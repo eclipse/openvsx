@@ -2,36 +2,44 @@ image:
   file: .gitpod.dockerfile
 
 ports:
+# Web UI (static resources)
 - port: 3000
+# Server (API)
 - port: 8080
+# PostgreSQL
 - port: 5000-5999
   onOpen: ignore
+# Elasticsearch
 - port: 9000-9999
   onOpen: ignore
 
 tasks:
 - init: |
-    cd /workspace/extension-registry/webui
-    yarn
-    yarn build:dev
-    cd /workspace/extension-registry/cli
-    yarn
-    cd /workspace/extension-registry/server
-    ./gradlew build downloadTestExtensions
+    # Build all components
+    yarn --cwd cli
+    yarn --cwd webui
+    yarn --cwd webui build:dev
+    server/gradlew -p server build downloadTestExtensions
   name: Server
   command: |
     export OVSX_SERVER_URL=`gp url 8080`
     export OVSX_WEBUI_URL=`gp url 3000`
     export OVSX_ELASTICSEARCH_HOST=localhost:9200
+    # Start Elasticsearch as background process
     $ES_HOME/bin/elasticsearch -d -p $ES_HOME/pid -Ediscovery.type=single-node -Expack.ml.enabled=false
     gp await-port 9200
-    cd /workspace/extension-registry/server
+    # Start the server application
+    cd server
     ./gradlew runServer
 - name: WebUI
   command: |
     gp await-port 8080
-    yarn --cwd webui start:dev
+    # Start Express for serving frontend resources
+    cd webui
+    yarn start:dev
 - name: Publisher
   command: |
     gp await-port 8080
-    find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
+    # Use the CLI to publish some test extensions to the running server
+    find server/build/test-extensions -name '*.vsix' -exec \
+      cli/lib/ovsx publish -r http://localhost:8080 '{}' \;
