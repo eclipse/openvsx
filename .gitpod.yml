@@ -1,0 +1,37 @@
+image:
+  file: .gitpod.dockerfile
+
+ports:
+- port: 3000
+- port: 8080
+- port: 5000-5999
+  onOpen: ignore
+- port: 9000-9999
+  onOpen: ignore
+
+tasks:
+- init: |
+    cd /workspace/extension-registry/webui
+    yarn
+    yarn build:dev
+    cd /workspace/extension-registry/cli
+    yarn
+    cd /workspace/extension-registry/server
+    ./gradlew build downloadTestExtensions
+  name: Server
+  command: |
+    export OVSX_SERVER_URL=`gp url 8080`
+    export OVSX_WEBUI_URL=`gp url 3000`
+    export OVSX_ELASTICSEARCH_HOST=localhost:9200
+    $ES_HOME/bin/elasticsearch -d -p $ES_HOME/pid -Ediscovery.type=single-node -Expack.ml.enabled=false
+    gp await-port 9200
+    cd /workspace/extension-registry/server
+    ./gradlew runServer
+- name: WebUI
+  command: |
+    gp await-port 8080
+    yarn --cwd webui start:dev
+- name: Publisher
+  command: |
+    gp await-port 8080
+    find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;

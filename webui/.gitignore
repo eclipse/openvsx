@@ -1,0 +1,4 @@
+/lib/
+/dev/static/bundle.*
+node_modules/
+yarn-error.log

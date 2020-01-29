@@ -1,0 +1,33 @@
+{
+    "name": "ovsx",
+    "version": "0.1.0",
+    "description": "Command line interface for Eclipse Open VSX Registry",
+    "repository": "https://github.com/theia-ide/extension-registry",
+    "author": "TypeFox",
+    "license": "EPL-2.0",
+    "bin": {
+        "ovsx": "lib/ovsx"
+    },
+    "engines": {
+        "node": ">= 8"
+    },
+    "dependencies": {
+        "vsce": "^1.70.0"
+    },
+    "devDependencies": {
+        "@types/didyoumean": "^1.2.0",
+        "@types/node": "^10.14.18",
+        "@types/semver": "^6.2.0",
+        "@types/tmp": "^0.1.0",
+        "rimraf": "^3.0.0",
+        "tslint": "^5.20.1",
+        "typescript": "3.6.4"
+    },
+    "scripts": {
+        "clean": "rimraf lib",
+        "build": "tsc -p ./tsconfig.json && yarn run lint && cp src/ovsx lib/ovsx",
+        "watch": "tsc -w -p ./tsconfig.json",
+        "lint": "tslint -c ../webui/configs/tslint.json -p ./tsconfig.json",
+        "prepare": "yarn run clean && yarn run build"
+    }
+}

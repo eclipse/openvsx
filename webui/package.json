@@ -1,0 +1,52 @@
+{
+    "name": "extension-registry-webui",
+    "version": "0.1.0",
+    "description": "User interface for the extension registry",
+    "repository": "https://github.com/theia-ide/extension-registry",
+    "author": "TypeFox",
+    "license": "EPL-2.0",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "main": "lib/index",
+    "types": "lib/index",
+    "dependencies": {
+        "@material-ui/core": "latest",
+        "@material-ui/icons": "latest",
+        "@material-ui/styles": "latest",
+        "date-fns": "^2.7.0",
+        "date-fns-tz": "^1.0.8",
+        "markdown-it": "^10.0.0",
+        "react": "^16.10.2",
+        "react-dom": "^16.10.2",
+        "react-router-dom": "^5.1.2"
+    },
+    "devDependencies": {
+        "@types/markdown-it": "^0.0.9",
+        "@types/react": "^16.9.9",
+        "@types/react-dom": "^16.9.2",
+        "@types/react-router-dom": "*",
+        "copy-webpack-plugin": "^5.0.4",
+        "css-loader": "^3.2.0",
+        "express": "^4.17.1",
+        "file-loader": "^4.2.0",
+        "source-map-loader": "^0.2.4",
+        "style-loader": "^1.0.0",
+        "ts-loader": "^6.2.0",
+        "tslint": "^5.20.0",
+        "typescript": "3.6.4",
+        "webpack": "^4.41.2",
+        "webpack-cli": "^3.3.9"
+    },
+    "scripts": {
+        "clean": "rimraf lib",
+        "build": "tsc -p ./tsconfig.json && yarn run lint",
+        "lint": "tslint -c ./configs/tslint.json --project ./tsconfig.json",
+        "watch": "tsc -w -p ./tsconfig.json",
+        "prepare": "yarn run clean && yarn run build",
+        "build:dev": "webpack --config ./configs/webpack.config.js",
+        "watch:dev": "webpack --watch --config ./configs/webpack.config.js",
+        "start:dev": "node dev/server/main"
+    }
+}
