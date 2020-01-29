@@ -4,17 +4,15 @@ buildscript {
     }
 }
 plugins {
-    id 'de.undercouch.download' version '4.0.1'
-    id 'org.springframework.boot' version '2.2.2.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id 'de.undercouch.download' version '4.0.2'
+    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
     id 'java'
 }
 
 def versions = [
     java: '11',
-    guava: '28.1-jre',
-    hibernate_search: '5.11.3.Final',
-    lucene: '5.5.5'
+    guava: '28.1-jre'
 ]
 
 sourceCompatibility = versions.java
@@ -27,6 +25,9 @@ dependencies {
 	implementation "org.springframework.boot:spring-boot-starter-web"
 	implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
+    implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.security:spring-security-oauth2-client"
+    implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "com.google.guava:guava:${versions.guava}"
 	runtimeOnly "org.postgresql:postgresql"
     runtimeOnly "org.springframework.boot:spring-boot-devtools"

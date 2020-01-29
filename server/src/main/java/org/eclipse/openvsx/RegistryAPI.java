@@ -24,7 +24,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +53,9 @@ public class RegistryAPI {
 
     @Autowired
     UpstreamRegistryService upstream;
+
+    @Autowired
+    UserService users;
 
     @Value("#{environment.OVSX_WEBUI_URL}")
     String webuiUrl;
@@ -248,16 +254,16 @@ public class RegistryAPI {
     public ResponseEntity<ReviewResultJson> review(@RequestBody(required = false) ReviewJson review,
                                                    @PathVariable("publisher") String publisherName,
                                                    @PathVariable("extension") String extensionName,
-                                                   @CookieValue(name = "sessionid", required = false) String sessionId) {
+                                                   @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
+                                                   @AuthenticationPrincipal OAuth2User principal) {
         ReviewResultJson json;
-        if (sessionId == null) {
-            json = ReviewResultJson.error("Not logged in.");
-        } else if (review == null) {
+        if (review == null) {
             json = ReviewResultJson.error("No JSON input.");
         } else if (review.rating < 0 || review.rating > 5) {
             json = ReviewResultJson.error("The rating must be an integer number between 0 and 5.");
         } else {
-            json = local.review(review, publisherName, extensionName, sessionId);
+            var user = users.updateUser(authorizedClient, principal);
+            json = local.review(review, publisherName, extensionName, user);
         }
         return new ResponseEntity<>(json, getReviewHeaders(), HttpStatus.OK);
     }

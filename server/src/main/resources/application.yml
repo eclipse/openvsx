@@ -1,0 +1,23 @@
+server:
+  address: 0.0.0.0
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: gitpod
+    password: gitpod
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+
+  security:
+      oauth2:
+        client:
+          registration:
+            github:
+              client-id: ${GITHUB_CLIENT_ID}
+              client-secret: ${GITHUB_CLIENT_SECRET}

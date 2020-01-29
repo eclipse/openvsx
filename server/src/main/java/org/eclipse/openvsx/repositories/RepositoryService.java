@@ -21,7 +21,6 @@ import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Publisher;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.entities.UserSession;
 
 @Component
 public class RepositoryService {
@@ -34,7 +33,6 @@ public class RepositoryService {
     @Autowired ExtensionReadmeRepository extensionReadmeRepo;
     @Autowired ExtensionReviewRepository extensionReviewRepo;
     @Autowired UserDataRepository userDataRepo;
-    @Autowired UserSessionRepository userSessionRepo;
 
     public Publisher findPublisher(String name) {
         return publisherRepo.findByName(name);
@@ -88,12 +86,8 @@ public class RepositoryService {
         return extensionReviewRepo.countByExtension(extension);
     }
 
-    public Streamable<UserData> findAllUsers() {
-        return userDataRepo.findAll();
-    }
-
-    public UserSession findUserSession(String id) {
-        return userSessionRepo.findById(id);
+    public UserData findUser(String provider, String providerId) {
+        return userDataRepo.findByProviderAndProviderId(provider, providerId);
     }
 
 }

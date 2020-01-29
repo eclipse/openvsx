@@ -10,12 +10,11 @@
 package org.eclipse.openvsx.repositories;
 
 import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.UserData;
 
 public interface UserDataRepository extends Repository<UserData, Long> {
 
-    Streamable<UserData> findAll();
+        UserData findByProviderAndProviderId(String provider, String providerId);
 
 }

@@ -47,6 +47,7 @@ import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Publisher;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.PublisherJson;
 import org.eclipse.openvsx.json.ReviewJson;
@@ -334,17 +335,14 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional
-    public ReviewResultJson review(ReviewJson review, String publisherName, String extensionName, String sessionId) {
-        var session = repositories.findUserSession(sessionId);
-        if (session == null)
-            return ReviewResultJson.error("Invalid session.");
+    public ReviewResultJson review(ReviewJson review, String publisherName, String extensionName, UserData user) {
         var extension = repositories.findExtension(extensionName, publisherName);
         if (extension == null)
             throw new NotFoundException();
         var extReview = new ExtensionReview();
         extReview.setExtension(extension);
         extReview.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
-        extReview.setUsername(session.getUser().getName());
+        extReview.setUsername(user.getLoginName());
         extReview.setTitle(review.title);
         extReview.setComment(review.comment);
         extReview.setRating(review.rating);

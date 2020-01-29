@@ -9,27 +9,28 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import java.util.List;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(uniqueConstraints = { @UniqueConstraint(columnNames = "name") })
 public class UserData {
 
     @Id
     @GeneratedValue
     long id;
 
-    String name;
+    String loginName;
 
-    @OneToMany(mappedBy = "user")
-    List<UserSession> sessions;
+    String fullName;
+
+    String email;
+
+    String avatarUrl;
+
+    String provider;
+
+    String providerId;
 
 
     public long getId() {
@@ -40,12 +41,52 @@ public class UserData {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
+	public String getLoginName() {
+		return loginName;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setLoginName(String loginName) {
+		this.loginName = loginName;
 	}
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
+    }
 
 }

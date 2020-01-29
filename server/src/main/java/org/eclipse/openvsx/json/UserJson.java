@@ -26,7 +26,10 @@ public class UserJson {
     @Nullable
     public String error;
 
-    public String name;
+    public String loginName;
+
+    @Nullable
+    public String fullName;
 
     @Nullable
     public String avatarUrl;
