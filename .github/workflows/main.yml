@@ -1,0 +1,27 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+      with:
+        version: 10.x
+    - name: Setup Yarn
+      run: npm install --global yarn
+    - name: Setup Java JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - uses: actions/checkout@v2
+    - name: Build CLI
+      run: yarn --cwd cli
+    - name: Build Web UI
+      run: |
+        yarn --cwd webui
+        yarn --cwd webui build:dev
+    - name: Build Server
+      run: server/gradlew --no-daemon -p server build
