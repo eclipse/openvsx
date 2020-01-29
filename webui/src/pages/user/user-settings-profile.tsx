@@ -33,7 +33,8 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
             <Grid container>
                 <Grid item md={9}>
                     <Typography variant='h5' gutterBottom>Profile</Typography>
-                    <Typography variant='body1'>Username: {this.props.user.name}</Typography>
+                    <Typography variant='body1'>Login name: {this.props.user.loginName}</Typography>
+                    <Typography variant='body1'>Full name: {this.props.user.fullName}</Typography>
                 </Grid>
                 <Grid item md={3}>
                     <Avatar classes={{ root: this.props.classes.avatar }} variant='rounded' src={this.props.user.avatarUrl} />

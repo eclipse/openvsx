@@ -15,7 +15,6 @@ import ExitToAppIcon from '@material-ui/icons/ExitToAppOutlined';
 import { Link } from 'react-router-dom';
 import { UserData } from '../extension-registry-types';
 import { ExtensionRegistryService } from '../extension-registry-service';
-import { createAbsoluteURL } from '../utils';
 import { UserSettingsRoutes } from './user/user-settings';
 import PopperJS from 'popper.js';
 
@@ -72,7 +71,7 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
                         <Paper>
                             <ClickAwayListener onClickAway={this.handleClose}>
                                 <Box p={1}>
-                                    <Typography variant='overline' color='textPrimary'>Logged in as {this.props.user.name}</Typography>
+                                    <Typography variant='overline' color='textPrimary'>Logged in as {this.props.user.loginName}</Typography>
                                     <Box mt={1}>
                                         <Box>
                                             <Link onClick={this.handleClose} to={UserSettingsRoutes.PROFILE_ROUTE} className={this.props.classes.link}>
@@ -82,7 +81,7 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
                                             </Link>
                                         </Box>
                                         <Box>
-                                            <a href={createAbsoluteURL([this.props.service.apiUrl, '-', 'user', 'logout'])}
+                                            <a href={this.props.service.getLogoutUrl()}
                                                 onClick={this.handleClose} className={this.props.classes.link}>
                                                 <Typography variant='button'>
                                                     Log Out

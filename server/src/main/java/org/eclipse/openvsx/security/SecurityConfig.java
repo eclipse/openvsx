@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
+import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,20 +18,24 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Value("#{environment.OVSX_WEBUI_URL}")
+    @Value("${ovsx.webui.url}")
     String webuiUrl;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-            .antMatchers("/login/**", "/api/**")
+            .antMatchers("/user", "/login/**", "/api/**")
                 .permitAll()
             .anyRequest()
                 .authenticated();
-        http.oauth2Login()
-            .defaultSuccessUrl(webuiUrl, true);
-        http.logout()
-            .logoutSuccessUrl(webuiUrl);
+        http.csrf()
+            .ignoringAntMatchers("/api/-/publish");
+        if (!Strings.isNullOrEmpty(webuiUrl)) {
+            http.oauth2Login()
+                .defaultSuccessUrl(webuiUrl, true);
+            http.logout()
+                .logoutSuccessUrl(webuiUrl);
+        }
     }
 
 }

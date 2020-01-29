@@ -22,7 +22,7 @@ const node = document.getElementById('main');
 ReactDOM.render(<BrowserRouter>
     <ThemeProvider theme={theme}>
         <Main
-            apiUrl={`${window.location.protocol}//${serverHost}/api`}
+            serverUrl={`${window.location.protocol}//${serverHost}`}
             listHeaderTitle='Extensions for VS Code Compatible Editors'
             logoURL='/open-source.png'
             pageTitle='Open VSX Registry'

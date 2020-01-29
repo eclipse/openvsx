@@ -51,7 +51,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                 rating,
                 title: this.state.title,
                 comment: this.state.comment,
-                user: this.props.user.name
+                user: this.props.user.loginName
             }, this.props.reviewPostUrl);
             this.setState({ open: false, title: '', comment: '' });
             this.props.saveCompleted();
@@ -71,7 +71,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                 <DialogTitle>{this.props.extension.displayName || this.props.extension.name} Review</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Your review will be posted publicly as {this.props.user.name}
+                        Your review will be posted publicly as {this.props.user.loginName}
                     </DialogContentText>
                     <ExtensionRatingStarSetter ref={ref => this.starSetter = ref} />
                     <Box my={2}>

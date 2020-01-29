@@ -57,7 +57,7 @@ public class RegistryAPI {
     @Autowired
     UserService users;
 
-    @Value("#{environment.OVSX_WEBUI_URL}")
+    @Value("${ovsx.webui.url}")
     String webuiUrl;
 
     protected Iterable<IExtensionRegistry> getRegistries() {

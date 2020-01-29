@@ -2,6 +2,14 @@ server:
   address: 0.0.0.0
   port: 8080
 
+ovsx:
+  server:
+    url: ${OVSX_SERVER_URL}
+  webui:
+    url: ${OVSX_WEBUI_URL}
+  elasticsearch:
+    host: ${OVSX_ELASTICSEARCH_HOST}
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres

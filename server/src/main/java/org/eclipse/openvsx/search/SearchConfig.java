@@ -19,7 +19,7 @@ import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfig
 @Configuration
 public class SearchConfig extends AbstractElasticsearchConfiguration {
 
-    @Value("#{environment.OVSX_ELASTICSEARCH_HOST}")
+    @Value("${ovsx.elasticsearch.host}")
     String searchHost;
 
     @Override

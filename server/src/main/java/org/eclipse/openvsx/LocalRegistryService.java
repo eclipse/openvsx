@@ -76,7 +76,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Autowired
     ElasticsearchOperations searchOperations;
 
-    @Value("#{environment.OVSX_SERVER_URL}")
+    @Value("${ovsx.server.url}")
     String serverUrl;
 
     @Override

@@ -17,7 +17,6 @@ import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
 import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
 import { ExtensionRegistryService } from './extension-registry-service';
-import { createAbsoluteURL } from './utils';
 import { UserData } from './extension-registry-types';
 import { ExtensionRegistryAvatar } from './pages/extension-registry-avatar';
 
@@ -49,7 +48,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         this.state = {};
 
         this.service = ExtensionRegistryService.instance;
-        this.service.apiUrl = props.apiUrl;
+        this.service.serverUrl = props.serverUrl;
     }
 
     componentDidMount() {
@@ -88,7 +87,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 this.state.user ?
                                     <ExtensionRegistryAvatar user={this.state.user} service={this.service} />
                                     :
-                                    <IconButton href={createAbsoluteURL([this.service.apiUrl, '-', 'user', 'login'])}>
+                                    <IconButton href={this.service.getLoginUrl()}>
                                         <AccountBoxIcon />
                                     </IconButton>
                             }
@@ -118,7 +117,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
 
 export namespace MainComponent {
     export interface Props extends WithStyles<typeof mainStyles> {
-        apiUrl: string;
+        serverUrl: string;
         pageTitle: string;
         listHeaderTitle: string;
         logoURL: string;

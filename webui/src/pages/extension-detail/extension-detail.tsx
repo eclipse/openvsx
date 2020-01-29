@@ -64,7 +64,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     protected async init() {
         try {
-            const extensionUrl = ExtensionRaw.getExtensionApiUrl(this.service.apiUrl, this.params);
+            const extensionUrl = ExtensionRaw.getExtensionApiUrl(this.service.serverUrl, this.params);
             const extension = await this.service.getExtensionDetail(extensionUrl);
             const user = await this.service.getUser();
             this.setState({ extension, user });

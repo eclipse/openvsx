@@ -37,7 +37,7 @@ export interface ExtensionRaw {
 }
 export namespace ExtensionRaw {
     export function getExtensionApiUrl(root: string, extension: ExtensionRaw) {
-        const arr = [root, extension.publisher, extension.name];
+        const arr = [root, 'api', extension.publisher, extension.name];
         return createAbsoluteURL(arr);
     }
 }
@@ -99,12 +99,13 @@ export interface ExtensionReviewList {
 }
 
 export interface UserData {
-    name: string;
-    avatarUrl: string;
+    loginName: string;
+    fullName?: string;
+    avatarUrl?: string;
 }
 export namespace UserData {
     export function is(resp: any): resp is UserData {
-        return resp && 'name' in resp && 'avatarUrl' in resp;
+        return resp && 'loginName' in resp;
     }
 }
 

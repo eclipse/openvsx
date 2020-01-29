@@ -37,81 +37,78 @@ export interface ErrorResponse {
     trace: string;
 }
 
-export class ExtensionRegistryAPI {
-
-    protected async run<Res>(req: ServerAPIRequestWithPayload<Res, any> | ServerAPIRequestWithoutPayload<Res>): Promise<Res> {
-        const param: RequestInit = {
-            method: req.method
-        };
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json'
-        };
-        if (req.method === 'POST' || req.method === 'PUT') {
-            param.body = JSON.stringify(req.payload);
-            headers['Accept'] = req.contentType;
-        }
-        if (req.credentials) {
-            param.credentials = 'include';
-        }
-        param.headers = headers;
-
-        const response = await fetch(req.endpoint, param);
-        if (response.status === 200) {
-            return req.operation(response);
-        } else {
-            throw await response.json() as ErrorResponse;
-        }
+async function run<Res>(req: ServerAPIRequestWithPayload<Res, any> | ServerAPIRequestWithoutPayload<Res>): Promise<Res> {
+    const param: RequestInit = {
+        method: req.method
+    };
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+    };
+    if (req.method === 'POST' || req.method === 'PUT') {
+        param.body = JSON.stringify(req.payload);
+        headers['Accept'] = req.contentType;
     }
-
-    getExtensions(endpoint: string): Promise<SearchResult> {
-        return this.run<SearchResult>({
-            method: 'GET',
-            endpoint,
-            operation: response => response.json()
-        });
+    if (req.credentials) {
+        param.credentials = 'include';
     }
+    param.headers = headers;
 
-    getExtension(endpoint: string): Promise<Extension> {
-        return this.run<Extension>({
-            method: 'GET',
-            endpoint,
-            operation: response => response.json()
-        });
+    const response = await fetch(req.endpoint, param);
+    if (response.status === 200) {
+        return req.operation(response);
+    } else {
+        throw await response.json() as ErrorResponse;
     }
+}
 
-    getExtensionReadme(endpoint: string): Promise<string> {
-        return this.run<string>({
-            method: 'GET',
-            endpoint,
-            operation: response => response.text()
-        });
-    }
+export function getExtensions(endpoint: string): Promise<SearchResult> {
+    return run<SearchResult>({
+        method: 'GET',
+        endpoint,
+        operation: response => response.json()
+    });
+}
 
-    getExtensionReviews(endpoint: string): Promise<ExtensionReviewList> {
-        return this.run<ExtensionReviewList>({
-            method: 'GET',
-            endpoint,
-            operation: response => response.json()
-        });
-    }
+export function getExtension(endpoint: string): Promise<Extension> {
+    return run<Extension>({
+        method: 'GET',
+        endpoint,
+        operation: response => response.json()
+    });
+}
 
-    postReview(payload: ExtensionReview, endpoint: string): Promise<void> {
-        return this.run({
-            method: 'POST',
-            payload,
-            contentType: 'application/json;charset=UTF-8',
-            credentials: true,
-            endpoint,
-            operation: response => response.json()
-        });
-    }
+export function getExtensionReadme(endpoint: string): Promise<string> {
+    return run<string>({
+        method: 'GET',
+        endpoint,
+        operation: response => response.text()
+    });
+}
 
-    getUser(endpoint: string): Promise<UserData | ErrorResponse> {
-        return this.run({
-            method: 'GET',
-            credentials: true,
-            endpoint,
-            operation: response => response.json()
-        });
-    }
+export function getExtensionReviews(endpoint: string): Promise<ExtensionReviewList> {
+    return run<ExtensionReviewList>({
+        method: 'GET',
+        endpoint,
+        operation: response => response.json()
+    });
+}
+
+export function postReview(payload: ExtensionReview, endpoint: string): Promise<void> {
+    return run({
+        method: 'POST',
+        payload,
+        contentType: 'application/json;charset=UTF-8',
+        credentials: true,
+        endpoint,
+        operation: response => response.json()
+    });
+}
+
+export function getUser(endpoint: string): Promise<UserData | ErrorResponse> {
+    return run({
+        method: 'GET',
+        credentials: true,
+        endpoint,
+        operation: response => response.json()
+    });
 }

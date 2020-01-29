@@ -9,9 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.util.Arrays;
+
+import com.google.common.base.Strings;
+
 import org.eclipse.openvsx.json.UserJson;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
@@ -25,18 +33,32 @@ public class UserAPI {
     @Autowired
     UserService users;
 
+    @Value("${ovsx.webui.url}")
+    String webuiUrl;
+
     @GetMapping(
         value = "/user",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public UserJson userInfo(@RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                             @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<UserJson> userData(@RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
+                                             @AuthenticationPrincipal OAuth2User principal) {
         var user = users.updateUser(authorizedClient, principal);
         var json = new UserJson();
         json.loginName = user.getLoginName();
         json.fullName = user.getFullName();
         json.avatarUrl = user.getAvatarUrl();
-        return json;
+        return new ResponseEntity<>(json, getUserHeaders(), HttpStatus.OK);
+    }
+
+    private HttpHeaders getUserHeaders() {
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (!Strings.isNullOrEmpty(webuiUrl)) {
+            headers.setAccessControlAllowOrigin(webuiUrl);
+            headers.setAccessControlAllowCredentials(true);
+            headers.setAccessControlAllowHeaders(Arrays.asList("Content-Type"));
+        }
+        return headers;
     }
 
 }
