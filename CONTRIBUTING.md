@@ -1,0 +1,23 @@
+# Contributing to Eclipse Open VSX
+
+Thank you for your interest in the Open VSX project! The following is a set of guidelines for contributing.
+
+## Code of Conduct
+
+This project is governed by the [Eclipse Community Code of Conduct](https://github.com/eclipse/.github/blob/master/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+## Communication
+
+The following communication channels are available:
+
+ * [GitHub issues](https://github.com/eclipse/openvsx/issues) - for bug reports, feature requests, etc.
+ * [Gitter chat](https://gitter.im/eclipse/openvsx) - for questions and project-related discussion
+ * [Developer mailing list](https://accounts.eclipse.org/mailing-list/openvsx-dev) - for organizational issues (e.g. elections of new committers)
+
+## How to Contribute
+
+Before your pull request can be accepted, you must electronically sign the [Eclipse Contributor Agreement](https://www.eclipse.org/legal/ECA.php).
+
+Unless you are an [elected committer of the Open VSX project](https://projects.eclipse.org/projects/ecd.openvsx/who), you must include a `Signed-off-by` line in the commit message. This line can be generated with the [-s flag of git commit](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt--s). By doing this you confirm that your contribution conforms to the Eclipse Contributor Agreement.
+
+For more information, see the [Eclipse Foundation Project Handbook](https://www.eclipse.org/projects/handbook/#resources-commit).
