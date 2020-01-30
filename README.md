@@ -14,6 +14,31 @@ The easiest way to get a development environment for this project is to open it 
 
 Click _Open Browser_ on port 3000 to see the running web application.
 
+### cli
+
+ * `yarn build` &mdash; build the library and `ovsx` command
+ * `yarn watch` &mdash; watch (build continuously)
+
+The command line tool is available at `cli/lib/ovsx`.
+
+### webui
+
+ * `yarn build` &mdash; build the library
+ * `yarn watch` &mdash; watch (build continuously)
+ * `yarn build:dev` &mdash; build the dev frontend (run webpack)
+ * `yarn watch:dev` &mdash; run webpack in watch mode
+ * `yarn start:dev` &mdash; start Express to serve the frontend on port 3000
+
+ The Express server is started automatically in Gitpod. A restart is usually not necessary.
+
+### server
+
+ * `./gradlew build` &mdash; build and test the server
+ * `./gradlew assemble -t` &mdash; build continuously (the server is restarted after every change)
+ * `./gradlew runServer` &mdash; start the Spring server on port 8080
+
+The Spring server is started automatically in Gitpod. It includes `spring-boot-devtools` which detects changes in the compiled class files and restarts the server.
+
 ### OAuth Setup
 
 If you would like to test authorization through GitHub, you need to [create an OAuth app](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) with a callback URL pointing to the exposed port 8080 of your Gitpod workspace. You can get it by printing a predefined variable in the Gitpod terminal:
