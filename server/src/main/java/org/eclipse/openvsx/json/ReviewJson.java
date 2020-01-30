@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 @JsonInclude(Include.NON_NULL)
 public class ReviewJson {
 
-    public String user;
+    public UserJson user;
 
     public String timestamp;
 

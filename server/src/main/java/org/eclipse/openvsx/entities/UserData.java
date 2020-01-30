@@ -13,6 +13,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
+import org.eclipse.openvsx.json.UserJson;
+
 @Entity
 public class UserData {
 
@@ -32,6 +34,17 @@ public class UserData {
 
     String providerId;
 
+
+    /**
+     * Convert to a JSON object.
+     */
+    public UserJson toUserJson() {
+        var json = new UserJson();
+        json.loginName = this.getLoginName();
+        json.fullName = this.getFullName();
+        json.avatarUrl = this.getAvatarUrl();
+        return json;
+    }
 
     public long getId() {
         return id;

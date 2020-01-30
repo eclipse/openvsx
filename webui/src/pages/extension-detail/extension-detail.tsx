@@ -14,7 +14,7 @@ import { RouteComponentProps, Switch, Route } from "react-router-dom";
 import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension, UserData, ExtensionRaw } from "../../extension-registry-types";
+import { Extension, UserData } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
 import { ExportRatingStars } from "./extension-rating-stars";
@@ -48,7 +48,7 @@ const detailStyles = (theme: Theme) => createStyles({
 });
 
 export class ExtensionDetailComponent extends React.Component<ExtensionDetailComponent.Props, ExtensionDetailComponent.State> {
-    protected service = ExtensionRegistryService.instance;
+
     protected params: Extension;
 
     constructor(props: ExtensionDetailComponent.Props) {
@@ -64,9 +64,9 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     protected async init() {
         try {
-            const extensionUrl = ExtensionRaw.getExtensionApiUrl(this.service.serverUrl, this.params);
-            const extension = await this.service.getExtensionDetail(extensionUrl);
-            const user = await this.service.getUser();
+            const extensionUrl = this.props.service.getExtensionApiUrl(this.params);
+            const extension = await this.props.service.getExtensionDetail(extensionUrl);
+            const user = await this.props.service.getUser();
             this.setState({ extension, user });
             if (extension.error) {
                 handleError(extension);
@@ -144,11 +144,11 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
 export namespace ExtensionDetailComponent {
     export interface Props extends WithStyles<typeof detailStyles>, RouteComponentProps {
-        service: ExtensionRegistryService
+        service: ExtensionRegistryService;
     }
     export interface State {
-        extension?: Extension,
-        user?: UserData
+        extension?: Extension;
+        user?: UserData;
     }
 }
 

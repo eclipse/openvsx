@@ -42,7 +42,7 @@ export class ExtensionList extends React.Component<ExtensionList.Props, Extensio
                 this.cancellationToken.cancel = undefined;
             }
             debounce(
-                () => this.props.service.getExtensions(newFilter).then(this.handleSearchResult, handleError),
+                () => this.props.service.search(newFilter).then(this.handleSearchResult, handleError),
                 this.cancellationToken
             );
         }
@@ -51,7 +51,7 @@ export class ExtensionList extends React.Component<ExtensionList.Props, Extensio
     protected getExtensions(filter: ExtensionFilter): Promise<SearchResult> {
         return new Promise((resolve, reject) => {
             this.cancellationToken.cancel = reject;
-            this.props.service.getExtensions(filter).then(resolve, reject);
+            this.props.service.search(filter).then(resolve, reject);
         });
     }
 

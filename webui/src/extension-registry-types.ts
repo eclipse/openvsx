@@ -8,8 +8,6 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { createAbsoluteURL } from "./utils";
-
 export interface ExtensionFilter {
     query?: string;
     category?: ExtensionCategory;
@@ -34,12 +32,6 @@ export interface ExtensionRaw {
     readonly averageRating?: number;
     readonly timestamp?: string;
     readonly description?: string;
-}
-export namespace ExtensionRaw {
-    export function getExtensionApiUrl(root: string, extension: ExtensionRaw) {
-        const arr = [root, 'api', extension.publisher, extension.name];
-        return createAbsoluteURL(arr);
-    }
 }
 
 export interface Extension extends ExtensionRaw {
@@ -84,13 +76,16 @@ export interface ExtensionReference {
     version?: string;
 }
 
-export type StarNumber = 1 | 2 | 3 | 4 | 5;
-export interface ExtensionReview {
-    rating: StarNumber;
+export type StarRating = 1 | 2 | 3 | 4 | 5;
+export interface NewReview {
+    rating: StarRating;
     title: string;
     comment: string;
-    user: string; // ExtensionRegistryUser;
-    timestamp?: string;
+}
+
+export interface ExtensionReview extends NewReview {
+    user: UserData;
+    timestamp: string;
 }
 
 export interface ExtensionReviewList {

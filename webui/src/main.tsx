@@ -40,15 +40,14 @@ const mainStyles = (theme: Theme) => createStyles({
 
 class MainComponent extends React.Component<MainComponent.Props, MainComponent.State> {
 
-    protected service: ExtensionRegistryService;
+    protected readonly service: ExtensionRegistryService;
 
     constructor(props: MainComponent.Props) {
         super(props);
 
         this.state = {};
 
-        this.service = ExtensionRegistryService.instance;
-        this.service.serverUrl = props.serverUrl;
+        this.service = new ExtensionRegistryService(props.serverUrl);
     }
 
     componentDidMount() {

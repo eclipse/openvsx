@@ -12,9 +12,9 @@ import * as React from "react";
 import { Box, IconButton } from "@material-ui/core";
 import StarIcon from '@material-ui/icons/Star';
 import StarBorderIcon from '@material-ui/icons/StarBorder';
-import { StarNumber } from "../../extension-registry-types";
+import { StarRating } from "../../extension-registry-types";
 
-export class ExtensionRatingStarSetter extends React.Component<{}, { number: StarNumber }> {
+export class ExtensionRatingStarSetter extends React.Component<{}, { number: StarRating }> {
 
     constructor(props: {}) {
         super(props);
@@ -22,11 +22,11 @@ export class ExtensionRatingStarSetter extends React.Component<{}, { number: Sta
         this.state = { number: 1 };
     }
 
-    protected handleStarClick = (number: StarNumber) => {
+    protected handleStarClick = (number: StarRating) => {
         this.setState({ number });
     }
 
-    protected renderStarButton(number: StarNumber): React.ReactElement {
+    protected renderStarButton(number: StarRating): React.ReactElement {
         return <IconButton key={'starbtn' + number} onClick={() => this.handleStarClick(number)}>
             {number <= this.state.number ? <StarIcon /> : <StarBorderIcon />}
         </IconButton>;
@@ -35,7 +35,7 @@ export class ExtensionRatingStarSetter extends React.Component<{}, { number: Sta
     protected renderStars(): React.ReactElement[] {
         const stars: React.ReactElement[] = [];
         for (let i = 1; i <= 5; i++) {
-            stars.push(this.renderStarButton(i as StarNumber));
+            stars.push(this.renderStarButton(i as StarRating));
         }
         return stars;
     }

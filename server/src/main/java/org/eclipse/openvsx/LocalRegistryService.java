@@ -342,7 +342,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extReview = new ExtensionReview();
         extReview.setExtension(extension);
         extReview.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
-        extReview.setUsername(user.getLoginName());
+        extReview.setUser(user);
         extReview.setTitle(review.title);
         extReview.setComment(review.comment);
         extReview.setRating(review.rating);

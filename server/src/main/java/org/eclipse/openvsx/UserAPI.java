@@ -43,10 +43,7 @@ public class UserAPI {
     public ResponseEntity<UserJson> userData(@RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
                                              @AuthenticationPrincipal OAuth2User principal) {
         var user = users.updateUser(authorizedClient, principal);
-        var json = new UserJson();
-        json.loginName = user.getLoginName();
-        json.fullName = user.getFullName();
-        json.avatarUrl = user.getAvatarUrl();
+        var json = user.toUserJson();
         return new ResponseEntity<>(json, getUserHeaders(), HttpStatus.OK);
     }
 

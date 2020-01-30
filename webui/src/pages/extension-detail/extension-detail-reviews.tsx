@@ -67,7 +67,8 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                             saveCompleted={this.saveCompleted}
                             extension={this.props.extension}
                             reviewPostUrl={this.state.reviewList.postUrl}
-                            user={this.props.user} />
+                            user={this.props.user}
+                            service={this.props.service} />
                     </Box> : ''
                 }
             </Box>

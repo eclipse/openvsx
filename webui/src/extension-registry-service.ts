@@ -9,24 +9,16 @@
  ********************************************************************************/
 
 import {
-    ExtensionFilter, Extension, ExtensionReview, UserData, ExtensionCategory,
-    ExtensionReviewList, PersonalAccessToken, SearchResult
+    ExtensionFilter, Extension, UserData, ExtensionCategory,
+    ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview, ExtensionRaw
 } from "./extension-registry-types";
 import { createAbsoluteURL } from "./utils";
-import { getExtensions, getExtension, getExtensionReadme, getExtensionReviews, postReview, getUser } from "./extension-registry-api";
 import { getTokens, generateToken, deleteToken, deleteTokens } from "./mock-token-api";
+import { sendRequest } from "./server-request";
 
 export class ExtensionRegistryService {
-    private static _instance: ExtensionRegistryService;
 
-    static get instance(): ExtensionRegistryService {
-        if (!ExtensionRegistryService._instance) {
-            ExtensionRegistryService._instance = new ExtensionRegistryService();
-        }
-        return ExtensionRegistryService._instance;
-    }
-
-    serverUrl: string;
+    constructor(protected readonly serverUrl: string) {}
 
     getLoginUrl(): string {
         return createAbsoluteURL([this.serverUrl, 'oauth2', 'authorization', 'github']);
@@ -36,49 +28,64 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'logout']);
     }
 
-    getExtensions(filter?: ExtensionFilter): Promise<SearchResult> {
+    getExtensionApiUrl(extension: ExtensionRaw) {
+        return createAbsoluteURL([this.serverUrl, 'api', extension.publisher, extension.name]);
+    }
+
+
+    search(filter?: ExtensionFilter): Promise<SearchResult> {
         let query: { key: string, value: string | number }[] | undefined;
         if (filter) {
             query = [];
             for (const key in filter) {
-                if (filter[key]) {
-                    const value = filter[key];
-                    if (!!value) {
-                        query.push({ key, value });
-                    }
+                const value = filter[key];
+                if (value) {
+                    query.push({ key, value });
                 }
             }
         }
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', '-', 'search'], query);
-        return getExtensions(endpoint);
+        return sendRequest<SearchResult>({ endpoint });
     }
 
     getExtensionDetail(extensionURL: string): Promise<Extension> {
-        return getExtension(extensionURL);
+        return sendRequest<Extension>({ endpoint: extensionURL });
     }
 
-    getExtensionReadme(readMeUrl: string): Promise<string> {
-        return getExtensionReadme(readMeUrl);
+    getExtensionReadme(readmeUrl: string): Promise<string> {
+        return sendRequest<string>({
+            endpoint: readmeUrl,
+            operation: response => response.text()
+        });
     }
 
     getExtensionReviews(reviewsUrl: string): Promise<ExtensionReviewList> {
-        return getExtensionReviews(reviewsUrl);
+        return sendRequest<ExtensionReviewList>({ endpoint: reviewsUrl });
     }
 
-    postReview(rating: ExtensionReview, postUrl: string): Promise<void> {
-        return postReview(rating, postUrl);
+    postReview(review: NewReview, postUrl: string): Promise<void> {
+        return sendRequest({
+            method: 'POST',
+            payload: review,
+            contentType: 'application/json;charset=UTF-8',
+            credentials: true,
+            endpoint: postUrl
+        });
     }
 
     async getUser(): Promise<UserData | undefined> {
         try {
-            const user = await getUser(createAbsoluteURL([this.serverUrl, 'user']));
+            const user = await sendRequest({
+                endpoint: createAbsoluteURL([this.serverUrl, 'user']),
+                credentials: true
+            });
             if (UserData.is(user)) {
                 return user;
             }
         } catch (err) {
             console.warn(err);
         }
-        return;
+        return undefined;
     }
 
     getCategories(): ExtensionCategory[] {

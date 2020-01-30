@@ -45,13 +45,12 @@ const headerStyles = (theme: Theme) => createStyles({
 
 class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Props, ExtensionListHeaderComp.State> {
 
-    protected service = ExtensionRegistryService.instance;
     protected categories: ExtensionCategory[];
 
     constructor(props: ExtensionListHeaderComp.Props) {
         super(props);
 
-        this.categories = this.service.getCategories();
+        this.categories = this.props.service.getCategories();
 
         this.state = {
             category: ''
@@ -127,14 +126,15 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
 
 namespace ExtensionListHeaderComp {
     export interface Props extends WithStyles<typeof headerStyles> {
-        onSearchChanged: (s: string) => void,
-        onCategoryChanged: (c: ExtensionCategory) => void,
-        listHeaderTitle: string,
-        searchTerm?: string,
-        category?: ExtensionCategory
+        onSearchChanged: (s: string) => void;
+        onCategoryChanged: (c: ExtensionCategory) => void;
+        listHeaderTitle: string;
+        searchTerm?: string;
+        category?: ExtensionCategory;
+        service: ExtensionRegistryService;
     }
     export interface State {
-        category: ExtensionCategory
+        category: ExtensionCategory;
     }
 }
 

@@ -22,13 +22,10 @@ const revivewDialogStyles = (theme: Theme) => createStyles({
 
 class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDialogComponent.Props, ExtensionReviewDialogComponent.State> {
 
-    protected service: ExtensionRegistryService;
     protected starSetter: ExtensionRatingStarSetter | null;
 
     constructor(props: ExtensionReviewDialogComponent.Props) {
         super(props);
-
-        this.service = ExtensionRegistryService.instance;
 
         this.state = {
             open: false,
@@ -38,7 +35,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     }
 
     protected handleOpenButton = async () => {
-        const user = await this.service.getUser();
+        const user = await this.props.service.getUser();
         if (user && UserData.is(user)) {
             this.setState({ open: true });
         }
@@ -47,11 +44,10 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     protected handleSave = async () => {
         try {
             const rating = this.starSetter ? this.starSetter.state.number : 1;
-            await this.service.postReview({
+            await this.props.service.postReview({
                 rating,
                 title: this.state.title,
-                comment: this.state.comment,
-                user: this.props.user.loginName
+                comment: this.state.comment
             }, this.props.reviewPostUrl);
             this.setState({ open: false, title: '', comment: '' });
             this.props.saveCompleted();
@@ -102,15 +98,16 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
 
 export namespace ExtensionReviewDialogComponent {
     export interface Props extends WithStyles<typeof revivewDialogStyles> {
-        extension: ExtensionRaw,
-        reviewPostUrl: string,
-        user: UserData,
-        saveCompleted: () => void
+        extension: ExtensionRaw;
+        reviewPostUrl: string;
+        user: UserData;
+        service: ExtensionRegistryService;
+        saveCompleted: () => void;
     }
     export interface State {
-        open: boolean,
-        comment: string,
-        title: string
+        open: boolean;
+        comment: string;
+        title: string;
     }
 }
 

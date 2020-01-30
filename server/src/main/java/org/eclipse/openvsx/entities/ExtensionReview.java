@@ -30,7 +30,8 @@ public class ExtensionReview {
 
     LocalDateTime timestamp;
 
-    String username;
+    @ManyToOne
+    UserData user;
 
     String title;
 
@@ -44,8 +45,8 @@ public class ExtensionReview {
      */
     public ReviewJson toReviewJson() {
         var json = new ReviewJson();
-        json.user = this.getUsername();
         json.timestamp = this.getTimestamp().toString();
+        json.user = this.getUser().toUserJson();
         json.title = this.getTitle();
         json.comment = this.getComment();
         json.rating = this.getRating();
@@ -76,12 +77,12 @@ public class ExtensionReview {
 		this.extension = extension;
 	}
 
-	public String getUsername() {
-		return username;
+	public UserData getUser() {
+		return user;
 	}
 
-	public void setUsername(String username) {
-		this.username = username;
+	public void setUser(UserData user) {
+		this.user = user;
 	}
 
 	public String getTitle() {
