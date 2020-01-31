@@ -14,7 +14,7 @@ import { RouteComponentProps, Switch, Route } from "react-router-dom";
 import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension, UserData } from "../../extension-registry-types";
+import { Extension, UserData, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
 import { ExportRatingStars } from "./extension-rating-stars";
@@ -66,10 +66,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         try {
             const extensionUrl = this.props.service.getExtensionApiUrl(this.params);
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
-            const user = await this.props.service.getUser();
-            this.setState({ extension, user });
-            if (extension.error) {
+            if (isError(extension)) {
                 handleError(extension);
+            } else {
+                this.setState({ extension });
             }
         } catch (err) {
             handleError(err);
@@ -132,7 +132,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                     extension={this.state.extension}
                                     reviewsDidUpdate={this.onReviewUpdate}
                                     service={this.props.service}
-                                    user={this.state.user} />
+                                    user={this.props.user} />
                             </Route>
                         </Switch>
                     </Box>
@@ -144,11 +144,11 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
 export namespace ExtensionDetailComponent {
     export interface Props extends WithStyles<typeof detailStyles>, RouteComponentProps {
+        user?: UserData;
         service: ExtensionRegistryService;
     }
     export interface State {
         extension?: Extension;
-        user?: UserData;
     }
 }
 

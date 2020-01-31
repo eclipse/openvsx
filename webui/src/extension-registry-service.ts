@@ -9,8 +9,8 @@
  ********************************************************************************/
 
 import {
-    ExtensionFilter, Extension, UserData, ExtensionCategory,
-    ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview, ExtensionRaw
+    Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
+    SearchResult, NewReview, ExtensionRaw, ErrorResult
 } from "./extension-registry-types";
 import { createAbsoluteURL } from "./utils";
 import { getTokens, generateToken, deleteToken, deleteTokens } from "./mock-token-api";
@@ -32,38 +32,33 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'api', extension.publisher, extension.name]);
     }
 
-
-    search(filter?: ExtensionFilter): Promise<SearchResult> {
+    search(filter?: ExtensionFilter): Promise<SearchResult | ErrorResult> {
         let query: { key: string, value: string | number }[] | undefined;
         if (filter) {
-            query = [];
-            for (const key in filter) {
-                const value = filter[key];
-                if (value) {
-                    query.push({ key, value });
-                }
-            }
+            query = Object.getOwnPropertyNames(filter)
+                .map(key => ({ key, value: filter[key] }))
+                .filter(({value}) => value !== undefined) as { key: string, value: string | number }[];
         }
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', '-', 'search'], query);
-        return sendRequest<SearchResult>({ endpoint });
+        return sendRequest({ endpoint });
     }
 
-    getExtensionDetail(extensionURL: string): Promise<Extension> {
-        return sendRequest<Extension>({ endpoint: extensionURL });
+    getExtensionDetail(extensionUrl: string): Promise<Extension | ErrorResult> {
+        return sendRequest({ endpoint: extensionUrl });
     }
 
     getExtensionReadme(readmeUrl: string): Promise<string> {
-        return sendRequest<string>({
+        return sendRequest({
             endpoint: readmeUrl,
-            operation: response => response.text()
+            accept: 'text/plain'
         });
     }
 
     getExtensionReviews(reviewsUrl: string): Promise<ExtensionReviewList> {
-        return sendRequest<ExtensionReviewList>({ endpoint: reviewsUrl });
+        return sendRequest({ endpoint: reviewsUrl });
     }
 
-    postReview(review: NewReview, postUrl: string): Promise<void> {
+    postReview(review: NewReview, postUrl: string): Promise<{} | ErrorResult> {
         return sendRequest({
             method: 'POST',
             payload: review,
@@ -73,19 +68,11 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getUser(): Promise<UserData | undefined> {
-        try {
-            const user = await sendRequest({
-                endpoint: createAbsoluteURL([this.serverUrl, 'user']),
-                credentials: true
-            });
-            if (UserData.is(user)) {
-                return user;
-            }
-        } catch (err) {
-            console.warn(err);
-        }
-        return undefined;
+    async getUser(): Promise<UserData | ErrorResult> {
+        return await sendRequest({
+            endpoint: createAbsoluteURL([this.serverUrl, 'user']),
+            credentials: true
+        });
     }
 
     getCategories(): ExtensionCategory[] {
@@ -128,4 +115,12 @@ export class ExtensionRegistryService {
     deleteTokens(): Promise<void> {
         return deleteTokens();
     }
+}
+
+export interface ExtensionFilter {
+    query?: string;
+    category?: ExtensionCategory;
+    size?: number;
+    offset?: number;
+    [key: string]: string | number | undefined;
 }

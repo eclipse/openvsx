@@ -11,8 +11,8 @@
 import * as React from "react";
 import { Grid } from "@material-ui/core";
 import { ExtensionListItem } from "./extension-list-item";
-import { ExtensionFilter, ExtensionRaw, SearchResult } from "../../extension-registry-types";
-import { ExtensionRegistryService } from "../../extension-registry-service";
+import { ExtensionRaw, SearchResult, isError, ErrorResult } from "../../extension-registry-types";
+import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
 import { debounce, handleError } from "../../utils";
 
 export class ExtensionList extends React.Component<ExtensionList.Props, ExtensionList.State> {
@@ -48,18 +48,19 @@ export class ExtensionList extends React.Component<ExtensionList.Props, Extensio
         }
     }
 
-    protected getExtensions(filter: ExtensionFilter): Promise<SearchResult> {
+    protected getExtensions(filter: ExtensionFilter): Promise<SearchResult | ErrorResult> {
         return new Promise((resolve, reject) => {
             this.cancellationToken.cancel = reject;
             this.props.service.search(filter).then(resolve, reject);
         });
     }
 
-    protected handleSearchResult = (result: SearchResult) => {
-        if (result.error)
+    protected handleSearchResult = (result: SearchResult | ErrorResult) => {
+        if (isError(result)) {
             handleError(result);
-        else
+        } else {
             this.setState({ extensions: result.extensions });
+        }
     }
 
     render() {
@@ -81,4 +82,3 @@ export namespace ExtensionList {
         extensions: ExtensionRaw[]
     }
 }
-

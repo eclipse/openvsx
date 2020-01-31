@@ -15,10 +15,11 @@ import { Route, Link, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
+import { ExtensionRegistryAvatar } from './pages/extension-registry-avatar';
 import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
 import { ExtensionRegistryService } from './extension-registry-service';
-import { UserData } from './extension-registry-types';
-import { ExtensionRegistryAvatar } from './pages/extension-registry-avatar';
+import { UserData, isError } from './extension-registry-types';
+import { handleError } from './utils';
 
 export namespace ExtensionRegistryPages {
     export const EXTENSION_REGISTRY = 'extension-registry';
@@ -40,14 +41,10 @@ const mainStyles = (theme: Theme) => createStyles({
 
 class MainComponent extends React.Component<MainComponent.Props, MainComponent.State> {
 
-    protected readonly service: ExtensionRegistryService;
-
     constructor(props: MainComponent.Props) {
         super(props);
 
         this.state = {};
-
-        this.service = new ExtensionRegistryService(props.serverUrl);
     }
 
     componentDidMount() {
@@ -55,9 +52,13 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     }
 
     protected async init() {
-        const user = await this.service.getUser();
-        if (user && UserData.is(user)) {
-            this.setState({ user });
+        try {
+            const user = await this.props.service.getUser();
+            if (!isError(user)) {
+                this.setState({ user });
+            }
+        } catch (err) {
+            handleError(err);
         }
     }
 
@@ -84,9 +85,9 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         <Box display='flex' alignItems='center'>
                             {
                                 this.state.user ?
-                                    <ExtensionRegistryAvatar user={this.state.user} service={this.service} />
+                                    <ExtensionRegistryAvatar user={this.state.user} service={this.props.service} />
                                     :
-                                    <IconButton href={this.service.getLoginUrl()}>
+                                    <IconButton href={this.props.service.getLoginUrl()}>
                                         <AccountBoxIcon />
                                     </IconButton>
                             }
@@ -96,9 +97,26 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 <Box flex='1'>
                     <Switch>
                         <Route exact path={['/', ExtensionListRoutes.EXTENSION_LIST_LINK]}
-                            render={routeProps => <ExtensionListContainer {...routeProps} service={this.service} listHeaderTitle={this.props.listHeaderTitle} />} />
-                        <Route path={UserSettingsRoutes.MAIN_W_TAB_PARAM} render={routeProps => <UserSettings service={this.service} {...routeProps} />} />
-                        <Route path={ExtensionDetailRoutes.EXTENSION_DETAIL_MAIN_ROUTE} render={routeProps => <ExtensionDetail {...routeProps} service={this.service} />} />
+                            render={routeProps =>
+                                <ExtensionListContainer
+                                    {...routeProps}
+                                    service={this.props.service}
+                                    listHeaderTitle={this.props.listHeaderTitle} />
+                            } />
+                        <Route path={UserSettingsRoutes.MAIN_W_TAB_PARAM}
+                            render={routeProps =>
+                                <UserSettings
+                                    {...routeProps}
+                                    user={this.state.user}
+                                    service={this.props.service} />
+                            } />
+                        <Route path={ExtensionDetailRoutes.EXTENSION_DETAIL_MAIN_ROUTE}
+                            render={routeProps =>
+                                <ExtensionDetail
+                                    {...routeProps}
+                                    user={this.state.user}
+                                    service={this.props.service} />
+                            } />
                         <Route path='*'>
                             <Container>
                                 <Box height='90vh' display='flex' justifyContent='center' alignItems='center'>
@@ -116,7 +134,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
 
 export namespace MainComponent {
     export interface Props extends WithStyles<typeof mainStyles> {
-        serverUrl: string;
+        service: ExtensionRegistryService;
         pageTitle: string;
         listHeaderTitle: string;
         logoURL: string;

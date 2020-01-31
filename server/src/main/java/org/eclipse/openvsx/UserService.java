@@ -9,12 +9,16 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.util.Optional;
+
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
@@ -22,24 +26,38 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserService {
 
+    protected static final String GITHUB_API = "https://api.github.com/";
+
     @Autowired
     EntityManager entityManager;
 
     @Autowired
     RepositoryService repositories;
 
-    @Transactional
-    public UserData updateUser(OAuth2AuthorizedClient authorizedClient, OAuth2User principal) {
-        var provider = authorizedClient.getClientRegistration().getRegistrationId();
-        switch (provider) {
-            case "github":
-                return updateGitHubUser(principal);
-            default:
-                throw new IllegalArgumentException("Unsupported OAuth2 provider: " + provider);
-        }
+    public Authentication getAuthentication() {
+        return SecurityContextHolder.getContext().getAuthentication();
     }
 
-    private UserData updateGitHubUser(OAuth2User principal) {
+    @Transactional
+    public UserData updateUser(OAuth2User principal, Optional<OAuth2AuthorizedClient> authorizedClient) {
+        if (authorizedClient.isPresent()) {
+            var provider = authorizedClient.get().getClientRegistration().getRegistrationId();
+            switch (provider) {
+                case "github":
+                    return updateGitHubUser(principal);
+                default:
+                    throw new IllegalArgumentException("Unsupported OAuth2 provider: " + provider);
+            }
+        }
+
+        String url = principal.getAttribute("url");
+        if (url != null && url.startsWith(GITHUB_API)) {
+            return updateGitHubUser(principal);
+        }
+        throw new IllegalArgumentException("Unsupported principal: " + principal.getName());
+    }
+
+    protected UserData updateGitHubUser(OAuth2User principal) {
         var user = repositories.findUser("github", principal.getName());
         if (user == null) {
             user = new UserData();

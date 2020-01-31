@@ -11,7 +11,7 @@
 export interface ServerAPIRequest<Res> {
     endpoint: string;
     method?: 'GET' | 'DELETE' | 'POST' | 'PUT';
-    operation?: (response: Response) => Promise<Res>;
+    accept?: 'application/json' | 'text/plain';
     credentials?: boolean;
 }
 
@@ -35,27 +35,37 @@ export interface ErrorResponse {
 }
 
 export async function sendRequest<Res>(req: ServerAPIRequest<Res> | ServerAPIRequestWithPayload<Res, any>): Promise<Res> {
+    if (!req.method) {
+        req.method = 'GET';
+    }
+    if (!req.accept) {
+        req.accept = 'application/json';
+    }
+
     const param: RequestInit = {
-        method: req.method || 'GET'
+        method: req.method
     };
     const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
+        'Accept': req.accept
     };
     if (hasPayload(req)) {
         param.body = JSON.stringify(req.payload);
-        headers['Accept'] = req.contentType;
+        headers['Content-Type'] = req.contentType;
     }
+    param.headers = headers;
     if (req.credentials) {
         param.credentials = 'include';
     }
-    param.headers = headers;
 
     const response = await fetch(req.endpoint, param);
     if (response.status === 200) {
-        if (req.operation) {
-            return req.operation(response);
-        } else {
-            return response.json();
+        switch (req.accept) {
+            case 'application/json':
+                return response.json();
+            case 'text/plain':
+                return response.text() as Promise<any>;
+            default:
+                throw new Error(`Unsupported type ${req.accept}`);
         }
     } else {
         throw await response.json() as ErrorResponse;

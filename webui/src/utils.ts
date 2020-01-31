@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ErrorResponse } from "./extension-registry-api";
+import { ErrorResponse } from "./server-request";
 
 export function createAbsoluteURL(arr: string[], queries?: {key: string, value: string | number}[]): string {
     const url = arr.reduce((acc, curr) => acc + (curr ? '/' + curr : ''));

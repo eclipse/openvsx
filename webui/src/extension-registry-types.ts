@@ -8,16 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-export interface ExtensionFilter {
-    query?: string;
-    category?: ExtensionCategory;
-    size?: number;
-    offset?: number;
-    [key: string]: string | number | undefined;
+export interface ErrorResult {
+    readonly error?: string;
+}
+export function isError(obj: any): obj is ErrorResult {
+    return obj && typeof obj.error === 'string';
 }
 
 export interface SearchResult {
-    readonly error?: string;
     readonly offset: number;
     readonly extensions: ExtensionRaw[];
 }
@@ -35,8 +33,6 @@ export interface ExtensionRaw {
 }
 
 export interface Extension extends ExtensionRaw {
-    readonly error?: string;
-
     readonly publisherUrl: string;
     readonly reviewsUrl: string;
     readonly downloadUrl: string;
@@ -97,11 +93,6 @@ export interface UserData {
     loginName: string;
     fullName?: string;
     avatarUrl?: string;
-}
-export namespace UserData {
-    export function is(resp: any): resp is UserData {
-        return resp && 'loginName' in resp;
-    }
 }
 
 export type ExtensionCategory =

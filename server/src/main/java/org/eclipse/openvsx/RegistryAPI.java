@@ -12,12 +12,19 @@ package org.eclipse.openvsx;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import com.google.common.collect.Iterables;
 
-import org.elasticsearch.common.Strings;
+import org.eclipse.openvsx.json.ExtensionJson;
+import org.eclipse.openvsx.json.PublisherJson;
+import org.eclipse.openvsx.json.ReviewJson;
+import org.eclipse.openvsx.json.ReviewListJson;
+import org.eclipse.openvsx.json.ReviewResultJson;
+import org.eclipse.openvsx.json.SearchEntryJson;
+import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.util.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -35,15 +42,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.PublisherJson;
-import org.eclipse.openvsx.json.ReviewJson;
-import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.ReviewResultJson;
-import org.eclipse.openvsx.json.SearchEntryJson;
-import org.eclipse.openvsx.json.SearchResultJson;
-import org.eclipse.openvsx.util.NotFoundException;
 
 @RestController
 public class RegistryAPI {
@@ -251,32 +249,18 @@ public class RegistryAPI {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ReviewResultJson> review(@RequestBody(required = false) ReviewJson review,
-                                                   @PathVariable("publisher") String publisherName,
-                                                   @PathVariable("extension") String extensionName,
-                                                   @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                                   @AuthenticationPrincipal OAuth2User principal) {
-        ReviewResultJson json;
+    public ReviewResultJson review(@RequestBody(required = false) ReviewJson review,
+                                   @PathVariable("publisher") String publisherName,
+                                   @PathVariable("extension") String extensionName,
+                                   @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
+                                   @AuthenticationPrincipal OAuth2User principal) {
         if (review == null) {
-            json = ReviewResultJson.error("No JSON input.");
+            return ReviewResultJson.error("No JSON input.");
         } else if (review.rating < 0 || review.rating > 5) {
-            json = ReviewResultJson.error("The rating must be an integer number between 0 and 5.");
-        } else {
-            var user = users.updateUser(authorizedClient, principal);
-            json = local.review(review, publisherName, extensionName, user);
+            return ReviewResultJson.error("The rating must be an integer number between 0 and 5.");
         }
-        return new ResponseEntity<>(json, getReviewHeaders(), HttpStatus.OK);
-    }
-
-    private HttpHeaders getReviewHeaders() {
-        var headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        if (!Strings.isNullOrEmpty(webuiUrl)) {
-            headers.setAccessControlAllowOrigin(webuiUrl);
-            headers.setAccessControlAllowCredentials(true);
-            headers.setAccessControlAllowHeaders(Arrays.asList("Content-Type"));
-        }
-        return headers;
+        var user = users.updateUser(principal, Optional.of(authorizedClient));
+        return local.review(review, publisherName, extensionName, user);
     }
 
 }

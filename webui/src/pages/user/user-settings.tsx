@@ -29,24 +29,10 @@ const profileStyles = (theme: Theme) => createStyles({
 
 });
 
-class UserSettingsComponent extends React.Component<UserSettingsComponent.Props, UserSettingsComponent.State> {
-
-    constructor(props: UserSettingsComponent.Props) {
-        super(props);
-
-        this.state = {};
-    }
-
-    componentDidMount() {
-        this.props.service.getUser().then(user => {
-            if (UserData.is(user)) {
-                this.setState({ user });
-            }
-        });
-    }
+class UserSettingsComponent extends React.Component<UserSettingsComponent.Props> {
 
     render() {
-        const user = this.state.user;
+        const user = this.props.user;
         if (!user) {
             return <Container>
                 <Box mt={6}>
@@ -80,10 +66,8 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props,
 
 export namespace UserSettingsComponent {
     export interface Props extends WithStyles<typeof profileStyles>, RouteComponentProps {
-        service: ExtensionRegistryService
-    }
-    export interface State {
-        user?: UserData
+        user?: UserData;
+        service: ExtensionRegistryService;
     }
 }
 

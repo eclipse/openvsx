@@ -35,8 +35,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     }
 
     protected handleOpenButton = async () => {
-        const user = await this.props.service.getUser();
-        if (user && UserData.is(user)) {
+        if (this.props.user) {
             this.setState({ open: true });
         }
     }
