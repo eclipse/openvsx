@@ -28,10 +28,10 @@ export function hasPayload<Res>(req: ServerAPIRequest<Res>): req is ServerAPIReq
 export interface ErrorResponse {
     error: string;
     message: string;
-    path: string;
     status: number;
-    timestamp: string;
-    trace: string;
+    path?: string;
+    timestamp?: string;
+    trace?: string;
 }
 
 export async function sendRequest<Res>(req: ServerAPIRequest<Res> | ServerAPIRequestWithPayload<Res, any>): Promise<Res> {
@@ -58,7 +58,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest<Res> | ServerAPIReq
     }
 
     const response = await fetch(req.endpoint, param);
-    if (response.status === 200) {
+    if (response.ok) {
         switch (req.accept) {
             case 'application/json':
                 return response.json();
@@ -68,6 +68,16 @@ export async function sendRequest<Res>(req: ServerAPIRequest<Res> | ServerAPIReq
                 throw new Error(`Unsupported type ${req.accept}`);
         }
     } else {
-        throw await response.json() as ErrorResponse;
+        let err: ErrorResponse;
+        try {
+            err = await response.json();
+        } catch (_) {
+            err = {
+                error: `Request failed: ${req.method} ${response.url}`,
+                status: response.status,
+                message: response.statusText || `Status ${response.status}`
+            }
+        }
+        throw err;
     }
 }

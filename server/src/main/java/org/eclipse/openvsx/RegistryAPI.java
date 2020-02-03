@@ -117,7 +117,7 @@ public class RegistryAPI {
         throw new NotFoundException();
     }
 
-    @GetMapping("/api/{publisher}/{extension}/file/{fileName}")
+    @GetMapping("/api/{publisher}/{extension}/file/{fileName:.+}")
     @CrossOrigin
     public ResponseEntity<byte[]> getFile(@PathVariable("publisher") String publisherName,
                                           @PathVariable("extension") String extensionName,
@@ -134,7 +134,7 @@ public class RegistryAPI {
         throw new NotFoundException();
     }
 
-    @GetMapping("/api/{publisher}/{extension}/{version}/file/{fileName}")
+    @GetMapping("/api/{publisher}/{extension}/{version}/file/{fileName:.+}")
     @CrossOrigin
     public ResponseEntity<byte[]> getFile(@PathVariable("publisher") String publisherName,
                                           @PathVariable("extension") String extensionName,
