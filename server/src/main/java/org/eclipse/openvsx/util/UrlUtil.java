@@ -12,6 +12,8 @@ package org.eclipse.openvsx.util;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import javax.servlet.http.HttpServletRequest;
+
 public final class UrlUtil {
 
     private UrlUtil() {}
@@ -34,6 +36,29 @@ public final class UrlUtil {
         } catch (UnsupportedEncodingException exc) {
             throw new RuntimeException(exc);
         }
+    }
+
+    /**
+     * Get the base URL to use for API requests from the given servlet request.
+     */
+    public static String getBaseUrl(HttpServletRequest request) {
+        // FIXME workaround for port forwarding in Gitpod
+        var scheme = "https"; //request.getScheme();
+        var port = 443; //request.getServerPort();
+        var url = new StringBuilder();
+        url.append(scheme).append("://").append(request.getServerName());
+        switch (scheme) {
+            case "http":
+                if (port != 80)
+                    url.append(":").append(port);
+                break;
+            case "https":
+                if (port != 443)
+                    url.append(":").append(port);
+                break;
+        }
+        url.append(request.getContextPath());
+        return url.toString();
     }
 
 }

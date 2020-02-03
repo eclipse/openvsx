@@ -31,7 +31,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
@@ -41,7 +40,8 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Component;
-
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -61,6 +61,7 @@ import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.SemanticVersion;
+import org.eclipse.openvsx.util.UrlUtil;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
@@ -76,8 +77,10 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Autowired
     ElasticsearchOperations searchOperations;
 
-    @Value("${ovsx.server.url}")
-    String serverUrl;
+    protected String getServerUrl() {
+        var requestAttrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return UrlUtil.getBaseUrl(requestAttrs.getRequest());
+    }
 
     @Override
     public PublisherJson getPublisher(String publisherName) {
@@ -87,6 +90,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new PublisherJson();
         json.name = publisher.getName();
         json.extensions = new LinkedHashMap<>();
+        var serverUrl = getServerUrl();
         for (var ext : repositories.findExtensions(publisher)) {
             String url = createApiUrl(serverUrl, publisher.getName(), ext.getName());
             json.extensions.put(ext.getName(), url);
@@ -151,6 +155,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (extension == null)
             throw new NotFoundException();
         var list = new ReviewListJson();
+        var serverUrl = getServerUrl();
         list.postUrl = createApiUrl(serverUrl, extension.getPublisher().getName(), extension.getName(), "review");
         list.reviews = repositories.findReviews(extension)
                 .map(extReview -> extReview.toReviewJson())
@@ -368,6 +373,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return null;
         var extVer = extension.getLatest();
         var entry = extVer.toSearchEntryJson();
+        var serverUrl = getServerUrl();
         entry.url = createApiUrl(serverUrl, entry.publisher, entry.name);
         entry.iconUrl = createApiUrl(serverUrl, entry.publisher, entry.name, "file", extVer.getIconFileName());
         entry.downloadUrl = createApiUrl(serverUrl, entry.publisher, entry.name, "file", extVer.getExtensionFileName());
@@ -378,6 +384,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
         json.reviewCount = repositories.countReviews(extension);
+        var serverUrl = getServerUrl();
         json.publisherUrl = createApiUrl(serverUrl, json.publisher);
         json.reviewsUrl = createApiUrl(serverUrl, json.publisher, json.name, "reviews");
         var allVersions = CollectionUtil.map(repositories.findVersions(extension),

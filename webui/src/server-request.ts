@@ -76,7 +76,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest<Res> | ServerAPIReq
                 error: `Request failed: ${req.method} ${response.url}`,
                 status: response.status,
                 message: response.statusText || `Status ${response.status}`
-            }
+            };
         }
         throw err;
     }
