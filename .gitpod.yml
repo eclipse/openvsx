@@ -22,9 +22,10 @@ tasks:
     server/gradlew -p server build downloadTestExtensions
   name: Server
   command: |
-    export OVSX_SERVER_URL=`gp url 8080`
-    export OVSX_WEBUI_URL=`gp url 3000`
-    export OVSX_ELASTICSEARCH_HOST=localhost:9200
+    export OVSX_APP_PROFILE=$PWD/server/src/main/resources/application-ovsx.properties
+    echo "ovsx.server.url=`gp url 8080`" >> $OVSX_APP_PROFILE
+    echo "ovsx.webui.url=`gp url 3000`" >> $OVSX_APP_PROFILE
+    echo "ovsx.elasticsearch.host=localhost:9200" >> $OVSX_APP_PROFILE
     export GITHUB_CALLBACK_URL=`gp url 8080 | sed s/https:/http:/`/login/oauth2/code/github
     # Start Elasticsearch as background process
     $ES_HOME/bin/elasticsearch -d -p $ES_HOME/pid -Ediscovery.type=single-node -Expack.ml.enabled=false

@@ -41,7 +41,7 @@ The Spring server is started automatically in Gitpod. It includes `spring-boot-d
 
 ### OAuth Setup
 
-If you would like to test authorization through GitHub, you need to [create an OAuth app](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) with a callback URL pointing to the exposed port 8080 of your Gitpod workspace. You can get it by printing a predefined variable in the Gitpod terminal:
+If you would like to test authorization through GitHub, you need to [create an OAuth app](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) with a callback URL pointing to the exposed port 8080 of your Gitpod workspace. You can get it by printing a predefined variable in the "Server" terminal in Gitpod:
 
 ```
 echo $GITHUB_CALLBACK_URL

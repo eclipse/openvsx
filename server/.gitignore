@@ -1,7 +1,7 @@
 /bin/
 /build/
-/src/main/resources/static
 .gradle/
 .settings/
 .classpath
 .project
+/src/main/resources/application-ovsx.properties
