@@ -42,21 +42,51 @@ public final class UrlUtil {
      * Get the base URL to use for API requests from the given servlet request.
      */
     public static String getBaseUrl(HttpServletRequest request) {
-        // FIXME workaround for port forwarding in Gitpod
-        var scheme = "https"; //request.getScheme();
-        var port = 443; //request.getServerPort();
         var url = new StringBuilder();
-        url.append(scheme).append("://").append(request.getServerName());
+
+        // Use the scheme from the X-Forwarded-Proto header if present
+        String scheme;
+        var forwardedScheme = request.getHeader("X-Forwarded-Proto");
+        if (forwardedScheme == null) {
+            scheme = request.getScheme();
+        } else {
+            scheme = forwardedScheme;
+        }
+        url.append(scheme).append("://");
+
+        // Use the host and port from the X-Forwarded-Host header if present
+        String host;
+        int port;
+        var forwardedHost = request.getHeader("X-Forwarded-Host");
+        if (forwardedHost == null) {
+            host = request.getServerName();
+            port = request.getServerPort();
+        } else {
+            int colonIndex = forwardedHost.lastIndexOf(':');
+            if (colonIndex > 0) {
+                host = forwardedHost.substring(0, colonIndex);
+                try {
+                    port = Integer.parseInt(forwardedHost.substring(colonIndex + 1));
+                } catch (NumberFormatException exc) {
+                    port = -1;
+                }
+            } else {
+                host = forwardedHost;
+                port = -1;
+            }
+        }
+        url.append(host);
         switch (scheme) {
             case "http":
-                if (port != 80)
+                if (port != 80 && port > 0)
                     url.append(":").append(port);
                 break;
             case "https":
-                if (port != 443)
+                if (port != 443 && port > 0)
                     url.append(":").append(port);
                 break;
         }
+
         url.append(request.getContextPath());
         return url.toString();
     }

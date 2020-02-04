@@ -11,7 +11,6 @@
 import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Avatar, Popper, Paper, ClickAwayListener, Typography, Box, Grow } from '@material-ui/core';
-import ExitToAppIcon from '@material-ui/icons/ExitToAppOutlined';
 import { Link } from 'react-router-dom';
 import { UserData } from '../extension-registry-types';
 import { ExtensionRegistryService } from '../extension-registry-service';
@@ -25,6 +24,7 @@ const avatarStyle = (theme: Theme) => createStyles({
         height: '30px'
     },
     link: {
+        cursor: 'pointer',
         textDecoration: 'none',
         display: 'flex',
         alignItems: 'center',
@@ -45,10 +45,12 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
         };
     }
 
-    protected handleAvatarClick = () => {
+    protected readonly handleAvatarClick = () => {
         this.setState({ open: !this.state.open });
     }
-    protected handleClose = () => this.setState({ open: false });
+    protected readonly handleClose = () => {
+        this.setState({ open: false });
+    }
 
     componentDidUpdate(prevProps: ExtensionRegistryAvatarComponent.Props, prevState: ExtensionRegistryAvatarComponent.State) {
         if (this.popperRef) {
@@ -81,13 +83,13 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
                                             </Link>
                                         </Box>
                                         <Box>
-                                            <a href={this.props.service.getLogoutUrl()}
-                                                onClick={this.handleClose} className={this.props.classes.link}>
-                                                <Typography variant='button'>
-                                                    Log Out
-                                                </Typography>
-                                                <ExitToAppIcon fontSize='small' />
-                                            </a>
+                                            <form method="post" action={this.props.service.getLogoutUrl()}>
+                                                <button type="submit" className={this.props.classes.link}>
+                                                    <Typography variant='button'>
+                                                        Log Out
+                                                    </Typography>
+                                                </button>
+                                            </form>
                                         </Box>
                                     </Box>
                                 </Box>
@@ -102,12 +104,12 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
 
 export namespace ExtensionRegistryAvatarComponent {
     export interface Props extends WithStyles<typeof avatarStyle> {
-        user: UserData
-        service: ExtensionRegistryService
+        user: UserData;
+        service: ExtensionRegistryService;
     }
 
     export interface State {
-        open: boolean
+        open: boolean;
     }
 }
 

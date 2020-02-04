@@ -26,12 +26,16 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         if (!Strings.isNullOrEmpty(webuiUrl)) {
-            registry.addMapping("/user")
-                    .allowedOrigins(webuiUrl)
-                    .allowCredentials(true);
-            registry.addMapping("/api/*/*/review")
-                    .allowedOrigins(webuiUrl)
-                    .allowCredentials(true);
+            var authorizedEndpoints = new String[] {
+                "/user",
+                "/logout",
+                "/api/*/*/review"
+            };
+            for (var endpoint : authorizedEndpoints) {
+                registry.addMapping(endpoint)
+                        .allowedOrigins(webuiUrl)
+                        .allowCredentials(true);
+            }
         }
     }
 

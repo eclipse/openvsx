@@ -24,12 +24,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-            .antMatchers("/user", "/login/**", "/api/**")
+            .antMatchers("/user", "/login/**", "/logout", "/api/**")
                 .permitAll()
             .anyRequest()
                 .authenticated();
         http.csrf()
-            .ignoringAntMatchers("/api/-/publish");
+            .ignoringAntMatchers("/logout", "/api/-/publish");
         if (!Strings.isNullOrEmpty(webuiUrl)) {
             http.oauth2Login()
                 .defaultSuccessUrl(webuiUrl, true);

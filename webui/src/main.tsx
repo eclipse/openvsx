@@ -48,13 +48,15 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     }
 
     componentDidMount() {
-        this.init();
+        this.updateUser();
     }
 
-    protected async init() {
+    protected async updateUser() {
         try {
             const user = await this.props.service.getUser();
-            if (!isError(user)) {
+            if (isError(user)) {
+                this.setState({ user: undefined });
+            } else {
                 this.setState({ user });
             }
         } catch (err) {
@@ -85,9 +87,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         <Box display='flex' alignItems='center'>
                             {
                                 this.state.user ?
-                                    <ExtensionRegistryAvatar user={this.state.user} service={this.props.service} />
+                                    <ExtensionRegistryAvatar
+                                        user={this.state.user}
+                                        service={this.props.service} />
                                     :
-                                    <IconButton href={this.props.service.getLoginUrl()}>
+                                    <IconButton href={this.props.service.getLoginUrl()} title="Log In">
                                         <AccountBoxIcon />
                                     </IconButton>
                             }
