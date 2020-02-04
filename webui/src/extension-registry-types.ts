@@ -91,12 +91,21 @@ export interface ExtensionReviewList {
 
 export interface UserData {
     loginName: string;
+    tokensUrl: string;
+    createTokenUrl: string;
+    deleteTokenUrl: string;
     fullName?: string;
     avatarUrl?: string;
 }
 
+export interface PersonalAccessToken {
+    value: string;
+    createdTimestamp: string;
+    accessedTimestamp: string;
+    description: string;
+}
+
 export type ExtensionCategory =
-    '' |
     'Programming Languages' |
     'Snippets' |
     'Linters' |
@@ -108,11 +117,3 @@ export type ExtensionCategory =
     'Other' |
     'Extension Packs' |
     'Language Packs';
-
-export interface PersonalAccessToken {
-    id: string;
-    tokenValue: string;
-    userId: string;
-    description: string;
-    date?: string;
-}

@@ -10,6 +10,7 @@
 package org.eclipse.openvsx;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -83,6 +84,14 @@ public class UserService {
                 user.setAvatarUrl(avatarUrl);
         }
         return user;
+    }
+
+    public String generateTokenValue() {
+        String value;
+        do {
+            value = UUID.randomUUID().toString();
+        } while (repositories.findAccessToken(value) != null);
+        return value;
     }
 
 }

@@ -130,11 +130,11 @@ namespace ExtensionListHeaderComp {
         onCategoryChanged: (c: ExtensionCategory) => void;
         listHeaderTitle: string;
         searchTerm?: string;
-        category?: ExtensionCategory;
+        category?: ExtensionCategory | '';
         service: ExtensionRegistryService;
     }
     export interface State {
-        category: ExtensionCategory;
+        category: ExtensionCategory | '';
     }
 }
 

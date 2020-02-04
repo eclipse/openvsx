@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public final class ArchiveUtilTest {
+public class ArchiveUtilTest {
 
     @Test
     public void testTodoTree() throws Exception {

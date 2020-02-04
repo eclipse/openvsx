@@ -27,7 +27,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         if (!Strings.isNullOrEmpty(webuiUrl)) {
             var authorizedEndpoints = new String[] {
-                "/user",
+                "/user/**",
                 "/logout",
                 "/api/*/*/review"
             };

@@ -50,7 +50,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public PublisherJson getPublisher(String publisherName) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, publisherName), PublisherJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName), PublisherJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -60,7 +60,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public ExtensionJson getExtension(String publisherName, String extensionName) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, publisherName, extensionName), ExtensionJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName, extensionName), ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -70,7 +70,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public ExtensionJson getExtension(String publisherName, String extensionName, String version) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, publisherName, extensionName, version), ExtensionJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName, extensionName, version), ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -79,12 +79,12 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
     @Override
     public byte[] getFile(String publisherName, String extensionName, String fileName) {
-        return getFile(createApiUrl(upstreamUrl, publisherName, extensionName, "file", fileName));
+        return getFile(createApiUrl(upstreamUrl, "api", publisherName, extensionName, "file", fileName));
     }
 
     @Override
     public byte[] getFile(String publisherName, String extensionName, String version, String fileName) {
-        return getFile(createApiUrl(upstreamUrl, publisherName, extensionName, version, "file", fileName));
+        return getFile(createApiUrl(upstreamUrl, "api", publisherName, extensionName, version, "file", fileName));
     }
 
     private byte[] getFile(String url) {
@@ -105,7 +105,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public ReviewListJson getReviews(String publisherName, String extensionName) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, publisherName, extensionName, "reviews"), ReviewListJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName, extensionName, "reviews"), ReviewListJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -115,7 +115,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 	@Override
 	public SearchResultJson search(String query, String category, int size, int offset) {
 		try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "-", "search"), SearchResultJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", "-", "search"), SearchResultJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;

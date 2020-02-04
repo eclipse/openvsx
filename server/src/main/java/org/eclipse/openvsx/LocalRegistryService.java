@@ -26,22 +26,6 @@ import javax.transaction.Transactional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 
-import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
-import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -62,6 +46,20 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.stereotype.Component;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
@@ -77,11 +75,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Autowired
     ElasticsearchOperations searchOperations;
 
-    protected String getServerUrl() {
-        var requestAttrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-        return UrlUtil.getBaseUrl(requestAttrs.getRequest());
-    }
-
     @Override
     public PublisherJson getPublisher(String publisherName) {
         var publisher = repositories.findPublisher(publisherName);
@@ -90,9 +83,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new PublisherJson();
         json.name = publisher.getName();
         json.extensions = new LinkedHashMap<>();
-        var serverUrl = getServerUrl();
+        var serverUrl = UrlUtil.getBaseUrl();
         for (var ext : repositories.findExtensions(publisher)) {
-            String url = createApiUrl(serverUrl, publisher.getName(), ext.getName());
+            String url = createApiUrl(serverUrl, "api", publisher.getName(), ext.getName());
             json.extensions.put(ext.getName(), url);
         }
         return json;
@@ -155,8 +148,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (extension == null)
             throw new NotFoundException();
         var list = new ReviewListJson();
-        var serverUrl = getServerUrl();
-        list.postUrl = createApiUrl(serverUrl, extension.getPublisher().getName(), extension.getName(), "review");
+        var serverUrl = UrlUtil.getBaseUrl();
+        list.postUrl = createApiUrl(serverUrl, "api", extension.getPublisher().getName(), extension.getName(), "review");
         list.reviews = repositories.findReviews(extension)
                 .map(extReview -> extReview.toReviewJson())
                 .toList();
@@ -373,10 +366,10 @@ public class LocalRegistryService implements IExtensionRegistry {
             return null;
         var extVer = extension.getLatest();
         var entry = extVer.toSearchEntryJson();
-        var serverUrl = getServerUrl();
-        entry.url = createApiUrl(serverUrl, entry.publisher, entry.name);
-        entry.iconUrl = createApiUrl(serverUrl, entry.publisher, entry.name, "file", extVer.getIconFileName());
-        entry.downloadUrl = createApiUrl(serverUrl, entry.publisher, entry.name, "file", extVer.getExtensionFileName());
+        var serverUrl = UrlUtil.getBaseUrl();
+        entry.url = createApiUrl(serverUrl, "api", entry.publisher, entry.name);
+        entry.iconUrl = createApiUrl(serverUrl, "api", entry.publisher, entry.name, "file", extVer.getIconFileName());
+        entry.downloadUrl = createApiUrl(serverUrl, "api", entry.publisher, entry.name, "file", extVer.getExtensionFileName());
         return entry;
     }
 
@@ -384,34 +377,34 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
         json.reviewCount = repositories.countReviews(extension);
-        var serverUrl = getServerUrl();
-        json.publisherUrl = createApiUrl(serverUrl, json.publisher);
-        json.reviewsUrl = createApiUrl(serverUrl, json.publisher, json.name, "reviews");
+        var serverUrl = UrlUtil.getBaseUrl();
+        json.publisherUrl = createApiUrl(serverUrl, "api", json.publisher);
+        json.reviewsUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, "reviews");
         var allVersions = CollectionUtil.map(repositories.findVersions(extension),
                 extVer -> new SemanticVersion(extVer.getVersion()));
         Collections.sort(allVersions, Comparator.reverseOrder());
         json.allVersions = new LinkedHashMap<>();
         for (var semVer : allVersions) {
-            String url = createApiUrl(serverUrl, json.publisher, json.name, semVer.toString());
+            String url = createApiUrl(serverUrl, "api", json.publisher, json.name, semVer.toString());
             json.allVersions.put(semVer.toString(), url);
         }
         if (isLatest) {
-            json.downloadUrl = createApiUrl(serverUrl, json.publisher, json.name, "file", extVersion.getExtensionFileName());
-            json.iconUrl = createApiUrl(serverUrl, json.publisher, json.name, "file", extVersion.getIconFileName());
-            json.readmeUrl = createApiUrl(serverUrl, json.publisher, json.name, "file", extVersion.getReadmeFileName());
+            json.downloadUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, "file", extVersion.getExtensionFileName());
+            json.iconUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, "file", extVersion.getIconFileName());
+            json.readmeUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, "file", extVersion.getReadmeFileName());
         } else {
-            json.downloadUrl = createApiUrl(serverUrl, json.publisher, json.name, json.version, "file", extVersion.getExtensionFileName());
-            json.iconUrl = createApiUrl(serverUrl, json.publisher, json.name, json.version, "file", extVersion.getIconFileName());
-            json.readmeUrl = createApiUrl(serverUrl, json.publisher, json.name, json.version, "file", extVersion.getReadmeFileName());
+            json.downloadUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, json.version, "file", extVersion.getExtensionFileName());
+            json.iconUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, json.version, "file", extVersion.getIconFileName());
+            json.readmeUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, json.version, "file", extVersion.getReadmeFileName());
         }
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {
-                ref.url = createApiUrl(serverUrl, ref.publisher, ref.extension);
+                ref.url = createApiUrl(serverUrl, "api", ref.publisher, ref.extension);
             });
         }
         if (json.bundledExtensions != null) {
             json.bundledExtensions.forEach(ref -> {
-                ref.url = createApiUrl(serverUrl, ref.publisher, ref.extension);
+                ref.url = createApiUrl(serverUrl, "api", ref.publisher, ref.extension);
             });
         }
         return json;

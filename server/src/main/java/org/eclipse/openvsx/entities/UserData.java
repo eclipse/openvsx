@@ -9,9 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.util.List;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 
 import org.eclipse.openvsx.json.UserJson;
 
@@ -33,6 +36,9 @@ public class UserData {
     String provider;
 
     String providerId;
+
+    @OneToMany(mappedBy = "user")
+    List<PersonalAccessToken> tokens;
 
 
     /**

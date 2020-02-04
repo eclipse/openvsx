@@ -41,11 +41,10 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
     protected handleCommentChange = (event: React.ChangeEvent<HTMLInputElement>) => this.setState({ tokenComment: event.target.value });
 
-    protected handleGenerate = () => {
-        this.props.service.generateToken(this.state.tokenComment).then(token => {
-            this.setState({ tokenFieldDisabled: false, token });
-            this.props.handleTokenGenerated();
-        });
+    protected handleGenerate = async () => {
+        const token = await this.props.service.createToken(this.props.user.createTokenUrl, this.state.tokenComment);
+        this.setState({ tokenFieldDisabled: false, token });
+        this.props.handleTokenGenerated();
     }
 
     render() {
@@ -68,7 +67,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                         multiline
                         variant="outlined"
                         rows={4}
-                        value={this.state.token ? this.state.token.tokenValue : ''}
+                        value={this.state.token ? this.state.token.value : ''}
                     />
                     {
                         this.state.tokenFieldDisabled ? '' : <Box>

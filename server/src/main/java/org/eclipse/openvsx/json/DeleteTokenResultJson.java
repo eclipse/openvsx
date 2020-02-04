@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2019 TypeFox and others
+ * Copyright (c) 2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,29 +15,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
 @JsonInclude(Include.NON_NULL)
-public class UserJson {
+public class DeleteTokenResultJson {
 
-    public static UserJson error(String message) {
-        var user = new UserJson();
-        user.error = message;
-        return user;
+    public static DeleteTokenResultJson error(String message) {
+        var result = new DeleteTokenResultJson();
+        result.error = message;
+        return result;
     }
 
     @Nullable
     public String error;
-
-    public String loginName;
-
-    public String tokensUrl;
-
-    public String createTokenUrl;
-
-    public String deleteTokenUrl;
-
-    @Nullable
-    public String fullName;
-
-    @Nullable
-    public String avatarUrl;
 
 }

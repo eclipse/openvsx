@@ -22,7 +22,7 @@ export interface ServerAPIRequestWithPayload<Res, Req> extends ServerAPIRequest<
 }
 
 export function hasPayload<Res>(req: ServerAPIRequest<Res>): req is ServerAPIRequestWithPayload<Res, any> {
-    return req.method === 'POST' || req.method === 'PUT';
+    return (req as ServerAPIRequestWithPayload<Res, any>).payload !== undefined;
 }
 
 export interface ErrorResponse {

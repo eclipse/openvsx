@@ -14,6 +14,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Iterables;
 
@@ -27,6 +28,7 @@ import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -67,7 +69,7 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        value = "/api/{publisher}",
+        path = "/api/{publisher}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -83,7 +85,7 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        value = "/api/{publisher}/{extension}",
+        path = "/api/{publisher}/{extension}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -100,7 +102,7 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        value = "/api/{publisher}/{extension}/{version}",
+        path = "/api/{publisher}/{extension}/{version}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -155,6 +157,7 @@ public class RegistryAPI {
     private HttpHeaders getFileResponseHeaders(String fileName) {
         var headers = new HttpHeaders();
         headers.setContentType(getFileType(fileName));
+        headers.setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS));
         return headers;
     }
 
@@ -168,7 +171,7 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        value = "/api/{publisher}/{extension}/reviews",
+        path = "/api/{publisher}/{extension}/reviews",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -185,7 +188,7 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        value = "/api/-/search",
+        path = "/api/-/search",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -236,7 +239,7 @@ public class RegistryAPI {
     }
 
     @PostMapping(
-        value = "/api/-/publish",
+        path = "/api/-/publish",
         consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -245,7 +248,7 @@ public class RegistryAPI {
     }
 
     @PostMapping(
-        value = "/api/{publisher}/{extension}/review",
+        path = "/api/{publisher}/{extension}/review",
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )

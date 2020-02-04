@@ -34,26 +34,28 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     }
 
     componentDidMount() {
-        this.initTokens();
+        this.updateTokens();
     }
 
-    protected async initTokens() {
-        const tokens = await this.props.service.getTokens();
+    protected async updateTokens() {
+        const tokens = await this.props.service.getTokens(this.props.user.tokensUrl);
         this.setState({ tokens });
     }
 
-    protected handleDelete = (id: string) => {
-        this.props.service.deleteToken(id);
-        this.initTokens();
+    protected handleDelete = async (token: PersonalAccessToken) => {
+        await this.props.service.deleteToken(this.props.user.deleteTokenUrl, token);
+        this.updateTokens();
     }
 
-    protected handleDeleteAll = () => {
-        this.props.service.deleteTokens();
-        this.initTokens();
+    protected handleDeleteAll = async () => {
+        await Promise.all(this.state.tokens.map(token =>
+            this.props.service.deleteToken(this.props.user.deleteTokenUrl, token)
+        ));
+        this.updateTokens();
     }
 
     protected handleTokenGenerated = () => {
-        this.initTokens();
+        this.updateTokens();
     }
 
     render() {
@@ -82,13 +84,13 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                 <Paper>
                     {
                         this.state.tokens.map(token => {
-                            return <Box key={'token' + token.id} p={2} display='flex' justifyContent='space-between'>
+                            return <Box key={'token:' + token.value} p={2} display='flex' justifyContent='space-between'>
                                 <Box display='flex' alignItems='center'>
-                                    <Typography classes={{ root: this.props.classes.boldText }}>{token.tokenValue}</Typography>
+                                    <Typography classes={{ root: this.props.classes.boldText }}>{token.value}</Typography>
                                 </Box>
                                 <Button
                                     variant='outlined'
-                                    onClick={() => this.handleDelete(token.id)}
+                                    onClick={() => this.handleDelete(token)}
                                     classes={{ root: this.props.classes.deleteBtn }}>
                                     Delete
                                 </Button>

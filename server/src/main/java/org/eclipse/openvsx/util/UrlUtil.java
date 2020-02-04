@@ -14,6 +14,9 @@ import java.net.URLEncoder;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
 public final class UrlUtil {
 
     private UrlUtil() {}
@@ -24,13 +27,12 @@ public final class UrlUtil {
     public static String createApiUrl(String baseUrl, String... segments) {
         try {
             var result = new StringBuilder(baseUrl);
-            if (!baseUrl.endsWith("/"))
-                result.append("/");
-            result.append("api");
             for (var segment : segments) {
                 if (segment == null)
                     return null;
-				result.append('/').append(URLEncoder.encode(segment, "UTF-8"));
+                if (result.length() == 0 || result.charAt(result.length() - 1) != '/')
+                    result.append('/');
+				result.append(URLEncoder.encode(segment, "UTF-8"));
             }
             return result.toString();
         } catch (UnsupportedEncodingException exc) {
@@ -39,9 +41,14 @@ public final class UrlUtil {
     }
 
     /**
-     * Get the base URL to use for API requests from the given servlet request.
+     * Get the base URL to use for API requests from the current servlet request.
      */
-    public static String getBaseUrl(HttpServletRequest request) {
+    public static String getBaseUrl() {
+        var requestAttrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return getBaseUrl(requestAttrs.getRequest());
+    }
+
+    private static String getBaseUrl(HttpServletRequest request) {
         var url = new StringBuilder();
 
         // Use the scheme from the X-Forwarded-Proto header if present

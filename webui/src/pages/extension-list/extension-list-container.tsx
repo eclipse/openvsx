@@ -73,6 +73,6 @@ export namespace ExtensionListContainer {
     }
     export interface State {
         searchTerm: string,
-        category: ExtensionCategory
+        category: ExtensionCategory | ''
     }
 }

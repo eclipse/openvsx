@@ -12,7 +12,8 @@ plugins {
 
 def versions = [
     java: '11',
-    guava: '28.1-jre'
+    guava: '28.1-jre',
+    junit: '5.5.2'
 ]
 
 sourceCompatibility = versions.java
@@ -31,14 +32,17 @@ dependencies {
     implementation "com.google.guava:guava:${versions.guava}"
 	runtimeOnly "org.postgresql:postgresql"
     runtimeOnly "org.springframework.boot:spring-boot-devtools"
-	testImplementation("org.springframework.boot:spring-boot-starter-test") {
-		exclude group: "org.junit.vintage", module: "junit-vintage-engine"
-	}
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
 }
 
 task runServer(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'org.eclipse.openvsx.RegistryApplication'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 

@@ -10,13 +10,20 @@
 
 import { ErrorResponse } from "./server-request";
 
-export function createAbsoluteURL(arr: string[], queries?: {key: string, value: string | number}[]): string {
-    const url = arr.reduce((acc, curr) => acc + (curr ? '/' + curr : ''));
-    const queryString = queries ? '?' + queries.map<string>((obj) => obj.key + '=' + obj.value).join('&') : '';
-    return url + queryString;
+export function addQuery(url: string, queries: { key: string, value: string | number }[]) {
+    return url + '?' + queries.map<string>((obj) => obj.key + '=' + obj.value).join('&');
 }
 
-export function createURL(arr: string[], queries?: {key: string, value: string | number}[]): string {
+export function createAbsoluteURL(arr: string[], queries?: { key: string, value: string | number }[]): string {
+    const url = arr.reduce((prev, curr) => prev ? prev + '/' + curr : curr);
+    if (queries && queries.length > 0) {
+        return addQuery(url, queries);
+    } else {
+        return url;
+    }
+}
+
+export function createURL(arr: string[], queries?: { key: string, value: string | number }[]): string {
     const url = createAbsoluteURL(arr, queries);
     return url.startsWith('/') ? url : '/' + url;
 }
