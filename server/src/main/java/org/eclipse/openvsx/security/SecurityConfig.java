@@ -29,7 +29,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .anyRequest()
                 .authenticated();
         http.csrf()
-            .ignoringAntMatchers("/logout", "/api/-/publish");
+            .disable();
         if (!Strings.isNullOrEmpty(webuiUrl)) {
             http.oauth2Login()
                 .defaultSuccessUrl(webuiUrl, true);

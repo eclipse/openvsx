@@ -9,12 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
 @JsonInclude(Include.NON_NULL)
 public class AccessTokenJson {
 
+    public long id;
+
+    @Nullable
     public String value;
 
     public String createdTimestamp;
@@ -22,5 +27,7 @@ public class AccessTokenJson {
     public String accessedTimestamp;
 
     public String description;
+
+    public String deleteTokenUrl;
 
 }

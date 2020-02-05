@@ -16,7 +16,7 @@ import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/s
 import { ExtensionRaw } from "../../extension-registry-types";
 import { ExportRatingStars } from "../extension-detail/extension-rating-stars";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { createURL } from "../../utils";
+import { createRoute } from "../../utils";
 
 
 const itemStyles = (theme: Theme) => createStyles({
@@ -37,7 +37,7 @@ interface ExtensionListItemProps extends WithStyles<typeof itemStyles> {
 class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
     render() {
         const { classes, extension } = this.props;
-        const route = createURL([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.OVERVIEW, extension.publisher, extension.name]);
+        const route = createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.OVERVIEW, extension.publisher, extension.name]);
         return <React.Fragment>
             <Fade in={true} timeout={{ enter: this.props.idx * 200 }}>
                 <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name}>

@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import { utcToZonedTime } from "date-fns-tz";
 import { ErrorResponse } from "./server-request";
 
 export function addQuery(url: string, queries: { key: string, value: string | number }[]) {
@@ -23,7 +24,7 @@ export function createAbsoluteURL(arr: string[], queries?: { key: string, value:
     }
 }
 
-export function createURL(arr: string[], queries?: { key: string, value: string | number }[]): string {
+export function createRoute(arr: string[], queries?: { key: string, value: string | number }[]): string {
     const url = createAbsoluteURL(arr, queries);
     return url.startsWith('/') ? url : '/' + url;
 }
@@ -31,6 +32,14 @@ export function createURL(arr: string[], queries?: { key: string, value: string 
 export function debounce(task: () => void, token: { timeout?: number }, delay: number = 150) {
     clearTimeout(token.timeout);
     token.timeout = setTimeout(task, delay);
+}
+
+export function toLocalTime(timestamp?: string): Date | undefined {
+    if (!timestamp) {
+        return undefined;
+    }
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return utcToZonedTime(timestamp, timeZone);
 }
 
 export function handleError(err?: Error | Partial<ErrorResponse>): void {

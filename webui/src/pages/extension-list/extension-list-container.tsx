@@ -14,13 +14,13 @@ import { ExtensionListHeader } from "./extension-list-header";
 import { ExtensionCategory } from "../../extension-registry-types";
 import { ExtensionList } from "./extension-list";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { createURL } from "../../utils";
+import { createRoute } from "../../utils";
 import { RouteComponentProps } from "react-router-dom";
 
 export const EXTENSION_LIST_COMPONENT_NAME = 'extension-list';
 
 export namespace ExtensionListRoutes {
-    export const EXTENSION_LIST_LINK = createURL([EXTENSION_LIST_COMPONENT_NAME]);
+    export const EXTENSION_LIST_LINK = createRoute([EXTENSION_LIST_COMPONENT_NAME]);
 }
 
 export class ExtensionListContainer extends React.Component<ExtensionListContainer.Props, ExtensionListContainer.State> {

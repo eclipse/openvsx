@@ -13,6 +13,7 @@ import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Bu
 import { UserData, PersonalAccessToken } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { GenerateTokenDialog } from "./generate-token-dialog";
+import { handleError, toLocalTime } from "../../utils";
 
 const tokensStyle = (theme: Theme) => createStyles({
     boldText: {
@@ -38,20 +39,32 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     }
 
     protected async updateTokens() {
-        const tokens = await this.props.service.getTokens(this.props.user.tokensUrl);
-        this.setState({ tokens });
+        try {
+            const tokens = await this.props.service.getTokens(this.props.user);
+            this.setState({ tokens });
+        } catch (err) {
+            handleError(err);
+        }
     }
 
     protected handleDelete = async (token: PersonalAccessToken) => {
-        await this.props.service.deleteToken(this.props.user.deleteTokenUrl, token);
-        this.updateTokens();
+        try {
+            await this.props.service.deleteToken(token);
+            this.updateTokens();
+        } catch (err) {
+            handleError(err);
+        }
     }
 
     protected handleDeleteAll = async () => {
-        await Promise.all(this.state.tokens.map(token =>
-            this.props.service.deleteToken(this.props.user.deleteTokenUrl, token)
-        ));
-        this.updateTokens();
+        try {
+            await Promise.all(this.state.tokens.map(token =>
+                this.props.service.deleteToken(token)
+            ));
+            this.updateTokens();
+        } catch (err) {
+            handleError(err);
+        }
     }
 
     protected handleTokenGenerated = () => {
@@ -75,18 +88,18 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             </Box>
             <Box my={2}>
                 <Typography variant='body1'>
-                    {
-                        this.state.tokens.length ? 'Tokens you have generated.' : 'There are no tokens generated.'
-                    }
+                    {this.state.tokens.length ? 'Tokens you have generated:' : 'You currently have no tokens.'}
                 </Typography>
             </Box>
             <Box>
                 <Paper>
                     {
                         this.state.tokens.map(token => {
-                            return <Box key={'token:' + token.value} p={2} display='flex' justifyContent='space-between'>
+                            return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
                                 <Box display='flex' alignItems='center'>
-                                    <Typography classes={{ root: this.props.classes.boldText }}>{token.value}</Typography>
+                                    <Typography classes={{ root: this.props.classes.boldText }}>{token.description}</Typography>
+                                    <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)!.toLocaleString()}</Typography>
+                                    <Typography variant='body2'>Accessed: {toLocalTime(token.accessedTimestamp)!.toLocaleString()}</Typography>
                                 </Box>
                                 <Button
                                     variant='outlined'
@@ -105,12 +118,12 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
 export namespace UserSettingsTokensComponent {
     export interface Props extends WithStyles<typeof tokensStyle> {
-        user: UserData
-        service: ExtensionRegistryService
+        user: UserData;
+        service: ExtensionRegistryService;
     }
 
     export interface State {
-        tokens: PersonalAccessToken[]
+        tokens: PersonalAccessToken[];
     }
 }
 

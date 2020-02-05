@@ -12,7 +12,7 @@ import * as React from "react";
 import { Tabs, Tab } from "@material-ui/core";
 import { ExtensionDetailRoutes } from "./extension-detail";
 import { RouteComponentProps } from "react-router-dom";
-import { createURL } from "../../utils";
+import { createRoute } from "../../utils";
 import { ExtensionRaw } from "../../extension-registry-types";
 
 export class ExtensionDetailTabs extends React.Component<ExtensionDetailTabs.Props, ExtensionDetailTabs.State> {
@@ -34,7 +34,7 @@ export class ExtensionDetailTabs extends React.Component<ExtensionDetailTabs.Pro
     }
 
     protected createRoute(tab: string) {
-        return createURL([ExtensionDetailRoutes.ROOT, tab, ...this.extensionResolvedRoute]);
+        return createRoute([ExtensionDetailRoutes.ROOT, tab, ...this.extensionResolvedRoute]);
     }
 
     render() {

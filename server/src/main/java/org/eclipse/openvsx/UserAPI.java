@@ -31,8 +31,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +63,6 @@ public class UserAPI {
                 var serverUrl = UrlUtil.getBaseUrl();
                 json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
                 json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
-                json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete");
                 return json;
             }
         }
@@ -77,8 +76,13 @@ public class UserAPI {
     public List<AccessTokenJson> getTokens(@RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
                                            @AuthenticationPrincipal OAuth2User principal) {
         var user = users.updateUser(principal, Optional.of(authorizedClient));
+        var serverUrl = UrlUtil.getBaseUrl();
         return repositories.findAccessTokens(user)
-                .map(t -> t.toAccessTokenJson())
+                .map(token -> {
+                    var json = token.toAccessTokenJson();
+                    json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId()));
+                    return json;
+                })
                 .toList();
     }
 
@@ -98,20 +102,25 @@ public class UserAPI {
         token.setAccessedTimestamp(token.getCreatedTimestamp());
         token.setDescription(description);
         entityManager.persist(token);
-        return token.toAccessTokenJson();
+        var json = token.toAccessTokenJson();
+        // Include the token value after creation so the user can copy it
+        json.value = token.getValue();
+        var serverUrl = UrlUtil.getBaseUrl();
+        json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId()));
+        return json;
     }
 
-    @DeleteMapping(
-        path = "/user/token/delete",
+    @PostMapping(
+        path = "/user/token/delete/{id}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional
-    public DeleteTokenResultJson deleteToken(@RequestParam(name = "token") String tokenValue,
+    public DeleteTokenResultJson deleteToken(@PathVariable("id") long id,
                                              @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
                                              @AuthenticationPrincipal OAuth2User principal) {
         var user = users.updateUser(principal, Optional.of(authorizedClient));
-        var token = repositories.findAccessToken(user, tokenValue);
-        if (token == null) {
+        var token = repositories.findAccessToken(id);
+        if (token == null || !token.getUser().equals(user)) {
             return DeleteTokenResultJson.error("Token does not exist.");
         }
         entityManager.remove(token);

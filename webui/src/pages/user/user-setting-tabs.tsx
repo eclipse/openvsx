@@ -11,7 +11,7 @@
 import * as React from "react";
 import { Tabs, Tab } from "@material-ui/core";
 import { RouteComponentProps } from "react-router-dom";
-import { createURL } from "../../utils";
+import { createRoute } from "../../utils";
 import { ExtensionRaw } from "../../extension-registry-types";
 import { UserSettingsRoutes } from "./user-settings";
 
@@ -33,7 +33,7 @@ export class UserSettingTabs extends React.Component<UserSettingTabs.Props, User
     }
 
     protected createRoute(tab: string) {
-        return createURL([UserSettingsRoutes.MAIN, tab]);
+        return createRoute([UserSettingsRoutes.MAIN, tab]);
     }
 
     render() {

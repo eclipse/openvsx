@@ -100,8 +100,8 @@ public class RepositoryService {
         return tokenRepo.findByValue(value);
     }
 
-    public PersonalAccessToken findAccessToken(UserData user, String value) {
-        return tokenRepo.findByUserAndValue(user, value);
+    public PersonalAccessToken findAccessToken(long id) {
+        return tokenRepo.findById(id);
     }
 
 }

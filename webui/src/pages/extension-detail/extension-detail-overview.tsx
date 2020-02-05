@@ -13,9 +13,8 @@ import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, L
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
 import * as MarkdownIt from 'markdown-it';
-import { utcToZonedTime } from "date-fns-tz";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
-import { createURL, handleError } from "../../utils";
+import { createRoute, handleError, toLocalTime } from "../../utils";
 import { RouteComponentProps } from "react-router-dom";
 
 const overviewStyles = (theme: Theme) => createStyles({
@@ -44,13 +43,13 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     componentDidMount() {
-        this.init();
+        this.updateReadme();
     }
 
-    protected async init() {
+    protected async updateReadme() {
         if (this.props.extension.readmeUrl) {
             try {
-                const readme = await this.props.service.getExtensionReadme(this.props.extension.readmeUrl);
+                const readme = await this.props.service.getExtensionReadme(this.props.extension);
                 this.setState({ readme });
             } catch (err) {
                 handleError(err);
@@ -65,12 +64,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             return '';
         }
         const { classes, extension } = this.props;
-        let zonedDate;
-        if (extension.timestamp) {
-            const date = new Date(extension.timestamp);
-            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            zonedDate = utcToZonedTime(date, timeZone);
-        }
+        const zonedDate = toLocalTime(extension.timestamp);
         return <React.Fragment>
             <Box display='flex' >
                 <Box className={classes.markdown} flex={5}>
@@ -103,7 +97,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     protected handleFilterButtonClicked = (kind: 'category' | 'search', buttonLabel: string) => {
-        this.props.history.push(createURL([ExtensionListRoutes.EXTENSION_LIST_LINK], [{ key: kind, value: buttonLabel }]));
+        this.props.history.push(createRoute([ExtensionListRoutes.EXTENSION_LIST_LINK], [{ key: kind, value: buttonLabel }]));
     }
 
     protected renderButtonList(kind: 'category' | 'search', title: string, arr?: string[]) {
@@ -148,11 +142,11 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
 export namespace ExtensionDetailOverview {
     export interface Props extends WithStyles<typeof overviewStyles>, RouteComponentProps {
-        extension: Extension,
-        service: ExtensionRegistryService
+        extension: Extension;
+        service: ExtensionRegistryService;
     }
     export interface State {
-        readme?: string
+        readme?: string;
     }
 }
 

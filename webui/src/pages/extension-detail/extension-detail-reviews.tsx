@@ -15,8 +15,7 @@ import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExportRatingStars } from "./extension-rating-stars";
 import { ExtensionReviewDialog } from "./extension-review-dialog";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { utcToZonedTime } from "date-fns-tz";
-import { handleError } from "../../utils";
+import { handleError, toLocalTime } from "../../utils";
 
 const reviewStyles = (theme: Theme) => createStyles({
     boldText: {
@@ -33,12 +32,12 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     }
 
     componentDidMount() {
-        this.init();
+        this.updateReviews();
     }
 
-    protected async init() {
+    protected async updateReviews() {
         try {
-            const reviewList = await this.props.service.getExtensionReviews(this.props.extension.reviewsUrl);
+            const reviewList = await this.props.service.getExtensionReviews(this.props.extension);
             this.setState({ reviewList });
         } catch (err) {
             handleError(err);
@@ -46,8 +45,8 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     }
 
     protected readonly saveCompleted = () => {
+        this.updateReviews();
         this.props.reviewsDidUpdate();
-        this.init();
     }
 
     render() {
@@ -74,47 +73,44 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             </Box>
             <Divider />
             <Box>
-                {this.state.reviewList.reviews.map((r: ExtensionReview) => {
-                    let zonedDate;
-                    if (r.timestamp) {
-                        const date = new Date(r.timestamp);
-                        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        zonedDate = utcToZonedTime(date, timeZone);
-                    }
-                    return <React.Fragment key={r.user + r.title + r.timestamp}>
-                        <Box my={2}>
-                            <Box display='flex'>
-                                <Typography variant='body2'>{zonedDate ? zonedDate.toLocaleString() : '-'}</Typography>
-                                <TextDivider />
-                                <Typography variant='body2'>{r.user}</Typography>
-                            </Box>
-                            <Box display='flex'>
-                                <Typography className={this.props.classes.boldText}>{r.title}</Typography>
-                                <Box ml={4} display='flex' alignItems='center'>
-                                    <ExportRatingStars number={r.rating} />
-                                </Box>
-                            </Box>
-                            <Box>
-                                <Typography variant='body1'>{r.comment}</Typography>
-                            </Box>
-                        </Box>
-                        <Divider />
-                    </React.Fragment>;
-                })}
+                {this.state.reviewList.reviews.map(this.renderReview.bind(this))}
             </Box>
+        </React.Fragment>;
+    }
+
+    protected renderReview(r: ExtensionReview) {
+        const zonedDate = toLocalTime(r.timestamp);
+        return <React.Fragment key={r.user.loginName + r.title + r.timestamp}>
+            <Box my={2}>
+                <Box display='flex'>
+                    <Typography variant='body2'>{zonedDate ? zonedDate.toLocaleString() : '-'}</Typography>
+                    <TextDivider />
+                    <Typography variant='body2'>{r.user.loginName}</Typography>
+                </Box>
+                <Box display='flex'>
+                    <Typography className={this.props.classes.boldText}>{r.title}</Typography>
+                    <Box ml={4} display='flex' alignItems='center'>
+                        <ExportRatingStars number={r.rating} />
+                    </Box>
+                </Box>
+                <Box>
+                    <Typography variant='body1'>{r.comment}</Typography>
+                </Box>
+            </Box>
+            <Divider />
         </React.Fragment>;
     }
 }
 
 export namespace ExtensionDetailReviewsComponent {
     export interface Props extends WithStyles<typeof reviewStyles> {
-        extension: Extension
-        user?: UserData
-        service: ExtensionRegistryService
-        reviewsDidUpdate: () => void
+        extension: Extension;
+        user?: UserData;
+        service: ExtensionRegistryService;
+        reviewsDidUpdate: () => void;
     }
     export interface State {
-        reviewList?: ExtensionReviewList
+        reviewList?: ExtensionReviewList;
     }
 }
 

@@ -45,7 +45,8 @@ public class PersonalAccessToken {
      */
     public AccessTokenJson toAccessTokenJson() {
         var json = new AccessTokenJson();
-        json.value = this.getValue();
+        json.id = this.getId();
+        // The value is not included: it is displayed only when the token is created
         json.createdTimestamp = this.getCreatedTimestamp().toString();
         json.accessedTimestamp = this.getAccessedTimestamp().toString();
         json.description = this.getDescription();

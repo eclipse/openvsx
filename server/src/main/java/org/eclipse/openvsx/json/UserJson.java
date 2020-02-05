@@ -32,8 +32,6 @@ public class UserJson {
 
     public String createTokenUrl;
 
-    public String deleteTokenUrl;
-
     @Nullable
     public String fullName;
 

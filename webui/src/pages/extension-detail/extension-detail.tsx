@@ -18,7 +18,7 @@ import { Extension, UserData, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
 import { ExportRatingStars } from "./extension-rating-stars";
-import { createURL, handleError } from "../../utils";
+import { createRoute, handleError } from "../../utils";
 
 export namespace ExtensionDetailRoutes {
     export const ROOT = 'extension-detail';
@@ -28,10 +28,10 @@ export namespace ExtensionDetailRoutes {
     export const OVERVIEW = 'overview';
     export const RATING = 'rating';
 
-    export const OVERVIEW_ROUTE = createURL([ROOT, OVERVIEW, PUBLISHER_PARAM, NAME_PARAM]);
-    export const REVIEW_ROUTE = createURL([ROOT, RATING, PUBLISHER_PARAM, NAME_PARAM]);
+    export const OVERVIEW_ROUTE = createRoute([ROOT, OVERVIEW, PUBLISHER_PARAM, NAME_PARAM]);
+    export const REVIEW_ROUTE = createRoute([ROOT, RATING, PUBLISHER_PARAM, NAME_PARAM]);
 
-    export const EXTENSION_DETAIL_MAIN_ROUTE = createURL([ROOT, TAB_PARAM, PUBLISHER_PARAM, NAME_PARAM]);
+    export const EXTENSION_DETAIL_MAIN_ROUTE = createRoute([ROOT, TAB_PARAM, PUBLISHER_PARAM, NAME_PARAM]);
 }
 
 const detailStyles = (theme: Theme) => createStyles({
@@ -59,10 +59,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     }
 
     componentDidMount() {
-        this.init();
+        this.updateExtension();
     }
 
-    protected async init() {
+    protected async updateExtension() {
         try {
             const extensionUrl = this.props.service.getExtensionApiUrl(this.params);
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
@@ -76,7 +76,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         }
     }
 
-    protected onReviewUpdate = () => this.init();
+    protected onReviewUpdate = () => this.updateExtension();
 
     render() {
         if (!this.state.extension) {

@@ -11,7 +11,7 @@
 import * as React from "react";
 import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography } from "@material-ui/core";
 import { RouteComponentProps, Route } from "react-router-dom";
-import { createURL } from "../../utils";
+import { createRoute } from "../../utils";
 import { UserSettingTabs } from "./user-setting-tabs";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { UserSettingsTokens } from "./user-settings-tokens";
@@ -19,10 +19,10 @@ import { UserSettingsProfile } from "./user-settings-profile";
 import { UserData } from "../../extension-registry-types";
 
 export namespace UserSettingsRoutes {
-    export const MAIN = createURL(['user-settings']);
-    export const MAIN_W_TAB_PARAM = createURL([MAIN, ':tab']);
-    export const PROFILE_ROUTE = createURL([MAIN, 'profile']);
-    export const TOKENS_ROUTE = createURL([MAIN, 'tokens']);
+    export const MAIN = createRoute(['user-settings']);
+    export const MAIN_W_TAB_PARAM = createRoute([MAIN, ':tab']);
+    export const PROFILE_ROUTE = createRoute([MAIN, 'profile']);
+    export const TOKENS_ROUTE = createRoute([MAIN, 'tokens']);
 }
 
 const profileStyles = (theme: Theme) => createStyles({

@@ -51,9 +51,9 @@ export class ExtensionRegistryService {
         return sendRequest({ endpoint: extensionUrl });
     }
 
-    getExtensionReadme(readmeUrl: string): Promise<string> {
+    getExtensionReadme(extension: Extension): Promise<string> {
         return sendRequest({
-            endpoint: readmeUrl,
+            endpoint: extension.readmeUrl!,
             accept: 'text/plain'
         });
     }
@@ -74,17 +74,17 @@ export class ExtensionRegistryService {
         ];
     }
 
-    getExtensionReviews(reviewsUrl: string): Promise<ExtensionReviewList> {
-        return sendRequest({ endpoint: reviewsUrl });
+    getExtensionReviews(extension: Extension): Promise<ExtensionReviewList> {
+        return sendRequest({ endpoint: extension.reviewsUrl });
     }
 
-    postReview(review: NewReview, postUrl: string): Promise<{} | ErrorResult> {
+    postReview(review: NewReview, postReviewUrl: string): Promise<{} | ErrorResult> {
         return sendRequest({
             method: 'POST',
             payload: review,
             contentType: 'application/json;charset=UTF-8',
             credentials: true,
-            endpoint: postUrl
+            endpoint: postReviewUrl
         });
     }
 
@@ -95,12 +95,15 @@ export class ExtensionRegistryService {
         });
     }
 
-    getTokens(tokensUrl: string): Promise<PersonalAccessToken[]> {
-        return sendRequest({ endpoint: tokensUrl });
+    getTokens(user: UserData): Promise<PersonalAccessToken[]> {
+        return sendRequest({
+            credentials: true,
+            endpoint: user.tokensUrl
+        });
     }
 
-    createToken(createTokenUrl: string, description: string): Promise<PersonalAccessToken> {
-        const endpoint = addQuery(createTokenUrl, [{ key: 'description', value: description }]);
+    createToken(user: UserData, description: string): Promise<PersonalAccessToken> {
+        const endpoint = addQuery(user.createTokenUrl, [{ key: 'description', value: description }]);
         return sendRequest({
             method: 'POST',
             credentials: true,
@@ -108,12 +111,11 @@ export class ExtensionRegistryService {
         });
     }
 
-    deleteToken(deleteTokenUrl: string, token: PersonalAccessToken): Promise<{} | ErrorResult> {
-        const endpoint = addQuery(deleteTokenUrl, [{ key: 'token', value: token.value }]);
+    deleteToken(token: PersonalAccessToken): Promise<{} | ErrorResult> {
         return sendRequest({
-            method: 'DELETE',
+            method: 'POST',
             credentials: true,
-            endpoint
+            endpoint: token.deleteTokenUrl
         });
     }
 

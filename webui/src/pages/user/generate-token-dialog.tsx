@@ -12,6 +12,7 @@ import * as React from "react";
 import { Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography } from "@material-ui/core";
 import { UserData, PersonalAccessToken } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
+import { handleError } from "../../utils";
 
 const tokensDialogStyle = (theme: Theme) => createStyles({
     boldText: {
@@ -26,7 +27,6 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
         this.state = {
             open: false,
-            tokenFieldDisabled: true,
             tokenComment: ''
         };
     }
@@ -36,15 +36,25 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     }
 
     protected handleCancel = () => {
-        this.setState({ open: false });
+        this.setState({
+            open: false,
+            tokenComment: '',
+            token: undefined
+        });
     }
 
-    protected handleCommentChange = (event: React.ChangeEvent<HTMLInputElement>) => this.setState({ tokenComment: event.target.value });
+    protected handleCommentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ tokenComment: event.target.value });
+    }
 
     protected handleGenerate = async () => {
-        const token = await this.props.service.createToken(this.props.user.createTokenUrl, this.state.tokenComment);
-        this.setState({ tokenFieldDisabled: false, token });
-        this.props.handleTokenGenerated();
+        try {
+            const token = await this.props.service.createToken(this.props.user, this.state.tokenComment);
+            this.setState({ token });
+            this.props.handleTokenGenerated();
+        } catch (err) {
+            handleError(err);
+        }
     }
 
     render() {
@@ -57,10 +67,10 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                         Write a comment. What is the token for?
                     </DialogContentText>
                     <Box my={2}>
-                        <TextField disabled={!this.state.tokenFieldDisabled} required fullWidth label='Token Comment' onChange={this.handleCommentChange} />
+                        <TextField disabled={!!this.state.token} required fullWidth label='Token Comment' onChange={this.handleCommentChange} />
                     </Box>
                     <TextField
-                        disabled={this.state.tokenFieldDisabled}
+                        disabled={!this.state.token}
                         margin="dense"
                         label="Generated token..."
                         fullWidth
@@ -70,21 +80,21 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                         value={this.state.token ? this.state.token.value : ''}
                     />
                     {
-                        this.state.tokenFieldDisabled ? '' : <Box>
+                        !this.state.token ? '' : <Box>
                             <Typography color='error' classes={{ root: this.props.classes.boldText }}>
-                                Copy and paste this token to a save place! Or you wont ever see it again!
+                                Copy and paste this token to a safe place. It will not be displayed again.
                             </Typography>
                         </Box>
                     }
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={this.handleCancel} color="secondary">
-                        {this.state.tokenFieldDisabled ? 'Cancel' : 'Close'}
+                        {this.state.token ? 'Close' : 'Cancel'}
                     </Button>
                     {
-                        this.state.tokenFieldDisabled ?
+                        !this.state.token ?
                             <Button onClick={this.handleGenerate} variant="contained" color="secondary">
-                                Generate token
+                                Generate Token
                             </Button> : ''
                     }
                 </DialogActions>
@@ -95,16 +105,15 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
 export namespace GenerateTokenDialogComponent {
     export interface Props extends WithStyles<typeof tokensDialogStyle> {
-        user: UserData
-        service: ExtensionRegistryService
-        handleTokenGenerated: () => void
+        user: UserData;
+        service: ExtensionRegistryService;
+        handleTokenGenerated: () => void;
     }
 
     export interface State {
-        open: boolean
-        tokenComment: string
-        tokenFieldDisabled: boolean
-        token?: PersonalAccessToken
+        open: boolean;
+        tokenComment: string;
+        token?: PersonalAccessToken;
     }
 }
 
