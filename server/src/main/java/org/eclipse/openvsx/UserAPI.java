@@ -44,10 +44,10 @@ public class UserAPI {
     EntityManager entityManager;
 
     @Autowired
-    UserService users;
+    RepositoryService repositories;
 
     @Autowired
-    RepositoryService repositories;
+    UserService users;
 
     @GetMapping(
         path = "/user",

@@ -9,12 +9,16 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import org.eclipse.openvsx.entities.Publisher;
+import org.eclipse.openvsx.entities.PublisherMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +73,7 @@ public class UserService {
             user.setEmail(principal.getAttribute("email"));
             user.setAvatarUrl(principal.getAttribute("avatar_url"));
             entityManager.persist(user);
+            createDefaultPublisher(user);
         } else {
             String loginName = principal.getAttribute("login");
             if (loginName != null && !loginName.equals(user.getLoginName()))
@@ -86,12 +91,45 @@ public class UserService {
         return user;
     }
 
+    private void createDefaultPublisher(UserData user) {
+        if (repositories.findPublisher(user.getLoginName()) != null) {
+            return;
+        }
+        var publisher = new Publisher();
+        publisher.setName(user.getLoginName());
+        entityManager.persist(publisher);
+
+        var membership = new PublisherMembership();
+        membership.setPublisher(publisher);
+        membership.setUser(user);
+        membership.setRole(PublisherMembership.ROLE_OWNER);
+        entityManager.persist(membership);
+    }
+
+    @Transactional
+    public UserData useAccessToken(String tokenValue) {
+        var token = repositories.findAccessToken(tokenValue);
+        if (token == null) {
+            return null;
+        }
+        token.setAccessedTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
+        return token.getUser();
+    }
+
     public String generateTokenValue() {
         String value;
         do {
             value = UUID.randomUUID().toString();
         } while (repositories.findAccessToken(value) != null);
         return value;
+    }
+
+    public boolean hasPublishPermission(UserData user, Publisher publisher) {
+        var membership = repositories.findMembership(user, publisher);
+        if (membership == null) {
+            return false;
+        }
+        return membership.getRole().equals(PublisherMembership.ROLE_OWNER);
     }
 
 }

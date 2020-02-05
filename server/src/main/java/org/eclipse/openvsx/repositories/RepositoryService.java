@@ -21,6 +21,7 @@ import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.Publisher;
+import org.eclipse.openvsx.entities.PublisherMembership;
 import org.eclipse.openvsx.entities.UserData;
 
 @Component
@@ -34,6 +35,7 @@ public class RepositoryService {
     @Autowired ExtensionReadmeRepository extensionReadmeRepo;
     @Autowired ExtensionReviewRepository extensionReviewRepo;
     @Autowired UserDataRepository userDataRepo;
+    @Autowired PublisherMembershipRepository membershipRepo;
     @Autowired PersonalAccessTokenRepository tokenRepo;
 
     public Publisher findPublisher(String name) {
@@ -90,6 +92,10 @@ public class RepositoryService {
 
     public UserData findUser(String provider, String providerId) {
         return userDataRepo.findByProviderAndProviderId(provider, providerId);
+    }
+
+    public PublisherMembership findMembership(UserData user, Publisher publisher) {
+        return membershipRepo.findByUserAndPublisher(user, publisher);
     }
 
     public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {

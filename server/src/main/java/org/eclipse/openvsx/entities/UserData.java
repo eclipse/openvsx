@@ -40,6 +40,9 @@ public class UserData {
     @OneToMany(mappedBy = "user")
     List<PersonalAccessToken> tokens;
 
+    @OneToMany(mappedBy = "user")
+    List<PublisherMembership> memberships;
+
 
     /**
      * Convert to a JSON object.

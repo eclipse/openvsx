@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -30,7 +31,6 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.Publisher;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.PublisherJson;
@@ -59,6 +59,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -71,6 +72,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    UserService users;
 
     @Autowired
     ElasticsearchOperations searchOperations;
@@ -232,41 +236,10 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional
-    public ExtensionJson publish(InputStream content) {
+    public ExtensionJson publish(InputStream content, String tokenValue) {
         try (var processor = new ExtensionProcessor(content)) {
-            var publisher = repositories.findPublisher(processor.getPublisherName());
-            if (publisher == null) {
-                publisher = new Publisher();
-                publisher.setName(processor.getPublisherName());
-                entityManager.persist(publisher);
-            }
-            var extension = repositories.findExtension(processor.getExtensionName(), publisher);
-            var extVersion = processor.getMetadata();
-            extVersion.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
-            if (extension == null) {
-                extension = new Extension();
-                extension.setName(processor.getExtensionName());
-                extension.setPublisher(publisher);
-                extension.setLatest(extVersion);
-                entityManager.persist(extension);
-            } else {
-                if (repositories.findVersion(extVersion.getVersion(), extension) != null) {
-                    throw new ErrorResultException(
-                            "Extension " + extension.getName()
-                            + " version " + extVersion.getVersion()
-                            + " is already published.");
-                }
-                if (isLatestVersion(extVersion.getVersion(), extension))
-                    extension.setLatest(extVersion);
-            }
-            extVersion.setExtension(extension);
-            extVersion.setExtensionFileName(
-                    publisher.getName()
-                    + "." + extension.getName()
-                    + "-" + extVersion.getVersion()
-                    + ".vsix");
-
-            entityManager.persist(extVersion);
+            var user = getUserByToken(tokenValue);
+            var extVersion = createExtensionVersion(processor, user);
             var binary = processor.getBinary(extVersion);
             entityManager.persist(binary);
             var readme = processor.getReadme(extVersion);
@@ -278,11 +251,68 @@ public class LocalRegistryService implements IExtensionRegistry {
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
 
-            updateSearchIndex(extension);
+            updateSearchIndex(extVersion.getExtension());
             return toJson(extVersion, false);
         } catch (ErrorResultException exc) {
             return ExtensionJson.error(exc.getMessage());
         }
+    }
+
+    private UserData getUserByToken(String tokenValue) {
+        if (Strings.isNullOrEmpty(tokenValue)) {
+            var authentication = users.getAuthentication();
+            if (authentication != null) {
+                var principal = authentication.getPrincipal();
+                if (principal instanceof OAuth2User) {
+                    return users.updateUser((OAuth2User) principal, Optional.empty());
+                }
+            }
+            throw new ErrorResultException("Not logged in.");
+        } else {
+            var user = users.useAccessToken(tokenValue);
+            if (user != null) {
+                return user;
+            }
+            throw new ErrorResultException("Invalid access token.");
+        }
+    }
+
+    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user) {
+        var publisher = repositories.findPublisher(processor.getPublisherName());
+        if (publisher == null) {
+            throw new ErrorResultException("Unknown publisher: " + publisher);
+        }
+        if (!users.hasPublishPermission(user, publisher)) {
+            throw new ErrorResultException("Insufficient access rights for publisher: " + publisher);
+        }
+
+        var extension = repositories.findExtension(processor.getExtensionName(), publisher);
+        var extVersion = processor.getMetadata();
+        extVersion.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
+        if (extension == null) {
+            extension = new Extension();
+            extension.setName(processor.getExtensionName());
+            extension.setPublisher(publisher);
+            extension.setLatest(extVersion);
+            entityManager.persist(extension);
+        } else {
+            if (repositories.findVersion(extVersion.getVersion(), extension) != null) {
+                throw new ErrorResultException(
+                        "Extension " + extension.getName()
+                        + " version " + extVersion.getVersion()
+                        + " is already published.");
+            }
+            if (isLatestVersion(extVersion.getVersion(), extension))
+                extension.setLatest(extVersion);
+        }
+        extVersion.setExtension(extension);
+        extVersion.setExtensionFileName(
+                publisher.getName()
+                + "." + extension.getName()
+                + "-" + extVersion.getVersion()
+                + ".vsix");
+        entityManager.persist(extVersion);
+        return extVersion;
     }
 
     private boolean isLatestVersion(String version, Extension extension) {

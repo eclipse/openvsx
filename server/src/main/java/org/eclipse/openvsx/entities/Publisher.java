@@ -31,6 +31,9 @@ public class Publisher {
     @OneToMany(mappedBy = "publisher")
     List<Extension> extensions;
 
+    @OneToMany(mappedBy = "publisher")
+    List<PublisherMembership> memberships;
+
 
 	public long getId() {
 		return id;

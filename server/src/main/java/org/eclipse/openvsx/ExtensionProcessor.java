@@ -40,21 +40,13 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String README = "extension/README";
     private static final String README_MD = "extension/README.md";
 
-    private final byte[] content;
-    private final ZipFile zipFile;
+    private final InputStream inputStream;
+    private byte[] content;
+    private ZipFile zipFile;
     private JsonNode packageJson;
 
     public ExtensionProcessor(InputStream stream) {
-        try {
-            content = ByteStreams.toByteArray(stream);
-            var tempFile = File.createTempFile("extension_", ".vsix");
-            Files.write(content, tempFile);
-            zipFile = new ZipFile(tempFile);
-        } catch (ZipException exc) {
-            throw new ErrorResultException("Could not read zip file: " + exc.getMessage());
-		} catch (IOException exc) {
-			throw new RuntimeException(exc);
-		}
+        this.inputStream = stream;
     }
 
 	@Override
@@ -66,10 +58,24 @@ public class ExtensionProcessor implements AutoCloseable {
 				throw new RuntimeException(exc);
             }
         }
-	}
+    }
+    
+    private void readInputStream() {
+        try {
+            content = ByteStreams.toByteArray(inputStream);
+            var tempFile = File.createTempFile("extension_", ".vsix");
+            Files.write(content, tempFile);
+            zipFile = new ZipFile(tempFile);
+        } catch (ZipException exc) {
+            throw new ErrorResultException("Could not read zip file: " + exc.getMessage());
+		} catch (IOException exc) {
+			throw new RuntimeException(exc);
+		}
+    }
 
     private void loadPackageJson() {
         if (packageJson == null) {
+            readInputStream();
             var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
             if (bytes == null)
                 throw new ErrorResultException("Entry not found: " + PACKAGE_JSON);
