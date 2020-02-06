@@ -49,7 +49,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
     protected handleGenerate = async () => {
         try {
-            const token = await this.props.service.createToken(this.props.user, this.state.tokenComment);
+            const token = await this.props.service.createAccessToken(this.props.user, this.state.tokenComment);
             this.setState({ token });
             this.props.handleTokenGenerated();
         } catch (err) {

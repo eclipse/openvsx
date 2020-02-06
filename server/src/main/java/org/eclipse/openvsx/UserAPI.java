@@ -17,10 +17,12 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.EntityManager;
+import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.json.AccessTokenJson;
+import org.eclipse.openvsx.json.CsrfTokenJson;
 import org.eclipse.openvsx.json.DeleteTokenResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -31,6 +33,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -70,11 +73,26 @@ public class UserAPI {
     }
 
     @GetMapping(
+        path = "/user/csrf",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public CsrfTokenJson getCsrfToken(HttpServletRequest request) {
+        var csrfToken = (CsrfToken) request.getAttribute("_csrf");
+        if (csrfToken == null) {
+            return CsrfTokenJson.error("Token is not available.");
+        }
+        var json = new CsrfTokenJson();
+        json.value = csrfToken.getToken();
+        json.header = csrfToken.getHeaderName();
+        return json;
+    }
+
+    @GetMapping(
         path = "/user/tokens",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public List<AccessTokenJson> getTokens(@RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                           @AuthenticationPrincipal OAuth2User principal) {
+    public List<AccessTokenJson> getAccessTokens(@RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
+                                                 @AuthenticationPrincipal OAuth2User principal) {
         var user = users.updateUser(principal, Optional.of(authorizedClient));
         var serverUrl = UrlUtil.getBaseUrl();
         return repositories.findAccessTokens(user)
@@ -91,9 +109,9 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional
-    public AccessTokenJson createToken(@RequestParam(name = "description", required = false) String description,
-                                       @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                       @AuthenticationPrincipal OAuth2User principal) {
+    public AccessTokenJson createAccessToken(@RequestParam(name = "description", required = false) String description,
+                                             @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
+                                             @AuthenticationPrincipal OAuth2User principal) {
         var user = users.updateUser(principal, Optional.of(authorizedClient));
         var token = new PersonalAccessToken();
         token.setUser(user);
@@ -115,9 +133,9 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional
-    public DeleteTokenResultJson deleteToken(@PathVariable("id") long id,
-                                             @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                             @AuthenticationPrincipal OAuth2User principal) {
+    public DeleteTokenResultJson deleteAccessToken(@PathVariable("id") long id,
+                                                   @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
+                                                   @AuthenticationPrincipal OAuth2User principal) {
         var user = users.updateUser(principal, Optional.of(authorizedClient));
         var token = repositories.findAccessToken(id);
         if (token == null || !token.getUser().equals(user)) {

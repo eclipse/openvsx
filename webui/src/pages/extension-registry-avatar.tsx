@@ -12,9 +12,10 @@ import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Avatar, Popper, Paper, ClickAwayListener, Typography, Box, Grow } from '@material-ui/core';
 import { Link } from 'react-router-dom';
-import { UserData } from '../extension-registry-types';
+import { UserData, isError } from '../extension-registry-types';
 import { ExtensionRegistryService } from '../extension-registry-service';
 import { UserSettingsRoutes } from './user/user-settings';
+import { handleError } from '../utils';
 import PopperJS from 'popper.js';
 
 const avatarStyle = (theme: Theme) => createStyles({
@@ -45,18 +46,33 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
         };
     }
 
+    componentDidMount() {
+        this.updateCsrf();
+    }
+
+    protected async updateCsrf() {
+        try {
+            const csrfToken = await this.props.service.getCsrfToken();
+            if (!isError(csrfToken)) {
+                this.setState({ csrf: csrfToken.value });
+            }
+        } catch (err) {
+            handleError(err);
+        }
+    }
+
+    componentDidUpdate() {
+        if (this.popperRef) {
+            this.popperRef.update();
+            this.popperRef.update();
+        }
+    }
+
     protected readonly handleAvatarClick = () => {
         this.setState({ open: !this.state.open });
     }
     protected readonly handleClose = () => {
         this.setState({ open: false });
-    }
-
-    componentDidUpdate(prevProps: ExtensionRegistryAvatarComponent.Props, prevState: ExtensionRegistryAvatarComponent.State) {
-        if (this.popperRef) {
-            this.popperRef.update();
-            this.popperRef.update();
-        }
     }
 
     render() {
@@ -84,6 +100,11 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
                                         </Box>
                                         <Box>
                                             <form method="post" action={this.props.service.getLogoutUrl()}>
+                                                {
+                                                    this.state.csrf ?
+                                                    <input name="_csrf" type="hidden" value={this.state.csrf}/>
+                                                    : ''
+                                                }
                                                 <button type="submit" className={this.props.classes.link}>
                                                     <Typography variant='button'>
                                                         Log Out
@@ -110,6 +131,7 @@ export namespace ExtensionRegistryAvatarComponent {
 
     export interface State {
         open: boolean;
+        csrf?: string;
     }
 }
 

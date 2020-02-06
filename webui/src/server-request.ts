@@ -8,21 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-export interface ServerAPIRequest<Res> {
+export interface ServerAPIRequest {
     endpoint: string;
     method?: 'GET' | 'DELETE' | 'POST' | 'PUT';
-    accept?: 'application/json' | 'text/plain';
+    headers?: Record<string, string>;
     credentials?: boolean;
-}
-
-export interface ServerAPIRequestWithPayload<Res, Req> extends ServerAPIRequest<Res> {
-    method: 'POST' | 'PUT';
-    payload: Req;
-    contentType: string;
-}
-
-export function hasPayload<Res>(req: ServerAPIRequest<Res>): req is ServerAPIRequestWithPayload<Res, any> {
-    return (req as ServerAPIRequestWithPayload<Res, any>).payload !== undefined;
+    payload?: any;
 }
 
 export interface ErrorResponse {
@@ -34,38 +25,37 @@ export interface ErrorResponse {
     trace?: string;
 }
 
-export async function sendRequest<Res>(req: ServerAPIRequest<Res> | ServerAPIRequestWithPayload<Res, any>): Promise<Res> {
+export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
     if (!req.method) {
         req.method = 'GET';
     }
-    if (!req.accept) {
-        req.accept = 'application/json';
+    if (!req.headers) {
+        req.headers = {};
+    }
+    if (!req.headers['Accept']) {
+        req.headers['Accept'] = 'application/json';
     }
 
     const param: RequestInit = {
         method: req.method
     };
-    const headers: Record<string, string> = {
-        'Accept': req.accept
-    };
-    if (hasPayload(req)) {
+    if (req.payload) {
         param.body = JSON.stringify(req.payload);
-        headers['Content-Type'] = req.contentType;
     }
-    param.headers = headers;
+    param.headers = req.headers;
     if (req.credentials) {
         param.credentials = 'include';
     }
 
     const response = await fetch(req.endpoint, param);
     if (response.ok) {
-        switch (req.accept) {
+        switch (req.headers!['Accept']) {
             case 'application/json':
                 return response.json();
             case 'text/plain':
                 return response.text() as Promise<any>;
             default:
-                throw new Error(`Unsupported type ${req.accept}`);
+                throw new Error(`Unsupported type ${req.headers!['Accept']}`);
         }
     } else {
         let err: ErrorResponse;

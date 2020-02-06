@@ -118,3 +118,8 @@ export type ExtensionCategory =
     'Other' |
     'Extension Packs' |
     'Language Packs';
+
+export interface CsrfTokenJson {
+    value: string;
+    header: string;
+}

@@ -10,7 +10,7 @@
 
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
-    SearchResult, NewReview, ExtensionRaw, ErrorResult
+    SearchResult, NewReview, ExtensionRaw, ErrorResult, CsrfTokenJson, isError
 } from "./extension-registry-types";
 import { createAbsoluteURL, addQuery } from "./utils";
 import { sendRequest } from "./server-request";
@@ -54,7 +54,7 @@ export class ExtensionRegistryService {
     getExtensionReadme(extension: Extension): Promise<string> {
         return sendRequest({
             endpoint: extension.readmeUrl!,
-            accept: 'text/plain'
+            headers: { 'Accept': 'text/plain' }
         });
     }
 
@@ -78,13 +78,20 @@ export class ExtensionRegistryService {
         return sendRequest({ endpoint: extension.reviewsUrl });
     }
 
-    postReview(review: NewReview, postReviewUrl: string): Promise<{} | ErrorResult> {
+    async postReview(review: NewReview, postReviewUrl: string): Promise<{} | ErrorResult> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
         return sendRequest({
             method: 'POST',
             payload: review,
-            contentType: 'application/json;charset=UTF-8',
             credentials: true,
-            endpoint: postReviewUrl
+            endpoint: postReviewUrl,
+            headers
         });
     }
 
@@ -95,27 +102,60 @@ export class ExtensionRegistryService {
         });
     }
 
-    getTokens(user: UserData): Promise<PersonalAccessToken[]> {
+    getAccessTokens(user: UserData): Promise<PersonalAccessToken[]> {
         return sendRequest({
             credentials: true,
             endpoint: user.tokensUrl
         });
     }
 
-    createToken(user: UserData, description: string): Promise<PersonalAccessToken> {
+    async createAccessToken(user: UserData, description: string): Promise<PersonalAccessToken> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
         const endpoint = addQuery(user.createTokenUrl, [{ key: 'description', value: description }]);
         return sendRequest({
             method: 'POST',
             credentials: true,
-            endpoint
+            endpoint,
+            headers
         });
     }
 
-    deleteToken(token: PersonalAccessToken): Promise<{} | ErrorResult> {
+    async deleteAccessToken(token: PersonalAccessToken): Promise<{} | ErrorResult> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
         return sendRequest({
             method: 'POST',
             credentials: true,
-            endpoint: token.deleteTokenUrl
+            endpoint: token.deleteTokenUrl,
+            headers
+        });
+    }
+
+    async deleteAllAccessTokens(tokens: PersonalAccessToken[]): Promise<({} | ErrorResult)[]> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return await Promise.all(tokens.map(token => sendRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: token.deleteTokenUrl,
+            headers
+        })));
+    }
+
+    getCsrfToken(): Promise<CsrfTokenJson | ErrorResult> {
+        return sendRequest({
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, "user", "csrf"])
         });
     }
 

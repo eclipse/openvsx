@@ -40,7 +40,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
     protected async updateTokens() {
         try {
-            const tokens = await this.props.service.getTokens(this.props.user);
+            const tokens = await this.props.service.getAccessTokens(this.props.user);
             this.setState({ tokens });
         } catch (err) {
             handleError(err);
@@ -49,7 +49,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
     protected handleDelete = async (token: PersonalAccessToken) => {
         try {
-            await this.props.service.deleteToken(token);
+            await this.props.service.deleteAccessToken(token);
             this.updateTokens();
         } catch (err) {
             handleError(err);
@@ -58,9 +58,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
     protected handleDeleteAll = async () => {
         try {
-            await Promise.all(this.state.tokens.map(token =>
-                this.props.service.deleteToken(token)
-            ));
+            await this.props.service.deleteAllAccessTokens(this.state.tokens);
             this.updateTokens();
         } catch (err) {
             handleError(err);

@@ -27,7 +27,6 @@ import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -56,9 +55,6 @@ public class RegistryAPI {
 
     @Autowired
     UserService users;
-
-    @Value("${ovsx.webui.url}")
-    String webuiUrl;
 
     protected Iterable<IExtensionRegistry> getRegistries() {
         var registries = new ArrayList<IExtensionRegistry>();
