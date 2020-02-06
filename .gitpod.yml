@@ -33,6 +33,7 @@ tasks:
     # Start the server application
     cd server
     ./gradlew runServer
+    export HIBERNATE_DDL_AUTO=update
 - name: WebUI
   command: |
     gp await-port 8080
@@ -43,5 +44,4 @@ tasks:
   command: |
     gp await-port 8080
     # Use the CLI to publish some test extensions to the running server
-    find server/build/test-extensions -name '*.vsix' -exec \
-      cli/lib/ovsx publish -r http://localhost:8080 -p super_token '{}' \;
+    find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish -r http://localhost:8080 -p super_token '{}' \;
