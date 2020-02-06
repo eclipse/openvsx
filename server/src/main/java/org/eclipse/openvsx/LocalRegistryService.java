@@ -280,10 +280,10 @@ public class LocalRegistryService implements IExtensionRegistry {
     private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user) {
         var publisher = repositories.findPublisher(processor.getPublisherName());
         if (publisher == null) {
-            throw new ErrorResultException("Unknown publisher: " + publisher);
+            throw new ErrorResultException("Unknown publisher: " + processor.getPublisherName());
         }
         if (!users.hasPublishPermission(user, publisher)) {
-            throw new ErrorResultException("Insufficient access rights for publisher: " + publisher);
+            throw new ErrorResultException("Insufficient access rights for publisher: " + publisher.getName());
         }
 
         var extension = repositories.findExtension(processor.getExtensionName(), publisher);

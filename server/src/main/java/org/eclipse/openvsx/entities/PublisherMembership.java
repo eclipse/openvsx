@@ -12,6 +12,7 @@ package org.eclipse.openvsx.entities;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 @Entity
@@ -24,9 +25,11 @@ public class PublisherMembership {
     long id;
 
     @ManyToOne
+    @JoinColumn(name = "publisher")
     private Publisher publisher;
 
     @ManyToOne
+    @JoinColumn(name = "user_data")
     private UserData user;
 
     private String role;

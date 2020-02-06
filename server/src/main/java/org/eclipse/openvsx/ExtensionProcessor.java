@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,6 +69,8 @@ public class ExtensionProcessor implements AutoCloseable {
             zipFile = new ZipFile(tempFile);
         } catch (ZipException exc) {
             throw new ErrorResultException("Could not read zip file: " + exc.getMessage());
+        } catch (EOFException exc) {
+            throw new ErrorResultException("Could not read from input stream: " + exc.getMessage());
 		} catch (IOException exc) {
 			throw new RuntimeException(exc);
 		}

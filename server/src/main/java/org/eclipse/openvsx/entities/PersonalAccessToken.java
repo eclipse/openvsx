@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -29,6 +30,7 @@ public class PersonalAccessToken {
     long id;
 
     @ManyToOne
+    @JoinColumn(name = "user_data")
     UserData user;
 
     String value;
