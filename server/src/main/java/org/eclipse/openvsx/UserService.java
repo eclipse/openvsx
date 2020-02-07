@@ -11,7 +11,6 @@ package org.eclipse.openvsx;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Optional;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -22,9 +21,7 @@ import org.eclipse.openvsx.entities.PublisherMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
@@ -39,22 +36,19 @@ public class UserService {
     @Autowired
     RepositoryService repositories;
 
-    public Authentication getAuthentication() {
-        return SecurityContextHolder.getContext().getAuthentication();
+    public OAuth2User getOAuth2Principal() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            var principal = authentication.getPrincipal();
+            if (principal instanceof OAuth2User) {
+                return (OAuth2User) principal;
+            }
+        }
+        return null;
     }
 
     @Transactional
-    public UserData updateUser(OAuth2User principal, Optional<OAuth2AuthorizedClient> authorizedClient) {
-        if (authorizedClient.isPresent()) {
-            var provider = authorizedClient.get().getClientRegistration().getRegistrationId();
-            switch (provider) {
-                case "github":
-                    return updateGitHubUser(principal);
-                default:
-                    throw new IllegalArgumentException("Unsupported OAuth2 provider: " + provider);
-            }
-        }
-
+    public UserData updateUser(OAuth2User principal) {
         String url = principal.getAttribute("url");
         if (url != null && url.startsWith(GITHUB_API)) {
             return updateGitHubUser(principal);

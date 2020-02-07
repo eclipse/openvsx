@@ -14,7 +14,6 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
@@ -28,17 +27,15 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class UserAPI {
@@ -57,19 +54,16 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public UserJson getUserData() {
-        var authentication = users.getAuthentication();
-        if (authentication != null) {
-            var principal = authentication.getPrincipal();
-            if (principal instanceof OAuth2User) {
-                var user = users.updateUser((OAuth2User) principal, Optional.empty());
-                var json = user.toUserJson();
-                var serverUrl = UrlUtil.getBaseUrl();
-                json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
-                json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
-                return json;
-            }
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            return UserJson.error("Not logged in.");
         }
-        return UserJson.error("Not logged in.");
+        var user = users.updateUser(principal);
+        var json = user.toUserJson();
+        var serverUrl = UrlUtil.getBaseUrl();
+        json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
+        json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
+        return json;
     }
 
     @GetMapping(
@@ -91,9 +85,12 @@ public class UserAPI {
         path = "/user/tokens",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public List<AccessTokenJson> getAccessTokens(@RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                                 @AuthenticationPrincipal OAuth2User principal) {
-        var user = users.updateUser(principal, Optional.of(authorizedClient));
+    public List<AccessTokenJson> getAccessTokens() {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
         var serverUrl = UrlUtil.getBaseUrl();
         return repositories.findAccessTokens(user)
                 .map(token -> {
@@ -109,10 +106,12 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional
-    public AccessTokenJson createAccessToken(@RequestParam(name = "description", required = false) String description,
-                                             @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                             @AuthenticationPrincipal OAuth2User principal) {
-        var user = users.updateUser(principal, Optional.of(authorizedClient));
+    public AccessTokenJson createAccessToken(@RequestParam(name = "description", required = false) String description) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setValue(users.generateTokenValue());
@@ -133,10 +132,12 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional
-    public DeleteTokenResultJson deleteAccessToken(@PathVariable("id") long id,
-                                                   @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                                   @AuthenticationPrincipal OAuth2User principal) {
-        var user = users.updateUser(principal, Optional.of(authorizedClient));
+    public DeleteTokenResultJson deleteAccessToken(@PathVariable("id") long id) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
         var token = repositories.findAccessToken(id);
         if (token == null || !token.getUser().equals(user)) {
             return DeleteTokenResultJson.error("Token does not exist.");

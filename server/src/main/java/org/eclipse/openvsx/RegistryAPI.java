@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Iterables;
@@ -32,10 +31,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,9 +47,6 @@ public class RegistryAPI {
 
     @Autowired
     UpstreamRegistryService upstream;
-
-    @Autowired
-    UserService users;
 
     protected Iterable<IExtensionRegistry> getRegistries() {
         var registries = new ArrayList<IExtensionRegistry>();
@@ -240,7 +232,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ExtensionJson publish(InputStream content,
-                                 @RequestParam(name = "token", required = false) String token) {
+                                 @RequestParam(name = "token") String token) {
         return local.publish(content, token);
     }
 
@@ -251,16 +243,13 @@ public class RegistryAPI {
     )
     public ReviewResultJson review(@RequestBody(required = false) ReviewJson review,
                                    @PathVariable("publisher") String publisherName,
-                                   @PathVariable("extension") String extensionName,
-                                   @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                                   @AuthenticationPrincipal OAuth2User principal) {
+                                   @PathVariable("extension") String extensionName) {
         if (review == null) {
             return ReviewResultJson.error("No JSON input.");
         } else if (review.rating < 0 || review.rating > 5) {
             return ReviewResultJson.error("The rating must be an integer number between 0 and 5.");
         }
-        var user = users.updateUser(principal, Optional.of(authorizedClient));
-        return local.review(review, publisherName, extensionName, user);
+        return local.review(review, publisherName, extensionName);
     }
 
 }

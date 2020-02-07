@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.util;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +21,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 public final class UrlUtil {
 
-    private UrlUtil() {}
+    private UrlUtil() {
+    }
 
     /**
      * Create a URL pointing to an API path.
@@ -32,7 +35,7 @@ public final class UrlUtil {
                     return null;
                 if (result.length() == 0 || result.charAt(result.length() - 1) != '/')
                     result.append('/');
-				result.append(URLEncoder.encode(segment, "UTF-8"));
+                result.append(URLEncoder.encode(segment, "UTF-8"));
             }
             return result.toString();
         } catch (UnsupportedEncodingException exc) {
@@ -84,18 +87,31 @@ public final class UrlUtil {
         }
         url.append(host);
         switch (scheme) {
-            case "http":
-                if (port != 80 && port > 0)
-                    url.append(":").append(port);
-                break;
-            case "https":
-                if (port != 443 && port > 0)
-                    url.append(":").append(port);
-                break;
+        case "http":
+            if (port != 80 && port > 0)
+                url.append(":").append(port);
+            break;
+        case "https":
+            if (port != 443 && port > 0)
+                url.append(":").append(port);
+            break;
         }
 
         url.append(request.getContextPath());
         return url.toString();
+    }
+
+    /**
+     * Determine whether the given URL is absolute. A URL is regarded as absolute if
+     * it specifies a host.
+     */
+    public static boolean isAbsolute(String urlString) {
+        try {
+            var url = new URL(urlString);
+            return url.getHost() != null;
+        } catch (MalformedURLException exc) {
+            throw new RuntimeException(exc);
+        }
     }
 
 }

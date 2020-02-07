@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -59,8 +58,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
@@ -238,7 +238,10 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Transactional
     public ExtensionJson publish(InputStream content, String tokenValue) {
         try (var processor = new ExtensionProcessor(content)) {
-            var user = getUserByToken(tokenValue);
+            var user = users.useAccessToken(tokenValue);
+            if (user == null) {
+                throw new ErrorResultException("Invalid access token.");
+            }
             var extVersion = createExtensionVersion(processor, user);
             var binary = processor.getBinary(extVersion);
             entityManager.persist(binary);
@@ -255,25 +258,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             return toJson(extVersion, false);
         } catch (ErrorResultException exc) {
             return ExtensionJson.error(exc.getMessage());
-        }
-    }
-
-    private UserData getUserByToken(String tokenValue) {
-        if (Strings.isNullOrEmpty(tokenValue)) {
-            var authentication = users.getAuthentication();
-            if (authentication != null) {
-                var principal = authentication.getPrincipal();
-                if (principal instanceof OAuth2User) {
-                    return users.updateUser((OAuth2User) principal, Optional.empty());
-                }
-            }
-            throw new ErrorResultException("Not logged in.");
-        } else {
-            var user = users.useAccessToken(tokenValue);
-            if (user != null) {
-                return user;
-            }
-            throw new ErrorResultException("Invalid access token.");
         }
     }
 
@@ -363,10 +347,15 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional
-    public ReviewResultJson review(ReviewJson review, String publisherName, String extensionName, UserData user) {
+    public ReviewResultJson review(ReviewJson review, String publisherName, String extensionName) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         var extension = repositories.findExtension(extensionName, publisherName);
         if (extension == null)
             throw new NotFoundException();
+        var user = users.updateUser(principal);
         var extReview = new ExtensionReview();
         extReview.setExtension(extension);
         extReview.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
