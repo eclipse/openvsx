@@ -14,14 +14,13 @@ import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-@EnableWebMvc
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${ovsx.webui.url}")
+    @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
     @Override
@@ -39,6 +38,13 @@ public class WebConfig implements WebMvcConfigurer {
                         .allowCredentials(true);
             }
         }
+    }
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/extension-list/**").setViewName("forward:/");
+        registry.addViewController("/extension-detail/**").setViewName("forward:/");
+        registry.addViewController("/user-settings/**").setViewName("forward:/");
     }
 
 }

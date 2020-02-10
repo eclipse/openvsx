@@ -21,7 +21,7 @@ const tokensStyle = (theme: Theme) => createStyles({
     },
     deleteBtn: {
         color: theme.palette.error.main,
-        height: 30
+        height: 36
     }
 });
 

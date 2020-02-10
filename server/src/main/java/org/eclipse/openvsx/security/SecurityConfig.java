@@ -19,7 +19,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Value("${ovsx.webui.url}")
+    @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
     @Override
@@ -45,6 +45,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .defaultSuccessUrl(webuiUrl, true);
             http.logout()
                 .logoutSuccessUrl(webuiUrl);
+        } else {
+            http.oauth2Login();
+            http.logout()
+                .logoutSuccessUrl("/");
         }
 
         // Publishing is done only via explicit access tokens, so we don't need CSRF protection here.

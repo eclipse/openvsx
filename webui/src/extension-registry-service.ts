@@ -17,7 +17,7 @@ import { sendRequest } from "./server-request";
 
 export class ExtensionRegistryService {
 
-    constructor(protected readonly serverUrl: string) {}
+    constructor(protected readonly serverUrl: string = '') {}
 
     getLoginUrl(): string {
         return createAbsoluteURL([this.serverUrl, 'oauth2', 'authorization', 'github']);
