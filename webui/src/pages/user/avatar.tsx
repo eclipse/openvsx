@@ -9,14 +9,14 @@
  ********************************************************************************/
 
 import * as React from 'react';
+import PopperJS from 'popper.js';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Avatar, Popper, Paper, ClickAwayListener, Typography, Box, Grow } from '@material-ui/core';
 import { Link } from 'react-router-dom';
-import { UserData, isError } from '../extension-registry-types';
-import { ExtensionRegistryService } from '../extension-registry-service';
-import { UserSettingsRoutes } from './user/user-settings';
-import { handleError } from '../utils';
-import PopperJS from 'popper.js';
+import { handleError } from '../../utils';
+import { UserData, isError } from '../../extension-registry-types';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { UserSettingsRoutes } from './user-settings';
 
 const avatarStyle = (theme: Theme) => createStyles({
     avatar: {

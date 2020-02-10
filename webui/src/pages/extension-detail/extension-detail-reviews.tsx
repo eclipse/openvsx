@@ -10,12 +10,12 @@
 
 import * as React from "react";
 import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider } from "@material-ui/core";
+import { handleError, toLocalTime } from "../../utils";
 import { ExtensionReview, UserData, Extension, ExtensionReviewList } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
+import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExportRatingStars } from "./extension-rating-stars";
 import { ExtensionReviewDialog } from "./extension-review-dialog";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { handleError, toLocalTime } from "../../utils";
 
 const reviewStyles = (theme: Theme) => createStyles({
     boldText: {

@@ -10,12 +10,12 @@
 
 import * as React from "react";
 import { Container } from "@material-ui/core";
-import { ExtensionListHeader } from "./extension-list-header";
-import { ExtensionCategory } from "../../extension-registry-types";
-import { ExtensionList } from "./extension-list";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { createRoute } from "../../utils";
 import { RouteComponentProps } from "react-router-dom";
+import { createRoute } from "../../utils";
+import { ExtensionCategory } from "../../extension-registry-types";
+import { ExtensionRegistryService } from "../../extension-registry-service";
+import { ExtensionList } from "./extension-list";
+import { ExtensionListHeader } from "./extension-list-header";
 
 export const EXTENSION_LIST_COMPONENT_NAME = 'extension-list';
 

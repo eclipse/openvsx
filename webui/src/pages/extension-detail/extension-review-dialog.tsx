@@ -11,10 +11,10 @@
 import * as React from "react";
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme, Box } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
-import { UserData, ExtensionRaw } from "../../extension-registry-types";
 import { handleError } from "../../utils";
+import { ExtensionRegistryService } from "../../extension-registry-service";
+import { UserData, ExtensionRaw } from "../../extension-registry-types";
+import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
 
 const revivewDialogStyles = (theme: Theme) => createStyles({
 

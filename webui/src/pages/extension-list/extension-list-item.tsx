@@ -10,9 +10,9 @@
 
 import React = require("react");
 import { Link } from "react-router-dom";
-import { ExtensionDetailRoutes } from "../extension-detail/extension-detail";
 import { Paper, Typography, Box, Grid, Fade } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
+import { ExtensionDetailRoutes } from "../extension-detail/extension-detail";
 import { ExtensionRaw } from "../../extension-registry-types";
 import { ExportRatingStars } from "../extension-detail/extension-rating-stars";
 import { ExtensionRegistryService } from "../../extension-registry-service";

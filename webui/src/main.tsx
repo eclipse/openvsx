@@ -10,13 +10,13 @@
 
 import * as React from 'react';
 import { Container, AppBar, Toolbar, Typography, IconButton, CssBaseline, Box, Theme } from '@material-ui/core';
+import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import { Route, Link, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
-import { ExtensionRegistryAvatar } from './pages/extension-registry-avatar';
-import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
+import { ExtensionRegistryAvatar } from './pages/user/avatar';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { handleError } from './utils';

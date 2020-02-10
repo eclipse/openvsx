@@ -10,10 +10,10 @@
 
 import * as React from "react";
 import { Tabs, Tab } from "@material-ui/core";
-import { ExtensionDetailRoutes } from "./extension-detail";
 import { RouteComponentProps } from "react-router-dom";
 import { createRoute } from "../../utils";
 import { ExtensionRaw } from "../../extension-registry-types";
+import { ExtensionDetailRoutes } from "./extension-detail";
 
 export class ExtensionDetailTabs extends React.Component<ExtensionDetailTabs.Props, ExtensionDetailTabs.State> {
 

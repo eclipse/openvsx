@@ -10,17 +10,18 @@
 
 import * as React from "react";
 import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from "@material-ui/core";
+import { handleError, toLocalTime } from "../../utils";
 import { UserData, PersonalAccessToken } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { GenerateTokenDialog } from "./generate-token-dialog";
-import { handleError, toLocalTime } from "../../utils";
 
 const tokensStyle = (theme: Theme) => createStyles({
     boldText: {
         fontWeight: 'bold'
     },
     deleteBtn: {
-        color: theme.palette.error.main
+        color: theme.palette.error.main,
+        height: 30
     }
 });
 
@@ -94,23 +95,25 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                     {
                         this.state.tokens.map(token => {
                             return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
-                                <Box display='flex' alignItems='center'>
+                                <Box alignItems='center'>
                                     <Typography classes={{ root: this.props.classes.boldText }}>{token.description}</Typography>
                                     <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)!.toLocaleString()}</Typography>
                                     <Typography variant='body2'>Accessed: {toLocalTime(token.accessedTimestamp)!.toLocaleString()}</Typography>
                                 </Box>
-                                <Button
-                                    variant='outlined'
-                                    onClick={() => this.handleDelete(token)}
-                                    classes={{ root: this.props.classes.deleteBtn }}>
-                                    Delete
-                                </Button>
+                                <Box display='flex' alignItems='center'>
+                                    <Button
+                                        variant='outlined'
+                                        onClick={() => this.handleDelete(token)}
+                                        classes={{ root: this.props.classes.deleteBtn }}>
+                                        Delete
+                                    </Button>
+                                </Box>
                             </Box>;
                         })
                     }
                 </Paper>
             </Box>
-        </React.Fragment>;
+        </React.Fragment >;
     }
 }
 

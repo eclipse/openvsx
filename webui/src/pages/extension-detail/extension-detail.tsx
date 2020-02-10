@@ -11,14 +11,14 @@
 import * as React from "react";
 import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container } from "@material-ui/core";
 import { RouteComponentProps, Switch, Route } from "react-router-dom";
+import { createRoute, handleError } from "../../utils";
 import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
-import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
+import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
 import { ExportRatingStars } from "./extension-rating-stars";
-import { createRoute, handleError } from "../../utils";
 
 export namespace ExtensionDetailRoutes {
     export const ROOT = 'extension-detail';

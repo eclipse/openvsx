@@ -9,13 +9,13 @@
  ********************************************************************************/
 
 import * as React from "react";
+import * as MarkdownIt from 'markdown-it';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link } from "@material-ui/core";
+import { RouteComponentProps } from "react-router-dom";
+import { createRoute, handleError, toLocalTime } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
-import * as MarkdownIt from 'markdown-it';
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
-import { createRoute, handleError, toLocalTime } from "../../utils";
-import { RouteComponentProps } from "react-router-dom";
 
 const overviewStyles = (theme: Theme) => createStyles({
     markdown: {
