@@ -24,6 +24,7 @@ public class AccessTokenJson {
 
     public String createdTimestamp;
 
+    @Nullable
     public String accessedTimestamp;
 
     public String description;

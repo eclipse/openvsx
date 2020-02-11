@@ -101,7 +101,7 @@ export interface PersonalAccessToken {
     id: number;
     value?: string;
     createdTimestamp: string;
-    accessedTimestamp: string;
+    accessedTimestamp?: string;
     description: string;
     deleteTokenUrl: string;
 }

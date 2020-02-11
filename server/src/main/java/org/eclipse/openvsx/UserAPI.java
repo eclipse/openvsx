@@ -116,7 +116,6 @@ public class UserAPI {
         token.setUser(user);
         token.setValue(users.generateTokenValue());
         token.setCreatedTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
-        token.setAccessedTimestamp(token.getCreatedTimestamp());
         token.setDescription(description);
         entityManager.persist(token);
         var json = token.toAccessTokenJson();

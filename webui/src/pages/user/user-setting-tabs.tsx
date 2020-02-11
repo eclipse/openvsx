@@ -40,7 +40,7 @@ export class UserSettingTabs extends React.Component<UserSettingTabs.Props, User
         return <React.Fragment>
             <Tabs value={this.state.tab} onChange={this.handleChange} orientation='vertical'>
                 <Tab value='profile' label='Profile' />
-                <Tab value='tokens' label='Tokens' />
+                <Tab value='tokens' label='Access Tokens' />
             </Tabs>
         </React.Fragment>;
     }

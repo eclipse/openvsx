@@ -50,7 +50,8 @@ public class PersonalAccessToken {
         json.id = this.getId();
         // The value is not included: it is displayed only when the token is created
         json.createdTimestamp = this.getCreatedTimestamp().toString();
-        json.accessedTimestamp = this.getAccessedTimestamp().toString();
+        if (this.getAccessedTimestamp() != null)
+            json.accessedTimestamp = this.getAccessedTimestamp().toString();
         json.description = this.getDescription();
         return json;
     }

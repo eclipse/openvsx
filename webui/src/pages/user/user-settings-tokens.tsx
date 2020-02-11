@@ -74,7 +74,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
         return <React.Fragment>
             <Box display='flex' justifyContent='space-between'>
                 <Box>
-                    <Typography variant='h5' gutterBottom>Tokens</Typography>
+                    <Typography variant='h5' gutterBottom>Access Tokens</Typography>
                 </Box>
                 <Box display='flex'>
                     <Box mr={1}>
@@ -92,29 +92,30 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             </Box>
             <Box>
                 <Paper>
-                    {
-                        this.state.tokens.map(token => {
-                            return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
-                                <Box alignItems='center'>
-                                    <Typography classes={{ root: this.props.classes.boldText }}>{token.description}</Typography>
-                                    <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)!.toLocaleString()}</Typography>
-                                    <Typography variant='body2'>Accessed: {toLocalTime(token.accessedTimestamp)!.toLocaleString()}</Typography>
-                                </Box>
-                                <Box display='flex' alignItems='center'>
-                                    <Button
-                                        variant='outlined'
-                                        onClick={() => this.handleDelete(token)}
-                                        classes={{ root: this.props.classes.deleteBtn }}>
-                                        Delete
-                                    </Button>
-                                </Box>
-                            </Box>;
-                        })
-                    }
+                    {this.state.tokens.map(token => this.renderToken(token))}
                 </Paper>
             </Box>
         </React.Fragment >;
     }
+
+    protected renderToken(token: PersonalAccessToken): React.ReactNode {
+        return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
+            <Box alignItems='center'>
+                <Typography classes={{ root: this.props.classes.boldText }}>{token.description}</Typography>
+                <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)!.toLocaleString()}</Typography>
+                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? toLocalTime(token.accessedTimestamp)!.toLocaleString() : 'never'}</Typography>
+            </Box>
+            <Box display='flex' alignItems='center'>
+                <Button
+                    variant='outlined'
+                    onClick={() => this.handleDelete(token)}
+                    classes={{ root: this.props.classes.deleteBtn }}>
+                    Delete
+                </Button>
+            </Box>
+        </Box>;
+    }
+
 }
 
 export namespace UserSettingsTokensComponent {
