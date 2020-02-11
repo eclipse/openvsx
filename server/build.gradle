@@ -36,8 +36,20 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
 }
 
+sourceSets {
+    dev {
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+}
+
+configurations {
+    devImplementation.extendsFrom implementation
+    devRuntimeOnly.extendsFrom runtimeOnly
+}
+
 task runServer(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
+    classpath = sourceSets.dev.runtimeClasspath
     main = 'org.eclipse.openvsx.RegistryApplication'
 }
 

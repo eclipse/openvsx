@@ -4,4 +4,4 @@
 .settings/
 .classpath
 .project
-/src/main/resources/application-ovsx.properties
+/src/dev/resources/application-ovsx.properties
