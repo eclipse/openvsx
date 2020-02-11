@@ -50,6 +50,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
@@ -78,6 +79,12 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     ElasticsearchOperations searchOperations;
+
+    @Value("${ovsx.elasticsearch.enabled:true}")
+    boolean enableSearch;
+
+    @Value("${ovsx.elasticsearch.init-index:false}")
+    boolean initSearchIndex;
 
     @Override
     public PublisherJson getPublisher(String publisherName) {
@@ -163,17 +170,19 @@ public class LocalRegistryService implements IExtensionRegistry {
     @EventListener
     @Transactional
     public void initSearchIndex(ApplicationStartedEvent event) {
-        searchOperations.createIndex(ExtensionSearch.class);
-        if (event.getApplicationContext().getEnvironment().getProperty("OVSX_INIT_SEARCH_INDEX") != null) {
-            logger.info("Initializing search index...");
-            var allExtensions = repositories.findAllExtensions();
-            if (!allExtensions.isEmpty()) {
-                var indexQueries = allExtensions.map(extension ->
-                    new IndexQueryBuilder()
-                        .withObject(extension.toSearch())
-                        .build()
-                ).toList();
-                searchOperations.bulkIndex(indexQueries);
+        if (enableSearch) {
+            searchOperations.createIndex(ExtensionSearch.class);
+            if (initSearchIndex) {
+                logger.info("Initializing search index...");
+                var allExtensions = repositories.findAllExtensions();
+                if (!allExtensions.isEmpty()) {
+                    var indexQueries = allExtensions.map(extension ->
+                        new IndexQueryBuilder()
+                            .withObject(extension.toSearch())
+                            .build()
+                    ).toList();
+                    searchOperations.bulkIndex(indexQueries);
+                }
             }
         }
     }
@@ -188,7 +197,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public SearchResultJson search(String queryString, String category, int size, int offset) {
         var json = new SearchResultJson();
-        if (size <= 0) {
+        if (size <= 0 || !enableSearch) {
             json.extensions = Collections.emptyList();
             return json;
         }

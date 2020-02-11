@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.search;
 
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
@@ -19,12 +20,18 @@ import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfig
 @Configuration
 public class SearchConfig extends AbstractElasticsearchConfiguration {
 
-    @Value("${ovsx.elasticsearch.host}")
+    @Value("${ovsx.elasticsearch.host:}")
     String searchHost;
 
     @Override
     public RestHighLevelClient elasticsearchClient() {
-        return RestClients.create(ClientConfiguration.create(searchHost)).rest();
+        ClientConfiguration config;
+        if (Strings.isNullOrEmpty(searchHost)) {
+            config = ClientConfiguration.localhost();
+        } else {
+            config = ClientConfiguration.create(searchHost);
+        }
+        return RestClients.create(config).rest();
     }
 
 }
