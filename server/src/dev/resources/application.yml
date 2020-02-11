@@ -15,6 +15,10 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: ${HIBERNATE_DDL_AUTO:create}
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always
 
   security:
       oauth2:
