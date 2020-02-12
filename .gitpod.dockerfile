@@ -3,7 +3,7 @@ FROM gitpod/workspace-postgres:latest
 USER gitpod
 
 RUN bash -c ". /home/gitpod/.sdkman/bin/sdkman-init.sh \
-    && sdk install java 11.0.5-open"
+    && sdk install java 11.0.6-open"
 
 RUN curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.8.6.tar.gz --output elasticsearch-6.8.6.tar.gz \
     && tar -xzf elasticsearch-6.8.6.tar.gz

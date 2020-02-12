@@ -22,21 +22,7 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-	implementation "org.springframework.boot:spring-boot-starter-web"
-	implementation "org.springframework.boot:spring-boot-starter-data-jpa"
-    implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
-    implementation "org.springframework.boot:spring-boot-starter-security"
-    implementation "org.springframework.security:spring-security-oauth2-client"
-    implementation "org.springframework.security:spring-security-oauth2-jose"
-    implementation "org.springframework.session:spring-session-jdbc"
-    implementation "com.google.guava:guava:${versions.guava}"
-	runtimeOnly "org.postgresql:postgresql"
-    runtimeOnly "org.springframework.boot:spring-boot-devtools"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
-}
-
+// The 'dev' source set contains the development setup. These files are not included in the jar.
 sourceSets {
     dev {
         compileClasspath += main.output
@@ -47,6 +33,21 @@ sourceSets {
 configurations {
     devImplementation.extendsFrom implementation
     devRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+	implementation "org.springframework.boot:spring-boot-starter-web"
+	implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
+    implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.security:spring-security-oauth2-client"
+    implementation "org.springframework.security:spring-security-oauth2-jose"
+    implementation "org.springframework.session:spring-session-jdbc"
+    implementation "com.google.guava:guava:${versions.guava}"
+	runtimeOnly "org.postgresql:postgresql"
+    devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
 }
 
 task runServer(type: JavaExec) {

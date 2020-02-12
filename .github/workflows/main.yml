@@ -2,6 +2,10 @@ name: CI
 
 on: [push, pull_request]
 
+env:
+  SERVER_TAG: docker.pkg.github.com/eclipse/openvsx/server
+  SERVER_VERSION: snapshot
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,4 +28,10 @@ jobs:
         yarn --cwd webui
         yarn --cwd webui build:dev
     - name: Build Server
-      run: server/gradlew --no-daemon -p server build
+      run: |
+        server/gradlew --no-daemon -p server build
+        docker build -t $SERVER_TAG:$SERVER_VERSION server
+    - name: Push Docker Images
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+        docker push $SERVER_TAG:$SERVER_VERSION
