@@ -124,11 +124,24 @@ export class Registry {
             response.on('data', chunk => json += chunk);
             response.on('end', () => {
                 if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
+                    if (json.startsWith('{')) {
+                        try {
+                            const error = JSON.parse(json) as ErrorResponse;
+                            if (error.message) {
+                                reject(new Error(error.message));
+                                return;
+                            }
+                        } catch (err) {}
+                    }
                     reject(statusError(response));
                 } else if (json.startsWith('<!DOCTYPE html>')) {
                     reject(json);
                 } else {
-                    resolve(JSON.parse(json));
+                    try {
+                        resolve(JSON.parse(json));
+                    } catch (err) {
+                        reject(err);
+                    }
                 }
             });
         };
@@ -188,4 +201,13 @@ export interface ExtensionReference {
     publisher: string;
     extension: string;
     version?: string;
+}
+
+export interface ErrorResponse {
+    error: string;
+    message: string;
+    status: number;
+    path?: string;
+    timestamp?: string;
+    trace?: string;
 }

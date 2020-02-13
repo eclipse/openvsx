@@ -21,14 +21,12 @@ module.exports = function (argv: string[]): void {
     program.usage('<command> [options]');
     program.option('--debug', 'include debug information on error');
 
-    program
-        .command('version')
-        .description('Output the version number.')
+    const versionCmd = program.command('version');
+    versionCmd.description('Output the version number.')
         .action(() => console.log(`Eclipse Open VSX CLI version ${pkg.version}`));
 
-    program
-        .command('publish [extension.vsix]')
-        .description('Publish an extension, packaging it first if necessary.')
+    const publishCmd = program .command('publish [extension.vsix]');
+    publishCmd.description('Publish an extension, packaging it first if necessary.')
         .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
         .option('-p, --pat <token>', 'Personal access token.')
         .option('--packagePath <path>', 'Package and publish the extension at the specified path.')
@@ -37,22 +35,25 @@ module.exports = function (argv: string[]): void {
         .option('--yarn', 'Use yarn instead of npm while packing extension files.')
         .action((extensionFile: string, { registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
-                console.error('Please specify either a package file or a package path, but not both.');
-                program.help();
+                console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
+                publishCmd.help();
+            }
+            if (pat === undefined) {
+                console.error("\u274c  A personal access token must be given with the option '--pat'.\n");
+                publishCmd.help();
             }
             if (extensionFile !== undefined && baseContentUrl !== undefined)
-                console.warn("Ignoring option 'baseContentUrl' for prepackaged extension.");
+                console.warn("Ignoring option '--baseContentUrl' for prepackaged extension.");
             if (extensionFile !== undefined && baseImagesUrl !== undefined)
-                console.warn("Ignoring option 'baseImagesUrl' for prepackaged extension.");
+                console.warn("Ignoring option '--baseImagesUrl' for prepackaged extension.");
             if (extensionFile !== undefined && yarn !== undefined)
-                console.warn("Ignoring option 'yarn' for prepackaged extension.");
+                console.warn("Ignoring option '--yarn' for prepackaged extension.");
             publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn })
                 .catch(handleError(program.debug));
         });
 
-    program
-        .command('get <publisher.extension>')
-        .description('Download an extension or its metadata.')
+    const getCmd = program.command('get <publisher.extension>');
+    getCmd.description('Download an extension or its metadata.')
         .option('-v, --version <version>', 'Specify an exact version or a version range.')
         .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
         .option('-o, --output <path>', 'Save the output in the specified file or directory.')
