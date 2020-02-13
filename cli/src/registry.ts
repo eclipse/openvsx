@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import * as querystring from 'querystring';
 import { statusError } from './util';
 
-export const DEFAULT_URL = 'http://localhost:8080';
+export const DEFAULT_URL = 'https://open-vsx.org';
 
 export class Registry {
 
