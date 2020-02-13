@@ -1,6 +1,6 @@
 {
     "name": "ovsx",
-    "version": "0.1.0",
+    "version": "0.0.0",
     "description": "Command line interface for Eclipse Open VSX Registry",
     "repository": "https://github.com/theia-ide/extension-registry",
     "author": "TypeFox",
