@@ -11,7 +11,7 @@
 import * as React from "react";
 import * as MarkdownIt from 'markdown-it';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link } from "@material-ui/core";
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps, withRouter } from "react-router-dom";
 import { createRoute, handleError, toLocalTime } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
@@ -96,8 +96,9 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         </React.Fragment>;
     }
 
-    protected handleFilterButtonClicked = (kind: 'category' | 'search', buttonLabel: string) => {
-        this.props.history.push(createRoute([ExtensionListRoutes.EXTENSION_LIST_LINK], [{ key: kind, value: buttonLabel }]));
+    protected handleFilterButtonClicked(kind: 'category' | 'search', buttonLabel: string) {
+        const route = createRoute([ExtensionListRoutes.EXTENSION_LIST_LINK], [{ key: kind, value: buttonLabel }]);
+        this.props.history.push(route);
     }
 
     protected renderButtonList(kind: 'category' | 'search', title: string, arr?: string[]) {
@@ -150,4 +151,4 @@ export namespace ExtensionDetailOverview {
     }
 }
 
-export const ExtensionDetailOverview = withStyles(overviewStyles)(ExtensionDetailOverviewComponent);
+export const ExtensionDetailOverview = withStyles(overviewStyles)(withRouter(ExtensionDetailOverviewComponent));

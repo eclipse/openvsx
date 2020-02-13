@@ -15,17 +15,9 @@ import { createRoute } from "../../utils";
 import { ExtensionRaw } from "../../extension-registry-types";
 import { UserSettingsRoutes } from "./user-settings";
 
-export class UserSettingTabs extends React.Component<UserSettingTabs.Props, UserSettingTabs.State> {
+export class UserSettingTabs extends React.Component<UserSettingTabs.Props> {
 
     protected resolvedRoute: string[];
-
-    constructor(props: UserSettingTabs.Props) {
-        super(props);
-
-        const params = this.props.match.params as UserSettingTabs.Params;
-
-        this.state = { tab: params.tab };
-    }
 
     protected handleChange = (event: React.ChangeEvent, newTab: string) => {
         this.props.history.push(this.createRoute(newTab));
@@ -37,8 +29,9 @@ export class UserSettingTabs extends React.Component<UserSettingTabs.Props, User
     }
 
     render() {
+        const params = this.props.match.params as UserSettingTabs.Params;
         return <React.Fragment>
-            <Tabs value={this.state.tab} onChange={this.handleChange} orientation='vertical'>
+            <Tabs value={params.tab} onChange={this.handleChange} orientation='vertical'>
                 <Tab value='profile' label='Profile' />
                 <Tab value='tokens' label='Access Tokens' />
             </Tabs>
@@ -48,10 +41,6 @@ export class UserSettingTabs extends React.Component<UserSettingTabs.Props, User
 
 export namespace UserSettingTabs {
     export interface Props extends RouteComponentProps {
-
-    }
-    export interface State {
-        tab: string
     }
 
     export interface Params extends ExtensionRaw {

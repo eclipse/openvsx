@@ -10,11 +10,12 @@
 
 import * as React from "react";
 import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container } from "@material-ui/core";
-import { RouteComponentProps, Switch, Route } from "react-router-dom";
+import { RouteComponentProps, Switch, Route, Link } from "react-router-dom";
 import { createRoute, handleError } from "../../utils";
 import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError } from "../../extension-registry-types";
+import { EXTENSION_LIST_COMPONENT_NAME } from "../extension-list/extension-list-container";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
@@ -26,15 +27,25 @@ export namespace ExtensionDetailRoutes {
     export const PUBLISHER_PARAM = ':publisher';
     export const NAME_PARAM = ':name';
     export const OVERVIEW = 'overview';
-    export const RATING = 'rating';
+    export const REVIEWS = 'reviews';
 
     export const OVERVIEW_ROUTE = createRoute([ROOT, OVERVIEW, PUBLISHER_PARAM, NAME_PARAM]);
-    export const REVIEW_ROUTE = createRoute([ROOT, RATING, PUBLISHER_PARAM, NAME_PARAM]);
+    export const REVIEWS_ROUTE = createRoute([ROOT, REVIEWS, PUBLISHER_PARAM, NAME_PARAM]);
 
     export const EXTENSION_DETAIL_MAIN_ROUTE = createRoute([ROOT, TAB_PARAM, PUBLISHER_PARAM, NAME_PARAM]);
 }
 
 const detailStyles = (theme: Theme) => createStyles({
+    link: {
+        textDecoration: 'none',
+        color: theme.palette.text.primary,
+        '&:hover': {
+            textDecoration: 'underline'
+        }
+    },
+    clickable: {
+        cursor: 'pointer'
+    },
     row: {
         marginBottom: theme.spacing(1)
     },
@@ -93,12 +104,27 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         <Box>
                             <Typography variant='h6' className={this.props.classes.row}>{extension.displayName || extension.name}</Typography>
                             <Box display='flex' className={this.props.classes.row}>
-                                <Box className={this.props.classes.alignVertically}>{extension.publisher}</Box>
+                                <Link
+                                    to={createRoute([EXTENSION_LIST_COMPONENT_NAME], [{ key: 'search', value: extension.publisher}])}
+                                    className={this.props.classes.link}>
+                                    <Box className={this.props.classes.alignVertically}>
+                                        {extension.publisher}
+                                    </Box>
+                                </Link>
                                 <TextDivider />
-                                <Box className={this.props.classes.alignVertically}>
-                                    <ExportRatingStars number={extension.averageRating || 0} />
-                                    {`(${this.state.extension.reviewCount})`}
-                                </Box>
+                                <Link
+                                    to={createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.REVIEWS, extension.publisher, extension.name])}
+                                    className={this.props.classes.link}
+                                    title={
+                                        extension.averageRating !== undefined ?
+                                        `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
+                                        : 'Not rated yet'
+                                    }>
+                                    <Box className={this.props.classes.alignVertically}>
+                                        <ExportRatingStars number={extension.averageRating || 0} />
+                                        {`(${this.state.extension.reviewCount})`}
+                                    </Box>
+                                </Link>
                                 <TextDivider />
                                 <Box className={this.props.classes.alignVertically}>{extension.license}</Box>
                             </Box>
@@ -115,19 +141,16 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             <Container maxWidth='lg'>
                 <Box>
                     <Box>
-                        <ExtensionDetailTabs history={this.props.history} location={this.props.location} match={this.props.match} />
+                        <ExtensionDetailTabs/>
                     </Box>
                     <Box>
                         <Switch>
                             <Route path={ExtensionDetailRoutes.OVERVIEW_ROUTE}>
                                 <ExtensionDetailOverview
-                                    history={this.props.history}
-                                    location={this.props.location}
-                                    match={this.props.match}
                                     extension={this.state.extension}
                                     service={this.props.service} />
                             </Route>
-                            <Route path={ExtensionDetailRoutes.REVIEW_ROUTE}>
+                            <Route path={ExtensionDetailRoutes.REVIEWS_ROUTE}>
                                 <ExtensionDetailReviews
                                     extension={this.state.extension}
                                     reviewsDidUpdate={this.onReviewUpdate}
@@ -139,6 +162,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 </Box>
             </Container>
         </React.Fragment>;
+    }
+
+    protected getRoundedRating(rating: number) {
+        return Math.round(rating * 10) / 10;
     }
 }
 
