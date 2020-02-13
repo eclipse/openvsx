@@ -16,6 +16,7 @@ import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.Publisher;
 import org.eclipse.openvsx.entities.PublisherMembership;
 import org.eclipse.openvsx.entities.UserData;
@@ -101,13 +102,13 @@ public class UserService {
     }
 
     @Transactional
-    public UserData useAccessToken(String tokenValue) {
+    public PersonalAccessToken useAccessToken(String tokenValue) {
         var token = repositories.findAccessToken(tokenValue);
-        if (token == null) {
+        if (token == null || !token.isActive()) {
             return null;
         }
         token.setAccessedTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
-        return token.getUser();
+        return token;
     }
 
     public String generateTokenValue() {

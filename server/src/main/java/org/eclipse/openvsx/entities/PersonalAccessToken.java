@@ -10,12 +10,14 @@
 package org.eclipse.openvsx.entities;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -35,11 +37,16 @@ public class PersonalAccessToken {
 
     String value;
 
+    boolean active;
+
     LocalDateTime createdTimestamp;
 
     LocalDateTime accessedTimestamp;
 
     String description;
+
+    @OneToMany(mappedBy = "publishedWith")
+    List<ExtensionVersion> publishedVersions;
 
 
     /**
@@ -78,6 +85,14 @@ public class PersonalAccessToken {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public LocalDateTime getCreatedTimestamp() {

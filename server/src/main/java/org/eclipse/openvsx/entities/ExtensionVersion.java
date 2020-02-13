@@ -46,6 +46,9 @@ public class ExtensionVersion {
 
     LocalDateTime timestamp;
 
+    @ManyToOne
+    PersonalAccessToken publishedWith;
+
     String extensionFileName;
 
     String iconFileName;
@@ -54,7 +57,7 @@ public class ExtensionVersion {
 
     String displayName;
 
-    @Column(length=2048)
+    @Column(length = 2048)
     String description;
 
     @ElementCollection
@@ -186,6 +189,14 @@ public class ExtensionVersion {
 	public void setTimestamp(LocalDateTime timestamp) {
 		this.timestamp = timestamp;
 	}
+
+    public PersonalAccessToken getPublishedWith() {
+        return publishedWith;
+    }
+
+    public void setPublishedWith(PersonalAccessToken publishedWith) {
+        this.publishedWith = publishedWith;
+    }
 
 	public String getExtensionFileName() {
 		return extensionFileName;

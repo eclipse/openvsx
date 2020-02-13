@@ -30,6 +30,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.PublisherJson;
@@ -247,11 +248,11 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Transactional
     public ExtensionJson publish(InputStream content, String tokenValue) {
         try (var processor = new ExtensionProcessor(content)) {
-            var user = users.useAccessToken(tokenValue);
-            if (user == null) {
+            var token = users.useAccessToken(tokenValue);
+            if (token == null) {
                 throw new ErrorResultException("Invalid access token.");
             }
-            var extVersion = createExtensionVersion(processor, user);
+            var extVersion = createExtensionVersion(processor, token.getUser(), token);
             var binary = processor.getBinary(extVersion);
             entityManager.persist(binary);
             var readme = processor.getReadme(extVersion);
@@ -270,7 +271,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
     }
 
-    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user) {
+    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token) {
         var publisher = repositories.findPublisher(processor.getPublisherName());
         if (publisher == null) {
             throw new ErrorResultException("Unknown publisher: " + processor.getPublisherName());
@@ -282,6 +283,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extension = repositories.findExtension(processor.getExtensionName(), publisher);
         var extVersion = processor.getMetadata();
         extVersion.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
+        extVersion.setPublishedWith(token);
         if (extension == null) {
             extension = new Extension();
             extension.setName(processor.getExtensionName());

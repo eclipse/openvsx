@@ -93,6 +93,7 @@ public class UserAPI {
         var user = users.updateUser(principal);
         var serverUrl = UrlUtil.getBaseUrl();
         return repositories.findAccessTokens(user)
+                .filter(token -> token.isActive())
                 .map(token -> {
                     var json = token.toAccessTokenJson();
                     json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId()));
@@ -115,6 +116,7 @@ public class UserAPI {
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setValue(users.generateTokenValue());
+        token.setActive(true);
         token.setCreatedTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
         token.setDescription(description);
         entityManager.persist(token);
@@ -138,10 +140,10 @@ public class UserAPI {
         }
         var user = users.updateUser(principal);
         var token = repositories.findAccessToken(id);
-        if (token == null || !token.getUser().equals(user)) {
+        if (token == null || !token.isActive() || !token.getUser().equals(user)) {
             return DeleteTokenResultJson.error("Token does not exist.");
         }
-        entityManager.remove(token);
+        token.setActive(false);
         var json = new DeleteTokenResultJson();
         return json;
     }

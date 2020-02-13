@@ -99,7 +99,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                             value={this.props.searchTerm || ''}
                             onChange={this.handleSearchChange}
                             className={classes.inputBase}
-                            placeholder='Search in Name and Description'>
+                            placeholder='Search for Name, Tags, Description or Publisher'>
                         </InputBase>
                         <IconButton color='primary' classes={{ root: classes.iconButton }}>
                             <SearchIcon />
