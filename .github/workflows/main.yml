@@ -10,13 +10,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Setup Node.js
+    - name: Set up Node.js
       uses: actions/setup-node@v1
       with:
         node-version: 10.x
-    - name: Setup Yarn
+    - name: Set up Yarn
       run: npm install --global yarn
-    - name: Setup Java JDK
+    - name: Set up Java JDK
       uses: actions/setup-java@v1
       with:
         java-version: 11
@@ -35,3 +35,8 @@ jobs:
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
         docker push $SERVER_TAG:$SERVER_VERSION
+    - name: Upload Server
+      uses: actions/upload-artifact@v1
+      with:
+        name: openvsx-server
+        path: server/build/libs/openvsx-server.jar
