@@ -3,6 +3,7 @@ name: CI
 on: [push, pull_request]
 
 env:
+  NPM_REG: https://npm.pkg.github.com
   SERVER_TAG: docker.pkg.github.com/eclipse/openvsx/server
   SERVER_VERSION: snapshot
 
@@ -31,12 +32,19 @@ jobs:
       run: |
         server/gradlew --no-daemon -p server build
         docker build -t $SERVER_TAG:$SERVER_VERSION server
-    - name: Push Docker Images
-      run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-        docker push $SERVER_TAG:$SERVER_VERSION
-    - name: Upload Server
+    - name: Upload Server Artifact
       uses: actions/upload-artifact@v1
       with:
         name: openvsx-server
         path: server/build/libs/openvsx-server.jar
+    - name: Publish Yarn Packages
+      run: |
+        echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+        yarn --cwd cli --non-interactive --no-git-tag-version --registry $NPM_REG publish
+        yarn --cwd webui --non-interactive --no-git-tag-version --registry $NPM_REG publish
+      if: github.repository == 'eclipse/openvsx' && github.ref == 'refs/heads/master'
+    - name: Push Docker Images
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+        docker push $SERVER_TAG:$SERVER_VERSION
+      if: github.repository == 'eclipse/openvsx' && github.ref == 'refs/heads/master'
