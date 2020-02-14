@@ -91,7 +91,7 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
                                 <Box p={1}>
                                     <Typography variant='overline' color='textPrimary'>Logged in as {this.props.user.loginName}</Typography>
                                     <Box mt={1}>
-                                        <Box>
+                                        <Box style={{ paddingBottom: '15px'}}>
                                             <Link onClick={this.handleClose} to={UserSettingsRoutes.PROFILE_ROUTE} className={this.props.classes.link}>
                                                 <Typography variant='button' color='textPrimary'>
                                                     Settings
