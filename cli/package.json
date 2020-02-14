@@ -2,9 +2,26 @@
     "name": "ovsx",
     "version": "0.0.0",
     "description": "Command line interface for Eclipse Open VSX Registry",
-    "repository": "https://github.com/theia-ide/extension-registry",
-    "author": "TypeFox",
+    "keywords": ["cli", "vscode", "extensions", "publish"],
     "license": "EPL-2.0",
+    "homepage": "https://open-vsx.org",
+    "repository" : {
+        "type" : "git",
+        "url": "ssh://git@github.com:eclipse/openvsx.git",
+        "directory": "cli"
+    },
+    "bugs": "https://github.com/eclipse/openvsx/issues",
+    "contributors": [
+        {
+            "name": "Miro Spönemann",
+            "email": "miro.spoenemann@typefox.io",
+            "url": "https://www.typefox.io"
+        }
+    ],
+    "files": [
+        "lib",
+        "src"
+    ],
     "bin": {
         "ovsx": "lib/ovsx"
     },
@@ -12,7 +29,7 @@
         "node": ">= 8"
     },
     "dependencies": {
-        "vsce": "^1.70.0"
+        "vsce": "^1.73.0"
     },
     "devDependencies": {
         "@types/didyoumean": "^1.2.0",

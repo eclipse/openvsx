@@ -1,10 +1,28 @@
 {
-    "name": "extension-registry-webui",
+    "name": "openvsx-webui",
     "version": "0.0.0",
-    "description": "User interface for the extension registry",
-    "repository": "https://github.com/theia-ide/extension-registry",
-    "author": "TypeFox",
+    "description": "User interface for Eclipse Open VSX Registry",
+    "keywords": ["react", "frontend", "vscode", "extensions", "search"],
     "license": "EPL-2.0",
+    "homepage": "https://open-vsx.org",
+    "repository" : {
+        "type" : "git",
+        "url": "ssh://git@github.com:eclipse/openvsx.git",
+        "directory": "webui"
+    },
+    "bugs": "https://github.com/eclipse/openvsx/issues",
+    "contributors": [
+        {
+            "name": "Jan Bicker",
+            "email": "jan.bicker@typefox.io",
+            "url": "https://www.typefox.io"
+        },
+        {
+            "name": "Miro Spönemann",
+            "email": "miro.spoenemann@typefox.io",
+            "url": "https://www.typefox.io"
+        }
+    ],
     "files": [
         "lib",
         "src"

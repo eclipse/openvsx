@@ -21,6 +21,9 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
     }
     if (!options.pat) {
         options.pat = process.env.OVSX_PAT;
+        if (!options.pat) {
+            throw new Error("A personal access token must be given with the option '--pat'.");
+        }
     }
     if (!options.extensionFile) {
         options.extensionFile = await createTempFile({ postfix: '.vsix' });

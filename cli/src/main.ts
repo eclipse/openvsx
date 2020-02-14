@@ -38,10 +38,6 @@ module.exports = function (argv: string[]): void {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
             }
-            if (pat === undefined) {
-                console.error("\u274c  A personal access token must be given with the option '--pat'.\n");
-                publishCmd.help();
-            }
             if (extensionFile !== undefined && baseContentUrl !== undefined)
                 console.warn("Ignoring option '--baseContentUrl' for prepackaged extension.");
             if (extensionFile !== undefined && baseImagesUrl !== undefined)
