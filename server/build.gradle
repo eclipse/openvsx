@@ -12,6 +12,7 @@ plugins {
 
 def versions = [
     java: '11',
+    flyway: '6.2.3',
     guava: '28.1-jre',
     junit: '5.5.2'
 ]
@@ -43,6 +44,7 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
+    implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.guava:guava:${versions.guava}"
 	runtimeOnly "org.postgresql:postgresql"
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"

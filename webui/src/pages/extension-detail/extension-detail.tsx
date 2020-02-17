@@ -11,6 +11,7 @@
 import * as React from "react";
 import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container } from "@material-ui/core";
 import { RouteComponentProps, Switch, Route, Link } from "react-router-dom";
+import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import { createRoute, handleError } from "../../utils";
 import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
 import { ExtensionRegistryService } from "../../extension-registry-service";
@@ -111,6 +112,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                         {extension.publisher}
                                     </Box>
                                 </Link>
+                                <TextDivider />
+                                <Box className={this.props.classes.alignVertically}>
+                                    <SaveAltIcon/>&nbsp;{extension.downloadCount || 0} {extension.downloadCount === 1 ? 'download' : 'downloads'}
+                                </Box>
                                 <TextDivider />
                                 <Link
                                     to={createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.REVIEWS, extension.publisher, extension.name])}

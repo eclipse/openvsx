@@ -19,6 +19,9 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: always
+  flyway:
+      baselineOnMigrate: true
+      baselineVersion: 1
 
   security:
       oauth2:

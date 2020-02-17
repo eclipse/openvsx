@@ -27,6 +27,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionBinary;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -122,6 +123,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Transactional
     public byte[] getFile(String publisherName, String extensionName, String fileName) {
         var extension = repositories.findExtension(extensionName, publisherName);
         if (extension == null)
@@ -130,10 +132,14 @@ public class LocalRegistryService implements IExtensionRegistry {
         var resource = getFile(extVersion, fileName);
         if (resource == null)
             throw new NotFoundException();
+        if (resource instanceof ExtensionBinary) {
+            extension.setDownloadCount(extension.getDownloadCount() + 1);
+        }
         return resource.getContent();
     }
 
     @Override
+    @Transactional
     public byte[] getFile(String publisherName, String extensionName, String version, String fileName) {
         var extVersion = repositories.findVersion(version, extensionName, publisherName);
         if (extVersion == null)
@@ -141,6 +147,10 @@ public class LocalRegistryService implements IExtensionRegistry {
         var resource = getFile(extVersion, fileName);
         if (resource == null)
             throw new NotFoundException();
+        if (resource instanceof ExtensionBinary) {
+            var extension = extVersion.getExtension();
+            extension.setDownloadCount(extension.getDownloadCount() + 1);
+        }
         return resource.getContent();
     }
 

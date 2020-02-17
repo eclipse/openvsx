@@ -31,6 +31,8 @@ public class SearchEntryJson {
     @Nullable
     public Double averageRating;
 
+    public int downloadCount;
+
     @Nullable
     public String displayName;
 

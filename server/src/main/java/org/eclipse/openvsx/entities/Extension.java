@@ -40,6 +40,8 @@ public class Extension {
 
     Double averageRating;
 
+    int downloadCount;
+
 
     /**
      * Convert to a search entity for Elasticsearch.
@@ -57,7 +59,7 @@ public class Extension {
         return search;
     }
 
-	public long getId() {
+    public long getId() {
 		return id;
 	}
 
@@ -95,6 +97,14 @@ public class Extension {
 
 	public void setAverageRating(Double averageRating) {
 		this.averageRating = averageRating;
+    }
+
+    public int getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(int downloadCount) {
+        this.downloadCount = downloadCount;
     }
 
 }

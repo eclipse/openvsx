@@ -33,7 +33,7 @@ tasks:
     # Start the server application
     cd server
     ./gradlew runServer
-    export HIBERNATE_DDL_AUTO=update
+    export HIBERNATE_DDL_AUTO=none
 - name: WebUI
   command: |
     gp await-port 8080

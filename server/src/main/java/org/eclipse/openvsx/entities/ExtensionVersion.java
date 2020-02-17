@@ -98,6 +98,7 @@ public class ExtensionVersion {
         json.publisher = extension.getPublisher().getName();
         json.name = extension.getName();
         json.averageRating = extension.getAverageRating();
+        json.downloadCount = extension.getDownloadCount();
         json.version = this.getVersion();
         json.preview = this.isPreview();
         json.timestamp = this.getTimestamp().toString();
@@ -143,6 +144,7 @@ public class ExtensionVersion {
         entry.name = extension.getName();
         entry.publisher = extension.getPublisher().getName();
         entry.averageRating = extension.getAverageRating();
+        entry.downloadCount = extension.getDownloadCount();
         entry.version = this.getVersion();
         entry.timestamp = this.getTimestamp().toString();
         entry.displayName = this.getDisplayName();

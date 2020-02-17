@@ -28,6 +28,7 @@ export interface ExtensionRaw {
     readonly displayName?: string;
     readonly version?: string;
     readonly averageRating?: number;
+    readonly downloadCount?: number;
     readonly timestamp?: string;
     readonly description?: string;
 }
