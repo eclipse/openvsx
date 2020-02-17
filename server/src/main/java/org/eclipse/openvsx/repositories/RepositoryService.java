@@ -82,12 +82,16 @@ public class RepositoryService {
         return extensionReadmeRepo.findByExtension(extVersion);
     }
 
-    public Streamable<ExtensionReview> findReviews(Extension extension) {
-        return extensionReviewRepo.findByExtension(extension);
+    public Streamable<ExtensionReview> findActiveReviews(Extension extension) {
+        return extensionReviewRepo.findByExtensionAndActiveTrue(extension);
     }
 
-    public long countReviews(Extension extension) {
-        return extensionReviewRepo.countByExtension(extension);
+    public Streamable<ExtensionReview> findActiveReviews(Extension extension, UserData user) {
+        return extensionReviewRepo.findByExtensionAndUserAndActiveTrue(extension, user);
+    }
+
+    public long countActiveReviews(Extension extension) {
+        return extensionReviewRepo.countByExtensionAndActiveTrue(extension);
     }
 
     public UserData findUser(String provider, String providerId) {

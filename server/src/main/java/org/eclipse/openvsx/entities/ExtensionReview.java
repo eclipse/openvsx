@@ -28,6 +28,8 @@ public class ExtensionReview {
     @ManyToOne
     Extension extension;
 
+    boolean active;
+
     LocalDateTime timestamp;
 
     @ManyToOne
@@ -60,6 +62,14 @@ public class ExtensionReview {
 	public void setId(long id) {
 		this.id = id;
 	}
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
 	public LocalDateTime getTimestamp() {
 		return timestamp;

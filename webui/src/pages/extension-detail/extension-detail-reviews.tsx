@@ -9,9 +9,9 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider } from "@material-ui/core";
+import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Button } from "@material-ui/core";
 import { handleError, toLocalTime } from "../../utils";
-import { ExtensionReview, UserData, Extension, ExtensionReviewList } from "../../extension-registry-types";
+import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExportRatingStars } from "./extension-rating-stars";
@@ -49,6 +49,19 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         this.props.reviewsDidUpdate();
     }
 
+    protected handleRevokeButton = async () => {
+        try {
+            const result = await this.props.service.deleteReview(this.state.reviewList!.deleteUrl);
+            if (isError(result)) {
+                handleError(result);
+            } else {
+                this.saveCompleted();
+            }
+        } catch (err) {
+            handleError(err);
+        }
+    }
+
     render() {
         if (!this.state.reviewList) {
             return '';
@@ -60,22 +73,37 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                         User Reviews
                     </Typography>
                 </Box>
-                {
-                    this.props.user ? <Box>
-                        <ExtensionReviewDialog
-                            saveCompleted={this.saveCompleted}
-                            extension={this.props.extension}
-                            reviewPostUrl={this.state.reviewList.postUrl}
-                            user={this.props.user}
-                            service={this.props.service} />
-                    </Box> : ''
-                }
+                {this.renderButton()}
             </Box>
             <Divider />
             <Box>
                 {this.state.reviewList.reviews.map(this.renderReview.bind(this))}
             </Box>
         </React.Fragment>;
+    }
+
+    protected renderButton() {
+        if (!this.props.user || !this.state.reviewList) {
+            return  '';
+        }
+        const existingReview = this.state.reviewList.reviews.find(r => isEqualUser(r.user, this.props.user!));
+        if (existingReview) {
+            const zonedDate = toLocalTime(existingReview.timestamp);
+            return <Button variant='contained' color='secondary'
+                        onClick={this.handleRevokeButton}
+                        title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`}>
+                Revoke my Review
+            </Button>
+        } else {
+            return <Box>
+                <ExtensionReviewDialog
+                    saveCompleted={this.saveCompleted}
+                    extension={this.props.extension}
+                    reviewPostUrl={this.state.reviewList.postUrl}
+                    user={this.props.user}
+                    service={this.props.service} />
+            </Box>
+        }
     }
 
     protected renderReview(r: ExtensionReview) {

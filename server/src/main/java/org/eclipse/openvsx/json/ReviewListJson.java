@@ -19,6 +19,8 @@ public class ReviewListJson {
 
     public String postUrl;
 
+    public String deleteUrl;
+
     public List<ReviewJson> reviews;
 
 }

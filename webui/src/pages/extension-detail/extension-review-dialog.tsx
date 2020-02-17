@@ -13,7 +13,7 @@ import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextFiel
 import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
 import { handleError } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { UserData, ExtensionRaw } from "../../extension-registry-types";
+import { UserData, ExtensionRaw, isError } from "../../extension-registry-types";
 import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
 
 const revivewDialogStyles = (theme: Theme) => createStyles({
@@ -34,22 +34,26 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
         };
     }
 
-    protected handleOpenButton = async () => {
+    protected handleOpenButton = () => {
         if (this.props.user) {
             this.setState({ open: true });
         }
     }
     protected handleCancel = () => this.setState({ open: false });
-    protected handleSave = async () => {
+    protected handlePost = async () => {
         try {
             const rating = this.starSetter ? this.starSetter.state.number : 1;
-            await this.props.service.postReview({
+            const result = await this.props.service.postReview({
                 rating,
                 title: this.state.title,
                 comment: this.state.comment
             }, this.props.reviewPostUrl);
-            this.setState({ open: false, title: '', comment: '' });
-            this.props.saveCompleted();
+            if (isError(result)) {
+                handleError(result);
+            } else {
+                this.setState({ open: false, title: '', comment: '' });
+                this.props.saveCompleted();
+            }
         } catch (err) {
             handleError(err);
         }
@@ -86,7 +90,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                     <Button onClick={this.handleCancel} color="secondary">
                         Cancel
                     </Button>
-                    <Button onClick={this.handleSave} variant="contained" color="secondary">
+                    <Button onClick={this.handlePost} variant="contained" color="secondary">
                         Post Review
                     </Button>
                 </DialogActions>

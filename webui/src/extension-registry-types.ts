@@ -87,6 +87,7 @@ export interface ExtensionReview extends NewReview {
 
 export interface ExtensionReviewList {
     postUrl: string;
+    deleteUrl: string;
     reviews: ExtensionReview[];
 }
 
@@ -96,6 +97,10 @@ export interface UserData {
     createTokenUrl: string;
     fullName?: string;
     avatarUrl?: string;
+}
+
+export function isEqualUser(u1: UserData, u2: UserData): boolean {
+    return u1.loginName === u2.loginName;
 }
 
 export interface PersonalAccessToken {

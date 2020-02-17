@@ -14,14 +14,14 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: ${HIBERNATE_DDL_AUTO:create}
+      ddl-auto: ${HIBERNATE_DDL_AUTO:none}
   session:
     store-type: jdbc
     jdbc:
       initialize-schema: always
   flyway:
       baselineOnMigrate: true
-      baselineVersion: 1
+      baselineVersion: 1.2
 
   security:
       oauth2:

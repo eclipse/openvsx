@@ -95,6 +95,20 @@ export class ExtensionRegistryService {
         });
     }
 
+    async deleteReview(deleteReviewUrl: string): Promise<{} | ErrorResult> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: deleteReviewUrl,
+            headers
+        });
+    }
+
     getUser(): Promise<UserData | ErrorResult> {
         return sendRequest({
             endpoint: createAbsoluteURL([this.serverUrl, 'user']),

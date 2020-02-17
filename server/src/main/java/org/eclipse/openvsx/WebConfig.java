@@ -30,7 +30,7 @@ public class WebConfig implements WebMvcConfigurer {
             var authorizedEndpoints = new String[] {
                 "/user/**",
                 "/logout",
-                "/api/*/*/review"
+                "/api/*/*/review/**"
             };
             for (var endpoint : authorizedEndpoints) {
                 registry.addMapping(endpoint)

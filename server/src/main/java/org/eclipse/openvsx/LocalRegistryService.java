@@ -91,8 +91,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public PublisherJson getPublisher(String publisherName) {
         var publisher = repositories.findPublisher(publisherName);
-        if (publisher == null)
+        if (publisher == null) {
             throw new NotFoundException();
+        }
         var json = new PublisherJson();
         json.name = publisher.getName();
         json.extensions = new LinkedHashMap<>();
@@ -107,8 +108,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public ExtensionJson getExtension(String publisherName, String extensionName) {
         var extension = repositories.findExtension(extensionName, publisherName);
-        if (extension == null)
+        if (extension == null) {
             throw new NotFoundException();
+        }
         ExtensionJson json = toJson(extension.getLatest(), true);
         return json;
     }
@@ -116,8 +118,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public ExtensionJson getExtension(String publisherName, String extensionName, String version) {
         var extVersion = repositories.findVersion(version, extensionName, publisherName);
-        if (extVersion == null)
+        if (extVersion == null) {
             throw new NotFoundException();
+        }
         ExtensionJson json = toJson(extVersion, false);
         return json;
     }
@@ -126,12 +129,14 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Transactional
     public byte[] getFile(String publisherName, String extensionName, String fileName) {
         var extension = repositories.findExtension(extensionName, publisherName);
-        if (extension == null)
+        if (extension == null) {
             throw new NotFoundException();
+        }
         var extVersion = extension.getLatest();
         var resource = getFile(extVersion, fileName);
-        if (resource == null)
+        if (resource == null) {
             throw new NotFoundException();
+        }
         if (resource instanceof ExtensionBinary) {
             extension.setDownloadCount(extension.getDownloadCount() + 1);
         }
@@ -172,7 +177,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         var list = new ReviewListJson();
         var serverUrl = UrlUtil.getBaseUrl();
         list.postUrl = createApiUrl(serverUrl, "api", extension.getPublisher().getName(), extension.getName(), "review");
-        list.reviews = repositories.findReviews(extension)
+        list.deleteUrl = createApiUrl(serverUrl, "api", extension.getPublisher().getName(), extension.getName(), "review", "delete");
+        list.reviews = repositories.findActiveReviews(extension)
                 .map(extReview -> extReview.toReviewJson())
                 .toList();
         return list;
@@ -333,14 +339,17 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private void addDependency(String dependency, ExtensionVersion extVersion) {
         var split = dependency.split("\\.");
-        if (split.length != 2)
+        if (split.length != 2) {
             return;
+        }
         var publisher = repositories.findPublisher(split[0]);
-        if (publisher == null)
+        if (publisher == null) {
             return;
+        }
         var extension = repositories.findExtension(split[1], publisher);
-        if (extension == null)
+        if (extension == null) {
             return;
+        }
         var depList = extVersion.getDependencies();
         if (depList == null) {
             depList = new ArrayList<Extension>();
@@ -351,14 +360,17 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private void addBundledExtension(String bundled, ExtensionVersion extVersion) {
         var split = bundled.split("\\.");
-        if (split.length != 2)
+        if (split.length != 2) {
             return;
+        }
         var publisher = repositories.findPublisher(split[0]);
-        if (publisher == null)
+        if (publisher == null) {
             return;
+        }
         var extension = repositories.findExtension(split[1], publisher);
-        if (extension == null)
+        if (extension == null) {
             return;
+        }
         var depList = extVersion.getBundledExtensions();
         if (depList == null) {
             depList = new ArrayList<Extension>();
@@ -368,17 +380,24 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional
-    public ReviewResultJson review(ReviewJson review, String publisherName, String extensionName) {
+    public ReviewResultJson postReview(ReviewJson review, String publisherName, String extensionName) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var extension = repositories.findExtension(extensionName, publisherName);
-        if (extension == null)
+        if (extension == null) {
             throw new NotFoundException();
+        }
         var user = users.updateUser(principal);
+        var activeReviews = repositories.findActiveReviews(extension, user);
+        if (!activeReviews.isEmpty()) {
+            return ReviewResultJson.error("You must not submit more than one review for an extension.");
+        }
+
         var extReview = new ExtensionReview();
         extReview.setExtension(extension);
+        extReview.setActive(true);
         extReview.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
         extReview.setUser(user);
         extReview.setTitle(review.title);
@@ -389,11 +408,37 @@ public class LocalRegistryService implements IExtensionRegistry {
         return new ReviewResultJson();
     }
 
-    private double computeAverageRating(Extension extension) {
-        var reviews = repositories.findReviews(extension);
+    @Transactional
+    public ReviewResultJson deleteReview(String publisherName, String extensionName) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var extension = repositories.findExtension(extensionName, publisherName);
+        if (extension == null) {
+            throw new NotFoundException();
+        }
+        var user = users.updateUser(principal);
+        var activeReviews = repositories.findActiveReviews(extension, user);
+        if (activeReviews.isEmpty()) {
+            return ReviewResultJson.error("You have not submitted any review yet.");
+        }
+
+        for (var extReview : activeReviews) {
+            extReview.setActive(false);
+        }
+        extension.setAverageRating(computeAverageRating(extension));
+        return new ReviewResultJson();
+    }
+
+    private Double computeAverageRating(Extension extension) {
+        var activeReviews = repositories.findActiveReviews(extension);
+        if (activeReviews.isEmpty()) {
+            return null;
+        }
         long sum = 0;
         long count = 0;
-        for (var review : reviews) {
+        for (var review : activeReviews) {
             sum += review.getRating();
             count++;
         }
@@ -416,7 +461,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private ExtensionJson toJson(ExtensionVersion extVersion, boolean isLatest) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
-        json.reviewCount = repositories.countReviews(extension);
+        json.reviewCount = repositories.countActiveReviews(extension);
         var serverUrl = UrlUtil.getBaseUrl();
         json.publisherUrl = createApiUrl(serverUrl, "api", json.publisher);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.publisher, json.name, "reviews");

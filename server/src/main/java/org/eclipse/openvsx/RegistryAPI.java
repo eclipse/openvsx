@@ -241,15 +241,24 @@ public class RegistryAPI {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ReviewResultJson review(@RequestBody(required = false) ReviewJson review,
-                                   @PathVariable("publisher") String publisherName,
-                                   @PathVariable("extension") String extensionName) {
+    public ReviewResultJson postReview(@RequestBody(required = false) ReviewJson review,
+                                       @PathVariable("publisher") String publisherName,
+                                       @PathVariable("extension") String extensionName) {
         if (review == null) {
             return ReviewResultJson.error("No JSON input.");
         } else if (review.rating < 0 || review.rating > 5) {
             return ReviewResultJson.error("The rating must be an integer number between 0 and 5.");
         }
-        return local.review(review, publisherName, extensionName);
+        return local.postReview(review, publisherName, extensionName);
+    }
+
+    @PostMapping(
+        path = "/api/{publisher}/{extension}/review/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ReviewResultJson deleteReview(@PathVariable("publisher") String publisherName,
+                                         @PathVariable("extension") String extensionName) {
+        return local.deleteReview(publisherName, extensionName);
     }
 
 }

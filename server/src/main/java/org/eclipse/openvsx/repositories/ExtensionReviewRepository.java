@@ -14,11 +14,14 @@ import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
+import org.eclipse.openvsx.entities.UserData;
 
 public interface ExtensionReviewRepository extends Repository<ExtensionReview, Long> {
 
-    Streamable<ExtensionReview> findByExtension(Extension extension);
+    Streamable<ExtensionReview> findByExtensionAndActiveTrue(Extension extension);
 
-    long countByExtension(Extension extension);
+    Streamable<ExtensionReview> findByExtensionAndUserAndActiveTrue(Extension extension, UserData user);
+
+    long countByExtensionAndActiveTrue(Extension extension);
 
 }
