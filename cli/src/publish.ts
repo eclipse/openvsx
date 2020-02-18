@@ -37,7 +37,7 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
         console.log(); // new line
     }
     const registry = new Registry({ url: options.registryUrl });
-    const extension = await registry.publish(options.extensionFile, options.pat);
+    const extension = await registry.publish(options.extensionFile, options.pat, options.createPublisher);
     if (extension.error) {
         throw new Error(extension.error);
     }
@@ -53,6 +53,10 @@ export interface PublishOptions {
      * Personal access token.
      */
     pat?: string;
+    /**
+     * Request to create a new publisher as specified in `package.json`.
+     */
+    createPublisher?: boolean
     /**
      * Path to the vsix file to be published. Cannot be used together with `packagePath`.
      */

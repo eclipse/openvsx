@@ -29,9 +29,13 @@ export class Registry {
             this.url = DEFAULT_URL;
     }
 
-    publish(file: string, pat?: string): Promise<Extension> {
+    publish(file: string, pat: string, createPublisher?: boolean): Promise<Extension> {
         try {
-            const url = this.getUrl('api/-/publish', pat ? { token: pat } : undefined);
+            const query: { [key: string]: string } = { token: pat };
+            if (createPublisher) {
+                query['create-publisher'] = 'true';
+            }
+            const url = this.getUrl('api/-/publish', query);
             return this.post(file, url, {
                 'Content-Type': 'application/octet-stream'
             });

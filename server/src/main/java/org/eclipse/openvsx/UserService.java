@@ -68,7 +68,9 @@ public class UserService {
             user.setEmail(principal.getAttribute("email"));
             user.setAvatarUrl(principal.getAttribute("avatar_url"));
             entityManager.persist(user);
-            createDefaultPublisher(user);
+            if (repositories.findPublisher(user.getLoginName()) == null) {
+                createPublisher(user, user.getLoginName());
+            }
         } else {
             String loginName = principal.getAttribute("login");
             if (loginName != null && !loginName.equals(user.getLoginName()))
@@ -86,12 +88,9 @@ public class UserService {
         return user;
     }
 
-    private void createDefaultPublisher(UserData user) {
-        if (repositories.findPublisher(user.getLoginName()) != null) {
-            return;
-        }
+    public Publisher createPublisher(UserData user, String name) {
         var publisher = new Publisher();
-        publisher.setName(user.getLoginName());
+        publisher.setName(name);
         entityManager.persist(publisher);
 
         var membership = new PublisherMembership();
@@ -99,6 +98,7 @@ public class UserService {
         membership.setUser(user);
         membership.setRole(PublisherMembership.ROLE_OWNER);
         entityManager.persist(membership);
+        return publisher;
     }
 
     @Transactional

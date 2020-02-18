@@ -29,11 +29,12 @@ module.exports = function (argv: string[]): void {
     publishCmd.description('Publish an extension, packaging it first if necessary.')
         .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
         .option('-p, --pat <token>', 'Personal access token.')
+        .option('--create-publisher', 'Request to create a new publisher as specified in package.json.')
         .option('--packagePath <path>', 'Package and publish the extension at the specified path.')
         .option('--baseContentUrl <url>', 'Prepend all relative links in README.md with this URL.')
         .option('--baseImagesUrl <url>', 'Prepend all relative image links in README.md with this URL.')
         .option('--yarn', 'Use yarn instead of npm while packing extension files.')
-        .action((extensionFile: string, { registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
+        .action((extensionFile: string, { registryUrl, pat, createPublisher, packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -44,7 +45,7 @@ module.exports = function (argv: string[]): void {
                 console.warn("Ignoring option '--baseImagesUrl' for prepackaged extension.");
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
-            publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn })
+            publish({ extensionFile, registryUrl, pat, createPublisher, packagePath, baseContentUrl, baseImagesUrl, yarn })
                 .catch(handleError(program.debug));
         });
 

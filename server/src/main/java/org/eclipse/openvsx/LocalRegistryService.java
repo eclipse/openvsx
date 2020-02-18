@@ -262,13 +262,13 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional
-    public ExtensionJson publish(InputStream content, String tokenValue) {
+    public ExtensionJson publish(InputStream content, String tokenValue, boolean createPublisher) {
         try (var processor = new ExtensionProcessor(content)) {
             var token = users.useAccessToken(tokenValue);
             if (token == null) {
                 throw new ErrorResultException("Invalid access token.");
             }
-            var extVersion = createExtensionVersion(processor, token.getUser(), token);
+            var extVersion = createExtensionVersion(processor, token.getUser(), token, createPublisher);
             var binary = processor.getBinary(extVersion);
             entityManager.persist(binary);
             var readme = processor.getReadme(extVersion);
@@ -287,10 +287,18 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
     }
 
-    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token) {
+    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token, boolean createPublisher) {
         var publisher = repositories.findPublisher(processor.getPublisherName());
         if (publisher == null) {
-            throw new ErrorResultException("Unknown publisher: " + processor.getPublisherName());
+            if (createPublisher) {
+                publisher = users.createPublisher(user, processor.getPublisherName());
+            } else {
+                throw new ErrorResultException("Unknown publisher: " + processor.getPublisherName()
+                        + " (use option 'create-publisher' to request creation of a new publisher)");
+            }
+        } else if (createPublisher) {
+            throw new ErrorResultException("Publisher already exists: " + publisher.getName()
+                    + " (remove option 'create-publisher' to publish)");
         }
         if (!users.hasPublishPermission(user, publisher)) {
             throw new ErrorResultException("Insufficient access rights for publisher: " + publisher.getName());

@@ -237,8 +237,9 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ExtensionJson publish(InputStream content,
-                                 @RequestParam(name = "token") String token) {
-        return local.publish(content, token);
+                                 @RequestParam(name = "token") String token,
+                                 @RequestParam(name = "create-publisher", defaultValue = "false") boolean createPublisher) {
+        return local.publish(content, token, createPublisher);
     }
 
     @PostMapping(
