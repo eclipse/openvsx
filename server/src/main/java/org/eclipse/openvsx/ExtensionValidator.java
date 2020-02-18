@@ -42,6 +42,9 @@ public class ExtensionValidator {
         "marketplace", "false"
     });
 
+    private final static int DEFAULT_STRING_SIZE = 255;
+    private final static int DESCRIPTION_SIZE = 2048;
+
     private final Pattern namePattern = Pattern.compile("[\\w\\-\\+\\$~]+");
 
     public Optional<Issue> validatePublisherName(String publisher) {
@@ -50,6 +53,9 @@ public class ExtensionValidator {
         }
         if (!namePattern.matcher(publisher).matches()) {
             return Optional.of(new Issue("Invalid publisher name: " + publisher));
+        }
+        if (publisher.length() > DEFAULT_STRING_SIZE) {
+            return Optional.of(new Issue("The publisher name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         return Optional.empty();
     }
@@ -60,6 +66,9 @@ public class ExtensionValidator {
         }
         if (!namePattern.matcher(name).matches()) {
             return Optional.of(new Issue("Invalid extension name: " + name));
+        }
+        if (name.length() > DEFAULT_STRING_SIZE) {
+            return Optional.of(new Issue("The extension name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         return Optional.empty();
     }
@@ -72,8 +81,14 @@ public class ExtensionValidator {
         if (hasInvalidCharacter(extVersion.getDisplayName())) {
             issues.add(new Issue("Invalid character found in field 'displayName'."));
         }
+        if (extVersion.getDisplayName().length() > DEFAULT_STRING_SIZE) {
+            issues.add(new Issue("The field 'displayName' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+        }
         if (hasInvalidCharacter(extVersion.getDescription())) {
             issues.add(new Issue("Invalid character found in field 'description'."));
+        }
+        if (extVersion.getDescription().length() > DESCRIPTION_SIZE) {
+            issues.add(new Issue("The field 'description' exceeds the current limit of " + DESCRIPTION_SIZE + " characters."));
         }
         if (extVersion.getCategories().stream().anyMatch(s -> !CATEGORIES_VALUES.contains(s))) {
             issues.add(new Issue("Invalid category: "
@@ -83,17 +98,32 @@ public class ExtensionValidator {
         if (extVersion.getTags().stream().anyMatch(s -> hasInvalidCharacter(s))) {
             issues.add(new Issue("Invalid character found in field 'keywords'."));
         }
+        if (extVersion.getTags().stream().anyMatch(s -> s.length() > DEFAULT_STRING_SIZE)) {
+            issues.add(new Issue("An entry of the field 'keywords' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+        }
         if (hasInvalidCharacter(extVersion.getLicense())) {
             issues.add(new Issue("Invalid character found in field 'license'."));
+        }
+        if (extVersion.getLicense().length() > DEFAULT_STRING_SIZE) {
+            issues.add(new Issue("The field 'license' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         if (isInvalidURL(extVersion.getHomepage())) {
             issues.add(new Issue("Invalid URL: " + extVersion.getHomepage()));
         }
+        if (extVersion.getHomepage().length() > DEFAULT_STRING_SIZE) {
+            issues.add(new Issue("The field 'homepage' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+        }
         if (isInvalidURL(extVersion.getRepository())) {
             issues.add(new Issue("Invalid URL: " + extVersion.getRepository()));
         }
+        if (extVersion.getRepository().length() > DEFAULT_STRING_SIZE) {
+            issues.add(new Issue("The field 'repository' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+        }
         if (isInvalidURL(extVersion.getBugs())) {
             issues.add(new Issue("Invalid URL: " + extVersion.getBugs()));
+        }
+        if (extVersion.getBugs().length() > DEFAULT_STRING_SIZE) {
+            issues.add(new Issue("The field 'bugs' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         if (!Strings.isNullOrEmpty(extVersion.getMarkdown())
                 && !MARKDOWN_VALUES.contains(extVersion.getMarkdown())) {
@@ -102,6 +132,9 @@ public class ExtensionValidator {
         }
         if (hasInvalidCharacter(extVersion.getGalleryColor())) {
             issues.add(new Issue("Invalid character found in field 'galleryBanner.color'."));
+        }
+        if (extVersion.getGalleryColor().length() > DEFAULT_STRING_SIZE) {
+            issues.add(new Issue("The field 'galleryBanner.color' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         if (!Strings.isNullOrEmpty(extVersion.getGalleryTheme())
                 && !GALLERY_THEME_VALUES.contains(extVersion.getGalleryTheme())) {
@@ -113,6 +146,9 @@ public class ExtensionValidator {
                 && isInvalidURL(extVersion.getQna())) {
             issues.add(new Issue("Invalid 'qna' value. Choose one of "
                     + QNA_VALUES.toString() + " or a URL."));
+        }
+        if (extVersion.getQna().length() > DEFAULT_STRING_SIZE) {
+            issues.add(new Issue("The field 'qna' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         return issues;
     }
