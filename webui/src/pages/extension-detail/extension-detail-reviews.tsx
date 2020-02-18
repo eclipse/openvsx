@@ -93,7 +93,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                         onClick={this.handleRevokeButton}
                         title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`}>
                 Revoke my Review
-            </Button>
+            </Button>;
         } else {
             return <Box>
                 <ExtensionReviewDialog
@@ -102,7 +102,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                     reviewPostUrl={this.state.reviewList.postUrl}
                     user={this.props.user}
                     service={this.props.service} />
-            </Box>
+            </Box>;
         }
     }
 
