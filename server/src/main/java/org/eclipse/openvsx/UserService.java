@@ -88,6 +88,7 @@ public class UserService {
         return user;
     }
 
+    @Transactional
     public Publisher createPublisher(UserData user, String name) {
         var publisher = new Publisher();
         publisher.setName(name);

@@ -24,6 +24,7 @@ import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.ReviewResultJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -239,7 +240,11 @@ public class RegistryAPI {
     public ExtensionJson publish(InputStream content,
                                  @RequestParam(name = "token") String token,
                                  @RequestParam(name = "create-publisher", defaultValue = "false") boolean createPublisher) {
-        return local.publish(content, token, createPublisher);
+        try {
+            return local.publish(content, token, createPublisher);
+        } catch (ErrorResultException exc) {
+            return ExtensionJson.error(exc.getMessage());
+        }
     }
 
     @PostMapping(

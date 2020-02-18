@@ -119,7 +119,6 @@ public class ExtensionVersion {
                 var ref = new ExtensionReferenceJson();
                 ref.publisher = depExtension.getPublisher().getName();
                 ref.extension = depExtension.getName();
-                json.dependencies.add(ref);
                 return ref;
             });
         }
@@ -128,7 +127,6 @@ public class ExtensionVersion {
                 var ref = new ExtensionReferenceJson();
                 ref.publisher = bndExtension.getPublisher().getName();
                 ref.extension = bndExtension.getName();
-                json.bundledExtensions.add(ref);
                 return ref;
             });
         }

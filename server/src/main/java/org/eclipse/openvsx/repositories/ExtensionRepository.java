@@ -21,9 +21,9 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Streamable<Extension> findByPublisherOrderByNameAsc(Publisher publisher);
 
-    Extension findByNameAndPublisher(String name, Publisher publisher);
+    Extension findByNameIgnoreCaseAndPublisher(String name, Publisher publisher);
 
-    Extension findByNameAndPublisherName(String name, String publisherName);
+    Extension findByNameIgnoreCaseAndPublisherNameIgnoreCase(String name, String publisherName);
 
     Streamable<Extension> findAll();
 

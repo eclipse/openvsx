@@ -121,7 +121,10 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     protected renderResourceLink(label: string, href?: string) {
-        return href ? <Box><Link href={href} target='_blank' variant='body2' color='secondary'>{label}</Link></Box> : '';
+        if (!href || !href.startsWith('http')) {
+            return '';
+        }
+        return <Box><Link href={href} target='_blank' variant='body2' color='secondary'>{label}</Link></Box>;
     }
 
     protected renderInfo(key: string, value: string) {

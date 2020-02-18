@@ -106,7 +106,7 @@ public class UserAPI {
         path = "/user/token/create",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional
+    @Transactional(rollbackOn = ResponseStatusException.class)
     public AccessTokenJson createAccessToken(@RequestParam(name = "description", required = false) String description) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
@@ -132,7 +132,7 @@ public class UserAPI {
         path = "/user/token/delete/{id}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional
+    @Transactional(rollbackOn = ResponseStatusException.class)
     public DeleteTokenResultJson deleteAccessToken(@PathVariable("id") long id) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {

@@ -17,4 +17,6 @@ public interface PublisherRepository extends Repository<Publisher, Long> {
 
     Publisher findByName(String name);
 
+    Publisher findByNameIgnoreCase(String name);
+
 }

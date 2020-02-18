@@ -39,15 +39,15 @@ public class RepositoryService {
     @Autowired PersonalAccessTokenRepository tokenRepo;
 
     public Publisher findPublisher(String name) {
-        return publisherRepo.findByName(name);
+        return publisherRepo.findByNameIgnoreCase(name);
     }
 
     public Extension findExtension(String name, Publisher publisher) {
-        return extensionRepo.findByNameAndPublisher(name, publisher);
+        return extensionRepo.findByNameIgnoreCaseAndPublisher(name, publisher);
     }
 
     public Extension findExtension(String name, String publisherName) {
-        return extensionRepo.findByNameAndPublisherName(name, publisherName);
+        return extensionRepo.findByNameIgnoreCaseAndPublisherNameIgnoreCase(name, publisherName);
     }
 
     public Streamable<Extension> findExtensions(Publisher publisher) {
@@ -63,7 +63,7 @@ public class RepositoryService {
     }
 
     public ExtensionVersion findVersion(String version, String extensionName, String publisherName) {
-        return extensionVersionRepo.findByVersionAndExtensionNameAndExtensionPublisherName(version, extensionName, publisherName);
+        return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionPublisherNameIgnoreCase(version, extensionName, publisherName);
     }
 
     public Streamable<ExtensionVersion> findVersions(Extension extension) {

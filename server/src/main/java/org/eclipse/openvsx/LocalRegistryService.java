@@ -23,6 +23,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 
@@ -78,6 +79,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     UserService users;
+
+    @Autowired
+    ExtensionValidator validator;
 
     @Autowired
     ElasticsearchOperations searchOperations;
@@ -261,8 +265,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             return CollectionUtil.map(page.getContent(), this::toSearchEntry);
     }
 
-    @Transactional
-    public ExtensionJson publish(InputStream content, String tokenValue, boolean createPublisher) {
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ExtensionJson publish(InputStream content, String tokenValue, boolean createPublisher) throws ErrorResultException {
         try (var processor = new ExtensionProcessor(content)) {
             var token = users.useAccessToken(tokenValue);
             if (token == null) {
@@ -282,18 +286,21 @@ public class LocalRegistryService implements IExtensionRegistry {
 
             updateSearchIndex(extVersion.getExtension());
             return toJson(extVersion, false);
-        } catch (ErrorResultException exc) {
-            return ExtensionJson.error(exc.getMessage());
         }
     }
 
     private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token, boolean createPublisher) {
-        var publisher = repositories.findPublisher(processor.getPublisherName());
+        var publisherName = processor.getPublisherName();
+        var publisherIssue = validator.validatePublisherName(publisherName);
+        if (publisherIssue.isPresent()) {
+            throw new ErrorResultException(publisherIssue.get().toString());
+        }
+        var publisher = repositories.findPublisher(publisherName);
         if (publisher == null) {
             if (createPublisher) {
-                publisher = users.createPublisher(user, processor.getPublisherName());
+                publisher = users.createPublisher(user, publisherName);
             } else {
-                throw new ErrorResultException("Unknown publisher: " + processor.getPublisherName()
+                throw new ErrorResultException("Unknown publisher: " + publisherName
                         + " (use option 'create-publisher' to request creation of a new publisher)");
             }
         } else if (createPublisher) {
@@ -304,13 +311,18 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ErrorResultException("Insufficient access rights for publisher: " + publisher.getName());
         }
 
-        var extension = repositories.findExtension(processor.getExtensionName(), publisher);
+        var extensionName = processor.getExtensionName();
+        var nameIssue = validator.validateExtensionName(extensionName);
+        if (nameIssue.isPresent()) {
+            throw new ErrorResultException(nameIssue.get().toString());
+        }
+        var extension = repositories.findExtension(extensionName, publisher);
         var extVersion = processor.getMetadata();
         extVersion.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
         extVersion.setPublishedWith(token);
         if (extension == null) {
             extension = new Extension();
-            extension.setName(processor.getExtensionName());
+            extension.setName(extensionName);
             extension.setPublisher(publisher);
             extension.setLatest(extVersion);
             entityManager.persist(extension);
@@ -330,6 +342,14 @@ public class LocalRegistryService implements IExtensionRegistry {
                 + "." + extension.getName()
                 + "-" + extVersion.getVersion()
                 + ".vsix");
+        var metadataIssues = validator.validateMetadata(extVersion);
+        if (!metadataIssues.isEmpty()) {
+            if (metadataIssues.size() == 1) {
+                throw new ErrorResultException(metadataIssues.get(0).toString());
+            }
+            throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
+                    + Joiner.on("\n").join(metadataIssues));
+        }
         entityManager.persist(extVersion);
         return extVersion;
     }
@@ -348,15 +368,15 @@ public class LocalRegistryService implements IExtensionRegistry {
     private void addDependency(String dependency, ExtensionVersion extVersion) {
         var split = dependency.split("\\.");
         if (split.length != 2) {
-            return;
+            throw new ErrorResultException("Invalid 'extensionDependencies' format. Expected: '${publisher}.${name}'");
         }
         var publisher = repositories.findPublisher(split[0]);
         if (publisher == null) {
-            return;
+            throw new ErrorResultException("Cannot resolve dependency: " + dependency);
         }
         var extension = repositories.findExtension(split[1], publisher);
         if (extension == null) {
-            return;
+            throw new ErrorResultException("Cannot resolve dependency: " + dependency);
         }
         var depList = extVersion.getDependencies();
         if (depList == null) {
@@ -369,15 +389,15 @@ public class LocalRegistryService implements IExtensionRegistry {
     private void addBundledExtension(String bundled, ExtensionVersion extVersion) {
         var split = bundled.split("\\.");
         if (split.length != 2) {
-            return;
+            throw new ErrorResultException("Invalid 'extensionPack' format. Expected: '${publisher}.${name}'");
         }
         var publisher = repositories.findPublisher(split[0]);
         if (publisher == null) {
-            return;
+            throw new ErrorResultException("Cannot resolve bundled extension: " + bundled);
         }
         var extension = repositories.findExtension(split[1], publisher);
         if (extension == null) {
-            return;
+            throw new ErrorResultException("Cannot resolve bundled extension: " + bundled);
         }
         var depList = extVersion.getBundledExtensions();
         if (depList == null) {
@@ -387,7 +407,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         depList.add(extension);
     }
 
-    @Transactional
+    @Transactional(rollbackOn = ResponseStatusException.class)
     public ReviewResultJson postReview(ReviewJson review, String publisherName, String extensionName) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
@@ -416,7 +436,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return new ReviewResultJson();
     }
 
-    @Transactional
+    @Transactional(rollbackOn = ResponseStatusException.class)
     public ReviewResultJson deleteReview(String publisherName, String extensionName) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
