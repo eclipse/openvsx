@@ -32,6 +32,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     componentDidMount() {
+        document.title = this.props.pageTitle;
         const searchParams = new URLSearchParams(this.props.location.search);
         const search = searchParams.get('search');
         const category = searchParams.get('category') as ExtensionCategory;
@@ -67,6 +68,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
 export namespace ExtensionListContainer {
     export interface Props extends RouteComponentProps {
         service: ExtensionRegistryService;
+        pageTitle: string;
         listHeaderTitle: string;
     }
     export interface State {

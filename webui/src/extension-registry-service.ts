@@ -10,7 +10,7 @@
 
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
-    SearchResult, NewReview, ExtensionRaw, ErrorResult, CsrfTokenJson, isError
+    SearchResult, NewReview, ErrorResult, CsrfTokenJson, isError
 } from "./extension-registry-types";
 import { createAbsoluteURL, addQuery } from "./utils";
 import { sendRequest } from "./server-request";
@@ -27,7 +27,7 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'logout']);
     }
 
-    getExtensionApiUrl(extension: ExtensionRaw) {
+    getExtensionApiUrl(extension: { publisher: string, name: string }) {
         return createAbsoluteURL([this.serverUrl, 'api', extension.publisher, extension.name]);
     }
 

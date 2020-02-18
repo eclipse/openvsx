@@ -15,7 +15,7 @@ import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import { createRoute, handleError } from "../../utils";
 import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension, UserData, isError } from "../../extension-registry-types";
+import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
@@ -60,26 +60,27 @@ const detailStyles = (theme: Theme) => createStyles({
 
 export class ExtensionDetailComponent extends React.Component<ExtensionDetailComponent.Props, ExtensionDetailComponent.State> {
 
-    protected params: Extension;
-
     constructor(props: ExtensionDetailComponent.Props) {
         super(props);
 
         this.state = {};
-        this.params = this.props.match.params as Extension;
     }
 
     componentDidMount() {
+        const params = this.props.match.params as ExtensionRaw;
+        document.title = `${params.name} – ${this.props.pageTitle}`;
         this.updateExtension();
     }
 
     protected async updateExtension() {
         try {
-            const extensionUrl = this.props.service.getExtensionApiUrl(this.params);
+            const params = this.props.match.params as ExtensionRaw;
+            const extensionUrl = this.props.service.getExtensionApiUrl(params);
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
                 handleError(extension);
             } else {
+                document.title = `${extension.displayName || extension.name} – ${this.props.pageTitle}`;
                 this.setState({ extension });
             }
         } catch (err) {
@@ -177,6 +178,7 @@ export namespace ExtensionDetailComponent {
     export interface Props extends WithStyles<typeof detailStyles>, RouteComponentProps {
         user?: UserData;
         service: ExtensionRegistryService;
+        pageTitle: string;
     }
     export interface State {
         extension?: Extension;

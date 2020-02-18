@@ -25,9 +25,10 @@ ReactDOM.render(<BrowserRouter>
     <ThemeProvider theme={theme}>
         <Main
             service={service}
+            pageTitle='Open VSX Registry'
+            toolbarText='Open VSX Registry'
             listHeaderTitle='Extensions for VS Code Compatible Editors'
             logoURL='/open-source.png'
-            pageTitle='Open VSX Registry'
         />
     </ThemeProvider>
 </BrowserRouter>, node);

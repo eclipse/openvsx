@@ -31,6 +31,10 @@ const profileStyles = (theme: Theme) => createStyles({
 
 class UserSettingsComponent extends React.Component<UserSettingsComponent.Props> {
 
+    componentDidMount() {
+        document.title = `Settings – ${this.props.pageTitle}`;
+    }
+
     render() {
         const user = this.props.user;
         if (!user) {
@@ -68,6 +72,7 @@ export namespace UserSettingsComponent {
     export interface Props extends WithStyles<typeof profileStyles>, RouteComponentProps {
         user?: UserData;
         service: ExtensionRegistryService;
+        pageTitle: string;
     }
 }
 

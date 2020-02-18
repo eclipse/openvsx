@@ -13,6 +13,7 @@ import { Container, AppBar, Toolbar, Typography, IconButton, CssBaseline, Box, T
 import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import GitHubIcon from '@material-ui/icons/GitHub';
+import BrokenImageIcon from '@material-ui/icons/BrokenImage';
 import { Route, Link as RouteLink, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
@@ -91,7 +92,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                             paddingRight: 10
                                         }}/>
                                     </Box>
-                                    <Typography variant='h6' noWrap>{this.props.pageTitle}</Typography>
+                                    <Typography variant='h6' noWrap>{this.props.toolbarText}</Typography>
                                 </Box>
                             </RouteLink>
                         </Box>
@@ -116,6 +117,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 <ExtensionListContainer
                                     {...routeProps}
                                     service={this.props.service}
+                                    pageTitle={this.props.pageTitle}
                                     listHeaderTitle={this.props.listHeaderTitle} />
                             } />
                         <Route path={UserSettingsRoutes.MAIN_W_TAB_PARAM}
@@ -123,19 +125,22 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 <UserSettings
                                     {...routeProps}
                                     user={this.state.user}
-                                    service={this.props.service} />
+                                    service={this.props.service}
+                                    pageTitle={this.props.pageTitle} />
                             } />
                         <Route path={ExtensionDetailRoutes.EXTENSION_DETAIL_MAIN_ROUTE}
                             render={routeProps =>
                                 <ExtensionDetail
                                     {...routeProps}
                                     user={this.state.user}
-                                    service={this.props.service} />
+                                    service={this.props.service}
+                                    pageTitle={this.props.pageTitle} />
                             } />
                         <Route path='*'>
                             <Container>
-                                <Box height='90vh' display='flex' justifyContent='center' alignItems='center'>
-                                    <Typography variant='h2'>Oooups...this is a 404 page.</Typography>
+                                <Box height='30vh' display='flex' flexWrap='wrap' justifyContent='center' alignItems='center'>
+                                    <Typography variant='h3'>Oooups...this is a 404 page.</Typography>
+                                    <BrokenImageIcon style={{ fontSize: '4rem', flexBasis: '100%' }}/>
                                 </Box>
                             </Container>
                         </Route>
@@ -157,6 +162,7 @@ export namespace MainComponent {
     export interface Props extends WithStyles<typeof mainStyles> {
         service: ExtensionRegistryService;
         pageTitle: string;
+        toolbarText: string;
         listHeaderTitle: string;
         logoURL: string;
     }
