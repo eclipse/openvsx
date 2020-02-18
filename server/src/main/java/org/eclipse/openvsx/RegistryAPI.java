@@ -146,15 +146,20 @@ public class RegistryAPI {
         var headers = new HttpHeaders();
         headers.setContentType(getFileType(fileName));
         headers.setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS));
+        if (fileName.endsWith(".vsix")) {
+            headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+        }
         return headers;
     }
 
     private MediaType getFileType(String fileName) {
-        if (fileName.endsWith(".vsix"))
+        if (fileName.endsWith(".vsix")) {
             return MediaType.APPLICATION_OCTET_STREAM;
+        }
         var contentType = URLConnection.guessContentTypeFromName(fileName);
-        if (contentType != null)
+        if (contentType != null) {
             return MediaType.parseMediaType(contentType);
+        }
         return MediaType.TEXT_PLAIN;
     }
 
