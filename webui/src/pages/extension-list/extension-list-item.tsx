@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import React = require("react");
-import { Link } from "react-router-dom";
+import { Link as RouteLink } from "react-router-dom";
 import { Paper, Typography, Box, Grid, Fade } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
 import { ExtensionDetailRoutes } from "../extension-detail/extension-detail";
@@ -41,7 +41,7 @@ class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
         return <React.Fragment>
             <Fade in={true} timeout={{ enter: this.props.idx * 200 }}>
                 <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name}>
-                    <Link to={route} className={classes.link}>
+                    <RouteLink to={route} className={classes.link}>
                         <Paper className={classes.paper}>
                             <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
                                 <img width='80' src={extension.iconUrl} />
@@ -63,7 +63,7 @@ class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
                                 <ExportRatingStars number={extension.averageRating || 0} />
                             </Box>
                         </Paper>
-                    </Link>
+                    </RouteLink>
                 </Grid>
             </Fade>
         </React.Fragment>;

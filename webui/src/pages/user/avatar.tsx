@@ -12,7 +12,7 @@ import * as React from 'react';
 import PopperJS from 'popper.js';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Avatar, Popper, Paper, ClickAwayListener, Typography, Box, Grow } from '@material-ui/core';
-import { Link } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router-dom';
 import { handleError } from '../../utils';
 import { UserData, isError } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
@@ -92,11 +92,11 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
                                     <Typography variant='overline' color='textPrimary'>Logged in as {this.props.user.loginName}</Typography>
                                     <Box mt={1}>
                                         <Box style={{ paddingBottom: '15px'}}>
-                                            <Link onClick={this.handleClose} to={UserSettingsRoutes.PROFILE_ROUTE} className={this.props.classes.link}>
+                                            <RouteLink onClick={this.handleClose} to={UserSettingsRoutes.PROFILE_ROUTE} className={this.props.classes.link}>
                                                 <Typography variant='button' color='textPrimary'>
                                                     Settings
                                                 </Typography>
-                                            </Link>
+                                            </RouteLink>
                                         </Box>
                                         <Box>
                                             <form method="post" action={this.props.service.getLogoutUrl()}>

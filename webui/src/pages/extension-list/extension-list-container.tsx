@@ -17,10 +17,8 @@ import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExtensionList } from "./extension-list";
 import { ExtensionListHeader } from "./extension-list-header";
 
-export const EXTENSION_LIST_COMPONENT_NAME = 'extension-list';
-
 export namespace ExtensionListRoutes {
-    export const EXTENSION_LIST_LINK = createRoute([EXTENSION_LIST_COMPONENT_NAME]);
+    export const EXTENSION_LIST = createRoute([]);
 }
 
 export class ExtensionListContainer extends React.Component<ExtensionListContainer.Props, ExtensionListContainer.State> {

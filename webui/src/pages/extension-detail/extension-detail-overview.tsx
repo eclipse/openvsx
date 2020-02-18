@@ -97,7 +97,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     protected handleFilterButtonClicked(kind: 'category' | 'search', buttonLabel: string) {
-        const route = createRoute([ExtensionListRoutes.EXTENSION_LIST_LINK], [{ key: kind, value: buttonLabel }]);
+        const route = createRoute([ExtensionListRoutes.EXTENSION_LIST], [{ key: kind, value: buttonLabel }]);
         this.props.history.push(route);
     }
 

@@ -9,10 +9,11 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Container, AppBar, Toolbar, Typography, IconButton, CssBaseline, Box, Theme } from '@material-ui/core';
+import { Container, AppBar, Toolbar, Typography, IconButton, CssBaseline, Box, Theme, Link } from '@material-ui/core';
 import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
-import { Route, Link, Switch } from 'react-router-dom';
+import GitHubIcon from '@material-ui/icons/GitHub';
+import { Route, Link as RouteLink, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
@@ -36,6 +37,16 @@ const mainStyles = (theme: Theme) => createStyles({
     },
     toolbar: {
         justifyContent: 'space-between'
+    },
+    footer: {
+        backgroundColor: theme.palette.secondary.contrastText,
+        padding: theme.spacing(2),
+        marginTop: theme.spacing(5)
+    },
+    footerBox: {
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '1.1rem'
     }
 });
 
@@ -71,7 +82,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 <AppBar position='sticky'>
                     <Toolbar classes={{ root: this.props.classes.toolbar }}>
                         <Box>
-                            <Link to={ExtensionListRoutes.EXTENSION_LIST_LINK} className={this.props.classes.link}>
+                            <RouteLink to={ExtensionListRoutes.EXTENSION_LIST} className={this.props.classes.link}>
                                 <Box display='flex'>
                                     <Box display='flex' alignItems='center' marginRight={1}>
                                         <img src={this.props.logoURL} style={{
@@ -82,7 +93,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     </Box>
                                     <Typography variant='h6' noWrap>{this.props.pageTitle}</Typography>
                                 </Box>
-                            </Link>
+                            </RouteLink>
                         </Box>
                         <Box display='flex' alignItems='center'>
                             {
@@ -100,7 +111,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 </AppBar>
                 <Box flex='1'>
                     <Switch>
-                        <Route exact path={['/', ExtensionListRoutes.EXTENSION_LIST_LINK]}
+                        <Route exact path={[ExtensionListRoutes.EXTENSION_LIST]}
                             render={routeProps =>
                                 <ExtensionListContainer
                                     {...routeProps}
@@ -130,7 +141,13 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         </Route>
                     </Switch>
                 </Box>
-                <footer></footer>
+                <footer className={this.props.classes.footer}>
+                    <Link target='_blank' href='https://github.com/eclipse/openvsx'>
+                        <Box className={this.props.classes.footerBox}>
+                            <GitHubIcon/>&nbsp;eclipse/openvsx
+                        </Box>
+                    </Link>
+                </footer>
             </Box>
         </React.Fragment>;
     }

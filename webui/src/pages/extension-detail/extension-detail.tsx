@@ -10,13 +10,12 @@
 
 import * as React from "react";
 import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container } from "@material-ui/core";
-import { RouteComponentProps, Switch, Route, Link } from "react-router-dom";
+import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-router-dom";
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import { createRoute, handleError } from "../../utils";
 import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError } from "../../extension-registry-types";
-import { EXTENSION_LIST_COMPONENT_NAME } from "../extension-list/extension-list-container";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
@@ -105,19 +104,19 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         <Box>
                             <Typography variant='h6' className={this.props.classes.row}>{extension.displayName || extension.name}</Typography>
                             <Box display='flex' className={this.props.classes.row}>
-                                <Link
-                                    to={createRoute([EXTENSION_LIST_COMPONENT_NAME], [{ key: 'search', value: extension.publisher}])}
+                                <RouteLink
+                                    to={createRoute([], [{ key: 'search', value: extension.publisher}])}
                                     className={this.props.classes.link}>
                                     <Box className={this.props.classes.alignVertically}>
                                         {extension.publisher}
                                     </Box>
-                                </Link>
+                                </RouteLink>
                                 <TextDivider />
                                 <Box className={this.props.classes.alignVertically}>
                                     <SaveAltIcon/>&nbsp;{extension.downloadCount || 0} {extension.downloadCount === 1 ? 'download' : 'downloads'}
                                 </Box>
                                 <TextDivider />
-                                <Link
+                                <RouteLink
                                     to={createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.REVIEWS, extension.publisher, extension.name])}
                                     className={this.props.classes.link}
                                     title={
@@ -129,7 +128,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                         <ExportRatingStars number={extension.averageRating || 0} />
                                         {`(${this.state.extension.reviewCount})`}
                                     </Box>
-                                </Link>
+                                </RouteLink>
                                 <TextDivider />
                                 <Box className={this.props.classes.alignVertically}>{extension.license}</Box>
                             </Box>
