@@ -43,6 +43,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class RegistryAPI {
 
+    private final static int REVIEW_TITLE_SIZE = 255;
+    private final static int REVIEW_COMMENT_SIZE = 2048;
+
     @Autowired
     LocalRegistryService local;
 
@@ -257,8 +260,15 @@ public class RegistryAPI {
                                        @PathVariable("extension") String extensionName) {
         if (review == null) {
             return ReviewResultJson.error("No JSON input.");
-        } else if (review.rating < 0 || review.rating > 5) {
+        }
+        if (review.rating < 0 || review.rating > 5) {
             return ReviewResultJson.error("The rating must be an integer number between 0 and 5.");
+        }
+        if (review.title != null && review.title.length() > REVIEW_TITLE_SIZE) {
+            return ReviewResultJson.error("The title must not be longer than " + REVIEW_TITLE_SIZE + " characters.");
+        }
+        if (review.comment != null && review.comment.length() > REVIEW_COMMENT_SIZE) {
+            return ReviewResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters.");
         }
         return local.postReview(review, publisherName, extensionName);
     }

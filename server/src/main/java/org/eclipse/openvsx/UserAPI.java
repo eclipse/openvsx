@@ -40,6 +40,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 public class UserAPI {
 
+    private final static int TOKEN_DESCRIPTION_SIZE = 255;
+
     @Autowired
     EntityManager entityManager;
 
@@ -108,6 +110,9 @@ public class UserAPI {
     )
     @Transactional(rollbackOn = ResponseStatusException.class)
     public AccessTokenJson createAccessToken(@RequestParam(name = "description", required = false) String description) {
+        if (description != null && description.length() > TOKEN_DESCRIPTION_SIZE) {
+            return AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
+        }
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);

@@ -10,7 +10,7 @@
 
 import * as React from "react";
 import { Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography } from "@material-ui/core";
-import { UserData, PersonalAccessToken } from "../../extension-registry-types";
+import { UserData, PersonalAccessToken, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { handleError } from "../../utils";
 
@@ -50,8 +50,12 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     protected handleGenerate = async () => {
         try {
             const token = await this.props.service.createAccessToken(this.props.user, this.state.tokenComment);
-            this.setState({ token });
-            this.props.handleTokenGenerated();
+            if (isError(token)) {
+                handleError(token);
+            } else {
+                this.setState({ token });
+                this.props.handleTokenGenerated();
+            }
         } catch (err) {
             handleError(err);
         }

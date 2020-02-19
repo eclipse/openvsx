@@ -11,6 +11,7 @@ package org.eclipse.openvsx.entities;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -37,6 +38,7 @@ public class ExtensionReview {
 
     String title;
 
+    @Column(length = 2048)
     String comment;
 
     int rating;

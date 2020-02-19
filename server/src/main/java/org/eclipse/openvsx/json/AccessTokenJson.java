@@ -17,7 +17,16 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 @JsonInclude(Include.NON_NULL)
 public class AccessTokenJson {
 
-    public long id;
+    public static AccessTokenJson error(String message) {
+        var result = new AccessTokenJson();
+        result.error = message;
+        return result;
+    }
+
+    @Nullable
+    public String error;
+
+    public Long id;
 
     @Nullable
     public String value;
