@@ -318,6 +318,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         var extension = repositories.findExtension(extensionName, publisher);
         var extVersion = processor.getMetadata();
+        if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
+            extVersion.setDisplayName(null);
+        }
         extVersion.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
         extVersion.setPublishedWith(token);
         if (extension == null) {

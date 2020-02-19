@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Strings;
@@ -24,11 +25,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ExtensionValidator {
-
-    private final static List<String> CATEGORIES_VALUES = Arrays.asList(new String[] {
-        "Programming Languages", "Snippets", "Linters", "Themes", "Debuggers", "Formatters",
-        "Keymaps", "SCM Providers", "Other", "Extension Packs", "Language Packs"
-    });
 
     private final static List<String> MARKDOWN_VALUES = Arrays.asList(new String[] {
         "github", "standard"
@@ -75,108 +71,103 @@ public class ExtensionValidator {
 
     public List<Issue> validateMetadata(ExtensionVersion extVersion) {
         var issues = new ArrayList<Issue>();
-        if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
-            extVersion.setDisplayName(null);
-        }
-        if (hasInvalidCharacter(extVersion.getDisplayName())) {
-            issues.add(new Issue("Invalid character found in field 'displayName'."));
-        }
-        if (extVersion.getDisplayName().length() > DEFAULT_STRING_SIZE) {
-            issues.add(new Issue("The field 'displayName' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        if (hasInvalidCharacter(extVersion.getDescription())) {
-            issues.add(new Issue("Invalid character found in field 'description'."));
-        }
-        if (extVersion.getDescription().length() > DESCRIPTION_SIZE) {
-            issues.add(new Issue("The field 'description' exceeds the current limit of " + DESCRIPTION_SIZE + " characters."));
-        }
-        if (extVersion.getCategories().stream().anyMatch(s -> !CATEGORIES_VALUES.contains(s))) {
-            issues.add(new Issue("Invalid category: "
-                    + extVersion.getCategories().stream().filter(s -> !CATEGORIES_VALUES.contains(s)).findFirst().get()
-                    + ". Choose from " + CATEGORIES_VALUES.toString()));
-        }
-        if (extVersion.getTags().stream().anyMatch(s -> hasInvalidCharacter(s))) {
-            issues.add(new Issue("Invalid character found in field 'keywords'."));
-        }
-        if (extVersion.getTags().stream().anyMatch(s -> s.length() > DEFAULT_STRING_SIZE)) {
-            issues.add(new Issue("An entry of the field 'keywords' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        if (hasInvalidCharacter(extVersion.getLicense())) {
-            issues.add(new Issue("Invalid character found in field 'license'."));
-        }
-        if (extVersion.getLicense().length() > DEFAULT_STRING_SIZE) {
-            issues.add(new Issue("The field 'license' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        if (isInvalidURL(extVersion.getHomepage())) {
-            issues.add(new Issue("Invalid URL: " + extVersion.getHomepage()));
-        }
-        if (extVersion.getHomepage().length() > DEFAULT_STRING_SIZE) {
-            issues.add(new Issue("The field 'homepage' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        if (isInvalidURL(extVersion.getRepository())) {
-            issues.add(new Issue("Invalid URL: " + extVersion.getRepository()));
-        }
-        if (extVersion.getRepository().length() > DEFAULT_STRING_SIZE) {
-            issues.add(new Issue("The field 'repository' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        if (isInvalidURL(extVersion.getBugs())) {
-            issues.add(new Issue("Invalid URL: " + extVersion.getBugs()));
-        }
-        if (extVersion.getBugs().length() > DEFAULT_STRING_SIZE) {
-            issues.add(new Issue("The field 'bugs' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        if (!Strings.isNullOrEmpty(extVersion.getMarkdown())
-                && !MARKDOWN_VALUES.contains(extVersion.getMarkdown())) {
-            issues.add(new Issue("Invalid 'markdown' value. Choose one of "
-                    + MARKDOWN_VALUES.toString()));
-        }
-        if (hasInvalidCharacter(extVersion.getGalleryColor())) {
-            issues.add(new Issue("Invalid character found in field 'galleryBanner.color'."));
-        }
-        if (extVersion.getGalleryColor().length() > DEFAULT_STRING_SIZE) {
-            issues.add(new Issue("The field 'galleryBanner.color' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        if (!Strings.isNullOrEmpty(extVersion.getGalleryTheme())
-                && !GALLERY_THEME_VALUES.contains(extVersion.getGalleryTheme())) {
-            issues.add(new Issue("Invalid 'galleryBanner.theme' value. Choose one of "
-                    + GALLERY_THEME_VALUES.toString()));
-        }
-        if (!Strings.isNullOrEmpty(extVersion.getQna())
-                && !QNA_VALUES.contains(extVersion.getQna())
-                && isInvalidURL(extVersion.getQna())) {
-            issues.add(new Issue("Invalid 'qna' value. Choose one of "
-                    + QNA_VALUES.toString() + " or a URL."));
-        }
-        if (extVersion.getQna().length() > DEFAULT_STRING_SIZE) {
-            issues.add(new Issue("The field 'qna' exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
+        checkCharacters(extVersion.getDisplayName(), "displayName", issues);
+        checkFieldSize(extVersion.getDisplayName(), DEFAULT_STRING_SIZE, "displayName", issues);
+        checkCharacters(extVersion.getDescription(), "description", issues);
+        checkFieldSize(extVersion.getDescription(), DESCRIPTION_SIZE, "description", issues);
+        checkCharacters(extVersion.getCategories(), "categories", issues);
+        checkFieldSize(extVersion.getCategories(), DEFAULT_STRING_SIZE, "categories", issues);
+        checkCharacters(extVersion.getTags(), "keywords", issues);
+        checkFieldSize(extVersion.getTags(), DEFAULT_STRING_SIZE, "keywords", issues);
+        checkCharacters(extVersion.getLicense(), "license", issues);
+        checkFieldSize(extVersion.getLicense(), DEFAULT_STRING_SIZE, "license", issues);
+        checkURL(extVersion.getHomepage(), "homepage", issues);
+        checkFieldSize(extVersion.getHomepage(), DEFAULT_STRING_SIZE, "homepage", issues);
+        checkURL(extVersion.getRepository(), "repository", issues);
+        checkFieldSize(extVersion.getRepository(), DEFAULT_STRING_SIZE, "repository", issues);
+        checkURL(extVersion.getBugs(), "bugs", issues);
+        checkFieldSize(extVersion.getBugs(), DEFAULT_STRING_SIZE, "bugs", issues);
+        checkInvalid(extVersion.getMarkdown(), s -> !MARKDOWN_VALUES.contains(s), "markdown", issues,
+                MARKDOWN_VALUES.toString());
+        checkCharacters(extVersion.getGalleryColor(), "galleryBanner.color", issues);
+        checkFieldSize(extVersion.getGalleryColor(), DEFAULT_STRING_SIZE, "galleryBanner.color", issues);
+        checkInvalid(extVersion.getGalleryTheme(), s -> !GALLERY_THEME_VALUES.contains(s), "galleryBanner.theme", issues,
+                GALLERY_THEME_VALUES.toString());
+        checkInvalid(extVersion.getQna(), s -> !QNA_VALUES.contains(s) && !isURL(s), "qna", issues,
+                QNA_VALUES.toString() + " or a URL");
+        checkFieldSize(extVersion.getQna(), DEFAULT_STRING_SIZE, "qna", issues);
         return issues;
     }
 
-    private boolean hasInvalidCharacter(String s) {
-        if (s == null) {
-            return false;
+    private void checkCharacters(String value, String field, List<Issue> issues) {
+        if (value == null) {
+            return;
         }
-        for (var i = 0; i < s.length(); i++) {
-            var type = Character.getType(s.charAt(i));
+        for (var i = 0; i < value.length(); i++) {
+            var type = Character.getType(value.charAt(i));
             if (type == Character.CONTROL || type == Character.FORMAT
                     || type == Character.UNASSIGNED || type == Character.PRIVATE_USE
                     || type == Character.LINE_SEPARATOR || type == Character.PARAGRAPH_SEPARATOR) {
-                return true;
+                issues.add(new Issue("Invalid character found in field '" + field + "': " + value + " (index " + i + ")"));
+                return;
             }
         }
-        return false;
     }
 
-    private boolean isInvalidURL(String s) {
-        if (Strings.isNullOrEmpty(s)) {
+    private void checkCharacters(List<String> values, String field, List<Issue> issues) {
+        if (values == null) {
+            return;
+        }
+        for (var value : values) {
+            checkCharacters(value, field, issues);
+        }
+    }
+
+    private void checkFieldSize(String value, int limit, String field, List<Issue> issues) {
+        if (value != null && value.length() > limit) {
+            issues.add(new Issue("The field '" + field + "' exceeds the current limit of " + limit + " characters."));
+        }
+    }
+
+    private void checkFieldSize(List<String> values, int limit, String field, List<Issue> issues) {
+        if (values == null) {
+            return;
+        }
+        for (var value : values) {
+            checkFieldSize(value, limit, field, issues);
+        }
+    }
+
+    private void checkInvalid(String value, Predicate<String> isInvalid, String field, List<Issue> issues, String allowedValues) {
+        if (Strings.isNullOrEmpty(value)) {
+            return;
+        }
+        if (isInvalid.test(value)) {
+            issues.add(new Issue("Invalid value in field '" + field + "': " + value
+                    + ". Allowed values: " + allowedValues));
+        }
+    }
+
+    private void checkURL(String value, String field, List<Issue> issues) {
+        if (Strings.isNullOrEmpty(value)) {
+            return;
+        }
+        try {
+            new URL(value);
+        } catch (MalformedURLException exc) {
+            issues.add(new Issue("Invalid URL in field '" + field + "': " + value));
+        }
+    }
+
+    private boolean isURL(String value) {
+        if (Strings.isNullOrEmpty(value)) {
             return false;
         }
         try {
-            new URL(s);
-            return false;
-        } catch (MalformedURLException exc) {
+            new URL(value);
             return true;
+        } catch (MalformedURLException exc) {
+            return false;
         }
     }
 
