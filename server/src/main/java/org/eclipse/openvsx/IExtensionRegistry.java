@@ -10,7 +10,7 @@
 package org.eclipse.openvsx;
 
 import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.PublisherJson;
+import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 
@@ -19,17 +19,17 @@ import org.eclipse.openvsx.json.SearchResultJson;
  */
 public interface IExtensionRegistry {
 
-    PublisherJson getPublisher(String publisherName);
+    NamespaceJson getNamespace(String namespace);
 
-    ExtensionJson getExtension(String publisherName, String extensionName);
+    ExtensionJson getExtension(String namespace, String extension);
 
-    ExtensionJson getExtension(String publisherName, String extensionName, String version);
+    ExtensionJson getExtension(String namespace, String extension, String version);
 
-    byte[] getFile(String publisherName, String extensionName, String fileName);
+    byte[] getFile(String namespace, String extension, String fileName);
 
-    byte[] getFile(String publisherName, String extensionName, String version, String fileName);
+    byte[] getFile(String namespace, String extension, String version, String fileName);
 
-    ReviewListJson getReviews(String publisherName, String extensionName);
+    ReviewListJson getReviews(String namespace, String extension);
 
     SearchResultJson search(String query, String category, int size, int offset);
 

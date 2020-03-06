@@ -22,7 +22,7 @@ public class ExtensionSearch {
 
     public String name;
 
-    public String publisher;
+    public String namespace;
 
     public String displayName;
 

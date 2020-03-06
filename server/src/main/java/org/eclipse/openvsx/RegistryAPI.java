@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.collect.Iterables;
 
 import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.PublisherJson;
+import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.ReviewResultJson;
@@ -61,14 +61,14 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        path = "/api/{publisher}",
+        path = "/api/{namespace}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    public PublisherJson getPublisher(@PathVariable("publisher") String publisherName) {
+    public NamespaceJson getNamespace(@PathVariable String namespace) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getPublisher(publisherName);
+                return registry.getNamespace(namespace);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -77,15 +77,15 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        path = "/api/{publisher}/{extension}",
+        path = "/api/{namespace}/{extension}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    public ExtensionJson getExtension(@PathVariable("publisher") String publisherName,
-                                      @PathVariable("extension") String extensionName) {
+    public ExtensionJson getExtension(@PathVariable String namespace,
+                                      @PathVariable String extension) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getExtension(publisherName, extensionName);
+                return registry.getExtension(namespace, extension);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -94,16 +94,16 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        path = "/api/{publisher}/{extension}/{version}",
+        path = "/api/{namespace}/{extension}/{version}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    public ExtensionJson getExtension(@PathVariable("publisher") String publisherName,
-                                      @PathVariable("extension") String extensionName,
-                                      @PathVariable("version") String version) {
+    public ExtensionJson getExtension(@PathVariable String namespace,
+                                      @PathVariable String extension,
+                                      @PathVariable String version) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getExtension(publisherName, extensionName, version);
+                return registry.getExtension(namespace, extension, version);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -111,14 +111,14 @@ public class RegistryAPI {
         throw new NotFoundException();
     }
 
-    @GetMapping("/api/{publisher}/{extension}/file/{fileName:.+}")
+    @GetMapping("/api/{namespace}/{extension}/file/{fileName:.+}")
     @CrossOrigin
-    public ResponseEntity<byte[]> getFile(@PathVariable("publisher") String publisherName,
-                                          @PathVariable("extension") String extensionName,
-                                          @PathVariable("fileName") String fileName) {
+    public ResponseEntity<byte[]> getFile(@PathVariable String namespace,
+                                          @PathVariable String extension,
+                                          @PathVariable String fileName) {
         for (var registry : getRegistries()) {
             try {
-                var content = registry.getFile(publisherName, extensionName, fileName);
+                var content = registry.getFile(namespace, extension, fileName);
                 var headers = getFileResponseHeaders(fileName);
                 return new ResponseEntity<>(content, headers, HttpStatus.OK);
             } catch (NotFoundException exc) {
@@ -128,15 +128,15 @@ public class RegistryAPI {
         throw new NotFoundException();
     }
 
-    @GetMapping("/api/{publisher}/{extension}/{version}/file/{fileName:.+}")
+    @GetMapping("/api/{namespace}/{extension}/{version}/file/{fileName:.+}")
     @CrossOrigin
-    public ResponseEntity<byte[]> getFile(@PathVariable("publisher") String publisherName,
-                                          @PathVariable("extension") String extensionName,
-                                          @PathVariable("version") String version,
-                                          @PathVariable("fileName") String fileName) {
+    public ResponseEntity<byte[]> getFile(@PathVariable String namespace,
+                                          @PathVariable String extension,
+                                          @PathVariable String version,
+                                          @PathVariable String fileName) {
         for (var registry : getRegistries()) {
             try {
-                var content = registry.getFile(publisherName, extensionName, version, fileName);
+                var content = registry.getFile(namespace, extension, version, fileName);
                 var headers = getFileResponseHeaders(fileName);
                 return new ResponseEntity<>(content, headers, HttpStatus.OK);
             } catch (NotFoundException exc) {
@@ -168,15 +168,15 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        path = "/api/{publisher}/{extension}/reviews",
+        path = "/api/{namespace}/{extension}/reviews",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    public ReviewListJson getReviews(@PathVariable("publisher") String publisherName,
-                                     @PathVariable("extension") String extensionName) {
+    public ReviewListJson getReviews(@PathVariable String namespace,
+                                     @PathVariable String extension) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getReviews(publisherName, extensionName);
+                return registry.getReviews(namespace, extension);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -189,10 +189,10 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    public SearchResultJson search(@RequestParam(name = "query", required = false) String query,
-                                   @RequestParam(name = "category", required = false) String category,
-                                   @RequestParam(name = "size", defaultValue = "18") int size,
-                                   @RequestParam(name = "offset", defaultValue = "0") int offset) {
+    public SearchResultJson search(@RequestParam(required = false) String query,
+                                   @RequestParam(required = false) String category,
+                                   @RequestParam(defaultValue = "18") int size,
+                                   @RequestParam(defaultValue = "0") int offset) {
         if (size < 0) {
             return SearchResultJson.error("The parameter 'size' must not be negative.");
         }
@@ -227,7 +227,7 @@ public class RegistryAPI {
         int mergedEntries = 0;
         while (entriesIter.hasNext() && result.extensions.size() < limit) {
             var next = entriesIter.next();
-            if (!Iterables.any(previousResult, ext -> ext.publisher.equals(next.publisher) && ext.name.equals(next.name))) {
+            if (!Iterables.any(previousResult, ext -> ext.namespace.equals(next.namespace) && ext.name.equals(next.name))) {
                 result.extensions.add(next);
                 mergedEntries++;
             }
@@ -251,13 +251,13 @@ public class RegistryAPI {
     }
 
     @PostMapping(
-        path = "/api/{publisher}/{extension}/review",
+        path = "/api/{namespace}/{extension}/review",
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ReviewResultJson postReview(@RequestBody(required = false) ReviewJson review,
-                                       @PathVariable("publisher") String publisherName,
-                                       @PathVariable("extension") String extensionName) {
+                                       @PathVariable String namespace,
+                                       @PathVariable String extension) {
         if (review == null) {
             return ReviewResultJson.error("No JSON input.");
         }
@@ -270,16 +270,16 @@ public class RegistryAPI {
         if (review.comment != null && review.comment.length() > REVIEW_COMMENT_SIZE) {
             return ReviewResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters.");
         }
-        return local.postReview(review, publisherName, extensionName);
+        return local.postReview(review, namespace, extension);
     }
 
     @PostMapping(
-        path = "/api/{publisher}/{extension}/review/delete",
+        path = "/api/{namespace}/{extension}/review/delete",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ReviewResultJson deleteReview(@PathVariable("publisher") String publisherName,
-                                         @PathVariable("extension") String extensionName) {
-        return local.deleteReview(publisherName, extensionName);
+    public ReviewResultJson deleteReview(@PathVariable String namespace,
+                                         @PathVariable String extension) {
+        return local.deleteReview(namespace, extension);
     }
 
 }

@@ -163,7 +163,7 @@ export interface Response {
 
 export interface Extension extends Response {
     name: string;
-    publisher: string;
+    namespace: string;
     displayName?: string;
     version: string;
     preview?: boolean;
@@ -174,7 +174,7 @@ export interface Extension extends Response {
 
     url: string;
     iconUrl?: string;
-    publisherUrl: string;
+    namespaceUrl: string;
     reviewsUrl: string;
     downloadUrl: string;
     readmeUrl?: string;

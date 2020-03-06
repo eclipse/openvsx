@@ -20,7 +20,7 @@ import javax.persistence.UniqueConstraint;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = "name") })
-public class Publisher {
+public class Namespace {
 
     @Id
     @GeneratedValue
@@ -28,11 +28,11 @@ public class Publisher {
 
     String name;
 
-    @OneToMany(mappedBy = "publisher")
+    @OneToMany(mappedBy = "namespace")
     List<Extension> extensions;
 
-    @OneToMany(mappedBy = "publisher")
-    List<PublisherMembership> memberships;
+    @OneToMany(mappedBy = "namespace")
+    List<NamespaceMembership> memberships;
 
 
 	public long getId() {

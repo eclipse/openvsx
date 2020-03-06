@@ -20,14 +20,14 @@ import org.eclipse.openvsx.entities.ExtensionReadme;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.Publisher;
-import org.eclipse.openvsx.entities.PublisherMembership;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 
 @Component
 public class RepositoryService {
 
-    @Autowired PublisherRepository publisherRepo;
+    @Autowired NamespaceRepository namespaceRepo;
     @Autowired ExtensionRepository extensionRepo;
     @Autowired ExtensionVersionRepository extensionVersionRepo;
     @Autowired ExtensionBinaryRepository extensionBinaryRepo;
@@ -35,23 +35,23 @@ public class RepositoryService {
     @Autowired ExtensionReadmeRepository extensionReadmeRepo;
     @Autowired ExtensionReviewRepository extensionReviewRepo;
     @Autowired UserDataRepository userDataRepo;
-    @Autowired PublisherMembershipRepository membershipRepo;
+    @Autowired NamespaceMembershipRepository membershipRepo;
     @Autowired PersonalAccessTokenRepository tokenRepo;
 
-    public Publisher findPublisher(String name) {
-        return publisherRepo.findByNameIgnoreCase(name);
+    public Namespace findNamespace(String name) {
+        return namespaceRepo.findByNameIgnoreCase(name);
     }
 
-    public Extension findExtension(String name, Publisher publisher) {
-        return extensionRepo.findByNameIgnoreCaseAndPublisher(name, publisher);
+    public Extension findExtension(String name, Namespace namespace) {
+        return extensionRepo.findByNameIgnoreCaseAndNamespace(name, namespace);
     }
 
-    public Extension findExtension(String name, String publisherName) {
-        return extensionRepo.findByNameIgnoreCaseAndPublisherNameIgnoreCase(name, publisherName);
+    public Extension findExtension(String name, String namespace) {
+        return extensionRepo.findByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespace);
     }
 
-    public Streamable<Extension> findExtensions(Publisher publisher) {
-        return extensionRepo.findByPublisherOrderByNameAsc(publisher);
+    public Streamable<Extension> findExtensions(Namespace namespace) {
+        return extensionRepo.findByNamespaceOrderByNameAsc(namespace);
     }
 
     public Streamable<Extension> findAllExtensions() {
@@ -62,8 +62,8 @@ public class RepositoryService {
         return extensionVersionRepo.findByVersionAndExtension(version, extension);
     }
 
-    public ExtensionVersion findVersion(String version, String extensionName, String publisherName) {
-        return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionPublisherNameIgnoreCase(version, extensionName, publisherName);
+    public ExtensionVersion findVersion(String version, String extensionName, String namespace) {
+        return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespace);
     }
 
     public Streamable<ExtensionVersion> findVersions(Extension extension) {
@@ -98,8 +98,8 @@ public class RepositoryService {
         return userDataRepo.findByProviderAndProviderId(provider, providerId);
     }
 
-    public PublisherMembership findMembership(UserData user, Publisher publisher) {
-        return membershipRepo.findByUserAndPublisher(user, publisher);
+    public NamespaceMembership findMembership(UserData user, Namespace namespace) {
+        return membershipRepo.findByUserAndNamespace(user, namespace);
     }
 
     public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {

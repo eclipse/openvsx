@@ -19,7 +19,7 @@ public class ExtensionReferenceJson {
 
     public String url;
 
-    public String publisher;
+    public String namespace;
 
     public String extension;
 

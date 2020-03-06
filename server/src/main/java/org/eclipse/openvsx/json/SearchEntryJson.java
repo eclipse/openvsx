@@ -22,7 +22,7 @@ public class SearchEntryJson {
 
     public String name;
 
-    public String publisher;
+    public String namespace;
 
     public String version;
 

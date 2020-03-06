@@ -24,7 +24,7 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
 
     protected createRoute(tab: string) {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
-        return createRoute([ExtensionDetailRoutes.ROOT, tab, params.publisher, params.name]);
+        return createRoute([ExtensionDetailRoutes.ROOT, tab, params.namespace, params.name]);
     }
 
     render() {

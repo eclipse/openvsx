@@ -13,17 +13,17 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.Publisher;
+import org.eclipse.openvsx.entities.Namespace;
 
 public interface ExtensionRepository extends Repository<Extension, Long> {
 
-    Streamable<Extension> findByPublisher(Publisher publisher);
+    Streamable<Extension> findByNamespace(Namespace namespace);
 
-    Streamable<Extension> findByPublisherOrderByNameAsc(Publisher publisher);
+    Streamable<Extension> findByNamespaceOrderByNameAsc(Namespace namespace);
 
-    Extension findByNameIgnoreCaseAndPublisher(String name, Publisher publisher);
+    Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
 
-    Extension findByNameIgnoreCaseAndPublisherNameIgnoreCase(String name, String publisherName);
+    Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
 
     Streamable<Extension> findAll();
 

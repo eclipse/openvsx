@@ -49,7 +49,7 @@ module.exports = function (argv: string[]): void {
                 .catch(handleError(program.debug));
         });
 
-    const getCmd = program.command('get <publisher.extension>');
+    const getCmd = program.command('get <namespace.extension>');
     getCmd.description('Download an extension or its metadata.')
         .option('-v, --version <version>', 'Specify an exact version or a version range.')
         .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')

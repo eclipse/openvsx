@@ -86,7 +86,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         </Box>
                         <Box mt={2}>
                             <Typography variant='h6'>More Info</Typography>
-                            {this.renderInfo('Publisher', extension.publisher)}
+                            {this.renderInfo('Namespace', extension.namespace)}
                             {extension.version ? this.renderInfo('Version', extension.version) : ''}
                             {zonedDate ? this.renderInfo('Date', zonedDate.toLocaleString()) : ''}
                         </Box>

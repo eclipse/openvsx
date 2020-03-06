@@ -5,7 +5,6 @@
 -- Dumped from database version 11.5 (Ubuntu 11.5-0ubuntu0.19.04.1)
 -- Dumped by pg_dump version 11.5 (Ubuntu 11.5-0ubuntu0.19.04.1)
 
-SET client_encoding = 'UTF8';
 
 --
 -- Name: extension; Type: TABLE; Schema: public; Owner: -
@@ -14,9 +13,10 @@ SET client_encoding = 'UTF8';
 CREATE TABLE public.extension (
     id bigint NOT NULL,
     average_rating double precision,
+    download_count integer NOT NULL,
     name character varying(255),
     latest_id bigint,
-    publisher_id bigint
+    namespace_id bigint
 );
 
 
@@ -59,7 +59,8 @@ CREATE TABLE public.extension_readme (
 
 CREATE TABLE public.extension_review (
     id bigint NOT NULL,
-    comment character varying(255),
+    active boolean NOT NULL,
+    comment character varying(2048),
     rating integer NOT NULL,
     "timestamp" timestamp without time zone,
     title character varying(255),
@@ -148,6 +149,28 @@ CREATE SEQUENCE public.hibernate_sequence
 
 
 --
+-- Name: namespace; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.namespace (
+    id bigint NOT NULL,
+    name character varying(255)
+);
+
+
+--
+-- Name: namespace_membership; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.namespace_membership (
+    id bigint NOT NULL,
+    role character varying(32),
+    namespace bigint,
+    user_data bigint
+);
+
+
+--
 -- Name: personal_access_token; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -158,28 +181,6 @@ CREATE TABLE public.personal_access_token (
     created_timestamp timestamp without time zone,
     description character varying(255),
     value character varying(255),
-    user_data bigint
-);
-
-
---
--- Name: publisher; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.publisher (
-    id bigint NOT NULL,
-    name character varying(255)
-);
-
-
---
--- Name: publisher_membership; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.publisher_membership (
-    id bigint NOT NULL,
-    role character varying(255),
-    publisher bigint,
     user_data bigint
 );
 
@@ -274,27 +275,27 @@ ALTER TABLE ONLY public.extension_version
 
 
 --
+-- Name: namespace_membership namespace_membership_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.namespace_membership
+    ADD CONSTRAINT namespace_membership_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: namespace namespace_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.namespace
+    ADD CONSTRAINT namespace_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: personal_access_token personal_access_token_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.personal_access_token
     ADD CONSTRAINT personal_access_token_pkey PRIMARY KEY (id);
-
-
---
--- Name: publisher_membership publisher_membership_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.publisher_membership
-    ADD CONSTRAINT publisher_membership_pkey PRIMARY KEY (id);
-
-
---
--- Name: publisher publisher_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.publisher
-    ADD CONSTRAINT publisher_pkey PRIMARY KEY (id);
 
 
 --
@@ -314,11 +315,11 @@ ALTER TABLE ONLY public.spring_session
 
 
 --
--- Name: publisher ukh9trv4xhmh6s68vbw9ba6to70; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: namespace ukeq2y9mghytirkcofquanv5frf; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.publisher
-    ADD CONSTRAINT ukh9trv4xhmh6s68vbw9ba6to70 UNIQUE (name);
+ALTER TABLE ONLY public.namespace
+    ADD CONSTRAINT ukeq2y9mghytirkcofquanv5frf UNIQUE (name);
 
 
 --
@@ -359,19 +360,19 @@ CREATE INDEX spring_session_ix3 ON public.spring_session USING btree (principal_
 
 
 --
--- Name: extension fk4uxqcu3nal7b8extpmuhe35wk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.extension
-    ADD CONSTRAINT fk4uxqcu3nal7b8extpmuhe35wk FOREIGN KEY (publisher_id) REFERENCES public.publisher(id);
-
-
---
 -- Name: extension_version_bundled_extensions fk5c81oqeatr9715wfkrx0w615t; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.extension_version_bundled_extensions
     ADD CONSTRAINT fk5c81oqeatr9715wfkrx0w615t FOREIGN KEY (bundled_extensions_id) REFERENCES public.extension(id);
+
+
+--
+-- Name: extension fk64imd3nrj67d50tpkjs94ngmn; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.extension
+    ADD CONSTRAINT fk64imd3nrj67d50tpkjs94ngmn FOREIGN KEY (namespace_id) REFERENCES public.namespace(id);
 
 
 --
@@ -396,14 +397,6 @@ ALTER TABLE ONLY public.extension_version
 
 ALTER TABLE ONLY public.extension_version_tags
     ADD CONSTRAINT fk8qxmudnllmiyukng19hfkp042 FOREIGN KEY (extension_version_id) REFERENCES public.extension_version(id);
-
-
---
--- Name: publisher_membership fk8r3555760hm2d1b1fy4tpdyq6; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.publisher_membership
-    ADD CONSTRAINT fk8r3555760hm2d1b1fy4tpdyq6 FOREIGN KEY (publisher) REFERENCES public.publisher(id);
 
 
 --
@@ -447,6 +440,14 @@ ALTER TABLE ONLY public.extension_review
 
 
 --
+-- Name: namespace_membership fkgfhwhknula6do2n6wyvqetm3n; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.namespace_membership
+    ADD CONSTRAINT fkgfhwhknula6do2n6wyvqetm3n FOREIGN KEY (namespace) REFERENCES public.namespace(id);
+
+
+--
 -- Name: extension_review fkinjbn9grk135y6ik0ut4ujp0w; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -471,6 +472,14 @@ ALTER TABLE ONLY public.extension_readme
 
 
 --
+-- Name: namespace_membership fknsamekutxywvsb3s1mjdcjkyp; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.namespace_membership
+    ADD CONSTRAINT fknsamekutxywvsb3s1mjdcjkyp FOREIGN KEY (user_data) REFERENCES public.user_data(id);
+
+
+--
 -- Name: extension_version_bundled_extensions fkp7o7ws8hrcv24897g2y89f8x5; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -484,14 +493,6 @@ ALTER TABLE ONLY public.extension_version_bundled_extensions
 
 ALTER TABLE ONLY public.extension_icon
     ADD CONSTRAINT fks849r0hw53a2x8nnwrciho2pp FOREIGN KEY (extension_id) REFERENCES public.extension_version(id);
-
-
---
--- Name: publisher_membership fksprejgjfk4d4txpmmj95gy5ia; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.publisher_membership
-    ADD CONSTRAINT fksprejgjfk4d4txpmmj95gy5ia FOREIGN KEY (user_data) REFERENCES public.user_data(id);
 
 
 --

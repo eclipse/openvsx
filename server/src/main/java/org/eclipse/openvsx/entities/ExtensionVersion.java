@@ -95,7 +95,7 @@ public class ExtensionVersion {
     public ExtensionJson toExtensionJson() {
         var json = new ExtensionJson();
         var extension = this.getExtension();
-        json.publisher = extension.getPublisher().getName();
+        json.namespace = extension.getNamespace().getName();
         json.name = extension.getName();
         json.averageRating = extension.getAverageRating();
         json.downloadCount = extension.getDownloadCount();
@@ -117,7 +117,7 @@ public class ExtensionVersion {
         if (this.getDependencies() != null) {
             json.dependencies = CollectionUtil.map(this.getDependencies(), depExtension -> {
                 var ref = new ExtensionReferenceJson();
-                ref.publisher = depExtension.getPublisher().getName();
+                ref.namespace = depExtension.getNamespace().getName();
                 ref.extension = depExtension.getName();
                 return ref;
             });
@@ -125,7 +125,7 @@ public class ExtensionVersion {
         if (this.getBundledExtensions() != null) {
             json.bundledExtensions = CollectionUtil.map(this.getBundledExtensions(), bndExtension -> {
                 var ref = new ExtensionReferenceJson();
-                ref.publisher = bndExtension.getPublisher().getName();
+                ref.namespace = bndExtension.getNamespace().getName();
                 ref.extension = bndExtension.getName();
                 return ref;
             });
@@ -140,7 +140,7 @@ public class ExtensionVersion {
         var entry = new SearchEntryJson();
         var extension = this.getExtension();
         entry.name = extension.getName();
-        entry.publisher = extension.getPublisher().getName();
+        entry.namespace = extension.getNamespace().getName();
         entry.averageRating = extension.getAverageRating();
         entry.downloadCount = extension.getDownloadCount();
         entry.version = this.getVersion();

@@ -29,7 +29,7 @@ public class ExtensionJson {
     @Nullable
     public String error;
 
-    public String publisherUrl;
+    public String namespaceUrl;
 
     public String reviewsUrl;
 
@@ -43,7 +43,7 @@ public class ExtensionJson {
 
     public String name;
 
-    public String publisher;
+    public String namespace;
 
     public Map<String, String> allVersions;
 

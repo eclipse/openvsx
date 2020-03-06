@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2019 TypeFox and others
+ * Copyright (c) 2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -11,12 +11,12 @@ package org.eclipse.openvsx.repositories;
 
 import org.springframework.data.repository.Repository;
 
-import org.eclipse.openvsx.entities.Publisher;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.UserData;
 
-public interface PublisherRepository extends Repository<Publisher, Long> {
+public interface NamespaceMembershipRepository extends Repository<NamespaceMembership, Long> {
 
-    Publisher findByName(String name);
-
-    Publisher findByNameIgnoreCase(String name);
+    NamespaceMembership findByUserAndNamespace(UserData user, Namespace namespace);
 
 }

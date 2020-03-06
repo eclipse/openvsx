@@ -29,7 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.PublisherJson;
+import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -48,9 +48,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public PublisherJson getPublisher(String publisherName) {
+    public NamespaceJson getNamespace(String namespace) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName), PublisherJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace), NamespaceJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -58,9 +58,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ExtensionJson getExtension(String publisherName, String extensionName) {
+    public ExtensionJson getExtension(String namespace, String extension) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName, extensionName), ExtensionJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace, extension), ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -68,9 +68,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ExtensionJson getExtension(String publisherName, String extensionName, String version) {
+    public ExtensionJson getExtension(String namespace, String extension, String version) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName, extensionName, version), ExtensionJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace, extension, version), ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -78,13 +78,13 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public byte[] getFile(String publisherName, String extensionName, String fileName) {
-        return getFile(createApiUrl(upstreamUrl, "api", publisherName, extensionName, "file", fileName));
+    public byte[] getFile(String namespace, String extension, String fileName) {
+        return getFile(createApiUrl(upstreamUrl, "api", namespace, extension, "file", fileName));
     }
 
     @Override
-    public byte[] getFile(String publisherName, String extensionName, String version, String fileName) {
-        return getFile(createApiUrl(upstreamUrl, "api", publisherName, extensionName, version, "file", fileName));
+    public byte[] getFile(String namespace, String extension, String version, String fileName) {
+        return getFile(createApiUrl(upstreamUrl, "api", namespace, extension, version, "file", fileName));
     }
 
     private byte[] getFile(String url) {
@@ -103,9 +103,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ReviewListJson getReviews(String publisherName, String extensionName) {
+    public ReviewListJson getReviews(String namespace, String extension) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", publisherName, extensionName, "reviews"), ReviewListJson.class);
+            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace, extension, "reviews"), ReviewListJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;

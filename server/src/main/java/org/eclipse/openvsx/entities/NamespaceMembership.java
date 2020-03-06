@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -16,7 +17,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class PublisherMembership {
+public class NamespaceMembership {
 
     public static final String ROLE_OWNER = "owner";
 
@@ -25,13 +26,14 @@ public class PublisherMembership {
     long id;
 
     @ManyToOne
-    @JoinColumn(name = "publisher")
-    private Publisher publisher;
+    @JoinColumn(name = "namespace")
+    private Namespace namespace;
 
     @ManyToOne
     @JoinColumn(name = "user_data")
     private UserData user;
 
+    @Column(length = 32)
     private String role;
 
 
@@ -51,12 +53,12 @@ public class PublisherMembership {
         this.user = user;
     }
 
-    public Publisher getPublisher() {
-        return publisher;
+    public Namespace getNamespace() {
+        return namespace;
     }
 
-    public void setPublisher(Publisher publisher) {
-        this.publisher = publisher;
+    public void setNamespace(Namespace namespace) {
+        this.namespace = namespace;
     }
 
     public String getRole() {

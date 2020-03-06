@@ -21,6 +21,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     ExtensionVersion findByVersionAndExtension(String version, Extension extension);
 
-    ExtensionVersion findByVersionAndExtensionNameIgnoreCaseAndExtensionPublisherNameIgnoreCase(String version, String extensionName, String publisherName);
+    ExtensionVersion findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
 
 }

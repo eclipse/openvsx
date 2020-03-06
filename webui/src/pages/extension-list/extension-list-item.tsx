@@ -37,7 +37,7 @@ interface ExtensionListItemProps extends WithStyles<typeof itemStyles> {
 class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
     render() {
         const { classes, extension } = this.props;
-        const route = createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.OVERVIEW, extension.publisher, extension.name]);
+        const route = createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.OVERVIEW, extension.namespace, extension.name]);
         return <React.Fragment>
             <Fade in={true} timeout={{ enter: this.props.idx * 200 }}>
                 <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name}>
@@ -53,7 +53,7 @@ class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
                             </Box>
                             <Box display='flex' justifyContent='space-between'>
                                 <Typography component='div' variant='caption' noWrap={true} align='left'>
-                                    {extension.publisher}
+                                    {extension.namespace}
                                 </Typography>
                                 <Typography component='div' variant='caption' noWrap={true} align='right'>
                                     {extension.version}

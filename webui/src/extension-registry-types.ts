@@ -22,7 +22,7 @@ export interface SearchResult {
 
 export interface ExtensionRaw {
     readonly name: string;
-    readonly publisher: string;
+    readonly namespace: string;
     readonly url: string;
     readonly iconUrl?: string;
     readonly displayName?: string;
@@ -34,7 +34,7 @@ export interface ExtensionRaw {
 }
 
 export interface Extension extends ExtensionRaw {
-    readonly publisherUrl: string;
+    readonly namespaceUrl: string;
     readonly reviewsUrl: string;
     readonly downloadUrl: string;
 
@@ -68,7 +68,7 @@ export interface Badge {
 }
 
 export interface ExtensionReference {
-    publisher: string;
+    namespace: string;
     extension: string;
     version?: string;
 }

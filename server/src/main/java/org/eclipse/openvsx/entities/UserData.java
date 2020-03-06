@@ -41,7 +41,7 @@ public class UserData {
     List<PersonalAccessToken> tokens;
 
     @OneToMany(mappedBy = "user")
-    List<PublisherMembership> memberships;
+    List<NamespaceMembership> memberships;
 
 
     /**

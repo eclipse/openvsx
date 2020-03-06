@@ -24,15 +24,15 @@ import { ExportRatingStars } from "./extension-rating-stars";
 export namespace ExtensionDetailRoutes {
     export const ROOT = 'extension-detail';
     export const TAB_PARAM = ':tab';
-    export const PUBLISHER_PARAM = ':publisher';
+    export const NAMESPACE_PARAM = ':namespace';
     export const NAME_PARAM = ':name';
     export const OVERVIEW = 'overview';
     export const REVIEWS = 'reviews';
 
-    export const OVERVIEW_ROUTE = createRoute([ROOT, OVERVIEW, PUBLISHER_PARAM, NAME_PARAM]);
-    export const REVIEWS_ROUTE = createRoute([ROOT, REVIEWS, PUBLISHER_PARAM, NAME_PARAM]);
+    export const OVERVIEW_ROUTE = createRoute([ROOT, OVERVIEW, NAMESPACE_PARAM, NAME_PARAM]);
+    export const REVIEWS_ROUTE = createRoute([ROOT, REVIEWS, NAMESPACE_PARAM, NAME_PARAM]);
 
-    export const EXTENSION_DETAIL_MAIN_ROUTE = createRoute([ROOT, TAB_PARAM, PUBLISHER_PARAM, NAME_PARAM]);
+    export const EXTENSION_DETAIL_MAIN_ROUTE = createRoute([ROOT, TAB_PARAM, NAMESPACE_PARAM, NAME_PARAM]);
 }
 
 const detailStyles = (theme: Theme) => createStyles({
@@ -106,10 +106,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                             <Typography variant='h6' className={this.props.classes.row}>{extension.displayName || extension.name}</Typography>
                             <Box display='flex' className={this.props.classes.row}>
                                 <RouteLink
-                                    to={createRoute([], [{ key: 'search', value: extension.publisher}])}
+                                    to={createRoute([], [{ key: 'search', value: extension.namespace}])}
                                     className={this.props.classes.link}>
                                     <Box className={this.props.classes.alignVertically}>
-                                        {extension.publisher}
+                                        {extension.namespace}
                                     </Box>
                                 </RouteLink>
                                 <TextDivider />
@@ -118,7 +118,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                 </Box>
                                 <TextDivider />
                                 <RouteLink
-                                    to={createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.REVIEWS, extension.publisher, extension.name])}
+                                    to={createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.REVIEWS, extension.namespace, extension.name])}
                                     className={this.props.classes.link}
                                     title={
                                         extension.averageRating !== undefined ?

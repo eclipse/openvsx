@@ -27,8 +27,8 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'logout']);
     }
 
-    getExtensionApiUrl(extension: { publisher: string, name: string }) {
-        return createAbsoluteURL([this.serverUrl, 'api', extension.publisher, extension.name]);
+    getExtensionApiUrl(extension: { namespace: string, name: string }) {
+        return createAbsoluteURL([this.serverUrl, 'api', extension.namespace, extension.name]);
     }
 
     search(filter?: ExtensionFilter): Promise<SearchResult | ErrorResult> {

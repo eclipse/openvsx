@@ -20,11 +20,11 @@ Variants:
 
 ### Download Extensions
 
-You can use `ovsx` for downloading extensions from an Open VSX instance. Extensions are identified with the format `publisher.extension`, and an exact version or version range can be specified with the `--version` (or `-v`) argument.
+You can use `ovsx` for downloading extensions from an Open VSX instance. Extensions are identified with the format `namespace.extension`, and an exact version or version range can be specified with the `--version` (or `-v`) argument. The namespace corresponds to the `publisher` entry of the package.json file.
 
 Variants:
  * `ovsx get <extension>`
-   downloads an extension and saves it in a file as specified in its download URL (usually in the format `publisher.extension-version.vsix`) in the current working directory.
+   downloads an extension and saves it in a file as specified in its download URL (usually in the format `namespace.extension-version.vsix`) in the current working directory.
  * `ovsx get <extension> -o <path>`
    downloads an extension and saves it in the specified file or directory.
  * `ovsx get <extension> --metadata`

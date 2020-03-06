@@ -17,8 +17,8 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.Publisher;
-import org.eclipse.openvsx.entities.PublisherMembership;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,8 +68,8 @@ public class UserService {
             user.setEmail(principal.getAttribute("email"));
             user.setAvatarUrl(principal.getAttribute("avatar_url"));
             entityManager.persist(user);
-            if (repositories.findPublisher(user.getLoginName()) == null) {
-                createPublisher(user, user.getLoginName());
+            if (repositories.findNamespace(user.getLoginName()) == null) {
+                createNamespace(user, user.getLoginName());
             }
         } else {
             String loginName = principal.getAttribute("login");
@@ -89,17 +89,17 @@ public class UserService {
     }
 
     @Transactional
-    public Publisher createPublisher(UserData user, String name) {
-        var publisher = new Publisher();
-        publisher.setName(name);
-        entityManager.persist(publisher);
+    public Namespace createNamespace(UserData user, String name) {
+        var namespace = new Namespace();
+        namespace.setName(name);
+        entityManager.persist(namespace);
 
-        var membership = new PublisherMembership();
-        membership.setPublisher(publisher);
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
         membership.setUser(user);
-        membership.setRole(PublisherMembership.ROLE_OWNER);
+        membership.setRole(NamespaceMembership.ROLE_OWNER);
         entityManager.persist(membership);
-        return publisher;
+        return namespace;
     }
 
     @Transactional
@@ -120,12 +120,12 @@ public class UserService {
         return value;
     }
 
-    public boolean hasPublishPermission(UserData user, Publisher publisher) {
-        var membership = repositories.findMembership(user, publisher);
+    public boolean hasPublishPermission(UserData user, Namespace namespace) {
+        var membership = repositories.findMembership(user, namespace);
         if (membership == null) {
             return false;
         }
-        return membership.getRole().equals(PublisherMembership.ROLE_OWNER);
+        return membership.getRole().equals(NamespaceMembership.ROLE_OWNER);
     }
 
 }

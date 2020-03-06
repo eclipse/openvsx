@@ -99,7 +99,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return packageJson.path("name").asText();
     }
 
-    public String getPublisherName() {
+    public String getNamespace() {
         loadPackageJson();
         return packageJson.path("publisher").asText();
     }

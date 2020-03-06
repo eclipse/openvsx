@@ -41,7 +41,7 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
     if (extension.error) {
         throw new Error(extension.error);
     }
-    console.log(`\ud83d\ude80  Published ${extension.publisher}.${extension.name} v${extension.version}`);
+    console.log(`\ud83d\ude80  Published ${extension.namespace}.${extension.name} v${extension.version}`);
 }
 
 export interface PublishOptions {

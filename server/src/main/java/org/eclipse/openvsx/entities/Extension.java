@@ -30,7 +30,7 @@ public class Extension {
     String name;
 
     @ManyToOne
-    Publisher publisher;
+    Namespace namespace;
 
     @OneToMany(mappedBy = "extension")
     List<ExtensionVersion> versions;
@@ -50,7 +50,7 @@ public class Extension {
         var search = new ExtensionSearch();
         search.id = this.getId();
         search.name = this.getName();
-        search.publisher = this.getPublisher().getName();
+        search.namespace = this.getNamespace().getName();
         var extVer = this.getLatest();
         search.displayName = extVer.getDisplayName();
         search.description = extVer.getDescription();
@@ -75,12 +75,12 @@ public class Extension {
 		this.name = name;
 	}
 
-	public Publisher getPublisher() {
-		return publisher;
+	public Namespace getNamespace() {
+		return namespace;
 	}
 
-	public void setPublisher(Publisher publisher) {
-		this.publisher = publisher;
+	public void setNamespace(Namespace namespace) {
+		this.namespace = namespace;
 	}
 
 	public ExtensionVersion getLatest() {
