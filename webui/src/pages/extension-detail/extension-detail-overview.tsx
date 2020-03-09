@@ -12,7 +12,7 @@ import * as React from "react";
 import * as MarkdownIt from 'markdown-it';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link } from "@material-ui/core";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { createRoute, handleError, toLocalTime } from "../../utils";
+import { handleError, toLocalTime, addQuery } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
@@ -97,7 +97,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     protected handleFilterButtonClicked(kind: 'category' | 'search', buttonLabel: string) {
-        const route = createRoute([ExtensionListRoutes.EXTENSION_LIST], [{ key: kind, value: buttonLabel }]);
+        const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
         this.props.history.push(route);
     }
 

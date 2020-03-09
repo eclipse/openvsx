@@ -19,10 +19,10 @@ import { UserSettingsTokens } from "./user-settings-tokens";
 import { UserSettingsProfile } from "./user-settings-profile";
 
 export namespace UserSettingsRoutes {
-    export const MAIN = createRoute(['user-settings']);
-    export const MAIN_W_TAB_PARAM = createRoute([MAIN, ':tab']);
-    export const PROFILE_ROUTE = createRoute([MAIN, 'profile']);
-    export const TOKENS_ROUTE = createRoute([MAIN, 'tokens']);
+    export const ROOT = createRoute(['user-settings']);
+    export const MAIN = createRoute([ROOT, ':tab']);
+    export const PROFILE = createRoute([ROOT, 'profile']);
+    export const TOKENS = createRoute([ROOT, 'tokens']);
 }
 
 const profileStyles = (theme: Theme) => createStyles({
@@ -53,10 +53,10 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                         </Grid>
                         <Grid item md={10}>
                             <Box pt={1} pl={6}>
-                                <Route path={UserSettingsRoutes.PROFILE_ROUTE}>
+                                <Route path={UserSettingsRoutes.PROFILE}>
                                     <UserSettingsProfile service={this.props.service} user={user} />
                                 </Route>
-                                <Route path={UserSettingsRoutes.TOKENS_ROUTE}>
+                                <Route path={UserSettingsRoutes.TOKENS}>
                                     <UserSettingsTokens service={this.props.service} user={user} />
                                 </Route>
                             </Box>

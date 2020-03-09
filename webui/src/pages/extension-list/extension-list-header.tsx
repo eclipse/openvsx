@@ -96,7 +96,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                     <Paper className={classes.search}>
                         <InputBase
                             autoFocus
-                            value={this.props.searchTerm || ''}
+                            value={this.props.searchQuery || ''}
                             onChange={this.handleSearchChange}
                             className={classes.inputBase}
                             placeholder='Search for Name, Tags or Description'>
@@ -129,7 +129,7 @@ namespace ExtensionListHeaderComp {
         onSearchChanged: (s: string) => void;
         onCategoryChanged: (c: ExtensionCategory) => void;
         listHeaderTitle: string;
-        searchTerm?: string;
+        searchQuery?: string;
         category?: ExtensionCategory | '';
         service: ExtensionRegistryService;
     }

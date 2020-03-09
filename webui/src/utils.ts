@@ -16,7 +16,7 @@ export function addQuery(url: string, queries: { key: string, value: string | nu
 }
 
 export function createAbsoluteURL(arr: string[], queries?: { key: string, value: string | number }[]): string {
-    const url = arr.reduce((prev, curr) => prev ? prev + '/' + curr : curr, '');
+    const url = arr.length === 0 ? '' : arr.reduce((prev, curr) => prev + '/' + curr);
     if (queries && queries.length > 0) {
         return addQuery(url, queries);
     } else {

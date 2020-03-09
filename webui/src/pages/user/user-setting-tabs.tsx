@@ -25,7 +25,7 @@ export class UserSettingTabs extends React.Component<UserSettingTabs.Props> {
     }
 
     protected createRoute(tab: string) {
-        return createRoute([UserSettingsRoutes.MAIN, tab]);
+        return createRoute([UserSettingsRoutes.ROOT, tab]);
     }
 
     render() {

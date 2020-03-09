@@ -18,7 +18,7 @@ import { ExtensionList } from "./extension-list";
 import { ExtensionListHeader } from "./extension-list-header";
 
 export namespace ExtensionListRoutes {
-    export const EXTENSION_LIST = createRoute([]);
+    export const MAIN = createRoute([]);
 }
 
 export class ExtensionListContainer extends React.Component<ExtensionListContainer.Props, ExtensionListContainer.State> {
@@ -26,7 +26,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     constructor(props: ExtensionListContainer.Props) {
         super(props);
         this.state = {
-            searchTerm: '',
+            searchQuery: '',
             category: ''
         };
     }
@@ -37,13 +37,13 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         const search = searchParams.get('search');
         const category = searchParams.get('category') as ExtensionCategory;
         this.setState({
-            searchTerm: search || '',
+            searchQuery: search || '',
             category: category || ''
         });
     }
 
-    protected onSearchChanged = (searchTerm: string) => {
-        this.setState({ searchTerm });
+    protected onSearchChanged = (searchQuery: string) => {
+        this.setState({ searchQuery: searchQuery });
     }
     protected onCategoryChanged = (category: ExtensionCategory) => {
         this.setState({ category });
@@ -53,13 +53,13 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         return <React.Fragment>
             <Container>
                 <ExtensionListHeader
-                    searchTerm={this.state.searchTerm}
+                    searchQuery={this.state.searchQuery}
                     category={this.state.category}
                     onSearchChanged={this.onSearchChanged}
                     onCategoryChanged={this.onCategoryChanged}
                     listHeaderTitle={this.props.listHeaderTitle}
                     service={this.props.service} />
-                <ExtensionList service={this.props.service} filter={{ query: this.state.searchTerm, category: this.state.category }} />
+                <ExtensionList service={this.props.service} filter={{ query: this.state.searchQuery, category: this.state.category }} />
             </Container>
         </React.Fragment>;
     }
@@ -72,7 +72,7 @@ export namespace ExtensionListContainer {
         listHeaderTitle: string;
     }
     export interface State {
-        searchTerm: string,
+        searchQuery: string,
         category: ExtensionCategory | ''
     }
 }

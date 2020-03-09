@@ -19,20 +19,23 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
 
     protected handleChange = (event: React.ChangeEvent, newTab: string) => {
         this.props.history.push(this.createRoute(newTab));
-        this.setState({ tab: newTab });
     }
 
     protected createRoute(tab: string) {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
-        return createRoute([ExtensionDetailRoutes.ROOT, tab, params.namespace, params.name]);
+        if (tab === ExtensionDetailRoutes.TAB_OVERVIEW) {
+            return createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name]);
+        } else {
+            return createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, tab]);
+        }
     }
 
     render() {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
         return <React.Fragment>
-            <Tabs value={params.tab} onChange={this.handleChange}>
-                <Tab value={ExtensionDetailRoutes.OVERVIEW} label='Overview' />
-                <Tab value={ExtensionDetailRoutes.REVIEWS} label='Rating &amp; Review' />
+            <Tabs value={params.tab || ExtensionDetailRoutes.TAB_OVERVIEW} onChange={this.handleChange}>
+                <Tab value={ExtensionDetailRoutes.TAB_OVERVIEW} label='Overview' />
+                <Tab value={ExtensionDetailRoutes.TAB_REVIEWS} label='Rating &amp; Review' />
             </Tabs>
         </React.Fragment>;
     }
@@ -43,7 +46,7 @@ export namespace ExtensionDetailTabs {
     }
 
     export interface Params extends ExtensionRaw {
-        tab: string;
+        tab?: string;
     }
 }
 

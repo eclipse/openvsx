@@ -12,27 +12,30 @@ import * as React from "react";
 import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container } from "@material-ui/core";
 import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-router-dom";
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
-import { createRoute, handleError } from "../../utils";
-import { ExtensionDetailOverview } from "../extension-detail/extension-detail-overview";
+import { handleError, createRoute, addQuery } from "../../utils";
+import { ExtensionListRoutes } from "../extension-list/extension-list-container";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
+import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
 import { ExportRatingStars } from "./extension-rating-stars";
 
 export namespace ExtensionDetailRoutes {
-    export const ROOT = 'extension-detail';
-    export const TAB_PARAM = ':tab';
-    export const NAMESPACE_PARAM = ':namespace';
-    export const NAME_PARAM = ':name';
-    export const OVERVIEW = 'overview';
-    export const REVIEWS = 'reviews';
+    export namespace Parameters {
+        export const NAMESPACE = ':namespace';
+        export const NAME = ':name';
+        export const TAB = ':tab?';
+    }
 
-    export const OVERVIEW_ROUTE = createRoute([ROOT, OVERVIEW, NAMESPACE_PARAM, NAME_PARAM]);
-    export const REVIEWS_ROUTE = createRoute([ROOT, REVIEWS, NAMESPACE_PARAM, NAME_PARAM]);
+    export const TAB_OVERVIEW = 'overview';
+    export const TAB_REVIEWS = 'reviews';
 
-    export const EXTENSION_DETAIL_MAIN_ROUTE = createRoute([ROOT, TAB_PARAM, NAMESPACE_PARAM, NAME_PARAM]);
+    export const ROOT = 'extension';
+    export const MAIN = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TAB]);
+    export const OVERVIEW = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME]);
+    export const REVIEWS = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, TAB_REVIEWS]);
 }
 
 const detailStyles = (theme: Theme) => createStyles({
@@ -106,7 +109,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                             <Typography variant='h6' className={this.props.classes.row}>{extension.displayName || extension.name}</Typography>
                             <Box display='flex' className={this.props.classes.row}>
                                 <RouteLink
-                                    to={createRoute([], [{ key: 'search', value: extension.namespace}])}
+                                    to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
                                     className={this.props.classes.link}>
                                     <Box className={this.props.classes.alignVertically}>
                                         {extension.namespace}
@@ -118,7 +121,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                 </Box>
                                 <TextDivider />
                                 <RouteLink
-                                    to={createRoute([ExtensionDetailRoutes.ROOT, ExtensionDetailRoutes.REVIEWS, extension.namespace, extension.name])}
+                                    to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
                                     className={this.props.classes.link}
                                     title={
                                         extension.averageRating !== undefined ?
@@ -150,17 +153,17 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     </Box>
                     <Box>
                         <Switch>
-                            <Route path={ExtensionDetailRoutes.OVERVIEW_ROUTE}>
-                                <ExtensionDetailOverview
-                                    extension={this.state.extension}
-                                    service={this.props.service} />
-                            </Route>
-                            <Route path={ExtensionDetailRoutes.REVIEWS_ROUTE}>
+                            <Route path={ExtensionDetailRoutes.REVIEWS}>
                                 <ExtensionDetailReviews
                                     extension={this.state.extension}
                                     reviewsDidUpdate={this.onReviewUpdate}
                                     service={this.props.service}
                                     user={this.props.user} />
+                            </Route>
+                            <Route path={ExtensionDetailRoutes.OVERVIEW}>
+                                <ExtensionDetailOverview
+                                    extension={this.state.extension}
+                                    service={this.props.service} />
                             </Route>
                         </Switch>
                     </Box>

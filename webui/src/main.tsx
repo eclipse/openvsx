@@ -23,14 +23,6 @@ import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { handleError } from './utils';
 
-export namespace ExtensionRegistryPages {
-    export const EXTENSION_REGISTRY = 'extension-registry';
-    export const EXTENSION_UPDATE = 'extension-update';
-    export const LOGIN = 'login';
-    export const USER_PROFILE = 'user-profile';
-    export const USER_REGISTRY = 'user-registry';
-}
-
 const mainStyles = (theme: Theme) => createStyles({
     link: {
         textDecoration: 'none',
@@ -83,7 +75,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 <AppBar position='sticky'>
                     <Toolbar classes={{ root: this.props.classes.toolbar }}>
                         <Box>
-                            <RouteLink to={ExtensionListRoutes.EXTENSION_LIST} className={this.props.classes.link}>
+                            <RouteLink to={ExtensionListRoutes.MAIN} className={this.props.classes.link}>
                                 <Box display='flex'>
                                     <Box display='flex' alignItems='center' marginRight={1}>
                                         <img src={this.props.logoURL} style={{
@@ -112,7 +104,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 </AppBar>
                 <Box flex='1'>
                     <Switch>
-                        <Route exact path={[ExtensionListRoutes.EXTENSION_LIST]}
+                        <Route exact path={[ExtensionListRoutes.MAIN]}
                             render={routeProps =>
                                 <ExtensionListContainer
                                     {...routeProps}
@@ -120,7 +112,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     pageTitle={this.props.pageTitle}
                                     listHeaderTitle={this.props.listHeaderTitle} />
                             } />
-                        <Route path={UserSettingsRoutes.MAIN_W_TAB_PARAM}
+                        <Route path={UserSettingsRoutes.MAIN}
                             render={routeProps =>
                                 <UserSettings
                                     {...routeProps}
@@ -128,7 +120,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     service={this.props.service}
                                     pageTitle={this.props.pageTitle} />
                             } />
-                        <Route path={ExtensionDetailRoutes.EXTENSION_DETAIL_MAIN_ROUTE}
+                        <Route path={ExtensionDetailRoutes.MAIN}
                             render={routeProps =>
                                 <ExtensionDetail
                                     {...routeProps}

@@ -23,6 +23,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
+    @Value("${ovsx.webui.frontendRoutes:/extension/**,/user-settings/**}")
+    String[] frontendRoutes;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         if (!Strings.isNullOrEmpty(webuiUrl) && UrlUtil.isAbsolute(webuiUrl)) {
@@ -42,9 +45,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/extension-list/**").setViewName("forward:/");
-        registry.addViewController("/extension-detail/**").setViewName("forward:/");
-        registry.addViewController("/user-settings/**").setViewName("forward:/");
+        for (var route : frontendRoutes) {
+            registry.addViewController(route).setViewName("forward:/");
+        }
     }
 
 }
