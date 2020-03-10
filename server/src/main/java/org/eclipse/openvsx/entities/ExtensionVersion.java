@@ -74,10 +74,13 @@ public class ExtensionVersion {
 
     String bugs;
 
+    @Column(length = 16)
     String markdown;
 
+    @Column(length = 16)
     String galleryColor;
 
+    @Column(length = 16)
     String galleryTheme;
 
     String qna;

@@ -66,6 +66,7 @@ public class UserService {
             user.setLoginName(principal.getAttribute("login"));
             user.setFullName(principal.getAttribute("name"));
             user.setEmail(principal.getAttribute("email"));
+            user.setProviderUrl(principal.getAttribute("html_url"));
             user.setAvatarUrl(principal.getAttribute("avatar_url"));
             entityManager.persist(user);
         } else {
@@ -78,6 +79,9 @@ public class UserService {
             String email = principal.getAttribute("email");
             if (email != null && !email.equals(user.getEmail()))
                 user.setEmail(email);
+            String providerUrl = principal.getAttribute("html_url");
+            if (providerUrl != null && !providerUrl.equals(user.getProviderUrl()))
+                user.setProviderUrl(providerUrl);
             String avatarUrl = principal.getAttribute("avatar_url");
             if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl()))
                 user.setAvatarUrl(avatarUrl);

@@ -12,6 +12,7 @@ package org.eclipse.openvsx.entities;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -35,6 +36,7 @@ public class PersonalAccessToken {
     @JoinColumn(name = "user_data")
     UserData user;
 
+    @Column(length = 64)
     String value;
 
     boolean active;
@@ -43,6 +45,7 @@ public class PersonalAccessToken {
 
     LocalDateTime accessedTimestamp;
 
+    @Column(length = 2048)
     String description;
 
     @OneToMany(mappedBy = "publishedWith")

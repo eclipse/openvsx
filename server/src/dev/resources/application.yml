@@ -12,8 +12,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
   session:
     store-type: jdbc
+    jdbc:
+      initialize-schema: never
 
   security:
       oauth2:

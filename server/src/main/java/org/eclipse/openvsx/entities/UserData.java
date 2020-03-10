@@ -11,6 +11,7 @@ package org.eclipse.openvsx.entities;
 
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -33,16 +34,18 @@ public class UserData {
 
     String avatarUrl;
 
+    @Column(length = 32)
     String provider;
 
     String providerId;
+
+    String providerUrl;
 
     @OneToMany(mappedBy = "user")
     List<PersonalAccessToken> tokens;
 
     @OneToMany(mappedBy = "user")
     List<NamespaceMembership> memberships;
-
 
     /**
      * Convert to a JSON object.
@@ -109,6 +112,14 @@ public class UserData {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public String getProviderUrl() {
+        return providerUrl;
+    }
+
+    public void setProviderUrl(String providerUrl) {
+        this.providerUrl = providerUrl;
     }
 
 }

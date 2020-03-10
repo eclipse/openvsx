@@ -40,6 +40,7 @@ public class ExtensionValidator {
 
     private final static int DEFAULT_STRING_SIZE = 255;
     private final static int DESCRIPTION_SIZE = 2048;
+    private final static int GALLERY_COLOR_SIZE = 16;
 
     private final Pattern namePattern = Pattern.compile("[\\w\\-\\+\\$~]+");
 
@@ -90,7 +91,7 @@ public class ExtensionValidator {
         checkInvalid(extVersion.getMarkdown(), s -> !MARKDOWN_VALUES.contains(s), "markdown", issues,
                 MARKDOWN_VALUES.toString());
         checkCharacters(extVersion.getGalleryColor(), "galleryBanner.color", issues);
-        checkFieldSize(extVersion.getGalleryColor(), DEFAULT_STRING_SIZE, "galleryBanner.color", issues);
+        checkFieldSize(extVersion.getGalleryColor(), GALLERY_COLOR_SIZE, "galleryBanner.color", issues);
         checkInvalid(extVersion.getGalleryTheme(), s -> !GALLERY_THEME_VALUES.contains(s), "galleryBanner.theme", issues,
                 GALLERY_THEME_VALUES.toString());
         checkInvalid(extVersion.getQna(), s -> !QNA_VALUES.contains(s) && !isURL(s), "qna", issues,

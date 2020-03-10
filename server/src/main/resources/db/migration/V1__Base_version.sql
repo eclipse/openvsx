@@ -79,12 +79,12 @@ CREATE TABLE public.extension_version (
     description character varying(2048),
     display_name character varying(255),
     extension_file_name character varying(255),
-    gallery_color character varying(255),
-    gallery_theme character varying(255),
+    gallery_color character varying(16),
+    gallery_theme character varying(16),
     homepage character varying(255),
     icon_file_name character varying(255),
     license character varying(255),
-    markdown character varying(255),
+    markdown character varying(16),
     preview boolean NOT NULL,
     qna character varying(255),
     readme_file_name character varying(255),
@@ -179,8 +179,8 @@ CREATE TABLE public.personal_access_token (
     accessed_timestamp timestamp without time zone,
     active boolean NOT NULL,
     created_timestamp timestamp without time zone,
-    description character varying(255),
-    value character varying(255),
+    description character varying(2048),
+    value character varying(64),
     user_data bigint
 );
 
@@ -221,8 +221,9 @@ CREATE TABLE public.user_data (
     email character varying(255),
     full_name character varying(255),
     login_name character varying(255),
-    provider character varying(255),
-    provider_id character varying(255)
+    provider character varying(32),
+    provider_id character varying(255),
+    provider_url character varying(255)
 );
 
 
