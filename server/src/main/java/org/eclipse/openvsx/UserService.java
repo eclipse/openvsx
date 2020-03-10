@@ -68,9 +68,6 @@ public class UserService {
             user.setEmail(principal.getAttribute("email"));
             user.setAvatarUrl(principal.getAttribute("avatar_url"));
             entityManager.persist(user);
-            if (repositories.findNamespace(user.getLoginName()) == null) {
-                createNamespace(user, user.getLoginName());
-            }
         } else {
             String loginName = principal.getAttribute("login");
             if (loginName != null && !loginName.equals(user.getLoginName()))
@@ -86,20 +83,6 @@ public class UserService {
                 user.setAvatarUrl(avatarUrl);
         }
         return user;
-    }
-
-    @Transactional
-    public Namespace createNamespace(UserData user, String name) {
-        var namespace = new Namespace();
-        namespace.setName(name);
-        entityManager.persist(namespace);
-
-        var membership = new NamespaceMembership();
-        membership.setNamespace(namespace);
-        membership.setUser(user);
-        membership.setRole(NamespaceMembership.ROLE_OWNER);
-        entityManager.persist(membership);
-        return namespace;
     }
 
     @Transactional
@@ -121,11 +104,22 @@ public class UserService {
     }
 
     public boolean hasPublishPermission(UserData user, Namespace namespace) {
+        var ownerships = repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER);
+        if (ownerships.isEmpty()) {
+            // If the namespace has no owner, everyone has publish permission to it.
+            return true;
+        }
+        if (ownerships.stream().anyMatch(m -> m.getUser().equals(user))) {
+            // The requesting user is an owner of the namespace.
+            return true;
+        }
+
         var membership = repositories.findMembership(user, namespace);
         if (membership == null) {
+            // The namespace is owned by someone else and the requesting user is not a member.
             return false;
         }
-        return membership.getRole().equals(NamespaceMembership.ROLE_OWNER);
+        return membership.getRole().equalsIgnoreCase(NamespaceMembership.ROLE_CONTRIBUTOR);
     }
 
 }

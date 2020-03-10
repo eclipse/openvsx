@@ -19,6 +19,7 @@ import com.google.common.collect.Iterables;
 
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.NamespaceResultJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.ReviewResultJson;
@@ -26,6 +27,7 @@ import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
+import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -236,15 +238,34 @@ public class RegistryAPI {
     }
 
     @PostMapping(
+        path = "/api/-/namespace/create",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public NamespaceResultJson createNamespace(@RequestBody(required = false) NamespaceJson namespace,
+                                               @RequestParam(name = "token") String token) {
+        if (namespace == null) {
+            return NamespaceResultJson.error("No JSON input.");
+        }
+        if (Strings.isNullOrEmpty(namespace.name)) {
+            return NamespaceResultJson.error("Missing required property 'name'.");
+        }
+        try {
+            return local.createNamespace(namespace, token);
+        } catch (ErrorResultException exc) {
+            return NamespaceResultJson.error(exc.getMessage());
+        }
+    }
+
+    @PostMapping(
         path = "/api/-/publish",
         consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ExtensionJson publish(InputStream content,
-                                 @RequestParam(name = "token") String token,
-                                 @RequestParam(name = "create-publisher", defaultValue = "false") boolean createPublisher) {
+                                 @RequestParam(name = "token") String token) {
         try {
-            return local.publish(content, token, createPublisher);
+            return local.publish(content, token);
         } catch (ErrorResultException exc) {
             return ExtensionJson.error(exc.getMessage());
         }

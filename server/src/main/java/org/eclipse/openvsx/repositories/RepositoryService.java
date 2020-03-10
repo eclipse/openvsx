@@ -102,6 +102,10 @@ public class RepositoryService {
         return membershipRepo.findByUserAndNamespace(user, namespace);
     }
 
+    public Streamable<NamespaceMembership> findMemberships(Namespace namespace, String role) {
+        return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
+    }
+
     public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {
         return tokenRepo.findByUser(user);
     }

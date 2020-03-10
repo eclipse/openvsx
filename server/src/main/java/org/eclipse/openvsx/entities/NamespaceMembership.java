@@ -20,6 +20,7 @@ import javax.persistence.ManyToOne;
 public class NamespaceMembership {
 
     public static final String ROLE_OWNER = "owner";
+    public static final String ROLE_CONTRIBUTOR = "contributor";
 
     @Id
     @GeneratedValue

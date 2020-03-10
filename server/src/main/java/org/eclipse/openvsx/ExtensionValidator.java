@@ -44,14 +44,14 @@ public class ExtensionValidator {
     private final Pattern namePattern = Pattern.compile("[\\w\\-\\+\\$~]+");
 
     public Optional<Issue> validateNamespace(String namespace) {
-        if (Strings.isNullOrEmpty(namespace)) {
-            return Optional.of(new Issue("Publisher must not be empty."));
+        if (Strings.isNullOrEmpty(namespace) || namespace.equals("-")) {
+            return Optional.of(new Issue("Namespace name must not be empty."));
         }
         if (!namePattern.matcher(namespace).matches()) {
-            return Optional.of(new Issue("Invalid publisher name: " + namespace));
+            return Optional.of(new Issue("Invalid namespace name: " + namespace));
         }
         if (namespace.length() > DEFAULT_STRING_SIZE) {
-            return Optional.of(new Issue("The publisher name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+            return Optional.of(new Issue("The namespace name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         return Optional.empty();
     }

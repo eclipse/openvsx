@@ -32,10 +32,12 @@ import org.eclipse.openvsx.entities.ExtensionBinary;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.NamespaceResultJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.ReviewResultJson;
@@ -266,13 +268,34 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ExtensionJson publish(InputStream content, String tokenValue, boolean createPublisher) throws ErrorResultException {
+    public NamespaceResultJson createNamespace(NamespaceJson json, String tokenValue) {
+        var namespaceIssue = validator.validateNamespace(json.name);
+        if (namespaceIssue.isPresent()) {
+            throw new ErrorResultException(namespaceIssue.get().toString());
+        }
+        var token = users.useAccessToken(tokenValue);
+        if (token == null) {
+            throw new ErrorResultException("Invalid access token.");
+        }
+        var namespace = repositories.findNamespace(json.name);
+        if (namespace != null) {
+            throw new ErrorResultException("Namespace already exists: " + namespace.getName());
+        }
+
+        namespace = new Namespace();
+        namespace.setName(json.name);
+        entityManager.persist(namespace);
+        return new NamespaceResultJson();
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
         try (var processor = new ExtensionProcessor(content)) {
             var token = users.useAccessToken(tokenValue);
             if (token == null) {
                 throw new ErrorResultException("Invalid access token.");
             }
-            var extVersion = createExtensionVersion(processor, token.getUser(), token, createPublisher);
+            var extVersion = createExtensionVersion(processor, token.getUser(), token);
             var binary = processor.getBinary(extVersion);
             entityManager.persist(binary);
             var readme = processor.getReadme(extVersion);
@@ -289,23 +312,12 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
     }
 
-    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token, boolean createPublisher) {
+    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token) {
         var namespaceName = processor.getNamespace();
-        var namespaceIssue = validator.validateNamespace(namespaceName);
-        if (namespaceIssue.isPresent()) {
-            throw new ErrorResultException(namespaceIssue.get().toString());
-        }
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
-            if (createPublisher) {
-                namespace = users.createNamespace(user, namespaceName);
-            } else {
-                throw new ErrorResultException("Unknown publisher: " + namespaceName
-                        + " (use option 'create-publisher' to request creation of a new publisher)");
-            }
-        } else if (createPublisher) {
-            throw new ErrorResultException("Publisher already exists: " + namespace.getName()
-                    + " (remove option 'create-publisher' to publish)");
+            throw new ErrorResultException("Unknown publisher: " + namespaceName
+                    + "\nUse the 'create-namespace' command to create a namespace corresponding to your publisher name.");
         }
         if (!users.hasPublishPermission(user, namespace)) {
             throw new ErrorResultException("Insufficient access rights for publisher: " + namespace.getName());

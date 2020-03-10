@@ -10,6 +10,7 @@
 
 import * as commander from 'commander';
 import * as didYouMean from 'didyoumean';
+import { createNamespace } from './create-namespace';
 import { publish } from './publish';
 import { handleError } from './util';
 import { getExtension } from './get';
@@ -25,16 +26,24 @@ module.exports = function (argv: string[]): void {
     versionCmd.description('Output the version number.')
         .action(() => console.log(`Eclipse Open VSX CLI version ${pkg.version}`));
 
-    const publishCmd = program .command('publish [extension.vsix]');
+    const createNamespaceCmd = program.command('create-namespace <name>');
+    createNamespaceCmd.description('Create a new namespace')
+        .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
+        .option('-p, --pat <token>', 'Personal access token (required).')
+        .action((name: string, { registryUrl, pat }) => {
+            createNamespace({ name, registryUrl, pat })
+                .catch(handleError(program.debug));
+        });
+
+    const publishCmd = program.command('publish [extension.vsix]');
     publishCmd.description('Publish an extension, packaging it first if necessary.')
         .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
-        .option('-p, --pat <token>', 'Personal access token.')
-        .option('--create-publisher', 'Request to create a new publisher as specified in package.json.')
+        .option('-p, --pat <token>', 'Personal access token (required).')
         .option('--packagePath <path>', 'Package and publish the extension at the specified path.')
         .option('--baseContentUrl <url>', 'Prepend all relative links in README.md with this URL.')
         .option('--baseImagesUrl <url>', 'Prepend all relative image links in README.md with this URL.')
         .option('--yarn', 'Use yarn instead of npm while packing extension files.')
-        .action((extensionFile: string, { registryUrl, pat, createPublisher, packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
+        .action((extensionFile: string, { registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -45,7 +54,7 @@ module.exports = function (argv: string[]): void {
                 console.warn("Ignoring option '--baseImagesUrl' for prepackaged extension.");
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
-            publish({ extensionFile, registryUrl, pat, createPublisher, packagePath, baseContentUrl, baseImagesUrl, yarn })
+            publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn })
                 .catch(handleError(program.debug));
         });
 

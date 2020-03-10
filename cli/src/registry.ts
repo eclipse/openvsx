@@ -29,14 +29,24 @@ export class Registry {
             this.url = DEFAULT_URL;
     }
 
-    publish(file: string, pat: string, createPublisher?: boolean): Promise<Extension> {
+    createNamespace(name: string, pat: string): Promise<Response> {
         try {
             const query: { [key: string]: string } = { token: pat };
-            if (createPublisher) {
-                query['create-publisher'] = 'true';
-            }
+            const url = this.getUrl('api/-/namespace/create', query);
+            const namespace = { name };
+            return this.post(JSON.stringify(namespace), url, {
+                'Content-Type': 'application/json'
+            });
+        } catch (err) {
+            return Promise.reject(err);
+        }
+    }
+
+    publish(file: string, pat: string): Promise<Extension> {
+        try {
+            const query: { [key: string]: string } = { token: pat };
             const url = this.getUrl('api/-/publish', query);
-            return this.post(file, url, {
+            return this.postFile(file, url, {
                 'Content-Type': 'application/octet-stream'
             });
         } catch (err) {
@@ -88,7 +98,17 @@ export class Registry {
         });
     }
 
-    post<T extends Response>(file: string, url: URL, headers?: http.OutgoingHttpHeaders): Promise<T> {
+    post<T extends Response>(content: string | Buffer | Uint8Array, url: URL, headers?: http.OutgoingHttpHeaders): Promise<T> {
+        return new Promise((resolve, reject) => {
+            const request = this.getProtocol(url)
+                                .request(url, { method: 'POST', headers }, this.getJsonResponse<T>(resolve, reject));
+            request.on('error', reject);
+            request.write(content);
+            request.end();
+        });
+    }
+
+    postFile<T extends Response>(file: string, url: URL, headers?: http.OutgoingHttpHeaders): Promise<T> {
         return new Promise((resolve, reject) => {
             const stream = fs.createReadStream(file);
             const request = this.getProtocol(url)

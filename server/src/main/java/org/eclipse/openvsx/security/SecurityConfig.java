@@ -53,7 +53,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // Publishing is done only via explicit access tokens, so we don't need CSRF protection here.
         http.csrf()
-            .ignoringAntMatchers("/api/-/publish");
+            .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create");
     }
 
 }
