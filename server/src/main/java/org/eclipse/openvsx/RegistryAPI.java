@@ -121,7 +121,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 var content = registry.getFile(namespace, extension, fileName);
-                var headers = getFileResponseHeaders(fileName);
+                var headers = getFileResponseHeaders(fileName, false);
                 return new ResponseEntity<>(content, headers, HttpStatus.OK);
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -139,7 +139,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 var content = registry.getFile(namespace, extension, version, fileName);
-                var headers = getFileResponseHeaders(fileName);
+                var headers = getFileResponseHeaders(fileName, true);
                 return new ResponseEntity<>(content, headers, HttpStatus.OK);
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -148,10 +148,21 @@ public class RegistryAPI {
         throw new NotFoundException();
     }
 
-    private HttpHeaders getFileResponseHeaders(String fileName) {
+    private HttpHeaders getFileResponseHeaders(String fileName, boolean fixedVersion) {
         var headers = new HttpHeaders();
-        headers.setContentType(getFileType(fileName));
-        headers.setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS));
+        MediaType fileType = getFileType(fileName);
+        headers.setContentType(fileType);
+        if (fixedVersion) {
+            // The files of a fixed version should not change
+            headers.setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS));
+        } else if (fileType.equals(MediaType.APPLICATION_OCTET_STREAM)) {
+            // If the version is not fixed, a new binary could be published at any time
+            headers.setCacheControl(CacheControl.noCache());
+        } else if (fileType.equals(MediaType.TEXT_PLAIN)) {
+            headers.setCacheControl(CacheControl.maxAge(15, TimeUnit.MINUTES));
+        } else {
+            headers.setCacheControl(CacheControl.maxAge(10, TimeUnit.DAYS));
+        }
         if (fileName.endsWith(".vsix")) {
             headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
         }
