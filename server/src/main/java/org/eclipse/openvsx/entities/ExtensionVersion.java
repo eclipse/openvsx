@@ -55,6 +55,8 @@ public class ExtensionVersion {
 
     String readmeFileName;
 
+    String licenseFileName;
+
     String displayName;
 
     @Column(length = 2048)
@@ -227,6 +229,14 @@ public class ExtensionVersion {
 	public void setReadmeFileName(String readmeFileName) {
 		this.readmeFileName = readmeFileName;
 	}
+
+    public String getLicenseFileName() {
+        return licenseFileName;
+    }
+
+    public void setLicenseFileName(String licenseFileName) {
+        this.licenseFileName = licenseFileName;
+    }
 
 	public String getDisplayName() {
 		return displayName;

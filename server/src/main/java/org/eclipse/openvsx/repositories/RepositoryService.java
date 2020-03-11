@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionBinary;
 import org.eclipse.openvsx.entities.ExtensionIcon;
+import org.eclipse.openvsx.entities.ExtensionLicense;
 import org.eclipse.openvsx.entities.ExtensionReadme;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -33,6 +34,7 @@ public class RepositoryService {
     @Autowired ExtensionBinaryRepository extensionBinaryRepo;
     @Autowired ExtensionIconRepository extensionIconRepo;
     @Autowired ExtensionReadmeRepository extensionReadmeRepo;
+    @Autowired ExtensionLicenseRepository extensionLicenseRepo;
     @Autowired ExtensionReviewRepository extensionReviewRepo;
     @Autowired UserDataRepository userDataRepo;
     @Autowired NamespaceMembershipRepository membershipRepo;
@@ -80,6 +82,10 @@ public class RepositoryService {
 
     public ExtensionReadme findReadme(ExtensionVersion extVersion) {
         return extensionReadmeRepo.findByExtension(extVersion);
+    }
+
+    public ExtensionLicense findLicense(ExtensionVersion extVersion) {
+        return extensionLicenseRepo.findByExtension(extVersion);
     }
 
     public Streamable<ExtensionReview> findActiveReviews(Extension extension) {

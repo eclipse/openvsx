@@ -38,6 +38,7 @@ export interface Extension extends ExtensionRaw {
     readonly reviewsUrl: string;
     readonly downloadUrl: string;
     readonly readmeUrl?: string;
+    readonly licenseUrl?: string;
 
     readonly publishedBy: UserData;
     readonly namespaceAccess: 'public' | 'restricted';

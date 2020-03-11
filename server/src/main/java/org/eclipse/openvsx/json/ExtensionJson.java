@@ -41,6 +41,9 @@ public class ExtensionJson {
     @Nullable
     public String readmeUrl;
 
+    @Nullable
+    public String licenseUrl;
+
     public String name;
 
     public String namespace;

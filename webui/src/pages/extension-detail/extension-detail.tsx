@@ -174,7 +174,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     </Box>
                 </RouteLink>
                 <TextDivider />
-                <Box className={this.props.classes.alignVertically}>{extension.license || 'Unlicensed'}</Box>
+                <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension)}</Box>
             </Box>
             <Box className={this.props.classes.descriptionRow}>
                 <Typography>{extension.description}</Typography>
@@ -222,11 +222,23 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             return <Link
                 href={this.props.namespaceAccessInfoURL}
                 target='_blank'
-                className={`${this.props.classes.link} ${this.props.classes.alignVertically}`}>
+                className={`${this.props.classes.link} ${this.props.classes.alignVertically}`} >
                 {popover}
             </Link>;
         } else {
             return popover;
+        }
+    }
+
+    protected renderLicense(extension: Extension): React.ReactNode {
+        if (extension.licenseUrl) {
+            return <Link
+                    href={extension.licenseUrl}
+                    className={this.props.classes.link} >
+                {extension.license || 'Provided license'}
+            </Link>;
+        } else {
+            return extension.license || 'Unlicensed';
         }
     }
 

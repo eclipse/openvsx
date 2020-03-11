@@ -43,6 +43,17 @@ CREATE TABLE public.extension_icon (
 
 
 --
+-- Name: extension_license; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.extension_license (
+    id bigint NOT NULL,
+    content bytea,
+    extension_id bigint
+);
+
+
+--
 -- Name: extension_readme; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -84,6 +95,7 @@ CREATE TABLE public.extension_version (
     homepage character varying(255),
     icon_file_name character varying(255),
     license character varying(255),
+    license_file_name character varying(255),
     markdown character varying(16),
     preview boolean NOT NULL,
     qna character varying(255),
@@ -244,6 +256,14 @@ ALTER TABLE ONLY public.extension_icon
 
 
 --
+-- Name: extension_license extension_license_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.extension_license
+    ADD CONSTRAINT extension_license_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: extension extension_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -358,6 +378,14 @@ CREATE INDEX spring_session_ix2 ON public.spring_session USING btree (expiry_tim
 --
 
 CREATE INDEX spring_session_ix3 ON public.spring_session USING btree (principal_name);
+
+
+--
+-- Name: extension_license fk2r233q3pr0ye01mb45dc5dcqh; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.extension_license
+    ADD CONSTRAINT fk2r233q3pr0ye01mb45dc5dcqh FOREIGN KEY (extension_id) REFERENCES public.extension_version(id);
 
 
 --

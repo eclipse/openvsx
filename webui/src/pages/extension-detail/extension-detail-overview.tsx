@@ -103,7 +103,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                     className={this.props.classes.link}>
                                     {extension.namespace}
                                 </RouteLink>)}
-                            {this.renderInfo('Write Access', this.renderAccessInfoLink(extension))}
+                            {this.renderInfo('Write Access', this.renderAccessInfo(extension))}
                             {this.renderInfo('Unique Identifier',
                                 <span className={this.props.classes.code}>{extension.namespace}.{extension.name}</span>)}
                             {extension.version ? this.renderInfo('Version', extension.version) : ''}
@@ -158,7 +158,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         </Box>;
     }
 
-    protected renderAccessInfoLink(extension: Extension): React.ReactNode {
+    protected renderAccessInfo(extension: Extension): React.ReactNode {
         const text = extension.namespaceAccess || 'unknown';
         if (this.props.namespaceAccessInfoURL) {
             return <Link

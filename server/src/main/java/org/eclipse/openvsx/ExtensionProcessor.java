@@ -27,10 +27,12 @@ import com.google.common.io.Files;
 
 import org.eclipse.openvsx.entities.ExtensionBinary;
 import org.eclipse.openvsx.entities.ExtensionIcon;
+import org.eclipse.openvsx.entities.ExtensionLicense;
 import org.eclipse.openvsx.entities.ExtensionReadme;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.springframework.data.util.Pair;
 
 /**
  * Processes uploaded extension files and extracts their metadata.
@@ -38,8 +40,8 @@ import org.eclipse.openvsx.util.ErrorResultException;
 public class ExtensionProcessor implements AutoCloseable {
 
     private static final String PACKAGE_JSON = "extension/package.json";
-    private static final String README = "extension/README";
-    private static final String README_MD = "extension/README.md";
+    private static final String[] README = { "extension/README.md", "extension/README", "extension/README.txt" };
+    private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
 
     private final InputStream inputStream;
     private byte[] content;
@@ -167,19 +169,52 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     public ExtensionReadme getReadme(ExtensionVersion extension) {
-        var fileName = "README.md";
-        var bytes = ArchiveUtil.readEntry(zipFile, README_MD);
-        if (bytes == null) {
-            fileName = "README";
-            bytes = ArchiveUtil.readEntry(zipFile, README);
-        }
-        if (bytes == null)
+        var result = readFromAlternateNames(README);
+        if (result == null) {
             return null;
+        }
         var readme = new ExtensionReadme();
         readme.setExtension(extension);
-        readme.setContent(bytes);
-        extension.setReadmeFileName(fileName);
+        readme.setContent(result.getFirst());
+        extension.setReadmeFileName(result.getSecond());
         return readme;
+    }
+
+    public ExtensionLicense getLicense(ExtensionVersion extension) {
+        var license = new ExtensionLicense();
+        license.setExtension(extension);
+        if (extension.getLicense() != null && extension.getLicense().toUpperCase().startsWith("SEE LICENSE IN ")) {
+            var fileName = extension.getLicense().substring("SEE LICENSE IN ".length()).trim();
+            extension.setLicense(null);
+            var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
+            if (bytes != null) {
+                license.setContent(bytes);
+                var lastSegmentIndex = fileName.lastIndexOf('/');
+                var lastSegment = fileName.substring(lastSegmentIndex + 1);
+                extension.setLicenseFileName(lastSegment);
+                return license;
+            }
+        }
+
+        var result = readFromAlternateNames(LICENSE);
+        if (result == null) {
+            return null;
+        }
+        license.setContent(result.getFirst());
+        extension.setLicenseFileName(result.getSecond());
+        return license;
+    }
+
+    private Pair<byte[], String> readFromAlternateNames(String[] names) {
+        for (var name : names) {
+            var bytes = ArchiveUtil.readEntry(zipFile, name);
+            if (bytes != null) {
+                var lastSegmentIndex = name.lastIndexOf('/');
+                var lastSegment = name.substring(lastSegmentIndex + 1);
+                return Pair.of(bytes, lastSegment);
+            }
+        }
+        return null;
     }
 
     public ExtensionIcon getIcon(ExtensionVersion extension) {
