@@ -9,14 +9,16 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container } from "@material-ui/core";
+import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container, Link } from "@material-ui/core";
 import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-router-dom";
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
-import { handleError, createRoute, addQuery } from "../../utils";
-import { ExtensionListRoutes } from "../extension-list/extension-list-container";
+import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
+import PublicIcon from '@material-ui/icons/Public';
+import { handleError, createRoute } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
+import { HoverPopover } from "../../custom-mui-components/hover-popover";
 import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
@@ -49,8 +51,12 @@ const detailStyles = (theme: Theme) => createStyles({
     clickable: {
         cursor: 'pointer'
     },
-    row: {
+    titleRow: {
         marginBottom: theme.spacing(1)
+    },
+    descriptionRow: {
+        marginTop: theme.spacing(2),
+        marginBottom: theme.spacing(2)
     },
     head: {
         backgroundColor: theme.palette.grey[200]
@@ -65,7 +71,6 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     constructor(props: ExtensionDetailComponent.Props) {
         super(props);
-
         this.state = {};
     }
 
@@ -94,10 +99,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     protected onReviewUpdate = () => this.updateExtension();
 
     render() {
-        if (!this.state.extension) {
+        const { extension } = this.state;
+        if (!extension) {
             return '';
         }
-        const { extension } = this.state;
         return <React.Fragment>
             <Box className={this.props.classes.head}>
                 <Container maxWidth='lg'>
@@ -105,44 +110,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         <Box display='flex' justifyContent='center' alignItems='center' mr={4}>
                             <img src={extension.iconUrl} width='auto' height='120px' />
                         </Box>
-                        <Box>
-                            <Typography variant='h6' className={this.props.classes.row}>{extension.displayName || extension.name}</Typography>
-                            <Box display='flex' className={this.props.classes.row}>
-                                <RouteLink
-                                    to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
-                                    className={this.props.classes.link}>
-                                    <Box className={this.props.classes.alignVertically}>
-                                        {extension.namespace}
-                                    </Box>
-                                </RouteLink>
-                                <TextDivider />
-                                <Box className={this.props.classes.alignVertically}>
-                                    <SaveAltIcon/>&nbsp;{extension.downloadCount || 0} {extension.downloadCount === 1 ? 'download' : 'downloads'}
-                                </Box>
-                                <TextDivider />
-                                <RouteLink
-                                    to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
-                                    className={this.props.classes.link}
-                                    title={
-                                        extension.averageRating !== undefined ?
-                                        `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
-                                        : 'Not rated yet'
-                                    }>
-                                    <Box className={this.props.classes.alignVertically}>
-                                        <ExportRatingStars number={extension.averageRating || 0} />
-                                        {`(${this.state.extension.reviewCount})`}
-                                    </Box>
-                                </RouteLink>
-                                <TextDivider />
-                                <Box className={this.props.classes.alignVertically}>{extension.license}</Box>
-                            </Box>
-                            <Box className={this.props.classes.row}>{extension.description}</Box>
-                            <Box className={this.props.classes.row}>
-                                <Button variant='contained' color='secondary' href={extension.downloadUrl}>
-                                    Download
-                                </Button>
-                            </Box>
-                        </Box>
+                        {this.renderHeader(extension)}
                     </Box>
                 </Container>
             </Box>
@@ -155,15 +123,16 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         <Switch>
                             <Route path={ExtensionDetailRoutes.REVIEWS}>
                                 <ExtensionDetailReviews
-                                    extension={this.state.extension}
+                                    extension={extension}
                                     reviewsDidUpdate={this.onReviewUpdate}
                                     service={this.props.service}
                                     user={this.props.user} />
                             </Route>
                             <Route path={ExtensionDetailRoutes.OVERVIEW}>
                                 <ExtensionDetailOverview
-                                    extension={this.state.extension}
-                                    service={this.props.service} />
+                                    extension={extension}
+                                    service={this.props.service}
+                                    namespaceAccessInfoURL={this.props.namespaceAccessInfoURL} />
                             </Route>
                         </Switch>
                     </Box>
@@ -172,9 +141,95 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         </React.Fragment>;
     }
 
-    protected getRoundedRating(rating: number) {
+    protected renderHeader(extension: Extension): React.ReactNode {
+        return <Box>
+            <Typography variant='h6' className={this.props.classes.titleRow}>{extension.displayName || extension.name}</Typography>
+            <Box display='flex'>
+                <Box className={this.props.classes.alignVertically} >
+                    {this.renderAccessInfo(extension)}&nbsp;Published by&nbsp;{
+                        extension.publishedBy.homepage ?
+                        <Link href={extension.publishedBy.homepage} className={this.props.classes.link}>
+                            {extension.publishedBy.loginName}
+                        </Link>
+                        :
+                        extension.publishedBy.loginName
+                    }
+                </Box>
+                <TextDivider />
+                <Box className={this.props.classes.alignVertically}>
+                    <SaveAltIcon fontSize='small'/>&nbsp;{extension.downloadCount || 0} {extension.downloadCount === 1 ? 'download' : 'downloads'}
+                </Box>
+                <TextDivider />
+                <RouteLink
+                    to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
+                    className={this.props.classes.link}
+                    title={
+                        extension.averageRating !== undefined ?
+                        `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
+                        : 'Not rated yet'
+                    }>
+                    <Box className={this.props.classes.alignVertically}>
+                        <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
+                        {`(${extension.reviewCount})`}
+                    </Box>
+                </RouteLink>
+                <TextDivider />
+                <Box className={this.props.classes.alignVertically}>{extension.license || 'Unlicensed'}</Box>
+            </Box>
+            <Box className={this.props.classes.descriptionRow}>
+                <Typography>{extension.description}</Typography>
+            </Box>
+            <Box>
+                <Button variant='contained' color='secondary' href={extension.downloadUrl}>
+                    Download
+                </Button>
+            </Box>
+        </Box>;
+    }
+
+    protected getRoundedRating(rating: number): number {
         return Math.round(rating * 10) / 10;
     }
+
+    protected renderAccessInfo(extension: Extension): React.ReactNode {
+        let icon: React.ReactElement;
+        switch (extension.namespaceAccess) {
+            case 'public':
+                icon = <PublicIcon fontSize='small'/>;
+                break;
+            case 'restricted':
+                icon = <VerifiedUserIcon fontSize='small'/>;
+                break;
+            default:
+                return '';
+        }
+
+        const popupContent = <Typography variant='body2'>
+            The namespace {extension.namespace} has {extension.namespaceAccess} write access.
+            {this.props.namespaceAccessInfoURL ?
+                <React.Fragment><br/>Click on the icon to learn more.</React.Fragment>
+                : ''}
+        </Typography>;
+
+        const popover = <HoverPopover
+            id='namespace-popover'
+            popupContent={popupContent}
+            className={this.props.classes.alignVertically} >
+            {icon}
+        </HoverPopover>;
+
+        if (this.props.namespaceAccessInfoURL) {
+            return <Link
+                href={this.props.namespaceAccessInfoURL}
+                target='_blank'
+                className={`${this.props.classes.link} ${this.props.classes.alignVertically}`}>
+                {popover}
+            </Link>;
+        } else {
+            return popover;
+        }
+    }
+
 }
 
 export namespace ExtensionDetailComponent {
@@ -182,6 +237,7 @@ export namespace ExtensionDetailComponent {
         user?: UserData;
         service: ExtensionRegistryService;
         pageTitle: string;
+        namespaceAccessInfoURL?: string;
     }
     export interface State {
         extension?: Extension;

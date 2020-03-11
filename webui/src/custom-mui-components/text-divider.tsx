@@ -16,16 +16,16 @@ import { Divider } from "@material-ui/core";
 const dividerStyles = (theme: Theme) => createStyles({
     root: {
         alignSelf: 'center',
-        height: '0.7em',
+        height: '1em',
         margin: `0 ${theme.spacing(1)}px`,
         backgroundColor: theme.palette.primary.contrastText
     }
 });
 
-export class TextDividerComp extends React.Component<WithStyles<typeof dividerStyles>> {
+export class TextDividerComponent extends React.Component<WithStyles<typeof dividerStyles>> {
     render() {
         return <Divider orientation='vertical' classes={{root: this.props.classes.root}} />;
     }
 }
 
-export const TextDivider = withStyles(dividerStyles)(TextDividerComp);
+export const TextDivider = withStyles(dividerStyles)(TextDividerComponent);

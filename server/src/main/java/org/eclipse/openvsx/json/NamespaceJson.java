@@ -17,8 +17,13 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 @JsonInclude(Include.NON_NULL)
 public class NamespaceJson {
 
+    public static final String PUBLIC_ACCESS = "public";
+    public static final String RESTRICTED_ACCESS = "restricted";
+
     public String name;
 
     public Map<String, String> extensions;
+
+    public String access;
 
 }

@@ -11,13 +11,20 @@
 import * as React from "react";
 import * as MarkdownIt from 'markdown-it';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link } from "@material-ui/core";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { RouteComponentProps, Link as RouteLink, withRouter } from "react-router-dom";
 import { handleError, toLocalTime, addQuery } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
 
 const overviewStyles = (theme: Theme) => createStyles({
+    link: {
+        textDecoration: 'none',
+        color: theme.palette.text.primary,
+        '&:hover': {
+            textDecoration: 'underline'
+        }
+    },
     markdown: {
         '& img': {
             maxWidth: '100%'
@@ -29,6 +36,10 @@ const overviewStyles = (theme: Theme) => createStyles({
         marginRight: theme.spacing(0.5),
         marginBottom: theme.spacing(0.5),
         padding: '1px 6px'
+    },
+    code: {
+        fontFamily: 'monospace',
+        fontSize: '1rem'
     }
 });
 
@@ -42,11 +53,11 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         this.state = {};
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.updateReadme();
     }
 
-    protected async updateReadme() {
+    protected async updateReadme(): Promise<void> {
         if (this.props.extension.readmeUrl) {
             try {
                 const readme = await this.props.service.getExtensionReadme(this.props.extension);
@@ -86,7 +97,15 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         </Box>
                         <Box mt={2}>
                             <Typography variant='h6'>More Info</Typography>
-                            {this.renderInfo('Namespace', extension.namespace)}
+                            {this.renderInfo('Namespace',
+                                <RouteLink
+                                    to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
+                                    className={this.props.classes.link}>
+                                    {extension.namespace}
+                                </RouteLink>)}
+                            {this.renderInfo('Write Access', this.renderAccessInfoLink(extension))}
+                            {this.renderInfo('Unique Identifier',
+                                <span className={this.props.classes.code}>{extension.namespace}.{extension.name}</span>)}
                             {extension.version ? this.renderInfo('Version', extension.version) : ''}
                             {zonedDate ? this.renderInfo('Date', zonedDate.toLocaleString()) : ''}
                         </Box>
@@ -96,38 +115,39 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         </React.Fragment>;
     }
 
-    protected handleFilterButtonClicked(kind: 'category' | 'search', buttonLabel: string) {
+    protected handleFilterButtonClicked(kind: 'category' | 'search', buttonLabel: string): void {
         const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
         this.props.history.push(route);
     }
 
-    protected renderButtonList(kind: 'category' | 'search', title: string, arr?: string[]) {
-        return arr ?
-            <Box>
-                <Typography variant='h6'>{title}</Typography>
-                {
-                    arr.map((buttonLabel: string) =>
-                        <Button
-                            className={this.props.classes.categoryButton}
-                            size='small'
-                            key={buttonLabel}
-                            variant='outlined'
-                            onClick={() => this.handleFilterButtonClicked(kind, buttonLabel)}
-                        >
-                            {buttonLabel}
-                        </Button>)
-                }
-            </Box> : '';
+    protected renderButtonList(kind: 'category' | 'search', title: string, arr?: string[]): React.ReactNode {
+        if (!arr || arr.length === 0) {
+            return '';
+        }
+        return <Box>
+            <Typography variant='h6'>{title}</Typography>
+            {
+                arr.sort((a, b) => a.localeCompare(b)).map((buttonLabel: string) =>
+                    <Button
+                        className={this.props.classes.categoryButton}
+                        size='small'
+                        key={buttonLabel}
+                        variant='outlined'
+                        onClick={() => this.handleFilterButtonClicked(kind, buttonLabel)} >
+                        {buttonLabel}
+                    </Button>)
+            }
+        </Box>;
     }
 
-    protected renderResourceLink(label: string, href?: string) {
+    protected renderResourceLink(label: string, href?: string): React.ReactNode {
         if (!href || !href.startsWith('http')) {
             return '';
         }
         return <Box><Link href={href} target='_blank' variant='body2' color='secondary'>{label}</Link></Box>;
     }
 
-    protected renderInfo(key: string, value: string) {
+    protected renderInfo(key: string, value: React.ReactNode) {
         return <Box display='flex'>
             <Box flex='1'>
                 <Typography variant='body2'>{key}</Typography>
@@ -138,7 +158,21 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         </Box>;
     }
 
-    protected renderMarkdown(md: string) {
+    protected renderAccessInfoLink(extension: Extension): React.ReactNode {
+        const text = extension.namespaceAccess || 'unknown';
+        if (this.props.namespaceAccessInfoURL) {
+            return <Link
+                href={this.props.namespaceAccessInfoURL}
+                target='_blank'
+                className={this.props.classes.link}>
+                {text}
+            </Link>;
+        } else {
+            return text;
+        }
+    }
+
+    protected renderMarkdown(md: string): React.ReactNode {
         const renderedMd = this.markdownIt.render(md);
         return <span dangerouslySetInnerHTML={{ __html: renderedMd }} />;
     }
@@ -148,6 +182,7 @@ export namespace ExtensionDetailOverview {
     export interface Props extends WithStyles<typeof overviewStyles>, RouteComponentProps {
         extension: Extension;
         service: ExtensionRegistryService;
+        namespaceAccessInfoURL?: string;
     }
     export interface State {
         readme?: string;

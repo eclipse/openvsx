@@ -33,6 +33,7 @@ import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -108,7 +109,13 @@ public class LocalRegistryService implements IExtensionRegistry {
             String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
             json.extensions.put(ext.getName(), url);
         }
+        json.access = getAccessString(namespace);
         return json;
+    }
+
+    private String getAccessString(Namespace namespace) {
+        var ownerships = repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER);
+        return ownerships.isEmpty() ? NamespaceJson.PUBLIC_ACCESS : NamespaceJson.RESTRICTED_ACCESS;
     }
 
     @Override
@@ -504,6 +511,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private ExtensionJson toJson(ExtensionVersion extVersion, boolean isLatest) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
+        json.namespaceAccess = getAccessString(extension.getNamespace());
         json.reviewCount = repositories.countActiveReviews(extension);
         var serverUrl = UrlUtil.getBaseUrl();
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);

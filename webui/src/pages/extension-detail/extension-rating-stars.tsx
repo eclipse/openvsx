@@ -14,7 +14,8 @@ import StarBorderIcon from '@material-ui/icons/StarBorder';
 import StarHalfIcon from '@material-ui/icons/StarHalf';
 
 interface ExportRatingStarsProps {
-    number: number
+    number: number;
+    fontSize?: 'inherit' | 'default' | 'small' | 'large';
 }
 
 export class ExportRatingStars extends React.Component<ExportRatingStarsProps> {
@@ -25,6 +26,14 @@ export class ExportRatingStars extends React.Component<ExportRatingStarsProps> {
     }
 
     protected getStar(i: number) {
-        return i <= this.props.number ? <StarIcon /> : i > this.props.number && i - this.props.number < 1 ? <StarHalfIcon /> : <StarBorderIcon />;
+        const starsNumber = this.props.number;
+        const fontSize = this.props.fontSize || 'default';
+        if (i <= starsNumber) {
+            return <StarIcon fontSize={fontSize}/>;
+        }
+        if (i > starsNumber && i - 1 < starsNumber) {
+            return <StarHalfIcon fontSize={fontSize}/>;
+        }
+        return <StarBorderIcon fontSize={fontSize}/>;
     }
 }

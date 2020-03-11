@@ -38,4 +38,7 @@ public class UserJson {
     @Nullable
     public String avatarUrl;
 
+    @Nullable
+    public String homepage;
+
 }

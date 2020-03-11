@@ -37,8 +37,10 @@ export interface Extension extends ExtensionRaw {
     readonly namespaceUrl: string;
     readonly reviewsUrl: string;
     readonly downloadUrl: string;
-
     readonly readmeUrl?: string;
+
+    readonly publishedBy: UserData;
+    readonly namespaceAccess: 'public' | 'restricted';
 
     readonly allVersions: { [key: string]: string };
     readonly preview?: boolean;
@@ -97,6 +99,7 @@ export interface UserData {
     createTokenUrl: string;
     fullName?: string;
     avatarUrl?: string;
+    homepage?: string;
 }
 
 export function isEqualUser(u1: UserData, u2: UserData): boolean {

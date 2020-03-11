@@ -126,7 +126,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     {...routeProps}
                                     user={this.state.user}
                                     service={this.props.service}
-                                    pageTitle={this.props.pageTitle} />
+                                    pageTitle={this.props.pageTitle}
+                                    namespaceAccessInfoURL={this.props.namespaceAccessInfoURL} />
                             } />
                         <Route path='*'>
                             <Container>
@@ -157,6 +158,7 @@ export namespace MainComponent {
         toolbarText: string;
         listHeaderTitle: string;
         logoURL: string;
+        namespaceAccessInfoURL?: string;
     }
 
     export interface State {

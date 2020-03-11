@@ -117,6 +117,9 @@ public class ExtensionVersion {
         json.galleryColor = this.getGalleryColor();
         json.galleryTheme = this.getGalleryTheme();
         json.qna = this.getQna();
+        if (this.getPublishedWith() != null) {
+            json.publishedBy = this.getPublishedWith().getUser().toUserJson();
+        }
         if (this.getDependencies() != null) {
             json.dependencies = CollectionUtil.map(this.getDependencies(), depExtension -> {
                 var ref = new ExtensionReferenceJson();

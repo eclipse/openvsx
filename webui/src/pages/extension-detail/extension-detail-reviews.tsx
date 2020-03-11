@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Button } from "@material-ui/core";
+import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Button, Link } from "@material-ui/core";
 import { handleError, toLocalTime } from "../../utils";
 import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
@@ -18,6 +18,13 @@ import { ExportRatingStars } from "./extension-rating-stars";
 import { ExtensionReviewDialog } from "./extension-review-dialog";
 
 const reviewStyles = (theme: Theme) => createStyles({
+    link: {
+        textDecoration: 'none',
+        color: theme.palette.text.primary,
+        '&:hover': {
+            textDecoration: 'underline'
+        }
+    },
     boldText: {
         fontWeight: 'bold'
     }
@@ -113,7 +120,16 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                 <Box display='flex'>
                     <Typography variant='body2'>{zonedDate ? zonedDate.toLocaleString() : '-'}</Typography>
                     <TextDivider />
-                    <Typography variant='body2'>{r.user.loginName}</Typography>
+                    <Typography variant='body2'>
+                        {
+                            r.user.homepage ?
+                            <Link href={r.user.homepage} className={this.props.classes.link}>
+                                {r.user.loginName}
+                            </Link>
+                            :
+                            r.user.loginName
+                        }
+                    </Typography>
                 </Box>
                 <Box display='flex'>
                     <Typography className={this.props.classes.boldText}>{r.title}</Typography>

@@ -29,6 +29,7 @@ ReactDOM.render(<BrowserRouter>
             toolbarText='Open VSX Registry'
             listHeaderTitle='Extensions for VS Code Compatible Editors'
             logoURL='/open-source.png'
+            namespaceAccessInfoURL='https://github.com/eclipse/openvsx/wiki/Namespace-Access'
         />
     </ThemeProvider>
 </BrowserRouter>, node);

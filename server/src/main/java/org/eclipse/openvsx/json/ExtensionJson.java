@@ -45,6 +45,10 @@ public class ExtensionJson {
 
     public String namespace;
 
+    public UserJson publishedBy;
+
+    public String namespaceAccess;
+
     public Map<String, String> allVersions;
 
     @Nullable
