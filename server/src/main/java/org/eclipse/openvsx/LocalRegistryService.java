@@ -437,7 +437,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
-            throw new NotFoundException();
+            return ReviewResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
         var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);
@@ -466,7 +466,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
-            throw new NotFoundException();
+            return ReviewResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
         var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);

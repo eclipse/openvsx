@@ -11,11 +11,22 @@ package org.eclipse.openvsx.json;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
 @JsonInclude(Include.NON_NULL)
 public class ReviewListJson {
+
+    public static ReviewListJson error(String message) {
+        var info = new ReviewListJson();
+        info.error = message;
+        return info;
+    }
+
+    @Nullable
+    public String error;
 
     public String postUrl;
 

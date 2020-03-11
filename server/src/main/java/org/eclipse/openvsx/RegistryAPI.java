@@ -75,7 +75,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+        return NamespaceJson.error("Namespace not found: " + namespace);
     }
 
     @GetMapping(
@@ -92,7 +92,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+        return ExtensionJson.error("Extension not found: " + namespace + "." + extension);
     }
 
     @GetMapping(
@@ -110,7 +110,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+        return ExtensionJson.error("Extension not found: " + namespace + "." + extension + " version " + version);
     }
 
     @GetMapping("/api/{namespace}/{extension}/file/{fileName:.+}")
@@ -194,7 +194,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+        return ReviewListJson.error("Extension not found: " + namespace + "." + extension);
     }
 
     @GetMapping(
