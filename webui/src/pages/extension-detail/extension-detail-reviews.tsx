@@ -115,7 +115,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
 
     protected renderReview(r: ExtensionReview) {
         const zonedDate = toLocalTime(r.timestamp);
-        return <React.Fragment key={r.user.loginName + r.title + r.timestamp}>
+        return <React.Fragment key={r.user.loginName + r.timestamp}>
             <Box my={2}>
                 <Box display='flex'>
                     <Typography variant='body2'>{zonedDate ? zonedDate.toLocaleString() : '-'}</Typography>
@@ -131,11 +131,8 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                         }
                     </Typography>
                 </Box>
-                <Box display='flex'>
-                    <Typography className={this.props.classes.boldText}>{r.title}</Typography>
-                    <Box ml={4} display='flex' alignItems='center'>
-                        <ExportRatingStars number={r.rating} />
-                    </Box>
+                <Box display='flex' alignItems='center'>
+                    <ExportRatingStars number={r.rating} />
                 </Box>
                 <Box>
                     <Typography variant='body1'>{r.comment}</Typography>

@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme, Box } from "@material-ui/core";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
 import { handleError } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
@@ -29,7 +29,6 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
 
         this.state = {
             open: false,
-            title: '',
             comment: ''
         };
     }
@@ -45,13 +44,12 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             const rating = this.starSetter ? this.starSetter.state.number : 1;
             const result = await this.props.service.postReview({
                 rating,
-                title: this.state.title,
                 comment: this.state.comment
             }, this.props.reviewPostUrl);
             if (isError(result)) {
                 handleError(result);
             } else {
-                this.setState({ open: false, title: '', comment: '' });
+                this.setState({ open: false, comment: '' });
                 this.props.saveCompleted();
             }
         } catch (err) {
@@ -59,7 +57,6 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
         }
     }
     protected handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => this.setState({ comment: event.target.value });
-    protected handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => this.setState({ title: event.target.value });
 
     render() {
         return <React.Fragment>
@@ -73,9 +70,6 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                         Your review will be posted publicly as {this.props.user.loginName}
                     </DialogContentText>
                     <ExtensionRatingStarSetter ref={ref => this.starSetter = ref} />
-                    <Box my={2}>
-                        <TextField fullWidth label='Review Title' onChange={this.handleTitleChange} />
-                    </Box>
                     <TextField
                         margin="dense"
                         label="Your Review..."
@@ -110,7 +104,6 @@ export namespace ExtensionReviewDialogComponent {
     export interface State {
         open: boolean;
         comment: string;
-        title: string;
     }
 }
 

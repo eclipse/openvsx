@@ -78,7 +78,7 @@ export interface ExtensionReference {
 export type StarRating = 1 | 2 | 3 | 4 | 5;
 export interface NewReview {
     rating: StarRating;
-    title: string;
+    title?: string;
     comment: string;
 }
 
