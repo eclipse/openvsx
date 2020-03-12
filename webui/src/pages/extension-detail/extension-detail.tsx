@@ -66,6 +66,10 @@ const detailStyles = (theme: Theme) => createStyles({
     alignVertically: {
         display: 'flex',
         alignItems: 'center'
+    },
+    code: {
+        fontFamily: 'monospace',
+        fontSize: '1rem'
     }
 });
 
@@ -195,19 +199,24 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     protected renderAccessInfo(extension: Extension): React.ReactNode {
         let icon: React.ReactElement;
+        let description: string;
         switch (extension.namespaceAccess) {
             case 'public':
                 icon = <PublicIcon fontSize='small'/>;
+                description = 'Everyone can publish to this namespace, so the identity of the publisher cannot be verified.';
                 break;
             case 'restricted':
                 icon = <VerifiedUserIcon fontSize='small'/>;
+                description = 'Only verified owners and contributors can publish to this namespace.';
                 break;
             default:
                 return '';
         }
 
         const popupContent = <Typography variant='body2'>
-            The namespace {extension.namespace} has {extension.namespaceAccess} write access.
+            {extension.displayName || extension.name} is in the {extension.namespaceAccess} namespace <span className={this.props.classes.code}>
+                {extension.namespace}
+            </span>. {description}
             <Optional enabled={Boolean(this.props.pageSettings.namespaceAccessInfoURL)}>
                 <br/>Click on the icon to learn more.
             </Optional>

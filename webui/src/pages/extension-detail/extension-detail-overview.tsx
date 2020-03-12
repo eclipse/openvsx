@@ -104,7 +104,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                     className={this.props.classes.link}>
                                     {extension.namespace}
                                 </RouteLink>)}
-                            {this.renderInfo('Write Access', this.renderAccessInfo(extension))}
+                            {this.renderInfo('Publishing Access', this.renderAccessInfo(extension))}
                             {this.renderInfo('Unique Identifier',
                                 <span className={this.props.classes.code}>{extension.namespace}.{extension.name}</span>)}
                             {extension.version ? this.renderInfo('Version', extension.version) : ''}
