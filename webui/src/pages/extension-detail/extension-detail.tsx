@@ -19,6 +19,8 @@ import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { HoverPopover } from "../../custom-mui-components/hover-popover";
+import { Optional } from "../../custom-mui-components/optional";
+import { PageSettings } from "../../page-settings";
 import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
@@ -76,7 +78,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     componentDidMount() {
         const params = this.props.match.params as ExtensionRaw;
-        document.title = `${params.name} – ${this.props.pageTitle}`;
+        document.title = `${params.name} – ${this.props.pageSettings.pageTitle}`;
         this.updateExtension();
     }
 
@@ -88,7 +90,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             if (isError(extension)) {
                 handleError(extension);
             } else {
-                document.title = `${extension.displayName || extension.name} – ${this.props.pageTitle}`;
+                document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
                 this.setState({ extension });
             }
         } catch (err) {
@@ -132,7 +134,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                 <ExtensionDetailOverview
                                     extension={extension}
                                     service={this.props.service}
-                                    namespaceAccessInfoURL={this.props.namespaceAccessInfoURL} />
+                                    pageSettings={this.props.pageSettings} />
                             </Route>
                         </Switch>
                     </Box>
@@ -206,9 +208,9 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
         const popupContent = <Typography variant='body2'>
             The namespace {extension.namespace} has {extension.namespaceAccess} write access.
-            {this.props.namespaceAccessInfoURL ?
-                <React.Fragment><br/>Click on the icon to learn more.</React.Fragment>
-                : ''}
+            <Optional enabled={Boolean(this.props.pageSettings.namespaceAccessInfoURL)}>
+                <br/>Click on the icon to learn more.
+            </Optional>
         </Typography>;
 
         const popover = <HoverPopover
@@ -218,9 +220,9 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             {icon}
         </HoverPopover>;
 
-        if (this.props.namespaceAccessInfoURL) {
+        if (this.props.pageSettings.namespaceAccessInfoURL) {
             return <Link
-                href={this.props.namespaceAccessInfoURL}
+                href={this.props.pageSettings.namespaceAccessInfoURL}
                 target='_blank'
                 className={`${this.props.classes.link} ${this.props.classes.alignVertically}`} >
                 {popover}
@@ -248,8 +250,7 @@ export namespace ExtensionDetailComponent {
     export interface Props extends WithStyles<typeof detailStyles>, RouteComponentProps {
         user?: UserData;
         service: ExtensionRegistryService;
-        pageTitle: string;
-        namespaceAccessInfoURL?: string;
+        pageSettings: PageSettings;
     }
     export interface State {
         extension?: Extension;

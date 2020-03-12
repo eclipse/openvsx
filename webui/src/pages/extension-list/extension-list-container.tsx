@@ -14,6 +14,7 @@ import { RouteComponentProps } from "react-router-dom";
 import { createRoute } from "../../utils";
 import { ExtensionCategory } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
+import { PageSettings } from "../../page-settings";
 import { ExtensionList } from "./extension-list";
 import { ExtensionListHeader } from "./extension-list-header";
 
@@ -32,7 +33,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     componentDidMount() {
-        document.title = this.props.pageTitle;
+        document.title = this.props.pageSettings.pageTitle;
         const searchParams = new URLSearchParams(this.props.location.search);
         const search = searchParams.get('search');
         const category = searchParams.get('category') as ExtensionCategory;
@@ -57,7 +58,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                     category={this.state.category}
                     onSearchChanged={this.onSearchChanged}
                     onCategoryChanged={this.onCategoryChanged}
-                    listHeaderTitle={this.props.listHeaderTitle}
+                    pageSettings={this.props.pageSettings}
                     service={this.props.service} />
                 <ExtensionList service={this.props.service} filter={{ query: this.state.searchQuery, category: this.state.category }} />
             </Container>
@@ -68,8 +69,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
 export namespace ExtensionListContainer {
     export interface Props extends RouteComponentProps {
         service: ExtensionRegistryService;
-        pageTitle: string;
-        listHeaderTitle: string;
+        pageSettings: PageSettings;
     }
     export interface State {
         searchQuery: string,

@@ -16,6 +16,7 @@ import { handleError, toLocalTime, addQuery } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
+import { PageSettings } from "../../page-settings";
 
 const overviewStyles = (theme: Theme) => createStyles({
     link: {
@@ -109,6 +110,14 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             {extension.version ? this.renderInfo('Version', extension.version) : ''}
                             {zonedDate ? this.renderInfo('Date', zonedDate.toLocaleString()) : ''}
                         </Box>
+                        <Box mt={2}>
+                            {this.props.pageSettings.claimNamespaceHref ?
+                                this.renderResourceLink('Claim Ownership', this.props.pageSettings.claimNamespaceHref(extension.namespace))
+                                : ''}
+                            {this.props.pageSettings.reportAbuseHref ?
+                                this.renderResourceLink('Report Abuse', this.props.pageSettings.reportAbuseHref(extension))
+                                : ''}
+                        </Box>
                     </Box>
                 </Box>
             </Box>
@@ -141,10 +150,12 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     protected renderResourceLink(label: string, href?: string): React.ReactNode {
-        if (!href || !href.startsWith('http')) {
+        if (!href || !(href.startsWith('http') || href.startsWith('mailto'))) {
             return '';
         }
-        return <Box><Link href={href} target='_blank' variant='body2' color='secondary'>{label}</Link></Box>;
+        return <Box>
+            <Link href={href} target='_blank' variant='body2' color='secondary'>{label}</Link>
+        </Box>;
     }
 
     protected renderInfo(key: string, value: React.ReactNode) {
@@ -160,9 +171,9 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     protected renderAccessInfo(extension: Extension): React.ReactNode {
         const text = extension.namespaceAccess || 'unknown';
-        if (this.props.namespaceAccessInfoURL) {
+        if (this.props.pageSettings.namespaceAccessInfoURL) {
             return <Link
-                href={this.props.namespaceAccessInfoURL}
+                href={this.props.pageSettings.namespaceAccessInfoURL}
                 target='_blank'
                 className={this.props.classes.link}>
                 {text}
@@ -182,7 +193,7 @@ export namespace ExtensionDetailOverview {
     export interface Props extends WithStyles<typeof overviewStyles>, RouteComponentProps {
         extension: Extension;
         service: ExtensionRegistryService;
-        namespaceAccessInfoURL?: string;
+        pageSettings: PageSettings;
     }
     export interface State {
         readme?: string;

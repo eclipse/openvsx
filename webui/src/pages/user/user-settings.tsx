@@ -14,6 +14,7 @@ import { RouteComponentProps, Route } from "react-router-dom";
 import { createRoute } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { UserData } from "../../extension-registry-types";
+import { PageSettings } from "../../page-settings";
 import { UserSettingTabs } from "./user-setting-tabs";
 import { UserSettingsTokens } from "./user-settings-tokens";
 import { UserSettingsProfile } from "./user-settings-profile";
@@ -32,7 +33,7 @@ const profileStyles = (theme: Theme) => createStyles({
 class UserSettingsComponent extends React.Component<UserSettingsComponent.Props> {
 
     componentDidMount() {
-        document.title = `Settings – ${this.props.pageTitle}`;
+        document.title = `Settings – ${this.props.pageSettings.pageTitle}`;
     }
 
     render() {
@@ -72,7 +73,7 @@ export namespace UserSettingsComponent {
     export interface Props extends WithStyles<typeof profileStyles>, RouteComponentProps {
         user?: UserData;
         service: ExtensionRegistryService;
-        pageTitle: string;
+        pageSettings: PageSettings;
     }
 }
 

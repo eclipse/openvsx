@@ -13,6 +13,7 @@ import { Typography, Box, WithStyles, createStyles, Theme, withStyles, Paper, Ic
 import SearchIcon from '@material-ui/icons/Search';
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExtensionCategory } from "../../extension-registry-types";
+import { PageSettings } from "../../page-settings";
 
 const headerStyles = (theme: Theme) => createStyles({
     search: {
@@ -90,7 +91,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
         return <React.Fragment>
             <Box display='flex' flexDirection='column' alignItems='center' py={6}>
                 <Typography variant='h4' classes={{ root: classes.typo }}>
-                    {this.props.listHeaderTitle}
+                    {this.props.pageSettings.listHeaderTitle}
                 </Typography>
                 <Box display='flex' width='70%'>
                     <Paper className={classes.search}>
@@ -128,7 +129,7 @@ namespace ExtensionListHeaderComp {
     export interface Props extends WithStyles<typeof headerStyles> {
         onSearchChanged: (s: string) => void;
         onCategoryChanged: (c: ExtensionCategory) => void;
-        listHeaderTitle: string;
+        pageSettings: PageSettings;
         searchQuery?: string;
         category?: ExtensionCategory | '';
         service: ExtensionRegistryService;

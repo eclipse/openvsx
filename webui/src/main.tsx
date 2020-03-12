@@ -19,8 +19,10 @@ import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-l
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
 import { ExtensionRegistryAvatar } from './pages/user/avatar';
+import { Optional } from './custom-mui-components/optional';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
+import { PageSettings } from './page-settings';
 import { handleError } from './utils';
 
 const mainStyles = (theme: Theme) => createStyles({
@@ -77,14 +79,18 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         <Box>
                             <RouteLink to={ExtensionListRoutes.MAIN} className={this.props.classes.link}>
                                 <Box display='flex'>
-                                    <Box display='flex' alignItems='center' marginRight={1}>
-                                        <img src={this.props.logoURL} style={{
-                                            width: 'auto',
-                                            height: 25,
-                                            paddingRight: 10
-                                        }}/>
-                                    </Box>
-                                    <Typography variant='h6' noWrap>{this.props.toolbarText}</Typography>
+                                    <Optional enabled={Boolean(this.props.pageSettings.logoURL)}>
+                                        <Box display='flex' alignItems='center' marginRight={1}>
+                                            <img src={this.props.pageSettings.logoURL} style={{
+                                                width: 'auto',
+                                                height: 25,
+                                                paddingRight: 10
+                                            }}/>
+                                        </Box>
+                                    </Optional>
+                                    <Optional enabled={Boolean(this.props.pageSettings.toolbarText)}>
+                                        <Typography variant='h6' noWrap>{this.props.pageSettings.toolbarText}</Typography>
+                                    </Optional>
                                 </Box>
                             </RouteLink>
                         </Box>
@@ -109,8 +115,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 <ExtensionListContainer
                                     {...routeProps}
                                     service={this.props.service}
-                                    pageTitle={this.props.pageTitle}
-                                    listHeaderTitle={this.props.listHeaderTitle} />
+                                    pageSettings={this.props.pageSettings} />
                             } />
                         <Route path={UserSettingsRoutes.MAIN}
                             render={routeProps =>
@@ -118,7 +123,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     {...routeProps}
                                     user={this.state.user}
                                     service={this.props.service}
-                                    pageTitle={this.props.pageTitle} />
+                                    pageSettings={this.props.pageSettings} />
                             } />
                         <Route path={ExtensionDetailRoutes.MAIN}
                             render={routeProps =>
@@ -126,8 +131,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     {...routeProps}
                                     user={this.state.user}
                                     service={this.props.service}
-                                    pageTitle={this.props.pageTitle}
-                                    namespaceAccessInfoURL={this.props.namespaceAccessInfoURL} />
+                                    pageSettings={this.props.pageSettings} />
                             } />
                         <Route path='*'>
                             <Container>
@@ -154,11 +158,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
 export namespace MainComponent {
     export interface Props extends WithStyles<typeof mainStyles> {
         service: ExtensionRegistryService;
-        pageTitle: string;
-        toolbarText: string;
-        listHeaderTitle: string;
-        logoURL: string;
-        namespaceAccessInfoURL?: string;
+        pageSettings: PageSettings;
     }
 
     export interface State {
