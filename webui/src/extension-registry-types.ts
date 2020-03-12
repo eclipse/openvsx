@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+export type UrlString = string;
+
 export interface ErrorResult {
     readonly error?: string;
 }
@@ -23,8 +25,8 @@ export interface SearchResult {
 export interface ExtensionRaw {
     readonly name: string;
     readonly namespace: string;
-    readonly url: string;
-    readonly iconUrl?: string;
+    readonly url: UrlString;
+    readonly files: { [id: string]: UrlString };
     readonly displayName?: string;
     readonly version?: string;
     readonly averageRating?: number;
@@ -34,16 +36,13 @@ export interface ExtensionRaw {
 }
 
 export interface Extension extends ExtensionRaw {
-    readonly namespaceUrl: string;
-    readonly reviewsUrl: string;
-    readonly downloadUrl: string;
-    readonly readmeUrl?: string;
-    readonly licenseUrl?: string;
+    readonly namespaceUrl: UrlString;
+    readonly reviewsUrl: UrlString;
 
     readonly publishedBy: UserData;
     readonly namespaceAccess: 'public' | 'restricted';
 
-    readonly allVersions: { [key: string]: string };
+    readonly allVersions: { [version: string]: UrlString };
     readonly preview?: boolean;
 
     readonly categories?: string[];
@@ -89,17 +88,17 @@ export interface ExtensionReview extends NewReview {
 }
 
 export interface ExtensionReviewList {
-    postUrl: string;
-    deleteUrl: string;
+    postUrl: UrlString;
+    deleteUrl: UrlString;
     reviews: ExtensionReview[];
 }
 
 export interface UserData {
     loginName: string;
-    tokensUrl: string;
-    createTokenUrl: string;
+    tokensUrl: UrlString;
+    createTokenUrl: UrlString;
     fullName?: string;
-    avatarUrl?: string;
+    avatarUrl?: UrlString;
     homepage?: string;
 }
 
@@ -113,7 +112,7 @@ export interface PersonalAccessToken {
     createdTimestamp: string;
     accessedTimestamp?: string;
     description: string;
-    deleteTokenUrl: string;
+    deleteTokenUrl: UrlString;
 }
 
 export type ExtensionCategory =

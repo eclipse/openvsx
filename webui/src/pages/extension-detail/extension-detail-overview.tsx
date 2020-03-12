@@ -59,7 +59,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     protected async updateReadme(): Promise<void> {
-        if (this.props.extension.readmeUrl) {
+        if (this.props.extension.files.readme) {
             try {
                 const readme = await this.props.service.getExtensionReadme(this.props.extension);
                 this.setState({ readme });
@@ -94,7 +94,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             {this.renderResourceLink('Repository', extension.repository)}
                             {this.renderResourceLink('Bugs', extension.bugs)}
                             {this.renderResourceLink('Q\'n\'A', extension.qna)}
-                            {this.renderResourceLink('Download', extension.downloadUrl)}
+                            {this.renderResourceLink('Download', extension.files.download)}
                         </Box>
                         <Box mt={2}>
                             <Typography variant='h6'>More Info</Typography>

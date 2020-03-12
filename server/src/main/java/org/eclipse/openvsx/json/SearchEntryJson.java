@@ -9,16 +9,16 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.util.Map;
+
 import javax.annotation.Nullable;
 
 public class SearchEntryJson {
 
     public String url;
 
-    public String downloadUrl;
-
-    @Nullable
-    public String iconUrl;
+    // key: file id ("download", "icon", "readme", "license"), value: url
+    public Map<String, String> files;
 
     public String name;
 

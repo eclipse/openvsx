@@ -110,7 +110,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 <Container maxWidth='lg'>
                     <Box display='flex' py={4}>
                         <Box display='flex' justifyContent='center' alignItems='center' mr={4}>
-                            <img src={extension.iconUrl} width='auto' height='120px' />
+                            <img src={extension.files.icon} width='auto' height='120px' />
                         </Box>
                         {this.renderHeader(extension)}
                     </Box>
@@ -182,7 +182,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 <Typography>{extension.description}</Typography>
             </Box>
             <Box>
-                <Button variant='contained' color='secondary' href={extension.downloadUrl}>
+                <Button variant='contained' color='secondary' href={extension.files.download}>
                     Download
                 </Button>
             </Box>
@@ -233,9 +233,9 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     }
 
     protected renderLicense(extension: Extension): React.ReactNode {
-        if (extension.licenseUrl) {
+        if (extension.files.license) {
             return <Link
-                    href={extension.licenseUrl}
+                    href={extension.files.license}
                     className={this.props.classes.link} >
                 {extension.license || 'Provided license'}
             </Link>;

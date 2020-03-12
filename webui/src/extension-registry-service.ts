@@ -53,7 +53,7 @@ export class ExtensionRegistryService {
 
     getExtensionReadme(extension: Extension): Promise<string> {
         return sendRequest({
-            endpoint: extension.readmeUrl!,
+            endpoint: extension.files.readme!,
             headers: { 'Accept': 'text/plain' }
         });
     }

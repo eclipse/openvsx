@@ -508,8 +508,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         var entry = extVer.toSearchEntryJson();
         var serverUrl = UrlUtil.getBaseUrl();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
-        entry.iconUrl = createApiUrl(serverUrl, "api", entry.namespace, entry.name, "file", extVer.getIconFileName());
-        entry.downloadUrl = createApiUrl(serverUrl, "api", entry.namespace, entry.name, "file", extVer.getExtensionFileName());
+        entry.files = new LinkedHashMap<>();
+        entry.files.put("download", createApiUrl(serverUrl, "api", entry.namespace, entry.name, "file", extVer.getExtensionFileName()));
+        entry.files.put("icon", createApiUrl(serverUrl, "api", entry.namespace, entry.name, "file", extVer.getIconFileName()));
         return entry;
     }
 
@@ -529,16 +530,17 @@ public class LocalRegistryService implements IExtensionRegistry {
             String url = createApiUrl(serverUrl, "api", json.namespace, json.name, semVer.toString());
             json.allVersions.put(semVer.toString(), url);
         }
+        json.files = new LinkedHashMap<>();
         if (isLatest) {
-            json.downloadUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getExtensionFileName());
-            json.iconUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getIconFileName());
-            json.readmeUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getReadmeFileName());
-            json.licenseUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getLicenseFileName());
+            json.files.put("download", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getExtensionFileName()));
+            json.files.put("icon", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getIconFileName()));
+            json.files.put("readme", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getReadmeFileName()));
+            json.files.put("license", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getLicenseFileName()));
         } else {
-            json.downloadUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName());
-            json.iconUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName());
-            json.readmeUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName());
-            json.licenseUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName());
+            json.files.put("download", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName()));
+            json.files.put("icon", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName()));
+            json.files.put("readme", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName()));
+            json.files.put("license", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName()));
         }
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {

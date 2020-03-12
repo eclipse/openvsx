@@ -33,16 +33,8 @@ public class ExtensionJson {
 
     public String reviewsUrl;
 
-    public String downloadUrl;
-
-    @Nullable
-    public String iconUrl;
-
-    @Nullable
-    public String readmeUrl;
-
-    @Nullable
-    public String licenseUrl;
+    // key: file id ("download", "icon", "readme", "license"), value: url
+    public Map<String, String> files;
 
     public String name;
 
@@ -50,8 +42,10 @@ public class ExtensionJson {
 
     public UserJson publishedBy;
 
+    // see constants in NamespaceJson
     public String namespaceAccess;
 
+    // key: version, value: url
     public Map<String, String> allVersions;
 
     @Nullable

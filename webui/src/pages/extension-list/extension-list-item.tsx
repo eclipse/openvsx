@@ -44,7 +44,7 @@ class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
                     <RouteLink to={route} className={classes.link}>
                         <Paper className={classes.paper}>
                             <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
-                                <img width='80' src={extension.iconUrl} />
+                                <img width='80' src={extension.files.icon} />
                             </Box>
                             <Box display='flex' justifyContent='center'>
                                 <Typography variant='h6' noWrap>
