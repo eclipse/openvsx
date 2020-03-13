@@ -76,11 +76,12 @@ async function printMetadata(registry: Registry, extension: Extension, output?: 
 }
 
 async function download(registry: Registry, extension: Extension, output?: string): Promise<void> {
-    if (!extension.downloadUrl) {
+    const downloadUrl = extension.files.download;
+    if (!downloadUrl) {
         throw new Error(`Extension ${extension.namespace}.${extension.name} does not provide a download URL.`);
     }
-    const fileNameIndex = extension.downloadUrl.lastIndexOf('/');
-    const fileName = extension.downloadUrl.substring(fileNameIndex + 1);
+    const fileNameIndex = downloadUrl.lastIndexOf('/');
+    const fileName = downloadUrl.substring(fileNameIndex + 1);
     let filePath: string | undefined;
     if (output) {
         const stats = await optionalStat(output);
@@ -94,7 +95,7 @@ async function download(registry: Registry, extension: Extension, output?: strin
     }
     await makeDirs(path.dirname(filePath));
     console.log(`Downloading ${extension.namespace}.${extension.name} v${extension.version} to ${filePath}`);
-    await registry.download(filePath, new URL(extension.downloadUrl));
+    await registry.download(filePath, new URL(downloadUrl));
 }
 
 export interface GetOptions {

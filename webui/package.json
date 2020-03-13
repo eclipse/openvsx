@@ -1,7 +1,7 @@
 {
     "name": "openvsx-webui",
     "version": "0.0.0",
-    "description": "User interface for Eclipse Open VSX Registry",
+    "description": "User interface for Eclipse Open VSX",
     "keywords": ["react", "frontend", "vscode", "extensions", "search"],
     "license": "EPL-2.0",
     "homepage": "https://open-vsx.org",

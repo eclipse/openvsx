@@ -54,9 +54,9 @@ export class Registry {
         }
     }
 
-    getMetadata(publisher: string, extension: string): Promise<Extension> {
+    getMetadata(namespace: string, extension: string): Promise<Extension> {
         try {
-            const path = `api/${encodeURIComponent(publisher)}/${encodeURIComponent(extension)}`;
+            const path = `api/${encodeURIComponent(namespace)}/${encodeURIComponent(extension)}`;
             return this.getJson(this.getUrl(path));
         } catch (err) {
             return Promise.reject(err);
@@ -184,6 +184,8 @@ export interface Response {
 export interface Extension extends Response {
     name: string;
     namespace: string;
+    publishedBy: UserData;
+    namespaceAccess: 'public' | 'restricted';
     displayName?: string;
     version: string;
     preview?: boolean;
@@ -193,11 +195,9 @@ export interface Extension extends Response {
     reviewCount?: number;
 
     url: string;
-    iconUrl?: string;
     namespaceUrl: string;
     reviewsUrl: string;
-    downloadUrl: string;
-    readmeUrl?: string;
+    files: { [id: string]: string };
 
     allVersions: { [key: string]: string };
     categories?: string[];
@@ -215,6 +215,13 @@ export interface Extension extends Response {
     bundledExtensions?: ExtensionReference[];
 }
 
+export interface UserData {
+    loginName: string;
+    fullName?: string;
+    avatarUrl?: string;
+    homepage?: string;
+}
+
 export interface Badge {
     url: string;
     href: string;
@@ -222,7 +229,8 @@ export interface Badge {
 }
 
 export interface ExtensionReference {
-    publisher: string;
+    url: string;
+    namespace: string;
     extension: string;
     version?: string;
 }

@@ -1,7 +1,7 @@
 {
     "name": "ovsx",
     "version": "0.0.0",
-    "description": "Command line interface for Eclipse Open VSX Registry",
+    "description": "Command line interface for Eclipse Open VSX",
     "keywords": ["cli", "vscode", "extensions", "publish"],
     "license": "EPL-2.0",
     "homepage": "https://open-vsx.org",
