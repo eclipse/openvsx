@@ -1,6 +1,9 @@
 # ovsx
 
-Command line interface for [Eclipse Open VSX Registry](https://open-vsx.org/).
+Command line interface for [Eclipse Open VSX](https://open-vsx.org/). Run it via [npx](https://www.npmjs.com/package/npx) or install it with
+```
+npm install --global ovsx
+```
 
 `ovsx` uses open-vsx.org as default instance for publishing and downloading extensions. If you are using a different instance, specify it via the `--registryUrl` (or `-r`) argument or an environment variable named `OVSX_REGISTRY_URL`.
 
@@ -17,6 +20,15 @@ Variants:
    packages the extension in the given path using `vsce` and then publishes it.
  * `ovsx publish <file>`
    publishes an already packaged file.
+
+### Create a Namespace
+
+The `publisher` field of your extension's package.json defines the namespace into which the extension will be published. Before you publish the first extension in a namespace, you must create it. This requires an access token as described above.
+
+ * `ovsx create-namespace <name>`
+   creates the specifed namespace. The name must correspond to the `publisher` of your extension.
+
+Creating a namespace does _not_ automatically give you the exclusive publishing rights. Initially, everyone will be able to publish an extension with the new namespace. If you want exclusive publishing rights, you can [claim ownership of a namespace](https://github.com/eclipse/openvsx/wiki/Namespace-Access).
 
 ### Download Extensions
 

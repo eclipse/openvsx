@@ -22,6 +22,8 @@
         "lib",
         "src"
     ],
+    "main": "lib/index",
+    "types": "lib/index",
     "bin": {
         "ovsx": "lib/ovsx"
     },
@@ -45,6 +47,8 @@
         "build": "tsc -p ./tsconfig.json && yarn run lint && cp src/ovsx lib/ovsx",
         "watch": "tsc -w -p ./tsconfig.json",
         "lint": "tslint -c ../webui/configs/tslint.json -p ./tsconfig.json",
-        "prepare": "yarn run clean && yarn run build"
+        "prepare": "yarn run clean && yarn run build",
+        "publish:next": "yarn publish --new-version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" --tag next",
+        "publish:latest": "yarn publish --tag latest"
     }
 }
