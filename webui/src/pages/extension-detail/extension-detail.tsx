@@ -114,7 +114,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 <Container maxWidth='lg'>
                     <Box display='flex' py={4}>
                         <Box display='flex' justifyContent='center' alignItems='center' mr={4}>
-                            <img src={extension.files.icon} width='auto' height='120px' />
+                            <img src={extension.files.icon} width='auto' height='120px' alt={extension.displayName || extension.name} />
                         </Box>
                         {this.renderHeader(extension)}
                     </Box>
