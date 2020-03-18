@@ -1,5 +1,8 @@
 # ovsx
 
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse/openvsx/tree/master/cli)
+[![NPM version](https://img.shields.io/npm/v/ovsx)](https://www.npmjs.com/package/ovsx)
+
 Command line interface for [Eclipse Open VSX](https://open-vsx.org/). Run it via [npx](https://www.npmjs.com/package/npx) or install it with
 ```
 npm install --global ovsx
