@@ -11,7 +11,7 @@ npm install --global ovsx
 
 You can use `ovsx` for publishing [VS Code extensions](https://code.visualstudio.com/api) to an Open VSX instance. This is very similar to [vsce](https://github.com/microsoft/vscode-vsce), the publishing tool for the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/vscode).
 
-You must create a personal access token before you can use `osvx` to publish. You can either pass the token via the `--pat` (or `-p`) argument, or put it into an environment variable named `OVSX_PAT`.
+You must create an Open VSX [personal access token](https://open-vsx.org/user-settings/tokens) before you can use `osvx` to publish. You can either pass the token via the `--pat` (or `-p`) argument, or put it into an environment variable named `OVSX_PAT`.
 
 Variants:
  * `ovsx publish`
