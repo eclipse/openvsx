@@ -85,7 +85,9 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                                 width: 'auto',
                                                 height: 25,
                                                 paddingRight: 10
-                                            }}/>
+                                            }}
+                                            alt={this.props.pageSettings.toolbarText}
+                                            />
                                         </Box>
                                     </Optional>
                                     <Optional enabled={Boolean(this.props.pageSettings.toolbarText)}>
