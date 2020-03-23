@@ -33,6 +33,16 @@ const mainStyles = (theme: Theme) => createStyles({
     toolbar: {
         justifyContent: 'space-between'
     },
+    toolbarLogo: {
+        width: 'auto',
+        height: '40px',
+        marginTop: '6px',
+        marginRight: theme.spacing(2)
+    },
+    alignVertically: {
+        display: 'flex',
+        alignItems: 'center'
+    },
     footer: {
         backgroundColor: theme.palette.secondary.contrastText,
         padding: theme.spacing(2),
@@ -78,17 +88,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                     <Toolbar classes={{ root: this.props.classes.toolbar }}>
                         <Box>
                             <RouteLink to={ExtensionListRoutes.MAIN} className={this.props.classes.link}>
-                                <Box display='flex'>
+                                <Box className={this.props.classes.alignVertically}>
                                     <Optional enabled={Boolean(this.props.pageSettings.logoURL)}>
-                                        <Box display='flex' alignItems='center' marginRight={1}>
-                                            <img src={this.props.pageSettings.logoURL} style={{
-                                                width: 'auto',
-                                                height: 25,
-                                                paddingRight: 10
-                                            }}
-                                            alt={this.props.pageSettings.toolbarText}
-                                            />
-                                        </Box>
+                                        <img src={this.props.pageSettings.logoURL}
+                                            className={this.props.classes.toolbarLogo}
+                                            alt={this.props.pageSettings.toolbarText}/>
                                     </Optional>
                                     <Optional enabled={Boolean(this.props.pageSettings.toolbarText)}>
                                         <Typography variant='h6' noWrap>{this.props.pageSettings.toolbarText}</Typography>
