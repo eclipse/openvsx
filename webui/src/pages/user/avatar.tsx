@@ -9,11 +9,11 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import PopperJS from 'popper.js';
 import { withStyles, createStyles } from '@material-ui/styles';
-import { Theme, WithStyles, Avatar, Popper, Paper, ClickAwayListener, Typography, Box, Grow } from '@material-ui/core';
+import { Theme, WithStyles, Avatar, Menu, Typography, MenuItem, Link, Divider } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
 import { handleError } from '../../utils';
+import { Optional } from '../../custom-mui-components/optional';
 import { UserData, isError } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { UserSettingsRoutes } from './user-settings';
@@ -26,19 +26,23 @@ const avatarStyle = (theme: Theme) => createStyles({
     },
     link: {
         cursor: 'pointer',
-        textDecoration: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        color: theme.palette.text.primary
+        textDecoration: 'none'
+    },
+    menuItem: {
+        cursor: 'auto'
+    },
+    menuButton: {
+        border: 'none',
+        background: 'none',
+        padding: 0
     }
 });
 
-class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistryAvatarComponent.Props, ExtensionRegistryAvatarComponent.State> {
+class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, UserAvatarComponent.State> {
 
     protected avatarButton: HTMLElement | null;
-    protected popperRef: PopperJS | null;
 
-    constructor(props: ExtensionRegistryAvatarComponent.Props) {
+    constructor(props: UserAvatarComponent.Props) {
         super(props);
 
         this.state = {
@@ -61,13 +65,6 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
         }
     }
 
-    componentDidUpdate() {
-        if (this.popperRef) {
-            this.popperRef.update();
-            this.popperRef.update();
-        }
-    }
-
     protected readonly handleAvatarClick = () => {
         this.setState({ open: !this.state.open });
     }
@@ -83,47 +80,47 @@ class ExtensionRegistryAvatarComponent extends React.Component<ExtensionRegistry
                 variant='rounded'
                 classes={{ root: this.props.classes.avatar }}
                 ref={ref => this.avatarButton = ref} />
-            <Popper open={this.state.open} anchorEl={this.avatarButton} popperRef={ref => this.popperRef = ref} placement='bottom-end' disablePortal transition>
-                {({ TransitionProps, placement }) => (
-                    <Grow {...TransitionProps}>
-                        <Paper>
-                            <ClickAwayListener onClickAway={this.handleClose}>
-                                <Box p={1}>
-                                    <Typography variant='overline' color='textPrimary'>Logged in as {this.props.user.loginName}</Typography>
-                                    <Box mt={1}>
-                                        <Box style={{ paddingBottom: '15px'}}>
-                                            <RouteLink onClick={this.handleClose} to={UserSettingsRoutes.PROFILE} className={this.props.classes.link}>
-                                                <Typography variant='button' color='textPrimary'>
-                                                    Settings
-                                                </Typography>
-                                            </RouteLink>
-                                        </Box>
-                                        <Box>
-                                            <form method="post" action={this.props.service.getLogoutUrl()}>
-                                                {
-                                                    this.state.csrf ?
-                                                    <input name="_csrf" type="hidden" value={this.state.csrf}/>
-                                                    : ''
-                                                }
-                                                <button type="submit" className={this.props.classes.link}>
-                                                    <Typography variant='button'>
-                                                        Log Out
-                                                    </Typography>
-                                                </button>
-                                            </form>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            </ClickAwayListener>
-                        </Paper>
-                    </Grow>
-                )}
-            </Popper>
+            <Menu
+                open={this.state.open}
+                anchorEl={this.avatarButton}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                onClose={this.handleClose} >
+                <MenuItem className={this.props.classes.menuItem}>
+                    <Link href={this.props.user.homepage}>
+                        <Typography variant='body2' color='textPrimary'>
+                            Logged in as
+                        </Typography>
+                        <Typography variant='overline' color='textPrimary'>
+                            {this.props.user.loginName}
+                        </Typography>
+                    </Link>
+                </MenuItem>
+                <Divider/>
+                <MenuItem className={this.props.classes.menuItem}>
+                    <RouteLink onClick={this.handleClose} to={UserSettingsRoutes.PROFILE} className={this.props.classes.link}>
+                        <Typography variant='button' color='textPrimary'>
+                            Settings
+                        </Typography>
+                    </RouteLink>
+                </MenuItem>
+                <MenuItem className={this.props.classes.menuItem}>
+                    <form method="post" action={this.props.service.getLogoutUrl()}>
+                        <Optional enabled={Boolean(this.state.csrf)}>
+                            <input name="_csrf" type="hidden" value={this.state.csrf}/>
+                        </Optional>
+                        <button type="submit" className={`${this.props.classes.link} ${this.props.classes.menuButton}`}>
+                            <Typography variant='button'>
+                                Log Out
+                            </Typography>
+                        </button>
+                    </form>
+                </MenuItem>
+            </Menu>
         </React.Fragment>;
     }
 }
 
-export namespace ExtensionRegistryAvatarComponent {
+export namespace UserAvatarComponent {
     export interface Props extends WithStyles<typeof avatarStyle> {
         user: UserData;
         service: ExtensionRegistryService;
@@ -135,4 +132,4 @@ export namespace ExtensionRegistryAvatarComponent {
     }
 }
 
-export const ExtensionRegistryAvatar = withStyles(avatarStyle)(ExtensionRegistryAvatarComponent);
+export const UserAvatar = withStyles(avatarStyle)(UserAvatarComponent);

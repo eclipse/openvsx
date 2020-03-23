@@ -18,7 +18,7 @@ import { Route, Link as RouteLink, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
-import { ExtensionRegistryAvatar } from './pages/user/avatar';
+import { UserAvatar } from './pages/user/avatar';
 import { Optional } from './custom-mui-components/optional';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
@@ -99,7 +99,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         <Box display='flex' alignItems='center'>
                             {
                                 this.state.user ?
-                                    <ExtensionRegistryAvatar
+                                    <UserAvatar
                                         user={this.state.user}
                                         service={this.props.service} />
                                     :
