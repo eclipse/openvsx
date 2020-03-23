@@ -30,6 +30,7 @@ const pageSettings: PageSettings = {
     toolbarText: 'Open VSX Registry',
     listHeaderTitle: 'Extensions for VS Code Compatible Editors',
     logoURL: '/open-source.png',
+    extensionDefaultIconURL: '/default-icon.png',
     namespaceAccessInfoURL: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access',
     reportAbuseHref: extension => `mailto:abuse@example.com?subject=Report%20Abuse%20-%20${extension.namespace}.${extension.name}&Body=${reportAbuseText}%0A%0A${extensionURL(extension)}`,
     claimNamespaceHref: namespace => `https://github.com/myorg/myrepo/issues/new?title=Claiming%20ownership%20of%20${namespace}`

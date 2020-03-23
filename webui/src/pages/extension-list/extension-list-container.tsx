@@ -60,7 +60,10 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                     onCategoryChanged={this.onCategoryChanged}
                     pageSettings={this.props.pageSettings}
                     service={this.props.service} />
-                <ExtensionList service={this.props.service} filter={{ query: this.state.searchQuery, category: this.state.category }} />
+                <ExtensionList
+                    service={this.props.service}
+                    pageSettings={this.props.pageSettings}
+                    filter={{ query: this.state.searchQuery, category: this.state.category }} />
             </Container>
         </React.Fragment>;
     }

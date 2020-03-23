@@ -44,6 +44,7 @@ tasks:
   command: |
     gp await-port 8080
     # Use the CLI to publish some test extensions to the running server
-    export PUBLISHERS="DotJoshJohnson eamodio Equinusocio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg Wscats"
+    export PUBLISHERS="DotJoshJohnson eamodio Equinusocio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode Wscats"
     for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub -r http://localhost:8080 -p super_token; done
+    find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish -r http://localhost:8080 -p super_token '{}' \;
     find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish -r http://localhost:8080 -p super_token '{}' \;

@@ -14,6 +14,7 @@ import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, SearchResult, isError, ErrorResult } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
 import { debounce, handleError } from "../../utils";
+import { PageSettings } from "../../page-settings";
 
 export class ExtensionList extends React.Component<ExtensionList.Props, ExtensionList.State> {
 
@@ -65,7 +66,12 @@ export class ExtensionList extends React.Component<ExtensionList.Props, Extensio
 
     render() {
         const extensionList = this.state.extensions.map((ext, idx) => {
-            return <ExtensionListItem idx={idx} extension={ext} service={this.props.service} key={ext.name} />;
+            return <ExtensionListItem
+                idx={idx}
+                extension={ext}
+                service={this.props.service}
+                pageSettings={this.props.pageSettings}
+                key={`${ext.namespace}.${ext.name}`} />;
         });
         return <Grid container spacing={2}>
             {extensionList}
@@ -75,10 +81,11 @@ export class ExtensionList extends React.Component<ExtensionList.Props, Extensio
 
 export namespace ExtensionList {
     export interface Props {
-        filter: ExtensionFilter,
-        service: ExtensionRegistryService
+        filter: ExtensionFilter;
+        service: ExtensionRegistryService;
+        pageSettings: PageSettings;
     }
     export interface State {
-        extensions: ExtensionRaw[]
+        extensions: ExtensionRaw[];
     }
 }

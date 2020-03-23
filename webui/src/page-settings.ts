@@ -15,6 +15,7 @@ export interface PageSettings {
     toolbarText?: string;
     listHeaderTitle?: string;
     logoURL?: string;
+    extensionDefaultIconURL?: string;
     namespaceAccessInfoURL?: string;
     reportAbuseHref?: (extension: Extension) => string;
     claimNamespaceHref?: (string: string) => string;

@@ -17,6 +17,7 @@ import { ExtensionRaw } from "../../extension-registry-types";
 import { ExportRatingStars } from "../extension-detail/extension-rating-stars";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { createRoute } from "../../utils";
+import { PageSettings } from "../../page-settings";
 
 
 const itemStyles = (theme: Theme) => createStyles({
@@ -28,13 +29,7 @@ const itemStyles = (theme: Theme) => createStyles({
     }
 });
 
-interface ExtensionListItemProps extends WithStyles<typeof itemStyles> {
-    service: ExtensionRegistryService;
-    extension: ExtensionRaw;
-    idx: number;
-}
-
-class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
+class ExtensionListItemComponent extends React.Component<ExtensionListItemComponent.Props> {
     render() {
         const { classes, extension } = this.props;
         const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
@@ -44,7 +39,9 @@ class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
                     <RouteLink to={route} className={classes.link}>
                         <Paper className={classes.paper}>
                             <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
-                                <img width='80' alt={extension.displayName || extension.name} src={extension.files.icon} />
+                                <img src={extension.files.icon || this.props.pageSettings.extensionDefaultIconURL}
+                                    width='80px'
+                                    alt={extension.displayName || extension.name} />
                             </Box>
                             <Box display='flex' justifyContent='center'>
                                 <Typography variant='h6' noWrap>
@@ -70,4 +67,13 @@ class ExtensionListItemComp extends React.Component<ExtensionListItemProps> {
     }
 }
 
-export const ExtensionListItem = withStyles(itemStyles)(ExtensionListItemComp);
+export namespace ExtensionListItemComponent {
+    export interface Props extends WithStyles<typeof itemStyles> {
+        service: ExtensionRegistryService;
+        extension: ExtensionRaw;
+        idx: number;
+        pageSettings: PageSettings;
+    }
+}
+
+export const ExtensionListItem = withStyles(itemStyles)(ExtensionListItemComponent);

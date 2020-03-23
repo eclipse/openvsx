@@ -1,6 +1,18 @@
 task downloadTestExtensions {
     doLast {
         download {
+            src "https://open-vsx.org/api/vscode/sql/file/vscode.sql-1.39.1.vsix"
+            dest "${buildDir}/test-extensions-builtin/sql-1.39.1.vsix"
+        }
+        download {
+            src "https://open-vsx.org/api/vscode/powershell/file/vscode.powershell-1.39.1.vsix"
+            dest "${buildDir}/test-extensions-builtin/powershell-1.39.1.vsix"
+        }
+        download {
+            src "https://open-vsx.org/api/vscode/docker/file/vscode.docker-1.39.1.vsix"
+            dest "${buildDir}/test-extensions-builtin/docker-1.39.1.vsix"
+        }
+        download {
             src "https://github.com/microsoft/vscode-python/releases/download/2019.9.34911/ms-python-release.vsix"
             dest "${buildDir}/test-extensions/python-2019.9.34911.vsix"
         }
