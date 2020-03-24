@@ -10,8 +10,8 @@ import { PageSettings } from '../src/page-settings';
 
 const theme = createMuiTheme({
     palette: {
-        primary: { main: '#EEEEEE', contrastText: '#263238' },
-        secondary: { main: '#42A5F5' }
+        primary: { main: '#eeeeee', contrastText: '#352e37' },
+        secondary: { main: '#a60ee5', contrastText: '#daf5ce' }
     }
 });
 
