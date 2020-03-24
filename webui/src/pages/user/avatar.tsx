@@ -77,6 +77,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
             <Avatar
                 onClick={this.handleAvatarClick}
                 src={this.props.user.avatarUrl}
+                alt={this.props.user.loginName}
                 variant='rounded'
                 classes={{ root: this.props.classes.avatar }}
                 ref={ref => this.avatarButton = ref} />

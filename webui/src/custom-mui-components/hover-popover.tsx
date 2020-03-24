@@ -17,6 +17,7 @@ const popoverStyles = (theme: Theme) => createStyles({
     },
     paper: {
         padding: theme.spacing(1),
+        maxWidth: 600
     }
 });
 

@@ -9,18 +9,19 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Button, Container, Link } from "@material-ui/core";
+import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar } from "@material-ui/core";
 import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-router-dom";
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import PublicIcon from '@material-ui/icons/Public';
-import { handleError, createRoute } from "../../utils";
+import { handleError, createRoute, addQuery } from "../../utils";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { HoverPopover } from "../../custom-mui-components/hover-popover";
 import { Optional } from "../../custom-mui-components/optional";
 import { PageSettings } from "../../page-settings";
+import { ExtensionListRoutes } from "../extension-list/extension-list-container";
 import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
@@ -70,6 +71,10 @@ const detailStyles = (theme: Theme) => createStyles({
     code: {
         fontFamily: 'monospace',
         fontSize: '1rem'
+    },
+    avatar: {
+        width: '20px',
+        height: '20px'
     }
 });
 
@@ -155,18 +160,37 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             <Typography variant='h6' className={this.props.classes.titleRow}>{extension.displayName || extension.name}</Typography>
             <Box display='flex'>
                 <Box className={this.props.classes.alignVertically} >
-                    {this.renderAccessInfo(extension)}&nbsp;Published by&nbsp;{
-                        extension.publishedBy.homepage ?
-                        <Link href={extension.publishedBy.homepage} className={this.props.classes.link}>
-                            {extension.publishedBy.loginName}
-                        </Link>
-                        :
-                        extension.publishedBy.loginName
-                    }
+                    {this.renderAccessInfo(extension)}&nbsp;<RouteLink
+                        to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
+                        className={this.props.classes.link}
+                        title={`Namespace: ${extension.namespace}`} >
+                        {extension.namespace}
+                    </RouteLink>
                 </Box>
                 <TextDivider />
                 <Box className={this.props.classes.alignVertically}>
-                    <SaveAltIcon fontSize='small'/>&nbsp;{extension.downloadCount || 0} {extension.downloadCount === 1 ? 'download' : 'downloads'}
+                    Published&nbsp;by&nbsp;<Link href={extension.publishedBy.homepage}
+                        className={`${this.props.classes.link} ${this.props.classes.alignVertically}`}>{
+                        extension.publishedBy.avatarUrl ?
+                        <React.Fragment>
+                            {extension.publishedBy.loginName}&nbsp;<Avatar
+                                src={extension.publishedBy.avatarUrl}
+                                alt={extension.publishedBy.loginName}
+                                variant='circle'
+                                classes={{ root: this.props.classes.avatar }} />
+                        </React.Fragment>
+                        : extension.publishedBy.loginName
+                    }</Link>
+                </Box>
+                <TextDivider />
+                <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension)}</Box>
+            </Box>
+            <Box className={this.props.classes.descriptionRow}>
+                <Typography>{extension.description}</Typography>
+            </Box>
+            <Box display='flex'>
+                <Box className={this.props.classes.alignVertically}>
+                    <SaveAltIcon fontSize='small'/>&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
                 </Box>
                 <TextDivider />
                 <RouteLink
@@ -179,19 +203,9 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     }>
                     <Box className={this.props.classes.alignVertically}>
                         <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
-                        {`(${extension.reviewCount})`}
+                        ({extension.reviewCount})
                     </Box>
                 </RouteLink>
-                <TextDivider />
-                <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension)}</Box>
-            </Box>
-            <Box className={this.props.classes.descriptionRow}>
-                <Typography>{extension.description}</Typography>
-            </Box>
-            <Box>
-                <Button variant='contained' color='secondary' href={extension.files.download}>
-                    Download
-                </Button>
             </Box>
         </Box>;
     }

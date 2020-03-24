@@ -12,7 +12,11 @@ import * as React from "react";
 import * as MarkdownIt from 'markdown-it';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link } from "@material-ui/core";
 import { RouteComponentProps, Link as RouteLink, withRouter } from "react-router-dom";
+import GitHubIcon from '@material-ui/icons/GitHub';
+import BugReportIcon from '@material-ui/icons/BugReport';
+import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 import { handleError, toLocalTime, addQuery } from "../../utils";
+import { Optional } from "../../custom-mui-components/optional";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
@@ -31,12 +35,20 @@ const overviewStyles = (theme: Theme) => createStyles({
             maxWidth: '100%'
         }
     },
+    resourceLink: {
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: theme.spacing(0.5)
+    },
     categoryButton: {
         fontWeight: 'normal',
         textTransform: 'none',
         marginRight: theme.spacing(0.5),
         marginBottom: theme.spacing(0.5),
         padding: '1px 6px'
+    },
+    downloadButton: {
+        marginTop: theme.spacing(2)
     },
     code: {
         fontFamily: 'monospace',
@@ -94,21 +106,25 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             {this.renderResourceLink('Repository', extension.repository)}
                             {this.renderResourceLink('Bugs', extension.bugs)}
                             {this.renderResourceLink('Q\'n\'A', extension.qna)}
-                            {this.renderResourceLink('Download', extension.files.download)}
+                            <Button variant='contained' color='secondary'
+                                href={extension.files.download}
+                                className={this.props.classes.downloadButton} >
+                                Download
+                            </Button>
                         </Box>
                         <Box mt={2}>
                             <Typography variant='h6'>More Info</Typography>
+                            {extension.version ? this.renderInfo('Version', extension.version) : ''}
+                            {zonedDate ? this.renderInfo('Released on', zonedDate.toLocaleString()) : ''}
                             {this.renderInfo('Namespace',
                                 <RouteLink
                                     to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
                                     className={this.props.classes.link}>
                                     {extension.namespace}
                                 </RouteLink>)}
-                            {this.renderInfo('Publishing Access', this.renderAccessInfo(extension))}
+                            {this.renderInfo('Access Type', this.renderAccessInfo(extension))}
                             {this.renderInfo('Unique Identifier',
                                 <span className={this.props.classes.code}>{extension.namespace}.{extension.name}</span>)}
-                            {extension.version ? this.renderInfo('Version', extension.version) : ''}
-                            {zonedDate ? this.renderInfo('Date', zonedDate.toLocaleString()) : ''}
                         </Box>
                         <Box mt={2}>
                             {this.props.pageSettings.claimNamespaceHref ?
@@ -154,7 +170,19 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             return '';
         }
         return <Box>
-            <Link href={href} target='_blank' variant='body2' color='secondary'>{label}</Link>
+            <Link href={href} target='_blank' variant='body2' color='secondary'
+                className={this.props.classes.resourceLink} >
+                <Optional enabled={label === 'Repository' && href.startsWith('https://github.com/')}>
+                    <GitHubIcon fontSize='small'/>&nbsp;
+                </Optional>
+                <Optional enabled={label === 'Bugs'}>
+                    <BugReportIcon fontSize='small'/>&nbsp;
+                </Optional>
+                <Optional enabled={label === 'Q\'n\'A'}>
+                    <QuestionAnswerIcon fontSize='small'/>&nbsp;
+                </Optional>
+                {label}
+            </Link>
         </Box>;
     }
 
