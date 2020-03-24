@@ -12,7 +12,8 @@ import { utcToZonedTime } from "date-fns-tz";
 import { ErrorResponse } from "./server-request";
 
 export function addQuery(url: string, queries: { key: string, value: string | number }[]) {
-    return url + '?' + queries.map<string>((obj) => obj.key + '=' + obj.value).join('&');
+    const nonEmpty = queries.filter(q => !!q.value);
+    return url + '?' + nonEmpty.map<string>(q => q.key + '=' + encodeURIComponent(q.value)).join('&');
 }
 
 export function createAbsoluteURL(arr: string[], queries?: { key: string, value: string | number }[]): string {

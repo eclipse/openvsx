@@ -11,7 +11,7 @@
 import * as React from "react";
 import { Container } from "@material-ui/core";
 import { RouteComponentProps } from "react-router-dom";
-import { createRoute } from "../../utils";
+import { createRoute, addQuery } from "../../utils";
 import { ExtensionCategory } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { PageSettings } from "../../page-settings";
@@ -44,10 +44,20 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     protected onSearchChanged = (searchQuery: string) => {
-        this.setState({ searchQuery: searchQuery });
+        this.setState({ searchQuery });
+        this.updateURL(searchQuery, this.state.category);
     }
     protected onCategoryChanged = (category: ExtensionCategory) => {
         this.setState({ category });
+        this.updateURL(this.state.searchQuery, category);
+    }
+
+    protected updateURL(searchQuery: string, category: ExtensionCategory | '') {
+        const queries: { key: string, value: string }[] = [
+            { key: 'search', value: searchQuery },
+            { key: 'category', value: category }
+        ];
+        history.replaceState(null, '', addQuery('', queries));
     }
 
     render() {
