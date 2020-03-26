@@ -30,6 +30,8 @@ public class SearchResultJson {
 
     public int offset;
 
+    public int totalSize;
+
     public List<SearchEntryJson> extensions;
 
 }

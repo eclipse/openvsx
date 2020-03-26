@@ -227,6 +227,7 @@ public class RegistryAPI {
                     result.offset += subResult.offset;
                     offset = Math.max(offset - subResult.offset - subResultSize, 0);
                 }
+                result.totalSize += subResult.totalSize;
             } catch (NotFoundException exc) {
                 // Try the next registry
             }

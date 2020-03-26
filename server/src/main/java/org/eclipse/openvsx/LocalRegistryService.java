@@ -238,6 +238,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var searchResult = search(queryString, category, pageRequest);
         json.extensions = toSearchEntries(searchResult, size, offset % size);
         json.offset = offset;
+        json.totalSize = (int) searchResult.getTotalElements();
         if (json.extensions.size() < size && searchResult.hasNext()) {
             // This is necessary when offset % size > 0
             var remainder = search(queryString, category, pageRequest.next());

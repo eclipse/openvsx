@@ -19,6 +19,7 @@ export function isError(obj: any): obj is ErrorResult {
 
 export interface SearchResult {
     readonly offset: number;
+    readonly totalSize: number;
     readonly extensions: ExtensionRaw[];
 }
 
