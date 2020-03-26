@@ -31,6 +31,13 @@ const overviewStyles = (theme: Theme) => createStyles({
         }
     },
     markdown: {
+        '& a': {
+            textDecoration: 'none',
+            color: theme.palette.secondary.main,
+            '&:hover': {
+                textDecoration: 'underline'
+            }
+        },
         '& img': {
             maxWidth: '100%'
         }
