@@ -40,6 +40,7 @@ import org.springframework.data.util.Pair;
 public class ExtensionProcessor implements AutoCloseable {
 
     private static final String PACKAGE_JSON = "extension/package.json";
+    private static final String PACKAGE_NLS_JSON = "extension/package.nls.json";
     private static final String[] README = { "extension/README.md", "extension/README", "extension/README.txt" };
     private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
 
@@ -47,6 +48,7 @@ public class ExtensionProcessor implements AutoCloseable {
     private byte[] content;
     private ZipFile zipFile;
     private JsonNode packageJson;
+    private JsonNode packageNlsJson;
 
     public ExtensionProcessor(InputStream stream) {
         this.inputStream = stream;
@@ -81,6 +83,8 @@ public class ExtensionProcessor implements AutoCloseable {
     private void loadPackageJson() {
         if (packageJson == null) {
             readInputStream();
+
+            // Read package.json
             var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
             if (bytes == null)
                 throw new ErrorResultException("Entry not found: " + PACKAGE_JSON);
@@ -92,7 +96,21 @@ public class ExtensionProcessor implements AutoCloseable {
                         + ": " + exc.getMessage());
 			} catch (IOException exc) {
 				throw new RuntimeException(exc);
-			}
+            }
+
+            // Read package.nls.json
+            bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_NLS_JSON);
+            if (bytes != null) {
+                try {
+                    var mapper = new ObjectMapper();
+                    packageNlsJson = mapper.readTree(bytes);
+                } catch (JsonParseException exc) {
+                    throw new ErrorResultException("Invalid JSON format in " + PACKAGE_NLS_JSON
+                            + ": " + exc.getMessage());
+                } catch (IOException exc) {
+                    throw new RuntimeException(exc);
+                }
+            }
         }
     }
 
@@ -123,8 +141,8 @@ public class ExtensionProcessor implements AutoCloseable {
         var extension = new ExtensionVersion();
         extension.setVersion(packageJson.path("version").textValue());
         extension.setPreview(packageJson.path("preview").booleanValue());
-        extension.setDisplayName(packageJson.path("displayName").textValue());
-        extension.setDescription(packageJson.path("description").textValue());
+        extension.setDisplayName(getNlsValue(packageJson.path("displayName")));
+        extension.setDescription(getNlsValue(packageJson.path("description")));
         extension.setCategories(getStringList(packageJson.path("categories")));
         extension.setTags(getStringList(packageJson.path("keywords")));
         extension.setLicense(packageJson.path("license").textValue());
@@ -151,6 +169,15 @@ public class ExtensionProcessor implements AutoCloseable {
             return list;
         }
         return null;
+    }
+
+    private String getNlsValue(JsonNode node) {
+        var value = node.textValue();
+        if (packageNlsJson != null && value.length() > 2 && value.startsWith("%") && value.endsWith("%")) {
+            var key = value.substring(1, value.length() - 1);
+            return packageNlsJson.path(key).textValue();
+        }
+        return value;
     }
 
     private String getUrl(JsonNode node) {
