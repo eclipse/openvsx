@@ -40,6 +40,9 @@ const overviewStyles = (theme: Theme) => createStyles({
         },
         '& img': {
             maxWidth: '100%'
+        },
+        '& code': {
+            whiteSpace: 'pre-line'
         }
     },
     resourceLink: {
@@ -98,10 +101,10 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const zonedDate = toLocalTime(extension.timestamp);
         return <React.Fragment>
             <Box display='flex' >
-                <Box className={classes.markdown} flex={5}>
+                <Box className={classes.markdown} flex={5} overflow="auto">
                     {this.renderMarkdown(this.state.readme)}
                 </Box>
-                <Box flex={3} display='flex' justifyContent='flex-end'>
+                <Box flex={3} display='flex' justifyContent='flex-end' minWidth='290px'>
                     <Box width='80%'>
                         {this.renderButtonList('category', 'Categories', extension.categories)}
                         <Box mt={2}>
