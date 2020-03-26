@@ -251,6 +251,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .withIndices("extensions")
                 .withPageable(pageRequest);
         if (!Strings.isNullOrEmpty(queryString)) {
+            var boolQuery = QueryBuilders.boolQuery();
             var multiMatchQuery = QueryBuilders.multiMatchQuery(queryString)
                     .field("name").boost(5)
                     .field("displayName").boost(5)
@@ -259,7 +260,14 @@ public class LocalRegistryService implements IExtensionRegistry {
                     .field("description")
                     .fuzziness(Fuzziness.AUTO)
                     .prefixLength(2);
-            queryBuilder.withQuery(multiMatchQuery);
+            boolQuery.should(multiMatchQuery).boost(5);
+            for (var term : queryString.split("\\s+")) {
+                var namePrefixQuery = QueryBuilders.prefixQuery("displayName", term);
+                boolQuery.should(namePrefixQuery).boost(2);
+                var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", term);
+                boolQuery.should(namespacePrefixQuery);
+            }
+            queryBuilder.withQuery(boolQuery);
         }
         if (!Strings.isNullOrEmpty(category)) {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
