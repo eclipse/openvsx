@@ -9,12 +9,13 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Grid, Theme, createStyles, withStyles, WithStyles } from "@material-ui/core";
+import { Grid, Box, Theme, createStyles, withStyles, WithStyles } from "@material-ui/core";
 import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, SearchResult, isError, ErrorResult } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
 import { debounce, handleError } from "../../utils";
 import { PageSettings } from "../../page-settings";
+import * as InfiniteScroll from "react-infinite-scroller";
 
 const itemStyles = (theme: Theme) => createStyles({
     container: {
@@ -24,15 +25,14 @@ const itemStyles = (theme: Theme) => createStyles({
 
 export class ExtensionListComponent extends React.Component<ExtensionListComponent.Props, ExtensionListComponent.State> {
 
-    protected extensions: ExtensionRaw[];
-
     protected cancellationToken: { cancel?: () => void, timeout?: number } = {};
 
     constructor(props: ExtensionListComponent.Props) {
         super(props);
 
         this.state = {
-            extensions: []
+            extensions: [],
+            hasMore: false
         };
     }
 
@@ -66,8 +66,22 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         if (isError(result)) {
             handleError(result);
         } else {
-            this.setState({ extensions: result.extensions });
+            this.setState({ extensions: result.extensions, hasMore: result.extensions.length < result.totalSize });
         }
+    }
+
+    protected loadMore = async (p: number) => {
+        const filter: ExtensionFilter = this.props.filter;
+        filter.offset = (p * (filter.size || 18));
+        const result = await this.getExtensions(filter);
+        if (isError(result)) {
+            handleError(result);
+        } else {
+            const extensions = this.state.extensions;
+            extensions.push(...result.extensions);
+            this.setState({ extensions, hasMore: extensions.length < result.totalSize });
+        }
+
     }
 
     render() {
@@ -79,9 +93,19 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 pageSettings={this.props.pageSettings}
                 key={`${ext.namespace}.${ext.name}`} />;
         });
-        return <Grid container spacing={2} className={this.props.classes.container}>
-            {extensionList}
-        </Grid>;
+        return <Box height='100%' overflow='auto'>
+            <InfiniteScroll
+                loadMore={this.loadMore}
+                hasMore={this.state.hasMore}
+                loader={<div className="loader" key={0}>Loading ...</div>}
+                threshold={50}
+                useWindow={false}
+            >
+                <Grid container spacing={2} className={this.props.classes.container}>
+                    {extensionList}
+                </Grid>
+            </InfiniteScroll>
+        </Box>;
     }
 }
 
@@ -93,6 +117,7 @@ export namespace ExtensionListComponent {
     }
     export interface State {
         extensions: ExtensionRaw[];
+        hasMore: boolean;
     }
 }
 
