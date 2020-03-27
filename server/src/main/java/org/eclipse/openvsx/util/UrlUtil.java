@@ -44,6 +44,36 @@ public final class UrlUtil {
     }
 
     /**
+     * Add a query to a URL. The parameters array must contain a sequence of key and value
+     * pairs, so its length is expected to be even.
+     */
+    public static String addQuery(String url, String... parameters) {
+        if (parameters.length % 2 != 0)
+            throw new IllegalArgumentException("Expected an even number of parameters.");
+        try {
+            var result = new StringBuilder(url);
+            var printedParams = 0;
+            for (var i = 0; i < parameters.length; i += 2) {
+                var key = parameters[i];
+                var value = parameters[i + 1];
+                if (key == null)
+                    throw new NullPointerException("Parameter key must not be null");
+                if (value != null) {
+                    if (printedParams == 0)
+                        result.append('?');
+                    else
+                        result.append('&');
+                    result.append(key).append('=').append(URLEncoder.encode(value, "UTF-8"));
+                    printedParams++;
+                }
+            }
+            return result.toString();
+        } catch (UnsupportedEncodingException exc) {
+            throw new RuntimeException(exc);
+        }
+    }
+
+    /**
      * Get the base URL to use for API requests from the current servlet request.
      */
     public static String getBaseUrl() {

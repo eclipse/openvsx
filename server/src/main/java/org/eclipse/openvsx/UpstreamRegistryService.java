@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import static org.eclipse.openvsx.util.UrlUtil.addQuery;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.util.Arrays;
@@ -50,7 +51,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public NamespaceJson getNamespace(String namespace) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace), NamespaceJson.class);
+            String requestUrl = createApiUrl(upstreamUrl, "api", namespace);
+            return restTemplate.getForObject(requestUrl, NamespaceJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -60,7 +62,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public ExtensionJson getExtension(String namespace, String extension) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace, extension), ExtensionJson.class);
+            String requestUrl = createApiUrl(upstreamUrl, "api", namespace, extension);
+            return restTemplate.getForObject(requestUrl, ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -70,7 +73,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public ExtensionJson getExtension(String namespace, String extension, String version) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace, extension, version), ExtensionJson.class);
+            String requestUrl = createApiUrl(upstreamUrl, "api", namespace, extension, version);
+            return restTemplate.getForObject(requestUrl, ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -105,7 +109,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public ReviewListJson getReviews(String namespace, String extension) {
         try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", namespace, extension, "reviews"), ReviewListJson.class);
+            String requestUrl = createApiUrl(upstreamUrl, "api", namespace, extension, "reviews");
+            return restTemplate.getForObject(requestUrl, ReviewListJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -115,7 +120,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 	@Override
 	public SearchResultJson search(String query, String category, int size, int offset) {
 		try {
-            return restTemplate.getForObject(createApiUrl(upstreamUrl, "api", "-", "search"), SearchResultJson.class);
+            var searchUrl = createApiUrl(upstreamUrl, "api", "-", "search");
+            var requestUrl = addQuery(searchUrl, "query", query, "category", category,
+                    "size", Integer.toString(size), "offset", Integer.toString(offset));
+            return restTemplate.getForObject(requestUrl, SearchResultJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;

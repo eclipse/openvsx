@@ -18,8 +18,15 @@ public class UriUtilTest {
     @Test
     public void testApiUrl() throws Exception {
         var baseUrl = "http://localhost/";
-        assertEquals("http://localhost/api/foo/bar",
-                UrlUtil.createApiUrl(baseUrl, "api", "foo", "bar"));
+        assertEquals("http://localhost/api/foo/b%09a%2Fr",
+                UrlUtil.createApiUrl(baseUrl, "api", "foo", "b\ta/r"));
+    }
+
+    @Test
+    public void testQuery() throws Exception {
+        var url = "http://localhost/api/foo";
+        assertEquals("http://localhost/api/foo?a=1&c=b%09a%2Fr",
+                UrlUtil.addQuery(url, "a", "1", "b", null, "c", "b\ta/r"));
     }
 
 }
