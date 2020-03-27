@@ -14,6 +14,7 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,6 +54,8 @@ import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +70,7 @@ import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 import org.springframework.web.server.ResponseStatusException;
 
 @Component
@@ -152,6 +156,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         if (resource instanceof ExtensionBinary) {
             extension.setDownloadCount(extension.getDownloadCount() + 1);
+            updateSearchIndex(extension);
         }
         return resource.getContent();
     }
@@ -168,6 +173,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (resource instanceof ExtensionBinary) {
             var extension = extVersion.getExtension();
             extension.setDownloadCount(extension.getDownloadCount() + 1);
+            updateSearchIndex(extension);
         }
         return resource.getContent();
     }
@@ -205,25 +211,48 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (enableSearch) {
             searchOperations.createIndex(ExtensionSearch.class);
             if (initSearchIndex) {
-                logger.info("Initializing search index...");
+                var stopWatch = new StopWatch();
+                stopWatch.start();
                 var allExtensions = repositories.findAllExtensions();
                 if (!allExtensions.isEmpty()) {
                     var indexQueries = allExtensions.map(extension ->
                         new IndexQueryBuilder()
-                            .withObject(extension.toSearch())
+                            .withObject(toSearchIndex(extension))
                             .build()
                     ).toList();
                     searchOperations.bulkIndex(indexQueries);
                 }
+                stopWatch.stop();
+                logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
             }
         }
     }
 
     public void updateSearchIndex(Extension extension) {
         var indexQuery = new IndexQueryBuilder()
-                .withObject(extension.toSearch())
+                .withObject(toSearchIndex(extension))
                 .build();
         searchOperations.index(indexQuery);
+    }
+
+    protected ExtensionSearch toSearchIndex(Extension extension) {
+        var entry = extension.toSearch();
+        var ratingValue = (entry.averageRating != null ? entry.averageRating : 0.0) / 5.0;
+        var downloadsValue = entry.downloadCount / 1000.0; // TODO get max download count from DB
+        var now = LocalDateTime.now(ZoneId.of("UTC")).toEpochSecond(ZoneOffset.UTC);
+        var referenceTime = LocalDateTime.parse("2020-03-01T00:00:00").toEpochSecond(ZoneOffset.UTC);
+        var timestampValue = (entry.timestamp - referenceTime) / (now - referenceTime);
+        entry.relevance = 5 * limit(ratingValue) + 3 * limit(downloadsValue) + 2 * limit(timestampValue);
+        return entry;
+    }
+
+    private double limit(double value) {
+        if (value < 0.0)
+            return 0.0;
+        else if (value > 1.0)
+            return 1.0;
+        else
+            return value;
     }
 
     @Override
@@ -253,6 +282,8 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .withPageable(pageRequest);
         if (!Strings.isNullOrEmpty(queryString)) {
             var boolQuery = QueryBuilders.boolQuery();
+
+            // Fuzzy matching of search query in multiple fields
             var multiMatchQuery = QueryBuilders.multiMatchQuery(queryString)
                     .field("name").boost(5)
                     .field("displayName").boost(5)
@@ -262,17 +293,25 @@ public class LocalRegistryService implements IExtensionRegistry {
                     .fuzziness(Fuzziness.AUTO)
                     .prefixLength(2);
             boolQuery.should(multiMatchQuery).boost(5);
-            for (var term : queryString.split("\\s+")) {
-                var namePrefixQuery = QueryBuilders.prefixQuery("displayName", term);
-                boolQuery.should(namePrefixQuery).boost(2);
-                var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", term);
-                boolQuery.should(namespacePrefixQuery);
-            }
+
+            // Prefix matching of search query in display name and namespace
+            var namePrefixQuery = QueryBuilders.prefixQuery("displayName", queryString.trim());
+            boolQuery.should(namePrefixQuery).boost(2);
+            var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", queryString.trim());
+            boolQuery.should(namespacePrefixQuery);
+
             queryBuilder.withQuery(boolQuery);
         }
+
         if (!Strings.isNullOrEmpty(category)) {
+            // Filter by selected category
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
+
+        // Configure default sorting of results
+        queryBuilder.withSort(SortBuilders.scoreSort());
+        queryBuilder.withSort(SortBuilders.fieldSort("relevance").order(SortOrder.DESC));
+
         return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
     }
 
@@ -469,6 +508,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         extReview.setRating(review.rating);
         entityManager.persist(extReview);
         extension.setAverageRating(computeAverageRating(extension));
+        updateSearchIndex(extension);
         return new ReviewResultJson();
     }
 
@@ -492,6 +532,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             extReview.setActive(false);
         }
         extension.setAverageRating(computeAverageRating(extension));
+        updateSearchIndex(extension);
         return new ReviewResultJson();
     }
 

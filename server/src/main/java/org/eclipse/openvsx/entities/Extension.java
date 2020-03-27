@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.time.ZoneOffset;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -51,9 +52,12 @@ public class Extension {
         search.id = this.getId();
         search.name = this.getName();
         search.namespace = this.getNamespace().getName();
+        search.averageRating = this.getAverageRating();
+        search.downloadCount = this.getDownloadCount();
         var extVer = this.getLatest();
         search.displayName = extVer.getDisplayName();
         search.description = extVer.getDescription();
+        search.timestamp = extVer.getTimestamp().toEpochSecond(ZoneOffset.UTC);
         search.categories = extVer.getCategories();
         search.tags = extVer.getTags();
         return search;

@@ -57,7 +57,8 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
             { key: 'search', value: searchQuery },
             { key: 'category', value: category }
         ];
-        history.replaceState(null, '', addQuery('', queries));
+        const url = addQuery('', queries) || location.pathname || '/';
+        history.replaceState(null, '', url);
     }
 
     render() {

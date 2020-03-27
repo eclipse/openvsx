@@ -11,6 +11,8 @@ package org.eclipse.openvsx.search;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 
@@ -20,6 +22,8 @@ public class ExtensionSearch {
     @Field(index = false)
     public long id;
 
+    public double relevance;
+
     public String name;
 
     public String namespace;
@@ -27,6 +31,13 @@ public class ExtensionSearch {
     public String displayName;
 
     public String description;
+
+    public long timestamp;
+
+    @Nullable
+    public Double averageRating;
+
+    public int downloadCount;
 
     @Field(index = false)
     public List<String> categories;

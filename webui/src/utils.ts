@@ -13,6 +13,9 @@ import { ErrorResponse } from "./server-request";
 
 export function addQuery(url: string, queries: { key: string, value: string | number }[]) {
     const nonEmpty = queries.filter(q => !!q.value);
+    if (nonEmpty.length === 0) {
+        return url;
+    }
     return url + '?' + nonEmpty.map<string>(q => q.key + '=' + encodeURIComponent(q.value)).join('&');
 }
 
