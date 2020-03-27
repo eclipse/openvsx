@@ -26,6 +26,11 @@ const itemStyles = (theme: Theme) => createStyles({
     },
     link: {
         textDecoration: 'none'
+    },
+    img: {
+        width: '5rem',
+        maxHeight: '5.8rem',
+        objectFit: 'contain',
     }
 });
 
@@ -40,7 +45,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                         <Paper className={classes.paper}>
                             <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
                                 <img src={extension.files.icon || this.props.pageSettings.extensionDefaultIconURL}
-                                    width='80px'
+                                    className={classes.img}
                                     alt={extension.displayName || extension.name} />
                             </Box>
                             <Box display='flex' justifyContent='center'>
