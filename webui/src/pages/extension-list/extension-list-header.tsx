@@ -16,10 +16,26 @@ import { ExtensionCategory } from "../../extension-registry-types";
 import { PageSettings } from "../../page-settings";
 
 const headerStyles = (theme: Theme) => createStyles({
+    form: {
+        display: 'flex', 
+        flexDirection: 'column',
+        width: '100%',
+        [theme.breakpoints.up('md')]: {
+            flexDirection: 'row', 
+            width: '70%'
+        },
+        [theme.breakpoints.down('md')]: {
+            maxWidth: 500,
+        }  
+    },
     search: {
         flex: 2,
         display: 'flex',
-        marginRight: theme.spacing(1)
+        marginRight: theme.spacing(1),
+        [theme.breakpoints.down('sm')]: {
+            marginRight: 0,
+            marginBottom: theme.spacing(2),
+        },
     },
     category: {
         flex: 1,
@@ -93,7 +109,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                 <Typography variant='h4' classes={{ root: classes.typo }}>
                     {this.props.pageSettings.listHeaderTitle}
                 </Typography>
-                <Box display='flex' width='70%'>
+                <Box className={classes.form}>
                     <Paper className={classes.search}>
                         <InputBase
                             autoFocus
