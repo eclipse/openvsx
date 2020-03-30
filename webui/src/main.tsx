@@ -60,7 +60,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     constructor(props: MainComponent.Props) {
         super(props);
 
-        this.state = {};
+        this.state = { userLoading: true };
     }
 
     componentDidMount() {
@@ -71,12 +71,13 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         try {
             const user = await this.props.service.getUser();
             if (isError(user)) {
-                this.setState({ user: undefined });
+                this.setState({ user: undefined, userLoading: false });
             } else {
-                this.setState({ user });
+                this.setState({ user, userLoading: false });
             }
         } catch (err) {
             handleError(err);
+            this.setState({ userLoading: false })
         }
     }
 
@@ -128,6 +129,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 <UserSettings
                                     {...routeProps}
                                     user={this.state.user}
+                                    userLoading={this.state.userLoading}
                                     service={this.props.service}
                                     pageSettings={this.props.pageSettings} />
                             } />
@@ -169,6 +171,7 @@ export namespace MainComponent {
 
     export interface State {
         user?: UserData;
+        userLoading: boolean;
     }
 }
 

@@ -15,6 +15,7 @@ import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import PublicIcon from '@material-ui/icons/Public';
 import { handleError, createRoute, addQuery } from "../../utils";
+import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
@@ -82,7 +83,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     constructor(props: ExtensionDetailComponent.Props) {
         super(props);
-        this.state = {};
+        this.state = { loading: true };
     }
 
     componentDidMount() {
@@ -98,12 +99,14 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
                 handleError(extension);
+                this.setState({ loading: false });
             } else {
                 document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
-                this.setState({ extension });
+                this.setState({ extension, loading: false });
             }
         } catch (err) {
             handleError(err);
+            this.setState({ loading: false });
         }
     }
 
@@ -112,7 +115,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     render() {
         const { extension } = this.state;
         if (!extension) {
-            return '';
+            return <DelayedLoadIndicator loading={this.state.loading}/>;
         }
         return <React.Fragment>
             <Box className={this.props.classes.head}>
@@ -280,6 +283,7 @@ export namespace ExtensionDetailComponent {
     }
     export interface State {
         extension?: Extension;
+        loading: boolean;
     }
 }
 

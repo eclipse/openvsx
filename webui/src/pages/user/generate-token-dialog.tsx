@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography } from "@material-ui/core";
+import { Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography, CircularProgress } from "@material-ui/core";
 import { UserData, PersonalAccessToken, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { handleError } from "../../utils";
@@ -20,6 +20,17 @@ const TOKEN_DESCRIPTION_SIZE = 255;
 const tokensDialogStyle = (theme: Theme) => createStyles({
     boldText: {
         fontWeight: 'bold'
+    },
+    buttonProgress: {
+        color: theme.palette.secondary.main,
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        marginTop: -12,
+        marginLeft: -12,
+    },
+    buttonWrapper: {
+        position: 'relative'
     }
 });
 
@@ -30,12 +41,13 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
         this.state = {
             open: false,
+            posted: false,
             description: ''
         };
     }
 
     protected handleOpenDialog = () => {
-        this.setState({ open: true });
+        this.setState({ open: true, posted: false });
     }
 
     protected handleCancel = () => {
@@ -56,6 +68,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     }
 
     protected handleGenerate = async () => {
+        this.setState({ posted: true });
         try {
             const token = await this.props.service.createAccessToken(this.props.user, this.state.description);
             if (isError(token)) {
@@ -110,13 +123,18 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                         {this.state.token ? 'Close' : 'Cancel'}
                     </Button>
                     <Optional enabled={!this.state.token}>
-                        <Button
-                            onClick={this.handleGenerate}
-                            disabled={Boolean(this.state.descriptionError)}
-                            variant="contained"
-                            color="secondary" >
-                            Generate Token
-                        </Button>
+                        <div className={this.props.classes.buttonWrapper}>
+                            <Button
+                                onClick={this.handleGenerate}
+                                disabled={Boolean(this.state.descriptionError) || this.state.posted}
+                                variant="contained"
+                                color="secondary" >
+                                Generate Token
+                            </Button>
+                            <Optional enabled={this.state.posted}>
+                                <CircularProgress size={24} className={this.props.classes.buttonProgress} />
+                            </Optional>
+                        </div>
                     </Optional>
                 </DialogActions>
             </Dialog>
@@ -133,6 +151,7 @@ export namespace GenerateTokenDialogComponent {
 
     export interface State {
         open: boolean;
+        posted: boolean;
         description: string;
         descriptionError?: string;
         token?: PersonalAccessToken;

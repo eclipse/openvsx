@@ -11,6 +11,8 @@
 import * as React from "react";
 import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from "@material-ui/core";
 import { handleError, toLocalTime } from "../../utils";
+import { Optional } from "../../custom-mui-components/optional";
+import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { UserData, PersonalAccessToken } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { GenerateTokenDialog } from "./generate-token-dialog";
@@ -32,9 +34,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     constructor(props: UserSettingsTokensComponent.Props) {
         super(props);
 
-        this.state = {
-            tokens: []
-        };
+        this.state = { tokens: [], loading: true };
     }
 
     componentDidMount() {
@@ -44,13 +44,15 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     protected async updateTokens() {
         try {
             const tokens = await this.props.service.getAccessTokens(this.props.user);
-            this.setState({ tokens });
+            this.setState({ tokens, loading: false });
         } catch (err) {
             handleError(err);
+            this.setState({ loading: false });
         }
     }
 
     protected handleDelete = async (token: PersonalAccessToken) => {
+        this.setState({ loading: true });
         try {
             await this.props.service.deleteAccessToken(token);
             this.updateTokens();
@@ -60,6 +62,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     }
 
     protected handleDeleteAll = async () => {
+        this.setState({ loading: true });
         try {
             await this.props.service.deleteAllAccessTokens(this.state.tokens);
             this.updateTokens();
@@ -69,6 +72,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     }
 
     protected handleTokenGenerated = () => {
+        this.setState({ loading: true });
         this.updateTokens();
     }
 
@@ -80,19 +84,30 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                 </Box>
                 <Box display='flex'>
                     <Box mr={1}>
-                        <GenerateTokenDialog handleTokenGenerated={this.handleTokenGenerated} service={this.props.service} user={this.props.user} />
+                        <GenerateTokenDialog
+                            handleTokenGenerated={this.handleTokenGenerated}
+                            service={this.props.service}
+                            user={this.props.user} />
                     </Box>
                     <Box>
-                        <Button variant='outlined' onClick={this.handleDeleteAll} classes={{ root: this.props.classes.deleteBtn }}>Delete all</Button>
+                        <Button
+                            variant='outlined'
+                            onClick={this.handleDeleteAll}
+                            classes={{ root: this.props.classes.deleteBtn }}>
+                            Delete all
+                        </Button>
                     </Box>
                 </Box>
             </Box>
-            <Box my={2}>
-                <Typography variant='body1'>
-                    {this.state.tokens.length ? 'Tokens you have generated:' : 'You currently have no tokens.'}
-                </Typography>
+            <Box mt={2}>
+                <Optional enabled={this.state.tokens.length === 0 && !this.state.loading}>
+                    <Typography variant='body1'>
+                        You currently have no tokens.
+                    </Typography>
+                </Optional>
             </Box>
-            <Box>
+            <Box mt={2}>
+                <DelayedLoadIndicator loading={this.state.loading}/>
                 <Paper>
                     {this.state.tokens.map(token => this.renderToken(token))}
                 </Paper>
@@ -128,6 +143,7 @@ export namespace UserSettingsTokensComponent {
 
     export interface State {
         tokens: PersonalAccessToken[];
+        loading: boolean;
     }
 }
 

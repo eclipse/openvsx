@@ -9,10 +9,12 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Button, Link } from "@material-ui/core";
+import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Button, Link, CircularProgress } from "@material-ui/core";
 import { handleError, toLocalTime } from "../../utils";
 import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
+import { Optional } from "../../custom-mui-components/optional";
+import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExportRatingStars } from "./extension-rating-stars";
 import { ExtensionReviewDialog } from "./extension-review-dialog";
@@ -28,6 +30,17 @@ const reviewStyles = (theme: Theme) => createStyles({
     comment: {
         overflow: 'hidden',
         textOverflow: 'ellipsis'
+    },
+    buttonProgress: {
+        color: theme.palette.secondary.main,
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        marginTop: -12,
+        marginLeft: -12,
+    },
+    buttonWrapper: {
+        position: 'relative'
     }
 });
 
@@ -36,7 +49,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     constructor(props: ExtensionDetailReviewsComponent.Props) {
         super(props);
 
-        this.state = {};
+        this.state = { loading: true, revoked: false };
     }
 
     componentDidMount() {
@@ -46,18 +59,21 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     protected async updateReviews() {
         try {
             const reviewList = await this.props.service.getExtensionReviews(this.props.extension);
-            this.setState({ reviewList });
+            this.setState({ reviewList, loading: false, revoked: false });
         } catch (err) {
             handleError(err);
+            this.setState({ loading: false, revoked: false });
         }
     }
 
     protected readonly saveCompleted = () => {
+        this.setState({ loading: true });
         this.updateReviews();
         this.props.reviewsDidUpdate();
     }
 
     protected handleRevokeButton = async () => {
+        this.setState({ revoked: true });
         try {
             const result = await this.props.service.deleteReview(this.state.reviewList!.deleteUrl);
             if (isError(result)) {
@@ -71,9 +87,6 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     }
 
     render() {
-        if (!this.state.reviewList) {
-            return '';
-        }
         return <React.Fragment>
             <Box display='flex' justifyContent='space-between' my={2}>
                 <Box>
@@ -85,23 +98,32 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             </Box>
             <Divider />
             <Box>
-                {this.state.reviewList.reviews.map(this.renderReview.bind(this))}
+                <DelayedLoadIndicator loading={this.state.loading}/>
+                {this.renderReviewList(this.state.reviewList)}
             </Box>
         </React.Fragment>;
     }
 
-    protected renderButton() {
+    protected renderButton(): React.ReactNode {
         if (!this.props.user || !this.state.reviewList) {
             return  '';
         }
         const existingReview = this.state.reviewList.reviews.find(r => isEqualUser(r.user, this.props.user!));
         if (existingReview) {
             const zonedDate = toLocalTime(existingReview.timestamp);
-            return <Button variant='contained' color='secondary'
-                        onClick={this.handleRevokeButton}
-                        title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`}>
-                Revoke my Review
-            </Button>;
+            return <div className={this.props.classes.buttonWrapper}>
+                <Button
+                    variant='contained'
+                    color='secondary'
+                    disabled={this.state.revoked}
+                    onClick={this.handleRevokeButton}
+                    title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`}>
+                    Revoke my Review
+                </Button>
+                <Optional enabled={this.state.revoked}>
+                    <CircularProgress size={24} className={this.props.classes.buttonProgress} />
+                </Optional>
+            </div>;
         } else {
             return <Box>
                 <ExtensionReviewDialog
@@ -114,7 +136,19 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         }
     }
 
-    protected renderReview(r: ExtensionReview) {
+    protected renderReviewList(list?: ExtensionReviewList): React.ReactNode {
+        if (!list) {
+            return '';
+        }
+        if (list.reviews.length === 0) {
+            return <Box mt={3}>
+                <Typography>Be the first to review this extension</Typography>
+            </Box>;
+        }
+        return list.reviews.map(this.renderReview.bind(this));
+    }
+
+    protected renderReview(r: ExtensionReview): React.ReactNode {
         const zonedDate = toLocalTime(r.timestamp);
         return <React.Fragment key={r.user.loginName + r.timestamp}>
             <Box my={2}>
@@ -153,6 +187,8 @@ export namespace ExtensionDetailReviewsComponent {
     }
     export interface State {
         reviewList?: ExtensionReviewList;
+        loading: boolean;
+        revoked: boolean;
     }
 }
 

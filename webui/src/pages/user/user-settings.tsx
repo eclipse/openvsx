@@ -12,6 +12,7 @@ import * as React from "react";
 import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography } from "@material-ui/core";
 import { RouteComponentProps, Route } from "react-router-dom";
 import { createRoute } from "../../utils";
+import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { UserData } from "../../extension-registry-types";
 import { PageSettings } from "../../page-settings";
@@ -37,6 +38,9 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
     }
 
     render() {
+        if (this.props.userLoading) {
+            return <DelayedLoadIndicator loading={true}/>;
+        }
         const user = this.props.user;
         if (!user) {
             return <Container>
@@ -72,6 +76,7 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
 export namespace UserSettingsComponent {
     export interface Props extends WithStyles<typeof profileStyles>, RouteComponentProps {
         user?: UserData;
+        userLoading: boolean;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
     }

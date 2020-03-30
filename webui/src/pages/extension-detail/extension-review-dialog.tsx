@@ -9,17 +9,28 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme } from "@material-ui/core";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme, CircularProgress } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
 import { handleError } from "../../utils";
+import { Optional } from "../../custom-mui-components/optional";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { UserData, ExtensionRaw, isError } from "../../extension-registry-types";
 import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
 
 const REVIEW_COMMENT_SIZE = 2048;
 
-const revivewDialogStyles = (theme: Theme) => createStyles({
-
+const reviewDialogStyles = (theme: Theme) => createStyles({
+    buttonProgress: {
+        color: theme.palette.secondary.main,
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        marginTop: -12,
+        marginLeft: -12,
+    },
+    buttonWrapper: {
+        position: 'relative'
+    }
 });
 
 class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDialogComponent.Props, ExtensionReviewDialogComponent.State> {
@@ -31,19 +42,21 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
 
         this.state = {
             open: false,
+            posted: false,
             comment: ''
         };
     }
 
     protected handleOpenButton = () => {
         if (this.props.user) {
-            this.setState({ open: true });
+            this.setState({ open: true, posted: false });
         }
     }
 
     protected handleCancel = () => this.setState({ open: false });
 
     protected handlePost = async () => {
+        this.setState({ posted: true });
         try {
             const rating = this.starSetter ? this.starSetter.state.number : 1;
             const result = await this.props.service.postReview({
@@ -99,13 +112,18 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                         color="secondary" >
                         Cancel
                     </Button>
-                    <Button
-                        onClick={this.handlePost}
-                        disabled={Boolean(this.state.commentError)}
-                        variant="contained"
-                        color="secondary" >
-                        Post Review
-                    </Button>
+                    <div className={this.props.classes.buttonWrapper}>
+                        <Button
+                            onClick={this.handlePost}
+                            disabled={Boolean(this.state.commentError) || this.state.posted}
+                            variant="contained"
+                            color="secondary" >
+                            Post Review
+                        </Button>
+                        <Optional enabled={this.state.posted}>
+                            <CircularProgress size={24} className={this.props.classes.buttonProgress} />
+                        </Optional>
+                    </div>
                 </DialogActions>
             </Dialog>
         </React.Fragment>;
@@ -113,7 +131,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
 }
 
 export namespace ExtensionReviewDialogComponent {
-    export interface Props extends WithStyles<typeof revivewDialogStyles> {
+    export interface Props extends WithStyles<typeof reviewDialogStyles> {
         extension: ExtensionRaw;
         reviewPostUrl: string;
         user: UserData;
@@ -122,9 +140,10 @@ export namespace ExtensionReviewDialogComponent {
     }
     export interface State {
         open: boolean;
+        posted: boolean;
         comment: string;
         commentError?: string;
     }
 }
 
-export const ExtensionReviewDialog = withStyles(revivewDialogStyles)(ExtensionReviewDialogComponent);
+export const ExtensionReviewDialog = withStyles(reviewDialogStyles)(ExtensionReviewDialogComponent);

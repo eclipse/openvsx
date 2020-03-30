@@ -18,6 +18,7 @@ import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 import { handleError, toLocalTime, addQuery } from "../../utils";
 import { Optional } from "../../custom-mui-components/optional";
+import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
@@ -74,7 +75,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     constructor(props: ExtensionDetailOverview.Props) {
         super(props);
         this.markdownIt = new MarkdownIt('commonmark');
-        this.state = {};
+        this.state = { loading: true };
     }
 
     componentDidMount(): void {
@@ -85,18 +86,19 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         if (this.props.extension.files.readme) {
             try {
                 const readme = await this.props.service.getExtensionReadme(this.props.extension);
-                this.setState({ readme });
+                this.setState({ readme, loading: false });
             } catch (err) {
                 handleError(err);
+                this.setState({ loading: false });
             }
         } else {
-            this.setState({ readme: '## No README available' });
+            this.setState({ readme: '## No README available', loading: false });
         }
     }
 
     render() {
         if (!this.state.readme) {
-            return '';
+            return <DelayedLoadIndicator loading={this.state.loading}/>;
         }
         const { classes, extension } = this.props;
         const zonedDate = toLocalTime(extension.timestamp);
@@ -239,6 +241,7 @@ export namespace ExtensionDetailOverview {
     }
     export interface State {
         readme?: string;
+        loading: boolean;
     }
 }
 
