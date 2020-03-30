@@ -20,7 +20,7 @@ const itemStyles = (theme: Theme) => createStyles({
     container: {
         justifyContent: 'center'
     }
-})
+});
 
 export class ExtensionListComponent extends React.Component<ExtensionListComponent.Props, ExtensionListComponent.State> {
 
