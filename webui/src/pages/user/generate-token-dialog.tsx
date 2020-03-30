@@ -13,6 +13,9 @@ import { Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitl
 import { UserData, PersonalAccessToken, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { handleError } from "../../utils";
+import { Optional } from "../../custom-mui-components/optional";
+
+const TOKEN_DESCRIPTION_SIZE = 255;
 
 const tokensDialogStyle = (theme: Theme) => createStyles({
     boldText: {
@@ -27,7 +30,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
         this.state = {
             open: false,
-            tokenComment: ''
+            description: ''
         };
     }
 
@@ -38,18 +41,23 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     protected handleCancel = () => {
         this.setState({
             open: false,
-            tokenComment: '',
+            description: '',
             token: undefined
         });
     }
 
-    protected handleCommentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({ tokenComment: event.target.value });
+    protected handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const description = event.target.value;
+        var descriptionError: string | undefined;
+        if (description.length > TOKEN_DESCRIPTION_SIZE) {
+            descriptionError = `The description must not be longer than ${TOKEN_DESCRIPTION_SIZE} characters.`;
+        }
+        this.setState({ description, descriptionError });
     }
 
     protected handleGenerate = async () => {
         try {
-            const token = await this.props.service.createAccessToken(this.props.user, this.state.tokenComment);
+            const token = await this.props.service.createAccessToken(this.props.user, this.state.description);
             if (isError(token)) {
                 handleError(token);
             } else {
@@ -68,39 +76,48 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                 <DialogTitle>Generate new token</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Write a comment. What is the token for?
+                        Describe where you will use this token.
                     </DialogContentText>
                     <Box my={2}>
-                        <TextField disabled={!!this.state.token} required fullWidth label='Token Comment' onChange={this.handleCommentChange} />
+                        <TextField
+                            disabled={Boolean(this.state.token)}
+                            fullWidth
+                            label='Token Description'
+                            error={Boolean(this.state.descriptionError)}
+                            helperText={this.state.descriptionError}
+                            onChange={this.handleDescriptionChange} />
                     </Box>
                     <TextField
                         disabled={!this.state.token}
                         margin="dense"
-                        label="Generated token..."
+                        label="Generated Token..."
                         fullWidth
                         multiline
                         variant="outlined"
                         rows={4}
                         value={this.state.token ? this.state.token.value : ''}
                     />
-                    {
-                        !this.state.token ? '' : <Box>
+                    <Optional enabled={Boolean(this.state.token)}>
+                        <Box>
                             <Typography color='error' classes={{ root: this.props.classes.boldText }}>
                                 Copy and paste this token to a safe place. It will not be displayed again.
                             </Typography>
                         </Box>
-                    }
+                    </Optional>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={this.handleCancel} color="secondary">
                         {this.state.token ? 'Close' : 'Cancel'}
                     </Button>
-                    {
-                        !this.state.token ?
-                            <Button onClick={this.handleGenerate} variant="contained" color="secondary">
-                                Generate Token
-                            </Button> : ''
-                    }
+                    <Optional enabled={!this.state.token}>
+                        <Button
+                            onClick={this.handleGenerate}
+                            disabled={Boolean(this.state.descriptionError)}
+                            variant="contained"
+                            color="secondary" >
+                            Generate Token
+                        </Button>
+                    </Optional>
                 </DialogActions>
             </Dialog>
         </React.Fragment>;
@@ -116,7 +133,8 @@ export namespace GenerateTokenDialogComponent {
 
     export interface State {
         open: boolean;
-        tokenComment: string;
+        description: string;
+        descriptionError?: string;
         token?: PersonalAccessToken;
     }
 }

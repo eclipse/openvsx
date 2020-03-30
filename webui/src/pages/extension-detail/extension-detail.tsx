@@ -57,16 +57,16 @@ const detailStyles = (theme: Theme) => createStyles({
     titleRow: {
         marginBottom: theme.spacing(1)
     },
-    descriptionRow: {
-        marginTop: theme.spacing(2),
-        marginBottom: theme.spacing(2)
-    },
     head: {
         backgroundColor: theme.palette.grey[200]
     },
     alignVertically: {
         display: 'flex',
         alignItems: 'center'
+    },
+    description: {
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
     },
     code: {
         fontFamily: 'monospace',
@@ -156,7 +156,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     }
 
     protected renderHeader(extension: Extension): React.ReactNode {
-        return <Box>
+        return <Box overflow='auto'>
             <Typography variant='h6' className={this.props.classes.titleRow}>{extension.displayName || extension.name}</Typography>
             <Box display='flex'>
                 <Box className={this.props.classes.alignVertically} >
@@ -185,8 +185,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 <TextDivider />
                 <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension)}</Box>
             </Box>
-            <Box className={this.props.classes.descriptionRow}>
-                <Typography>{extension.description}</Typography>
+            <Box mt={2} mb={2} overflow='auto'>
+                <Typography classes={{ root: this.props.classes.description }}>{extension.description}</Typography>
             </Box>
             <Box display='flex'>
                 <Box className={this.props.classes.alignVertically}>

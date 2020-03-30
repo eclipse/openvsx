@@ -540,8 +540,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         var serverUrl = UrlUtil.getBaseUrl();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
         entry.files = new LinkedHashMap<>();
-        entry.files.put("download", createApiUrl(serverUrl, "api", entry.namespace, entry.name, "file", extVer.getExtensionFileName()));
-        entry.files.put("icon", createApiUrl(serverUrl, "api", entry.namespace, entry.name, "file", extVer.getIconFileName()));
+        entry.files.put("download", createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getExtensionFileName()));
+        entry.files.put("icon", createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getIconFileName()));
         return entry;
     }
 

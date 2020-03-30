@@ -25,8 +25,9 @@ const reviewStyles = (theme: Theme) => createStyles({
             textDecoration: 'underline'
         }
     },
-    boldText: {
-        fontWeight: 'bold'
+    comment: {
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
     }
 });
 
@@ -134,8 +135,8 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                 <Box display='flex' alignItems='center'>
                     <ExportRatingStars number={r.rating} />
                 </Box>
-                <Box>
-                    <Typography variant='body1'>{r.comment}</Typography>
+                <Box overflow='auto'>
+                    <Typography variant='body1' classes={{ root: this.props.classes.comment }}>{r.comment}</Typography>
                 </Box>
             </Box>
             <Divider />

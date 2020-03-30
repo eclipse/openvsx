@@ -109,7 +109,7 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional(rollbackOn = ResponseStatusException.class)
-    public AccessTokenJson createAccessToken(@RequestParam(name = "description", required = false) String description) {
+    public AccessTokenJson createAccessToken(@RequestParam(required = false) String description) {
         if (description != null && description.length() > TOKEN_DESCRIPTION_SIZE) {
             return AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
         }

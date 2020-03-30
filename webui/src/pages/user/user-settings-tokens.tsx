@@ -16,8 +16,10 @@ import { ExtensionRegistryService } from "../../extension-registry-service";
 import { GenerateTokenDialog } from "./generate-token-dialog";
 
 const tokensStyle = (theme: Theme) => createStyles({
-    boldText: {
-        fontWeight: 'bold'
+    description: {
+        fontWeight: 'bold',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
     },
     deleteBtn: {
         color: theme.palette.error.main,
@@ -100,8 +102,8 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
     protected renderToken(token: PersonalAccessToken): React.ReactNode {
         return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
-            <Box alignItems='center'>
-                <Typography classes={{ root: this.props.classes.boldText }}>{token.description}</Typography>
+            <Box alignItems='center' overflow='auto'>
+                <Typography classes={{ root: this.props.classes.description }}>{token.description}</Typography>
                 <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)!.toLocaleString()}</Typography>
                 <Typography variant='body2'>Accessed: {token.accessedTimestamp ? toLocalTime(token.accessedTimestamp)!.toLocaleString() : 'never'}</Typography>
             </Box>

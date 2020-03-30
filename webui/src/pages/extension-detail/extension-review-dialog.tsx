@@ -16,6 +16,8 @@ import { ExtensionRegistryService } from "../../extension-registry-service";
 import { UserData, ExtensionRaw, isError } from "../../extension-registry-types";
 import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
 
+const REVIEW_COMMENT_SIZE = 2048;
+
 const revivewDialogStyles = (theme: Theme) => createStyles({
 
 });
@@ -38,7 +40,9 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             this.setState({ open: true });
         }
     }
+
     protected handleCancel = () => this.setState({ open: false });
+
     protected handlePost = async () => {
         try {
             const rating = this.starSetter ? this.starSetter.state.number : 1;
@@ -56,7 +60,15 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             handleError(err);
         }
     }
-    protected handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => this.setState({ comment: event.target.value });
+
+    protected handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const comment = event.target.value;
+        var commentError: string | undefined;
+        if (comment.length > REVIEW_COMMENT_SIZE) {
+            commentError = `The review comment must not be longer than ${REVIEW_COMMENT_SIZE} characters.`;
+        }
+        this.setState({ comment, commentError });
+    };
 
     render() {
         return <React.Fragment>
@@ -77,14 +89,21 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                         multiline
                         variant="outlined"
                         rows={4}
-                        onChange={this.handleCommentChange}
-                    />
+                        error={Boolean(this.state.commentError)}
+                        helperText={this.state.commentError}
+                        onChange={this.handleCommentChange} />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={this.handleCancel} color="secondary">
+                    <Button
+                        onClick={this.handleCancel}
+                        color="secondary" >
                         Cancel
                     </Button>
-                    <Button onClick={this.handlePost} variant="contained" color="secondary">
+                    <Button
+                        onClick={this.handlePost}
+                        disabled={Boolean(this.state.commentError)}
+                        variant="contained"
+                        color="secondary" >
                         Post Review
                     </Button>
                 </DialogActions>
@@ -104,6 +123,7 @@ export namespace ExtensionReviewDialogComponent {
     export interface State {
         open: boolean;
         comment: string;
+        commentError?: string;
     }
 }
 
