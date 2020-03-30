@@ -17,16 +17,16 @@ import { PageSettings } from "../../page-settings";
 
 const headerStyles = (theme: Theme) => createStyles({
     form: {
-        display: 'flex', 
+        display: 'flex',
         flexDirection: 'column',
         width: '100%',
         [theme.breakpoints.up('md')]: {
-            flexDirection: 'row', 
+            flexDirection: 'row',
             width: '70%'
         },
         [theme.breakpoints.down('md')]: {
             maxWidth: 500,
-        }  
+        }
     },
     search: {
         flex: 2,

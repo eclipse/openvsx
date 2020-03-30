@@ -48,7 +48,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
     protected handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const description = event.target.value;
-        var descriptionError: string | undefined;
+        let descriptionError: string | undefined;
         if (description.length > TOKEN_DESCRIPTION_SIZE) {
             descriptionError = `The description must not be longer than ${TOKEN_DESCRIPTION_SIZE} characters.`;
         }

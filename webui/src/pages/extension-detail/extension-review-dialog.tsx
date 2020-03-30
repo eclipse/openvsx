@@ -63,12 +63,12 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
 
     protected handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         const comment = event.target.value;
-        var commentError: string | undefined;
+        let commentError: string | undefined;
         if (comment.length > REVIEW_COMMENT_SIZE) {
             commentError = `The review comment must not be longer than ${REVIEW_COMMENT_SIZE} characters.`;
         }
         this.setState({ comment, commentError });
-    };
+    }
 
     render() {
         return <React.Fragment>
