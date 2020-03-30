@@ -12,6 +12,15 @@ const theme = createMuiTheme({
     palette: {
         primary: { main: '#eeeeee', contrastText: '#352e37' },
         secondary: { main: '#a60ee5', contrastText: '#daf5ce' }
+    },
+    breakpoints: {
+        values: {
+            xs: 340,
+            sm: 550,
+            md: 800,
+            lg: 1040,
+            xl: 1240
+        }
     }
 });
 
