@@ -25,8 +25,6 @@ public interface IExtensionRegistry {
 
     ExtensionJson getExtension(String namespace, String extension, String version);
 
-    byte[] getFile(String namespace, String extension, String fileName);
-
     byte[] getFile(String namespace, String extension, String version, String fileName);
 
     ReviewListJson getReviews(String namespace, String extension);

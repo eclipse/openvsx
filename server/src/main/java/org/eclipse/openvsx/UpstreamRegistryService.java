@@ -82,11 +82,6 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public byte[] getFile(String namespace, String extension, String fileName) {
-        return getFile(createApiUrl(upstreamUrl, "api", namespace, extension, "file", fileName));
-    }
-
-    @Override
     public byte[] getFile(String namespace, String extension, String version, String fileName) {
         return getFile(createApiUrl(upstreamUrl, "api", namespace, extension, version, "file", fileName));
     }

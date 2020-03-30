@@ -12,6 +12,7 @@ import * as React from "react";
 import * as MarkdownIt from 'markdown-it';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link } from "@material-ui/core";
 import { RouteComponentProps, Link as RouteLink, withRouter } from "react-router-dom";
+import HomeIcon from '@material-ui/icons/Home';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
@@ -182,6 +183,9 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         return <Box>
             <Link href={href} target='_blank' variant='body2' color='secondary'
                 className={this.props.classes.resourceLink} >
+                <Optional enabled={label === 'Homepage'}>
+                    <HomeIcon fontSize='small'/>&nbsp;
+                </Optional>
                 <Optional enabled={label === 'Repository' && href.startsWith('https://github.com/')}>
                     <GitHubIcon fontSize='small'/>&nbsp;
                 </Optional>

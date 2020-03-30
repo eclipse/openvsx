@@ -128,7 +128,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (extension == null) {
             throw new NotFoundException();
         }
-        ExtensionJson json = toJson(extension.getLatest(), true);
+        ExtensionJson json = toJson(extension.getLatest());
         return json;
     }
 
@@ -138,27 +138,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (extVersion == null) {
             throw new NotFoundException();
         }
-        ExtensionJson json = toJson(extVersion, false);
+        ExtensionJson json = toJson(extVersion);
         return json;
-    }
-
-    @Override
-    @Transactional
-    public byte[] getFile(String namespace, String extensionName, String fileName) {
-        var extension = repositories.findExtension(extensionName, namespace);
-        if (extension == null) {
-            throw new NotFoundException();
-        }
-        var extVersion = extension.getLatest();
-        var resource = getFile(extVersion, fileName);
-        if (resource == null) {
-            throw new NotFoundException();
-        }
-        if (resource instanceof ExtensionBinary) {
-            extension.setDownloadCount(extension.getDownloadCount() + 1);
-            updateSearchIndex(extension);
-        }
-        return resource.getContent();
     }
 
     @Override
@@ -368,7 +349,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
 
             updateSearchIndex(extVersion.getExtension());
-            return toJson(extVersion, false);
+            return toJson(extVersion);
         }
     }
 
@@ -564,7 +545,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return entry;
     }
 
-    private ExtensionJson toJson(ExtensionVersion extVersion, boolean isLatest) {
+    private ExtensionJson toJson(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
         json.namespaceAccess = getAccessString(extension.getNamespace());
@@ -581,17 +562,10 @@ public class LocalRegistryService implements IExtensionRegistry {
             json.allVersions.put(semVer.toString(), url);
         }
         json.files = new LinkedHashMap<>();
-        if (isLatest) {
-            json.files.put("download", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getExtensionFileName()));
-            json.files.put("icon", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getIconFileName()));
-            json.files.put("readme", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getReadmeFileName()));
-            json.files.put("license", createApiUrl(serverUrl, "api", json.namespace, json.name, "file", extVersion.getLicenseFileName()));
-        } else {
-            json.files.put("download", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName()));
-            json.files.put("icon", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName()));
-            json.files.put("readme", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName()));
-            json.files.put("license", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName()));
-        }
+        json.files.put("download", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName()));
+        json.files.put("icon", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName()));
+        json.files.put("readme", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName()));
+        json.files.put("license", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName()));
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {
                 ref.url = createApiUrl(serverUrl, "api", ref.namespace, ref.extension);
