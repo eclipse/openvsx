@@ -9,20 +9,26 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Grid } from "@material-ui/core";
+import { Grid, Theme, createStyles, withStyles, WithStyles } from "@material-ui/core";
 import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, SearchResult, isError, ErrorResult } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
 import { debounce, handleError } from "../../utils";
 import { PageSettings } from "../../page-settings";
 
-export class ExtensionList extends React.Component<ExtensionList.Props, ExtensionList.State> {
+const itemStyles = (theme: Theme) => createStyles({
+    container: {
+        justifyContent: 'center'
+    }
+});
+
+export class ExtensionListComponent extends React.Component<ExtensionListComponent.Props, ExtensionListComponent.State> {
 
     protected extensions: ExtensionRaw[];
 
     protected cancellationToken: { cancel?: () => void, timeout?: number } = {};
 
-    constructor(props: ExtensionList.Props) {
+    constructor(props: ExtensionListComponent.Props) {
         super(props);
 
         this.state = {
@@ -34,7 +40,7 @@ export class ExtensionList extends React.Component<ExtensionList.Props, Extensio
         this.getExtensions(this.props.filter).then(this.handleSearchResult, handleError);
     }
 
-    componentDidUpdate(prevProps: ExtensionList.Props, prevState: ExtensionList.State) {
+    componentDidUpdate(prevProps: ExtensionListComponent.Props, prevState: ExtensionListComponent.State) {
         const prevFilter = prevProps.filter;
         const newFilter = this.props.filter;
         if (prevFilter.category !== newFilter.category || prevFilter.query !== newFilter.query) {
@@ -73,14 +79,14 @@ export class ExtensionList extends React.Component<ExtensionList.Props, Extensio
                 pageSettings={this.props.pageSettings}
                 key={`${ext.namespace}.${ext.name}`} />;
         });
-        return <Grid container spacing={2}>
+        return <Grid container spacing={2} className={this.props.classes.container}>
             {extensionList}
         </Grid>;
     }
 }
 
-export namespace ExtensionList {
-    export interface Props {
+export namespace ExtensionListComponent {
+    export interface Props extends WithStyles<typeof itemStyles> {
         filter: ExtensionFilter;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
@@ -89,3 +95,5 @@ export namespace ExtensionList {
         extensions: ExtensionRaw[];
     }
 }
+
+export const ExtensionList = withStyles(itemStyles)(ExtensionListComponent);

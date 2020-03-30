@@ -21,6 +21,10 @@ import { PageSettings } from "../../page-settings";
 
 
 const itemStyles = (theme: Theme) => createStyles({
+    extensionCard: {
+        maxWidth: '12.875rem',
+        minWidth: '11.875rem',
+    },
     paper: {
         padding: theme.spacing(3, 2)
     },
@@ -40,7 +44,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
         const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
         return <React.Fragment>
             <Fade in={true} timeout={{ enter: this.props.idx * 200 }}>
-                <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name}>
+                <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name} className={classes.extensionCard}>
                     <RouteLink to={route} className={classes.link}>
                         <Paper className={classes.paper}>
                             <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
