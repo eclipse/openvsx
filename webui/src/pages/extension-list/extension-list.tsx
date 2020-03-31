@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Grid, Box, Theme, createStyles, withStyles, WithStyles, CircularProgress, Container } from "@material-ui/core";
+import { Grid, Theme, createStyles, withStyles, WithStyles, CircularProgress, Container } from "@material-ui/core";
 import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, SearchResult, isError, ErrorResult } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
@@ -24,7 +24,7 @@ const itemStyles = (theme: Theme) => createStyles({
     loader: {
         display: 'flex',
         justifyContent: 'center',
-        margin: 5
+        margin: theme.spacing(3)
     }
 });
 
@@ -89,29 +89,29 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
     }
 
     render() {
-        const extensionList = this.state.extensions.map((ext, idx) => {
-            return <ExtensionListItem
+        const extensionList = this.state.extensions.map((ext, idx) => (
+            <ExtensionListItem
                 idx={idx}
                 extension={ext}
                 service={this.props.service}
                 pageSettings={this.props.pageSettings}
-                key={`${ext.namespace}.${ext.name}`} />;
-        });
-        return <Box height='100%' overflow='auto'>
-            <InfiniteScroll
-                loadMore={this.loadMore}
-                hasMore={this.state.hasMore}
-                loader={<div key='vsx-list-loader' className={this.props.classes.loader}><CircularProgress size={20} color='secondary' /></div>}
-                threshold={50}
-                useWindow={false}
-            >
-                <Container>
-                    <Grid container spacing={2} className={this.props.classes.container}>
-                        {extensionList}
-                    </Grid>
-                </Container>
-            </InfiniteScroll>
-        </Box>;
+                key={`${ext.namespace}.${ext.name}`} />
+        ));
+        const loader = <div key='extension-list-loader' className={this.props.classes.loader}>
+            <CircularProgress size='3rem' color='secondary' />
+        </div>;
+        return <InfiniteScroll
+            loadMore={this.loadMore}
+            hasMore={this.state.hasMore}
+            loader={loader}
+            threshold={150}
+            useWindow={false} >
+            <Container>
+                <Grid container spacing={2} className={this.props.classes.container}>
+                    {extensionList}
+                </Grid>
+            </Container>
+        </InfiniteScroll>;
     }
 }
 

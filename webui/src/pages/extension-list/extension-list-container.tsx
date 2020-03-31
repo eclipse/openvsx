@@ -62,21 +62,19 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     render() {
-        return <React.Fragment>
-                <Box display='flex' flexDirection='column' height='100%'>
-                    <ExtensionListHeader
-                        searchQuery={this.state.searchQuery}
-                        category={this.state.category}
-                        onSearchChanged={this.onSearchChanged}
-                        onCategoryChanged={this.onCategoryChanged}
-                        pageSettings={this.props.pageSettings}
-                        service={this.props.service} />
-                    <ExtensionList
-                        service={this.props.service}
-                        pageSettings={this.props.pageSettings}
-                        filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 6 }} />
-                </Box>
-        </React.Fragment>;
+        return <Box display='flex' flexDirection='column' height='100%' overflow='auto' >
+            <ExtensionListHeader
+                searchQuery={this.state.searchQuery}
+                category={this.state.category}
+                onSearchChanged={this.onSearchChanged}
+                onCategoryChanged={this.onCategoryChanged}
+                pageSettings={this.props.pageSettings}
+                service={this.props.service} />
+            <ExtensionList
+                service={this.props.service}
+                pageSettings={this.props.pageSettings}
+                filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10 }} />
+        </Box>;
     }
 }
 
