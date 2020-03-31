@@ -24,6 +24,7 @@ import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { PageSettings } from './page-settings';
 import { handleError } from './utils';
+import "../src/main.css";
 
 const mainStyles = (theme: Theme) => createStyles({
     link: {
@@ -45,8 +46,7 @@ const mainStyles = (theme: Theme) => createStyles({
     },
     footer: {
         backgroundColor: theme.palette.primary.contrastText,
-        padding: theme.spacing(2),
-        marginTop: theme.spacing(5)
+        padding: theme.spacing(2)
     },
     footerBox: {
         display: 'flex',
@@ -77,14 +77,14 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             }
         } catch (err) {
             handleError(err);
-            this.setState({ userLoading: false })
+            this.setState({ userLoading: false });
         }
     }
 
     render() {
         return <React.Fragment>
             <CssBaseline />
-            <Box display='flex' flexDirection='column' minHeight='100vh'>
+            <Box display='flex' flexDirection='column' height='100%'>
                 <AppBar position='sticky'>
                     <Toolbar classes={{ root: this.props.classes.toolbar }}>
                         <Box>
@@ -115,7 +115,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         </Box>
                     </Toolbar>
                 </AppBar>
-                <Box flex='1'>
+                <Box flex='1' overflow='auto'>
                     <Switch>
                         <Route exact path={[ExtensionListRoutes.MAIN]}
                             render={routeProps =>

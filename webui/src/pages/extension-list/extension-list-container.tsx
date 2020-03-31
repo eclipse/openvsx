@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Container } from "@material-ui/core";
+import { Box } from "@material-ui/core";
 import { RouteComponentProps } from "react-router-dom";
 import { createRoute, addQuery } from "../../utils";
 import { ExtensionCategory } from "../../extension-registry-types";
@@ -63,19 +63,19 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
 
     render() {
         return <React.Fragment>
-            <Container>
-                <ExtensionListHeader
-                    searchQuery={this.state.searchQuery}
-                    category={this.state.category}
-                    onSearchChanged={this.onSearchChanged}
-                    onCategoryChanged={this.onCategoryChanged}
-                    pageSettings={this.props.pageSettings}
-                    service={this.props.service} />
-                <ExtensionList
-                    service={this.props.service}
-                    pageSettings={this.props.pageSettings}
-                    filter={{ query: this.state.searchQuery, category: this.state.category }} />
-            </Container>
+                <Box display='flex' flexDirection='column' height='100%'>
+                    <ExtensionListHeader
+                        searchQuery={this.state.searchQuery}
+                        category={this.state.category}
+                        onSearchChanged={this.onSearchChanged}
+                        onCategoryChanged={this.onCategoryChanged}
+                        pageSettings={this.props.pageSettings}
+                        service={this.props.service} />
+                    <ExtensionList
+                        service={this.props.service}
+                        pageSettings={this.props.pageSettings}
+                        filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 6 }} />
+                </Box>
         </React.Fragment>;
     }
 }

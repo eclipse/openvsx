@@ -9,7 +9,22 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography, CircularProgress } from "@material-ui/core";
+import {
+    Button,
+    Theme,
+    createStyles,
+    WithStyles,
+    withStyles,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    Box,
+    TextField,
+    DialogActions,
+    Typography,
+    CircularProgress
+} from "@material-ui/core";
 import { UserData, PersonalAccessToken, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { handleError } from "../../utils";
