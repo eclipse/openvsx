@@ -2,11 +2,17 @@
     "name": "openvsx-webui",
     "version": "0.0.0",
     "description": "User interface for Eclipse Open VSX",
-    "keywords": ["react", "frontend", "vscode", "extensions", "search"],
+    "keywords": [
+        "react",
+        "frontend",
+        "vscode",
+        "extensions",
+        "search"
+    ],
     "license": "EPL-2.0",
     "homepage": "https://open-vsx.org",
-    "repository" : {
-        "type" : "git",
+    "repository": {
+        "type": "git",
         "url": "ssh://git@github.com:eclipse/openvsx.git",
         "directory": "webui"
     },
@@ -38,14 +44,14 @@
         "markdown-it": "^10.0.0",
         "react": "^16.10.2",
         "react-dom": "^16.10.2",
-        "react-router-dom": "^5.1.2",
-        "react-infinite-scroller": "^1.2.4"
+        "react-infinite-scroller": "^1.2.4",
+        "react-router-dom": "^5.1.2"
     },
     "devDependencies": {
-        "@types/react-infinite-scroller":"^1.2.1",
         "@types/markdown-it": "^0.0.9",
         "@types/react": "^16.9.9",
         "@types/react-dom": "^16.9.2",
+        "@types/react-infinite-scroller": "^1.2.1",
         "@types/react-router-dom": "*",
         "copy-webpack-plugin": "^5.0.4",
         "css-loader": "^3.2.0",
@@ -67,6 +73,8 @@
         "prepare": "yarn run clean && yarn run build",
         "build:dev": "webpack --config ./configs/webpack.config.js",
         "watch:dev": "webpack --watch --config ./configs/webpack.config.js",
-        "start:dev": "node dev/server/main"
+        "start:dev": "node dev/server/main",
+        "publish:next": "yarn publish --new-version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" --tag next --no-git-tag-version",
+        "publish:latest": "yarn publish --tag latest"
     }
 }
