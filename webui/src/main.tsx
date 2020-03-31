@@ -46,8 +46,7 @@ const mainStyles = (theme: Theme) => createStyles({
     },
     footer: {
         backgroundColor: theme.palette.primary.contrastText,
-        padding: theme.spacing(2),
-        marginTop: theme.spacing(5)
+        padding: theme.spacing(2)
     },
     footerBox: {
         display: 'flex',

@@ -26,7 +26,7 @@ export class DelayedLoadIndicator extends React.Component<DelayedLoadIndicator.P
     }
 
     componentDidUpdate(prevProps: DelayedLoadIndicator.Props) {
-        if (this.props.loading != prevProps.loading) {
+        if (this.props.loading !== prevProps.loading) {
             clearTimeout(this.timeout);
         }
         if (this.props.loading && !prevProps.loading) {

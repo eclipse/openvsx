@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Grid, Box, Theme, createStyles, withStyles, WithStyles } from "@material-ui/core";
+import { Grid, Box, Theme, createStyles, withStyles, WithStyles, CircularProgress } from "@material-ui/core";
 import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, SearchResult, isError, ErrorResult } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
@@ -20,6 +20,11 @@ import * as InfiniteScroll from "react-infinite-scroller";
 const itemStyles = (theme: Theme) => createStyles({
     container: {
         justifyContent: 'center'
+    },
+    loader: {
+        display: 'flex',
+        justifyContent: 'center',
+        margin: 5
     }
 });
 
@@ -97,7 +102,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
             <InfiniteScroll
                 loadMore={this.loadMore}
                 hasMore={this.state.hasMore}
-                loader={<div className="loader" key={0}>Loading ...</div>}
+                loader={<div key='vsx-list-loader' className={this.props.classes.loader}><CircularProgress size={20} color='secondary' /></div>}
                 threshold={50}
                 useWindow={false}
             >
