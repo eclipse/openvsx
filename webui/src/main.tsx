@@ -77,7 +77,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             }
         } catch (err) {
             handleError(err);
-            this.setState({ userLoading: false })
+            this.setState({ userLoading: false });
         }
     }
 

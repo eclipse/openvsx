@@ -9,7 +9,11 @@
  ********************************************************************************/
 
 import React = require("react");
-import { Typography, Box, WithStyles, createStyles, Theme, withStyles, Paper, IconButton, InputBase, Select, MenuItem } from "@material-ui/core";
+import { 
+    Typography, Box, WithStyles, 
+    createStyles, Theme, withStyles, 
+    Paper, IconButton, InputBase, 
+    Select, MenuItem, Container } from "@material-ui/core";
 import SearchIcon from '@material-ui/icons/Search';
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExtensionCategory } from "../../extension-registry-types";
@@ -53,7 +57,8 @@ const headerStyles = (theme: Theme) => createStyles({
     typo: {
         marginBottom: theme.spacing(2),
         fontWeight: theme.typography.fontWeightLight,
-        letterSpacing: 4
+        letterSpacing: 4,
+        textAlign: 'center'
     },
     placeholder: {
         opacity: 0.4
@@ -105,38 +110,40 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
     render() {
         const { classes } = this.props;
         return <React.Fragment>
-            <Box display='flex' flexDirection='column' alignItems='center' py={6}>
-                <Typography variant='h4' classes={{ root: classes.typo }}>
-                    {this.props.pageSettings.listHeaderTitle}
-                </Typography>
-                <Box className={classes.form}>
-                    <Paper className={classes.search}>
-                        <InputBase
-                            autoFocus
-                            value={this.props.searchQuery || ''}
-                            onChange={this.handleSearchChange}
-                            className={classes.inputBase}
-                            placeholder='Search for Name, Tags or Description'>
-                        </InputBase>
-                        <IconButton color='primary' classes={{ root: classes.iconButton }}>
-                            <SearchIcon />
-                        </IconButton>
-                    </Paper>
-                    <Paper className={classes.category}>
-                        <Select
-                            value={this.state.category}
-                            onChange={this.handleCategoryChange}
-                            renderValue={this.renderValue}
-                            displayEmpty
-                            input={<InputBase className={classes.inputBase}></InputBase>}>
-                            <MenuItem value=''>All Categories</MenuItem>
-                            {this.categories.map(c => {
-                                return <MenuItem value={c} key={c}>{c}</MenuItem>;
-                            })}
-                        </Select>
-                    </Paper>
+            <Container>
+                <Box display='flex' flexDirection='column' alignItems='center' py={6}>
+                    <Typography variant='h4' classes={{ root: classes.typo }}>
+                        {this.props.pageSettings.listHeaderTitle}
+                    </Typography>
+                    <Box className={classes.form}>
+                        <Paper className={classes.search}>
+                            <InputBase
+                                autoFocus
+                                value={this.props.searchQuery || ''}
+                                onChange={this.handleSearchChange}
+                                className={classes.inputBase}
+                                placeholder='Search for Name, Tags or Description'>
+                            </InputBase>
+                            <IconButton color='primary' classes={{ root: classes.iconButton }}>
+                                <SearchIcon />
+                            </IconButton>
+                        </Paper>
+                        <Paper className={classes.category}>
+                            <Select
+                                value={this.state.category}
+                                onChange={this.handleCategoryChange}
+                                renderValue={this.renderValue}
+                                displayEmpty
+                                input={<InputBase className={classes.inputBase}></InputBase>}>
+                                <MenuItem value=''>All Categories</MenuItem>
+                                {this.categories.map(c => {
+                                    return <MenuItem value={c} key={c}>{c}</MenuItem>;
+                                })}
+                            </Select>
+                        </Paper>
+                    </Box>
                 </Box>
-            </Box>
+            </Container>
         </React.Fragment>;
     }
 }

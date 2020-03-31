@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Grid, Box, Theme, createStyles, withStyles, WithStyles, CircularProgress } from "@material-ui/core";
+import { Grid, Box, Theme, createStyles, withStyles, WithStyles, CircularProgress, Container } from "@material-ui/core";
 import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, SearchResult, isError, ErrorResult } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
@@ -106,9 +106,11 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 threshold={50}
                 useWindow={false}
             >
-                <Grid container spacing={2} className={this.props.classes.container}>
-                    {extensionList}
-                </Grid>
+                <Container>
+                    <Grid container spacing={2} className={this.props.classes.container}>
+                        {extensionList}
+                    </Grid>
+                </Container>
             </InfiniteScroll>
         </Box>;
     }

@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Container, Box } from "@material-ui/core";
+import { Box } from "@material-ui/core";
 import { RouteComponentProps } from "react-router-dom";
 import { createRoute, addQuery } from "../../utils";
 import { ExtensionCategory } from "../../extension-registry-types";
@@ -63,7 +63,6 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
 
     render() {
         return <React.Fragment>
-            <Container className='extension-list-container'>
                 <Box display='flex' flexDirection='column' height='100%'>
                     <ExtensionListHeader
                         searchQuery={this.state.searchQuery}
@@ -77,7 +76,6 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                         pageSettings={this.props.pageSettings}
                         filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 6 }} />
                 </Box>
-            </Container>
         </React.Fragment>;
     }
 }
