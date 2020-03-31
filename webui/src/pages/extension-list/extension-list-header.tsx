@@ -9,11 +9,10 @@
  ********************************************************************************/
 
 import React = require("react");
-import { 
-    Typography, Box, WithStyles, 
-    createStyles, Theme, withStyles, 
-    Paper, IconButton, InputBase, 
-    Select, MenuItem, Container } from "@material-ui/core";
+import {
+    Typography, Box, WithStyles, createStyles, Theme, withStyles, Paper,
+    IconButton, InputBase, Select, MenuItem, Container
+} from "@material-ui/core";
 import SearchIcon from '@material-ui/icons/Search';
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExtensionCategory } from "../../extension-registry-types";

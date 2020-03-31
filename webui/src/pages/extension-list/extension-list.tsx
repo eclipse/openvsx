@@ -86,7 +86,6 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
             extensions.push(...result.extensions);
             this.setState({ extensions, hasMore: extensions.length < result.totalSize });
         }
-
     }
 
     render() {
