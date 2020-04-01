@@ -40,6 +40,11 @@ tasks:
     # Start Express for serving frontend resources
     cd webui
     yarn start:dev
+- name: Re-Compile WebUI on changes
+  command: |
+    gp await-port 8080
+    cd webui
+    yarn watch:dev
 - name: Publisher
   command: |
     gp await-port 8080
