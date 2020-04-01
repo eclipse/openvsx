@@ -32,8 +32,12 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
 
     protected cancellationToken: { cancel?: () => void, timeout?: number } = {};
 
+    protected filterSize: number;
+
     constructor(props: ExtensionListComponent.Props) {
         super(props);
+
+        this.filterSize = this.props.filter.size || 10;
 
         this.state = {
             extensions: [],
@@ -77,14 +81,14 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
 
     protected loadMore = async (p: number) => {
         const filter: ExtensionFilter = this.props.filter;
-        filter.offset = (p * (filter.size || 18));
+        filter.offset = (p * this.filterSize);
         const result = await this.getExtensions(filter);
         if (isError(result)) {
             handleError(result);
         } else {
             const extensions = this.state.extensions;
             extensions.push(...result.extensions);
-            this.setState({ extensions, hasMore: extensions.length < result.totalSize });
+            this.setState({ extensions, hasMore: extensions.length < result.totalSize && result.extensions.length >= this.filterSize });
         }
     }
 
@@ -93,6 +97,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
             <ExtensionListItem
                 idx={idx}
                 extension={ext}
+                filterSize={this.filterSize}
                 service={this.props.service}
                 pageSettings={this.props.pageSettings}
                 key={`${ext.namespace}.${ext.name}`} />
@@ -104,7 +109,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
             loadMore={this.loadMore}
             hasMore={this.state.hasMore}
             loader={loader}
-            threshold={150}
+            threshold={200}
             useWindow={false} >
             <Container>
                 <Grid container spacing={2} className={this.props.classes.container}>
