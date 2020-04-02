@@ -11,22 +11,17 @@ package org.eclipse.openvsx.json;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
 @JsonInclude(Include.NON_NULL)
-public class SearchResultJson {
+public class SearchResultJson extends ResultJson {
 
     public static SearchResultJson error(String message) {
         var result = new SearchResultJson();
         result.error = message;
         return result;
     }
-
-    @Nullable
-    public String error;
 
     public int offset;
 

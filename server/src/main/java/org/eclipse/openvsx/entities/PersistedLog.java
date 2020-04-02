@@ -9,33 +9,31 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class NamespaceMembership {
-
-    public static final String ROLE_OWNER = "owner";
-    public static final String ROLE_CONTRIBUTOR = "contributor";
+public class PersistedLog {
 
     @Id
     @GeneratedValue
     long id;
 
-    @ManyToOne
-    @JoinColumn(name = "namespace")
-    Namespace namespace;
+    LocalDateTime timestamp;
 
     @ManyToOne
-    @JoinColumn(name = "user_data")
+    @JoinColumn(name = "user_data", foreignKey=@ForeignKey(name="persisted_log_user_data_fkey"))
     UserData user;
 
-    @Column(length = 32)
-    String role;
+    @Column(length = 512)
+    String message;
 
 
     public long getId() {
@@ -43,9 +41,17 @@ public class NamespaceMembership {
     }
 
     public void setId(long id) {
-		this.id = id;
+        this.id = id;
     }
-    
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public UserData getUser() {
         return user;
     }
@@ -54,20 +60,12 @@ public class NamespaceMembership {
         this.user = user;
     }
 
-    public Namespace getNamespace() {
-        return namespace;
+    public String getMessage() {
+        return message;
     }
 
-    public void setNamespace(Namespace namespace) {
-        this.namespace = namespace;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
 }

@@ -81,7 +81,11 @@ public class Extension {
 
 	public Namespace getNamespace() {
 		return namespace;
-	}
+    }
+    
+    public List<ExtensionVersion> getVersions() {
+        return versions;
+    }
 
 	public void setNamespace(Namespace namespace) {
 		this.namespace = namespace;

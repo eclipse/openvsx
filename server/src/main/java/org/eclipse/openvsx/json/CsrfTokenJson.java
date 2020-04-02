@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import javax.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
@@ -18,16 +16,13 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;;
  * A badge to be shown in the sidebar of the extension page in the marketplace.
  */
 @JsonInclude(Include.NON_NULL)
-public class CsrfTokenJson {
+public class CsrfTokenJson extends ResultJson {
 
     public static CsrfTokenJson error(String message) {
         var info = new CsrfTokenJson();
         info.error = message;
         return info;
     }
-
-    @Nullable
-    public String error;
 
     public String value;
 

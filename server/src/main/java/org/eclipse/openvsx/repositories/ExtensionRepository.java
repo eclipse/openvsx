@@ -27,4 +27,6 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Streamable<Extension> findAll();
 
+    long count();
+
 }

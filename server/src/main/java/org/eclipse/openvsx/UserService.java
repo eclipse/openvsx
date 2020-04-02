@@ -58,7 +58,7 @@ public class UserService {
     }
 
     protected UserData updateGitHubUser(OAuth2User principal) {
-        var user = repositories.findUser("github", principal.getName());
+        var user = repositories.findUserByProviderId("github", principal.getName());
         if (user == null) {
             user = new UserData();
             user.setProvider("github");

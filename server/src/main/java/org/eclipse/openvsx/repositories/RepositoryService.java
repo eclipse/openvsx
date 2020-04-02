@@ -12,6 +12,9 @@ package org.eclipse.openvsx.repositories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
+import org.eclipse.openvsx.entities.PersistedLog;
+
+import java.time.LocalDateTime;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionBinary;
@@ -39,9 +42,14 @@ public class RepositoryService {
     @Autowired UserDataRepository userDataRepo;
     @Autowired NamespaceMembershipRepository membershipRepo;
     @Autowired PersonalAccessTokenRepository tokenRepo;
+    @Autowired PersistedLogRepository persistedLogRepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
+    }
+
+    public long countNamespaces() {
+        return namespaceRepo.count();
     }
 
     public Extension findExtension(String name, Namespace namespace) {
@@ -58,6 +66,10 @@ public class RepositoryService {
 
     public Streamable<Extension> findAllExtensions() {
         return extensionRepo.findAll();
+    }
+
+    public long countExtensions() {
+        return extensionRepo.count();
     }
 
     public ExtensionVersion findVersion(String version, Extension extension) {
@@ -92,6 +104,10 @@ public class RepositoryService {
         return extensionReviewRepo.findByExtensionAndActiveTrue(extension);
     }
 
+    public Streamable<ExtensionReview> findAllReviews(Extension extension) {
+        return extensionReviewRepo.findByExtension(extension);
+    }
+
     public Streamable<ExtensionReview> findActiveReviews(Extension extension, UserData user) {
         return extensionReviewRepo.findByExtensionAndUserAndActiveTrue(extension, user);
     }
@@ -100,8 +116,16 @@ public class RepositoryService {
         return extensionReviewRepo.countByExtensionAndActiveTrue(extension);
     }
 
-    public UserData findUser(String provider, String providerId) {
+    public UserData findUserByProviderId(String provider, String providerId) {
         return userDataRepo.findByProviderAndProviderId(provider, providerId);
+    }
+
+    public UserData findUserByLoginName(String provider, String loginName) {
+        return userDataRepo.findByProviderAndLoginName(provider, loginName);
+    }
+
+    public long countUsers() {
+        return userDataRepo.count();
     }
 
     public NamespaceMembership findMembership(UserData user, Namespace namespace) {
@@ -122,6 +146,14 @@ public class RepositoryService {
 
     public PersonalAccessToken findAccessToken(long id) {
         return tokenRepo.findById(id);
+    }
+
+    public Streamable<PersistedLog> findAllPersistedLogs() {
+        return persistedLogRepo.findByOrderByTimestampAsc();
+    }
+
+    public Streamable<PersistedLog> findPersistedLogsAfter(LocalDateTime dateTime) {
+        return persistedLogRepo.findByTimestampAfterOrderByTimestampAsc(dateTime);
     }
 
 }

@@ -19,10 +19,9 @@ import com.google.common.collect.Iterables;
 
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.NamespaceResultJson;
+import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.ReviewResultJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -228,18 +227,18 @@ public class RegistryAPI {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public NamespaceResultJson createNamespace(@RequestBody(required = false) NamespaceJson namespace,
-                                               @RequestParam(name = "token") String token) {
+    public ResultJson createNamespace(@RequestBody(required = false) NamespaceJson namespace,
+                                      @RequestParam String token) {
         if (namespace == null) {
-            return NamespaceResultJson.error("No JSON input.");
+            return ResultJson.error("No JSON input.");
         }
         if (Strings.isNullOrEmpty(namespace.name)) {
-            return NamespaceResultJson.error("Missing required property 'name'.");
+            return ResultJson.error("Missing required property 'name'.");
         }
         try {
             return local.createNamespace(namespace, token);
         } catch (ErrorResultException exc) {
-            return NamespaceResultJson.error(exc.getMessage());
+            return ResultJson.error(exc.getMessage());
         }
     }
 
@@ -249,7 +248,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ExtensionJson publish(InputStream content,
-                                 @RequestParam(name = "token") String token) {
+                                 @RequestParam String token) {
         try {
             return local.publish(content, token);
         } catch (ErrorResultException exc) {
@@ -262,20 +261,20 @@ public class RegistryAPI {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ReviewResultJson postReview(@RequestBody(required = false) ReviewJson review,
-                                       @PathVariable String namespace,
-                                       @PathVariable String extension) {
+    public ResultJson postReview(@RequestBody(required = false) ReviewJson review,
+                                 @PathVariable String namespace,
+                                 @PathVariable String extension) {
         if (review == null) {
-            return ReviewResultJson.error("No JSON input.");
+            return ResultJson.error("No JSON input.");
         }
         if (review.rating < 0 || review.rating > 5) {
-            return ReviewResultJson.error("The rating must be an integer number between 0 and 5.");
+            return ResultJson.error("The rating must be an integer number between 0 and 5.");
         }
         if (review.title != null && review.title.length() > REVIEW_TITLE_SIZE) {
-            return ReviewResultJson.error("The title must not be longer than " + REVIEW_TITLE_SIZE + " characters.");
+            return ResultJson.error("The title must not be longer than " + REVIEW_TITLE_SIZE + " characters.");
         }
         if (review.comment != null && review.comment.length() > REVIEW_COMMENT_SIZE) {
-            return ReviewResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters.");
+            return ResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters.");
         }
         return local.postReview(review, namespace, extension);
     }
@@ -284,8 +283,8 @@ public class RegistryAPI {
         path = "/api/{namespace}/{extension}/review/delete",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ReviewResultJson deleteReview(@PathVariable String namespace,
-                                         @PathVariable String extension) {
+    public ResultJson deleteReview(@PathVariable String namespace,
+                                   @PathVariable String extension) {
         return local.deleteReview(namespace, extension);
     }
 

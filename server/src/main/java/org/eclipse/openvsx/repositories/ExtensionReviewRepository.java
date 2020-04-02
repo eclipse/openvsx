@@ -18,6 +18,8 @@ import org.eclipse.openvsx.entities.UserData;
 
 public interface ExtensionReviewRepository extends Repository<ExtensionReview, Long> {
 
+    Streamable<ExtensionReview> findByExtension(Extension extension);
+
     Streamable<ExtensionReview> findByExtensionAndActiveTrue(Extension extension);
 
     Streamable<ExtensionReview> findByExtensionAndUserAndActiveTrue(Extension extension, UserData user);

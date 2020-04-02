@@ -29,13 +29,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             http.authorizeRequests()
                 .antMatchers("/user/tokens", "/user/token/**", "/api/*/*/review/**")
                     .authenticated()
-                .antMatchers("/user", "/login/**", "/logout", "/api/**")
+                .antMatchers("/user", "/login/**", "/logout", "/api/**", "/admin/**")
                     .permitAll();
         } else {
             // All endpoints are marked as permitted for CORS to work correctly.
             // User authentication is checked within the endpoints that require it.
             http.authorizeRequests()
-                .antMatchers("/user/**", "/login/**", "/logout", "/api/**")
+                .antMatchers("/user/**", "/login/**", "/logout", "/api/**", "/admin/**")
                     .permitAll();
         }
 
@@ -53,7 +53,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // Publishing is done only via explicit access tokens, so we don't need CSRF protection here.
         http.csrf()
-            .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create");
+            .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/admin/**");
     }
 
 }

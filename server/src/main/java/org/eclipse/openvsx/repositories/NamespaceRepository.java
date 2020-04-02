@@ -19,4 +19,6 @@ public interface NamespaceRepository extends Repository<Namespace, Long> {
 
     Namespace findByNameIgnoreCase(String name);
 
+    long count();
+
 }

@@ -18,16 +18,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
 @JsonInclude(Include.NON_NULL)
-public class ExtensionJson {
+public class ExtensionJson extends ResultJson {
 
     public static ExtensionJson error(String message) {
         var info = new ExtensionJson();
         info.error = message;
         return info;
     }
-
-    @Nullable
-    public String error;
 
     public String namespaceUrl;
 

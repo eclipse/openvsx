@@ -22,9 +22,14 @@ import org.eclipse.openvsx.json.UserJson;
 @Entity
 public class UserData {
 
+    public static final String ROLE_ADMIN = "admin";
+
     @Id
     @GeneratedValue
     long id;
+
+    @Column(length = 32)
+    String role;
 
     String loginName;
 
@@ -66,6 +71,14 @@ public class UserData {
     public void setId(long id) {
 		this.id = id;
 	}
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 
 	public String getLoginName() {
 		return loginName;

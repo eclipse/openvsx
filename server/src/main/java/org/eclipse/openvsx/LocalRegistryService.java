@@ -39,10 +39,9 @@ import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.NamespaceResultJson;
+import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.ReviewResultJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -306,7 +305,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public NamespaceResultJson createNamespace(NamespaceJson json, String tokenValue) {
+    public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
         var namespaceIssue = validator.validateNamespace(json.name);
         if (namespaceIssue.isPresent()) {
             throw new ErrorResultException(namespaceIssue.get().toString());
@@ -323,7 +322,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         namespace = new Namespace();
         namespace.setName(json.name);
         entityManager.persist(namespace);
-        return new NamespaceResultJson();
+        return ResultJson.success("Created namespace " + namespace.getName());
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -411,9 +410,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private boolean isLatestVersion(String version, Extension extension) {
-        var allVersions = repositories.findVersions(extension);
         var newSemver = new SemanticVersion(version);
-        for (var publishedVersion : allVersions) {
+        for (var publishedVersion : extension.getVersions()) {
             var oldSemver = new SemanticVersion(publishedVersion.getVersion());
             if (newSemver.compareTo(oldSemver) < 0)
                 return false;
@@ -464,19 +462,19 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)
-    public ReviewResultJson postReview(ReviewJson review, String namespace, String extensionName) {
+    public ResultJson postReview(ReviewJson review, String namespace, String extensionName) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
-            return ReviewResultJson.error("Extension not found: " + namespace + "." + extensionName);
+            return ResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
         var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);
         if (!activeReviews.isEmpty()) {
-            return ReviewResultJson.error("You must not submit more than one review for an extension.");
+            return ResultJson.error("You must not submit more than one review for an extension.");
         }
 
         var extReview = new ExtensionReview();
@@ -490,23 +488,23 @@ public class LocalRegistryService implements IExtensionRegistry {
         entityManager.persist(extReview);
         extension.setAverageRating(computeAverageRating(extension));
         updateSearchIndex(extension);
-        return new ReviewResultJson();
+        return ResultJson.success("Added review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)
-    public ReviewResultJson deleteReview(String namespace, String extensionName) {
+    public ResultJson deleteReview(String namespace, String extensionName) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
-            return ReviewResultJson.error("Extension not found: " + namespace + "." + extensionName);
+            return ResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
         var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);
         if (activeReviews.isEmpty()) {
-            return ReviewResultJson.error("You have not submitted any review yet.");
+            return ResultJson.error("You have not submitted any review yet.");
         }
 
         for (var extReview : activeReviews) {
@@ -514,7 +512,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         extension.setAverageRating(computeAverageRating(extension));
         updateSearchIndex(extension);
-        return new ReviewResultJson();
+        return ResultJson.success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 
     private Double computeAverageRating(Extension extension) {

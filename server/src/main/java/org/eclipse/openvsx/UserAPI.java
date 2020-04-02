@@ -22,7 +22,7 @@ import javax.transaction.Transactional;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.CsrfTokenJson;
-import org.eclipse.openvsx.json.DeleteTokenResultJson;
+import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.UrlUtil;
@@ -138,7 +138,7 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional(rollbackOn = ResponseStatusException.class)
-    public DeleteTokenResultJson deleteAccessToken(@PathVariable("id") long id) {
+    public ResultJson deleteAccessToken(@PathVariable("id") long id) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -146,11 +146,10 @@ public class UserAPI {
         var user = users.updateUser(principal);
         var token = repositories.findAccessToken(id);
         if (token == null || !token.isActive() || !token.getUser().equals(user)) {
-            return DeleteTokenResultJson.error("Token does not exist.");
+            return ResultJson.error("Token does not exist.");
         }
         token.setActive(false);
-        var json = new DeleteTokenResultJson();
-        return json;
+        return ResultJson.success("Deleted access token for user " + user.getLoginName());
     }
 
 }

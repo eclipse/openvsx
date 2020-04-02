@@ -9,21 +9,22 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import javax.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
 @JsonInclude(Include.NON_NULL)
-public class NamespaceResultJson {
+public class StatsJson extends ResultJson {
 
-    public static NamespaceResultJson error(String message) {
-        var result = new NamespaceResultJson();
-        result.error = message;
-        return result;
+    public static StatsJson error(String message) {
+        var user = new StatsJson();
+        user.error = message;
+        return user;
     }
 
-    @Nullable
-    public String error;
+    public long userCount;
+
+    public long extensionCount;
+
+    public long namespaceCount;
 
 }
