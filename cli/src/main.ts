@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as commander from 'commander';
-import * as didYouMean from 'didyoumean';
+import * as leven from 'leven';
 import { createNamespace } from './create-namespace';
 import { publish } from './publish';
 import { handleError } from './util';
@@ -74,9 +74,10 @@ module.exports = function (argv: string[]): void {
     program
         .command('*', '', { noHelp: true })
         .action((cmd: string) => {
-            const suggestion = didYouMean(cmd, program.commands.map((c: any) => c._name));
+            const availableCommands = program.commands.map((c: any) => c._name) as string[];
+            const suggestion = availableCommands.find(c => leven(c, cmd) < c.length * 0.4);
             if (suggestion)
-                console.error(`Unknown command '${cmd}', did you mean '${suggestion}'?`);
+                console.error(`Unknown command '${cmd}', did you mean '${suggestion}'?\n`);
             else
                 console.error(`Unknown command '${cmd}'`);
             program.help();

@@ -31,10 +31,9 @@
         "node": ">= 8"
     },
     "dependencies": {
-        "vsce": "^1.73.0"
+        "vsce": "^1.75.0"
     },
     "devDependencies": {
-        "@types/didyoumean": "^1.2.0",
         "@types/node": "^10.14.18",
         "@types/semver": "^6.2.0",
         "@types/tmp": "^0.1.0",
