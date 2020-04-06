@@ -10,7 +10,7 @@
 
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
-    SearchResult, NewReview, ErrorResult, CsrfTokenJson, isError
+    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError
 } from "./extension-registry-types";
 import { createAbsoluteURL, addQuery } from "./utils";
 import { sendRequest } from "./server-request";
@@ -78,7 +78,7 @@ export class ExtensionRegistryService {
         return sendRequest({ endpoint: extension.reviewsUrl });
     }
 
-    async postReview(review: NewReview, postReviewUrl: string): Promise<{} | ErrorResult> {
+    async postReview(review: NewReview, postReviewUrl: string): Promise<SuccessResult | ErrorResult> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -95,7 +95,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteReview(deleteReviewUrl: string): Promise<{} | ErrorResult> {
+    async deleteReview(deleteReviewUrl: string): Promise<SuccessResult | ErrorResult> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
@@ -138,7 +138,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAccessToken(token: PersonalAccessToken): Promise<{} | ErrorResult> {
+    async deleteAccessToken(token: PersonalAccessToken): Promise<SuccessResult | ErrorResult> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
@@ -152,7 +152,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAllAccessTokens(tokens: PersonalAccessToken[]): Promise<({} | ErrorResult)[]> {
+    async deleteAllAccessTokens(tokens: PersonalAccessToken[]): Promise<(SuccessResult | ErrorResult)[]> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {

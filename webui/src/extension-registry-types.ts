@@ -10,8 +10,15 @@
 
 export type UrlString = string;
 
+export interface SuccessResult {
+    readonly success: string;
+}
+export function isSuccess(obj: any): obj is SuccessResult {
+    return obj && typeof obj.success === 'string';
+}
+
 export interface ErrorResult {
-    readonly error?: string;
+    readonly error: string;
 }
 export function isError(obj: any): obj is ErrorResult {
     return obj && typeof obj.error === 'string';

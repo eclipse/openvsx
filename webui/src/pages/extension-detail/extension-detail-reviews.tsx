@@ -77,10 +77,9 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         try {
             const result = await this.props.service.deleteReview(this.state.reviewList!.deleteUrl);
             if (isError(result)) {
-                handleError(result);
-            } else {
-                this.saveCompleted();
+                throw result;
             }
+            this.saveCompleted();
         } catch (err) {
             handleError(err);
         }

@@ -22,7 +22,7 @@ export class DelayedLoadIndicator extends React.Component<DelayedLoadIndicator.P
     }
 
     componentDidMount() {
-        this.componentDidUpdate({ loading: false});
+        this.componentDidUpdate({ loading: false });
     }
 
     componentWillUnmount() {

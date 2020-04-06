@@ -15,7 +15,6 @@ import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/s
 import { ExtensionDetailRoutes } from "../extension-detail/extension-detail";
 import { ExtensionRaw } from "../../extension-registry-types";
 import { ExportRatingStars } from "../extension-detail/extension-rating-stars";
-import { ExtensionRegistryService } from "../../extension-registry-service";
 import { createRoute } from "../../utils";
 import { PageSettings } from "../../page-settings";
 
@@ -78,7 +77,6 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
 
 export namespace ExtensionListItemComponent {
     export interface Props extends WithStyles<typeof itemStyles> {
-        service: ExtensionRegistryService;
         extension: ExtensionRaw;
         idx: number;
         pageSettings: PageSettings;

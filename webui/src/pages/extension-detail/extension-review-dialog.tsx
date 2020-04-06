@@ -64,11 +64,10 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                 comment: this.state.comment
             }, this.props.reviewPostUrl);
             if (isError(result)) {
-                handleError(result);
-            } else {
-                this.setState({ open: false, comment: '' });
-                this.props.saveCompleted();
+                throw result;
             }
+            this.setState({ open: false, comment: '' });
+            this.props.saveCompleted();
         } catch (err) {
             handleError(err);
         }

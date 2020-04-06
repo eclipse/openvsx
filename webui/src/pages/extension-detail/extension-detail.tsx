@@ -98,12 +98,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             const extensionUrl = this.props.service.getExtensionApiUrl(params);
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
-                handleError(extension);
-                this.setState({ loading: false });
-            } else {
-                document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
-                this.setState({ extension, loading: false });
+                throw extension;
             }
+            document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
+            this.setState({ extension, loading: false });
         } catch (err) {
             handleError(err);
             this.setState({ loading: false });
