@@ -17,14 +17,28 @@ const dividerStyles = (theme: Theme) => createStyles({
     root: {
         alignSelf: 'center',
         height: '1em',
-        margin: `0 ${theme.spacing(1)}px`,
+        margin: `0 ${theme.spacing(1)}px`
+    },
+    lightTheme: {
         backgroundColor: theme.palette.primary.contrastText
+    },
+    darkTheme: {
+        backgroundColor: theme.palette.secondary.contrastText
     }
 });
 
-export class TextDividerComponent extends React.Component<WithStyles<typeof dividerStyles>> {
+export class TextDividerComponent extends React.Component<TextDividerComponent.Props> {
     render() {
-        return <Divider orientation='vertical' classes={{root: this.props.classes.root}} />;
+        const themeClass = this.props.theme === 'dark' ? this.props.classes.darkTheme : this.props.classes.lightTheme;
+        return <Divider orientation='vertical' classes={{
+            root: `${this.props.classes.root} ${themeClass}`
+        }} />;
+    }
+}
+
+export namespace TextDividerComponent {
+    export interface Props extends WithStyles<typeof dividerStyles> {
+        theme?: 'light' | 'dark';
     }
 }
 

@@ -62,18 +62,18 @@ export interface Extension extends ExtensionRaw {
     readonly homepage?: string;
     readonly repository?: string;
     readonly bugs?: string;
-    readonly markdown?: string;
+    readonly markdown?: 'github' | 'standard';
     readonly galleryColor?: string;
-    readonly galleryTheme?: string;
-    readonly qna?: string;
+    readonly galleryTheme?: 'light' | 'dark';
+    readonly qna?: UrlString | 'marketplace' | 'false';
     readonly badges?: Badge[];
     readonly dependencies?: ExtensionReference[];
     readonly bundledExtensions?: ExtensionReference[];
 }
 
 export interface Badge {
-    url: string;
-    href: string;
+    url: UrlString;
+    href: UrlString;
     description: string;
 }
 

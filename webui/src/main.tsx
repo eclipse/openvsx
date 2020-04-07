@@ -45,8 +45,8 @@ const mainStyles = (theme: Theme) => createStyles({
         alignItems: 'center'
     },
     footer: {
-        backgroundColor: theme.palette.primary.contrastText,
-        padding: theme.spacing(2)
+        backgroundColor: theme.palette.primary.dark,
+        padding: `${theme.spacing(1.5)}px ${theme.spacing(3)}px`
     },
     footerBox: {
         display: 'flex',
