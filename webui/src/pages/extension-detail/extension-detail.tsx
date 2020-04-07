@@ -100,12 +100,20 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     componentDidMount() {
         const params = this.props.match.params as ExtensionRaw;
         document.title = `${params.name} – ${this.props.pageSettings.pageTitle}`;
-        this.updateExtension();
+        this.updateExtension(params);
     }
 
-    protected async updateExtension() {
+    componentDidUpdate(prevProps: ExtensionDetailComponent.Props) {
+        const prevParams = prevProps.match.params as ExtensionRaw;
+        const newParams = this.props.match.params as ExtensionRaw;
+        if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name) {
+            this.setState({ extension: undefined, loading: true });
+            this.updateExtension(newParams);
+        }
+    }
+
+    protected async updateExtension(params: ExtensionRaw) {
         try {
-            const params = this.props.match.params as ExtensionRaw;
             const extensionUrl = this.props.service.getExtensionApiUrl(params);
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
@@ -119,7 +127,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         }
     }
 
-    protected onReviewUpdate = () => this.updateExtension();
+    protected onReviewUpdate = () => this.updateExtension(this.props.match.params as ExtensionRaw);
 
     render() {
         const { extension } = this.state;

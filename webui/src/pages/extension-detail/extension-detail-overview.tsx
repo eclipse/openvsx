@@ -16,18 +16,19 @@ import HomeIcon from '@material-ui/icons/Home';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
-import { handleError, toLocalTime, addQuery } from "../../utils";
+import { handleError, toLocalTime, addQuery, createRoute } from "../../utils";
 import { Optional } from "../../custom-mui-components/optional";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension } from "../../extension-registry-types";
+import { Extension, ExtensionReference } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
 import { PageSettings } from "../../page-settings";
+import { ExtensionDetailRoutes } from "./extension-detail";
 
 const overviewStyles = (theme: Theme) => createStyles({
     link: {
         textDecoration: 'none',
-        color: theme.palette.text.primary,
+        color: theme.palette.primary.contrastText,
         '&:hover': {
             textDecoration: 'underline'
         }
@@ -125,6 +126,18 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                 Download
                             </Button>
                         </Box>
+                        <Optional enabled={extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0}>
+                            <Box mt={2}>
+                                <Typography variant='h6'>Bundled Extensions</Typography>
+                                {extension.bundledExtensions!.map(ref => this.renderExtensionRef(ref))}
+                            </Box>
+                        </Optional>
+                        <Optional enabled={extension.dependencies !== undefined && extension.dependencies.length > 0}>
+                            <Box mt={2}>
+                                <Typography variant='h6'>Dependencies</Typography>
+                                {extension.dependencies!.map(ref => this.renderExtensionRef(ref))}
+                            </Box>
+                        </Optional>
                         <Box mt={2}>
                             <Typography variant='h6'>More Info</Typography>
                             {extension.version ? this.renderInfo('Version', extension.version + (extension.preview ? ' (preview)' : '')) : ''}
@@ -202,7 +215,16 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         </Box>;
     }
 
-    protected renderInfo(key: string, value: React.ReactNode) {
+    protected renderExtensionRef(ref: ExtensionReference): React.ReactNode {
+        return <Box>
+            <RouteLink to={createRoute([ExtensionDetailRoutes.ROOT, ref.namespace, ref.extension])}
+                className={this.props.classes.link} >
+                {ref.namespace}.{ref.extension}
+            </RouteLink>
+        </Box>;
+    }
+
+    protected renderInfo(key: string, value: React.ReactNode): React.ReactNode {
         return <Box display='flex'>
             <Box flex='1'>
                 <Typography variant='body2'>{key}</Typography>

@@ -33,6 +33,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
 
     protected cancellationToken: { timeout?: number } = {};
     protected filterSize: number;
+    protected enableLoadMore: boolean;
     protected lastRequestedPage: number = 0;
     protected pageOffset: number = 0;
 
@@ -48,11 +49,13 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
     }
 
     componentDidMount() {
+        this.enableLoadMore = true;
         this.componentDidUpdate({ filter: {} } as ExtensionListComponent.Props);
     }
 
     componentWillUnmount() {
         clearTimeout(this.cancellationToken.timeout);
+        this.enableLoadMore = false;
     }
 
     componentDidUpdate(prevProps: ExtensionListComponent.Props) {
@@ -97,7 +100,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
             if (isError(result)) {
                 throw result;
             }
-            if (isSameFilter(this.props.filter, filter)) {
+            if (this.enableLoadMore && isSameFilter(this.props.filter, filter)) {
                 const extensions = this.state.extensions;
                 extensions.push(...result.extensions);
                 this.setState({
