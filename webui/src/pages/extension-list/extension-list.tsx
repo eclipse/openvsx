@@ -64,7 +64,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         debounce(
             async () => {
                 try {
-                    const result = await this.props.service.search(newFilter)
+                    const result = await this.props.service.search(newFilter);
                     if (isError(result)) {
                         throw result;
                     }
@@ -167,5 +167,5 @@ function copyFilter(f: ExtensionFilter): ExtensionFilter {
         category: f.category,
         size: f.size,
         offset: f.offset
-    }
+    };
 }
