@@ -72,6 +72,10 @@ public class RepositoryService {
         return extensionRepo.count();
     }
 
+    public int getMaxExtensionDownloadCount() {
+        return extensionRepo.getMaxDownloadCount();
+    }
+
     public ExtensionVersion findVersion(String version, Extension extension) {
         return extensionVersionRepo.findByVersionAndExtension(version, extension);
     }
@@ -86,6 +90,10 @@ public class RepositoryService {
 
     public Streamable<ExtensionVersion> findDependenciesReference(Extension extension) {
         return extensionVersionRepo.findByDependencies(extension);
+    }
+
+    public LocalDateTime getOldestExtensionTimestamp() {
+        return extensionVersionRepo.getOldestTimestamp();
     }
 
     public ExtensionBinary findBinary(ExtensionVersion extVersion) {

@@ -14,7 +14,6 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,7 +24,6 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 
 import org.eclipse.openvsx.entities.Extension;
@@ -46,37 +44,22 @@ import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
+import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
  
-    Logger logger = LoggerFactory.getLogger(LocalRegistryService.class);
-
     @Autowired
     EntityManager entityManager;
 
@@ -87,16 +70,10 @@ public class LocalRegistryService implements IExtensionRegistry {
     UserService users;
 
     @Autowired
-    ExtensionValidator validator;
+    SearchService search;
 
     @Autowired
-    ElasticsearchOperations searchOperations;
-
-    @Value("${ovsx.elasticsearch.enabled:true}")
-    boolean enableSearch;
-
-    @Value("${ovsx.elasticsearch.init-index:false}")
-    boolean initSearchIndex;
+    ExtensionValidator validator;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -153,7 +130,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (resource instanceof ExtensionBinary) {
             var extension = extVersion.getExtension();
             extension.setDownloadCount(extension.getDownloadCount() + 1);
-            updateSearchIndex(extension);
+            search.updateSearchIndex(extension);
         }
         return resource.getContent();
     }
@@ -185,114 +162,25 @@ public class LocalRegistryService implements IExtensionRegistry {
         return list;
     }
 
-    @EventListener
-    @Transactional
-    public void initSearchIndex(ApplicationStartedEvent event) {
-        if (enableSearch) {
-            searchOperations.createIndex(ExtensionSearch.class);
-            if (initSearchIndex) {
-                var stopWatch = new StopWatch();
-                stopWatch.start();
-                var allExtensions = repositories.findAllExtensions();
-                if (!allExtensions.isEmpty()) {
-                    var indexQueries = allExtensions.map(extension ->
-                        new IndexQueryBuilder()
-                            .withObject(toSearchIndex(extension))
-                            .build()
-                    ).toList();
-                    searchOperations.bulkIndex(indexQueries);
-                }
-                stopWatch.stop();
-                logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
-            }
-        }
-    }
-
-    public void updateSearchIndex(Extension extension) {
-        var indexQuery = new IndexQueryBuilder()
-                .withObject(toSearchIndex(extension))
-                .build();
-        searchOperations.index(indexQuery);
-    }
-
-    protected ExtensionSearch toSearchIndex(Extension extension) {
-        var entry = extension.toSearch();
-        var ratingValue = (entry.averageRating != null ? entry.averageRating : 0.0) / 5.0;
-        var downloadsValue = entry.downloadCount / 1000.0; // TODO get max download count from DB
-        var now = LocalDateTime.now(ZoneId.of("UTC")).toEpochSecond(ZoneOffset.UTC);
-        var referenceTime = LocalDateTime.parse("2020-03-01T00:00:00").toEpochSecond(ZoneOffset.UTC);
-        var timestampValue = (entry.timestamp - referenceTime) / (now - referenceTime);
-        entry.relevance = 5 * limit(ratingValue) + 3 * limit(downloadsValue) + 2 * limit(timestampValue);
-        return entry;
-    }
-
-    private double limit(double value) {
-        if (value < 0.0)
-            return 0.0;
-        else if (value > 1.0)
-            return 1.0;
-        else
-            return value;
-    }
-
     @Override
     public SearchResultJson search(String queryString, String category, int size, int offset) {
         var json = new SearchResultJson();
-        if (size <= 0 || !enableSearch) {
+        if (size <= 0 || !search.isEnabled()) {
             json.extensions = Collections.emptyList();
             return json;
         }
 
         var pageRequest = PageRequest.of(offset / size, size);
-        var searchResult = search(queryString, category, pageRequest);
+        var searchResult = search.search(queryString, category, pageRequest);
         json.extensions = toSearchEntries(searchResult, size, offset % size);
         json.offset = offset;
         json.totalSize = (int) searchResult.getTotalElements();
         if (json.extensions.size() < size && searchResult.hasNext()) {
             // This is necessary when offset % size > 0
-            var remainder = search(queryString, category, pageRequest.next());
+            var remainder = search.search(queryString, category, pageRequest.next());
             json.extensions.addAll(toSearchEntries(remainder, size - json.extensions.size(), 0));
         }
         return json;
-    }
-
-    private Page<ExtensionSearch> search(String queryString, String category, Pageable pageRequest) {
-        var queryBuilder = new NativeSearchQueryBuilder()
-                .withIndices("extensions")
-                .withPageable(pageRequest);
-        if (!Strings.isNullOrEmpty(queryString)) {
-            var boolQuery = QueryBuilders.boolQuery();
-
-            // Fuzzy matching of search query in multiple fields
-            var multiMatchQuery = QueryBuilders.multiMatchQuery(queryString)
-                    .field("name").boost(5)
-                    .field("displayName").boost(5)
-                    .field("tags").boost(3)
-                    .field("namespace").boost(2)
-                    .field("description")
-                    .fuzziness(Fuzziness.AUTO)
-                    .prefixLength(2);
-            boolQuery.should(multiMatchQuery).boost(5);
-
-            // Prefix matching of search query in display name and namespace
-            var namePrefixQuery = QueryBuilders.prefixQuery("displayName", queryString.trim());
-            boolQuery.should(namePrefixQuery).boost(2);
-            var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", queryString.trim());
-            boolQuery.should(namespacePrefixQuery);
-
-            queryBuilder.withQuery(boolQuery);
-        }
-
-        if (!Strings.isNullOrEmpty(category)) {
-            // Filter by selected category
-            queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
-        }
-
-        // Configure default sorting of results
-        queryBuilder.withSort(SortBuilders.scoreSort());
-        queryBuilder.withSort(SortBuilders.fieldSort("relevance").order(SortOrder.DESC));
-
-        return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
     }
 
     private List<SearchEntryJson> toSearchEntries(Page<ExtensionSearch> page, int size, int offset) {
@@ -347,7 +235,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
 
-            updateSearchIndex(extVersion.getExtension());
+            search.updateSearchIndex(extVersion.getExtension());
             return toJson(extVersion);
         }
     }
@@ -487,7 +375,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         extReview.setRating(review.rating);
         entityManager.persist(extReview);
         extension.setAverageRating(computeAverageRating(extension));
-        updateSearchIndex(extension);
+        search.updateSearchIndex(extension);
         return ResultJson.success("Added review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 
@@ -511,7 +399,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             extReview.setActive(false);
         }
         extension.setAverageRating(computeAverageRating(extension));
-        updateSearchIndex(extension);
+        search.updateSearchIndex(extension);
         return ResultJson.success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 

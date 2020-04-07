@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
@@ -28,5 +29,8 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
     Streamable<Extension> findAll();
 
     long count();
+
+    @Query("select max(e.downloadCount) from Extension e")
+    int getMaxDownloadCount();
 
 }

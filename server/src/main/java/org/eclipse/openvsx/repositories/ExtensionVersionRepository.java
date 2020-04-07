@@ -9,8 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
+
+import java.time.LocalDateTime;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -24,5 +27,8 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     Streamable<ExtensionVersion> findByBundledExtensions(Extension extension);
 
     Streamable<ExtensionVersion> findByDependencies(Extension extension);
+
+    @Query("select min(ev.timestamp) from ExtensionVersion ev")
+    LocalDateTime getOldestTimestamp();
 
 }
