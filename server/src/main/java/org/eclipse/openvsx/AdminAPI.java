@@ -203,6 +203,21 @@ public class AdminAPI {
 
     public ResultJson deleteExtension(Extension extension, UserData admin) {
         var namespace = extension.getNamespace();
+        var bundledRefs = repositories.findBundledExtensionsReference(extension);
+        if (!bundledRefs.isEmpty()) {
+            return ResultJson.error("Extension " + namespace.getName() + "." + extension.getName()
+                    + " is bundled by the following extension packs: "
+                    + bundledRefs.stream()
+                        .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
+                        .collect(Collectors.joining(", ")));
+        }
+        var dependRefs = repositories.findDependenciesReference(extension);
+        if (!dependRefs.isEmpty()) {
+            return ResultJson.error("The following extensions have a dependency on " + namespace.getName() + "." + extension.getName() + ": "
+                    + dependRefs.stream()
+                        .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
+                        .collect(Collectors.joining(", ")));
+        }
         for (var extVersion : extension.getVersions()) {
             removeExtensionVersion(extVersion);
         }

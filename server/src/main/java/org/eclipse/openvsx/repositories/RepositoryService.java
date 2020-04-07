@@ -80,8 +80,12 @@ public class RepositoryService {
         return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespace);
     }
 
-    public Streamable<ExtensionVersion> findVersions(Extension extension) {
-        return extensionVersionRepo.findByExtension(extension);
+    public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
+        return extensionVersionRepo.findByBundledExtensions(extension);
+    }
+
+    public Streamable<ExtensionVersion> findDependenciesReference(Extension extension) {
+        return extensionVersionRepo.findByDependencies(extension);
     }
 
     public ExtensionBinary findBinary(ExtensionVersion extVersion) {

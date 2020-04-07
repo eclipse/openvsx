@@ -551,7 +551,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var serverUrl = UrlUtil.getBaseUrl();
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
-        var allVersions = CollectionUtil.map(repositories.findVersions(extension),
+        var allVersions = CollectionUtil.map(extension.getVersions(),
                 extVer -> new SemanticVersion(extVer.getVersion()));
         Collections.sort(allVersions, Comparator.reverseOrder());
         json.allVersions = new LinkedHashMap<>();
