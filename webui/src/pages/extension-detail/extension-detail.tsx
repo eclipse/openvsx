@@ -71,6 +71,11 @@ const detailStyles = (theme: Theme) => createStyles({
         display: 'flex',
         alignItems: 'center'
     },
+    preview: {
+        fontSize: '0.6em',
+        fontStyle: 'italic',
+        marginLeft: theme.spacing(3)
+    },
     description: {
         overflow: 'hidden',
         textOverflow: 'ellipsis'
@@ -169,7 +174,11 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     protected renderHeader(extension: Extension): React.ReactNode {
         const themeClass = extension.galleryTheme === 'dark' ? this.props.classes.darkTheme : this.props.classes.lightTheme;
         return <Box overflow='auto'>
-            <Typography variant='h5' className={this.props.classes.titleRow}>{extension.displayName || extension.name}</Typography>
+            <Typography variant='h5' className={this.props.classes.titleRow}>
+                {extension.displayName || extension.name} {extension.preview ?
+                    <span className={`${this.props.classes.preview} ${themeClass}`}>preview</span>
+                    : ''}
+            </Typography>
             <Box display='flex' className={themeClass}>
                 <Box className={this.props.classes.alignVertically} >
                     {this.renderAccessInfo(extension, themeClass)}&nbsp;<RouteLink

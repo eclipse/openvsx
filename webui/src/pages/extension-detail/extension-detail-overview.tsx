@@ -127,7 +127,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         </Box>
                         <Box mt={2}>
                             <Typography variant='h6'>More Info</Typography>
-                            {extension.version ? this.renderInfo('Version', extension.version) : ''}
+                            {extension.version ? this.renderInfo('Version', extension.version + (extension.preview ? ' (preview)' : '')) : ''}
                             {zonedDate ? this.renderInfo('Released on', zonedDate.toLocaleString()) : ''}
                             {this.renderInfo('Namespace',
                                 <RouteLink
