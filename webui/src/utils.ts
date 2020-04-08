@@ -59,17 +59,3 @@ export function handleError(err?: Error | Partial<ErrorResponse>): void {
             alert(`The server responded with an error: ${err.error}`);
     }
 }
-
-export function stringHash(...a: (string | undefined)[]): number {
-    let hash = 0;
-    for (const s of a) {
-        if (s) {
-            for (let i = 0; i < s.length; i++) {
-                const c = s.charCodeAt(i);
-                hash = ((hash << 5) - hash) + c;
-                hash |= 0; // Convert to 32bit integer
-            }
-        }
-    }
-    return hash;
-}

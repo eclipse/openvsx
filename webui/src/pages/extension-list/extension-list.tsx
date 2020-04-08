@@ -14,7 +14,7 @@ import { Grid, Theme, createStyles, withStyles, WithStyles, CircularProgress, Co
 import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
-import { debounce, handleError, stringHash } from "../../utils";
+import { debounce, handleError } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { PageSettings } from "../../page-settings";
 
@@ -42,6 +42,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         this.filterSize = this.props.filter.size || 10;
         this.state = {
             extensions: [],
+            extensionKeys: new Set(),
             appliedFilter: {},
             hasMore: false,
             loading: true
@@ -73,8 +74,13 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                     }
                     const actualSize = result.extensions.length;
                     this.pageOffset = this.lastRequestedPage;
+                    const extensionKeys = new Set<string>();
+                    for (const ext of result.extensions) {
+                        extensionKeys.add(`${ext.namespace}.${ext.name}`);
+                    }
                     this.setState({
                         extensions: result.extensions,
+                        extensionKeys,
                         appliedFilter: newFilter,
                         hasMore: actualSize < result.totalSize && actualSize > 0,
                         loading: false
@@ -102,9 +108,18 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
             }
             if (this.enableLoadMore && isSameFilter(this.props.filter, filter)) {
                 const extensions = this.state.extensions;
-                extensions.push(...result.extensions);
+                const extensionKeys = this.state.extensionKeys;
+                // Check for duplicate keys to avoid problems due to asynchronous user edit / loadMore call
+                for (const ext of result.extensions) {
+                    const key = `${ext.namespace}.${ext.name}`;
+                    if (!extensionKeys.has(key)) {
+                        extensions.push(ext);
+                        extensionKeys.add(key);
+                    }
+                }
                 this.setState({
                     extensions,
+                    extensionKeys,
                     hasMore: extensions.length < result.totalSize && result.extensions.length > 0
                 });
             }
@@ -114,14 +129,13 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
     }
 
     render() {
-        const filterHash = stringHash(this.state.appliedFilter.category, this.state.appliedFilter.query);
         const extensionList = this.state.extensions.map((ext, idx) => (
             <ExtensionListItem
                 idx={idx}
                 extension={ext}
                 filterSize={this.filterSize}
                 pageSettings={this.props.pageSettings}
-                key={`${ext.namespace}.${ext.name}#${filterHash}`} />
+                key={`${ext.namespace}.${ext.name}`} />
         ));
         const loader = <div key='extension-list-loader' className={this.props.classes.loader}>
             <CircularProgress size='3rem' color='secondary' />
@@ -152,6 +166,7 @@ export namespace ExtensionListComponent {
     }
     export interface State {
         extensions: ExtensionRaw[];
+        extensionKeys: Set<string>;
         appliedFilter: ExtensionFilter;
         hasMore: boolean;
         loading: boolean;
