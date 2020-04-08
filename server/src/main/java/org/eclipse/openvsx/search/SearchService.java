@@ -63,24 +63,28 @@ public class SearchService {
     @EventListener
     @Transactional
     public void initSearchIndex(ApplicationStartedEvent event) {
-        if (enableSearch) {
+        if (!isEnabled()) {
+            return;
+        }
+        if (initSearchIndex) {
+            var stopWatch = new StopWatch();
+            stopWatch.start();
+            searchOperations.deleteIndex(ExtensionSearch.class);
             searchOperations.createIndex(ExtensionSearch.class);
-            if (initSearchIndex) {
-                var stopWatch = new StopWatch();
-                stopWatch.start();
-                var allExtensions = repositories.findAllExtensions();
-                if (!allExtensions.isEmpty()) {
-                    var stats = new SearchStats();
-                    var indexQueries = allExtensions.map(extension ->
-                        new IndexQueryBuilder()
-                            .withObject(toSearchIndex(extension, stats))
-                            .build()
-                    ).toList();
-                    searchOperations.bulkIndex(indexQueries);
-                }
-                stopWatch.stop();
-                logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
+            var allExtensions = repositories.findAllExtensions();
+            if (!allExtensions.isEmpty()) {
+                var stats = new SearchStats();
+                var indexQueries = allExtensions.map(extension ->
+                    new IndexQueryBuilder()
+                        .withObject(toSearchIndex(extension, stats))
+                        .build()
+                ).toList();
+                searchOperations.bulkIndex(indexQueries);
             }
+            stopWatch.stop();
+            logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
+        } else {
+            searchOperations.createIndex(ExtensionSearch.class);
         }
     }
 

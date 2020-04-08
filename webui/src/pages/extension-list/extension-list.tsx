@@ -76,7 +76,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                     this.setState({
                         extensions: result.extensions,
                         appliedFilter: newFilter,
-                        hasMore: actualSize < result.totalSize && actualSize >= this.filterSize,
+                        hasMore: actualSize < result.totalSize && actualSize > 0,
                         loading: false
                     });
                 } catch (err) {
@@ -105,7 +105,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 extensions.push(...result.extensions);
                 this.setState({
                     extensions,
-                    hasMore: extensions.length < result.totalSize && result.extensions.length >= this.filterSize
+                    hasMore: extensions.length < result.totalSize && result.extensions.length > 0
                 });
             }
         } catch (err) {

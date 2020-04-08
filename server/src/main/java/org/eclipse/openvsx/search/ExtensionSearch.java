@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 @Document(indexName = "extensions")
 public class ExtensionSearch {
@@ -22,6 +23,7 @@ public class ExtensionSearch {
     @Field(index = false)
     public long id;
 
+    @Field(index = false, type = FieldType.Float)
     public double relevance;
 
     public String name;
@@ -32,11 +34,14 @@ public class ExtensionSearch {
 
     public String description;
 
+    @Field(index = false)
     public long timestamp;
 
     @Nullable
+    @Field(index = false, type = FieldType.Float)
     public Double averageRating;
 
+    @Field(index = false)
     public int downloadCount;
 
     @Field(index = false)
