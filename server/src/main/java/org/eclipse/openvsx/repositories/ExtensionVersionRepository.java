@@ -20,6 +20,8 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
+    Streamable<ExtensionVersion> findByExtension(Extension extension);
+
     ExtensionVersion findByVersionAndExtension(String version, Extension extension);
 
     ExtensionVersion findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
