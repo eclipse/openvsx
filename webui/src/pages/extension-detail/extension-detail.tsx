@@ -87,6 +87,30 @@ const detailStyles = (theme: Theme) => createStyles({
     avatar: {
         width: '20px',
         height: '20px'
+    },
+    headerWrapper: {
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column',
+            textAlign: 'center',
+            fontSize: '85%',
+        },
+        '& > *': {
+            '&:first-child': {
+                [theme.breakpoints.up('md')]: {
+                    marginRight: '2rem'
+                }
+            }
+        }
+    },
+    info: {
+        [theme.breakpoints.down('sm')]: {
+            justifyContent: 'center'
+        }
+    },
+    count: {
+        [theme.breakpoints.down('sm')]: {
+            justifyContent: 'center'
+        }
     }
 });
 
@@ -141,8 +165,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     color: extension.galleryTheme === 'dark' ? '#ffffff' : undefined
                 }} >
                 <Container maxWidth='lg'>
-                    <Box display='flex' py={4}>
-                        <Box display='flex' justifyContent='center' alignItems='center' mr={4}>
+                    <Box display='flex' py={4} className={this.props.classes.headerWrapper}>
+                        <Box display='flex' justifyContent='center' alignItems='center'>
                             <img src={extension.files.icon || this.props.pageSettings.extensionDefaultIconURL}
                                 width='auto'
                                 height='120px'
@@ -184,10 +208,10 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         return <Box overflow='auto'>
             <Typography variant='h5' className={this.props.classes.titleRow}>
                 {extension.displayName || extension.name} {extension.preview ?
-                    <span className={`${this.props.classes.preview} ${themeClass}`}>preview</span>
+                    <span className={`${this.props.classes.preview} ${themeClass}`}>preview!!!!</span>
                     : ''}
             </Typography>
-            <Box display='flex' className={themeClass}>
+            <Box display='flex' className={`${themeClass} ${this.props.classes.info}`}>
                 <Box className={this.props.classes.alignVertically} >
                     {this.renderAccessInfo(extension, themeClass)}&nbsp;<RouteLink
                         to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
@@ -217,7 +241,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             <Box mt={2} mb={2} overflow='auto'>
                 <Typography classes={{ root: this.props.classes.description }}>{extension.description}</Typography>
             </Box>
-            <Box display='flex' className={themeClass}>
+            <Box display='flex' className={`${themeClass} ${this.props.classes.count}`}>
                 <Box className={this.props.classes.alignVertically}>
                     <SaveAltIcon fontSize='small'/>&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
                 </Box>

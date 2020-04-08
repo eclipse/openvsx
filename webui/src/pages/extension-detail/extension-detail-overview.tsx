@@ -26,6 +26,19 @@ import { PageSettings } from "../../page-settings";
 import { ExtensionDetailRoutes } from "./extension-detail";
 
 const overviewStyles = (theme: Theme) => createStyles({
+    overview: {
+        display: 'flex',
+        [theme.breakpoints.down('lg')]: {
+            flexDirection: 'column',
+        }
+    },
+    resourcesWrapper: {
+        margin: "4rem 0",
+        width: "100%",
+        [theme.breakpoints.up('lg')]: {
+            margin: '0 0 0 4.8rem',
+        }
+    },
     link: {
         textDecoration: 'none',
         color: theme.palette.primary.contrastText,
@@ -65,7 +78,13 @@ const overviewStyles = (theme: Theme) => createStyles({
     },
     code: {
         fontFamily: 'monospace',
-        fontSize: '1rem'
+        fontSize: '.85rem',
+        [theme.breakpoints.down('lg')]: {
+            fontSize: '.7rem'
+        }
+    },
+    moreInfo: {
+        maxWidth: '30rem',
     }
 });
 
@@ -104,12 +123,12 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const { classes, extension } = this.props;
         const zonedDate = toLocalTime(extension.timestamp);
         return <React.Fragment>
-            <Box display='flex' >
+            <Box className={this.props.classes.overview}>
                 <Box className={classes.markdown} flex={5} overflow="auto">
                     {this.renderMarkdown(this.state.readme)}
                 </Box>
                 <Box flex={3} display='flex' justifyContent='flex-end' minWidth='290px'>
-                    <Box width='80%'>
+                    <Box className={this.props.classes.resourcesWrapper}>
                         {this.renderButtonList('category', 'Categories', extension.categories)}
                         <Box mt={2}>
                             {this.renderButtonList('search', 'Tags', extension.tags)}
@@ -138,7 +157,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                 {extension.dependencies!.map(ref => this.renderExtensionRef(ref))}
                             </Box>
                         </Optional>
-                        <Box mt={2}>
+                        <Box mt={2} className={this.props.classes.moreInfo}>
                             <Typography variant='h6'>More Info</Typography>
                             {extension.version ? this.renderInfo('Version', extension.version + (extension.preview ? ' (preview)' : '')) : ''}
                             {zonedDate ? this.renderInfo('Released on', zonedDate.toLocaleString()) : ''}
