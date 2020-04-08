@@ -23,7 +23,7 @@ public class ExtensionSearch {
     @Field(index = false)
     public long id;
 
-    @Field(index = false, type = FieldType.Float)
+    @Field(index = false, type = FieldType.Float, fielddata = true)
     public double relevance;
 
     public String name;
