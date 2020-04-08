@@ -71,6 +71,10 @@ const detailStyles = (theme: Theme) => createStyles({
         display: 'flex',
         alignItems: 'center'
     },
+    extensionLogo: {
+        height: '7.5rem',
+        maxWidth: '9rem'
+    },
     preview: {
         fontSize: '0.6em',
         fontStyle: 'italic',
@@ -168,8 +172,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     <Box display='flex' py={4} className={this.props.classes.headerWrapper}>
                         <Box display='flex' justifyContent='center' alignItems='center'>
                             <img src={extension.files.icon || this.props.pageSettings.extensionDefaultIconURL}
-                                width='auto'
-                                height='120px'
+                                className={this.props.classes.extensionLogo}
                                 alt={extension.displayName || extension.name} />
                         </Box>
                         {this.renderHeader(extension)}
