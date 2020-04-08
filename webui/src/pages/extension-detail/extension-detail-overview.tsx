@@ -26,6 +26,19 @@ import { PageSettings } from "../../page-settings";
 import { ExtensionDetailRoutes } from "./extension-detail";
 
 const overviewStyles = (theme: Theme) => createStyles({
+    overview: {
+        display: 'flex',
+        [theme.breakpoints.down('lg')]: {
+            flexDirection: 'column',
+        }
+    },
+    resourcesWrapper: {
+        margin: "4rem 0",
+        width: "100%",
+        [theme.breakpoints.up('lg')]: {
+            margin: '0 0 0 4.8rem',
+        }
+    },
     link: {
         textDecoration: 'none',
         color: theme.palette.primary.contrastText,
@@ -65,7 +78,13 @@ const overviewStyles = (theme: Theme) => createStyles({
     },
     code: {
         fontFamily: 'monospace',
-        fontSize: '1rem'
+        fontSize: '.85rem',
+        [theme.breakpoints.down('lg')]: {
+            fontSize: '.7rem'
+        }
+    },
+    moreInfo: {
+        maxWidth: '30rem',
     }
 });
 
@@ -99,17 +118,17 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     render() {
         if (!this.state.readme) {
-            return <DelayedLoadIndicator loading={this.state.loading}/>;
+            return <DelayedLoadIndicator loading={this.state.loading} />;
         }
         const { classes, extension } = this.props;
         const zonedDate = toLocalTime(extension.timestamp);
         return <React.Fragment>
-            <Box display='flex' >
+            <Box className={this.props.classes.overview}>
                 <Box className={classes.markdown} flex={5} overflow="auto">
                     {this.renderMarkdown(this.state.readme)}
                 </Box>
                 <Box flex={3} display='flex' justifyContent='flex-end' minWidth='290px'>
-                    <Box width='80%'>
+                    <Box className={this.props.classes.resourcesWrapper}>
                         {this.renderButtonList('category', 'Categories', extension.categories)}
                         <Box mt={2}>
                             {this.renderButtonList('search', 'Tags', extension.tags)}
@@ -138,13 +157,13 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                 {extension.dependencies!.map(ref => this.renderExtensionRef(ref))}
                             </Box>
                         </Optional>
-                        <Box mt={2}>
+                        <Box mt={2} className={this.props.classes.moreInfo}>
                             <Typography variant='h6'>More Info</Typography>
                             {extension.version ? this.renderInfo('Version', extension.version + (extension.preview ? ' (preview)' : '')) : ''}
                             {zonedDate ? this.renderInfo('Released on', zonedDate.toLocaleString()) : ''}
                             {this.renderInfo('Namespace',
                                 <RouteLink
-                                    to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
+                                    to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
                                     className={this.props.classes.link}>
                                     {extension.namespace}
                                 </RouteLink>)}
@@ -199,16 +218,16 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             <Link href={href} target='_blank' variant='body2' color='secondary'
                 className={this.props.classes.resourceLink} >
                 <Optional enabled={label === 'Homepage'}>
-                    <HomeIcon fontSize='small'/>&nbsp;
+                    <HomeIcon fontSize='small' />&nbsp;
                 </Optional>
                 <Optional enabled={label === 'Repository' && href.startsWith('https://github.com/')}>
-                    <GitHubIcon fontSize='small'/>&nbsp;
+                    <GitHubIcon fontSize='small' />&nbsp;
                 </Optional>
                 <Optional enabled={label === 'Bugs'}>
-                    <BugReportIcon fontSize='small'/>&nbsp;
+                    <BugReportIcon fontSize='small' />&nbsp;
                 </Optional>
                 <Optional enabled={label === 'Q\'n\'A'}>
-                    <QuestionAnswerIcon fontSize='small'/>&nbsp;
+                    <QuestionAnswerIcon fontSize='small' />&nbsp;
                 </Optional>
                 {label}
             </Link>
