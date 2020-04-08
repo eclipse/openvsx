@@ -53,9 +53,6 @@ public class SearchService {
     @Value("${ovsx.elasticsearch.enabled:true}")
     boolean enableSearch;
 
-    @Value("${ovsx.elasticsearch.init-index:false}")
-    boolean initSearchIndex;
-
     public boolean isEnabled() {
         return enableSearch;
     }
@@ -66,37 +63,40 @@ public class SearchService {
         if (!isEnabled()) {
             return;
         }
-        if (initSearchIndex) {
-            var stopWatch = new StopWatch();
-            stopWatch.start();
-            searchOperations.deleteIndex(ExtensionSearch.class);
-            searchOperations.createIndex(ExtensionSearch.class);
-            var allExtensions = repositories.findAllExtensions();
-            if (!allExtensions.isEmpty()) {
-                var stats = new SearchStats();
-                var indexQueries = allExtensions.map(extension ->
-                    new IndexQueryBuilder()
-                        .withObject(toSearchIndex(extension, stats))
-                        .build()
-                ).toList();
-                searchOperations.bulkIndex(indexQueries);
-            }
-            stopWatch.stop();
-            logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
-        } else {
-            searchOperations.createIndex(ExtensionSearch.class);
-        }
+        var stopWatch = new StopWatch();
+        stopWatch.start();
+        updateSearchIndex();
+        stopWatch.stop();
+        logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
     }
 
-    public void updateSearchIndex(Extension extension) {
+    public void updateSearchIndex() {
+        if (searchOperations.indexExists(ExtensionSearch.class)) {
+            searchOperations.deleteIndex(ExtensionSearch.class);
+        }
+        searchOperations.createIndex(ExtensionSearch.class);
+        var allExtensions = repositories.findAllExtensions();
+        if (allExtensions.isEmpty()) {
+            return;
+        }
+        var stats = new SearchStats();
+        var indexQueries = allExtensions.map(extension ->
+            new IndexQueryBuilder()
+                .withObject(toSearchEntry(extension, stats))
+                .build()
+        ).toList();
+        searchOperations.bulkIndex(indexQueries);
+    }
+
+    public void updateSearchEntry(Extension extension) {
         var stats = new SearchStats();
         var indexQuery = new IndexQueryBuilder()
-                .withObject(toSearchIndex(extension, stats))
+                .withObject(toSearchEntry(extension, stats))
                 .build();
         searchOperations.index(indexQuery);
     }
 
-    protected ExtensionSearch toSearchIndex(Extension extension, SearchStats stats) {
+    protected ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
         var entry = extension.toSearch();
         var ratingValue = (entry.averageRating != null ? entry.averageRating : 0.0) / 5.0;
         var downloadsValue = entry.downloadCount / stats.downloadRef;

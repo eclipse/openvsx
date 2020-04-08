@@ -130,7 +130,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (resource instanceof ExtensionBinary) {
             var extension = extVersion.getExtension();
             extension.setDownloadCount(extension.getDownloadCount() + 1);
-            search.updateSearchIndex(extension);
+            search.updateSearchEntry(extension);
         }
         return resource.getContent();
     }
@@ -235,7 +235,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
 
-            search.updateSearchIndex(extVersion.getExtension());
+            search.updateSearchEntry(extVersion.getExtension());
             return toJson(extVersion);
         }
     }
@@ -375,7 +375,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         extReview.setRating(review.rating);
         entityManager.persist(extReview);
         extension.setAverageRating(computeAverageRating(extension));
-        search.updateSearchIndex(extension);
+        search.updateSearchEntry(extension);
         return ResultJson.success("Added review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 
@@ -399,7 +399,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             extReview.setActive(false);
         }
         extension.setAverageRating(computeAverageRating(extension));
-        search.updateSearchIndex(extension);
+        search.updateSearchEntry(extension);
         return ResultJson.success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 

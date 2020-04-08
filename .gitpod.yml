@@ -43,6 +43,8 @@ tasks:
 - name: Publisher
   command: |
     gp await-port 8080
+    # Wait a bit longer so the application can initialize its Elasticsearch index
+    sleep 2s
     # Use the CLI to publish some test extensions to the running server
     export PUBLISHERS="DotJoshJohnson eamodio Equinusocio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode Wscats"
     for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub -r http://localhost:8080 -p super_token; done
