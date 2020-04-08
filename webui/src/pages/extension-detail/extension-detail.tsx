@@ -87,6 +87,30 @@ const detailStyles = (theme: Theme) => createStyles({
     avatar: {
         width: '20px',
         height: '20px'
+    },
+    headerWrapper: {
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column',
+            textAlign: 'center',
+            fontSize: '85%',
+        },
+        '& > *': {
+            '&:first-child': {
+                [theme.breakpoints.up('md')]: {
+                    marginRight: '2rem'
+                }
+            }
+        }
+    },
+    info: {
+        [theme.breakpoints.down('sm')]: {
+            justifyContent: 'center'
+        }
+    },
+    count: {
+        [theme.breakpoints.down('sm')]: {
+            justifyContent: 'center'
+        }
     }
 });
 
@@ -132,17 +156,17 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     render() {
         const { extension } = this.state;
         if (!extension) {
-            return <DelayedLoadIndicator loading={this.state.loading}/>;
+            return <DelayedLoadIndicator loading={this.state.loading} />;
         }
 
         return <React.Fragment>
             <Box className={this.props.classes.head} style={{
-                    backgroundColor: extension.galleryColor,
-                    color: extension.galleryTheme === 'dark' ? '#ffffff' : undefined
-                }} >
+                backgroundColor: extension.galleryColor,
+                color: extension.galleryTheme === 'dark' ? '#ffffff' : undefined
+            }} >
                 <Container maxWidth='lg'>
-                    <Box display='flex' py={4}>
-                        <Box display='flex' justifyContent='center' alignItems='center' mr={4}>
+                    <Box display='flex' py={4} className={this.props.classes.headerWrapper}>
+                        <Box display='flex' justifyContent='center' alignItems='center'>
                             <img src={extension.files.icon || this.props.pageSettings.extensionDefaultIconURL}
                                 width='auto'
                                 height='120px'
@@ -155,7 +179,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             <Container maxWidth='lg'>
                 <Box>
                     <Box>
-                        <ExtensionDetailTabs/>
+                        <ExtensionDetailTabs />
                     </Box>
                     <Box>
                         <Switch>
@@ -187,48 +211,48 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     <span className={`${this.props.classes.preview} ${themeClass}`}>preview</span>
                     : ''}
             </Typography>
-            <Box display='flex' className={themeClass}>
+            <Box display='flex' className={`${themeClass} ${this.props.classes.info}`}>
                 <Box className={this.props.classes.alignVertically} >
                     {this.renderAccessInfo(extension, themeClass)}&nbsp;<RouteLink
-                        to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace}])}
+                        to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
                         className={`${this.props.classes.link} ${themeClass}`}
                         title={`Namespace: ${extension.namespace}`} >
                         {extension.namespace}
                     </RouteLink>
                 </Box>
-                <TextDivider theme={extension.galleryTheme}/>
+                <TextDivider theme={extension.galleryTheme} />
                 <Box className={this.props.classes.alignVertically}>
                     Published&nbsp;by&nbsp;<Link href={extension.publishedBy.homepage}
                         className={`${this.props.classes.link} ${themeClass} ${this.props.classes.alignVertically}`}>{
-                        extension.publishedBy.avatarUrl ?
-                        <React.Fragment>
-                            {extension.publishedBy.loginName}&nbsp;<Avatar
-                                src={extension.publishedBy.avatarUrl}
-                                alt={extension.publishedBy.loginName}
-                                variant='circle'
-                                classes={{ root: this.props.classes.avatar }} />
-                        </React.Fragment>
-                        : extension.publishedBy.loginName
-                    }</Link>
+                            extension.publishedBy.avatarUrl ?
+                                <React.Fragment>
+                                    {extension.publishedBy.loginName}&nbsp;<Avatar
+                                        src={extension.publishedBy.avatarUrl}
+                                        alt={extension.publishedBy.loginName}
+                                        variant='circle'
+                                        classes={{ root: this.props.classes.avatar }} />
+                                </React.Fragment>
+                                : extension.publishedBy.loginName
+                        }</Link>
                 </Box>
-                <TextDivider theme={extension.galleryTheme}/>
+                <TextDivider theme={extension.galleryTheme} />
                 <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension, themeClass)}</Box>
             </Box>
             <Box mt={2} mb={2} overflow='auto'>
                 <Typography classes={{ root: this.props.classes.description }}>{extension.description}</Typography>
             </Box>
-            <Box display='flex' className={themeClass}>
+            <Box display='flex' className={`${themeClass} ${this.props.classes.count}`}>
                 <Box className={this.props.classes.alignVertically}>
-                    <SaveAltIcon fontSize='small'/>&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
+                    <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
                 </Box>
-                <TextDivider theme={extension.galleryTheme}/>
+                <TextDivider theme={extension.galleryTheme} />
                 <RouteLink
                     to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
                     className={`${this.props.classes.link} ${themeClass}`}
                     title={
                         extension.averageRating !== undefined ?
-                        `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
-                        : 'Not rated yet'
+                            `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
+                            : 'Not rated yet'
                     }>
                     <Box className={this.props.classes.alignVertically}>
                         <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
@@ -248,11 +272,11 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         let description: string;
         switch (extension.namespaceAccess) {
             case 'public':
-                icon = <PublicIcon fontSize='small'/>;
+                icon = <PublicIcon fontSize='small' />;
                 description = 'Everyone can publish to this namespace, so the identity of the publisher cannot be verified.';
                 break;
             case 'restricted':
-                icon = <VerifiedUserIcon fontSize='small'/>;
+                icon = <VerifiedUserIcon fontSize='small' />;
                 description = 'Only verified owners and contributors can publish to this namespace.';
                 break;
             default:
@@ -264,7 +288,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 {extension.namespace}
             </span>. {description}
             <Optional enabled={Boolean(this.props.pageSettings.namespaceAccessInfoURL)}>
-                <br/>Click on the icon to learn more.
+                <br />Click on the icon to learn more.
             </Optional>
         </Typography>;
 
@@ -290,8 +314,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     protected renderLicense(extension: Extension, themeClass: string): React.ReactNode {
         if (extension.files.license) {
             return <Link
-                    href={extension.files.license}
-                    className={`${this.props.classes.link} ${themeClass}`} >
+                href={extension.files.license}
+                className={`${this.props.classes.link} ${themeClass}`} >
                 {extension.license || 'Provided license'}
             </Link>;
         } else {
