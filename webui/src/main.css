@@ -1,3 +1,7 @@
 html, body, #main, .extension-list-container {
     height: 100%;
 }
+
+img {
+    object-fit: contain;
+}

@@ -33,7 +33,6 @@ const itemStyles = (theme: Theme) => createStyles({
     img: {
         width: '5rem',
         maxHeight: '5.8rem',
-        objectFit: 'contain',
     }
 });
 
