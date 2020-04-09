@@ -47,7 +47,7 @@ If you would like to test authorization through GitHub, you need to [create an O
 echo $GITHUB_CALLBACK_URL
 ```
 
-Note that the callback URL needs to be updated on GitHub whenever you create a fresh Gitpod workspace.
+Note that the callback URL needs to be [updated on GitHub](https://github.com/settings/developers) whenever you create a fresh Gitpod workspace.
 
 After you created the GitHub OAuth app, the next step is to copy the _Client ID_ and _Client Secret_ into [Gitpod environment variables](https://www.gitpod.io/docs/environment-variables/) named `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` and bound to this repository.
 

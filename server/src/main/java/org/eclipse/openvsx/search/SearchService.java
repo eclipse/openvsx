@@ -12,6 +12,8 @@ package org.eclipse.openvsx.search;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.transaction.Transactional;
 
@@ -42,7 +44,8 @@ public class SearchService {
 
     private static final double BUILTIN_PENALTY = 0.5;
 
-    Logger logger = LoggerFactory.getLogger(SearchService.class);
+    protected final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    protected final Logger logger = LoggerFactory.getLogger(SearchService.class);
 
     @Autowired
     RepositoryService repositories;
@@ -71,29 +74,39 @@ public class SearchService {
     }
 
     public void updateSearchIndex() {
-        if (searchOperations.indexExists(ExtensionSearch.class)) {
-            searchOperations.deleteIndex(ExtensionSearch.class);
+        try {
+            rwLock.writeLock().lock();
+            if (searchOperations.indexExists(ExtensionSearch.class)) {
+                searchOperations.deleteIndex(ExtensionSearch.class);
+            }
+            searchOperations.createIndex(ExtensionSearch.class);
+            var allExtensions = repositories.findAllExtensions();
+            if (allExtensions.isEmpty()) {
+                return;
+            }
+            var stats = new SearchStats();
+            var indexQueries = allExtensions.map(extension ->
+                new IndexQueryBuilder()
+                    .withObject(toSearchEntry(extension, stats))
+                    .build()
+            ).toList();
+            searchOperations.bulkIndex(indexQueries);
+        } finally {
+            rwLock.writeLock().unlock();
         }
-        searchOperations.createIndex(ExtensionSearch.class);
-        var allExtensions = repositories.findAllExtensions();
-        if (allExtensions.isEmpty()) {
-            return;
-        }
-        var stats = new SearchStats();
-        var indexQueries = allExtensions.map(extension ->
-            new IndexQueryBuilder()
-                .withObject(toSearchEntry(extension, stats))
-                .build()
-        ).toList();
-        searchOperations.bulkIndex(indexQueries);
     }
 
     public void updateSearchEntry(Extension extension) {
-        var stats = new SearchStats();
-        var indexQuery = new IndexQueryBuilder()
-                .withObject(toSearchEntry(extension, stats))
-                .build();
-        searchOperations.index(indexQuery);
+        try {
+            rwLock.writeLock().lock();
+            var stats = new SearchStats();
+            var indexQuery = new IndexQueryBuilder()
+                    .withObject(toSearchEntry(extension, stats))
+                    .build();
+            searchOperations.index(indexQuery);
+        } finally {
+            rwLock.writeLock().unlock();
+        }
     }
 
     protected ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
@@ -155,7 +168,12 @@ public class SearchService {
         queryBuilder.withSort(SortBuilders.scoreSort());
         queryBuilder.withSort(SortBuilders.fieldSort("relevance").order(SortOrder.DESC));
 
-        return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
+        try {
+            rwLock.readLock().lock();
+            return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     protected class SearchStats {
