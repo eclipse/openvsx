@@ -12,12 +12,13 @@ package org.eclipse.openvsx.search;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.transaction.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.Extension;
@@ -83,11 +84,6 @@ public class SearchService {
             searchOperations.createIndex(ExtensionSearch.class);
             var allExtensions = repositories.findAllExtensions();
             if (allExtensions.isEmpty()) {
-                // Index a single dummy entry for proper initialization
-                var indexQuery = new IndexQueryBuilder()
-                        .withObject(createDummyEntry())
-                        .build();
-                searchOperations.index(indexQuery);
                 return;
             }
             var stats = new SearchStats();
@@ -122,18 +118,22 @@ public class SearchService {
         var timestamp = extension.getLatest().getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
         entry.relevance = 2 * limit(ratingValue) + 2 * limit(downloadsValue) + 1 * limit(timestampValue);
+
         // Reduce the relevance value of built-in extensions to show other results first
         if ("vscode".equals(entry.namespace)) {
             entry.relevance *= BUILTIN_PENALTY;
         }
-        return entry;
-    }
-
-    private ExtensionSearch createDummyEntry() {
-        var entry = new ExtensionSearch();
-        entry.id = -1;
-        entry.categories = new ArrayList<>();
-        entry.tags = new ArrayList<>();
+    
+        if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
+            var message = "Invalid relevance for entry " + entry.namespace + "." + entry.name;
+            try {
+                message += " " + new ObjectMapper().writeValueAsString(stats);
+            } catch (JsonProcessingException exc) {
+                // Ignore exception
+            }
+            logger.error(message);
+            entry.relevance = 0.0;
+        }
         return entry;
     }
 
@@ -191,15 +191,17 @@ public class SearchService {
     }
 
     protected class SearchStats {
-        final double downloadRef;
-        final double timestampRef;
-        final LocalDateTime oldest;
+        protected final double downloadRef;
+        protected final double timestampRef;
+        protected final LocalDateTime oldest;
 
         public SearchStats() {
-            this.downloadRef = (repositories.getMaxExtensionDownloadCount() + 100) * 1.5;
-            this.oldest = repositories.getOldestExtensionTimestamp();
             var now = LocalDateTime.now(ZoneId.of("UTC"));
-            this.timestampRef = Duration.between(this.oldest, now).toSeconds();
+            var maxDownloads = repositories.getMaxExtensionDownloadCount();
+            var oldestTimestamp = repositories.getOldestExtensionTimestamp();
+            this.downloadRef = maxDownloads * 1.5 + 100;
+            this.oldest = oldestTimestamp == null ? now : oldestTimestamp;
+            this.timestampRef = Duration.between(this.oldest, now).toSeconds() + 60;
         }
     }
 
