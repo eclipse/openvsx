@@ -12,6 +12,7 @@ package org.eclipse.openvsx.search;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -82,6 +83,11 @@ public class SearchService {
             searchOperations.createIndex(ExtensionSearch.class);
             var allExtensions = repositories.findAllExtensions();
             if (allExtensions.isEmpty()) {
+                // Index a single dummy entry for proper initialization
+                var indexQuery = new IndexQueryBuilder()
+                        .withObject(createDummyEntry())
+                        .build();
+                searchOperations.index(indexQuery);
                 return;
             }
             var stats = new SearchStats();
@@ -120,6 +126,14 @@ public class SearchService {
         if ("vscode".equals(entry.namespace)) {
             entry.relevance *= BUILTIN_PENALTY;
         }
+        return entry;
+    }
+
+    private ExtensionSearch createDummyEntry() {
+        var entry = new ExtensionSearch();
+        entry.id = -1;
+        entry.categories = new ArrayList<>();
+        entry.tags = new ArrayList<>();
         return entry;
     }
 
