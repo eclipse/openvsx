@@ -28,7 +28,23 @@ export namespace UserSettingsRoutes {
 }
 
 const profileStyles = (theme: Theme) => createStyles({
-
+    container: {
+        [theme.breakpoints.down('md')]: {
+            flexDirection: 'column'
+        }
+    },
+    tabs: {
+        [theme.breakpoints.down('lg')]: {
+            marginBottom: '3rem'
+        },
+    },
+    info: {
+        [theme.breakpoints.up('lg')]: {
+            paddingTop: '.5rem',
+            paddingLeft: '3rem',
+            flex: '1'
+        }
+    }
 });
 
 class UserSettingsComponent extends React.Component<UserSettingsComponent.Props> {
@@ -52,12 +68,12 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
         return <React.Fragment>
             <Container>
                 <Box mt={6}>
-                    <Grid container>
-                        <Grid item md={2}>
+                    <Grid container className={this.props.classes.container}>
+                        <Grid item className={this.props.classes.tabs}>
                             <UserSettingTabs {...this.props} />
                         </Grid>
-                        <Grid item md={10}>
-                            <Box pt={1} pl={6}>
+                        <Grid item className={this.props.classes.info}>
+                            <Box>
                                 <Route path={UserSettingsRoutes.PROFILE}>
                                     <UserSettingsProfile service={this.props.service} user={user} />
                                 </Route>

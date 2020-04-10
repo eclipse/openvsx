@@ -9,35 +9,41 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Tabs, Tab } from "@material-ui/core";
+import { Tabs, Tab, useTheme, useMediaQuery } from "@material-ui/core";
 import { RouteComponentProps } from "react-router-dom";
 import { createRoute } from "../../utils";
 import { ExtensionRaw } from "../../extension-registry-types";
 import { UserSettingsRoutes } from "./user-settings";
 
-export class UserSettingTabs extends React.Component<UserSettingTabs.Props> {
+export const UserSettingTabs = (props: UserSettingTabs.Props) => {
 
-    protected resolvedRoute: string[];
+    const theme = useTheme();
+    const isATablet = useMediaQuery(theme.breakpoints.down('md'));
+    const isAMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const params = props.match.params as UserSettingTabs.Params;
 
-    protected handleChange = (event: React.ChangeEvent, newTab: string) => {
-        this.props.history.push(this.createRoute(newTab));
-        this.setState({ tab: newTab });
-    }
+    const handleChange = (event: React.ChangeEvent, newTab: string) => {
+        props.history.push(generateRoute(newTab));
+    };
 
-    protected createRoute(tab: string) {
+    const generateRoute = (tab: string) => {
         return createRoute([UserSettingsRoutes.ROOT, tab]);
-    }
+    };
 
-    render() {
-        const params = this.props.match.params as UserSettingTabs.Params;
-        return <React.Fragment>
-            <Tabs value={params.tab} onChange={this.handleChange} orientation='vertical'>
+    return (
+        <React.Fragment>
+            <Tabs
+                value={params.tab}
+                onChange={handleChange}
+                orientation={isATablet ? 'horizontal' : 'vertical'}
+                centered={isAMobile ? true : false}
+            >
                 <Tab value='profile' label='Profile' />
                 <Tab value='tokens' label='Access Tokens' />
             </Tabs>
-        </React.Fragment>;
-    }
-}
+        </React.Fragment>
+    );
+};
 
 export namespace UserSettingTabs {
     export interface Props extends RouteComponentProps {
