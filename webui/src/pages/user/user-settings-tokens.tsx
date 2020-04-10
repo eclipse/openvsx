@@ -18,6 +18,21 @@ import { ExtensionRegistryService } from "../../extension-registry-service";
 import { GenerateTokenDialog } from "./generate-token-dialog";
 
 const tokensStyle = (theme: Theme) => createStyles({
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column',
+            alignItems: 'center'
+        }
+    },
+    buttons: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        [theme.breakpoints.down('sm')]: {
+            justifyContent: 'center'
+        }
+    },
     description: {
         fontWeight: 'bold',
         overflow: 'hidden',
@@ -78,12 +93,12 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
     render() {
         return <React.Fragment>
-            <Box display='flex' justifyContent='space-between'>
+            <Box className={this.props.classes.header}>
                 <Box>
                     <Typography variant='h5' gutterBottom>Access Tokens</Typography>
                 </Box>
-                <Box display='flex'>
-                    <Box mr={1}>
+                <Box className={this.props.classes.buttons}>
+                    <Box mr={1} mb={1}>
                         <GenerateTokenDialog
                             handleTokenGenerated={this.handleTokenGenerated}
                             service={this.props.service}
