@@ -25,7 +25,7 @@ const itemStyles = (theme: Theme) => createStyles({
         minWidth: '11.875rem',
     },
     paper: {
-        padding: theme.spacing(3, 2)
+        padding: theme.spacing(3, 2),
     },
     link: {
         textDecoration: 'none'
@@ -51,7 +51,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                                     alt={extension.displayName || extension.name} />
                             </Box>
                             <Box display='flex' justifyContent='center'>
-                                <Typography variant='h6' noWrap>
+                                <Typography variant='h6' noWrap style={{fontSize: '1rem'}}>
                                     {extension.displayName || extension.name}
                                 </Typography>
                             </Box>
