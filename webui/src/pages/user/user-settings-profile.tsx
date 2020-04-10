@@ -14,9 +14,32 @@ import { UserData } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 
 const profileStyle = (theme: Theme) => createStyles({
+    profile: {
+        [theme.breakpoints.up('lg')]: {
+            justifyContent: 'space-between'
+        },
+        ['@media(max-width: 1040px)']: {
+            flexDirection: 'row-reverse',
+            justifyContent: 'flex-end',
+            '& > div:first-of-type': {
+                marginLeft: '2rem'
+            }
+        },
+        [theme.breakpoints.down('sm')]: {
+            textAlign: 'center',
+            flexDirection: 'column-reverse',
+            '& > div:first-of-type': {
+                marginLeft: '0',
+                marginTop: '2rem'
+            }
+        }
+    },
     avatar: {
         width: '150px',
-        height: '150px'
+        height: '150px',
+        [theme.breakpoints.down('sm')]: {
+            margin: '0 auto',
+        }
     }
 });
 
@@ -30,13 +53,13 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
 
     render() {
         return <React.Fragment>
-            <Grid container>
-                <Grid item md={9}>
+            <Grid container className={this.props.classes.profile}>
+                <Grid item>
                     <Typography variant='h5' gutterBottom>Profile</Typography>
                     <Typography variant='body1'>Login name: {this.props.user.loginName}</Typography>
                     <Typography variant='body1'>Full name: {this.props.user.fullName}</Typography>
                 </Grid>
-                <Grid item md={3}>
+                <Grid item>
                     <Avatar classes={{ root: this.props.classes.avatar }} variant='rounded' src={this.props.user.avatarUrl} />
                 </Grid>
             </Grid>
