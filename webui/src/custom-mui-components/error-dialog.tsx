@@ -18,7 +18,7 @@ export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
             <Dialog open={this.props.isErrorDialogOpen}>
                 <DialogTitle>Error</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>
+                    <DialogContentText style={{color: '#f15374'}}>
                         {this.props.errorMessage}
                     </DialogContentText>
                 </DialogContent>
