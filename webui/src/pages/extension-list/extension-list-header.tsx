@@ -131,7 +131,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                             >
                                 Search for Name, Tags or Description
                             </label>
-                            <IconButton color='primary' classes={{ root: classes.iconButton }}>
+                            <IconButton color='primary' aria-label="Search" classes={{ root: classes.iconButton }}>
                                 <SearchIcon />
                             </IconButton>
                         </Paper>

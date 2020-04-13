@@ -101,7 +101,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 <AppBar position='sticky'>
                     <Toolbar classes={{ root: this.props.classes.toolbar }}>
                         <Box>
-                            <RouteLink to={ExtensionListRoutes.MAIN} className={this.props.classes.link}>
+                            <RouteLink to={ExtensionListRoutes.MAIN} className={this.props.classes.link} aria-label="Home - Open VSX Registry">
                                 <Box className={this.props.classes.alignVertically}>
                                     <Optional enabled={Boolean(this.props.pageSettings.logoURL)}>
                                         <img src={this.props.pageSettings.logoURL}
