@@ -5,3 +5,12 @@ html, body, #main, .extension-list-container {
 img {
     object-fit: contain;
 }
+
+.visually-hidden {
+    position: absolute;
+    left: -100000rem;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
