@@ -106,7 +106,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     <Optional enabled={Boolean(this.props.pageSettings.logoURL)}>
                                         <img src={this.props.pageSettings.logoURL}
                                             className={this.props.classes.toolbarLogo}
-                                            alt={this.props.pageSettings.toolbarText} />
+                                            alt={this.props.pageSettings.logoAlt}/>
                                     </Optional>
                                     <Optional enabled={Boolean(this.props.pageSettings.toolbarText)}>
                                         <Typography variant='h6' noWrap>{this.props.pageSettings.toolbarText}</Typography>
