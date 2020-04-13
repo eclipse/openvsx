@@ -18,6 +18,7 @@ import { UserData, PersonalAccessToken, isError } from "../../extension-registry
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { handleError } from "../../utils";
 import { Optional } from "../../custom-mui-components/optional";
+import { CopyToClipboard } from "../../custom-mui-components/copy-to-clipboard";
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
@@ -122,6 +123,23 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                     </Optional>
                 </DialogContent>
                 <DialogActions>
+                     {
+                        this.state.token ? <CopyToClipboard>
+                            {({ copy }) => (
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={() => {
+                                        if (this.state.token) {
+                                            copy(this.state.token.value);
+                                        }
+                                    }}
+                                >
+                                    Copy
+                                </Button>
+                            )}
+                        </CopyToClipboard> : null
+                    }
                     <Button onClick={this.handleCancel} color="secondary">
                         {this.state.token ? 'Close' : 'Cancel'}
                     </Button>

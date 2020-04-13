@@ -39,6 +39,7 @@
         "@material-ui/core": "latest",
         "@material-ui/icons": "latest",
         "@material-ui/styles": "latest",
+        "clipboard-copy": "^3.1.0",
         "date-fns": "^2.7.0",
         "date-fns-tz": "^1.0.8",
         "markdown-it": "^10.0.0",
