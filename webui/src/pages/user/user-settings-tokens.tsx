@@ -61,7 +61,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             const tokens = await this.props.service.getAccessTokens(this.props.user);
             this.setState({ tokens, loading: false });
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
             this.setState({ loading: false });
         }
     }
@@ -72,7 +72,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             await this.props.service.deleteAccessToken(token);
             this.updateTokens();
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
         }
     }
 
@@ -82,7 +82,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             await this.props.service.deleteAllAccessTokens(this.state.tokens);
             this.updateTokens();
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
         }
     }
 
@@ -102,7 +102,9 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                         <GenerateTokenDialog
                             handleTokenGenerated={this.handleTokenGenerated}
                             service={this.props.service}
-                            user={this.props.user} />
+                            user={this.props.user}
+                            setError={this.props.setError}
+                        />
                     </Box>
                     <Box>
                         <Button
@@ -154,6 +156,7 @@ export namespace UserSettingsTokensComponent {
     export interface Props extends WithStyles<typeof tokensStyle> {
         user: UserData;
         service: ExtensionRegistryService;
+        setError: Function;
     }
 
     export interface State {

@@ -82,7 +82,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
             this.setState({ token });
             this.props.handleTokenGenerated();
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
         }
     }
 
@@ -168,6 +168,7 @@ export namespace GenerateTokenDialogComponent {
         user: UserData;
         service: ExtensionRegistryService;
         handleTokenGenerated: () => void;
+        setError: Function;
     }
 
     export interface State {

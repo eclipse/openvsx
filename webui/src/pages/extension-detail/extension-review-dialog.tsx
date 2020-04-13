@@ -69,7 +69,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             this.setState({ open: false, comment: '' });
             this.props.saveCompleted();
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
         }
     }
 
@@ -136,6 +136,7 @@ export namespace ExtensionReviewDialogComponent {
         user: UserData;
         service: ExtensionRegistryService;
         saveCompleted: () => void;
+        setError: Function
     }
     export interface State {
         open: boolean;

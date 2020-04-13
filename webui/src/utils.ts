@@ -46,16 +46,18 @@ export function toLocalTime(timestamp?: string): Date | undefined {
     return utcToZonedTime(timestamp, timeZone);
 }
 
-export function handleError(err?: Error | Partial<ErrorResponse>): void {
+export function handleError(err?: Error | Partial<ErrorResponse>): string {
+    let errorMessage: string = '';
     if (err) {
         console.error(err);
         if (err instanceof Error)
-            alert(`An unexpected error occurred: ${err.message}`);
+            errorMessage = `An unexpected error occurred: ${err.message}`;
         else if (err.error && err.status && err.message)
-            alert(`The server responded with an error: ${err.error} (status ${err.status}, ${err.message})`);
+            errorMessage = `The server responded with an error: ${err.error} (status ${err.status}, ${err.message})`;
         else if (err.error && err.status)
-            alert(`The server responded with an error: ${err.error} (status ${err.status})`);
+            errorMessage = `The server responded with an error: ${err.error} (status ${err.status})`;
         else if (err.error)
-            alert(`The server responded with an error: ${err.error}`);
+            errorMessage = `The server responded with an error: ${err.error}`;
     }
+    return errorMessage;
 }

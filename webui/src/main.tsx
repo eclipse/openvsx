@@ -24,6 +24,7 @@ import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { PageSettings } from './page-settings';
 import { handleError } from './utils';
+import { ErrorDialog } from './custom-mui-components/error-dialog';
 import "../src/main.css";
 
 const mainStyles = (theme: Theme) => createStyles({
@@ -60,7 +61,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     constructor(props: MainComponent.Props) {
         super(props);
 
-        this.state = { userLoading: true };
+        this.state = {
+            userLoading: true,
+            error: '',
+            isErrorDialogOpen: false
+        };
     }
 
     componentDidMount() {
@@ -72,13 +77,20 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             const user = await this.props.service.getUser();
             if (isError(user)) {
                 this.setState({ user: undefined, userLoading: false });
-            } else {
+            } else {
                 this.setState({ user, userLoading: false });
             }
         } catch (err) {
-            handleError(err);
-            this.setState({ userLoading: false });
+            this.setState({ error: handleError(err), userLoading: false });
         }
+    }
+
+    setError = (error: string) => {
+        this.setState({ error, isErrorDialogOpen: true });
+    }
+
+    handleDialogClose = () => {
+        this.setState({ isErrorDialogOpen: false });
     }
 
     render() {
@@ -93,7 +105,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     <Optional enabled={Boolean(this.props.pageSettings.logoURL)}>
                                         <img src={this.props.pageSettings.logoURL}
                                             className={this.props.classes.toolbarLogo}
-                                            alt={this.props.pageSettings.toolbarText}/>
+                                            alt={this.props.pageSettings.toolbarText} />
                                     </Optional>
                                     <Optional enabled={Boolean(this.props.pageSettings.toolbarText)}>
                                         <Typography variant='h6' noWrap>{this.props.pageSettings.toolbarText}</Typography>
@@ -106,7 +118,9 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 this.state.user ?
                                     <UserAvatar
                                         user={this.state.user}
-                                        service={this.props.service} />
+                                        service={this.props.service}
+                                        setError={this.setError}
+                                    />
                                     :
                                     <IconButton href={this.props.service.getLoginUrl()} title="Log In">
                                         <AccountBoxIcon />
@@ -122,7 +136,9 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 <ExtensionListContainer
                                     {...routeProps}
                                     service={this.props.service}
-                                    pageSettings={this.props.pageSettings} />
+                                    pageSettings={this.props.pageSettings}
+                                    setError={this.setError}
+                                />
                             } />
                         <Route path={UserSettingsRoutes.MAIN}
                             render={routeProps =>
@@ -131,7 +147,9 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     user={this.state.user}
                                     userLoading={this.state.userLoading}
                                     service={this.props.service}
-                                    pageSettings={this.props.pageSettings} />
+                                    pageSettings={this.props.pageSettings}
+                                    setError={this.setError}
+                                />
                             } />
                         <Route path={ExtensionDetailRoutes.MAIN}
                             render={routeProps =>
@@ -139,22 +157,34 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     {...routeProps}
                                     user={this.state.user}
                                     service={this.props.service}
-                                    pageSettings={this.props.pageSettings} />
+                                    pageSettings={this.props.pageSettings}
+                                    setError={this.setError}
+                                />
                             } />
                         <Route path='*'>
                             <Container>
                                 <Box height='30vh' display='flex' flexWrap='wrap' justifyContent='center' alignItems='center'>
                                     <Typography variant='h3'>Oooups...this is a 404 page.</Typography>
-                                    <BrokenImageIcon style={{ fontSize: '4rem', flexBasis: '100%' }}/>
+                                    <BrokenImageIcon style={{ fontSize: '4rem', flexBasis: '100%' }} />
                                 </Box>
                             </Container>
                         </Route>
                     </Switch>
                 </Box>
+                {
+                    this.state.error ? ( 
+                        <ErrorDialog 
+                            errorMessage={this.state.error} 
+                            isErrorDialogOpen={this.state.isErrorDialogOpen}
+                            handleCloseDialog={this.handleDialogClose} 
+                        /> 
+                    ) 
+                    : null
+                }
                 <footer className={this.props.classes.footer}>
                     <Link target='_blank' href='https://github.com/eclipse/openvsx'>
                         <Box className={this.props.classes.footerBox}>
-                            <GitHubIcon/>&nbsp;eclipse/openvsx
+                            <GitHubIcon />&nbsp;eclipse/openvsx
                         </Box>
                     </Link>
                 </footer>
@@ -172,6 +202,8 @@ export namespace MainComponent {
     export interface State {
         user?: UserData;
         userLoading: boolean;
+        error: string;
+        isErrorDialogOpen: boolean
     }
 }
 
