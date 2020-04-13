@@ -78,7 +78,11 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                                     <UserSettingsProfile service={this.props.service} user={user} />
                                 </Route>
                                 <Route path={UserSettingsRoutes.TOKENS}>
-                                    <UserSettingsTokens service={this.props.service} user={user} />
+                                    <UserSettingsTokens
+                                        service={this.props.service}
+                                        user={user}
+                                        setError={this.props.setError}
+                                    />
                                 </Route>
                             </Box>
                         </Grid>
@@ -95,6 +99,7 @@ export namespace UserSettingsComponent {
         userLoading: boolean;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
+        setError: Function;
     }
 }
 

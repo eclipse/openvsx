@@ -150,7 +150,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
             this.setState({ extension, loading: false });
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
             this.setState({ loading: false });
         }
     }
@@ -191,13 +191,17 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                     extension={extension}
                                     reviewsDidUpdate={this.onReviewUpdate}
                                     service={this.props.service}
-                                    user={this.props.user} />
+                                    user={this.props.user}
+                                    setError={this.props.setError}
+                                />
                             </Route>
                             <Route path={ExtensionDetailRoutes.OVERVIEW}>
                                 <ExtensionDetailOverview
                                     extension={extension}
                                     service={this.props.service}
-                                    pageSettings={this.props.pageSettings} />
+                                    pageSettings={this.props.pageSettings}
+                                    setError={this.props.setError}
+                                />
                             </Route>
                         </Switch>
                     </Box>
@@ -333,6 +337,7 @@ export namespace ExtensionDetailComponent {
         user?: UserData;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
+        setError: Function
     }
     export interface State {
         extension?: Extension;

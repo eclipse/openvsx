@@ -61,7 +61,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             const reviewList = await this.props.service.getExtensionReviews(this.props.extension);
             this.setState({ reviewList, loading: false, revoked: false });
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
             this.setState({ loading: false, revoked: false });
         }
     }
@@ -81,7 +81,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             }
             this.saveCompleted();
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
         }
     }
 
@@ -116,7 +116,8 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                     color='secondary'
                     disabled={this.state.revoked}
                     onClick={this.handleRevokeButton}
-                    title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`}>
+                    title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`}
+                >
                     Revoke my Review
                 </Button>
                 <Optional enabled={this.state.revoked}>
@@ -130,7 +131,9 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                     extension={this.props.extension}
                     reviewPostUrl={this.state.reviewList.postUrl}
                     user={this.props.user}
-                    service={this.props.service} />
+                    service={this.props.service}
+                    setError={this.props.setError}
+                />
             </Box>;
         }
     }
@@ -183,6 +186,7 @@ export namespace ExtensionDetailReviewsComponent {
         user?: UserData;
         service: ExtensionRegistryService;
         reviewsDidUpdate: () => void;
+        setError: Function;
     }
     export interface State {
         reviewList?: ExtensionReviewList;

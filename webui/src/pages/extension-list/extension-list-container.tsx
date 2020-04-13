@@ -73,7 +73,9 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
             <ExtensionList
                 service={this.props.service}
                 pageSettings={this.props.pageSettings}
-                filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10 }} />
+                filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10 }}
+                setError={this.props.setError} 
+            />
         </Box>;
     }
 }
@@ -82,6 +84,7 @@ export namespace ExtensionListContainer {
     export interface Props extends RouteComponentProps {
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
+        setError: Function;
     }
     export interface State {
         searchQuery: string,

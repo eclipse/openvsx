@@ -86,7 +86,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                         loading: false
                     });
                 } catch (err) {
-                    handleError(err);
+                    this.props.setError(handleError(err));
                     this.setState({ loading: false });
                 }
             },
@@ -124,7 +124,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 });
             }
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
         }
     }
 
@@ -163,6 +163,7 @@ export namespace ExtensionListComponent {
         filter: ExtensionFilter;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
+        setError: Function;
     }
     export interface State {
         extensions: ExtensionRaw[];

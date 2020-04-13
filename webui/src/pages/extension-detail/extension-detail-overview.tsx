@@ -108,7 +108,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 const readme = await this.props.service.getExtensionReadme(this.props.extension);
                 this.setState({ readme, loading: false });
             } catch (err) {
-                handleError(err);
+                this.props.setError(handleError(err));
                 this.setState({ loading: false });
             }
         } else {
@@ -279,6 +279,7 @@ export namespace ExtensionDetailOverview {
         extension: Extension;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
+        setError: Function;
     }
     export interface State {
         readme?: string;

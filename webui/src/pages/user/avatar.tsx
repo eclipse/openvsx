@@ -61,7 +61,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                 this.setState({ csrf: csrfToken.value });
             }
         } catch (err) {
-            handleError(err);
+            this.props.setError(handleError(err));
         }
     }
 
@@ -125,6 +125,7 @@ export namespace UserAvatarComponent {
     export interface Props extends WithStyles<typeof avatarStyle> {
         user: UserData;
         service: ExtensionRegistryService;
+        setError: Function;
     }
 
     export interface State {
