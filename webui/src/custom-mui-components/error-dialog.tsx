@@ -14,7 +14,7 @@ import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogAc
 export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
 
     handleEnter = (e: KeyboardEvent) => {
-        if (e.keyCode === 13) {
+        if (e.code ===  'Enter') {
             this.props.handleCloseDialog();
         }
     }
@@ -29,7 +29,10 @@ export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
 
     render() {
         return (
-            <Dialog open={this.props.isErrorDialogOpen} onClose={this.props.handleCloseDialog}>
+            <Dialog
+                open={this.props.isErrorDialogOpen}
+                onClose={this.props.handleCloseDialog}
+            >
                 <DialogTitle>Error</DialogTitle>
                 <DialogContent>
                     <DialogContentText style={{ color: '#f15374' }}>
