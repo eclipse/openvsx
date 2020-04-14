@@ -13,12 +13,26 @@ import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogAc
 
 export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
 
+    handleEnter = (e: KeyboardEvent) => {
+        if (e.keyCode === 13) {
+            this.props.handleCloseDialog();
+        }
+    }
+
+    componentDidMount() {
+        document.addEventListener('keydown', this.handleEnter);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('keydown', this.handleEnter);
+    }
+
     render() {
         return (
-            <Dialog open={this.props.isErrorDialogOpen}>
+            <Dialog open={this.props.isErrorDialogOpen} onClose={this.props.handleCloseDialog}>
                 <DialogTitle>Error</DialogTitle>
                 <DialogContent>
-                    <DialogContentText style={{color: '#f15374'}}>
+                    <DialogContentText style={{ color: '#f15374' }}>
                         {this.props.errorMessage}
                     </DialogContentText>
                 </DialogContent>
