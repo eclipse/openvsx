@@ -82,6 +82,20 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
         this.setState({ comment, commentError });
     }
 
+    handleEnter = (e: KeyboardEvent) => {
+        if (e.keyCode === 13) {
+            this.handlePost();
+        }
+    }
+
+    componentDidMount() {
+        document.addEventListener('keydown', this.handleEnter);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('keydown', this.handleEnter);
+    }
+
     render() {
         return <React.Fragment>
             <Button variant='contained' color='secondary' onClick={this.handleOpenButton}>
@@ -116,7 +130,8 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                             onClick={this.handlePost}
                             disabled={Boolean(this.state.commentError) || this.state.posted}
                             variant="contained"
-                            color="secondary" >
+                            color="secondary"
+                        >
                             Post Review
                         </Button>
                         <Optional enabled={this.state.posted}>
@@ -135,7 +150,7 @@ export namespace ExtensionReviewDialogComponent {
         reviewPostUrl: string;
         user: UserData;
         service: ExtensionRegistryService;
-        saveCompleted: () => void;        
+        saveCompleted: () => void;
         setError: (err: Error | Partial<ErrorResponse>) => void;
 
     }
