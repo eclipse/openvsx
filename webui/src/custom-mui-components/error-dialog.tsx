@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2019 TypeFox and others
+ * Copyright (c) 2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -34,8 +34,8 @@ export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
 
 export namespace ErrorDialog {
     export interface Props {
-        errorMessage: string
-        isErrorDialogOpen: boolean
-        handleCloseDialog: any
+        errorMessage: string;
+        isErrorDialogOpen: boolean;
+        handleCloseDialog: () => void;
     }
 }

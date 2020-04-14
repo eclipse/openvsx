@@ -10,7 +10,7 @@
 
 import * as React from "react";
 import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Button, Link, CircularProgress } from "@material-ui/core";
-import { handleError, toLocalTime } from "../../utils";
+import { toLocalTime } from "../../utils";
 import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { Optional } from "../../custom-mui-components/optional";
@@ -18,6 +18,7 @@ import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-i
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExportRatingStars } from "./extension-rating-stars";
 import { ExtensionReviewDialog } from "./extension-review-dialog";
+import { ErrorResponse } from '../../server-request';
 
 const reviewStyles = (theme: Theme) => createStyles({
     link: {
@@ -61,7 +62,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             const reviewList = await this.props.service.getExtensionReviews(this.props.extension);
             this.setState({ reviewList, loading: false, revoked: false });
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
             this.setState({ loading: false, revoked: false });
         }
     }
@@ -81,7 +82,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             }
             this.saveCompleted();
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
         }
     }
 
@@ -186,7 +187,7 @@ export namespace ExtensionDetailReviewsComponent {
         user?: UserData;
         service: ExtensionRegistryService;
         reviewsDidUpdate: () => void;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         reviewList?: ExtensionReviewList;

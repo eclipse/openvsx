@@ -19,6 +19,7 @@ import { PageSettings } from "../../page-settings";
 import { UserSettingTabs } from "./user-setting-tabs";
 import { UserSettingsTokens } from "./user-settings-tokens";
 import { UserSettingsProfile } from "./user-settings-profile";
+import { ErrorResponse } from '../../server-request';
 
 export namespace UserSettingsRoutes {
     export const ROOT = createRoute(['user-settings']);
@@ -99,7 +100,7 @@ export namespace UserSettingsComponent {
         userLoading: boolean;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
 }
 

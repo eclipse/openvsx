@@ -16,7 +16,7 @@ import HomeIcon from '@material-ui/icons/Home';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
-import { handleError, toLocalTime, addQuery, createRoute } from "../../utils";
+import { toLocalTime, addQuery, createRoute } from "../../utils";
 import { Optional } from "../../custom-mui-components/optional";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
@@ -24,6 +24,7 @@ import { Extension, ExtensionReference } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
 import { PageSettings } from "../../page-settings";
 import { ExtensionDetailRoutes } from "./extension-detail";
+import { ErrorResponse } from '../../server-request';
 
 const overviewStyles = (theme: Theme) => createStyles({
     overview: {
@@ -108,7 +109,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 const readme = await this.props.service.getExtensionReadme(this.props.extension);
                 this.setState({ readme, loading: false });
             } catch (err) {
-                this.props.setError(handleError(err));
+                this.props.setError(err);
                 this.setState({ loading: false });
             }
         } else {
@@ -279,7 +280,7 @@ export namespace ExtensionDetailOverview {
         extension: Extension;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         readme?: string;

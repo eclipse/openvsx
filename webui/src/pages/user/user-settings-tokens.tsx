@@ -10,12 +10,13 @@
 
 import * as React from "react";
 import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from "@material-ui/core";
-import { handleError, toLocalTime } from "../../utils";
+import { toLocalTime } from "../../utils";
 import { Optional } from "../../custom-mui-components/optional";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { UserData, PersonalAccessToken } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { GenerateTokenDialog } from "./generate-token-dialog";
+import { ErrorResponse } from '../../server-request';
 
 const tokensStyle = (theme: Theme) => createStyles({
     header: {
@@ -61,7 +62,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             const tokens = await this.props.service.getAccessTokens(this.props.user);
             this.setState({ tokens, loading: false });
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
             this.setState({ loading: false });
         }
     }
@@ -72,7 +73,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             await this.props.service.deleteAccessToken(token);
             this.updateTokens();
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
         }
     }
 
@@ -82,7 +83,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             await this.props.service.deleteAllAccessTokens(this.state.tokens);
             this.updateTokens();
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
         }
     }
 
@@ -156,7 +157,7 @@ export namespace UserSettingsTokensComponent {
     export interface Props extends WithStyles<typeof tokensStyle> {
         user: UserData;
         service: ExtensionRegistryService;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

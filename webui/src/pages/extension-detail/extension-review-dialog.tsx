@@ -11,11 +11,11 @@
 import * as React from "react";
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme, CircularProgress } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
-import { handleError } from "../../utils";
 import { Optional } from "../../custom-mui-components/optional";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { UserData, ExtensionRaw, isError } from "../../extension-registry-types";
 import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
+import { ErrorResponse } from '../../server-request';
 
 const REVIEW_COMMENT_SIZE = 2048;
 
@@ -69,7 +69,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             this.setState({ open: false, comment: '' });
             this.props.saveCompleted();
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
         }
     }
 
@@ -135,8 +135,9 @@ export namespace ExtensionReviewDialogComponent {
         reviewPostUrl: string;
         user: UserData;
         service: ExtensionRegistryService;
-        saveCompleted: () => void;
-        setError: Function
+        saveCompleted: () => void;        
+        setError: (err: Error | Partial<ErrorResponse>) => void;
+
     }
     export interface State {
         open: boolean;
