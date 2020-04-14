@@ -86,6 +86,20 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
         }
     }
 
+    handleEnter = (e: KeyboardEvent) => {
+        if (e.keyCode === 13) {
+            this.handleGenerate();
+        }
+    }
+
+    componentDidMount() {
+        document.addEventListener('keydown', this.handleEnter);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('keydown', this.handleEnter);
+    }
+
     render() {
         return <React.Fragment>
             <Button variant='outlined' onClick={this.handleOpenDialog}>Generate new token</Button>
