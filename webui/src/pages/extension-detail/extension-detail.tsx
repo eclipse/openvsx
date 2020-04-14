@@ -14,7 +14,7 @@ import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-rou
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import PublicIcon from '@material-ui/icons/Public';
-import { handleError, createRoute, addQuery } from "../../utils";
+import { createRoute, addQuery } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
@@ -27,6 +27,7 @@ import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
 import { ExportRatingStars } from "./extension-rating-stars";
+import { ErrorResponse } from '../../server-request';
 
 export namespace ExtensionDetailRoutes {
     export namespace Parameters {
@@ -150,7 +151,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
             this.setState({ extension, loading: false });
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
             this.setState({ loading: false });
         }
     }
@@ -337,7 +338,7 @@ export namespace ExtensionDetailComponent {
         user?: UserData;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: Function
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         extension?: Extension;

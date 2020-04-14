@@ -17,6 +17,7 @@ import { ExtensionRegistryService } from "../../extension-registry-service";
 import { PageSettings } from "../../page-settings";
 import { ExtensionList } from "./extension-list";
 import { ExtensionListHeader } from "./extension-list-header";
+import { ErrorResponse } from "../../server-request";
 
 export namespace ExtensionListRoutes {
     export const MAIN = createRoute([]);
@@ -74,7 +75,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                 service={this.props.service}
                 pageSettings={this.props.pageSettings}
                 filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10 }}
-                setError={this.props.setError} 
+                setError={this.props.setError}
             />
         </Box>;
     }
@@ -84,7 +85,7 @@ export namespace ExtensionListContainer {
     export interface Props extends RouteComponentProps {
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         searchQuery: string,

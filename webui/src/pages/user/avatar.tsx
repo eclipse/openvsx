@@ -12,11 +12,11 @@ import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Avatar, Menu, Typography, MenuItem, Link, Divider } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
-import { handleError } from '../../utils';
 import { Optional } from '../../custom-mui-components/optional';
 import { UserData, isError } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { UserSettingsRoutes } from './user-settings';
+import { ErrorResponse } from '../../server-request';
 
 const avatarStyle = (theme: Theme) => createStyles({
     avatar: {
@@ -61,7 +61,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                 this.setState({ csrf: csrfToken.value });
             }
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
         }
     }
 
@@ -125,7 +125,7 @@ export namespace UserAvatarComponent {
     export interface Props extends WithStyles<typeof avatarStyle> {
         user: UserData;
         service: ExtensionRegistryService;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

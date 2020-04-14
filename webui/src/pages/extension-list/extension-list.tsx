@@ -14,9 +14,10 @@ import { Grid, Theme, createStyles, withStyles, WithStyles, CircularProgress, Co
 import { ExtensionListItem } from "./extension-list-item";
 import { ExtensionRaw, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
-import { debounce, handleError } from "../../utils";
+import { debounce } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { PageSettings } from "../../page-settings";
+import { ErrorResponse } from '../../server-request';
 
 const itemStyles = (theme: Theme) => createStyles({
     container: {
@@ -86,7 +87,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                         loading: false
                     });
                 } catch (err) {
-                    this.props.setError(handleError(err));
+                    this.props.setError(err);
                     this.setState({ loading: false });
                 }
             },
@@ -124,7 +125,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 });
             }
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
         }
     }
 
@@ -163,7 +164,7 @@ export namespace ExtensionListComponent {
         filter: ExtensionFilter;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         extensions: ExtensionRaw[];

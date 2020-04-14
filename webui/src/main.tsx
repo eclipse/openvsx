@@ -81,11 +81,12 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 this.setState({ user, userLoading: false });
             }
         } catch (err) {
-            this.setState({ error: handleError(err), userLoading: false });
+            this.setState({ error: handleError(err), isErrorDialogOpen: true, userLoading: false });
         }
     }
 
-    setError = (error: string) => {
+    setError = (err: {}) => {
+        const error = handleError(err);
         this.setState({ error, isErrorDialogOpen: true });
     }
 
@@ -172,13 +173,13 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                     </Switch>
                 </Box>
                 {
-                    this.state.error ? ( 
-                        <ErrorDialog 
-                            errorMessage={this.state.error} 
+                    this.state.error ? (
+                        <ErrorDialog
+                            errorMessage={this.state.error}
                             isErrorDialogOpen={this.state.isErrorDialogOpen}
-                            handleCloseDialog={this.handleDialogClose} 
-                        /> 
-                    ) 
+                            handleCloseDialog={this.handleDialogClose}
+                        />
+                    )
                     : null
                 }
                 <footer className={this.props.classes.footer}>

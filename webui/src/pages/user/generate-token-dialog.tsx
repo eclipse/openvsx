@@ -16,9 +16,9 @@ import {
 } from "@material-ui/core";
 import { UserData, PersonalAccessToken, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { handleError } from "../../utils";
 import { Optional } from "../../custom-mui-components/optional";
 import { CopyToClipboard } from "../../custom-mui-components/copy-to-clipboard";
+import { ErrorResponse } from '../../server-request';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
@@ -82,7 +82,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
             this.setState({ token });
             this.props.handleTokenGenerated();
         } catch (err) {
-            this.props.setError(handleError(err));
+            this.props.setError(err);
         }
     }
 
@@ -168,7 +168,7 @@ export namespace GenerateTokenDialogComponent {
         user: UserData;
         service: ExtensionRegistryService;
         handleTokenGenerated: () => void;
-        setError: Function;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

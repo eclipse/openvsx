@@ -58,6 +58,8 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
             errorMessage = `The server responded with an error: ${err.error} (status ${err.status})`;
         else if (err.error)
             errorMessage = `The server responded with an error: ${err.error}`;
+    } else {
+        errorMessage = "An unexpected error occurred.";
     }
     return errorMessage;
 }
