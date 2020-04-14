@@ -21,18 +21,23 @@ import { PageSettings } from "../../page-settings";
 
 const itemStyles = (theme: Theme) => createStyles({
     extensionCard: {
-        maxWidth: '12.875rem',
+        maxWidth: '14.875rem',
         minWidth: '11.875rem',
     },
     paper: {
         padding: theme.spacing(3, 2),
+        '& > *': {
+            '&:not(:last-child)': {
+                marginBottom: '.5rem',
+            }
+        }
     },
     link: {
         textDecoration: 'none'
     },
     img: {
-        width: '5rem',
-        maxHeight: '5.8rem',
+        width: '4.5rem',
+        maxHeight: '5.4rem',
     }
 });
 
@@ -51,7 +56,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                                     alt={extension.displayName || extension.name} />
                             </Box>
                             <Box display='flex' justifyContent='center'>
-                                <Typography variant='h6' noWrap style={{fontSize: '1rem'}}>
+                                <Typography variant='h6' noWrap style={{fontSize: '1.15rem'}}>
                                     {extension.displayName || extension.name}
                                 </Typography>
                             </Box>
@@ -64,7 +69,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                                 </Typography>
                             </Box>
                             <Box display='flex' justifyContent='center'>
-                                <ExportRatingStars number={extension.averageRating || 0} />
+                                <ExportRatingStars number={extension.averageRating || 0} fontSize="small"/>
                             </Box>
                         </Paper>
                     </RouteLink>
