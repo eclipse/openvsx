@@ -83,7 +83,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     }
 
     handleEnter = (e: KeyboardEvent) => {
-        if (e.keyCode === 13) {
+        if (e.code ===  'Enter') {
             this.handlePost();
         }
     }
