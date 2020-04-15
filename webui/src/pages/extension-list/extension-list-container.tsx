@@ -29,7 +29,8 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         super(props);
         this.state = {
             searchQuery: '',
-            category: ''
+            category: '',
+            resultNumber: 0
         };
     }
 
@@ -62,9 +63,15 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         history.replaceState(null, '', url);
     }
 
+    protected handleUpdate = (resultNumber: number) => this.doHandleUpdate(resultNumber);
+    protected doHandleUpdate(resultNumber: number) {
+        this.setState({ resultNumber });
+    }
+
     render() {
         return <Box display='flex' flexDirection='column' height='100%' overflow='auto' >
             <ExtensionListHeader
+                resultNumber={this.state.resultNumber}
                 searchQuery={this.state.searchQuery}
                 category={this.state.category}
                 onSearchChanged={this.onSearchChanged}
@@ -76,6 +83,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                 pageSettings={this.props.pageSettings}
                 filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10 }}
                 setError={this.props.setError}
+                onUpdate={this.handleUpdate}
             />
         </Box>;
     }
@@ -89,6 +97,7 @@ export namespace ExtensionListContainer {
     }
     export interface State {
         searchQuery: string,
-        category: ExtensionCategory | ''
+        category: ExtensionCategory | '',
+        resultNumber: number
     }
 }

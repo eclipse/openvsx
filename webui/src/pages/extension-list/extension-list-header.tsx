@@ -19,17 +19,29 @@ import { ExtensionCategory } from "../../extension-registry-types";
 import { PageSettings } from "../../page-settings";
 
 const headerStyles = (theme: Theme) => createStyles({
+    formContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        [theme.breakpoints.up('md')]: {
+            width: '70%'
+        },
+        [theme.breakpoints.down('md')]: {
+            maxWidth: 500,
+        }
+    },
     form: {
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
         [theme.breakpoints.up('md')]: {
             flexDirection: 'row',
-            width: '70%'
-        },
-        [theme.breakpoints.down('md')]: {
-            maxWidth: 500,
         }
+    },
+    resultNumber: {
+        color: "rgba(63, 56, 65, 0.5)",
+        fontSize: '0.75rem',
+        marginTop: 5
     },
     search: {
         flex: 2,
@@ -114,40 +126,43 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                     <Typography variant='h4' classes={{ root: classes.typo }}>
                         {this.props.pageSettings.listHeaderTitle}
                     </Typography>
-                    <Box className={classes.form}>
-                        <Paper className={classes.search}>
-                            <InputBase
-                                autoFocus
-                                value={this.props.searchQuery || ''}
-                                onChange={this.handleSearchChange}
-                                className={classes.inputBase}
-                                placeholder='Search for Name, Tags or Description'
-                                id="search-input"
-                            >
-                            </InputBase>
-                            <label
-                                htmlFor="search-input"
-                                className="visually-hidden"
-                            >
-                                Search for Name, Tags or Description
+                    <Box className={classes.formContainer}>
+                        <Box className={classes.form}>
+                            <Paper className={classes.search}>
+                                <InputBase
+                                    autoFocus
+                                    value={this.props.searchQuery || ''}
+                                    onChange={this.handleSearchChange}
+                                    className={classes.inputBase}
+                                    placeholder='Search for Name, Tags or Description'
+                                    id="search-input"
+                                >
+                                </InputBase>
+                                <label
+                                    htmlFor="search-input"
+                                    className="visually-hidden"
+                                >
+                                    Search for Name, Tags or Description
                             </label>
-                            <IconButton color='primary' aria-label="Search" classes={{ root: classes.iconButton }}>
-                                <SearchIcon />
-                            </IconButton>
-                        </Paper>
-                        <Paper className={classes.category}>
-                            <Select
-                                value={this.state.category}
-                                onChange={this.handleCategoryChange}
-                                renderValue={this.renderValue}
-                                displayEmpty
-                                input={<InputBase className={classes.inputBase}></InputBase>}>
-                                <MenuItem value=''>All Categories</MenuItem>
-                                {this.categories.map(c => {
-                                    return <MenuItem value={c} key={c}>{c}</MenuItem>;
-                                })}
-                            </Select>
-                        </Paper>
+                                <IconButton color='primary' aria-label="Search" classes={{ root: classes.iconButton }}>
+                                    <SearchIcon />
+                                </IconButton>
+                            </Paper>
+                            <Paper className={classes.category}>
+                                <Select
+                                    value={this.state.category}
+                                    onChange={this.handleCategoryChange}
+                                    renderValue={this.renderValue}
+                                    displayEmpty
+                                    input={<InputBase className={classes.inputBase}></InputBase>}>
+                                    <MenuItem value=''>All Categories</MenuItem>
+                                    {this.categories.map(c => {
+                                        return <MenuItem value={c} key={c}>{c}</MenuItem>;
+                                    })}
+                                </Select>
+                            </Paper>
+                        </Box>
+                        <Box className={classes.resultNumber} >{`${this.props.resultNumber} Result${this.props.resultNumber !== 1 ? 's' : ''}`}</Box>
                     </Box>
                 </Box>
             </Container>
@@ -163,6 +178,7 @@ namespace ExtensionListHeaderComp {
         searchQuery?: string;
         category?: ExtensionCategory | '';
         service: ExtensionRegistryService;
+        resultNumber: number;
     }
     export interface State {
         category: ExtensionCategory | '';
