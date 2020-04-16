@@ -73,6 +73,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                     if (isError(result)) {
                         throw result;
                     }
+                    this.props.onUpdate(result.totalSize);
                     const actualSize = result.extensions.length;
                     this.pageOffset = this.lastRequestedPage;
                     const extensionKeys = new Set<string>();
@@ -165,6 +166,7 @@ export namespace ExtensionListComponent {
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
         setError: (err: Error | Partial<ErrorResponse>) => void;
+        onUpdate: (resultNumber: number) => void;
     }
     export interface State {
         extensions: ExtensionRaw[];
