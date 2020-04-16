@@ -59,7 +59,7 @@ const overviewStyles = (theme: Theme) => createStyles({
             maxWidth: '100%'
         },
         '& code': {
-            whiteSpace: 'pre-line'
+            whiteSpace: 'pre'
         }
     },
     resourceLink: {
