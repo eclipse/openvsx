@@ -21,6 +21,19 @@ import { ExtensionReviewDialog } from "./extension-review-dialog";
 import { ErrorResponse } from '../../server-request';
 
 const reviewStyles = (theme: Theme) => createStyles({
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        ['@media(max-width: 360px)']: {
+            flexDirection: 'column',
+            '& > div:first-of-type': {
+                marginBottom: '1rem'
+            },
+            '& button': {
+                maxWidth: '12rem',
+            }
+        },
+    },
     link: {
         textDecoration: 'none',
         color: theme.palette.text.primary,
@@ -88,7 +101,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
 
     render() {
         return <React.Fragment>
-            <Box display='flex' justifyContent='space-between' my={2}>
+            <Box className={this.props.classes.header} my={2}>
                 <Box>
                     <Typography variant='h5'>
                         User Reviews

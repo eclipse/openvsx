@@ -30,6 +30,21 @@ const reviewDialogStyles = (theme: Theme) => createStyles({
     },
     buttonWrapper: {
         position: 'relative'
+    },
+    dialogActions: {
+        [theme.breakpoints.down('xs')]: {
+            justifyContent: 'center'
+        }
+    },
+    stars: {
+        [theme.breakpoints.down('xs')]: {
+            width: '135%',
+            transform: 'scale(.8) translateX(-15%)',
+        },
+        ['@media(max-width: 305px)']: {
+            width: '140%',
+            transform: 'scale(.7) translateX(-23%)',
+        }
     }
 });
 
@@ -107,7 +122,9 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                     <DialogContentText>
                         Your review will be posted publicly as {this.props.user.loginName}
                     </DialogContentText>
-                    <ExtensionRatingStarSetter ref={ref => this.starSetter = ref} />
+                    <div className={this.props.classes.stars}>
+                        <ExtensionRatingStarSetter ref={(ref: any) => this.starSetter = ref} />
+                    </div>
                     <TextField
                         margin="dense"
                         label="Your Review..."
@@ -119,7 +136,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                         helperText={this.state.commentError}
                         onChange={this.handleCommentChange} />
                 </DialogContent>
-                <DialogActions>
+                <DialogActions className={this.props.classes.dialogActions}>
                     <Button
                         onClick={this.handleCancel}
                         color="secondary" >
