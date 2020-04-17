@@ -59,7 +59,34 @@ const overviewStyles = (theme: Theme) => createStyles({
             maxWidth: '100%'
         },
         '& code': {
-            whiteSpace: 'pre'
+            whiteSpace: 'pre',
+            backgroundColor: '#f2f2f2',
+            padding: 2
+        },
+        '& h2': {
+            borderBottom: '1px solid #eee'
+        },
+        '& pre': {
+            background: '#f2f2f2',
+            padding: '10px 5px',
+            '& code': {
+                padding: 0,
+                background: 'inherit'
+            }
+        },
+        '& table': {
+            borderCollapse: 'collapse',
+            borderSpacing: 0,
+            '& tr, & td, & th': {
+                border: '1px solid #ddd'
+            },
+            '& td, & th': {
+                padding: '6px 8px'
+            },
+            '& th': {
+                textAlign: 'start',
+                background: '#eee'
+            }
         }
     },
     resourceLink: {
@@ -95,7 +122,11 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     constructor(props: ExtensionDetailOverview.Props) {
         super(props);
-        this.markdownIt = new MarkdownIt('commonmark');
+        this.markdownIt = new MarkdownIt({
+            html: true,
+            linkify: true,
+            typographer: true
+        });
         this.state = { loading: true };
     }
 
