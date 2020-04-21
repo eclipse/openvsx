@@ -34,10 +34,6 @@ module.exports = {
                 test: /\.css$/,
                 exclude: /\.useable\.css$/,
                 use: ['style-loader', 'css-loader']
-            },
-            {
-                test: /\.(png|svg|jpg|gif)$/,
-                use: ['file-loader']
             }
         ]
     },

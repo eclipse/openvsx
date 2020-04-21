@@ -158,7 +158,7 @@ export class ExtensionRegistryService {
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
-        return await Promise.all(tokens.map(token => sendRequest({
+        return await Promise.all(tokens.map(token => sendRequest<SuccessResult | ErrorResult>({
             method: 'POST',
             credentials: true,
             endpoint: token.deleteTokenUrl,
