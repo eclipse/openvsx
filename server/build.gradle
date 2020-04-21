@@ -4,17 +4,17 @@ buildscript {
     }
 }
 plugins {
-    id 'de.undercouch.download' version '4.0.2'
-    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id 'de.undercouch.download' version '4.0.4'
+    id 'org.springframework.boot' version '2.2.6.RELEASE'
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
     id 'java'
 }
 
 def versions = [
     java: '11',
-    flyway: '6.2.3',
-    guava: '28.1-jre',
-    junit: '5.5.2'
+    flyway: '6.3.3',
+    guava: '28.2-jre',
+    junit: '5.6.2'
 ]
 
 sourceCompatibility = versions.java
