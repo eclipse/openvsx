@@ -16,6 +16,10 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import org.eclipse.openvsx.json.NamespaceMembershipJson;
+import org.eclipse.openvsx.util.UrlUtil;
+import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
+
 @Entity
 public class NamespaceMembership {
 
@@ -37,6 +41,19 @@ public class NamespaceMembership {
     @Column(length = 32)
     String role;
 
+    public NamespaceMembershipJson toJson() {
+        var json = new NamespaceMembershipJson();
+        var serverUrl = UrlUtil.getBaseUrl();
+
+        json.namespace = this.namespace.name;
+        json.role = this.role;
+        json.removeMembershipUrl = createApiUrl(serverUrl, "user", "namespace", this.namespace.getName(), "member", "remove", this.user.loginName);
+        json.setMembershipRoleUrl = createApiUrl(serverUrl, "user", "namespace", this.namespace.getName(), "role", this.user.loginName);
+
+        json.user = this.user.toUserJson();
+
+        return json;
+    }
 
     public long getId() {
         return id;

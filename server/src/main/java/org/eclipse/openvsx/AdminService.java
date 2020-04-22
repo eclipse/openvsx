@@ -20,8 +20,6 @@ import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
@@ -39,55 +37,6 @@ public class AdminService {
 
     @Autowired
     EntityManager entityManager;
-
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role, UserData admin)
-            throws ErrorResultException {
-        var namespace = repositories.findNamespace(namespaceName);
-        if (namespace == null) {
-            throw new ErrorResultException("Namespace not found: " + namespaceName);
-        }
-        if (Strings.isNullOrEmpty(provider)) {
-            provider = "github";
-        }
-        var user = repositories.findUserByLoginName(provider, userName);
-        if (user == null) {
-            throw new ErrorResultException("User not found: " + provider + "/" + userName);
-        }
-
-        if (Strings.isNullOrEmpty(role)) {
-            return removeNamespaceMember(namespace, user, admin);
-        } else {
-            if (!(role.equals(NamespaceMembership.ROLE_OWNER)
-                    || role.equals(NamespaceMembership.ROLE_CONTRIBUTOR))) {
-                throw new ErrorResultException("Invalid role: " + role);
-            }
-            return addNamespaceMember(namespace, user, role, admin);
-        }
-    }
-
-    protected ResultJson removeNamespaceMember(Namespace namespace, UserData user, UserData admin) throws ErrorResultException {
-        var membership = repositories.findMembership(user, namespace);
-        if (membership == null) {
-            throw new ErrorResultException("User " + user.getLoginName() + " is not a member of " + namespace.getName());
-        }
-        entityManager.remove(membership);
-        return logAdminAction(admin, "Removed " + user.getLoginName() + " from namespace " + namespace.getName());
-    }
-
-    protected ResultJson addNamespaceMember(Namespace namespace, UserData user, String role, UserData admin) {
-        var membership = repositories.findMembership(user, namespace);
-        if (membership != null) {
-            membership.setRole(role);
-            return logAdminAction(admin, "Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role);
-        }
-        membership = new NamespaceMembership();
-        membership.setNamespace(namespace);
-        membership.setUser(user);
-        membership.setRole(role);
-        entityManager.persist(membership);
-        return logAdminAction(admin, "Added " + user.getLoginName() + " as " + role + " of " + namespace.getName());
-    }
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, String version, UserData admin)
@@ -180,6 +129,9 @@ public class AdminService {
 
     @Transactional
     public ResultJson logAdminAction(UserData admin, String message) {
+        if(admin == null) {
+            return null;
+        }
         var log = new PersistedLog();
         log.setUser(admin);
         log.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));

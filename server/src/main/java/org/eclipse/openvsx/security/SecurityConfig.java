@@ -27,7 +27,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         if (Strings.isNullOrEmpty(webuiUrl) || !UrlUtil.isAbsolute(webuiUrl)) {
             // Default configuration: mark endpoints that require a user principal as authenticated.
             http.authorizeRequests()
-                .antMatchers("/user/tokens", "/user/token/**", "/api/*/*/review/**")
+                .antMatchers("/user/tokens", "/user/token/**", "/user/namespaces", 
+                             "/user/search/**", "/user/namespace/*/member/add/**", 
+                             "/user/namespace/*/member/remove/**", "user/namespace/*/members", 
+                             "/user/namespace/*/role/*/*", "/api/*/*/review/**")
                     .authenticated()
                 .antMatchers("/user", "/login/**", "/logout", "/api/**", "/admin/**")
                     .permitAll();

@@ -19,6 +19,7 @@ import { PageSettings } from "../../page-settings";
 import { UserSettingTabs } from "./user-setting-tabs";
 import { UserSettingsTokens } from "./user-settings-tokens";
 import { UserSettingsProfile } from "./user-settings-profile";
+import { UserSettingsNamespaces } from "./user-settings-namespaces";
 import { ErrorResponse } from '../../server-request';
 
 export namespace UserSettingsRoutes {
@@ -26,6 +27,7 @@ export namespace UserSettingsRoutes {
     export const MAIN = createRoute([ROOT, ':tab']);
     export const PROFILE = createRoute([ROOT, 'profile']);
     export const TOKENS = createRoute([ROOT, 'tokens']);
+    export const NAMESPACES = createRoute([ROOT, 'namespaces']);
 }
 
 const profileStyles = (theme: Theme) => createStyles({
@@ -44,6 +46,9 @@ const profileStyles = (theme: Theme) => createStyles({
             paddingTop: '.5rem',
             paddingLeft: '3rem',
             flex: '1'
+        },
+        [theme.breakpoints.down('md')]: {
+            width: '100%'
         }
     }
 });
@@ -56,7 +61,7 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
 
     render() {
         if (this.props.userLoading) {
-            return <DelayedLoadIndicator loading={true}/>;
+            return <DelayedLoadIndicator loading={true} />;
         }
         const user = this.props.user;
         if (!user) {
@@ -84,6 +89,9 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                                         user={user}
                                         setError={this.props.setError}
                                     />
+                                </Route>
+                                <Route path={UserSettingsRoutes.NAMESPACES}>
+                                    <UserSettingsNamespaces service={this.props.service} user={user} />
                                 </Route>
                             </Box>
                         </Grid>

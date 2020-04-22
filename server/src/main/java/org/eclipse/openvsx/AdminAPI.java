@@ -138,7 +138,7 @@ public class AdminAPI {
             return ResultJson.error("Administration role is required.");
         }
         try {
-            return admins.editNamespaceMember(namespaceName, userName, provider, role, token.getUser());
+            return users.editNamespaceMember(namespaceName, userName, provider, role, token.getUser());
         } catch (ErrorResultException exc) {
             return ResultJson.error(exc.getMessage());
         }

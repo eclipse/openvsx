@@ -38,4 +38,7 @@ public class UserJson extends ResultJson {
     @Nullable
     public String homepage;
 
+    @Nullable
+    public String provider;
+
 }

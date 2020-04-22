@@ -140,6 +140,10 @@ public class RepositoryService {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
 
+    public Streamable<UserData> findUsersByLoginNameStartingWith(String loginNameStart) {
+        return userDataRepo.findByLoginNameStartingWith(loginNameStart);
+    }
+
     public long countUsers() {
         return userDataRepo.count();
     }
@@ -150,6 +154,18 @@ public class RepositoryService {
 
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace, String role) {
         return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
+    }
+
+    public Streamable<NamespaceMembership> findMemberships(UserData user) {
+        return membershipRepo.findByUser(user);
+    }
+
+    public Streamable<NamespaceMembership> findMemberships(UserData user, String role) {
+        return membershipRepo.findByUserAndRoleIgnoreCase(user, role);
+    }
+
+    public Streamable<NamespaceMembership> findMemberships(Namespace namespace) {
+        return membershipRepo.findByNamespace(namespace);
     }
 
     public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {

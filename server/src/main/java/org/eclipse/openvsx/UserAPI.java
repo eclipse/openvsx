@@ -13,15 +13,19 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 
+import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.CsrfTokenJson;
+import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.NamespaceMembershipJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -138,7 +142,7 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional(rollbackOn = ResponseStatusException.class)
-    public ResultJson deleteAccessToken(@PathVariable("id") long id) {
+    public ResultJson deleteAccessToken(@PathVariable long id) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -152,4 +156,111 @@ public class UserAPI {
         return ResultJson.success("Deleted access token for user " + user.getLoginName());
     }
 
+    @GetMapping(
+        path = "/user/namespaces",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<NamespaceJson> getOwnNamespaces() {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
+
+        var memberships = repositories.findMemberships(user, NamespaceMembership.ROLE_OWNER);
+
+        return memberships.map(membership -> {
+            var namespace = membership.getNamespace();
+            var json = new NamespaceJson();
+            json.name = namespace.getName();
+            json.extensions = new LinkedHashMap<>();
+            var serverUrl = UrlUtil.getBaseUrl();
+            for (var ext : repositories.findExtensions(namespace)) {
+                String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
+                json.extensions.put(ext.getName(), url);
+            }
+            json.access = NamespaceJson.RESTRICTED_ACCESS;
+            json.addMembershipUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "member", "add");
+            json.getMembersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
+
+            return json;
+        }).toList();
+    }
+
+    @GetMapping(
+        path = "/user/namespace/{name}/members",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<NamespaceMembershipJson> getNamespaceMembers(@PathVariable String name) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
+        var namespace = repositories.findNamespace(name);
+        var userMembership = repositories.findMembership(user, namespace);
+        if(userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
+            var memberships = repositories.findMemberships(namespace);
+            return memberships.map(membership -> membership.toJson()).toList();
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN); 
+        }
+    }
+
+    @GetMapping(
+        path = "/user/search/{name}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<UserJson> getUsersStartWith(@PathVariable String name) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        var users = repositories.findUsersByLoginNameStartingWith(name);
+
+        return users.filter(user -> user.getProvider() != null).map(user -> user.toUserJson()).toList();
+    }
+
+    @PostMapping(path = "/user/namespace/{namespaceName}/member/{setMethod}/{userLogin}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional(rollbackOn = ResponseStatusException.class)
+    public ResultJson setNamespaceMember(@PathVariable String namespaceName, @PathVariable String userLogin,
+            @PathVariable String setMethod, @RequestParam(required = false) String provider) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
+        var namespace = repositories.findNamespace(namespaceName);
+        var userMembership = repositories.findMembership(user, namespace);
+        var member = repositories.findUserByLoginName(provider, userLogin);
+
+        if (userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
+            if (setMethod.equalsIgnoreCase("add")) {
+                users.addNamespaceMember(namespace, member, NamespaceMembership.ROLE_CONTRIBUTOR, user);
+                return ResultJson.success("Added " + userLogin + " as member to namespace " + namespace);
+            } else if (setMethod.equalsIgnoreCase("remove")) {
+                users.removeNamespaceMember(namespace, member, user);
+                return ResultJson.success("Removed " + userLogin + " from namespace " + namespace);
+            } else {
+                return ResultJson.error("Set method is not correct. Must be either 'add' or 'remove'.");
+            }
+        }
+        
+        return ResultJson.error("You must be an owner of this namespace.");
+    }
+
+    @PostMapping(path = "/user/namespace/{namespaceName}/role/{userLogin}/{role}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional(rollbackOn = ResponseStatusException.class)
+    public ResultJson setNamespaceMemberRole(@PathVariable String namespaceName, @PathVariable String userLogin,
+            @PathVariable String role, @RequestParam(required = false) String provider) {
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
+        users.editNamespaceMember(namespaceName, userLogin, provider, role, user);
+
+        return ResultJson.success("Changed role for " + userLogin + " in namespace " + namespaceName + " to " + role);
+    }
 }
