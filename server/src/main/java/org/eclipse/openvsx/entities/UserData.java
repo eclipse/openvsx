@@ -62,6 +62,7 @@ public class UserData {
         json.fullName = this.getFullName();
         json.avatarUrl = this.getAvatarUrl();
         json.homepage = this.getProviderUrl();
+        json.provider = this.getProvider();
         return json;
     }
 

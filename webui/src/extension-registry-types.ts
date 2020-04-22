@@ -109,6 +109,7 @@ export interface UserData {
     fullName?: string;
     avatarUrl?: UrlString;
     homepage?: string;
+    provider?: string;
 }
 
 export function isEqualUser(u1: UserData, u2: UserData): boolean {
@@ -140,4 +141,25 @@ export type ExtensionCategory =
 export interface CsrfTokenJson {
     value: string;
     header: string;
+}
+
+export interface NamespaceMembership {
+    namespace: string;
+    role: MembershipRole;
+    user: UserData;
+    removeMembershipUrl: string;
+    setMembershipRoleUrl: string;
+}
+
+export interface Namespace {
+    name: string;
+    extensions: Extension[];
+    memberships: NamespaceMembership[];
+    addMembershipUrl: string;
+    getMembersUrl: string;
+}
+
+export enum MembershipRole {
+    CONTRIBUTOR = 'contributor',
+    OWNER = 'owner'
 }

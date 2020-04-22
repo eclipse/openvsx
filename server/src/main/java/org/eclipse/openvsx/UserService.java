@@ -16,11 +16,15 @@ import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import com.google.common.base.Strings;
+
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -36,6 +40,9 @@ public class UserService {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    AdminService admins;
 
     public OAuth2User getOAuth2Principal() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -129,6 +136,55 @@ public class UserService {
             return false;
         }
         return membership.getRole().equalsIgnoreCase(NamespaceMembership.ROLE_CONTRIBUTOR);
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role, UserData admin)
+            throws ErrorResultException {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new ErrorResultException("Namespace not found: " + namespaceName);
+        }
+        if (Strings.isNullOrEmpty(provider)) {
+            provider = "github";
+        }
+        var user = repositories.findUserByLoginName(provider, userName);
+        if (user == null) {
+            throw new ErrorResultException("User not found: " + provider + "/" + userName);
+        }
+
+        if (Strings.isNullOrEmpty(role)) {
+            return removeNamespaceMember(namespace, user, admin);
+        } else {
+            if (!(role.equals(NamespaceMembership.ROLE_OWNER)
+                    || role.equals(NamespaceMembership.ROLE_CONTRIBUTOR))) {
+                throw new ErrorResultException("Invalid role: " + role);
+            }
+            return addNamespaceMember(namespace, user, role, admin);
+        }
+    }
+
+    protected ResultJson removeNamespaceMember(Namespace namespace, UserData user, UserData admin) throws ErrorResultException {
+        var membership = repositories.findMembership(user, namespace);
+        if (membership == null) {
+            throw new ErrorResultException("User " + user.getLoginName() + " is not a member of " + namespace.getName());
+        }
+        entityManager.remove(membership);
+        return admins.logAdminAction(admin, "Removed " + user.getLoginName() + " from namespace " + namespace.getName());
+    }
+
+    protected ResultJson addNamespaceMember(Namespace namespace, UserData user, String role, UserData admin) {
+        var membership = repositories.findMembership(user, namespace);
+        if (membership != null) {
+            membership.setRole(role);
+            return admins.logAdminAction(admin, "Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role);
+        }
+        membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        membership.setUser(user);
+        membership.setRole(role);
+        entityManager.persist(membership);
+        return admins.logAdminAction(admin, "Added " + user.getLoginName() + " as " + role + " of " + namespace.getName());
     }
 
 }
