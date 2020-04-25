@@ -180,7 +180,7 @@ public class SearchService {
 
         // Configure default sorting of results
         queryBuilder.withSort(SortBuilders.scoreSort());
-        queryBuilder.withSort(SortBuilders.fieldSort("relevance").order(SortOrder.DESC));
+        queryBuilder.withSort(SortBuilders.fieldSort("relevance").unmappedType("float").order(SortOrder.DESC));
 
         try {
             rwLock.readLock().lock();
