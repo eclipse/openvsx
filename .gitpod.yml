@@ -4,8 +4,10 @@ image:
 ports:
 # Web UI (static resources)
 - port: 3000
+  onOpen: open-preview
 # Server (API)
 - port: 8080
+  onOpen: ignore
 # PostgreSQL
 - port: 5000-5999
   onOpen: ignore
