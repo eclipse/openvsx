@@ -33,6 +33,8 @@ public final class UrlUtil {
             for (var segment : segments) {
                 if (segment == null)
                     return null;
+                if (segment.isEmpty())
+                    continue;
                 if (result.length() == 0 || result.charAt(result.length() - 1) != '/')
                     result.append('/');
                 result.append(URLEncoder.encode(segment, "UTF-8"));
