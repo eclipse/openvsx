@@ -8,16 +8,20 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import * as React from 'react';
 import { Extension } from "./extension-registry-types";
 
 export interface PageSettings {
     pageTitle: string;
-    toolbarText?: string;
-    listHeaderTitle?: string;
-    logoURL?: string;
-    logoAlt?: string;
+    toolbarContent?: React.FunctionComponent;
+    footerContent?: React.FunctionComponent;
+    searchHeader?: React.FunctionComponent,
+    reportAbuse?: React.FunctionComponent<{ extension: Extension } & Styleable>;
+    claimNamespace?: React.FunctionComponent<{ extension: Extension } & Styleable>;
     extensionDefaultIconURL?: string;
     namespaceAccessInfoURL?: string;
-    reportAbuseHref?: (extension: Extension) => string;
-    claimNamespaceHref?: (string: string) => string;
+}
+
+export interface Styleable {
+    className: string;
 }
