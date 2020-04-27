@@ -10,8 +10,8 @@
 
 import React = require("react");
 import {
-    Typography, Box, WithStyles, createStyles, Theme, withStyles, Paper,
-    IconButton, InputBase, Select, MenuItem, Container
+    Box, WithStyles, createStyles, Theme, withStyles, Paper, IconButton, InputBase,
+    Select, MenuItem, Container
 } from "@material-ui/core";
 import SearchIcon from '@material-ui/icons/Search';
 import { ExtensionRegistryService } from "../../extension-registry-service";
@@ -65,12 +65,6 @@ const headerStyles = (theme: Theme) => createStyles({
         borderRadius: '0 4px 4px 0',
         padding: theme.spacing(1)
     },
-    typo: {
-        marginBottom: theme.spacing(2),
-        fontWeight: theme.typography.fontWeightLight,
-        letterSpacing: 4,
-        textAlign: 'center'
-    },
     placeholder: {
         opacity: 0.4
     }
@@ -119,13 +113,12 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
     }
 
     render() {
-        const { classes } = this.props;
+        const classes = this.props.classes;
+        const SearchHeader = this.props.pageSettings.searchHeader;
         return <React.Fragment>
             <Container>
                 <Box display='flex' flexDirection='column' alignItems='center' py={6}>
-                    <Typography variant='h4' classes={{ root: classes.typo }}>
-                        {this.props.pageSettings.listHeaderTitle}
-                    </Typography>
+                    {SearchHeader ? <SearchHeader /> : ''}
                     <Box className={classes.formContainer}>
                         <Box className={classes.form}>
                             <Paper className={classes.search}>

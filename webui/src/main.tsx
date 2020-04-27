@@ -9,17 +9,15 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Container, AppBar, Toolbar, Typography, IconButton, CssBaseline, Box, Theme, Link } from '@material-ui/core';
+import { Container, AppBar, Toolbar, Typography, IconButton, CssBaseline, Box, Theme } from '@material-ui/core';
 import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
-import GitHubIcon from '@material-ui/icons/GitHub';
 import BrokenImageIcon from '@material-ui/icons/BrokenImage';
 import { Route, Link as RouteLink, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
 import { UserAvatar } from './pages/user/avatar';
-import { Optional } from './custom-mui-components/optional';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { PageSettings } from './page-settings';
@@ -35,12 +33,6 @@ const mainStyles = (theme: Theme) => createStyles({
     toolbar: {
         justifyContent: 'space-between'
     },
-    toolbarLogo: {
-        width: 'auto',
-        height: '40px',
-        marginTop: '6px',
-        marginRight: theme.spacing(2)
-    },
     alignVertically: {
         display: 'flex',
         alignItems: 'center'
@@ -48,11 +40,6 @@ const mainStyles = (theme: Theme) => createStyles({
     footer: {
         backgroundColor: theme.palette.primary.dark,
         padding: `${theme.spacing(1.5)}px ${theme.spacing(3)}px`
-    },
-    footerBox: {
-        display: 'flex',
-        alignItems: 'center',
-        fontSize: '1.1rem'
     }
 });
 
@@ -95,6 +82,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     }
 
     render() {
+        const ToolbarContent = this.props.pageSettings.toolbarContent;
+        const FooterContent = this.props.pageSettings.footerContent;
         return <React.Fragment>
             <CssBaseline />
             <Box display='flex' flexDirection='column' height='100%'>
@@ -103,14 +92,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         <Box>
                             <RouteLink to={ExtensionListRoutes.MAIN} className={this.props.classes.link} aria-label={`Home - ${this.props.pageSettings.pageTitle}`}>
                                 <Box className={this.props.classes.alignVertically}>
-                                    <Optional enabled={Boolean(this.props.pageSettings.logoURL)}>
-                                        <img src={this.props.pageSettings.logoURL}
-                                            className={this.props.classes.toolbarLogo}
-                                            alt={this.props.pageSettings.logoAlt}/>
-                                    </Optional>
-                                    <Optional enabled={Boolean(this.props.pageSettings.toolbarText)}>
-                                        <Typography variant='h6' noWrap>{this.props.pageSettings.toolbarText}</Typography>
-                                    </Optional>
+                                    {ToolbarContent ? <ToolbarContent /> : ''}
                                 </Box>
                             </RouteLink>
                         </Box>
@@ -183,11 +165,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                     : null
                 }
                 <footer className={this.props.classes.footer}>
-                    <Link target='_blank' href='https://github.com/eclipse/openvsx'>
-                        <Box className={this.props.classes.footerBox}>
-                            <GitHubIcon />&nbsp;eclipse/openvsx
-                        </Box>
-                    </Link>
+                    {FooterContent ? <FooterContent /> : ''}
                 </footer>
             </Box>
         </React.Fragment>;

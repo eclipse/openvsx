@@ -154,6 +154,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         }
         const { classes, extension } = this.props;
         const zonedDate = toLocalTime(extension.timestamp);
+        const ClaimNamespace = this.props.pageSettings.claimNamespace;
+        const ReportAbuse = this.props.pageSettings.reportAbuse;
         return <React.Fragment>
             <Box className={this.props.classes.overview}>
                 <Box className={classes.markdown} flex={5} overflow="auto">
@@ -204,12 +206,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                 <span className={this.props.classes.code}>{extension.namespace}.{extension.name}</span>)}
                         </Box>
                         <Box mt={2}>
-                            {this.props.pageSettings.claimNamespaceHref ?
-                                this.renderResourceLink('Claim Ownership', this.props.pageSettings.claimNamespaceHref(extension.namespace))
-                                : ''}
-                            {this.props.pageSettings.reportAbuseHref ?
-                                this.renderResourceLink('Report Abuse', this.props.pageSettings.reportAbuseHref(extension))
-                                : ''}
+                            {ClaimNamespace ? <ClaimNamespace extension={extension} className={this.props.classes.resourceLink} /> : ''}
+                            {ReportAbuse ? <ReportAbuse extension={extension} className={this.props.classes.resourceLink} /> : ''}
                         </Box>
                     </Box>
                 </Box>
