@@ -13,7 +13,7 @@ import { Container, AppBar, Toolbar, Typography, IconButton, CssBaseline, Box, T
 import { WithStyles, createStyles, withStyles } from '@material-ui/styles';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import BrokenImageIcon from '@material-ui/icons/BrokenImage';
-import { Route, Link as RouteLink, Switch } from 'react-router-dom';
+import { Route, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
@@ -30,16 +30,23 @@ const mainStyles = (theme: Theme) => createStyles({
         textDecoration: 'none',
         color: theme.palette.text.primary
     },
-    toolbar: {
+    spreadHorizontally: {
         justifyContent: 'space-between'
     },
     alignVertically: {
         display: 'flex',
         alignItems: 'center'
     },
+    main: {
+        flex: 1,
+        overflow: 'auto'
+    },
     footer: {
         backgroundColor: theme.palette.primary.dark,
-        padding: `${theme.spacing(1.5)}px ${theme.spacing(3)}px`
+        padding: `${theme.spacing(1.5)}px ${theme.spacing(3)}px`,
+        [theme.breakpoints.down('sm')]: {
+            padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`
+        }
     }
 });
 
@@ -82,19 +89,18 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     }
 
     render() {
-        const ToolbarContent = this.props.pageSettings.toolbarContent;
-        const FooterContent = this.props.pageSettings.footerContent;
+        const {
+            toolbarContent: ToolbarContent,
+            footerContent: FooterContent,
+            additionalRoutes: AdditionalRoutes
+         } = this.props.pageSettings;
         return <React.Fragment>
             <CssBaseline />
             <Box display='flex' flexDirection='column' height='100%'>
                 <AppBar position='sticky'>
-                    <Toolbar classes={{ root: this.props.classes.toolbar }}>
-                        <Box>
-                            <RouteLink to={ExtensionListRoutes.MAIN} className={this.props.classes.link} aria-label={`Home - ${this.props.pageSettings.pageTitle}`}>
-                                <Box className={this.props.classes.alignVertically}>
-                                    {ToolbarContent ? <ToolbarContent /> : ''}
-                                </Box>
-                            </RouteLink>
+                    <Toolbar classes={{ root: this.props.classes.spreadHorizontally }}>
+                        <Box className={this.props.classes.alignVertically}>
+                            {ToolbarContent ? <ToolbarContent /> : null}
                         </Box>
                         <Box display='flex' alignItems='center'>
                             {
@@ -112,7 +118,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         </Box>
                     </Toolbar>
                 </AppBar>
-                <Box flex='1' overflow='auto'>
+                <Box className={this.props.classes.main}>
                     <Switch>
                         <Route exact path={[ExtensionListRoutes.MAIN]}
                             render={routeProps =>
@@ -144,6 +150,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     setError={this.setError}
                                 />
                             } />
+                        {AdditionalRoutes ? <AdditionalRoutes /> : null}
                         <Route path='*'>
                             <Container>
                                 <Box height='30vh' display='flex' flexWrap='wrap' justifyContent='center' alignItems='center'>
@@ -155,18 +162,22 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                     </Switch>
                 </Box>
                 {
-                    this.state.error ? (
+                    this.state.error ?
                         <ErrorDialog
                             errorMessage={this.state.error}
                             isErrorDialogOpen={this.state.isErrorDialogOpen}
-                            handleCloseDialog={this.handleDialogClose}
-                        />
-                    )
-                    : null
+                            handleCloseDialog={this.handleDialogClose} />
+                        : null
                 }
-                <footer className={this.props.classes.footer}>
-                    {FooterContent ? <FooterContent /> : ''}
-                </footer>
+                {
+                    FooterContent ?
+                        <footer className={this.props.classes.footer}>
+                            <Box className={`${this.props.classes.spreadHorizontally} ${this.props.classes.alignVertically}`}>
+                                <FooterContent />
+                            </Box>
+                        </footer>
+                        : null
+                }
             </Box>
         </React.Fragment>;
     }

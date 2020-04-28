@@ -18,6 +18,7 @@ export interface PageSettings {
     searchHeader?: React.FunctionComponent,
     reportAbuse?: React.FunctionComponent<{ extension: Extension } & Styleable>;
     claimNamespace?: React.FunctionComponent<{ extension: Extension } & Styleable>;
+    additionalRoutes?: React.FunctionComponent,
     extensionDefaultIconURL?: string;
     namespaceAccessInfoURL?: string;
 }

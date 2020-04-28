@@ -11,9 +11,12 @@
 import * as React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import { Link, Typography, Theme, Box } from '@material-ui/core';
+import { Link as RouteLink, Route } from 'react-router-dom';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import { Extension } from '../src/extension-registry-types';
 import { PageSettings, Styleable } from '../src/page-settings';
+import { ExtensionListRoutes } from '../src/pages/extension-list/extension-list-container';
+import About from './about';
 
 export default function createPageSettings(theme: Theme): PageSettings {
     const toolbarStyle = makeStyles({
@@ -24,22 +27,53 @@ export default function createPageSettings(theme: Theme): PageSettings {
             marginRight: theme.spacing(2)
         }
     });
-    const toolbarContent = () => <img src='/openvsx-registry.svg'
-        className={toolbarStyle().logo}
-        alt='Open VSX Registry' />;
+    const toolbarContent = () => <RouteLink
+            to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
+            <img src='/openvsx-registry.svg'
+                className={toolbarStyle().logo}
+                alt='Open VSX Registry' />
+        </RouteLink>;
     
     const footerStyle = makeStyles({
-        footerBox: {
+        repositoryLink: {
             display: 'flex',
             alignItems: 'center',
-            fontSize: '1.1rem'
+            fontSize: '1.1rem',
+            [theme.breakpoints.down('sm')]: {
+                display: 'none'
+            }
+        },
+        legalLink: {
+            marginLeft: theme.spacing(3),
+            textDecoration: 'none',
+            color: theme.palette.primary.main,
+            '&:hover': {
+                textDecoration: 'underline'
+            },
+            [theme.breakpoints.down('sm')]: {
+                marginLeft: theme.spacing(1.5)
+            }
+        },
+        group: {
+            display: 'flex',
+            [theme.breakpoints.down('sm')]: {
+                fontSize: '80%'
+            }
         }
     });
-    const footerContent = () => <Link target='_blank' href='https://github.com/eclipse/openvsx'>
-            <Box className={footerStyle().footerBox}>
+    const footerContent = () => <React.Fragment>
+            <Link target='_blank' href='https://github.com/eclipse/openvsx' className={footerStyle().repositoryLink}>
                 <GitHubIcon />&nbsp;eclipse/openvsx
+            </Link>
+            <Box className={footerStyle().group}>
+                <RouteLink to='/about' className={footerStyle().legalLink}>
+                    About this Service
+                </RouteLink>
+                <Link href='https://www.example.com/terms' className={footerStyle().legalLink}>
+                    Terms of Use
+                </Link>
             </Box>
-        </Link>;
+        </React.Fragment>;
 
     const searchStyle = makeStyles({
         typography: {
@@ -52,6 +86,8 @@ export default function createPageSettings(theme: Theme): PageSettings {
     const searchHeader = () => <Typography variant='h4' classes={{ root: searchStyle().typography }}>
             Extensions for VS Code Compatible Editors
         </Typography>;
+
+    const additionalRoutes = () => <Route path='/about' render={() => <About />} />
 
     const reportAbuseText = encodeURIComponent('<Please describe the issue>');
     const extensionURL = (extension: Extension) => encodeURIComponent(
@@ -73,6 +109,7 @@ export default function createPageSettings(theme: Theme): PageSettings {
         toolbarContent,
         footerContent,
         searchHeader,
+        additionalRoutes,
         reportAbuse,
         claimNamespace,
         extensionDefaultIconURL: '/default-icon.png',
