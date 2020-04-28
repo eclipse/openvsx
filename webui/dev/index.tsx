@@ -30,34 +30,34 @@ if (serverHost.startsWith('3000-')) {
 const App = () => {
     const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
 
-    const theme = React.useMemo(
-        () =>
-            createMuiTheme({
-                palette: {
-                    primary: {
-                        main: prefersDarkMode ? '#444' : '#eeeeee',
-                        dark: prefersDarkMode ? '#f4f4f4' : '#565157'
-                    },
-                    secondary: {
-                        main: prefersDarkMode ? '#c160ef' : '#a60ee5', 
-                        contrastText: '#edf5ea',
-                        light: prefersDarkMode ? '#777' : '#fff',
-                        dark: prefersDarkMode ? '#333' : '#fff', 
-                    },
-                    type: prefersDarkMode ? 'dark' : 'light'
+const theme = React.useMemo(
+    () =>
+        createMuiTheme({
+            palette: {
+                primary: {
+                    main: prefersDarkMode ? '#444' : '#eeeeee',
+                    dark: prefersDarkMode ? '#f4f4f4' : '#565157'
                 },
-                breakpoints: {
-                    values: {
-                        xs: 340,
-                        sm: 550,
-                        md: 800,
-                        lg: 1040,
-                        xl: 1240
-                    }
+                secondary: {
+                    main: prefersDarkMode ? '#c160ef' : '#a60ee5', 
+                    contrastText: '#edf5ea',
+                    light: prefersDarkMode ? '#777' : '#fff',
+                    dark: prefersDarkMode ? '#333' : '#fff', 
+                },
+                type: prefersDarkMode ? 'dark' : 'light'
+            },
+            breakpoints: {
+                values: {
+                    xs: 340,
+                    sm: 550,
+                    md: 800,
+                    lg: 1040,
+                    xl: 1240
                 }
-            }),
-        [prefersDarkMode],
-    );
+            }
+        }),
+    [prefersDarkMode],
+);
 
     const service = new ExtensionRegistryService(`${location.protocol}//${serverHost}`);
     const pageSettings = createPageSettings(theme, prefersDarkMode);

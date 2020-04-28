@@ -31,7 +31,13 @@ const overviewStyles = (theme: Theme) => createStyles({
         display: 'flex',
         [theme.breakpoints.down('lg')]: {
             flexDirection: 'column',
-        }
+        },
+        'h1': {
+            margin: '4.5rem 0 3rem'
+        },
+        'h2': {
+            marginBottom: '3.5rem 0 2.5rem'
+        },
     },
     resourcesWrapper: {
         margin: "4rem 0",
