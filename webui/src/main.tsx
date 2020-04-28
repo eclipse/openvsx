@@ -148,6 +148,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     service={this.props.service}
                                     pageSettings={this.props.pageSettings}
                                     setError={this.setError}
+                                    prefersDarkMode={this.props.prefersDarkMode}
                                 />
                             } />
                         {AdditionalRoutes ? <AdditionalRoutes /> : null}
@@ -187,6 +188,7 @@ export namespace MainComponent {
     export interface Props extends WithStyles<typeof mainStyles> {
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
+        prefersDarkMode: boolean;
     }
 
     export interface State {

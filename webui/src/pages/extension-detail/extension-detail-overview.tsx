@@ -60,14 +60,14 @@ const overviewStyles = (theme: Theme) => createStyles({
         },
         '& code': {
             whiteSpace: 'pre',
-            backgroundColor: '#f2f2f2',
+            backgroundColor: theme.palette.secondary.light,
             padding: 2
         },
         '& h2': {
             borderBottom: '1px solid #eee'
         },
         '& pre': {
-            background: '#f2f2f2',
+            background: theme.palette.secondary.light,
             padding: '10px 5px',
             '& code': {
                 padding: 0,
@@ -85,7 +85,7 @@ const overviewStyles = (theme: Theme) => createStyles({
             },
             '& th': {
                 textAlign: 'start',
-                background: '#eee'
+                background: theme.palette.secondary.dark
             }
         }
     },

@@ -17,8 +17,9 @@ import { Extension } from '../src/extension-registry-types';
 import { PageSettings, Styleable } from '../src/page-settings';
 import { ExtensionListRoutes } from '../src/pages/extension-list/extension-list-container';
 import About from './about';
+import OpenVSXLogo from './openvsx-registry-logo';
 
-export default function createPageSettings(theme: Theme): PageSettings {
+export default function createPageSettings(theme: Theme, prefersDarkMode: boolean): PageSettings {
     const toolbarStyle = makeStyles({
         logo: {
             width: 'auto',
@@ -29,11 +30,9 @@ export default function createPageSettings(theme: Theme): PageSettings {
     });
     const toolbarContent = () => <RouteLink
             to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
-            <img src='/openvsx-registry.svg'
-                className={toolbarStyle().logo}
-                alt='Open VSX Registry' />
+            <OpenVSXLogo prefersDarkMode={prefersDarkMode} className={toolbarStyle().logo}/>
         </RouteLink>;
-    
+
     const footerStyle = makeStyles({
         repositoryLink: {
             display: 'flex',

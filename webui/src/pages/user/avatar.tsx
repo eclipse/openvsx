@@ -35,6 +35,9 @@ const avatarStyle = (theme: Theme) => createStyles({
         border: 'none',
         background: 'none',
         padding: 0
+    },
+    logoutButton: {
+        color: theme.palette.primary.dark,
     }
 });
 
@@ -110,7 +113,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                             <input name="_csrf" type="hidden" value={this.state.csrf}/>
                         </Optional>
                         <button type="submit" className={`${this.props.classes.link} ${this.props.classes.menuButton}`}>
-                            <Typography variant='button'>
+                            <Typography variant='button' className={this.props.classes.logoutButton}>
                                 Log Out
                             </Typography>
                         </button>

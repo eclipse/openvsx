@@ -66,7 +66,7 @@ const detailStyles = (theme: Theme) => createStyles({
         marginBottom: theme.spacing(1)
     },
     head: {
-        backgroundColor: theme.palette.grey[200]
+        backgroundColor: theme.palette.secondary.dark,
     },
     alignVertically: {
         display: 'flex',
@@ -165,10 +165,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         }
 
         return <React.Fragment>
-            <Box className={this.props.classes.head} style={{
-                backgroundColor: extension.galleryColor,
-                color: extension.galleryTheme === 'dark' ? '#ffffff' : undefined
-            }} >
+            <Box className={this.props.classes.head}
+                style={{
+                    backgroundColor: this.props.prefersDarkMode ? undefined : extension.galleryColor,
+                    color: extension.galleryTheme === 'dark' ? '#ffffff' : undefined
+                }}
+            >
                 <Container maxWidth='lg'>
                     <Box display='flex' py={4} className={this.props.classes.headerWrapper}>
                         <Box display='flex' justifyContent='center' alignItems='center'>
@@ -213,62 +215,64 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     protected renderHeader(extension: Extension): React.ReactNode {
         const themeClass = extension.galleryTheme === 'dark' ? this.props.classes.darkTheme : this.props.classes.lightTheme;
-        return <Box overflow='auto'>
-            <Typography variant='h5' className={this.props.classes.titleRow}>
-                {extension.displayName || extension.name} {extension.preview ?
-                    <span className={`${this.props.classes.preview} ${themeClass}`}>preview</span>
-                    : ''}
-            </Typography>
-            <Box display='flex' className={`${themeClass} ${this.props.classes.info}`}>
-                <Box className={this.props.classes.alignVertically} >
-                    {this.renderAccessInfo(extension, themeClass)}&nbsp;<RouteLink
-                        to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
+        return (
+                <Box overflow='auto'>
+                <Typography variant='h5' className={this.props.classes.titleRow}>
+                    {extension.displayName || extension.name} {extension.preview ?
+                        <span className={`${this.props.classes.preview} ${themeClass}`}>preview</span>
+                        : ''}
+                </Typography>
+                <Box display='flex' className={`${themeClass} ${this.props.classes.info}`}>
+                    <Box className={this.props.classes.alignVertically} >
+                        {this.renderAccessInfo(extension, themeClass)}&nbsp;<RouteLink
+                            to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
+                            className={`${this.props.classes.link} ${themeClass}`}
+                            title={`Namespace: ${extension.namespace}`} >
+                            {extension.namespace}
+                        </RouteLink>
+                    </Box>
+                    <TextDivider theme={extension.galleryTheme} />
+                    <Box className={this.props.classes.alignVertically}>
+                        Published&nbsp;by&nbsp;<Link href={extension.publishedBy.homepage}
+                            className={`${this.props.classes.link} ${themeClass} ${this.props.classes.alignVertically}`}>{
+                                extension.publishedBy.avatarUrl ?
+                                    <React.Fragment>
+                                        {extension.publishedBy.loginName}&nbsp;<Avatar
+                                            src={extension.publishedBy.avatarUrl}
+                                            alt={extension.publishedBy.loginName}
+                                            variant='circle'
+                                            classes={{ root: this.props.classes.avatar }} />
+                                    </React.Fragment>
+                                    : extension.publishedBy.loginName
+                            }</Link>
+                    </Box>
+                    <TextDivider theme={extension.galleryTheme} />
+                    <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension, themeClass)}</Box>
+                </Box>
+                <Box mt={2} mb={2} overflow='auto'>
+                    <Typography classes={{ root: this.props.classes.description }}>{extension.description}</Typography>
+                </Box>
+                <Box display='flex' className={`${themeClass} ${this.props.classes.count}`}>
+                    <Box className={this.props.classes.alignVertically}>
+                        <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
+                    </Box>
+                    <TextDivider theme={extension.galleryTheme} />
+                    <RouteLink
+                        to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
                         className={`${this.props.classes.link} ${themeClass}`}
-                        title={`Namespace: ${extension.namespace}`} >
-                        {extension.namespace}
+                        title={
+                            extension.averageRating !== undefined ?
+                                `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
+                                : 'Not rated yet'
+                        }>
+                        <Box className={this.props.classes.alignVertically}>
+                            <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
+                            ({extension.reviewCount})
+                        </Box>
                     </RouteLink>
                 </Box>
-                <TextDivider theme={extension.galleryTheme} />
-                <Box className={this.props.classes.alignVertically}>
-                    Published&nbsp;by&nbsp;<Link href={extension.publishedBy.homepage}
-                        className={`${this.props.classes.link} ${themeClass} ${this.props.classes.alignVertically}`}>{
-                            extension.publishedBy.avatarUrl ?
-                                <React.Fragment>
-                                    {extension.publishedBy.loginName}&nbsp;<Avatar
-                                        src={extension.publishedBy.avatarUrl}
-                                        alt={extension.publishedBy.loginName}
-                                        variant='circle'
-                                        classes={{ root: this.props.classes.avatar }} />
-                                </React.Fragment>
-                                : extension.publishedBy.loginName
-                        }</Link>
-                </Box>
-                <TextDivider theme={extension.galleryTheme} />
-                <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension, themeClass)}</Box>
             </Box>
-            <Box mt={2} mb={2} overflow='auto'>
-                <Typography classes={{ root: this.props.classes.description }}>{extension.description}</Typography>
-            </Box>
-            <Box display='flex' className={`${themeClass} ${this.props.classes.count}`}>
-                <Box className={this.props.classes.alignVertically}>
-                    <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
-                </Box>
-                <TextDivider theme={extension.galleryTheme} />
-                <RouteLink
-                    to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
-                    className={`${this.props.classes.link} ${themeClass}`}
-                    title={
-                        extension.averageRating !== undefined ?
-                            `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
-                            : 'Not rated yet'
-                    }>
-                    <Box className={this.props.classes.alignVertically}>
-                        <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
-                        ({extension.reviewCount})
-                    </Box>
-                </RouteLink>
-            </Box>
-        </Box>;
+        );
     }
 
     protected getRoundedRating(rating: number): number {
@@ -339,6 +343,7 @@ export namespace ExtensionDetailComponent {
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
         setError: (err: Error | Partial<ErrorResponse>) => void;
+        prefersDarkMode: boolean;
     }
     export interface State {
         extension?: Extension;
