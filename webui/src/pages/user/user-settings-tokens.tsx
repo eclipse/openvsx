@@ -42,6 +42,11 @@ const tokensStyle = (theme: Theme) => createStyles({
     deleteBtn: {
         color: theme.palette.error.main,
         height: 36
+    },
+    empty: {
+        [theme.breakpoints.down('sm')]: {
+            textAlign: 'center'
+        }
     }
 });
 
@@ -119,7 +124,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             </Box>
             <Box mt={2}>
                 <Optional enabled={this.state.tokens.length === 0 && !this.state.loading}>
-                    <Typography variant='body1'>
+                    <Typography variant='body1' className={this.props.classes.empty}>
                         You currently have no tokens.
                     </Typography>
                 </Optional>
