@@ -14,7 +14,7 @@ import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-rou
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import PublicIcon from '@material-ui/icons/Public';
-import { createRoute, addQuery } from "../../utils";
+import { createRoute } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
@@ -22,7 +22,6 @@ import { TextDivider } from "../../custom-mui-components/text-divider";
 import { HoverPopover } from "../../custom-mui-components/hover-popover";
 import { Optional } from "../../custom-mui-components/optional";
 import { PageSettings } from "../../page-settings";
-import { ExtensionListRoutes } from "../extension-list/extension-list-container";
 import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
 import { ExtensionDetailTabs } from "./extension-detail-tabs";
@@ -47,6 +46,8 @@ export namespace ExtensionDetailRoutes {
 
 const detailStyles = (theme: Theme) => createStyles({
     link: {
+        display: 'contents',
+        cursor: 'pointer',
         textDecoration: 'none',
         '&:hover': {
             textDecoration: 'underline'
@@ -58,19 +59,17 @@ const detailStyles = (theme: Theme) => createStyles({
     darkTheme: {
         color: theme.palette.secondary.contrastText,
     },
-    clickable: {
-        cursor: 'pointer'
-    },
     titleRow: {
         fontWeight: 'bold',
         marginBottom: theme.spacing(1)
     },
+    infoRow: {
+        [theme.breakpoints.down('sm')]: {
+            justifyContent: 'center'
+        }
+    },
     head: {
         backgroundColor: theme.palette.grey[200]
-    },
-    alignVertically: {
-        display: 'flex',
-        alignItems: 'center'
     },
     extensionLogo: {
         height: '7.5rem',
@@ -85,9 +84,13 @@ const detailStyles = (theme: Theme) => createStyles({
         overflow: 'hidden',
         textOverflow: 'ellipsis'
     },
+    alignVertically: {
+        display: 'flex',
+        alignItems: 'center'
+    },
     code: {
-        fontFamily: 'monospace',
-        fontSize: '1rem'
+        fontFamily: 'Monaco, monospace',
+        fontSize: '0.8rem'
     },
     avatar: {
         width: '20px',
@@ -96,8 +99,7 @@ const detailStyles = (theme: Theme) => createStyles({
     headerWrapper: {
         [theme.breakpoints.down('sm')]: {
             flexDirection: 'column',
-            textAlign: 'center',
-            fontSize: '85%',
+            textAlign: 'center'
         },
         '& > *': {
             '&:first-child': {
@@ -105,16 +107,6 @@ const detailStyles = (theme: Theme) => createStyles({
                     marginRight: '2rem'
                 }
             }
-        }
-    },
-    info: {
-        [theme.breakpoints.down('sm')]: {
-            justifyContent: 'center'
-        }
-    },
-    count: {
-        [theme.breakpoints.down('sm')]: {
-            justifyContent: 'center'
         }
     }
 });
@@ -212,60 +204,54 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     }
 
     protected renderHeader(extension: Extension): React.ReactNode {
-        const themeClass = extension.galleryTheme === 'dark' ? this.props.classes.darkTheme : this.props.classes.lightTheme;
+        const classes = this.props.classes;
+        const themeClass = extension.galleryTheme === 'dark' ? classes.darkTheme : classes.lightTheme;
         return <Box overflow='auto'>
-            <Typography variant='h5' className={this.props.classes.titleRow}>
+            <Typography variant='h5' className={classes.titleRow}>
                 {extension.displayName || extension.name} {extension.preview ?
-                    <span className={`${this.props.classes.preview} ${themeClass}`}>preview</span>
+                    <span className={`${classes.preview} ${themeClass}`}>preview</span>
                     : ''}
             </Typography>
-            <Box display='flex' className={`${themeClass} ${this.props.classes.info}`}>
-                <Box className={this.props.classes.alignVertically} >
-                    {this.renderAccessInfo(extension, themeClass)}&nbsp;<RouteLink
-                        to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
-                        className={`${this.props.classes.link} ${themeClass}`}
-                        title={`Namespace: ${extension.namespace}`} >
-                        {extension.namespace}
-                    </RouteLink>
-                </Box>
+            <Box className={`${themeClass} ${classes.infoRow} ${classes.alignVertically}`}>
+                {this.renderAccessInfo(extension, themeClass)}&nbsp;<span
+                    title='Unique identifier'
+                    className={classes.code}>
+                    {extension.namespace}.{extension.name}
+                </span>
                 <TextDivider theme={extension.galleryTheme} />
-                <Box className={this.props.classes.alignVertically}>
-                    Published&nbsp;by&nbsp;<Link href={extension.publishedBy.homepage}
-                        className={`${this.props.classes.link} ${themeClass} ${this.props.classes.alignVertically}`}>{
-                            extension.publishedBy.avatarUrl ?
-                                <React.Fragment>
-                                    {extension.publishedBy.loginName}&nbsp;<Avatar
-                                        src={extension.publishedBy.avatarUrl}
-                                        alt={extension.publishedBy.loginName}
-                                        variant='circle'
-                                        classes={{ root: this.props.classes.avatar }} />
-                                </React.Fragment>
-                                : extension.publishedBy.loginName
-                        }</Link>
-                </Box>
+                Published by <Link href={extension.publishedBy.homepage}
+                    className={`${classes.link} ${themeClass}`}>
+                    {
+                        extension.publishedBy.avatarUrl ?
+                        <React.Fragment>
+                            {extension.publishedBy.loginName}&nbsp;<Avatar
+                                src={extension.publishedBy.avatarUrl}
+                                alt={extension.publishedBy.loginName}
+                                variant='circle'
+                                classes={{ root: classes.avatar }} />
+                        </React.Fragment>
+                        : extension.publishedBy.loginName
+                    }
+                </Link>
                 <TextDivider theme={extension.galleryTheme} />
-                <Box className={this.props.classes.alignVertically}>{this.renderLicense(extension, themeClass)}</Box>
+                {this.renderLicense(extension, themeClass)}
             </Box>
             <Box mt={2} mb={2} overflow='auto'>
-                <Typography classes={{ root: this.props.classes.description }}>{extension.description}</Typography>
+                <Typography classes={{ root: classes.description }}>{extension.description}</Typography>
             </Box>
-            <Box display='flex' className={`${themeClass} ${this.props.classes.count}`}>
-                <Box className={this.props.classes.alignVertically}>
-                    <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
-                </Box>
+            <Box className={`${themeClass} ${classes.infoRow} ${classes.alignVertically}`}>
+                <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
                 <TextDivider theme={extension.galleryTheme} />
                 <RouteLink
                     to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
-                    className={`${this.props.classes.link} ${themeClass}`}
+                    className={`${classes.link} ${themeClass} ${classes.alignVertically}`}
                     title={
                         extension.averageRating !== undefined ?
                             `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
                             : 'Not rated yet'
                     }>
-                    <Box className={this.props.classes.alignVertically}>
-                        <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
-                        ({extension.reviewCount})
-                    </Box>
+                    <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
+                    ({extension.reviewCount})
                 </RouteLink>
             </Box>
         </Box>;
@@ -311,7 +297,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             return <Link
                 href={this.props.pageSettings.namespaceAccessInfoURL}
                 target='_blank'
-                className={`${this.props.classes.link} ${themeClass} ${this.props.classes.alignVertically}`} >
+                className={`${this.props.classes.link} ${themeClass}`} >
                 {popover}
             </Link>;
         } else {
@@ -323,7 +309,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         if (extension.files.license) {
             return <Link
                 href={extension.files.license}
-                className={`${this.props.classes.link} ${themeClass}`} >
+                className={`${this.props.classes.link} ${themeClass}`}
+                title={extension.license ? 'License type' : undefined} >
                 {extension.license || 'Provided license'}
             </Link>;
         } else {

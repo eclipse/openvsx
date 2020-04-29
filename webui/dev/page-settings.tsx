@@ -23,8 +23,7 @@ export default function createPageSettings(theme: Theme): PageSettings {
         logo: {
             width: 'auto',
             height: '40px',
-            marginTop: '6px',
-            marginRight: theme.spacing(2)
+            marginTop: '7px'
         }
     });
     const toolbarContent = () => <RouteLink
@@ -67,7 +66,7 @@ export default function createPageSettings(theme: Theme): PageSettings {
             </Link>
             <Box className={footerStyle().group}>
                 <RouteLink to='/about' className={footerStyle().legalLink}>
-                    About this Service
+                    About This Service
                 </RouteLink>
                 <Link href='https://www.example.com/terms' className={footerStyle().legalLink}>
                     Terms of Use

@@ -104,13 +104,6 @@ const overviewStyles = (theme: Theme) => createStyles({
     downloadButton: {
         marginTop: theme.spacing(2)
     },
-    code: {
-        fontFamily: 'monospace',
-        fontSize: '.85rem',
-        [theme.breakpoints.down('lg')]: {
-            fontSize: '.7rem'
-        }
-    },
     moreInfo: {
         maxWidth: '30rem',
     }
@@ -202,8 +195,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                     {extension.namespace}
                                 </RouteLink>)}
                             {this.renderInfo('Access Type', this.renderAccessInfo(extension))}
-                            {this.renderInfo('Unique Identifier',
-                                <span className={this.props.classes.code}>{extension.namespace}.{extension.name}</span>)}
                         </Box>
                         <Box mt={2}>
                             {ClaimNamespace ? <ClaimNamespace extension={extension} className={this.props.classes.resourceLink} /> : ''}

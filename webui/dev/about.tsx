@@ -13,12 +13,12 @@ import { Box, Typography, Container } from '@material-ui/core';
 
 const About = () => <Container maxWidth='md'>
     <Box mt={4}>
-        <Typography variant='h4'>About this Service</Typography>
-        <Typography variant='body1'>
-            <Box mt={2}>
+        <Typography variant='h4'>About This Service</Typography>
+        <Box mt={2}>
+            <Typography variant='body1'>
                 This instance of Open VSX is meant only for development.
-            </Box>
-        </Typography>
+            </Typography>
+        </Box>
     </Box>
 </Container>;
 
