@@ -104,14 +104,16 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
 
     return {
         pageTitle: 'Open VSX Registry',
+        themeType: prefersDarkMode ? 'dark' : 'light',
         toolbarContent,
         footerContent,
         searchHeader,
         additionalRoutes,
         reportAbuse,
         claimNamespace,
-        extensionDefaultIconURL: '/default-icon.png',
-        namespaceAccessInfoURL: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access',
-        themeType: prefersDarkMode ? 'dark' : 'light',
+        urls: {
+            extensionDefaultIcon: '/default-icon.png',
+            namespaceAccessInfo: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access'
+        }
     };
 }

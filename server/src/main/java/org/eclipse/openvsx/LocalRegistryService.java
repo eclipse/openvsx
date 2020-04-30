@@ -435,6 +435,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
         json.namespaceAccess = getAccessString(extension.getNamespace());
+        if (NamespaceJson.RESTRICTED_ACCESS.equals(json.namespaceAccess)) {
+            json.unrelatedPublisher = isUnrelatedPublisher(extVersion);
+        }
         json.reviewCount = repositories.countActiveReviews(extension);
         var serverUrl = UrlUtil.getBaseUrl();
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
@@ -463,6 +466,15 @@ public class LocalRegistryService implements IExtensionRegistry {
             });
         }
         return json;
+    }
+
+    private boolean isUnrelatedPublisher(ExtensionVersion extVersion) {
+        if (extVersion.getPublishedWith() == null)
+            return false;
+        var user = extVersion.getPublishedWith().getUser();
+        var namespace = extVersion.getExtension().getNamespace();
+        var membership = repositories.findMembership(user, namespace);
+        return membership == null;
     }
 
 }

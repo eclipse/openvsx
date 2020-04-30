@@ -29,7 +29,7 @@ const dividerStyles = (theme: Theme) => createStyles({
 
 export class TextDividerComponent extends React.Component<TextDividerComponent.Props> {
     render() {
-        const themeClass = this.props.theme === 'dark' ? this.props.classes.darkTheme : this.props.classes.lightTheme;
+        const themeClass = this.props.themeType === 'dark' ? this.props.classes.darkTheme : this.props.classes.lightTheme;
         return <Divider orientation='vertical' classes={{
             root: `${this.props.classes.root} ${themeClass}`
         }} />;
@@ -38,7 +38,7 @@ export class TextDividerComponent extends React.Component<TextDividerComponent.P
 
 export namespace TextDividerComponent {
     export interface Props extends WithStyles<typeof dividerStyles> {
-        theme?: 'light' | 'dark';
+        themeType?: 'light' | 'dark';
     }
 }
 

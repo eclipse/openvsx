@@ -51,7 +51,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                     <RouteLink to={route} className={classes.link}>
                         <Paper className={classes.paper}>
                             <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
-                                <img src={extension.files.icon || this.props.pageSettings.extensionDefaultIconURL}
+                                <img src={extension.files.icon || this.props.pageSettings.urls.extensionDefaultIcon}
                                     className={classes.img}
                                     alt={extension.displayName || extension.name} />
                             </Box>

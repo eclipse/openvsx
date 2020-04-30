@@ -9,17 +9,17 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar } from "@material-ui/core";
+import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar, Paper } from "@material-ui/core";
 import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-router-dom";
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import PublicIcon from '@material-ui/icons/Public';
+import WarningIcon from '@material-ui/icons/Warning';
 import { createRoute } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
-import { HoverPopover } from "../../custom-mui-components/hover-popover";
 import { PageSettings } from "../../page-settings";
 import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
@@ -56,7 +56,7 @@ const detailStyles = (theme: Theme) => createStyles({
         color: '#333',
     },
     darkTheme: {
-        color: theme.palette.secondary.contrastText,
+        color: '#fff',
     },
     titleRow: {
         fontWeight: 'bold',
@@ -72,7 +72,10 @@ const detailStyles = (theme: Theme) => createStyles({
     },
     extensionLogo: {
         height: '7.5rem',
-        maxWidth: '9rem'
+        maxWidth: '9rem',
+        [theme.breakpoints.up('md')]: {
+            marginRight: '2rem'
+        }
     },
     preview: {
         fontSize: '0.6em',
@@ -95,17 +98,40 @@ const detailStyles = (theme: Theme) => createStyles({
         width: '20px',
         height: '20px'
     },
-    headerWrapper: {
+    header: {
+        display: 'flex',
+        flexDirection: 'column',
+        padding: `${theme.spacing(4)}px 0`
+    },
+    iconAndInfo: {
+        display: 'flex',
         [theme.breakpoints.down('sm')]: {
             flexDirection: 'column',
-            textAlign: 'center'
-        },
-        '& > *': {
-            '&:first-child': {
-                [theme.breakpoints.up('md')]: {
-                    marginRight: '2rem'
-                }
-            }
+            textAlign: 'center',
+            alignItems: 'center'
+        }
+    },
+    banner: {
+        margin: `0 ${theme.spacing(6)}px ${theme.spacing(4)}px ${theme.spacing(6)}px`,
+        padding: theme.spacing(2),
+        [theme.breakpoints.down('sm')]: {
+            margin: `0 0 ${theme.spacing(2)}px 0`,
+        }
+    },
+    warningLight: {
+        backgroundColor: theme.palette.warning.light,
+        color: '#000',
+        '& > a': {
+            color: '#000',
+            fontWeight: 'bold'
+        }
+    },
+    warningDark: {
+        backgroundColor: theme.palette.warning.dark,
+        color: '#fff',
+        '& > a': {
+            color: '#fff',
+            fontWeight: 'bold'
         }
     }
 });
@@ -154,24 +180,24 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         if (!extension) {
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
-
-        const darkTheme = (extension.galleryTheme === 'dark' || (!extension.galleryTheme && this.props.pageSettings.themeType !== 'light'));
+        const headerTheme = extension.galleryTheme || this.props.pageSettings.themeType || 'light';
 
         return <React.Fragment>
             <Box className={this.props.classes.head}
                 style={{
                     backgroundColor: extension.galleryColor,
-                    color: darkTheme ? '#fff' : '#333'
+                    color: headerTheme === 'dark' ? '#fff' : '#333'
                 }}
             >
                 <Container maxWidth='lg'>
-                    <Box display='flex' py={4} className={this.props.classes.headerWrapper}>
-                        <Box display='flex' justifyContent='center' alignItems='center'>
-                            <img src={extension.files.icon || this.props.pageSettings.extensionDefaultIconURL}
+                    <Box className={this.props.classes.header}>
+                        {this.renderBanner(extension, headerTheme)}
+                        <Box className={this.props.classes.iconAndInfo}>
+                            <img src={extension.files.icon || this.props.pageSettings.urls.extensionDefaultIcon}
                                 className={this.props.classes.extensionLogo}
                                 alt={extension.displayName || extension.name} />
+                            {this.renderHeaderInfo(extension, headerTheme)}
                         </Box>
-                        {this.renderHeader(extension, darkTheme)}
                     </Box>
                 </Container>
             </Box>
@@ -206,11 +232,48 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         </React.Fragment>;
     }
 
-    protected renderHeader(extension: Extension, darkTheme: boolean): React.ReactNode {
+    protected renderBanner(extension: Extension, themeType: 'light' | 'dark'): React.ReactNode {
         const classes = this.props.classes;
-        const themeClass = darkTheme ? classes.darkTheme : classes.lightTheme;
-        const theme = darkTheme ? 'dark' : 'light';
-        return ( 
+        const warningClass = themeType === 'dark' ? classes.warningDark : classes.warningLight;
+        const themeClass = themeType === 'dark' ? classes.darkTheme : classes.lightTheme;
+        let extensionName = extension.displayName || extension.name;
+        if (!extensionName.toLowerCase().endsWith('extension')) {
+            extensionName += ' extension';
+        }
+        if (extension.namespaceAccess === 'public') {
+            return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
+                The namespace <span className={classes.code}>{extension.namespace}</span> is public,
+                which means that everyone can publish new versions of the {extensionName}.
+                If you would like to become the owner of <span className={classes.code}>{extension.namespace}</span>,
+                please <Link
+                    href={this.props.pageSettings.urls.namespaceAccessInfo}
+                    target='_blank'
+                    className={`${classes.link}`} >
+                    read this guide
+                </Link>.
+            </Paper>;
+        } else if (extension.unrelatedPublisher) {
+            return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
+                The {extensionName} was published by <Link href={extension.publishedBy.homepage}
+                    className={`${classes.link}`}>
+                    {extension.publishedBy.loginName}
+                </Link>. This user account is not related to
+                the namespace <span className={classes.code}>{extension.namespace}</span> of
+                this extension. <Link
+                    href={this.props.pageSettings.urls.namespaceAccessInfo}
+                    target='_blank'
+                    className={`${classes.link}`} >
+                    See the documentation
+                </Link> to learn how we handle namespaces.
+            </Paper>;
+        }
+        return null;
+    }
+
+    protected renderHeaderInfo(extension: Extension, themeType: 'light' | 'dark'): React.ReactNode {
+        const classes = this.props.classes;
+        const themeClass = themeType === 'dark' ? classes.darkTheme : classes.lightTheme;
+        return (
         <Box overflow='auto'>
             <Typography variant='h5' className={classes.titleRow}>
                 {extension.displayName || extension.name} {extension.preview ?
@@ -223,7 +286,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     className={classes.code}>
                     {extension.namespace}.{extension.name}
                 </span>
-                <TextDivider theme={theme}/>
+                <TextDivider themeType={themeType}/>
                 Published by <Link href={extension.publishedBy.homepage}
                     className={`${classes.link} ${themeClass}`}>
                     {
@@ -238,7 +301,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         : extension.publishedBy.loginName
                     }
                 </Link>
-                <TextDivider theme={theme}/>
+                <TextDivider themeType={themeType}/>
                 {this.renderLicense(extension, themeClass)}
             </Box>
             <Box mt={2} mb={2} overflow='auto'>
@@ -246,7 +309,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             </Box>
             <Box className={`${themeClass} ${classes.infoRow} ${classes.alignVertically}`}>
                 <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
-                <TextDivider theme={theme}/>
+                <TextDivider themeType={themeType}/>
                 <RouteLink
                     to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
                     className={`${classes.link} ${themeClass} ${classes.alignVertically}`}
@@ -269,48 +332,31 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     protected renderAccessInfo(extension: Extension, themeClass: string): React.ReactNode {
         let icon: React.ReactElement;
-        let description: string;
+        let title: string;
         switch (extension.namespaceAccess) {
             case 'public':
                 icon = <PublicIcon fontSize='small' />;
-                description = 'Everyone can publish to this namespace, so the identity of the publisher cannot be verified.';
+                title = 'Public namespace access';
                 break;
             case 'restricted':
-                icon = <VerifiedUserIcon fontSize='small' />;
-                description = 'Only verified owners and contributors can publish to this namespace.';
+                if (extension.unrelatedPublisher) {
+                    icon = <WarningIcon fontSize='small' />;
+                    title = 'Published to a restricted namespace by an unrelated user';
+                } else {
+                    icon = <VerifiedUserIcon fontSize='small' />;
+                    title = 'Restricted namespace access';
+                }
                 break;
             default:
-                return '';
+                return null;
         }
-
-        const popupContent = <Typography variant='body2'>
-            {extension.displayName || extension.name} is in the {extension.namespaceAccess} namespace <span className={this.props.classes.code}>
-                {extension.namespace}
-            </span>. {description}
-            {
-                this.props.pageSettings.namespaceAccessInfoURL ?
-                <React.Fragment><br />Click on the icon to learn more.</React.Fragment>
-                : null
-            }
-        </Typography>;
-
-        const popover = <HoverPopover
-            id='namespace-popover'
-            popupContent={popupContent}
-            className={this.props.classes.alignVertically} >
+        return <Link
+            href={this.props.pageSettings.urls.namespaceAccessInfo}
+            target='_blank'
+            title={title}
+            className={`${this.props.classes.link} ${themeClass}`} >
             {icon}
-        </HoverPopover>;
-
-        if (this.props.pageSettings.namespaceAccessInfoURL) {
-            return <Link
-                href={this.props.pageSettings.namespaceAccessInfoURL}
-                target='_blank'
-                className={`${this.props.classes.link} ${themeClass}`} >
-                {popover}
-            </Link>;
-        } else {
-            return popover;
-        }
+        </Link>;
     }
 
     protected renderLicense(extension: Extension, themeClass: string): React.ReactNode {

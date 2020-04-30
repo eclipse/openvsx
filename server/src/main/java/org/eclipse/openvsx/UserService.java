@@ -108,6 +108,11 @@ public class UserService {
     }
 
     public boolean hasPublishPermission(UserData user, Namespace namespace) {
+        if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+            // Privileged users can publish to every namespace.
+            return true;
+        }
+
         var ownerships = repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER);
         if (ownerships.isEmpty()) {
             // If the namespace has no owner, everyone has publish permission to it.
