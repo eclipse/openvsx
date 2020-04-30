@@ -20,7 +20,6 @@ import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { HoverPopover } from "../../custom-mui-components/hover-popover";
-import { Optional } from "../../custom-mui-components/optional";
 import { PageSettings } from "../../page-settings";
 import { ExtensionDetailOverview } from "./extension-detail-overview";
 import { ExtensionDetailReviews } from "./extension-detail-reviews";
@@ -288,9 +287,11 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             {extension.displayName || extension.name} is in the {extension.namespaceAccess} namespace <span className={this.props.classes.code}>
                 {extension.namespace}
             </span>. {description}
-            <Optional enabled={Boolean(this.props.pageSettings.namespaceAccessInfoURL)}>
-                <br />Click on the icon to learn more.
-            </Optional>
+            {
+                this.props.pageSettings.namespaceAccessInfoURL ?
+                <React.Fragment><br />Click on the icon to learn more.</React.Fragment>
+                : null
+            }
         </Typography>;
 
         const popover = <HoverPopover

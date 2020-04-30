@@ -11,7 +11,6 @@
 import * as React from "react";
 import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from "@material-ui/core";
 import { toLocalTime } from "../../utils";
-import { Optional } from "../../custom-mui-components/optional";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { UserData, PersonalAccessToken } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
@@ -123,11 +122,12 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                 </Box>
             </Box>
             <Box mt={2}>
-                <Optional enabled={this.state.tokens.length === 0 && !this.state.loading}>
+                {
+                    this.state.tokens.length === 0 && !this.state.loading ?
                     <Typography variant='body1' className={this.props.classes.empty}>
                         You currently have no tokens.
-                    </Typography>
-                </Optional>
+                    </Typography> : null
+                }
             </Box>
             <Box mt={2}>
                 <DelayedLoadIndicator loading={this.state.loading}/>
