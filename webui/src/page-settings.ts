@@ -21,6 +21,7 @@ export interface PageSettings {
     additionalRoutes?: React.FunctionComponent,
     extensionDefaultIconURL?: string;
     namespaceAccessInfoURL?: string;
+    themeType?: 'light' | 'dark';
 }
 
 export interface Styleable {

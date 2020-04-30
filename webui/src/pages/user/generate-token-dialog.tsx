@@ -36,6 +36,11 @@ const tokensDialogStyle = (theme: Theme) => createStyles({
     },
     buttonWrapper: {
         position: 'relative'
+    },
+    generateTokenButton: {
+        '&:hover': {
+            color: theme.palette.primary.dark,
+        }
     }
 });
 
@@ -163,7 +168,9 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                                 onClick={this.handleGenerate}
                                 disabled={Boolean(this.state.descriptionError) || this.state.posted}
                                 variant="contained"
-                                color="secondary" >
+                                color="secondary"
+                                className={this.props.classes.generateTokenButton}
+                            >
                                 Generate Token
                             </Button>
                             <Optional enabled={this.state.posted}>

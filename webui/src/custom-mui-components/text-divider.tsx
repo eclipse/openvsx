@@ -20,7 +20,7 @@ const dividerStyles = (theme: Theme) => createStyles({
         margin: `0 ${theme.spacing(1)}px`
     },
     lightTheme: {
-        backgroundColor: theme.palette.primary.contrastText
+        backgroundColor: '#333'
     },
     darkTheme: {
         backgroundColor: theme.palette.secondary.contrastText
