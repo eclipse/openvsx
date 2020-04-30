@@ -54,7 +54,7 @@ const detailStyles = (theme: Theme) => createStyles({
         }
     },
     lightTheme: {
-        color: theme.palette.primary.contrastText,
+        color: '#333',
     },
     darkTheme: {
         color: theme.palette.secondary.contrastText,
@@ -69,7 +69,7 @@ const detailStyles = (theme: Theme) => createStyles({
         }
     },
     head: {
-        backgroundColor: theme.palette.grey[200]
+        backgroundColor: theme.palette.secondary.dark,
     },
     extensionLogo: {
         height: '7.5rem',
@@ -156,11 +156,15 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
 
+        const darkTheme = (extension.galleryTheme === 'dark' || (!extension.galleryTheme && this.props.pageSettings.themeType !== 'light'));
+
         return <React.Fragment>
-            <Box className={this.props.classes.head} style={{
-                backgroundColor: extension.galleryColor,
-                color: extension.galleryTheme === 'dark' ? '#ffffff' : undefined
-            }} >
+            <Box className={this.props.classes.head}
+                style={{
+                    backgroundColor: extension.galleryColor,
+                    color: darkTheme ? '#fff' : '#333'
+                }}
+            >
                 <Container maxWidth='lg'>
                     <Box display='flex' py={4} className={this.props.classes.headerWrapper}>
                         <Box display='flex' justifyContent='center' alignItems='center'>
@@ -168,7 +172,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                 className={this.props.classes.extensionLogo}
                                 alt={extension.displayName || extension.name} />
                         </Box>
-                        {this.renderHeader(extension)}
+                        {this.renderHeader(extension, darkTheme)}
                     </Box>
                 </Container>
             </Box>
@@ -203,10 +207,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         </React.Fragment>;
     }
 
-    protected renderHeader(extension: Extension): React.ReactNode {
+    protected renderHeader(extension: Extension, darkTheme: boolean): React.ReactNode {
         const classes = this.props.classes;
-        const themeClass = extension.galleryTheme === 'dark' ? classes.darkTheme : classes.lightTheme;
-        return <Box overflow='auto'>
+        const themeClass = darkTheme ? classes.darkTheme : classes.lightTheme;
+        const theme = darkTheme ? 'dark' : 'light';
+        return ( 
+        <Box overflow='auto'>
             <Typography variant='h5' className={classes.titleRow}>
                 {extension.displayName || extension.name} {extension.preview ?
                     <span className={`${classes.preview} ${themeClass}`}>preview</span>
@@ -218,7 +224,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     className={classes.code}>
                     {extension.namespace}.{extension.name}
                 </span>
-                <TextDivider theme={extension.galleryTheme} />
+                <TextDivider theme={theme}/>
                 Published by <Link href={extension.publishedBy.homepage}
                     className={`${classes.link} ${themeClass}`}>
                     {
@@ -233,7 +239,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         : extension.publishedBy.loginName
                     }
                 </Link>
-                <TextDivider theme={extension.galleryTheme} />
+                <TextDivider theme={theme}/>
                 {this.renderLicense(extension, themeClass)}
             </Box>
             <Box mt={2} mb={2} overflow='auto'>
@@ -241,7 +247,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             </Box>
             <Box className={`${themeClass} ${classes.infoRow} ${classes.alignVertically}`}>
                 <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
-                <TextDivider theme={extension.galleryTheme} />
+                <TextDivider theme={theme}/>
                 <RouteLink
                     to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
                     className={`${classes.link} ${themeClass} ${classes.alignVertically}`}
@@ -253,8 +259,9 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
                     ({extension.reviewCount})
                 </RouteLink>
+                </Box>
             </Box>
-        </Box>;
+        );
     }
 
     protected getRoundedRating(rating: number): number {

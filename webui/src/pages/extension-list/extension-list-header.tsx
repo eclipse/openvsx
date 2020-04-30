@@ -63,7 +63,11 @@ const headerStyles = (theme: Theme) => createStyles({
     iconButton: {
         backgroundColor: theme.palette.secondary.main,
         borderRadius: '0 4px 4px 0',
-        padding: theme.spacing(1)
+        padding: theme.spacing(1),
+        transition: 'all 0s',
+        '&:hover': {
+            filter: 'invert(100%)',
+        }
     },
     placeholder: {
         opacity: 0.4
