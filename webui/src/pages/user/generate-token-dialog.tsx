@@ -11,36 +11,20 @@
 import * as React from "react";
 import {
     Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle,
-    DialogContent, DialogContentText, Box, TextField, DialogActions, Typography,
-    CircularProgress
+    DialogContent, DialogContentText, Box, TextField, DialogActions, Typography
 } from "@material-ui/core";
+import { ButtonWithProgress } from "../../custom-mui-components/button-with-progress";
+import { CopyToClipboard } from "../../custom-mui-components/copy-to-clipboard";
 import { UserData, PersonalAccessToken, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Optional } from "../../custom-mui-components/optional";
-import { CopyToClipboard } from "../../custom-mui-components/copy-to-clipboard";
 import { ErrorResponse } from '../../server-request';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
 const tokensDialogStyle = (theme: Theme) => createStyles({
     boldText: {
+        color: 'red',
         fontWeight: 'bold'
-    },
-    buttonProgress: {
-        color: theme.palette.secondary.main,
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        marginTop: -12,
-        marginLeft: -12,
-    },
-    buttonWrapper: {
-        position: 'relative'
-    },
-    generateTokenButton: {
-        '&:hover': {
-            color: theme.palette.primary.dark,
-        }
     }
 });
 
@@ -133,25 +117,25 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                         rows={4}
                         value={this.state.token ? this.state.token.value : ''}
                     />
-                    <Optional enabled={Boolean(this.state.token)}>
+                    {
+                        this.state.token ?
                         <Box>
-                            <Typography color='error' classes={{ root: this.props.classes.boldText }}>
+                            <Typography classes={{ root: this.props.classes.boldText }}>
                                 Copy and paste this token to a safe place. It will not be displayed again.
                             </Typography>
-                        </Box>
-                    </Optional>
+                        </Box> : null
+                    }
                 </DialogContent>
                 <DialogActions>
                      {
-                        this.state.token ? <CopyToClipboard>
+                        this.state.token ?
+                        <CopyToClipboard tooltipProps={{ placement: 'left' }}>
                             {({ copy }) => (
                                 <Button
                                     variant="contained"
                                     color="secondary"
                                     onClick={() => {
-                                        if (this.state.token) {
-                                            copy(this.state.token.value);
-                                        }
+                                        copy(this.state.token!.value);
                                     }}
                                 >
                                     Copy
@@ -162,22 +146,15 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                     <Button onClick={this.handleCancel} color="secondary">
                         {this.state.token ? 'Close' : 'Cancel'}
                     </Button>
-                    <Optional enabled={!this.state.token}>
-                        <div className={this.props.classes.buttonWrapper}>
-                            <Button
-                                onClick={this.handleGenerate}
-                                disabled={Boolean(this.state.descriptionError) || this.state.posted}
-                                variant="contained"
-                                color="secondary"
-                                className={this.props.classes.generateTokenButton}
-                            >
-                                Generate Token
-                            </Button>
-                            <Optional enabled={this.state.posted}>
-                                <CircularProgress size={24} className={this.props.classes.buttonProgress} />
-                            </Optional>
-                        </div>
-                    </Optional>
+                    {
+                        !this.state.token ?
+                        <ButtonWithProgress
+                                error={Boolean(this.state.descriptionError)}
+                                working={this.state.posted}
+                                onClick={this.handleGenerate} >
+                            Generate Token
+                        </ButtonWithProgress> : null
+                    }
                 </DialogActions>
             </Dialog>
         </React.Fragment>;

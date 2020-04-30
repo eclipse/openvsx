@@ -30,11 +30,11 @@ export function CopyToClipboard(props: CopyToClipboard.Props) {
     return (
         <Tooltip
             open={showTooltip}
-            title={"Copied to clipboard!"}
+            title={'Copied to clipboard!'}
             leaveDelay={1500}
             onClose={handleOnTooltipClose}
             disableHoverListener
-            {...props.TooltipProps || {}}
+            {...props.tooltipProps || {}}
         >
             {
                 props.children({ copy: onCopy }) as React.ReactElement<any>
@@ -45,7 +45,7 @@ export function CopyToClipboard(props: CopyToClipboard.Props) {
 
 export namespace CopyToClipboard {
     export interface Props {
-        TooltipProps?: Partial<TooltipProps>;
+        tooltipProps?: Partial<TooltipProps>;
         children: (props: ChildProps) => React.ReactElement<any>;
     }
 

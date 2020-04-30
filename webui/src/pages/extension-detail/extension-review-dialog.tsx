@@ -9,9 +9,9 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme, CircularProgress } from "@material-ui/core";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
-import { Optional } from "../../custom-mui-components/optional";
+import { ButtonWithProgress } from "../../custom-mui-components/button-with-progress";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { UserData, ExtensionRaw, isError } from "../../extension-registry-types";
 import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
@@ -20,17 +20,6 @@ import { ErrorResponse } from '../../server-request';
 const REVIEW_COMMENT_SIZE = 2048;
 
 const reviewDialogStyles = (theme: Theme) => createStyles({
-    buttonProgress: {
-        color: theme.palette.secondary.main,
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        marginTop: -12,
-        marginLeft: -12,
-    },
-    buttonWrapper: {
-        position: 'relative'
-    },
     dialogActions: {
         [theme.breakpoints.down('xs')]: {
             justifyContent: 'center'
@@ -142,19 +131,12 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                         color="secondary" >
                         Cancel
                     </Button>
-                    <div className={this.props.classes.buttonWrapper}>
-                        <Button
-                            onClick={this.handlePost}
-                            disabled={Boolean(this.state.commentError) || this.state.posted}
-                            variant="contained"
-                            color="secondary"
-                        >
-                            Post Review
-                        </Button>
-                        <Optional enabled={this.state.posted}>
-                            <CircularProgress size={24} className={this.props.classes.buttonProgress} />
-                        </Optional>
-                    </div>
+                    <ButtonWithProgress
+                            error={Boolean(this.state.commentError)}
+                            working={this.state.posted}
+                            onClick={this.handlePost} >
+                        Post Review
+                    </ButtonWithProgress>
                 </DialogActions>
             </Dialog>
         </React.Fragment>;

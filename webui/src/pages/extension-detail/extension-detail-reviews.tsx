@@ -9,12 +9,12 @@
  ********************************************************************************/
 
 import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Button, Link, CircularProgress } from "@material-ui/core";
+import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Link } from "@material-ui/core";
 import { toLocalTime } from "../../utils";
 import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
-import { Optional } from "../../custom-mui-components/optional";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
+import { ButtonWithProgress } from "../../custom-mui-components/button-with-progress";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { ExportRatingStars } from "./extension-rating-stars";
 import { ExtensionReviewDialog } from "./extension-review-dialog";
@@ -44,17 +44,6 @@ const reviewStyles = (theme: Theme) => createStyles({
     comment: {
         overflow: 'hidden',
         textOverflow: 'ellipsis'
-    },
-    buttonProgress: {
-        color: theme.palette.secondary.main,
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        marginTop: -12,
-        marginLeft: -12,
-    },
-    buttonWrapper: {
-        position: 'relative'
     }
 });
 
@@ -124,20 +113,12 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         const existingReview = this.state.reviewList.reviews.find(r => isEqualUser(r.user, this.props.user!));
         if (existingReview) {
             const zonedDate = toLocalTime(existingReview.timestamp);
-            return <div className={this.props.classes.buttonWrapper}>
-                <Button
-                    variant='contained'
-                    color='secondary'
-                    disabled={this.state.revoked}
+            return <ButtonWithProgress
+                    working={this.state.revoked}
                     onClick={this.handleRevokeButton}
-                    title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`}
-                >
-                    Revoke my Review
-                </Button>
-                <Optional enabled={this.state.revoked}>
-                    <CircularProgress size={24} className={this.props.classes.buttonProgress} />
-                </Optional>
-            </div>;
+                    title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`} >
+                Revoke my Review
+            </ButtonWithProgress>;
         } else {
             return <Box>
                 <ExtensionReviewDialog

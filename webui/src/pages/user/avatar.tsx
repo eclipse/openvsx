@@ -12,7 +12,6 @@ import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Avatar, Menu, Typography, MenuItem, Link, Divider } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
-import { Optional } from '../../custom-mui-components/optional';
 import { UserData, isError } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { UserSettingsRoutes } from './user-settings';
@@ -109,9 +108,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                 </MenuItem>
                 <MenuItem className={this.props.classes.menuItem}>
                     <form method="post" action={this.props.service.getLogoutUrl()}>
-                        <Optional enabled={Boolean(this.state.csrf)}>
-                            <input name="_csrf" type="hidden" value={this.state.csrf}/>
-                        </Optional>
+                        {this.state.csrf ? <input name="_csrf" type="hidden" value={this.state.csrf} /> : null }
                         <button type="submit" className={`${this.props.classes.link} ${this.props.classes.menuButton}`}>
                             <Typography variant='button' className={this.props.classes.logoutButton}>
                                 Log Out

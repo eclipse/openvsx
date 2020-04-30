@@ -17,7 +17,6 @@ import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 import { toLocalTime, addQuery, createRoute } from "../../utils";
-import { Optional } from "../../custom-mui-components/optional";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, ExtensionReference } from "../../extension-registry-types";
@@ -172,18 +171,22 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                 Download
                             </Button>
                         </Box>
-                        <Optional enabled={extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0}>
+                        {
+                            extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0 ?
                             <Box mt={2}>
                                 <Typography variant='h6'>Bundled Extensions</Typography>
                                 {extension.bundledExtensions!.map(ref => this.renderExtensionRef(ref))}
                             </Box>
-                        </Optional>
-                        <Optional enabled={extension.dependencies !== undefined && extension.dependencies.length > 0}>
+                            : null
+                        }
+                        {
+                            extension.dependencies !== undefined && extension.dependencies.length > 0 ?
                             <Box mt={2}>
                                 <Typography variant='h6'>Dependencies</Typography>
                                 {extension.dependencies!.map(ref => this.renderExtensionRef(ref))}
                             </Box>
-                        </Optional>
+                            : null
+                        }
                         <Box mt={2} className={this.props.classes.moreInfo}>
                             <Typography variant='h6'>More Info</Typography>
                             {extension.version ? this.renderInfo('Version', extension.version + (extension.preview ? ' (preview)' : '')) : ''}
@@ -235,22 +238,20 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         if (!href || !(href.startsWith('http') || href.startsWith('mailto'))) {
             return '';
         }
+        let icon: React.ReactNode;
+        if (label === 'Homepage') {
+            icon = <HomeIcon fontSize='small' />;
+        } else if (label === 'Repository' && href.startsWith('https://github.com/')) {
+            icon = <GitHubIcon fontSize='small' />;
+        } else if (label === 'Bugs') {
+            icon = <BugReportIcon fontSize='small' />;
+        } else if (label === 'Q\'n\'A') {
+            icon = <QuestionAnswerIcon fontSize='small' />;
+        }
         return <Box>
             <Link href={href} target='_blank' variant='body2' color='secondary'
                 className={this.props.classes.resourceLink} >
-                <Optional enabled={label === 'Homepage'}>
-                    <HomeIcon fontSize='small' />&nbsp;
-                </Optional>
-                <Optional enabled={label === 'Repository' && href.startsWith('https://github.com/')}>
-                    <GitHubIcon fontSize='small' />&nbsp;
-                </Optional>
-                <Optional enabled={label === 'Bugs'}>
-                    <BugReportIcon fontSize='small' />&nbsp;
-                </Optional>
-                <Optional enabled={label === 'Q\'n\'A'}>
-                    <QuestionAnswerIcon fontSize='small' />&nbsp;
-                </Optional>
-                {label}
+                {icon}&nbsp;{label}
             </Link>
         </Box>;
     }
