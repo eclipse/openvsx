@@ -39,6 +39,8 @@ public class ExtensionJson extends ResultJson {
 
     public UserJson publishedBy;
 
+    public boolean unrelatedPublisher;
+
     // see constants in NamespaceJson
     public String namespaceAccess;
 

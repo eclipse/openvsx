@@ -13,15 +13,17 @@ import { Extension } from "./extension-registry-types";
 
 export interface PageSettings {
     pageTitle: string;
+    themeType?: 'light' | 'dark';
     toolbarContent?: React.FunctionComponent;
     footerContent?: React.FunctionComponent;
     searchHeader?: React.FunctionComponent,
     reportAbuse?: React.FunctionComponent<{ extension: Extension } & Styleable>;
     claimNamespace?: React.FunctionComponent<{ extension: Extension } & Styleable>;
     additionalRoutes?: React.FunctionComponent,
-    extensionDefaultIconURL?: string;
-    namespaceAccessInfoURL?: string;
-    themeType?: 'light' | 'dark';
+    urls: {
+        extensionDefaultIcon: string;
+        namespaceAccessInfo: string;
+    }
 }
 
 export interface Styleable {

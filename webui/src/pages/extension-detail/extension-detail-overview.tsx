@@ -197,7 +197,13 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                     className={this.props.classes.link}>
                                     {extension.namespace}
                                 </RouteLink>)}
-                            {this.renderInfo('Access Type', this.renderAccessInfo(extension))}
+                            {this.renderInfo('Access Type',
+                                <Link
+                                    href={this.props.pageSettings.urls.namespaceAccessInfo}
+                                    target='_blank'
+                                    className={this.props.classes.link}>
+                                    {extension.namespaceAccess || 'unknown'}
+                                </Link>)}
                         </Box>
                         <Box mt={2}>
                             {ClaimNamespace ? <ClaimNamespace extension={extension} className={this.props.classes.resourceLink} /> : ''}
@@ -274,20 +280,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 <Typography variant='body2'>{value}</Typography>
             </Box>
         </Box>;
-    }
-
-    protected renderAccessInfo(extension: Extension): React.ReactNode {
-        const text = extension.namespaceAccess || 'unknown';
-        if (this.props.pageSettings.namespaceAccessInfoURL) {
-            return <Link
-                href={this.props.pageSettings.namespaceAccessInfoURL}
-                target='_blank'
-                className={this.props.classes.link}>
-                {text}
-            </Link>;
-        } else {
-            return text;
-        }
     }
 
     protected renderMarkdown(md: string): React.ReactNode {

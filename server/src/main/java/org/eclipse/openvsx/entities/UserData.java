@@ -23,6 +23,7 @@ import org.eclipse.openvsx.json.UserJson;
 public class UserData {
 
     public static final String ROLE_ADMIN = "admin";
+    public static final String ROLE_PRIVILEGED = "privileged";
 
     @Id
     @GeneratedValue
