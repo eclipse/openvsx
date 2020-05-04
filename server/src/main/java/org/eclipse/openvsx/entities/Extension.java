@@ -26,7 +26,7 @@ public class Extension {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     String name;
 

@@ -24,7 +24,7 @@ public class NamespaceMembership {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     @ManyToOne
     @JoinColumn(name = "namespace")

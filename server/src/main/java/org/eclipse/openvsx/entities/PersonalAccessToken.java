@@ -30,7 +30,7 @@ public class PersonalAccessToken {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_data")

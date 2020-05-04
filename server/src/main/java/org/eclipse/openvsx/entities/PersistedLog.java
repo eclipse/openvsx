@@ -24,7 +24,7 @@ public class PersistedLog {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     LocalDateTime timestamp;
 

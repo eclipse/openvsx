@@ -24,7 +24,7 @@ public class ExtensionReview {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     @ManyToOne
     Extension extension;

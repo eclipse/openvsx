@@ -8,12 +8,6 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: gitpod
     password: gitpod
-  jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: none
   session:
     store-type: jdbc
     jdbc:

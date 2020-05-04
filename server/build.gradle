@@ -12,6 +12,7 @@ plugins {
 
 def versions = [
     java: '11',
+    eclipseLink: '2.7.6',
     flyway: '6.3.3',
     guava: '28.2-jre',
     junit: '5.6.2'
@@ -38,14 +39,18 @@ configurations {
 
 dependencies {
 	implementation "org.springframework.boot:spring-boot-starter-web"
-	implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa") {
+        exclude group: 'org.hibernate', module: 'hibernate-core'
+    }
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
+    implementation "org.eclipse.persistence:org.eclipse.persistence.jpa:${versions.eclipseLink}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.guava:guava:${versions.guava}"
+    runtimeOnly "org.springframework:spring-instrument"
 	runtimeOnly "org.postgresql:postgresql"
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
@@ -55,6 +60,10 @@ dependencies {
 task runServer(type: JavaExec) {
     classpath = sourceSets.dev.runtimeClasspath
     main = 'org.eclipse.openvsx.RegistryApplication'
+    def instrumentJar = sourceSets.dev.runtimeClasspath.find{ f ->
+        f.name.matches('spring-instrument-\\d+\\.\\d+\\.\\d+\\.RELEASE\\.jar')
+    }
+    jvmArgs = ["-javaagent:${instrumentJar}"]
 }
 
 test {

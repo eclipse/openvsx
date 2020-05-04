@@ -6,7 +6,8 @@
             "name": "Launch RegistryApplication",
             "request": "launch",
             "mainClass": "org.eclipse.openvsx.RegistryApplication",
-            "projectName": "openvsx-server"
+            "projectName": "openvsx-server",
+            "vmArgs": "-javaagent:/workspace/.gradle/caches/modules-2/files-2.1/org.springframework/spring-instrument/5.2.5.RELEASE/4301e9f70a94da4631ff2f44901aac39165f274/spring-instrument-5.2.5.RELEASE.jar"
         }
     ]
 }

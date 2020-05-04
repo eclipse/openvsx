@@ -32,7 +32,7 @@ public class ExtensionVersion {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     @ManyToOne
     Extension extension;

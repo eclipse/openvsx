@@ -19,7 +19,7 @@ public class ExtensionReadme implements FileResource {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     @OneToOne
     ExtensionVersion extension;

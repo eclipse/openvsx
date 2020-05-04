@@ -19,7 +19,7 @@ public class ExtensionIcon implements FileResource {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     @OneToOne
     ExtensionVersion extension;

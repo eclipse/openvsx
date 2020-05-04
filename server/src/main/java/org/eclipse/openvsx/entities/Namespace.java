@@ -24,7 +24,7 @@ public class Namespace {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     String name;
 

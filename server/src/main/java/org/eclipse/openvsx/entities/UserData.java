@@ -26,7 +26,7 @@ public class UserData {
 
     @Id
     @GeneratedValue
-    long id;
+    Long id;
 
     @Column(length = 32)
     String role;
