@@ -114,6 +114,7 @@ const detailStyles = (theme: Theme) => createStyles({
     banner: {
         margin: `0 ${theme.spacing(6)}px ${theme.spacing(4)}px ${theme.spacing(6)}px`,
         padding: theme.spacing(2),
+        display: 'flex',
         [theme.breakpoints.down('sm')]: {
             margin: `0 0 ${theme.spacing(2)}px 0`,
         }
@@ -121,7 +122,7 @@ const detailStyles = (theme: Theme) => createStyles({
     warningLight: {
         backgroundColor: theme.palette.warning.light,
         color: '#000',
-        '& > a': {
+        '& a': {
             color: '#000',
             fontWeight: 'bold'
         }
@@ -129,7 +130,7 @@ const detailStyles = (theme: Theme) => createStyles({
     warningDark: {
         backgroundColor: theme.palette.warning.dark,
         color: '#fff',
-        '& > a': {
+        '& a': {
             color: '#fff',
             fontWeight: 'bold'
         }
@@ -236,35 +237,39 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         const classes = this.props.classes;
         const warningClass = themeType === 'dark' ? classes.warningDark : classes.warningLight;
         const themeClass = themeType === 'dark' ? classes.darkTheme : classes.lightTheme;
-        let extensionName = extension.displayName || extension.name;
-        if (!extensionName.toLowerCase().endsWith('extension')) {
-            extensionName += ' extension';
-        }
         if (extension.namespaceAccess === 'public') {
             return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
-                The namespace <span className={classes.code}>{extension.namespace}</span> is public,
-                which means that everyone can publish new versions of the {extensionName}.
-                If you would like to become the owner of <span className={classes.code}>{extension.namespace}</span>,
-                please <Link
-                    href={this.props.pageSettings.urls.namespaceAccessInfo}
-                    target='_blank'
-                    className={`${classes.link}`} >
-                    read this guide
-                </Link>.
+                <PublicIcon fontSize='large' />
+                <Box ml={1}>
+                    The namespace <span className={classes.code}>{extension.namespace}</span> is public,
+                    which means that everyone can publish new versions of
+                    the "{extension.displayName || extension.name}" extension.
+                    If you would like to become the owner of <span className={classes.code}>{extension.namespace}</span>,
+                    please <Link
+                        href={this.props.pageSettings.urls.namespaceAccessInfo}
+                        target='_blank'
+                        className={`${classes.link}`} >
+                        read this guide
+                    </Link>.
+                </Box>
             </Paper>;
         } else if (extension.unrelatedPublisher) {
             return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
-                The {extensionName} was published by <Link href={extension.publishedBy.homepage}
-                    className={`${classes.link}`}>
-                    {extension.publishedBy.loginName}
-                </Link>. This user account is not related to
-                the namespace <span className={classes.code}>{extension.namespace}</span> of
-                this extension. <Link
-                    href={this.props.pageSettings.urls.namespaceAccessInfo}
-                    target='_blank'
-                    className={`${classes.link}`} >
-                    See the documentation
-                </Link> to learn how we handle namespaces.
+                <WarningIcon fontSize='large' />
+                <Box ml={1}>
+                    The "{extension.displayName || extension.name}" extension was published
+                    by <Link href={extension.publishedBy.homepage}
+                        className={`${classes.link}`}>
+                        {extension.publishedBy.loginName}
+                    </Link>. This user account is not related to
+                    the namespace <span className={classes.code}>{extension.namespace}</span> of
+                    this extension. <Link
+                        href={this.props.pageSettings.urls.namespaceAccessInfo}
+                        target='_blank'
+                        className={`${classes.link}`} >
+                        See the documentation
+                    </Link> to learn how we handle namespaces.
+                </Box>
             </Paper>;
         }
         return null;
