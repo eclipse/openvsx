@@ -44,8 +44,6 @@ import org.springframework.util.StopWatch;
 @Component
 public class SearchService {
 
-    private static final double BUILTIN_PENALTY = 0.5;
-
     protected final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected final Logger logger = LoggerFactory.getLogger(SearchService.class);
 
@@ -57,6 +55,15 @@ public class SearchService {
 
     @Value("${ovsx.elasticsearch.enabled:true}")
     boolean enableSearch;
+
+    @Value("${ovsx.elasticsearch.relevance.rating:1.0}")
+    double ratingRelevance;
+    @Value("${ovsx.elasticsearch.relevance.downloads:1.0}")
+    double downloadsRelevance;
+    @Value("${ovsx.elasticsearch.relevance.timestamp:1.0}")
+    double timestampRelevance;
+    @Value("${ovsx.elasticsearch.relevance.builtin:0.5}")
+    double builtinRelevance;
 
     public boolean isEnabled() {
         return enableSearch;
@@ -117,11 +124,13 @@ public class SearchService {
         var downloadsValue = entry.downloadCount / stats.downloadRef;
         var timestamp = extension.getLatest().getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
-        entry.relevance = 2 * limit(ratingValue) + 2 * limit(downloadsValue) + 1 * limit(timestampValue);
+        entry.relevance = ratingRelevance * limit(ratingValue)
+                + downloadsRelevance * limit(downloadsValue)
+                + timestampRelevance * limit(timestampValue);
 
         // Reduce the relevance value of built-in extensions to show other results first
         if ("vscode".equals(entry.namespace)) {
-            entry.relevance *= BUILTIN_PENALTY;
+            entry.relevance *= builtinRelevance;
         }
     
         if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
