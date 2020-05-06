@@ -13,6 +13,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +33,7 @@ import org.eclipse.openvsx.entities.ExtensionReadme;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LicenseDetection;
 import org.springframework.data.util.Pair;
 
 /**
@@ -54,17 +56,17 @@ public class ExtensionProcessor implements AutoCloseable {
         this.inputStream = stream;
     }
 
-	@Override
-	public void close() {
+    @Override
+    public void close() {
         if (zipFile != null) {
-			try {
-				zipFile.close();
-			} catch (IOException exc) {
-				throw new RuntimeException(exc);
+            try {
+                zipFile.close();
+            } catch (IOException exc) {
+                throw new RuntimeException(exc);
             }
         }
     }
-    
+
     private void readInputStream() {
         try {
             content = ByteStreams.toByteArray(inputStream);
@@ -75,9 +77,9 @@ public class ExtensionProcessor implements AutoCloseable {
             throw new ErrorResultException("Could not read zip file: " + exc.getMessage());
         } catch (EOFException exc) {
             throw new ErrorResultException("Could not read from input stream: " + exc.getMessage());
-		} catch (IOException exc) {
-			throw new RuntimeException(exc);
-		}
+        } catch (IOException exc) {
+            throw new RuntimeException(exc);
+        }
     }
 
     private void loadPackageJson() {
@@ -94,8 +96,8 @@ public class ExtensionProcessor implements AutoCloseable {
             } catch (JsonParseException exc) {
                 throw new ErrorResultException("Invalid JSON format in " + PACKAGE_JSON
                         + ": " + exc.getMessage());
-			} catch (IOException exc) {
-				throw new RuntimeException(exc);
+            } catch (IOException exc) {
+                throw new RuntimeException(exc);
             }
 
             // Read package.nls.json
@@ -209,12 +211,15 @@ public class ExtensionProcessor implements AutoCloseable {
 
     public ExtensionLicense getLicense(ExtensionVersion extension) {
         var license = new ExtensionLicense();
+        String licenseId;
         license.setExtension(extension);
         if (extension.getLicense() != null && extension.getLicense().toUpperCase().startsWith("SEE LICENSE IN ")) {
             var fileName = extension.getLicense().substring("SEE LICENSE IN ".length()).trim();
             extension.setLicense(null);
             var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
             if (bytes != null) {
+                licenseId = this.getLicenseId(bytes);
+                extension.setLicense(licenseId);
                 license.setContent(bytes);
                 var lastSegmentIndex = fileName.lastIndexOf('/');
                 var lastSegment = fileName.substring(lastSegmentIndex + 1);
@@ -227,9 +232,21 @@ public class ExtensionProcessor implements AutoCloseable {
         if (result == null) {
             return null;
         }
+        if (extension.getLicense() == null || extension.getLicense().isEmpty()) {
+            licenseId = this.getLicenseId(result.getFirst());
+            extension.setLicense(licenseId);
+        }
         license.setContent(result.getFirst());
         extension.setLicenseFileName(result.getSecond());
         return license;
+    }
+
+    private String getLicenseId(byte[] text) {
+        try {
+            return LicenseDetection.detectLicense(new String(text, "utf-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Pair<byte[], String> readFromAlternateNames(String[] names) {
