@@ -16,7 +16,7 @@ def versions = [
     guava: '28.2-jre',
     junit: '5.6.2'
 ]
-
+ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
 
 repositories {

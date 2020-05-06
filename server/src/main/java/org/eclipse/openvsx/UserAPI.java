@@ -29,6 +29,7 @@ import org.eclipse.openvsx.json.NamespaceMembershipJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -217,9 +218,9 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        var users = repositories.findUsersByLoginNameStartingWith(name);
-
-        return users.filter(user -> user.getProvider() != null).map(user -> user.toUserJson()).toList();
+        var users = repositories.findUsersByLoginNameStartingWith(name)
+                .map(user -> user.toUserJson());
+        return CollectionUtil.limit(users, 5);
     }
 
     @PostMapping(path = "/user/namespace/{namespaceName}/member/{setMethod}/{userLogin}", produces = MediaType.APPLICATION_JSON_VALUE)

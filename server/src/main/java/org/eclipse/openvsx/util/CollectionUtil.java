@@ -37,4 +37,16 @@ public final class CollectionUtil {
         return result;
     }
 
+    public static <T> List<T> limit(Iterable<T> source, int limit) {
+        var result = new ArrayList<T>();
+        var count = 0;
+        for (var s : source) {
+            result.add(s);
+            count++;
+            if (count == limit)
+                return result;
+        }
+        return result;
+    }
+
 }
