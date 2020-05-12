@@ -417,8 +417,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         return (double) sum / count;
     }
 
-    private SearchEntryJson toSearchEntry(ExtensionSearch search) {
-        var extension = entityManager.find(Extension.class, search.id);
+    private SearchEntryJson toSearchEntry(ExtensionSearch searchItem) {
+        var extension = entityManager.find(Extension.class, searchItem.id);
         if (extension == null)
             return null;
         var extVer = extension.getLatest();

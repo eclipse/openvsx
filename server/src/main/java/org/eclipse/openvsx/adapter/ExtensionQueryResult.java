@@ -1,0 +1,104 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+package org.eclipse.openvsx.adapter;
+
+import java.util.List;
+
+public class ExtensionQueryResult {
+
+    public List<ResultItem> results;
+
+    public static class ResultItem {
+        public List<Extension> extensions;
+        public List<ResultMetadata> resultMetadata;
+    }
+
+    public static class Extension {
+        public static final String FLAG_PREVIEW = "preview";
+
+        public Publisher publisher;
+        public String extensionId;
+        public String extensionName;
+        public String displayName;
+        public String flags;
+        public String shortDescription;
+        public List<ExtensionVersion> versions;
+        public List<Statistic> statistics;
+    }
+
+    public static class Publisher {
+        public String publisherId;
+        public String publisherName;
+        public String displayName;
+    }
+
+    public static class ExtensionVersion {
+        public String version;
+        public String lastUpdated;
+        public List<ExtensionFile> files;
+        public List<Property> properties;
+        public String assetUri;
+        public String fallbackAssetUri;
+
+        public void addProperty(String key, String value) {
+            if (value != null) {
+                var repositoryProp = new Property();
+                repositoryProp.key = key;
+                repositoryProp.value = value;
+                properties.add(repositoryProp);
+            }
+        }
+    }
+
+    public static class ExtensionFile {
+        public static final String FILE_ICON = "Microsoft.VisualStudio.Services.Icons.Default";
+        public static final String FILE_DETAILS = "Microsoft.VisualStudio.Services.Content.Details";
+        public static final String FILE_CHANGELOG = "Microsoft.VisualStudio.Services.Content.Changelog";
+        public static final String FILE_MANIFEST = "Microsoft.VisualStudio.Code.Manifest";
+        public static final String FILE_VSIX = "Microsoft.VisualStudio.Services.VSIXPackage";
+        public static final String FILE_LICENSE = "Microsoft.VisualStudio.Services.Content.License";
+
+        public String assetType;
+        public String source;
+    }
+
+    public static class Property {
+        public static final String PROP_REPOSITORY = "Microsoft.VisualStudio.Services.Links.Source";
+        public static final String PROP_DEPENDENCY = "Microsoft.VisualStudio.Code.ExtensionDependencies";
+        public static final String PROP_EXTENSION_PACK = "Microsoft.VisualStudio.Code.ExtensionPack";
+        public static final String PROP_ENGINE = "Microsoft.VisualStudio.Code.Engine";
+        public static final String PROP_LOCALIZED_LANGUAGES = "Microsoft.VisualStudio.Code.LocalizedLanguages";
+        public static final String PROP_BRANDING_COLOR = "Microsoft.VisualStudio.Services.Branding.Color";
+        public static final String PROP_BRANDING_THEME = "Microsoft.VisualStudio.Services.Branding.Theme";
+
+        public String key;
+        public String value;
+    }
+
+    public static class Statistic {
+        public static final String STAT_INSTALL = "install";
+        public static final String STAT_AVERAGE_RATING = "averagerating";
+        public static final String STAT_RATING_COUNT = "ratingcount";
+
+        public String statisticName;
+        public double value;
+    }
+
+    public static class ResultMetadata {
+        public String metadataType;
+        public List<ResultMetadataItem> metadataItems;
+    }
+
+    public static class ResultMetadataItem {
+        public String name;
+        public long count;
+    }
+
+}
