@@ -17,12 +17,9 @@ import org.eclipse.openvsx.entities.PersistedLog;
 import java.time.LocalDateTime;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionBinary;
-import org.eclipse.openvsx.entities.ExtensionIcon;
-import org.eclipse.openvsx.entities.ExtensionLicense;
-import org.eclipse.openvsx.entities.ExtensionReadme;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -34,10 +31,7 @@ public class RepositoryService {
     @Autowired NamespaceRepository namespaceRepo;
     @Autowired ExtensionRepository extensionRepo;
     @Autowired ExtensionVersionRepository extensionVersionRepo;
-    @Autowired ExtensionBinaryRepository extensionBinaryRepo;
-    @Autowired ExtensionIconRepository extensionIconRepo;
-    @Autowired ExtensionReadmeRepository extensionReadmeRepo;
-    @Autowired ExtensionLicenseRepository extensionLicenseRepo;
+    @Autowired FileResourceRepository fileResourceRepo;
     @Autowired ExtensionReviewRepository extensionReviewRepo;
     @Autowired UserDataRepository userDataRepo;
     @Autowired NamespaceMembershipRepository membershipRepo;
@@ -100,24 +94,20 @@ public class RepositoryService {
         return extensionVersionRepo.findByLicense(license);
     }
 
+    public Streamable<ExtensionVersion> findAllExtensionVersions() {
+        return extensionVersionRepo.findAll();
+    }
+
     public LocalDateTime getOldestExtensionTimestamp() {
         return extensionVersionRepo.getOldestTimestamp();
     }
 
-    public ExtensionBinary findBinary(ExtensionVersion extVersion) {
-        return extensionBinaryRepo.findByExtension(extVersion);
+    public Streamable<FileResource> findFiles(ExtensionVersion extVersion) {
+        return fileResourceRepo.findByExtension(extVersion);
     }
 
-    public ExtensionIcon findIcon(ExtensionVersion extVersion) {
-        return extensionIconRepo.findByExtension(extVersion);
-    }
-
-    public ExtensionReadme findReadme(ExtensionVersion extVersion) {
-        return extensionReadmeRepo.findByExtension(extVersion);
-    }
-
-    public ExtensionLicense findLicense(ExtensionVersion extVersion) {
-        return extensionLicenseRepo.findByExtension(extVersion);
+    public FileResource findFile(ExtensionVersion extVersion, String type) {
+        return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }
 
     public Streamable<ExtensionReview> findActiveReviews(Extension extension) {

@@ -47,6 +47,15 @@ public class ExtensionQueryResult {
         public String assetUri;
         public String fallbackAssetUri;
 
+        public void addFile(String assetType, String source) {
+            if (source != null) {
+                var file = new ExtensionFile();
+                file.assetType = assetType;
+                file.source = source;
+                files.add(file);
+            }
+        }
+
         public void addProperty(String key, String value) {
             if (value != null) {
                 var repositoryProp = new Property();

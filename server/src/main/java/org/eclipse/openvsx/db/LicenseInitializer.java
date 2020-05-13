@@ -13,6 +13,7 @@ import java.util.Arrays;
 
 import javax.transaction.Transactional;
 
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.LicenseDetection;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ public class LicenseInitializer {
     public void initExtensionLicenses(ApplicationStartedEvent event) {
         var detection = new LicenseDetection(Arrays.asList(detectLicenseIds));
         repositories.findVersionsByLicense(null).forEach(extVersion -> {
-            var license = repositories.findLicense(extVersion);
+            var license = repositories.findFile(extVersion, FileResource.LICENSE);
             if (license != null) {
                 var detectedId = detection.detectLicense(license.getContent());
                 if (detectedId != null) {

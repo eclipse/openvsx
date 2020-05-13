@@ -28,10 +28,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionBinary;
-import org.eclipse.openvsx.entities.ExtensionIcon;
-import org.eclipse.openvsx.entities.ExtensionLicense;
-import org.eclipse.openvsx.entities.ExtensionReadme;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -43,6 +39,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -111,37 +108,46 @@ public class VSCodeAdapter {
         var extVersion = repositories.findVersion(version, extensionName, namespace);
         if (extVersion == null)
             throw new NotFoundException();
-        var resource = getFile(extVersion, assetType);
-        if (resource == null)
+        var fileNameAndResource = getFile(extVersion, assetType);
+        if (fileNameAndResource == null || fileNameAndResource.getSecond() == null)
             throw new NotFoundException();
-        String fileName = "";
-        if (resource instanceof ExtensionBinary) {
+        if (fileNameAndResource.getSecond().getType().equals(FileResource.DOWNLOAD)) {
             var extension = extVersion.getExtension();
             extension.setDownloadCount(extension.getDownloadCount() + 1);
             search.updateSearchEntry(extension);
-            fileName = extVersion.getExtensionFileName();
-        } else if (resource instanceof ExtensionReadme) {
-            fileName = extVersion.getReadmeFileName();
-        } else if (resource instanceof ExtensionLicense) {
-            fileName = extVersion.getLicenseFileName();
-        } else if (resource instanceof ExtensionIcon) {
-            fileName = extVersion.getIconFileName();
         }
-        var content = resource.getContent();
-        var headers = getFileResponseHeaders(fileName);
+        var content = fileNameAndResource.getSecond().getContent();
+        var headers = getFileResponseHeaders(fileNameAndResource.getFirst());
         return new ResponseEntity<>(content, headers, HttpStatus.OK);
     }
     
-    private FileResource getFile(ExtensionVersion extVersion, String assetType) {
+    private Pair<String, FileResource> getFile(ExtensionVersion extVersion, String assetType) {
         switch (assetType) {
             case FILE_VSIX:
-                return repositories.findBinary(extVersion);
+                return Pair.of(
+                    extVersion.getExtensionFileName(),
+                    repositories.findFile(extVersion, FileResource.DOWNLOAD)
+                );
+            case FILE_MANIFEST:
+                return Pair.of(
+                    "package.json",
+                    repositories.findFile(extVersion, FileResource.MANIFEST)
+                );
             case FILE_DETAILS:
-                return repositories.findReadme(extVersion);
+                return Pair.of(
+                    extVersion.getReadmeFileName(),
+                    repositories.findFile(extVersion, FileResource.README)
+                );
             case FILE_LICENSE:
-                return repositories.findLicense(extVersion);
+                return Pair.of(
+                    extVersion.getLicenseFileName(),
+                    repositories.findFile(extVersion, FileResource.LICENSE)
+                );
             case FILE_ICON:
-                return repositories.findIcon(extVersion);
+                return Pair.of(
+                    extVersion.getIconFileName(),
+                    repositories.findFile(extVersion, FileResource.ICON)
+                );
             default:
                return null;
         }
@@ -267,30 +273,16 @@ public class VSCodeAdapter {
 
         if (test(flags, FLAG_INCLUDE_FILES)) {
             queryVer.files = Lists.newArrayList();
-            if (extVer.getReadmeFileName() != null) {
-                var readmeFile = new ExtensionQueryResult.ExtensionFile();
-                readmeFile.assetType = FILE_DETAILS;
-                readmeFile.source = UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getReadmeFileName());
-                queryVer.files.add(readmeFile);
-            }
-            if (extVer.getLicenseFileName() != null) {
-                var licenseFile = new ExtensionQueryResult.ExtensionFile();
-                licenseFile.assetType = FILE_LICENSE;
-                licenseFile.source = UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getLicenseFileName());
-                queryVer.files.add(licenseFile);
-            }
-            if (extVer.getIconFileName() != null) {
-                var iconFile = new ExtensionQueryResult.ExtensionFile();
-                iconFile.assetType = FILE_ICON;
-                iconFile.source = UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getIconFileName());
-                queryVer.files.add(iconFile);
-            }
-            if (extVer.getExtensionFileName() != null) {
-                var vsixFile = new ExtensionQueryResult.ExtensionFile();
-                vsixFile.assetType = FILE_VSIX;
-                vsixFile.source = UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getExtensionFileName());
-                queryVer.files.add(vsixFile);
-            }
+            queryVer.addFile(FILE_MANIFEST,
+                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", "package.json"));
+            queryVer.addFile(FILE_DETAILS,
+                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getReadmeFileName()));
+            queryVer.addFile(FILE_LICENSE,
+                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getLicenseFileName()));
+            queryVer.addFile(FILE_ICON,
+                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getIconFileName()));
+            queryVer.addFile(FILE_VSIX,
+                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getExtensionFileName()));
         }
 
         if (test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {

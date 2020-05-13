@@ -99,18 +99,7 @@ public class AdminService {
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
-        var binary = repositories.findBinary(extVersion);
-        if (binary != null)
-            entityManager.remove(binary);
-        var icon = repositories.findIcon(extVersion);
-        if (icon != null)
-            entityManager.remove(icon);
-        var license = repositories.findLicense(extVersion);
-        if (license != null)
-            entityManager.remove(license);
-        var readme = repositories.findReadme(extVersion);
-        if (readme != null)
-            entityManager.remove(readme);
+        repositories.findFiles(extVersion).forEach(file -> entityManager.remove(file));
         entityManager.remove(extVersion);
     }
 

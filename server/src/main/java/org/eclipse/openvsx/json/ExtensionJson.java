@@ -30,7 +30,7 @@ public class ExtensionJson extends ResultJson {
 
     public String reviewsUrl;
 
-    // key: file id ("download", "icon", "readme", "license"), value: url
+    // key: file type (see constants in FileResource), value: url
     public Map<String, String> files;
 
     public String name;

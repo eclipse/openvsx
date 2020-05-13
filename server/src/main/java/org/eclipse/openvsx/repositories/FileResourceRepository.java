@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2019 TypeFox and others
+ * Copyright (c) 2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,12 +10,14 @@
 package org.eclipse.openvsx.repositories;
 
 import org.springframework.data.repository.Repository;
-
-import org.eclipse.openvsx.entities.ExtensionIcon;
+import org.springframework.data.util.Streamable;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
 
-public interface ExtensionIconRepository extends Repository<ExtensionIcon, Long> {
+public interface FileResourceRepository extends Repository<FileResource, Long> {
 
-    ExtensionIcon findByExtension(ExtensionVersion extVersion);
+    Streamable<FileResource> findByExtension(ExtensionVersion extVersion);
+
+    FileResource findByExtensionAndType(ExtensionVersion extVersion, String type);
 
 }

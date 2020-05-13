@@ -25,11 +25,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-import org.eclipse.openvsx.entities.ExtensionBinary;
-import org.eclipse.openvsx.entities.ExtensionIcon;
-import org.eclipse.openvsx.entities.ExtensionLicense;
-import org.eclipse.openvsx.entities.ExtensionReadme;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LicenseDetection;
@@ -47,13 +44,19 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
 
     private final InputStream inputStream;
+    private final List<String> detectedLicenseIds;
     private byte[] content;
     private ZipFile zipFile;
     private JsonNode packageJson;
     private JsonNode packageNlsJson;
 
     public ExtensionProcessor(InputStream stream) {
+        this(stream, Collections.emptyList());
+    }
+
+    public ExtensionProcessor(InputStream stream, List<String> detectedLicenseIds) {
         this.inputStream = stream;
+        this.detectedLicenseIds = detectedLicenseIds;
     }
 
     @Override
@@ -68,6 +71,9 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     private void readInputStream() {
+        if (zipFile != null) {
+            return;
+        }
         try {
             content = ByteStreams.toByteArray(inputStream);
             var tempFile = File.createTempFile("extension_", ".vsix");
@@ -83,35 +89,36 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     private void loadPackageJson() {
-        if (packageJson == null) {
-            readInputStream();
+        if (packageJson != null) {
+            return;
+        }
+        readInputStream();
 
-            // Read package.json
-            var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
-            if (bytes == null)
-                throw new ErrorResultException("Entry not found: " + PACKAGE_JSON);
+        // Read package.json
+        var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
+        if (bytes == null)
+            throw new ErrorResultException("Entry not found: " + PACKAGE_JSON);
+        try {
+            var mapper = new ObjectMapper();
+            packageJson = mapper.readTree(bytes);
+        } catch (JsonParseException exc) {
+            throw new ErrorResultException("Invalid JSON format in " + PACKAGE_JSON
+                    + ": " + exc.getMessage());
+        } catch (IOException exc) {
+            throw new RuntimeException(exc);
+        }
+
+        // Read package.nls.json
+        bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_NLS_JSON);
+        if (bytes != null) {
             try {
                 var mapper = new ObjectMapper();
-                packageJson = mapper.readTree(bytes);
+                packageNlsJson = mapper.readTree(bytes);
             } catch (JsonParseException exc) {
-                throw new ErrorResultException("Invalid JSON format in " + PACKAGE_JSON
+                throw new ErrorResultException("Invalid JSON format in " + PACKAGE_NLS_JSON
                         + ": " + exc.getMessage());
             } catch (IOException exc) {
                 throw new RuntimeException(exc);
-            }
-
-            // Read package.nls.json
-            bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_NLS_JSON);
-            if (bytes != null) {
-                try {
-                    var mapper = new ObjectMapper();
-                    packageNlsJson = mapper.readTree(bytes);
-                } catch (JsonParseException exc) {
-                    throw new ErrorResultException("Invalid JSON format in " + PACKAGE_NLS_JSON
-                            + ": " + exc.getMessage());
-                } catch (IOException exc) {
-                    throw new RuntimeException(exc);
-                }
             }
         }
     }
@@ -190,28 +197,66 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    public ExtensionBinary getBinary(ExtensionVersion extension) {
-        var binary = new ExtensionBinary();
+    public List<FileResource> getResources(ExtensionVersion extension) {
+        var resources = new ArrayList<FileResource>();
+        var binary = getBinary(extension);
+        if (binary != null)
+            resources.add(binary);
+        var manifest = getManifest(extension);
+        if (manifest != null)
+            resources.add(manifest);
+        var readme = getReadme(extension);
+        if (readme != null)
+            resources.add(readme);
+        var license = getLicense(extension);
+        if (license != null)
+            resources.add(license);
+        var icon = getIcon(extension);
+        if (icon != null)
+            resources.add(icon);
+        return resources;
+    }
+
+    public FileResource getBinary(ExtensionVersion extension) {
+        var binary = new FileResource();
         binary.setExtension(extension);
+        binary.setType(FileResource.DOWNLOAD);
         binary.setContent(content);
         return binary;
     }
 
-    public ExtensionReadme getReadme(ExtensionVersion extension) {
+    public FileResource getManifest(ExtensionVersion extension) {
+        readInputStream();
+        var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
+        if (bytes == null) {
+            return null;
+        }
+        var manifest = new FileResource();
+        manifest.setExtension(extension);
+        manifest.setType(FileResource.MANIFEST);
+        manifest.setContent(bytes);
+        return manifest;
+    }
+
+    public FileResource getReadme(ExtensionVersion extension) {
+        readInputStream();
         var result = readFromAlternateNames(README);
         if (result == null) {
             return null;
         }
-        var readme = new ExtensionReadme();
+        var readme = new FileResource();
         readme.setExtension(extension);
+        readme.setType(FileResource.README);
         readme.setContent(result.getFirst());
         extension.setReadmeFileName(result.getSecond());
         return readme;
     }
 
-    public ExtensionLicense getLicense(ExtensionVersion extension, List<String> detectedLicenseIds) {
-        var license = new ExtensionLicense();
+    public FileResource getLicense(ExtensionVersion extension) {
+        readInputStream();
+        var license = new FileResource();
         license.setExtension(extension);
+        license.setType(FileResource.LICENSE);
         if (extension.getLicense() != null && extension.getLicense().toUpperCase().startsWith("SEE LICENSE IN ")) {
             var fileName = extension.getLicense().substring("SEE LICENSE IN ".length()).trim();
             extension.setLicense(null);
@@ -252,7 +297,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    public ExtensionIcon getIcon(ExtensionVersion extension) {
+    public FileResource getIcon(ExtensionVersion extension) {
         loadPackageJson();
         var iconPath = packageJson.get("icon");
         if (iconPath == null || !iconPath.isTextual())
@@ -261,8 +306,9 @@ public class ExtensionProcessor implements AutoCloseable {
         var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + iconPathStr);
         if (bytes == null)
             return null;
-        var icon = new ExtensionIcon();
+        var icon = new FileResource();
         icon.setExtension(extension);
+        icon.setType(FileResource.ICON);
         icon.setContent(bytes);
         var fileNameIndex = iconPathStr.lastIndexOf('/');
         if (fileNameIndex >= 0)

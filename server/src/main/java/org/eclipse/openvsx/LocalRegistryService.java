@@ -28,7 +28,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionBinary;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -132,7 +131,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var resource = getFile(extVersion, fileName);
         if (resource == null)
             throw new NotFoundException();
-        if (resource instanceof ExtensionBinary) {
+        if (resource.getType().equals(FileResource.DOWNLOAD)) {
             var extension = extVersion.getExtension();
             extension.setDownloadCount(extension.getDownloadCount() + 1);
             search.updateSearchEntry(extension);
@@ -142,13 +141,15 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private FileResource getFile(ExtensionVersion extVersion, String fileName) {
         if (fileName.equals(extVersion.getExtensionFileName()))
-            return repositories.findBinary(extVersion);
+            return repositories.findFile(extVersion, FileResource.DOWNLOAD);
+        if (fileName.equals("package.json"))
+            return repositories.findFile(extVersion, FileResource.MANIFEST);
         if (fileName.equals(extVersion.getReadmeFileName()))
-            return repositories.findReadme(extVersion);
+            return repositories.findFile(extVersion, FileResource.README);
         if (fileName.equals(extVersion.getLicenseFileName()))
-            return repositories.findLicense(extVersion);
+            return repositories.findFile(extVersion, FileResource.LICENSE);
         if (fileName.equals(extVersion.getIconFileName()))
-            return repositories.findIcon(extVersion);
+            return repositories.findFile(extVersion, FileResource.ICON);
         return null;
     }
 
@@ -220,23 +221,13 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        try (var processor = new ExtensionProcessor(content)) {
+        try (var processor = new ExtensionProcessor(content, Arrays.asList(detectedLicenseIds))) {
             var token = users.useAccessToken(tokenValue);
             if (token == null) {
                 throw new ErrorResultException("Invalid access token.");
             }
             var extVersion = createExtensionVersion(processor, token.getUser(), token);
-            var binary = processor.getBinary(extVersion);
-            entityManager.persist(binary);
-            var readme = processor.getReadme(extVersion);
-            if (readme != null)
-                entityManager.persist(readme);
-            var license = processor.getLicense(extVersion, Arrays.asList(detectedLicenseIds));
-            if (license != null)
-                entityManager.persist(license);
-            var icon = processor.getIcon(extVersion);
-            if (icon != null)
-                entityManager.persist(icon);
+            processor.getResources(extVersion).forEach(resource -> entityManager.persist(resource));
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
 
@@ -431,8 +422,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         var serverUrl = UrlUtil.getBaseUrl();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
         entry.files = new LinkedHashMap<>();
-        entry.files.put("download", createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getExtensionFileName()));
-        entry.files.put("icon", createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getIconFileName()));
+        entry.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getExtensionFileName()));
+        entry.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getIconFileName()));
         return entry;
     }
 
@@ -456,10 +447,11 @@ public class LocalRegistryService implements IExtensionRegistry {
             json.allVersions.put(semVer.toString(), url);
         }
         json.files = new LinkedHashMap<>();
-        json.files.put("download", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName()));
-        json.files.put("icon", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName()));
-        json.files.put("readme", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName()));
-        json.files.put("license", createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName()));
+        json.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName()));
+        json.files.put(FileResource.MANIFEST, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", "package.json"));
+        json.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName()));
+        json.files.put(FileResource.README, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName()));
+        json.files.put(FileResource.LICENSE, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName()));
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {
                 ref.url = createApiUrl(serverUrl, "api", ref.namespace, ref.extension);
