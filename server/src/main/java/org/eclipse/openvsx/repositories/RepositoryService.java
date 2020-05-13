@@ -96,6 +96,10 @@ public class RepositoryService {
         return extensionVersionRepo.findByDependencies(extension);
     }
 
+    public Streamable<ExtensionVersion> findVersionsByLicense(String license) {
+        return extensionVersionRepo.findByLicense(license);
+    }
+
     public LocalDateTime getOldestExtensionTimestamp() {
         return extensionVersionRepo.getOldestTimestamp();
     }

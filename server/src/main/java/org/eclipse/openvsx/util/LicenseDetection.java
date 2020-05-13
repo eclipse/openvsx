@@ -51,11 +51,11 @@ public class LicenseDetection {
         }
     }
 
-    public String detectLicense(String file) {
+    public String detectLicense(String content) {
         try {
             for (var licenseId : licenseIds) {
                 var license = LicenseInfoFactory.getListedLicenseById(licenseId);
-                var diff = LicenseCompareHelper.isTextStandardLicense(license, file);
+                var diff = LicenseCompareHelper.isTextStandardLicense(license, content);
                 if (!diff.isDifferenceFound()) {
                     return license.getLicenseId();
                 }
