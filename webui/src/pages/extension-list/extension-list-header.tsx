@@ -39,7 +39,7 @@ const headerStyles = (theme: Theme) => createStyles({
         }
     },
     resultNumber: {
-        color: "rgba(63, 56, 65, 0.5)",
+        color: theme.palette.text.hint,
         fontSize: '0.75rem',
         marginTop: 5
     },
