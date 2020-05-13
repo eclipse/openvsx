@@ -13,9 +13,9 @@ plugins {
 def versions = [
     java: '11',
     flyway: '6.3.3',
+    spdx: '2.2.1',
     guava: '28.2-jre',
-    junit: '5.6.2',
-    spdx: '2.1.20'
+    junit: '5.6.2'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -38,8 +38,8 @@ configurations {
 }
 
 dependencies {
-	implementation "org.springframework.boot:spring-boot-starter-web"
-	implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.security:spring-security-oauth2-client"
@@ -48,9 +48,11 @@ dependencies {
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.guava:guava:${versions.guava}"
     implementation("org.spdx:spdx-tools:${versions.spdx}") {
+        exclude group: 'net.sf.saxon'
+        exclude group: 'org.antlr', module: 'antlr'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
-	runtimeOnly "org.postgresql:postgresql"
+    runtimeOnly "org.postgresql:postgresql"
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
@@ -65,4 +67,5 @@ test {
     useJUnitPlatform()
 }
 
-apply from: "test-extensions.gradle"
+apply from: 'dependencies.gradle'
+apply from: 'test-extensions.gradle'

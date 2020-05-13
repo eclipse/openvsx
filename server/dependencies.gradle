@@ -1,0 +1,18 @@
+import java.nio.file.Path
+
+task listDependencies {
+    doLast {
+        def prefix = Path.of(System.env.GRADLE_USER_HOME, 'caches', 'modules-2', 'files-2.1')
+        def list = new ArrayList<String>()
+        sourceSets.main.runtimeClasspath.forEach{f ->
+            def path = f.toPath()
+            if (path.startsWith(prefix)) {
+                def relative = prefix.relativize(path)
+                list.add("${relative.getName(0)}:${relative.getName(1)}:${relative.getName(2)}")
+            }
+        }
+        list.sort()
+        mkdir "${buildDir}/dependencies"
+        new File("${buildDir}/dependencies/list.txt").write(list.join('\n'))
+    }
+}

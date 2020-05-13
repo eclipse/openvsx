@@ -13,7 +13,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +33,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LicenseDetection;
+import org.elasticsearch.common.Strings;
 import org.springframework.data.util.Pair;
 
 /**
@@ -209,21 +209,20 @@ public class ExtensionProcessor implements AutoCloseable {
         return readme;
     }
 
-    public ExtensionLicense getLicense(ExtensionVersion extension) {
+    public ExtensionLicense getLicense(ExtensionVersion extension, List<String> detectedLicenseIds) {
         var license = new ExtensionLicense();
-        String licenseId;
         license.setExtension(extension);
         if (extension.getLicense() != null && extension.getLicense().toUpperCase().startsWith("SEE LICENSE IN ")) {
             var fileName = extension.getLicense().substring("SEE LICENSE IN ".length()).trim();
             extension.setLicense(null);
             var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
             if (bytes != null) {
-                licenseId = this.getLicenseId(bytes);
-                extension.setLicense(licenseId);
                 license.setContent(bytes);
                 var lastSegmentIndex = fileName.lastIndexOf('/');
                 var lastSegment = fileName.substring(lastSegmentIndex + 1);
                 extension.setLicenseFileName(lastSegment);
+                var detection = new LicenseDetection(detectedLicenseIds);
+                extension.setLicense(detection.detectLicense(bytes));
                 return license;
             }
         }
@@ -232,21 +231,13 @@ public class ExtensionProcessor implements AutoCloseable {
         if (result == null) {
             return null;
         }
-        if (extension.getLicense() == null || extension.getLicense().isEmpty()) {
-            licenseId = this.getLicenseId(result.getFirst());
-            extension.setLicense(licenseId);
-        }
         license.setContent(result.getFirst());
         extension.setLicenseFileName(result.getSecond());
-        return license;
-    }
-
-    private String getLicenseId(byte[] text) {
-        try {
-            return LicenseDetection.detectLicense(new String(text, "utf-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        if (Strings.isNullOrEmpty(extension.getLicense())) {
+            var detection = new LicenseDetection(detectedLicenseIds);
+            extension.setLicense(detection.detectLicense(result.getFirst()));
         }
+        return license;
     }
 
     private Pair<byte[], String> readFromAlternateNames(String[] names) {

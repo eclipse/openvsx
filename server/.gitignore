@@ -4,4 +4,5 @@
 .settings/
 .classpath
 .project
+DEPENDENCIES
 /src/dev/resources/application-ovsx.properties

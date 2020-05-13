@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -51,6 +52,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -74,6 +76,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     ExtensionValidator validator;
+
+    @Value("${ovsx.licenses.detect:}")
+    String[] detectedLicenseIds;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -226,7 +231,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             var readme = processor.getReadme(extVersion);
             if (readme != null)
                 entityManager.persist(readme);
-            var license = processor.getLicense(extVersion);
+            var license = processor.getLicense(extVersion, Arrays.asList(detectedLicenseIds));
             if (license != null)
                 entityManager.persist(license);
             var icon = processor.getIcon(extVersion);
