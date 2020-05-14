@@ -67,6 +67,10 @@ public class ExtensionJson extends ResultJson {
     @Nullable
     public String description;
 
+    // format: engine@version
+    @Nullable
+    public List<String> engines;
+
     @Nullable
     public List<String> categories;
 

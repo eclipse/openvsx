@@ -152,6 +152,7 @@ public class ExtensionProcessor implements AutoCloseable {
         extension.setPreview(packageJson.path("preview").booleanValue());
         extension.setDisplayName(getNlsValue(packageJson.path("displayName")));
         extension.setDescription(getNlsValue(packageJson.path("description")));
+        extension.setEngines(getEngines(packageJson.path("engines")));
         extension.setCategories(getStringList(packageJson.path("categories")));
         extension.setTags(getStringList(packageJson.path("keywords")));
         extension.setLicense(packageJson.path("license").textValue());
@@ -194,6 +195,19 @@ public class ExtensionProcessor implements AutoCloseable {
             return node.textValue();
         if (node.isObject())
             return node.path("url").textValue();
+        return null;
+    }
+
+    private List<String> getEngines(JsonNode node) {
+        if (node.isObject()) {
+            var result = new ArrayList<String>();
+            var fieldIter = node.fields();
+            while (fieldIter.hasNext()) {
+                var entry = fieldIter.next();
+                result.add(entry.getKey() + "@" + entry.getValue().textValue());
+            }
+            return result;
+        }
         return null;
     }
 

@@ -290,8 +290,7 @@ public class VSCodeAdapter {
             queryVer.addProperty(PROP_BRANDING_COLOR, extVer.getGalleryColor());
             queryVer.addProperty(PROP_BRANDING_THEME, extVer.getGalleryTheme());
             queryVer.addProperty(PROP_REPOSITORY, extVer.getRepository());
-            // TODO get vscode engine from package.json
-            queryVer.addProperty(PROP_ENGINE, "^1.0.0");
+            queryVer.addProperty(PROP_ENGINE, getVscodeEngine(extVer));
             var dependencies = extVer.getDependencies().stream()
                     .map(e -> e.getNamespace().getName() + "." + e.getName())
                     .collect(Collectors.joining(","));
@@ -303,6 +302,16 @@ public class VSCodeAdapter {
             queryVer.addProperty(PROP_LOCALIZED_LANGUAGES, "");
         }
         return queryVer;
+    }
+
+    private String getVscodeEngine(ExtensionVersion extVer) {
+        if (extVer.getEngines() == null)
+            return null;
+        return extVer.getEngines().stream()
+                .filter(engine -> engine.startsWith("vscode@"))
+                .findFirst()
+                .map(engine -> engine.substring("vscode@".length()))
+                .orElse(null);
     }
 
     private boolean test(int flags, int flag) {

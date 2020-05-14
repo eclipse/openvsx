@@ -54,11 +54,10 @@ export interface Extension extends ExtensionRaw {
     readonly allVersions: { [version: string]: UrlString };
     readonly preview?: boolean;
 
+    readonly engines?: string[];
     readonly categories?: string[];
-
-    readonly reviewCount: number;
-
     readonly tags?: string[];
+    readonly reviewCount: number;
     readonly license?: string;
     readonly homepage?: string;
     readonly repository?: string;

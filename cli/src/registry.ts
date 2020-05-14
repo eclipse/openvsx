@@ -201,6 +201,7 @@ export interface Extension extends Response {
     files: { [id: string]: string };
 
     allVersions: { [key: string]: string };
+    engines?: string[];
     categories?: string[];
     tags?: string[];
     license?: string;

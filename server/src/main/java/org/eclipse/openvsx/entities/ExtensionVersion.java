@@ -63,6 +63,9 @@ public class ExtensionVersion {
     String description;
 
     @ElementCollection
+    List<String> engines;
+
+    @ElementCollection
     List<String> categories;
 
     @ElementCollection
@@ -109,6 +112,7 @@ public class ExtensionVersion {
         json.timestamp = this.getTimestamp().toString();
         json.displayName = this.getDisplayName();
         json.description = this.getDescription();
+        json.engines = this.getEngines();
         json.categories = this.getCategories();
         json.tags = this.getTags();
         json.license = this.getLicense();
@@ -260,6 +264,14 @@ public class ExtensionVersion {
 
 	public void setLicense(String license) {
 		this.license = license;
+	}
+
+	public List<String> getEngines() {
+		return engines;
+	}
+
+	public void setEngines(List<String> engines) {
+		this.engines = engines;
 	}
 
 	public List<String> getCategories() {

@@ -39,18 +39,30 @@ public class ManifestInitializer {
     @EventListener
     @Transactional
     public void initExtensionManifests(ApplicationStartedEvent event) {
-        var count = new int[1];
+        var count = new int[2];
         repositories.findAllExtensionVersions().forEach(extVersion -> {
-            var manifest = repositories.findFile(extVersion, FileResource.MANIFEST);
-            if (manifest == null) {
+            var needsManifest = repositories.findFile(extVersion, FileResource.MANIFEST) == null;
+            var needsEngines = extVersion.getEngines() == null || extVersion.getEngines().isEmpty();
+            if (needsManifest || needsEngines) {
                 var binary = repositories.findFile(extVersion, FileResource.DOWNLOAD);
                 if (binary != null) {
                     try {
                         var processor = new ExtensionProcessor(new ByteArrayInputStream(binary.getContent()));
-                        manifest = processor.getManifest(extVersion);
-                        if (manifest != null) {
-                            entityManager.persist(manifest);
-                            count[0]++;
+                        // DB 1.2: Add resource for missing manifest (package.json)
+                        if (needsManifest) {
+                            var manifest = processor.getManifest(extVersion);
+                            if (manifest != null) {
+                                entityManager.persist(manifest);
+                                count[0]++;
+                            }
+                        }
+                        // DB 1.3: Load missing attributes from package.json
+                        if (needsEngines) {
+                            var metadata = processor.getMetadata();
+                            if (metadata.getEngines() != null) {
+                                extVersion.setEngines(metadata.getEngines());
+                                count[1]++;
+                            }
                         }
                     } catch (ErrorResultException exc) {
                         var extension = extVersion.getExtension();
@@ -62,9 +74,10 @@ public class ManifestInitializer {
             }
         });
 
-        if (count[0] > 0) {
+        if (count[0] > 0)
             logger.info("Initialized manifest resource for " + count[0] + " extensions.");
-        }
+        if (count[1] > 0)
+            logger.info("Initialized engines field for " + count[1] + " extensions.");
     }
 
 }
