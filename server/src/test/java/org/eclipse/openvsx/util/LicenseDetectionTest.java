@@ -26,11 +26,14 @@ public class LicenseDetectionTest {
 
     @Test
     public void testMIT() throws Exception {
-        var stream = getClass().getResourceAsStream("MIT.txt");
-        var bytes = ByteStreams.toByteArray(stream);
-        var detection = new LicenseDetection();
-        var result = detection.detectLicense(bytes);
-        assertEquals("MIT", result);
+        try (
+            var stream = getClass().getResourceAsStream("MIT.txt");
+        ) {
+            var bytes = ByteStreams.toByteArray(stream);
+            var detection = new LicenseDetection();
+            var result = detection.detectLicense(bytes);
+            assertEquals("MIT", result);
+        }
     }
 
 }

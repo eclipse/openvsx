@@ -19,12 +19,15 @@ public class ArchiveUtilTest {
 
     @Test
     public void testTodoTree() throws Exception {
-        var stream = getClass().getResourceAsStream("todo-tree.zip");
-        var bytes = ByteStreams.toByteArray(stream);
-        var packageJson = ArchiveUtil.readEntry(bytes, "extension/package.json");
-        assertEquals(24052, packageJson.length);
-        var icon = ArchiveUtil.readEntry(bytes, "extension/resources/todo-tree.png");
-        assertEquals(8854, icon.length);
+        try (
+            var stream = getClass().getResourceAsStream("todo-tree.zip");
+        ) {
+            var bytes = ByteStreams.toByteArray(stream);
+            var packageJson = ArchiveUtil.readEntry(bytes, "extension/package.json");
+            assertEquals(24052, packageJson.length);
+            var icon = ArchiveUtil.readEntry(bytes, "extension/resources/todo-tree.png");
+            assertEquals(8854, icon.length);
+        }
     }
 
 }
