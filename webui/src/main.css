@@ -1,4 +1,4 @@
-html, body, #main, .extension-list-container {
+html, body {
     height: 100%;
 }
 
@@ -13,4 +13,14 @@ img {
     width: 1px;
     height: 1px;
     overflow: hidden;
+}
+
+@keyframes fadein {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadeout {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
 }

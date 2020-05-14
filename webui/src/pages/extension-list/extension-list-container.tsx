@@ -69,7 +69,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     render() {
-        return <Box display='flex' flexDirection='column' height='100%' overflow='auto' >
+        return <Box display='flex' flexDirection='column' >
             <ExtensionListHeader
                 resultNumber={this.state.resultNumber}
                 searchQuery={this.state.searchQuery}

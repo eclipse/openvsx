@@ -33,13 +33,18 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
         </RouteLink>;
 
     const footerStyle = makeStyles({
+        wrapper: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            [theme.breakpoints.down('sm')]: {
+                flexDirection: 'column'
+            }
+        },
         repositoryLink: {
             display: 'flex',
             alignItems: 'center',
-            fontSize: '1.1rem',
-            [theme.breakpoints.down('sm')]: {
-                display: 'none'
-            }
+            fontSize: '1.1rem'
         },
         legalLink: {
             marginLeft: theme.spacing(3),
@@ -49,21 +54,16 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
                 textDecoration: 'underline'
             },
             [theme.breakpoints.down('sm')]: {
-                marginLeft: theme.spacing(1.5)
-            }
-        },
-        group: {
-            display: 'flex',
-            [theme.breakpoints.down('sm')]: {
-                fontSize: '80%'
+                marginLeft: theme.spacing(1.5),
+                marginTop: theme.spacing(2)
             }
         }
     });
-    const footerContent = () => <React.Fragment>
+    const footerContent = () => <Box className={footerStyle().wrapper}>
             <Link target='_blank' href='https://github.com/eclipse/openvsx' className={footerStyle().repositoryLink}>
                 <GitHubIcon />&nbsp;eclipse/openvsx
             </Link>
-            <Box className={footerStyle().group}>
+            <Box display='flex'>
                 <RouteLink to='/about' className={footerStyle().legalLink}>
                     About This Service
                 </RouteLink>
@@ -71,7 +71,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
                     Terms of Use
                 </Link>
             </Box>
-        </React.Fragment>;
+        </Box>;
 
     const searchStyle = makeStyles({
         typography: {
@@ -111,6 +111,9 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
         additionalRoutes,
         reportAbuse,
         claimNamespace,
+        metrics: {
+            maxFooterHeight: 85
+        },
         urls: {
             extensionDefaultIcon: '/default-icon.png',
             namespaceAccessInfo: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access'

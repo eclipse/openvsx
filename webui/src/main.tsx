@@ -26,6 +26,12 @@ import { ErrorDialog } from './custom-mui-components/error-dialog';
 import "../src/main.css";
 
 const mainStyles = (theme: Theme) => createStyles({
+    main: {
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        minHeight: '100vh'
+    },
     link: {
         textDecoration: 'none',
         color: theme.palette.text.primary
@@ -37,33 +43,73 @@ const mainStyles = (theme: Theme) => createStyles({
         display: 'flex',
         alignItems: 'center'
     },
-    main: {
-        flex: 1,
-        overflow: 'auto'
-    },
     footer: {
-        backgroundColor: theme.palette.primary.dark,
+        position: 'absolute',
+        bottom: 0,
+        width: '100%',
         padding: `${theme.spacing(1.5)}px ${theme.spacing(3)}px`,
-        [theme.breakpoints.down('sm')]: {
-            padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`
-        }
+        backgroundColor: theme.palette.primary.dark
+    },
+    fixed: {
+        position: 'fixed',
+    },
+    fadeIn: {
+        animation: 'fadein 2s',
+        opacity: 1
+    },
+    fadeOut: {
+        animation: 'fadeout 2s',
+        opacity: 0
     }
 });
 
 class MainComponent extends React.Component<MainComponent.Props, MainComponent.State> {
+
+    private scrollListener?: () => void;
+    private scrollTimeout?: number;
 
     constructor(props: MainComponent.Props) {
         super(props);
 
         this.state = {
             userLoading: true,
+            showNormalFooter: false,
+            showFixedFooter: true,
+            fadeFooter: false,
             error: '',
             isErrorDialogOpen: false
         };
     }
 
     componentDidMount() {
+        this.scrollListener = () => {
+            const element = document.scrollingElement;
+            if (!element) {
+                return;
+            }
+            clearTimeout(this.scrollTimeout);
+            console.log(`scrollTop: ${element.scrollTop}, scrollHeight: ${element.scrollHeight}, clientHeight: ${element.clientHeight}`);
+            const fixFooter = element.scrollTop === 0
+                && element.scrollHeight > element.clientHeight + this.getContentPadding();
+            if (fixFooter && this.state.showNormalFooter) {
+                this.setState({ showNormalFooter: false, showFixedFooter: true, fadeFooter: true });
+            } else if (!fixFooter && this.state.showFixedFooter) {
+                this.setState({ showNormalFooter: true, fadeFooter: true });
+                this.scrollTimeout = setTimeout(
+                    () => this.setState({ showFixedFooter: false, fadeFooter: false }),
+                    2000
+                );
+            }
+        };
+        document.addEventListener('scroll', this.scrollListener);
         this.updateUser();
+    }
+
+    componentWillUnmount() {
+        clearTimeout(this.scrollTimeout);
+        if (this.scrollListener) {
+            document.removeEventListener('scroll', this.scrollListener);
+        }
     }
 
     protected async updateUser() {
@@ -93,13 +139,14 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             toolbarContent: ToolbarContent,
             footerContent: FooterContent,
             additionalRoutes: AdditionalRoutes
-         } = this.props.pageSettings;
+        } = this.props.pageSettings;
+        const classes = this.props.classes;
         return <React.Fragment>
             <CssBaseline />
-            <Box display='flex' flexDirection='column' height='100%'>
+            <Box className={classes.main}>
                 <AppBar position='sticky'>
-                    <Toolbar classes={{ root: this.props.classes.spreadHorizontally }}>
-                        <Box className={this.props.classes.alignVertically}>
+                    <Toolbar classes={{ root: classes.spreadHorizontally }}>
+                        <Box className={classes.alignVertically}>
                             {ToolbarContent ? <ToolbarContent /> : null}
                         </Box>
                         <Box display='flex' alignItems='center'>
@@ -118,7 +165,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         </Box>
                     </Toolbar>
                 </AppBar>
-                <Box className={this.props.classes.main}>
+                <Box pb={`${this.getContentPadding()}px`}>
                     <Switch>
                         <Route exact path={[ExtensionListRoutes.MAIN]}
                             render={routeProps =>
@@ -170,16 +217,37 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         : null
                 }
                 {
-                    FooterContent ?
-                        <footer className={this.props.classes.footer}>
-                            <Box className={`${this.props.classes.spreadHorizontally} ${this.props.classes.alignVertically}`}>
-                                <FooterContent />
-                            </Box>
+                    FooterContent && this.state.showNormalFooter ?
+                        <footer className={classes.footer}>
+                            <FooterContent />
+                        </footer>
+                        : null
+                }
+                {
+                    FooterContent && this.state.showFixedFooter ?
+                        <footer className={
+                            this.state.fadeFooter ?
+                            `${classes.footer} ${classes.fixed} ${
+                                this.state.showNormalFooter ? classes.fadeOut : classes.fadeIn
+                            }`
+                            :
+                            `${classes.footer} ${classes.fixed}`
+                        }>
+                            <FooterContent />
                         </footer>
                         : null
                 }
             </Box>
         </React.Fragment>;
+    }
+
+    protected getContentPadding(): number {
+        const metrics = this.props.pageSettings.metrics;
+        if (metrics && metrics.maxFooterHeight) {
+            return metrics.maxFooterHeight + 8;
+        } else {
+            return 0;
+        }
     }
 }
 
@@ -192,6 +260,9 @@ export namespace MainComponent {
     export interface State {
         user?: UserData;
         userLoading: boolean;
+        showNormalFooter: boolean;
+        showFixedFooter: boolean;
+        fadeFooter: boolean;
         error: string;
         isErrorDialogOpen: boolean
     }

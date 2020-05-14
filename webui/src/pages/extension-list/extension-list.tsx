@@ -148,8 +148,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 loadMore={this.loadMore}
                 hasMore={this.state.hasMore}
                 loader={loader}
-                threshold={200}
-                useWindow={false} >
+                threshold={200} >
                 <Container maxWidth="xl">
                     <Grid container spacing={2} className={this.props.classes.container}>
                         {extensionList}

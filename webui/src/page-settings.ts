@@ -16,10 +16,13 @@ export interface PageSettings {
     themeType?: 'light' | 'dark';
     toolbarContent?: React.FunctionComponent;
     footerContent?: React.FunctionComponent;
-    searchHeader?: React.FunctionComponent,
+    searchHeader?: React.FunctionComponent;
     reportAbuse?: React.FunctionComponent<{ extension: Extension } & Styleable>;
     claimNamespace?: React.FunctionComponent<{ extension: Extension } & Styleable>;
-    additionalRoutes?: React.FunctionComponent,
+    additionalRoutes?: React.FunctionComponent;
+    metrics?: {
+        maxFooterHeight?: number;
+    };
     urls: {
         extensionDefaultIcon: string;
         namespaceAccessInfo: string;
