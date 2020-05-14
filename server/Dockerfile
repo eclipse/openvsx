@@ -9,4 +9,4 @@ ADD --chown=openvsx:openvsx build/libs/openvsx-server.jar /home/openvsx/
 
 RUN jar -xf /home/openvsx/openvsx-server.jar
 
-ENTRYPOINT ["java", "-cp", "BOOT-INF/classes:BOOT-INF/lib/*", "org.eclipse.openvsx.RegistryApplication"]
+ENTRYPOINT ["java", "-Xmx7G", "-cp", "BOOT-INF/classes:BOOT-INF/lib/*", "org.eclipse.openvsx.RegistryApplication"]
