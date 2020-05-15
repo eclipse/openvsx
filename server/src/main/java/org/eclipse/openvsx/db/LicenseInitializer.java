@@ -39,11 +39,14 @@ public class LicenseInitializer {
     @Transactional
     public void initExtensionLicenses(ApplicationStartedEvent event) {
         var detection = new LicenseDetection(Arrays.asList(detectLicenseIds));
+        var undetected = new int[1];
         repositories.findVersionsByLicense(null).forEach(extVersion -> {
             var license = repositories.findFile(extVersion, FileResource.LICENSE);
             if (license != null) {
                 var detectedId = detection.detectLicense(license.getContent());
-                if (detectedId != null) {
+                if (detectedId == null) {
+                    undetected[0]++;
+                } else {
                     extVersion.setLicense(detectedId);
                     var extension = extVersion.getExtension();
                     logger.info("License of " + extension.getNamespace().getName() + "." + extension.getName()
@@ -51,6 +54,9 @@ public class LicenseInitializer {
                 }
             }
         });
+
+        if (undetected[0] > 0)
+            logger.warn("Failed to detect license type for " + undetected[0] + " extensions.");
     }
 
 }
