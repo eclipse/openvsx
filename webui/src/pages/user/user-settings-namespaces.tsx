@@ -23,6 +23,9 @@ import { makeStyles } from "@material-ui/styles";
 import { createAbsoluteURL } from "../../utils";
 import { UserNamespaceMember } from "./user-namespace-member-component";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
+import { UserNamespaceExtensionList } from "./user-namespace-extension-list";
+import { ErrorResponse } from "../../server-request";
+import { PageSettings } from "../../page-settings";
 
 
 const namespacesStyle = (theme: Theme) => createStyles({
@@ -161,8 +164,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
                                     <Button className={this.props.classes.addButton} variant='outlined' onClick={this.handleOpenAddDialog}>
                                         Add Namespace Member
-                                        </Button>
-
+                                    </Button>
                                 </Box>
                                 <Paper>
                                     {this.state.members.map(member =>
@@ -173,6 +175,12 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                                             service={this.props.service}
                                             onRemoveUser={() => this.removeUser(member)} />)}
                                 </Paper>
+                                <UserNamespaceExtensionList
+                                    namespace={this.state.chosenNamespace}
+                                    service={this.props.service}
+                                    setError={this.props.setError}
+                                    pageSettings={this.props.pageSettings}
+                                />
                             </Box>
                         </Box>
                         {this.renderAddDialog()}
@@ -335,8 +343,10 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
 export namespace UserSettingsNamespacesComponent {
     export interface Props extends WithStyles<typeof namespacesStyle> {
-        user: UserData
-        service: ExtensionRegistryService
+        user: UserData;
+        service: ExtensionRegistryService;
+        setError: (err: Error | Partial<ErrorResponse>) => void;
+        pageSettings: PageSettings;
     }
 
     export interface State {

@@ -153,7 +153,7 @@ export interface NamespaceMembership {
 
 export interface Namespace {
     name: string;
-    extensions: Extension[];
+    extensions: { [key: string]: string };
     memberships: NamespaceMembership[];
     addMembershipUrl: string;
     getMembersUrl: string;
