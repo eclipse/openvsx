@@ -91,7 +91,12 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                                     />
                                 </Route>
                                 <Route path={UserSettingsRoutes.NAMESPACES}>
-                                    <UserSettingsNamespaces service={this.props.service} user={user} />
+                                    <UserSettingsNamespaces
+                                        service={this.props.service}
+                                        user={user}
+                                        setError={this.props.setError}
+                                        pageSettings={this.props.pageSettings}
+                                    />
                                 </Route>
                             </Box>
                         </Grid>
