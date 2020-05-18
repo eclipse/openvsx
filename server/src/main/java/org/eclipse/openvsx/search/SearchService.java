@@ -174,9 +174,10 @@ public class SearchService {
             boolQuery.should(multiMatchQuery).boost(5);
 
             // Prefix matching of search query in display name and namespace
-            var namePrefixQuery = QueryBuilders.prefixQuery("displayName", queryString.trim());
+            var prefixString = queryString.trim().toLowerCase();
+            var namePrefixQuery = QueryBuilders.prefixQuery("displayName", prefixString);
             boolQuery.should(namePrefixQuery).boost(2);
-            var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", queryString.trim());
+            var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", prefixString);
             boolQuery.should(namespacePrefixQuery);
 
             queryBuilder.withQuery(boolQuery);
