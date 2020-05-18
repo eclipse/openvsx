@@ -37,6 +37,7 @@ import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.util.Pair;
@@ -45,12 +46,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.ModelAndView;
 
 @RestController
 public class VSCodeAdapter {
@@ -63,6 +68,9 @@ public class VSCodeAdapter {
 
     @Autowired
     SearchService search;
+
+    @Value("${ovsx.webui.url:}")
+    String webuiUrl;
 
     @PostMapping(
         path = "/vscode/gallery/extensionquery",
@@ -96,6 +104,49 @@ public class VSCodeAdapter {
 
         var searchResult = search.search(queryString, category, pageRequest);
         return findExtensions(searchResult, param.flags);
+    }
+
+    private ExtensionQueryResult findExtension(long id, int flags) {
+        var extension = entityManager.find(Extension.class, id);
+        var resultItem = new ExtensionQueryResult.ResultItem();
+        if (extension == null)
+            resultItem.extensions = Collections.emptyList();
+        else
+            resultItem.extensions = Lists.newArrayList(toQueryExtension(extension, flags));
+
+        var countMetadataItem = new ExtensionQueryResult.ResultMetadataItem();
+        countMetadataItem.name = "TotalCount";
+        countMetadataItem.count = extension == null ? 0 : 1;
+        var countMetadata = new ExtensionQueryResult.ResultMetadata();
+        countMetadata.metadataType = "ResultCount";
+        countMetadata.metadataItems = Lists.newArrayList(countMetadataItem);
+        resultItem.resultMetadata = Lists.newArrayList(countMetadata);
+
+        var result = new ExtensionQueryResult();
+        result.results = Lists.newArrayList(resultItem);
+        return result;
+    }
+
+    private ExtensionQueryResult findExtensions(Page<ExtensionSearch> searchResult, int flags) {
+        var resultItem = new ExtensionQueryResult.ResultItem();
+        resultItem.extensions = CollectionUtil.map(searchResult.getContent(), es -> {
+            var extension = entityManager.find(Extension.class, es.id);
+            if (extension == null)
+                return null;
+            return toQueryExtension(extension, flags);
+        });
+
+        var countMetadataItem = new ExtensionQueryResult.ResultMetadataItem();
+        countMetadataItem.name = "TotalCount";
+        countMetadataItem.count = searchResult.getTotalElements();
+        var countMetadata = new ExtensionQueryResult.ResultMetadata();
+        countMetadata.metadataType = "ResultCount";
+        countMetadata.metadataItems = Lists.newArrayList(countMetadataItem);
+        resultItem.resultMetadata = Lists.newArrayList(countMetadata);
+
+        var result = new ExtensionQueryResult();
+        result.results = Lists.newArrayList(resultItem);
+        return result;
     }
 
     @GetMapping("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType:.+}")
@@ -176,47 +227,15 @@ public class VSCodeAdapter {
         return MediaType.TEXT_PLAIN;
     }
 
-    private ExtensionQueryResult findExtension(long id, int flags) {
-        var extension = entityManager.find(Extension.class, id);
-        var resultItem = new ExtensionQueryResult.ResultItem();
-        if (extension == null)
-            resultItem.extensions = Collections.emptyList();
-        else
-            resultItem.extensions = Lists.newArrayList(toQueryExtension(extension, flags));
-
-        var countMetadataItem = new ExtensionQueryResult.ResultMetadataItem();
-        countMetadataItem.name = "TotalCount";
-        countMetadataItem.count = extension == null ? 0 : 1;
-        var countMetadata = new ExtensionQueryResult.ResultMetadata();
-        countMetadata.metadataType = "ResultCount";
-        countMetadata.metadataItems = Lists.newArrayList(countMetadataItem);
-        resultItem.resultMetadata = Lists.newArrayList(countMetadata);
-
-        var result = new ExtensionQueryResult();
-        result.results = Lists.newArrayList(resultItem);
-        return result;
-    }
-
-    private ExtensionQueryResult findExtensions(Page<ExtensionSearch> searchResult, int flags) {
-        var resultItem = new ExtensionQueryResult.ResultItem();
-        resultItem.extensions = CollectionUtil.map(searchResult.getContent(), es -> {
-            var extension = entityManager.find(Extension.class, es.id);
-            if (extension == null)
-                return null;
-            return toQueryExtension(extension, flags);
-        });
-
-        var countMetadataItem = new ExtensionQueryResult.ResultMetadataItem();
-        countMetadataItem.name = "TotalCount";
-        countMetadataItem.count = searchResult.getTotalElements();
-        var countMetadata = new ExtensionQueryResult.ResultMetadata();
-        countMetadata.metadataType = "ResultCount";
-        countMetadata.metadataItems = Lists.newArrayList(countMetadataItem);
-        resultItem.resultMetadata = Lists.newArrayList(countMetadata);
-
-        var result = new ExtensionQueryResult();
-        result.results = Lists.newArrayList(resultItem);
-        return result;
+    @GetMapping("/vscode/item")
+    public ModelAndView getItemUrl(@RequestParam String itemName, ModelMap model) {
+        var dotIndex = itemName.indexOf('.');
+        if (dotIndex < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expecting an item of the form `{publisher}.{name}`");
+        }
+        var namespace = itemName.substring(0, dotIndex);
+        var extension = itemName.substring(dotIndex + 1);
+        return new ModelAndView("redirect:" + UrlUtil.createApiUrl(webuiUrl, "extension", namespace, extension), model);
     }
 
     private ExtensionQueryResult.Extension toQueryExtension(Extension extension, int flags) {
