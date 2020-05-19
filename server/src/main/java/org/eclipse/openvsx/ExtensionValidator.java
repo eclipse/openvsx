@@ -72,6 +72,7 @@ public class ExtensionValidator {
 
     public List<Issue> validateMetadata(ExtensionVersion extVersion) {
         var issues = new ArrayList<Issue>();
+        checkVersion(extVersion.getVersion(), issues);
         checkCharacters(extVersion.getDisplayName(), "displayName", issues);
         checkFieldSize(extVersion.getDisplayName(), DEFAULT_STRING_SIZE, "displayName", issues);
         checkCharacters(extVersion.getDescription(), "description", issues);
@@ -98,6 +99,16 @@ public class ExtensionValidator {
                 QNA_VALUES.toString() + " or a URL");
         checkFieldSize(extVersion.getQna(), DEFAULT_STRING_SIZE, "qna", issues);
         return issues;
+    }
+
+    private void checkVersion(String version, List<Issue> issues) {
+        if (Strings.isNullOrEmpty(version)) {
+            issues.add(new Issue("Version must not be empty."));
+            return;
+        }
+        if (version.equals("latest") || version.equals("preview") || version.equals("reviews")) {
+            issues.add(new Issue("The version string '" + version + "' is reserved."));
+        }
     }
 
     private void checkCharacters(String value, String field, List<Issue> issues) {

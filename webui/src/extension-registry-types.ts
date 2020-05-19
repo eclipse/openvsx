@@ -11,64 +11,67 @@
 export type UrlString = string;
 
 export interface SuccessResult {
-    readonly success: string;
+    success: string;
 }
 export function isSuccess(obj: any): obj is SuccessResult {
     return obj && typeof obj.success === 'string';
 }
 
 export interface ErrorResult {
-    readonly error: string;
+    error: string;
 }
 export function isError(obj: any): obj is ErrorResult {
     return obj && typeof obj.error === 'string';
 }
 
 export interface SearchResult {
-    readonly offset: number;
-    readonly totalSize: number;
-    readonly extensions: ExtensionRaw[];
+    offset: number;
+    totalSize: number;
+    extensions: ExtensionRaw[];
 }
 
 export interface ExtensionRaw {
-    readonly name: string;
-    readonly namespace: string;
-    readonly url: UrlString;
-    readonly files: { [id: string]: UrlString };
-    readonly displayName?: string;
-    readonly version?: string;
-    readonly averageRating?: number;
-    readonly downloadCount?: number;
-    readonly timestamp?: string;
-    readonly description?: string;
+    name: string;
+    namespace: string;
+    url: UrlString;
+    files: { [id: string]: UrlString };
+    displayName?: string;
+    version?: string;
+    averageRating?: number;
+    downloadCount?: number;
+    timestamp?: string;
+    description?: string;
 }
 
+export const VERSION_ALIASES = ['latest', 'preview'];
+
 export interface Extension extends ExtensionRaw {
-    readonly namespaceUrl: UrlString;
-    readonly reviewsUrl: UrlString;
+    namespaceUrl: UrlString;
+    reviewsUrl: UrlString;
 
-    readonly publishedBy: UserData;
-    readonly unrelatedPublisher: boolean;
-    readonly namespaceAccess: 'public' | 'restricted';
+    publishedBy: UserData;
+    unrelatedPublisher: boolean;
+    namespaceAccess: 'public' | 'restricted';
 
-    readonly allVersions: { [version: string]: UrlString };
-    readonly preview?: boolean;
+    allVersions: { [version: string]: UrlString };
+    versionAlias?: 'latest' | 'preview';
+    preview?: boolean;
 
-    readonly engines?: string[];
-    readonly categories?: string[];
-    readonly tags?: string[];
-    readonly reviewCount: number;
-    readonly license?: string;
-    readonly homepage?: string;
-    readonly repository?: string;
-    readonly bugs?: string;
-    readonly markdown?: 'github' | 'standard';
-    readonly galleryColor?: string;
-    readonly galleryTheme?: 'light' | 'dark';
-    readonly qna?: UrlString | 'marketplace' | 'false';
-    readonly badges?: Badge[];
-    readonly dependencies?: ExtensionReference[];
-    readonly bundledExtensions?: ExtensionReference[];
+    engines?: string[];
+    categories?: string[];
+    tags?: string[];
+    reviewCount: number;
+    license?: string;
+    homepage?: string;
+    repository?: string;
+    bugs?: string;
+    markdown?: 'github' | 'standard';
+    galleryColor?: string;
+    galleryTheme?: 'light' | 'dark';
+    qna?: UrlString | 'marketplace' | 'false';
+    badges?: Badge[];
+    dependencies?: ExtensionReference[];
+    bundledExtensions?: ExtensionReference[];
 }
 
 export interface Badge {

@@ -88,7 +88,6 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 return;
             }
             clearTimeout(this.scrollTimeout);
-            console.log(`scrollTop: ${element.scrollTop}, scrollHeight: ${element.scrollHeight}, clientHeight: ${element.clientHeight}`);
             const fixFooter = element.scrollTop === 0
                 && element.scrollHeight > element.clientHeight + this.getContentPadding();
             if (fixFooter && this.state.showNormalFooter) {

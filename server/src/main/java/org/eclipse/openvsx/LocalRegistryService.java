@@ -82,9 +82,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
         var namespace = repositories.findNamespace(namespaceName);
-        if (namespace == null) {
+        if (namespace == null)
             throw new NotFoundException();
-        }
         var json = new NamespaceJson();
         json.name = namespace.getName();
         json.extensions = new LinkedHashMap<>();
@@ -105,27 +104,41 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public ExtensionJson getExtension(String namespace, String extensionName) {
         var extension = repositories.findExtension(extensionName, namespace);
-        if (extension == null) {
+        if (extension == null)
             throw new NotFoundException();
-        }
         ExtensionJson json = toJson(extension.getLatest());
         return json;
     }
 
     @Override
     public ExtensionJson getExtension(String namespace, String extensionName, String version) {
-        var extVersion = repositories.findVersion(version, extensionName, namespace);
-        if (extVersion == null) {
+        var extVersion = findVersion(namespace, extensionName, version);
+        if (extVersion == null)
             throw new NotFoundException();
-        }
         ExtensionJson json = toJson(extVersion);
         return json;
+    }
+
+    private ExtensionVersion findVersion(String namespace, String extensionName, String version) {
+        if ("latest".equals(version)) {
+            var extension = repositories.findExtension(extensionName, namespace);
+            if (extension == null)
+                return null;
+            return extension.getLatest();
+        } else if ("preview".equals(version)) {
+            var extension = repositories.findExtension(extensionName, namespace);
+            if (extension == null)
+                return null;
+            return extension.getPreview();
+        } else {
+            return repositories.findVersion(version, extensionName, namespace);
+        }
     }
 
     @Override
     @Transactional
     public byte[] getFile(String namespace, String extensionName, String version, String fileName) {
-        var extVersion = repositories.findVersion(version, extensionName, namespace);
+        var extVersion = findVersion(namespace, extensionName, version);
         if (extVersion == null)
             throw new NotFoundException();
         var resource = getFile(extVersion, fileName);
@@ -264,6 +277,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             extension.setName(extensionName);
             extension.setNamespace(namespace);
             extension.setLatest(extVersion);
+            if (extVersion.isPreview())
+                extension.setPreview(extVersion);
             entityManager.persist(extension);
         } else {
             if (repositories.findVersion(extVersion.getVersion(), extension) != null) {
@@ -272,8 +287,14 @@ public class LocalRegistryService implements IExtensionRegistry {
                         + " version " + extVersion.getVersion()
                         + " is already published.");
             }
-            if (isLatestVersion(extVersion.getVersion(), extension))
+            if (extension.getLatest() == null
+                    || extension.getLatest().isPreview() && isGreater(extVersion, extension.getLatest())
+                    || !extVersion.isPreview() && isLatestVersion(extVersion.getVersion(), false, extension)) {
                 extension.setLatest(extVersion);
+            }
+            if (extVersion.isPreview() && isLatestVersion(extVersion.getVersion(), true, extension)) {
+                extension.setPreview(extVersion);
+            }
         }
         extVersion.setExtension(extension);
         extVersion.setExtensionFileName(
@@ -293,14 +314,20 @@ public class LocalRegistryService implements IExtensionRegistry {
         return extVersion;
     }
 
-    private boolean isLatestVersion(String version, Extension extension) {
+    private boolean isLatestVersion(String version, boolean preview, Extension extension) {
         var newSemver = new SemanticVersion(version);
-        for (var publishedVersion : extension.getVersions()) {
+        for (var publishedVersion : repositories.findVersions(extension, preview)) {
             var oldSemver = new SemanticVersion(publishedVersion.getVersion());
             if (newSemver.compareTo(oldSemver) < 0)
                 return false;
         }
         return true;
+    }
+
+    private boolean isGreater(ExtensionVersion v1, ExtensionVersion v2) {
+        var sv1 = new SemanticVersion(v1.getVersion());
+        var sv2 = new SemanticVersion(v2.getVersion());
+        return sv1.compareTo(sv2) > 0;
     }
 
     private void addDependency(String dependency, ExtensionVersion extVersion) {
@@ -430,28 +457,38 @@ public class LocalRegistryService implements IExtensionRegistry {
     private ExtensionJson toJson(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
+        if (extVersion == extension.getPreview())
+            json.versionAlias = "preview";
+        else if (extVersion == extension.getLatest())
+            json.versionAlias = "latest";
         json.namespaceAccess = getAccessString(extension.getNamespace());
-        if (NamespaceJson.RESTRICTED_ACCESS.equals(json.namespaceAccess)) {
+        if (NamespaceJson.RESTRICTED_ACCESS.equals(json.namespaceAccess))
             json.unrelatedPublisher = isUnrelatedPublisher(extVersion);
-        }
         json.reviewCount = repositories.countActiveReviews(extension);
         var serverUrl = UrlUtil.getBaseUrl();
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
+
+        json.allVersions = new LinkedHashMap<>();
+        if (extension.getLatest() != null)
+            json.allVersions.put("latest", createApiUrl(serverUrl, "api", json.namespace, json.name, "latest"));
+        if (extension.getPreview() != null)
+            json.allVersions.put("preview", createApiUrl(serverUrl, "api", json.namespace, json.name, "preview"));
         var allVersions = CollectionUtil.map(repositories.findVersions(extension),
                 extVer -> new SemanticVersion(extVer.getVersion()));
         Collections.sort(allVersions, Comparator.reverseOrder());
-        json.allVersions = new LinkedHashMap<>();
         for (var semVer : allVersions) {
             String url = createApiUrl(serverUrl, "api", json.namespace, json.name, semVer.toString());
             json.allVersions.put(semVer.toString(), url);
         }
+    
         json.files = new LinkedHashMap<>();
         json.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName()));
         json.files.put(FileResource.MANIFEST, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", "package.json"));
         json.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName()));
         json.files.put(FileResource.README, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName()));
         json.files.put(FileResource.LICENSE, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName()));
+    
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {
                 ref.url = createApiUrl(serverUrl, "api", ref.namespace, ref.extension);

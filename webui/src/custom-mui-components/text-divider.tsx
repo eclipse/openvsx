@@ -19,26 +19,39 @@ const dividerStyles = (theme: Theme) => createStyles({
         height: '1em',
         margin: `0 ${theme.spacing(1)}px`
     },
+    collapseSmall: {
+        [theme.breakpoints.down('sm')]: {
+            height: 0,
+            margin: `${theme.spacing(0.25)}px`
+        }
+    },
     lightTheme: {
         backgroundColor: '#333'
     },
     darkTheme: {
-        backgroundColor: theme.palette.secondary.contrastText
+        backgroundColor: '#edf5ea'
     }
 });
 
 export class TextDividerComponent extends React.Component<TextDividerComponent.Props> {
     render() {
-        const themeClass = this.props.themeType === 'dark' ? this.props.classes.darkTheme : this.props.classes.lightTheme;
-        return <Divider orientation='vertical' classes={{
-            root: `${this.props.classes.root} ${themeClass}`
-        }} />;
+        const classes = [this.props.classes.root];
+        if (this.props.themeType === 'dark') {
+            classes.push(this.props.classes.darkTheme);
+        } else if (this.props.themeType === 'light') {
+            classes.push(this.props.classes.lightTheme);
+        }
+        if (this.props.collapseSmall) {
+            classes.push(this.props.classes.collapseSmall);
+        }
+        return <Divider orientation='vertical' classes={{ root: classes.join(' ') }} />;
     }
 }
 
 export namespace TextDividerComponent {
     export interface Props extends WithStyles<typeof dividerStyles> {
         themeType?: 'light' | 'dark';
+        collapseSmall?: boolean;
     }
 }
 

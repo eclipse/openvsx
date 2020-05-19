@@ -27,11 +27,15 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'logout']);
     }
 
-    getExtensionApiUrl(extension: { namespace: string, name: string }) {
-        return createAbsoluteURL([this.serverUrl, 'api', extension.namespace, extension.name]);
+    getExtensionApiUrl(ext: { namespace: string, name: string, version?: string }): string {
+        if (ext.version) {
+            return createAbsoluteURL([this.serverUrl, 'api', ext.namespace, ext.name, ext.version]);
+        } else {
+            return createAbsoluteURL([this.serverUrl, 'api', ext.namespace, ext.name]);
+        }
     }
 
-    search(filter?: ExtensionFilter): Promise<SearchResult | ErrorResult> {
+    search(filter?: ExtensionFilter): Promise<Readonly<SearchResult | ErrorResult>> {
         const query: { key: string, value: string | number }[] = [];
         if (filter) {
             if (filter.query)
@@ -47,7 +51,7 @@ export class ExtensionRegistryService {
         return sendRequest({ endpoint });
     }
 
-    getExtensionDetail(extensionUrl: string): Promise<Extension | ErrorResult> {
+    getExtensionDetail(extensionUrl: string): Promise<Readonly<Extension | ErrorResult>> {
         return sendRequest({ endpoint: extensionUrl });
     }
 
@@ -74,11 +78,11 @@ export class ExtensionRegistryService {
         ];
     }
 
-    getExtensionReviews(extension: Extension): Promise<ExtensionReviewList> {
+    getExtensionReviews(extension: Extension): Promise<Readonly<ExtensionReviewList>> {
         return sendRequest({ endpoint: extension.reviewsUrl });
     }
 
-    async postReview(review: NewReview, postReviewUrl: string): Promise<SuccessResult | ErrorResult> {
+    async postReview(review: NewReview, postReviewUrl: string): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -95,7 +99,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteReview(deleteReviewUrl: string): Promise<SuccessResult | ErrorResult> {
+    async deleteReview(deleteReviewUrl: string): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
@@ -109,28 +113,28 @@ export class ExtensionRegistryService {
         });
     }
 
-    getUser(): Promise<UserData | ErrorResult> {
+    getUser(): Promise<Readonly<UserData | ErrorResult>> {
         return sendRequest({
             endpoint: createAbsoluteURL([this.serverUrl, 'user']),
             credentials: true
         });
     }
 
-    getUserByName(name: string): Promise<UserData[]> {
+    getUserByName(name: string): Promise<Readonly<UserData>[]> {
         return sendRequest({
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'search', name]),
             credentials: true
         });
     }
 
-    getAccessTokens(user: UserData): Promise<PersonalAccessToken[]> {
+    getAccessTokens(user: UserData): Promise<Readonly<PersonalAccessToken>[]> {
         return sendRequest({
             credentials: true,
             endpoint: user.tokensUrl
         });
     }
 
-    async createAccessToken(user: UserData, description: string): Promise<PersonalAccessToken> {
+    async createAccessToken(user: UserData, description: string): Promise<Readonly<PersonalAccessToken>> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
@@ -145,7 +149,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAccessToken(token: PersonalAccessToken): Promise<SuccessResult | ErrorResult> {
+    async deleteAccessToken(token: PersonalAccessToken): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
@@ -159,7 +163,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAllAccessTokens(tokens: PersonalAccessToken[]): Promise<(SuccessResult | ErrorResult)[]> {
+    async deleteAllAccessTokens(tokens: PersonalAccessToken[]): Promise<Readonly<SuccessResult | ErrorResult>[]> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
@@ -173,28 +177,28 @@ export class ExtensionRegistryService {
         })));
     }
 
-    getCsrfToken(): Promise<CsrfTokenJson | ErrorResult> {
+    getCsrfToken(): Promise<Readonly<CsrfTokenJson | ErrorResult>> {
         return sendRequest({
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, "user", "csrf"])
         });
     }
 
-    getNamespaces(): Promise<Namespace[]> {
+    getNamespaces(): Promise<Readonly<Namespace>[]> {
         return sendRequest({
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, "user", "namespaces"])
         });
     }
 
-    getNamespaceMembers(namespace: Namespace): Promise<NamespaceMembership[]> {
+    getNamespaceMembers(namespace: Namespace): Promise<Readonly<NamespaceMembership>[]> {
         return sendRequest({
             credentials: true,
             endpoint: namespace.getMembersUrl
         });
     }
 
-    async setNamespaceMembers(endpoint: string, provider?: string): Promise<(SuccessResult | ErrorResult)[]> {
+    async setNamespaceMembers(endpoint: string, provider?: string): Promise<Readonly<SuccessResult | ErrorResult>[]> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
@@ -213,7 +217,7 @@ export class ExtensionRegistryService {
         );
     }
 
-    async changeNamespaceMemberRole(namespaceMembership: NamespaceMembership, role: MembershipRole): Promise<(SuccessResult | ErrorResult)[]> {
+    async changeNamespaceMemberRole(namespaceMembership: NamespaceMembership, role: MembershipRole): Promise<Readonly<SuccessResult | ErrorResult>[]> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {

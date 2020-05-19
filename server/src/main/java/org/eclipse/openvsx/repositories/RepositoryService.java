@@ -82,6 +82,10 @@ public class RepositoryService {
          return extensionVersionRepo.findByExtension(extension);
     }
 
+    public Streamable<ExtensionVersion> findVersions(Extension extension, boolean preview) {
+         return extensionVersionRepo.findByExtensionAndPreview(extension, preview);
+    }
+
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
         return extensionVersionRepo.findByBundledExtensions(extension);
     }

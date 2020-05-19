@@ -10,7 +10,7 @@
 
 import * as React from "react";
 import * as MarkdownIt from 'markdown-it';
-import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link } from "@material-ui/core";
+import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link, NativeSelect } from "@material-ui/core";
 import { RouteComponentProps, Link as RouteLink, withRouter } from "react-router-dom";
 import HomeIcon from '@material-ui/icons/Home';
 import GitHubIcon from '@material-ui/icons/GitHub';
@@ -19,7 +19,7 @@ import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 import { toLocalTime, addQuery, createRoute } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension, ExtensionReference } from "../../extension-registry-types";
+import { Extension, ExtensionReference, VERSION_ALIASES } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
 import { PageSettings } from "../../page-settings";
 import { ExtensionDetailRoutes } from "./extension-detail";
@@ -28,15 +28,38 @@ import { ErrorResponse } from '../../server-request';
 const overviewStyles = (theme: Theme) => createStyles({
     overview: {
         display: 'flex',
+        marginTop: theme.spacing(2),
         [theme.breakpoints.down('lg')]: {
-            flexDirection: 'column',
+            flexDirection: 'column-reverse',
         }
     },
     resourcesWrapper: {
-        margin: "4rem 0",
+        flex: 1,
+        display: 'flex',
         width: "100%",
-        [theme.breakpoints.up('lg')]: {
-            margin: '0 0 0 4.8rem',
+        minWidth: '290px',
+        margin: '0 0 0 4.8rem',
+        [theme.breakpoints.down('lg')]: {
+            margin: `0 0 ${theme.spacing(2)}px 0`
+        },
+        [theme.breakpoints.up('xl')]: {
+            flexDirection: 'column'
+        },
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column'
+        }
+    },
+    resourcesGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        [theme.breakpoints.up('xl')]: {
+            flex: 'none',
+            marginBottom: theme.spacing(2)
+        },
+        [theme.breakpoints.down('sm')]: {
+            flex: 'none',
+            marginBottom: theme.spacing(2)
         }
     },
     link: {
@@ -93,7 +116,14 @@ const overviewStyles = (theme: Theme) => createStyles({
         alignItems: 'center',
         marginTop: theme.spacing(0.5)
     },
-    categoryButton: {
+    versionAlias: {
+        backgroundColor: theme.palette.primary.dark,
+        color: theme.palette.primary.light,
+        fontStyle: 'italic',
+        marginLeft: theme.spacing(2),
+        padding: '4px'
+    },
+    tagButton: {
         fontWeight: 'normal',
         textTransform: 'none',
         marginRight: theme.spacing(0.5),
@@ -126,6 +156,15 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         this.updateReadme();
     }
 
+    componentDidUpdate(prevProps: ExtensionDetailOverview.Props) {
+        const prevExt = prevProps.extension;
+        const newExt = this.props.extension;
+        if (prevExt.namespace !== newExt.namespace || prevExt.name !== newExt.name || prevExt.version !== newExt.version) {
+            this.setState({ loading: true });
+            this.updateReadme();
+        }
+    }
+
     protected async updateReadme(): Promise<void> {
         if (this.props.extension.files.readme) {
             try {
@@ -145,7 +184,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
         const { classes, extension } = this.props;
-        const zonedDate = toLocalTime(extension.timestamp);
         const ClaimNamespace = this.props.pageSettings.claimNamespace;
         const ReportAbuse = this.props.pageSettings.reportAbuse;
         return <React.Fragment>
@@ -153,13 +191,28 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 <Box className={classes.markdown} flex={5} overflow="auto">
                     {this.renderMarkdown(this.state.readme)}
                 </Box>
-                <Box flex={3} display='flex' justifyContent='flex-end' minWidth='290px'>
-                    <Box className={this.props.classes.resourcesWrapper}>
-                        {this.renderButtonList('category', 'Categories', extension.categories)}
-                        <Box mt={2}>
-                            {this.renderButtonList('search', 'Tags', extension.tags)}
+                <Box className={this.props.classes.resourcesWrapper}>
+                    <Box className={this.props.classes.resourcesGroup}>
+                        <Box>
+                            {this.renderVersionSection()}
                         </Box>
-                        <Box mt={2}>
+                        {
+                            extension.categories && extension.categories.length > 0 ?
+                            <Box mt={2}>
+                                {this.renderButtonList('category', 'Categories', extension.categories)}
+                            </Box>
+                            : null
+                        }
+                        {
+                            extension.tags && extension.tags.length > 0 ?
+                            <Box mt={2}>
+                                {this.renderButtonList('search', 'Tags', extension.tags)}
+                            </Box>
+                            : null
+                        }
+                    </Box>
+                    <Box className={this.props.classes.resourcesGroup}>
+                        <Box>
                             <Typography variant='h6'>Resources</Typography>
                             {this.renderResourceLink('Homepage', extension.homepage)}
                             {this.renderResourceLink('Repository', extension.repository)}
@@ -189,8 +242,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         }
                         <Box mt={2} className={this.props.classes.moreInfo}>
                             <Typography variant='h6'>More Info</Typography>
-                            {extension.version ? this.renderInfo('Version', extension.version + (extension.preview ? ' (preview)' : '')) : ''}
-                            {zonedDate ? this.renderInfo('Released on', zonedDate.toLocaleString()) : ''}
                             {this.renderInfo('Namespace',
                                 <RouteLink
                                     to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
@@ -215,29 +266,74 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         </React.Fragment>;
     }
 
-    protected handleFilterButtonClicked(kind: 'category' | 'search', buttonLabel: string): void {
-        const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
-        this.props.history.push(route);
+    protected renderVersionSection(): React.ReactNode {
+        const { classes, extension } = this.props;
+        const zonedDate = toLocalTime(extension.timestamp);
+        return <React.Fragment>
+            <Typography variant='h6'>Version</Typography>
+            <NativeSelect
+                name='Version'
+                value={extension.version}
+                onChange={event => this.props.selectVersion(event.target.value)}
+                inputProps={{ 'aria-label': 'Version' }} >
+                {
+                    Object.keys(extension.allVersions)
+                        .filter(version => VERSION_ALIASES.indexOf(version) < 0)
+                        .map(version => <option key={version}>{version}</option>)
+                }
+            </NativeSelect>
+            {
+                extension.versionAlias ?
+                <span className={classes.versionAlias}>{extension.versionAlias}</span>
+                : null
+            }
+            {
+                zonedDate ?
+                <Box mt={1} mb={1}>Published on {zonedDate.toLocaleString()}</Box>
+                : null
+            }
+            Aliases: {
+                Object.keys(extension.allVersions)
+                        .filter(version => VERSION_ALIASES.indexOf(version) >= 0)
+                        .map(alias => {
+                    let route: string;
+                    if (alias === 'latest') {
+                        route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
+                    } else {
+                        route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, alias]);
+                    }
+                    return <Button
+                        className={this.props.classes.tagButton}
+                        size='small'
+                        variant='outlined'
+                        key={alias}
+                        onClick={() => this.props.history.push(route)} >
+                        {alias}
+                    </Button>;
+                })
+            }
+        </React.Fragment>;
     }
 
-    protected renderButtonList(kind: 'category' | 'search', title: string, arr?: string[]): React.ReactNode {
-        if (!arr || arr.length === 0) {
-            return '';
-        }
-        return <Box>
+    protected renderButtonList(kind: 'category' | 'search', title: string, arr: string[]): React.ReactNode {
+        const filtered = Array.from(new Set(arr)).sort((a, b) => a.localeCompare(b));
+        return <React.Fragment>
             <Typography variant='h6'>{title}</Typography>
             {
-                arr.sort((a, b) => a.localeCompare(b)).map((buttonLabel: string) =>
+                filtered.map((buttonLabel: string) =>
                     <Button
-                        className={this.props.classes.categoryButton}
+                        className={this.props.classes.tagButton}
                         size='small'
-                        key={buttonLabel}
                         variant='outlined'
-                        onClick={() => this.handleFilterButtonClicked(kind, buttonLabel)} >
+                        key={buttonLabel}
+                        onClick={() => {
+                            const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
+                            this.props.history.push(route);
+                        }} >
                         {buttonLabel}
                     </Button>)
             }
-        </Box>;
+        </React.Fragment>;
     }
 
     protected renderResourceLink(label: string, href?: string): React.ReactNode {
@@ -263,7 +359,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     }
 
     protected renderExtensionRef(ref: ExtensionReference): React.ReactNode {
-        return <Box>
+        return <Box key={`${ref.namespace}.${ref.extension}`}>
             <RouteLink to={createRoute([ExtensionDetailRoutes.ROOT, ref.namespace, ref.extension])}
                 className={this.props.classes.link} >
                 {ref.namespace}.{ref.extension}
@@ -293,6 +389,7 @@ export namespace ExtensionDetailOverview {
         extension: Extension;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
+        selectVersion: (version: string) => void;
         setError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {

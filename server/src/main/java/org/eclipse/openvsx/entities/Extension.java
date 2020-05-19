@@ -39,6 +39,9 @@ public class Extension {
     @OneToOne
     ExtensionVersion latest;
 
+    @OneToOne
+    ExtensionVersion preview;
+
     Double averageRating;
 
     int downloadCount;
@@ -97,6 +100,14 @@ public class Extension {
 
 	public void setLatest(ExtensionVersion latest) {
 		this.latest = latest;
+	}
+
+	public ExtensionVersion getPreview() {
+		return preview;
+	}
+
+	public void setPreview(ExtensionVersion preview) {
+		this.preview = preview;
 	}
 
 	public Double getAverageRating() {

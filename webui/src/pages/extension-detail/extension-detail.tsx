@@ -18,7 +18,7 @@ import WarningIcon from '@material-ui/icons/Warning';
 import { createRoute } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension, UserData, isError, ExtensionRaw } from "../../extension-registry-types";
+import { Extension, UserData, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
 import { PageSettings } from "../../page-settings";
 import { ExtensionDetailOverview } from "./extension-detail-overview";
@@ -31,16 +31,14 @@ export namespace ExtensionDetailRoutes {
     export namespace Parameters {
         export const NAMESPACE = ':namespace';
         export const NAME = ':name';
-        export const TAB = ':tab?';
+        export const VERSION = ':version?';
     }
 
-    export const TAB_OVERVIEW = 'overview';
-    export const TAB_REVIEWS = 'reviews';
-
     export const ROOT = 'extension';
-    export const MAIN = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TAB]);
-    export const OVERVIEW = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME]);
-    export const REVIEWS = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, TAB_REVIEWS]);
+    export const MAIN = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.VERSION]);
+    export const LATEST = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME]);
+    export const PREVIEW = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'preview']);
+    export const REVIEWS = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'reviews']);
 }
 
 const detailStyles = (theme: Theme) => createStyles({
@@ -62,7 +60,12 @@ const detailStyles = (theme: Theme) => createStyles({
         fontWeight: 'bold',
         marginBottom: theme.spacing(1)
     },
-    infoRow: {
+    infoRowBreak: {
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column'
+        }
+    },
+    infoRowNonBreak: {
         [theme.breakpoints.down('sm')]: {
             justifyContent: 'center'
         }
@@ -76,11 +79,6 @@ const detailStyles = (theme: Theme) => createStyles({
         [theme.breakpoints.up('md')]: {
             marginRight: '2rem'
         }
-    },
-    preview: {
-        fontSize: '0.6em',
-        fontStyle: 'italic',
-        marginLeft: theme.spacing(3)
     },
     description: {
         overflow: 'hidden',
@@ -100,11 +98,13 @@ const detailStyles = (theme: Theme) => createStyles({
     },
     header: {
         display: 'flex',
+        alignItems: 'center',
         flexDirection: 'column',
         padding: `${theme.spacing(4)}px 0`
     },
     iconAndInfo: {
         display: 'flex',
+        width: '100%',
         [theme.breakpoints.down('sm')]: {
             flexDirection: 'column',
             textAlign: 'center',
@@ -112,6 +112,7 @@ const detailStyles = (theme: Theme) => createStyles({
         }
     },
     banner: {
+        maxWidth: '800px',
         margin: `0 ${theme.spacing(6)}px ${theme.spacing(4)}px ${theme.spacing(6)}px`,
         padding: theme.spacing(2),
         display: 'flex',
@@ -145,23 +146,34 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     }
 
     componentDidMount() {
-        const params = this.props.match.params as ExtensionRaw;
+        const params = this.props.match.params as ExtensionDetailComponent.Params;
         document.title = `${params.name} – ${this.props.pageSettings.pageTitle}`;
-        this.updateExtension(params);
+        this.updateExtension(this.getExtensionApiUrl(params));
     }
 
     componentDidUpdate(prevProps: ExtensionDetailComponent.Props) {
-        const prevParams = prevProps.match.params as ExtensionRaw;
-        const newParams = this.props.match.params as ExtensionRaw;
-        if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name) {
-            this.setState({ extension: undefined, loading: true });
-            this.updateExtension(newParams);
+        const prevParams = prevProps.match.params as ExtensionDetailComponent.Params;
+        const newParams = this.props.match.params as ExtensionDetailComponent.Params;
+        if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name
+                || newParams.version !== prevParams.version) {
+            if (newParams.namespace === prevParams.namespace && newParams.name === prevParams.name) {
+                this.setState({ loading: true });
+            } else {
+                this.setState({ extension: undefined, loading: true });
+            }
+            this.updateExtension(this.getExtensionApiUrl(newParams));
         }
     }
 
-    protected async updateExtension(params: ExtensionRaw) {
+    protected getExtensionApiUrl(params: ExtensionDetailComponent.Params) {
+        if (params.version === 'reviews') {
+            return this.props.service.getExtensionApiUrl({ namespace: params.namespace, name: params.name });
+        }
+        return this.props.service.getExtensionApiUrl(params);
+    }
+
+    protected async updateExtension(extensionUrl: string) {
         try {
-            const extensionUrl = this.props.service.getExtensionApiUrl(params);
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
                 throw extension;
@@ -174,35 +186,51 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         }
     }
 
-    protected onReviewUpdate = () => this.updateExtension(this.props.match.params as ExtensionRaw);
+    protected onReviewUpdate = () => {
+        const params = this.props.match.params as { namespace: string; name: string; };
+        const extensionUrl = this.props.service.getExtensionApiUrl(params);
+        this.updateExtension(extensionUrl);
+    }
+    protected onVersionSelect = (version: string) => {
+        const params = this.props.match.params as ExtensionDetailComponent.Params;
+        let newRoute: string;
+        if (version === 'latest') {
+            newRoute = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name]);
+        } else {
+            newRoute = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, version]);
+        }
+        this.props.history.push(newRoute);
+    }
 
     render() {
         const { extension } = this.state;
         if (!extension) {
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
+        const classes = this.props.classes;
         const headerTheme = extension.galleryTheme || this.props.pageSettings.themeType || 'light';
 
         return <React.Fragment>
-            <Box className={this.props.classes.head}
+            <DelayedLoadIndicator loading={this.state.loading} />
+            <Box className={classes.head}
                 style={{
                     backgroundColor: extension.galleryColor,
                     color: headerTheme === 'dark' ? '#fff' : '#333'
                 }}
             >
-                <Container maxWidth='lg'>
-                    <Box className={this.props.classes.header}>
+                <Container maxWidth='xl'>
+                    <Box className={classes.header}>
                         {this.renderBanner(extension, headerTheme)}
-                        <Box className={this.props.classes.iconAndInfo}>
+                        <Box className={classes.iconAndInfo}>
                             <img src={extension.files.icon || this.props.pageSettings.urls.extensionDefaultIcon}
-                                className={this.props.classes.extensionLogo}
+                                className={classes.extensionLogo}
                                 alt={extension.displayName || extension.name} />
                             {this.renderHeaderInfo(extension, headerTheme)}
                         </Box>
                     </Box>
                 </Container>
             </Box>
-            <Container maxWidth='lg'>
+            <Container maxWidth='xl'>
                 <Box>
                     <Box>
                         <ExtensionDetailTabs />
@@ -218,11 +246,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                     setError={this.props.setError}
                                 />
                             </Route>
-                            <Route path={ExtensionDetailRoutes.OVERVIEW}>
+                            <Route path={ExtensionDetailRoutes.LATEST}>
                                 <ExtensionDetailOverview
                                     extension={extension}
                                     service={this.props.service}
                                     pageSettings={this.props.pageSettings}
+                                    selectVersion={this.onVersionSelect}
                                     setError={this.props.setError}
                                 />
                             </Route>
@@ -281,42 +310,46 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         return (
         <Box overflow='auto'>
             <Typography variant='h5' className={classes.titleRow}>
-                {extension.displayName || extension.name} {extension.preview ?
-                    <span className={`${classes.preview} ${themeClass}`}>preview</span>
-                    : ''}
+                {extension.displayName || extension.name}
             </Typography>
-            <Box className={`${themeClass} ${classes.infoRow} ${classes.alignVertically}`}>
-                {this.renderAccessInfo(extension, themeClass)}&nbsp;<span
-                    title='Unique identifier'
-                    className={classes.code}>
-                    {extension.namespace}.{extension.name}
-                </span>
-                <TextDivider themeType={themeType}/>
-                Published by <Link href={extension.publishedBy.homepage}
-                    className={`${classes.link} ${themeClass}`}>
-                    {
-                        extension.publishedBy.avatarUrl ?
-                        <React.Fragment>
-                            {extension.publishedBy.loginName}&nbsp;<Avatar
-                                src={extension.publishedBy.avatarUrl}
-                                alt={extension.publishedBy.loginName}
-                                variant='circle'
-                                classes={{ root: classes.avatar }} />
-                        </React.Fragment>
-                        : extension.publishedBy.loginName
-                    }
-                </Link>
-                <TextDivider themeType={themeType}/>
-                {this.renderLicense(extension, themeClass)}
+            <Box className={`${themeClass} ${classes.infoRowBreak} ${classes.alignVertically}`}>
+                <Box className={classes.alignVertically}>
+                    {this.renderAccessInfo(extension, themeClass)}&nbsp;<span
+                        title='Unique identifier'
+                        className={classes.code}>
+                        {extension.namespace}.{extension.name}
+                    </span>
+                </Box>
+                <TextDivider themeType={themeType} collapseSmall={true} />
+                <Box className={classes.alignVertically}>
+                    Published by <Link href={extension.publishedBy.homepage}
+                        className={`${classes.link} ${themeClass}`}>
+                        {
+                            extension.publishedBy.avatarUrl ?
+                            <React.Fragment>
+                                {extension.publishedBy.loginName}&nbsp;<Avatar
+                                    src={extension.publishedBy.avatarUrl}
+                                    alt={extension.publishedBy.loginName}
+                                    variant='circle'
+                                    classes={{ root: classes.avatar }} />
+                            </React.Fragment>
+                            : extension.publishedBy.loginName
+                        }
+                    </Link>
+                </Box>
+                <TextDivider themeType={themeType} collapseSmall={true} />
+                <Box className={classes.alignVertically}>
+                    {this.renderLicense(extension, themeClass)}
+                </Box>
             </Box>
             <Box mt={2} mb={2} overflow='auto'>
                 <Typography classes={{ root: classes.description }}>{extension.description}</Typography>
             </Box>
-            <Box className={`${themeClass} ${classes.infoRow} ${classes.alignVertically}`}>
+            <Box className={`${themeClass} ${classes.infoRowNonBreak} ${classes.alignVertically}`}>
                 <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
-                <TextDivider themeType={themeType}/>
+                <TextDivider themeType={themeType} />
                 <RouteLink
-                    to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, ExtensionDetailRoutes.TAB_REVIEWS])}
+                    to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, 'reviews'])}
                     className={`${classes.link} ${themeClass} ${classes.alignVertically}`}
                     title={
                         extension.averageRating !== undefined ?
@@ -386,9 +419,16 @@ export namespace ExtensionDetailComponent {
         pageSettings: PageSettings;
         setError: (err: Error | Partial<ErrorResponse>) => void;
     }
+
     export interface State {
         extension?: Extension;
         loading: boolean;
+    }
+
+    export interface Params {
+        readonly namespace: string;
+        readonly name: string;
+        readonly version?: string;
     }
 }
 

@@ -12,30 +12,33 @@ import * as React from "react";
 import { Tabs, Tab } from "@material-ui/core";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { createRoute } from "../../utils";
-import { ExtensionRaw } from "../../extension-registry-types";
 import { ExtensionDetailRoutes } from "./extension-detail";
 
 export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetailTabs.Props> {
 
     protected handleChange = (event: React.ChangeEvent, newTab: string) => {
-        this.props.history.push(this.createRoute(newTab));
-    }
-
-    protected createRoute(tab: string) {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
-        if (tab === ExtensionDetailRoutes.TAB_OVERVIEW) {
-            return createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name]);
-        } else {
-            return createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, tab]);
+        const previousTab = params.version === 'reviews' ? 'reviews' : 'overview';
+        if (newTab !== previousTab) {
+            let route: string;
+            if (newTab === 'reviews') {
+                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, 'reviews']);
+            } else if (params.version && params.version !== 'reviews') {
+                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, params.version]);
+            } else {
+                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name]);
+            }
+            this.props.history.push(route);
         }
     }
 
     render() {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
+        const tab = params.version === 'reviews' ? 'reviews' : 'overview';
         return <React.Fragment>
-            <Tabs value={params.tab || ExtensionDetailRoutes.TAB_OVERVIEW} onChange={this.handleChange}>
-                <Tab value={ExtensionDetailRoutes.TAB_OVERVIEW} label='Overview' />
-                <Tab value={ExtensionDetailRoutes.TAB_REVIEWS} label='Rating &amp; Review' />
+            <Tabs value={tab} onChange={this.handleChange}>
+                <Tab value='overview' label='Overview' />
+                <Tab value='reviews' label='Rating &amp; Review' />
             </Tabs>
         </React.Fragment>;
     }
@@ -45,8 +48,10 @@ export namespace ExtensionDetailTabs {
     export interface Props extends RouteComponentProps {
     }
 
-    export interface Params extends ExtensionRaw {
-        tab?: string;
+    export interface Params {
+        readonly namespace: string;
+        readonly name: string;
+        readonly version?: string;
     }
 }
 
