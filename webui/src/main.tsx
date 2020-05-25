@@ -143,7 +143,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         return <React.Fragment>
             <CssBaseline />
             <Box className={classes.main}>
-                <AppBar position='sticky'>
+                <AppBar position='relative'>
                     <Toolbar classes={{ root: classes.spreadHorizontally }}>
                         <Box className={classes.alignVertically}>
                             {ToolbarContent ? <ToolbarContent /> : null}
