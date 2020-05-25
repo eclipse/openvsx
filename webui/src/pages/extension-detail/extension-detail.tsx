@@ -17,6 +17,7 @@ import PublicIcon from '@material-ui/icons/Public';
 import WarningIcon from '@material-ui/icons/Warning';
 import { createRoute } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
+import { HoverPopover } from "../../custom-mui-components/hover-popover";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, UserData, isError } from "../../extension-registry-types";
 import { TextDivider } from "../../custom-mui-components/text-divider";
@@ -95,6 +96,10 @@ const detailStyles = (theme: Theme) => createStyles({
     avatar: {
         width: '20px',
         height: '20px'
+    },
+    avatarPopover: {
+        width: '60px',
+        height: '60px'
     },
     header: {
         display: 'flex',
@@ -322,20 +327,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 </Box>
                 <TextDivider themeType={themeType} collapseSmall={true} />
                 <Box className={classes.alignVertically}>
-                    Published by <Link href={extension.publishedBy.homepage}
-                        className={`${classes.link} ${themeClass}`}>
-                        {
-                            extension.publishedBy.avatarUrl ?
-                            <React.Fragment>
-                                {extension.publishedBy.loginName}&nbsp;<Avatar
-                                    src={extension.publishedBy.avatarUrl}
-                                    alt={extension.publishedBy.loginName}
-                                    variant='circle'
-                                    classes={{ root: classes.avatar }} />
-                            </React.Fragment>
-                            : extension.publishedBy.loginName
-                        }
-                    </Link>
+                    Published by&nbsp;{this.renderUser(extension.publishedBy, themeClass)}
                 </Box>
                 <TextDivider themeType={themeType} collapseSmall={true} />
                 <Box className={classes.alignVertically}>
@@ -395,6 +387,47 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             className={`${this.props.classes.link} ${themeClass}`} >
             {icon}
         </Link>;
+    }
+
+    protected renderUser(user: UserData, themeClass: string) {
+        const popupContent = <Box display='flex' flexDirection='row'>
+            {
+                user.avatarUrl ?
+                <Avatar
+                    src={user.avatarUrl}
+                    alt={user.fullName || user.loginName}
+                    variant='rounded'
+                    classes={{ root: this.props.classes.avatarPopover }} />
+                : null
+            }
+            <Box ml={2}>
+                {
+                    user.fullName ?
+                    <Typography variant='h6'>{user.fullName}</Typography>
+                    : null
+                }
+                <Typography variant='body1'>{user.loginName}</Typography>
+            </Box>
+        </Box>;
+        return <HoverPopover
+            id={`user_${user.loginName}_popover`}
+            popupContent={popupContent}
+            className={this.props.classes.alignVertically} >
+            <Link href={user.homepage}
+                className={`${this.props.classes.link} ${themeClass}`}>
+                {
+                    user.avatarUrl ?
+                    <React.Fragment>
+                        {user.loginName}&nbsp;<Avatar
+                            src={user.avatarUrl}
+                            alt={user.loginName}
+                            variant='circle'
+                            classes={{ root: this.props.classes.avatar }} />
+                    </React.Fragment>
+                    : user.loginName
+                }
+            </Link>
+        </HoverPopover>;
     }
 
     protected renderLicense(extension: Extension, themeClass: string): React.ReactNode {

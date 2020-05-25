@@ -7,10 +7,12 @@ ports:
 # Server (API)
 - port: 8080
 # PostgreSQL
-- port: 5000-5999
+- port: 5432
   onOpen: ignore
 # Elasticsearch
-- port: 9000-9999
+- port: 9200
+  onOpen: ignore
+- port: 9300
   onOpen: ignore
 
 tasks:
@@ -44,7 +46,9 @@ tasks:
   command: |
     gp await-port 8080
     # Use the CLI to publish some test extensions to the running server
+    export OVSX_REGISTRY_URL=http://localhost:8080
+    export OVSX_PAT=super_token
     export PUBLISHERS="DotJoshJohnson eamodio Equinusocio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode Wscats"
-    for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub -r http://localhost:8080 -p super_token; done
-    find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish -r http://localhost:8080 -p super_token '{}' \;
-    find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish -r http://localhost:8080 -p super_token '{}' \;
+    for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub; done
+    find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
+    find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;

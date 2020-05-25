@@ -269,19 +269,26 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     protected renderVersionSection(): React.ReactNode {
         const { classes, extension } = this.props;
         const zonedDate = toLocalTime(extension.timestamp);
+        const allVersions = Object.keys(extension.allVersions)
+            .filter(version => VERSION_ALIASES.indexOf(version) < 0);
+        const otherAliases = Object.keys(extension.allVersions)
+            .filter(version => version !== extension.versionAlias && VERSION_ALIASES.indexOf(version) >= 0);
         return <React.Fragment>
             <Typography variant='h6'>Version</Typography>
-            <NativeSelect
-                name='Version'
-                value={extension.version}
-                onChange={event => this.props.selectVersion(event.target.value)}
-                inputProps={{ 'aria-label': 'Version' }} >
-                {
-                    Object.keys(extension.allVersions)
-                        .filter(version => VERSION_ALIASES.indexOf(version) < 0)
-                        .map(version => <option key={version}>{version}</option>)
-                }
-            </NativeSelect>
+            {
+                allVersions.length === 1 ?
+                <Typography variant='body1' display='inline'>{allVersions[0]}</Typography>
+                :
+                <NativeSelect
+                    name='Version'
+                    value={extension.version}
+                    onChange={event => this.props.selectVersion(event.target.value)}
+                    inputProps={{ 'aria-label': 'Version' }} >
+                    {
+                        allVersions.map(version => <option key={version}>{version}</option>)
+                    }
+                </NativeSelect>
+            }
             {
                 extension.versionAlias ?
                 <span className={classes.versionAlias}>{extension.versionAlias}</span>
@@ -292,10 +299,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 <Box mt={1} mb={1}>Published on {zonedDate.toLocaleString()}</Box>
                 : null
             }
-            Aliases: {
-                Object.keys(extension.allVersions)
-                        .filter(version => VERSION_ALIASES.indexOf(version) >= 0)
-                        .map(alias => {
+            {
+                otherAliases.map(alias => {
                     let route: string;
                     if (alias === 'latest') {
                         route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
@@ -307,6 +312,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         size='small'
                         variant='outlined'
                         key={alias}
+                        title={`Switch to version with "${alias}" alias`}
                         onClick={() => this.props.history.push(route)} >
                         {alias}
                     </Button>;
@@ -326,6 +332,11 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         size='small'
                         variant='outlined'
                         key={buttonLabel}
+                        title={
+                            kind === 'category'
+                            ? `Search for extensions in "${buttonLabel}" category`
+                            : `Search for extensions containing "${buttonLabel}"`
+                        }
                         onClick={() => {
                             const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
                             this.props.history.push(route);
