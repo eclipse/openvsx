@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -171,12 +172,12 @@ public class ExtensionProcessor implements AutoCloseable {
 
     private List<String> getStringList(JsonNode node) {
         if (node.isArray()) {
-            var list = new ArrayList<String>();
+            var set = new LinkedHashSet<String>();
             for (var element : node) {
                 if (element.isTextual())
-                    list.add(element.textValue());
+                    set.add(element.textValue());
             }
-            return list;
+            return new ArrayList<>(set);
         }
         return null;
     }

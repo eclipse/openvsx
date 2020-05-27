@@ -272,7 +272,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const allVersions = Object.keys(extension.allVersions)
             .filter(version => VERSION_ALIASES.indexOf(version) < 0);
         const otherAliases = Object.keys(extension.allVersions)
-            .filter(version => version !== extension.versionAlias && VERSION_ALIASES.indexOf(version) >= 0);
+            .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
         return <React.Fragment>
             <Typography variant='h6'>Version</Typography>
             {
@@ -290,9 +290,9 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 </NativeSelect>
             }
             {
-                extension.versionAlias ?
-                <span className={classes.versionAlias}>{extension.versionAlias}</span>
-                : null
+                extension.versionAlias.map(alias =>
+                    <span key={alias} className={classes.versionAlias}>{alias}</span>
+                )
             }
             {
                 zonedDate ?

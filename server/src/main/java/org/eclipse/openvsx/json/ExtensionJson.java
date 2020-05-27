@@ -57,8 +57,7 @@ public class ExtensionJson extends ResultJson {
     public String version;
 
     // latest or preview
-    @Nullable
-    public String versionAlias;
+    public List<String> versionAlias;
 
     public String timestamp;
 

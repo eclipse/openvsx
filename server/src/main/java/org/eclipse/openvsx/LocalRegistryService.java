@@ -265,13 +265,15 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (nameIssue.isPresent()) {
             throw new ErrorResultException(nameIssue.get().toString());
         }
-        var extension = repositories.findExtension(extensionName, namespace);
         var extVersion = processor.getMetadata();
         if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
             extVersion.setDisplayName(null);
         }
         extVersion.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
         extVersion.setPublishedWith(token);
+        entityManager.persist(extVersion);
+
+        var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
             extension = new Extension();
             extension.setName(extensionName);
@@ -310,7 +312,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
                     + Joiner.on("\n").join(metadataIssues));
         }
-        entityManager.persist(extVersion);
         return extVersion;
     }
 
@@ -457,10 +458,11 @@ public class LocalRegistryService implements IExtensionRegistry {
     private ExtensionJson toJson(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
+        json.versionAlias = new ArrayList<>(2);
+        if (extVersion == extension.getLatest())
+            json.versionAlias.add("latest");
         if (extVersion == extension.getPreview())
-            json.versionAlias = "preview";
-        else if (extVersion == extension.getLatest())
-            json.versionAlias = "latest";
+            json.versionAlias.add("preview");
         json.namespaceAccess = getAccessString(extension.getNamespace());
         if (NamespaceJson.RESTRICTED_ACCESS.equals(json.namespaceAccess))
             json.unrelatedPublisher = isUnrelatedPublisher(extVersion);

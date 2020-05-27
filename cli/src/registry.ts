@@ -189,7 +189,7 @@ export interface Extension extends Response {
     namespaceAccess: 'public' | 'restricted';
     displayName?: string;
     version: string;
-    versionAlias?: 'latest' | 'preview';
+    versionAlias: string[];
     preview?: boolean;
     timestamp?: string;
     description?: string;

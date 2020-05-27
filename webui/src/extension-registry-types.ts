@@ -54,7 +54,7 @@ export interface Extension extends ExtensionRaw {
     namespaceAccess: 'public' | 'restricted';
 
     allVersions: { [version: string]: UrlString };
-    versionAlias?: 'latest' | 'preview';
+    versionAlias: string[];
     preview?: boolean;
 
     engines?: string[];
