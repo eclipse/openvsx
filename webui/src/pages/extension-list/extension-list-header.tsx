@@ -131,7 +131,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                                     value={this.props.searchQuery || ''}
                                     onChange={this.handleSearchChange}
                                     className={classes.inputBase}
-                                    placeholder='Search for Name, Tags or Description'
+                                    placeholder='Search by Name, Tag, or Description'
                                     id="search-input" />
                                 <label
                                     htmlFor="search-input"

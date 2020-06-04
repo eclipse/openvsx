@@ -38,7 +38,7 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
         return <React.Fragment>
             <Tabs value={tab} onChange={this.handleChange}>
                 <Tab value='overview' label='Overview' />
-                <Tab value='reviews' label='Rating &amp; Review' />
+                <Tab value='reviews' label='Ratings &amp; Reviews' />
             </Tabs>
         </React.Fragment>;
     }
