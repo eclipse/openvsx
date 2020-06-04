@@ -241,7 +241,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             : null
                         }
                         <Box mt={2} className={this.props.classes.moreInfo}>
-                            <Typography variant='h6'>More Info</Typography>
+                            <Typography variant='h6'>More Information</Typography>
                             {this.renderInfo('Namespace',
                                 <RouteLink
                                     to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
