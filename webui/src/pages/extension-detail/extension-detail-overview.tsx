@@ -10,6 +10,7 @@
 
 import * as React from "react";
 import * as MarkdownIt from 'markdown-it';
+import * as DOMPurify from 'dompurify';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link, NativeSelect } from "@material-ui/core";
 import { RouteComponentProps, Link as RouteLink, withRouter } from "react-router-dom";
 import HomeIcon from '@material-ui/icons/Home';
@@ -391,7 +392,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     protected renderMarkdown(md: string): React.ReactNode {
         const renderedMd = this.markdownIt.render(md);
-        return <span dangerouslySetInnerHTML={{ __html: renderedMd }} />;
+        const sanitized = DOMPurify.sanitize(renderedMd);
+        return <span dangerouslySetInnerHTML={{ __html: sanitized }} />;
     }
 }
 
