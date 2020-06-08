@@ -178,7 +178,9 @@ public class RegistryAPI {
     public SearchResultJson search(@RequestParam(required = false) String query,
                                    @RequestParam(required = false) String category,
                                    @RequestParam(defaultValue = "18") int size,
-                                   @RequestParam(defaultValue = "0") int offset) {
+                                   @RequestParam(defaultValue = "0") int offset,
+                                   @RequestParam(defaultValue = "desc") String sortOrder,
+                                   @RequestParam(defaultValue = "relevance") String sortBy) {
         if (size < 0) {
             return SearchResultJson.error("The parameter 'size' must not be negative.");
         }
@@ -193,7 +195,7 @@ public class RegistryAPI {
                 return result;
             }
             try {
-                var subResult = registry.search(query, category, size, offset);
+                var subResult = registry.search(query, category, size, offset, sortOrder, sortBy);
                 if (subResult.extensions != null && subResult.extensions.size() > 0) {
                     int limit = size - result.extensions.size();
                     var subResultSize = mergeSearchResults(result, subResult.extensions, limit);
@@ -203,6 +205,8 @@ public class RegistryAPI {
                 result.totalSize += subResult.totalSize;
             } catch (NotFoundException exc) {
                 // Try the next registry
+            } catch (ErrorResultException exc) {
+                return SearchResultJson.error(exc.getMessage());
             }
         }
         return result;

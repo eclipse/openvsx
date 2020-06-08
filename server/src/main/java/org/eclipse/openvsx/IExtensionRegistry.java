@@ -29,6 +29,6 @@ public interface IExtensionRegistry {
 
     ReviewListJson getReviews(String namespace, String extension);
 
-    SearchResultJson search(String query, String category, int size, int offset);
+    SearchResultJson search(String query, String category, int size, int offset, String sortOrder, String sortBy);
 
 }

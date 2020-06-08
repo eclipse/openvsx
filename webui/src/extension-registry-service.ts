@@ -10,7 +10,7 @@
 
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
-    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceMembership, MembershipRole
+    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceMembership, MembershipRole, SortBy, SortOrder
 } from "./extension-registry-types";
 import { createAbsoluteURL, addQuery } from "./utils";
 import { sendRequest } from "./server-request";
@@ -46,6 +46,10 @@ export class ExtensionRegistryService {
                 query.push({ key: 'offset', value: filter.offset });
             if (filter.size)
                 query.push({ key: 'size', value: filter.size });
+            if (filter.sortBy)
+                query.push({ key: 'sortBy', value: filter.sortBy });
+            if (filter.sortOrder)
+                query.push({ key: 'sortOrder', value: filter.sortOrder });
         }
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', '-', 'search'], query);
         return sendRequest({ endpoint });
@@ -245,4 +249,6 @@ export interface ExtensionFilter {
     category?: ExtensionCategory | '';
     size?: number;
     offset?: number;
+    sortBy?: SortBy;
+    sortOrder?: SortOrder;
 }

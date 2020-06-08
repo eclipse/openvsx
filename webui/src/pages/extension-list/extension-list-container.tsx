@@ -12,7 +12,7 @@ import * as React from "react";
 import { Box } from "@material-ui/core";
 import { RouteComponentProps } from "react-router-dom";
 import { createRoute, addQuery } from "../../utils";
-import { ExtensionCategory } from "../../extension-registry-types";
+import { ExtensionCategory, SortOrder, SortBy } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { PageSettings } from "../../page-settings";
 import { ExtensionList } from "./extension-list";
@@ -30,7 +30,9 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         this.state = {
             searchQuery: '',
             category: '',
-            resultNumber: 0
+            resultNumber: 0,
+            sortBy: 'relevance',
+            sortOrder: 'desc'
         };
     }
 
@@ -47,18 +49,32 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
 
     protected onSearchChanged = (searchQuery: string) => {
         this.setState({ searchQuery });
-        this.updateURL(searchQuery, this.state.category);
+        this.updateURL(searchQuery, this.state.category, this.state.sortBy, this.state.sortOrder);
     }
     protected onCategoryChanged = (category: ExtensionCategory) => {
         this.setState({ category });
-        this.updateURL(this.state.searchQuery, category);
+        this.updateURL(this.state.searchQuery, category, this.state.sortBy, this.state.sortOrder);
+    }
+    protected onSortByChanged = (sortBy: SortBy) => {
+        this.setState({ sortBy });
+        this.updateURL(this.state.searchQuery, this.state.category, sortBy, this.state.sortOrder);
+    }
+    protected onSortOrderChanged = (sortOrder: SortOrder) => {
+        this.setState({ sortOrder });
+        this.updateURL(this.state.searchQuery, this.state.category, this.state.sortBy, sortOrder);
     }
 
-    protected updateURL(searchQuery: string, category: ExtensionCategory | '') {
+    protected updateURL(searchQuery: string, category: ExtensionCategory | '', sortBy?: SortBy, sortOrder?: SortOrder) {
         const queries: { key: string, value: string }[] = [
             { key: 'search', value: searchQuery },
             { key: 'category', value: category }
         ];
+        if (sortBy) {
+            queries.push({ key: 'sortBy', value: sortBy });
+        }
+        if (sortOrder) {
+            queries.push({ key: 'sortOrder', value: sortOrder });
+        }
         const url = addQuery('', queries) || location.pathname || '/';
         history.replaceState(null, '', url);
     }
@@ -76,12 +92,17 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                 category={this.state.category}
                 onSearchChanged={this.onSearchChanged}
                 onCategoryChanged={this.onCategoryChanged}
+                onSortByChanged={this.onSortByChanged}
+                onSortOrderChanged={this.onSortOrderChanged}
                 pageSettings={this.props.pageSettings}
                 service={this.props.service} />
             <ExtensionList
                 service={this.props.service}
                 pageSettings={this.props.pageSettings}
-                filter={{ query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10 }}
+                filter={{
+                    query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10,
+                    sortBy: this.state.sortBy, sortOrder: this.state.sortOrder
+                }}
                 setError={this.props.setError}
                 onUpdate={this.handleUpdate}
             />
@@ -98,6 +119,8 @@ export namespace ExtensionListContainer {
     export interface State {
         searchQuery: string,
         category: ExtensionCategory | '',
-        resultNumber: number
+        resultNumber: number,
+        sortBy: SortBy,
+        sortOrder: SortOrder
     }
 }

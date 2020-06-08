@@ -179,7 +179,7 @@ export namespace ExtensionListComponent {
 export const ExtensionList = withStyles(itemStyles)(ExtensionListComponent);
 
 function isSameFilter(f1: ExtensionFilter, f2: ExtensionFilter): boolean {
-    return f1.category === f2.category && f1.query === f2.query;
+    return f1.category === f2.category && f1.query === f2.query && f1.sortBy === f2.sortBy && f1.sortOrder === f2.sortOrder;
 }
 
 function copyFilter(f: ExtensionFilter): ExtensionFilter {
@@ -187,6 +187,8 @@ function copyFilter(f: ExtensionFilter): ExtensionFilter {
         query: f.query,
         category: f.category,
         size: f.size,
-        offset: f.offset
+        offset: f.offset,
+        sortBy: f.sortBy,
+        sortOrder: f.sortOrder
     };
 }

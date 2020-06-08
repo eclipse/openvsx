@@ -15,8 +15,10 @@ import {
 } from "@material-ui/core";
 import SearchIcon from '@material-ui/icons/Search';
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { ExtensionCategory } from "../../extension-registry-types";
+import { ExtensionCategory, SortBy, SortOrder } from "../../extension-registry-types";
 import { PageSettings } from "../../page-settings";
+import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
 
 const headerStyles = (theme: Theme) => createStyles({
     formContainer: {
@@ -38,10 +40,33 @@ const headerStyles = (theme: Theme) => createStyles({
             flexDirection: 'row',
         }
     },
-    resultNumber: {
-        color: theme.palette.text.hint,
+    resultNumAndSortContainer: {
+        display: 'flex',
+        justifyContent: 'space-between',
         fontSize: '0.75rem',
         marginTop: 5
+    },
+    resultNum: {
+        color: theme.palette.text.hint,
+    },
+    resultSort: {
+        color: theme.palette.text.secondary,
+        display: 'flex'
+    },
+    resultSortItem: {
+        '&:hover': {
+            cursor: 'pointer'
+        }
+    },
+    resultSortBySelectRoot: {
+        fontSize: '0.75rem',
+        height: '1.1rem'
+    },
+    resultSortBySelect: {
+        padding: '0px !important'
+    },
+    resultSortBySelectIcon: {
+        display: 'none'
     },
     search: {
         flex: 2,
@@ -84,7 +109,9 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
         this.categories = this.props.service.getCategories();
 
         this.state = {
-            category: ''
+            category: '',
+            sortBy: 'relevance',
+            sortOrder: 'desc'
         };
     }
 
@@ -116,6 +143,18 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
         }
     }
 
+    protected handleSortByChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const sortBy = event.target.value as SortBy;
+        this.setState({ sortBy });
+        this.props.onSortByChanged(sortBy);
+    }
+
+    protected handleSortOrderChange = () => {
+        const sortOrder = this.state.sortOrder === 'asc' ? 'desc' : 'asc';
+        this.setState({ sortOrder });
+        this.props.onSortOrderChanged(sortOrder);
+    }
+
     render() {
         const classes = this.props.classes;
         const SearchHeader = this.props.pageSettings.searchHeader;
@@ -136,7 +175,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                                 <label
                                     htmlFor="search-input"
                                     className="visually-hidden" >
-                                        Search for Name, Tags or Description
+                                    Search for Name, Tags or Description
                                 </label>
                                 <IconButton color='primary' aria-label="Search" classes={{ root: classes.iconButton }}>
                                     <SearchIcon />
@@ -156,7 +195,37 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                                 </Select>
                             </Paper>
                         </Box>
-                        <Box className={classes.resultNumber} >{`${this.props.resultNumber} Result${this.props.resultNumber !== 1 ? 's' : ''}`}</Box>
+                        <Box className={classes.resultNumAndSortContainer}>
+                            <Box className={classes.resultNum} >{`${this.props.resultNumber} Result${this.props.resultNumber !== 1 ? 's' : ''}`}</Box>
+                            <Box className={classes.resultSort}>
+                                <Box className={classes.resultSortItem}>
+                                    Sort by
+                                    <Select
+                                        style={{ marginLeft: '4px' }}
+                                        classes={{ root: classes.resultSortBySelectRoot, select: classes.resultSortBySelect, icon: classes.resultSortBySelectIcon }}
+                                        IconComponent={() => <span />}
+                                        value={this.state.sortBy}
+                                        onChange={this.handleSortByChange}
+                                    >
+                                        <MenuItem value={'relevance'}>Relevance</MenuItem>
+                                        <MenuItem value={'timestamp'}>Date</MenuItem>
+                                        <MenuItem value={'downloadCount'}>Downloads</MenuItem>
+                                        <MenuItem value={'averageRating'}>Rating</MenuItem>
+                                    </Select>
+                                </Box>
+                                <Box title={this.state.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                                    className={classes.resultSortItem}
+                                    style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginLeft: '8px' }}
+                                    onClick={this.handleSortOrderChange}>
+                                    {
+                                        this.state.sortOrder === 'asc' ?
+                                            <ArrowUpwardIcon fontSize='small' />
+                                            :
+                                            <ArrowDownwardIcon fontSize='small' />
+                                    }
+                                </Box>
+                            </Box>
+                        </Box>
                     </Box>
                 </Box>
             </Container>
@@ -168,6 +237,8 @@ namespace ExtensionListHeaderComp {
     export interface Props extends WithStyles<typeof headerStyles> {
         onSearchChanged: (s: string) => void;
         onCategoryChanged: (c: ExtensionCategory) => void;
+        onSortByChanged: (sb: SortBy) => void;
+        onSortOrderChanged: (so: SortOrder) => void;
         pageSettings: PageSettings;
         searchQuery?: string;
         category?: ExtensionCategory | '';
@@ -176,6 +247,8 @@ namespace ExtensionListHeaderComp {
     }
     export interface State {
         category: ExtensionCategory | '';
+        sortBy: SortBy;
+        sortOrder: SortOrder;
     }
 }
 

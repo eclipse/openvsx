@@ -165,3 +165,6 @@ export enum MembershipRole {
     CONTRIBUTOR = 'contributor',
     OWNER = 'owner'
 }
+
+export type SortBy = 'relevance' | 'timestamp' | 'averageRating' | 'downloadCount';
+export type SortOrder = 'asc' | 'desc';
