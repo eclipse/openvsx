@@ -113,7 +113,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
 	@Override
-	public SearchResultJson search(String query, String category, int size, int offset) {
+	public SearchResultJson search(String query, String category, int size, int offset, String sortOrder, String sortBy) {
 		try {
             var searchUrl = createApiUrl(upstreamUrl, "api", "-", "search");
             var requestUrl = addQuery(searchUrl, "query", query, "category", category,

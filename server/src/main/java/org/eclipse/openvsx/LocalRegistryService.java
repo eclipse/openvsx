@@ -182,7 +182,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public SearchResultJson search(String queryString, String category, int size, int offset) {
+    public SearchResultJson search(String queryString, String category, int size, int offset, String sortOrder, String sortBy) {
         var json = new SearchResultJson();
         if (size <= 0 || !search.isEnabled()) {
             json.extensions = Collections.emptyList();
@@ -190,13 +190,13 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var pageRequest = PageRequest.of(offset / size, size);
-        var searchResult = search.search(queryString, category, pageRequest);
+        var searchResult = search.search(queryString, category, pageRequest, sortOrder, sortBy);
         json.extensions = toSearchEntries(searchResult, size, offset % size);
         json.offset = offset;
         json.totalSize = (int) searchResult.getTotalElements();
         if (json.extensions.size() < size && searchResult.hasNext()) {
             // This is necessary when offset % size > 0
-            var remainder = search.search(queryString, category, pageRequest.next());
+            var remainder = search.search(queryString, category, pageRequest.next(), sortOrder, sortBy);
             json.extensions.addAll(toSearchEntries(remainder, size - json.extensions.size(), 0));
         }
         return json;

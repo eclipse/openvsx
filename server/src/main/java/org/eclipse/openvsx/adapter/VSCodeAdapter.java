@@ -102,7 +102,7 @@ public class VSCodeAdapter {
             pageRequest = PageRequest.of(filter.pageNumber - 1, filter.pageSize);
         }
 
-        var searchResult = search.search(queryString, category, pageRequest);
+        var searchResult = search.search(queryString, category, pageRequest, null, null);
         return findExtensions(searchResult, param.flags);
     }
 

@@ -23,6 +23,7 @@ import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -155,7 +156,7 @@ public class SearchService {
             return value;
     }
 
-    public Page<ExtensionSearch> search(String queryString, String category, Pageable pageRequest) {
+    public Page<ExtensionSearch> search(String queryString, String category, Pageable pageRequest, String sortOrder, String sortBy) {
         var queryBuilder = new NativeSearchQueryBuilder()
                 .withIndices("extensions")
                 .withPageable(pageRequest);
@@ -188,10 +189,28 @@ public class SearchService {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
 
-        // Configure default sorting of results
-        queryBuilder.withSort(SortBuilders.scoreSort());
-        queryBuilder.withSort(SortBuilders.fieldSort("relevance").unmappedType("float").order(SortOrder.DESC));
+        if (!"asc".equals(sortOrder) && !"desc".equals(sortOrder)) {
+            throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
+        }
 
+        if ("relevance".equals(sortBy)) {
+            queryBuilder.withSort(SortBuilders.scoreSort());
+        }
+
+        if ("relevance".equals(sortBy) || "averageRating".equals(sortBy)) {
+            queryBuilder.withSort(
+                    SortBuilders.fieldSort(sortBy).unmappedType("float").order(SortOrder.fromString(sortOrder)));
+        } else if ("timestamp".equals(sortBy)) {
+            queryBuilder.withSort(
+                    SortBuilders.fieldSort(sortBy).unmappedType("long").order(SortOrder.fromString(sortOrder)));
+        } else if ("downloadCount".equals(sortBy)) {
+            queryBuilder.withSort(
+                    SortBuilders.fieldSort(sortBy).unmappedType("integer").order(SortOrder.fromString(sortOrder)));
+        } else {
+            throw new ErrorResultException(
+                    "sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'");
+        }
+        
         try {
             rwLock.readLock().lock();
             return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
