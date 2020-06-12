@@ -25,5 +25,5 @@ public interface NamespaceMembershipRepository extends Repository<NamespaceMembe
 
     Streamable<NamespaceMembership> findByUser(UserData user);
 
-    Streamable<NamespaceMembership> findByUserAndRoleIgnoreCase(UserData user, String role);
+    Streamable<NamespaceMembership> findByUserAndRoleIgnoreCaseOrderByNamespaceName(UserData user, String role);
 }

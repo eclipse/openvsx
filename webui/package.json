@@ -39,8 +39,6 @@
         "@material-ui/core": "^4.9.11",
         "@material-ui/icons": "^4.9.1",
         "clipboard-copy": "^3.1.0",
-        "date-fns": "^2.12.0",
-        "date-fns-tz": "^1.0.10",
         "markdown-it": "^10.0.0",
         "dompurify": "^2.0.11",
         "react": "^16.13.1",

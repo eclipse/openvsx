@@ -10,7 +10,7 @@
 
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
-    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceMembership, MembershipRole, SortBy, SortOrder
+    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceMembership, MembershipRole, SortBy, SortOrder, UrlString
 } from "./extension-registry-types";
 import { createAbsoluteURL, addQuery } from "./utils";
 import { sendRequest } from "./server-request";
@@ -55,7 +55,7 @@ export class ExtensionRegistryService {
         return sendRequest({ endpoint });
     }
 
-    getExtensionDetail(extensionUrl: string): Promise<Readonly<Extension | ErrorResult>> {
+    getExtensionDetail(extensionUrl: UrlString): Promise<Readonly<Extension | ErrorResult>> {
         return sendRequest({ endpoint: extensionUrl });
     }
 
@@ -86,7 +86,7 @@ export class ExtensionRegistryService {
         return sendRequest({ endpoint: extension.reviewsUrl });
     }
 
-    async postReview(review: NewReview, postReviewUrl: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async postReview(review: NewReview, postReviewUrl: UrlString): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -198,46 +198,27 @@ export class ExtensionRegistryService {
     getNamespaceMembers(namespace: Namespace): Promise<Readonly<NamespaceMembership>[]> {
         return sendRequest({
             credentials: true,
-            endpoint: namespace.getMembersUrl
+            endpoint: namespace.membersUrl
         });
     }
 
-    async setNamespaceMembers(endpoint: string, provider?: string): Promise<Readonly<SuccessResult | ErrorResult>[]> {
+    async setNamespaceMember(endpoint: UrlString, user: UserData, role: MembershipRole | 'remove'): Promise<Readonly<SuccessResult | ErrorResult>[]> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
-        if (provider) {
-            endpoint = addQuery(endpoint, [{ key: 'provider', value: provider }]);
-        }
+        const query = [
+            { key: 'user', value: user.loginName },
+            { key: 'provider', value: user.provider },
+            { key: 'role', value: role }
+        ];
         return sendRequest(
             {
                 headers,
                 method: 'POST',
                 credentials: true,
-                endpoint
-            }
-        );
-    }
-
-    async changeNamespaceMemberRole(namespaceMembership: NamespaceMembership, role: MembershipRole): Promise<Readonly<SuccessResult | ErrorResult>[]> {
-        const csrfToken = await this.getCsrfToken();
-        const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
-            headers[csrfToken.header] = csrfToken.value;
-        }
-        let endpoint = createAbsoluteURL([namespaceMembership.setMembershipRoleUrl, role]);
-        const provider = namespaceMembership.user.provider;
-        if (provider) {
-            endpoint = addQuery(endpoint, [{ key: 'provider', value: provider }]);
-        }
-        return sendRequest(
-            {
-                headers,
-                method: 'POST',
-                credentials: true,
-                endpoint
+                endpoint: addQuery(endpoint, query)
             }
         );
     }

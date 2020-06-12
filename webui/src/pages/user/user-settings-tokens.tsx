@@ -142,8 +142,8 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
         return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
             <Box alignItems='center' overflow='auto'>
                 <Typography classes={{ root: this.props.classes.description }}>{token.description}</Typography>
-                <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)!.toLocaleString()}</Typography>
-                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? toLocalTime(token.accessedTimestamp)!.toLocaleString() : 'never'}</Typography>
+                <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)}</Typography>
+                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? toLocalTime(token.accessedTimestamp) : 'never'}</Typography>
             </Box>
             <Box display='flex' alignItems='center'>
                 <Button

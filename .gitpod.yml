@@ -6,6 +6,7 @@ ports:
 - port: 3000
 # Server (API)
 - port: 8080
+  onOpen: ignore
 # PostgreSQL
 - port: 5432
   onOpen: ignore

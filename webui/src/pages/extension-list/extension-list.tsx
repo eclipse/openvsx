@@ -88,7 +88,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                         loading: false
                     });
                 } catch (err) {
-                    this.props.setError(err);
+                    this.props.handleError(err);
                     this.setState({ loading: false });
                 }
             },
@@ -126,7 +126,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 });
             }
         } catch (err) {
-            this.props.setError(err);
+            this.props.handleError(err);
         }
     }
 
@@ -164,7 +164,7 @@ export namespace ExtensionListComponent {
         filter: ExtensionFilter;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
         onUpdate: (resultNumber: number) => void;
     }
     export interface State {

@@ -12,8 +12,6 @@ package org.eclipse.openvsx;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +47,7 @@ import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.SemanticVersion;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -269,7 +268,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
             extVersion.setDisplayName(null);
         }
-        extVersion.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
+        extVersion.setTimestamp(TimeUtil.getCurrentUTC());
         extVersion.setPublishedWith(token);
         entityManager.persist(extVersion);
 
@@ -392,7 +391,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extReview = new ExtensionReview();
         extReview.setExtension(extension);
         extReview.setActive(true);
-        extReview.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
+        extReview.setTimestamp(TimeUtil.getCurrentUTC());
         extReview.setUser(user);
         extReview.setTitle(review.title);
         extReview.setComment(review.comment);

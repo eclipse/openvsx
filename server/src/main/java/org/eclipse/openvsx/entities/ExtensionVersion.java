@@ -26,6 +26,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.util.CollectionUtil;
+import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
 public class ExtensionVersion {
@@ -109,7 +110,7 @@ public class ExtensionVersion {
         json.downloadCount = extension.getDownloadCount();
         json.version = this.getVersion();
         json.preview = this.isPreview();
-        json.timestamp = this.getTimestamp().toString();
+        json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         json.displayName = this.getDisplayName();
         json.description = this.getDescription();
         json.engines = this.getEngines();
@@ -156,7 +157,7 @@ public class ExtensionVersion {
         entry.averageRating = extension.getAverageRating();
         entry.downloadCount = extension.getDownloadCount();
         entry.version = this.getVersion();
-        entry.timestamp = this.getTimestamp().toString();
+        entry.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         entry.displayName = this.getDisplayName();
         entry.description = this.getDescription();
         return entry;

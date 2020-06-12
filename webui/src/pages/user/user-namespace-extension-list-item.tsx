@@ -10,11 +10,11 @@
 
 import * as React from 'react';
 import { Extension } from '../../extension-registry-types';
-import { Paper, Typography, Theme, createStyles, WithStyles, withStyles } from '@material-ui/core';
-import { createRoute } from '../../utils';
-import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
+import { Paper, Typography, Theme, createStyles, WithStyles, withStyles, Box } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
+import { createRoute, toLocalTime } from '../../utils';
 import { PageSettings } from '../../page-settings';
+import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 
 const itemStyles = (theme: Theme) => createStyles({
     link: {
@@ -32,11 +32,11 @@ const itemStyles = (theme: Theme) => createStyles({
     extensionLogo: {
         flex: '0 0 15%',
         display: 'block',
-        marginRight: '.5rem',
+        marginRight: theme.spacing(2),
         height: '3rem',
         maxWidth: '4rem',
     },
-    p: {
+    paragraph: {
         display: 'flex',
         justifyContent: 'space-between',
     }
@@ -44,6 +44,7 @@ const itemStyles = (theme: Theme) => createStyles({
 
 const UserNamespaceExtensionListItemComponent = ({ extension, classes, pageSettings }: UserNamespaceExtensionListItemComponent.Props) => {
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
+    const localTime = toLocalTime(extension.timestamp);
     return (
         extension ? (
             <RouteLink to={route} className={classes.link}>
@@ -57,14 +58,18 @@ const UserNamespaceExtensionListItemComponent = ({ extension, classes, pageSetti
                         <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
                             {extension.displayName || extension.name}
                         </Typography>
-                        <p className={classes.p}>
+                        <Box className={classes.paragraph} mt={1}>
                             <span>Latest Version:</span>
                             <span>{extension.version}</span>
-                        </p>
-                        <p className={classes.p}>
-                            <span>Released on:</span>
-                            <span>{(new Date(extension.timestamp || '')).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        </p>
+                        </Box>
+                        {
+                            localTime ?
+                            <Box className={classes.paragraph} mt={0.25}>
+                                <span>Released on:</span>
+                                <span>{localTime}</span>
+                            </Box>
+                            : null
+                        }
                     </div>
                 </Paper>
             </RouteLink>

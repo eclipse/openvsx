@@ -87,14 +87,14 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                                     <UserSettingsTokens
                                         service={this.props.service}
                                         user={user}
-                                        setError={this.props.setError}
+                                        setError={this.props.handleError}
                                     />
                                 </Route>
                                 <Route path={UserSettingsRoutes.NAMESPACES}>
                                     <UserSettingsNamespaces
                                         service={this.props.service}
                                         user={user}
-                                        setError={this.props.setError}
+                                        handleError={this.props.handleError}
                                         pageSettings={this.props.pageSettings}
                                     />
                                 </Route>
@@ -113,7 +113,7 @@ export namespace UserSettingsComponent {
         userLoading: boolean;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 }
 

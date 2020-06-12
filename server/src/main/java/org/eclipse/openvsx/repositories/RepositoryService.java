@@ -154,12 +154,8 @@ public class RepositoryService {
         return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
     }
 
-    public Streamable<NamespaceMembership> findMemberships(UserData user) {
-        return membershipRepo.findByUser(user);
-    }
-
     public Streamable<NamespaceMembership> findMemberships(UserData user, String role) {
-        return membershipRepo.findByUserAndRoleIgnoreCase(user, role);
+        return membershipRepo.findByUserAndRoleIgnoreCaseOrderByNamespaceName(user, role);
     }
 
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace) {

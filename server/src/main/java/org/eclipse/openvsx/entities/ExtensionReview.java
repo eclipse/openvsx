@@ -18,6 +18,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
 import org.eclipse.openvsx.json.ReviewJson;
+import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
 public class ExtensionReview {
@@ -49,7 +50,7 @@ public class ExtensionReview {
      */
     public ReviewJson toReviewJson() {
         var json = new ReviewJson();
-        json.timestamp = this.getTimestamp().toString();
+        json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         json.user = this.getUser().toUserJson();
         json.title = this.getTitle();
         json.comment = this.getComment();
