@@ -20,7 +20,6 @@ import {
 import { UserData, Namespace, NamespaceMembership, isError } from "../../extension-registry-types";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { makeStyles } from "@material-ui/styles";
-import { createAbsoluteURL } from "../../utils";
 import { UserNamespaceMember } from "./user-namespace-member-component";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
 import { UserNamespaceExtensionList } from "./user-namespace-extension-list";
@@ -60,7 +59,13 @@ const namespacesStyle = (theme: Theme) => createStyles({
 
     memberContainer: {
         flex: 5,
-        padding: theme.spacing(1)
+        padding: theme.spacing(1),
+        [theme.breakpoints.only('md')]: {
+            width: '80%'
+        },
+        [theme.breakpoints.down('sm')]: {
+            width: '100%'
+        }
     },
     memberListHeader: {
         display: 'flex',
@@ -73,7 +78,7 @@ const namespacesStyle = (theme: Theme) => createStyles({
         }
     },
     foundUserListPopper: {
-        zIndex: 2000
+        zIndex: theme.zIndex.tooltip
     },
     foundUserListContainer: {
         display: 'flex',
@@ -147,20 +152,21 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     }
 
     render() {
+        const namespace = this.state.chosenNamespace;
         return <React.Fragment>
             <DelayedLoadIndicator loading={this.state.loading} />
             {
-                this.state.namespaces.length > 0 && this.state.chosenNamespace ?
+                this.state.namespaces.length > 0 && namespace ?
                     <React.Fragment>
                         <Box className={this.props.classes.namespaceManagementContainer}>
                             <NamespacesTabs
-                                chosenNamespace={this.state.chosenNamespace}
+                                chosenNamespace={namespace}
                                 namespaces={this.state.namespaces}
                                 onChange={this.handleChangeNamespace}
                             />
                             <Box className={this.props.classes.memberContainer}>
                                 <Box className={this.props.classes.memberListHeader}>
-                                    <Typography variant='h5'>Members in {this.state.chosenNamespace.name}</Typography>
+                                    <Typography variant='h5'>Members in {namespace.name}</Typography>
 
                                     <Button className={this.props.classes.addButton} variant='outlined' onClick={this.handleOpenAddDialog}>
                                         Add Namespace Member
@@ -170,15 +176,17 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                                     {this.state.members.map(member =>
                                         <UserNamespaceMember
                                             key={'nspcmbr-' + member.user.loginName + member.user.provider}
+                                            namespace={namespace}
                                             member={member}
                                             user={this.props.user}
                                             service={this.props.service}
-                                            onRemoveUser={() => this.removeUser(member)} />)}
+                                            onRemoveUser={() => this.removeUser(member)}
+                                            handleError={this.props.handleError} />)}
                                 </Paper>
                                 <UserNamespaceExtensionList
-                                    namespace={this.state.chosenNamespace}
+                                    namespace={namespace}
                                     service={this.props.service}
-                                    setError={this.props.setError}
+                                    setError={this.props.handleError}
                                     pageSettings={this.props.pageSettings}
                                 />
                             </Box>
@@ -266,32 +274,37 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     protected async addUser(user: UserData) {
         try {
             if (this.state.chosenNamespace) {
-                const endpoint = createAbsoluteURL([this.state.chosenNamespace.addMembershipUrl, user.loginName]);
-                const result = await this.props.service.setNamespaceMembers(endpoint, user.provider);
+                const endpoint = this.state.chosenNamespace.roleUrl;
+                const result = await this.props.service.setNamespaceMember(endpoint, user, 'contributor');
                 if (isError(result)) {
                     throw result;
                 }
+                this.setState({ loading: true });
                 const members = await this.props.service.getNamespaceMembers(this.state.chosenNamespace);
-                this.setState({ members });
+                this.setState({ members, loading: false });
                 this.doCloseAddDialog();
             }
         } catch (err) {
-            throw err;
+            this.props.handleError(err);
+            this.setState({ loading: false });
         }
     }
 
-    protected async removeUser(memberShip: NamespaceMembership) {
+    protected async removeUser(membership: NamespaceMembership) {
         try {
             if (this.state.chosenNamespace) {
-                const result = await this.props.service.setNamespaceMembers(memberShip.removeMembershipUrl, memberShip.user.provider);
+                const endpoint = this.state.chosenNamespace.roleUrl;
+                const result = await this.props.service.setNamespaceMember(endpoint, membership.user, 'remove');
                 if (isError(result)) {
                     throw result;
                 }
+                this.setState({ loading: true });
                 const members = await this.props.service.getNamespaceMembers(this.state.chosenNamespace);
-                this.setState({ members });
+                this.setState({ members, loading: false });
             }
         } catch (err) {
-            throw err;
+            this.props.handleError(err);
+            this.setState({ loading: false });
         }
     }
 
@@ -345,7 +358,7 @@ export namespace UserSettingsNamespacesComponent {
     export interface Props extends WithStyles<typeof namespacesStyle> {
         user: UserData;
         service: ExtensionRegistryService;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
         pageSettings: PageSettings;
     }
 

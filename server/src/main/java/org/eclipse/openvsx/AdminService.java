@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -24,8 +22,10 @@ import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.SemanticVersion;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +37,12 @@ public class AdminService {
 
     @Autowired
     EntityManager entityManager;
+
+    @Autowired
+    UserService users;
+
+    @Autowired
+    SearchService search;
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, String version, UserData admin)
@@ -74,6 +80,7 @@ public class AdminService {
                         .collect(Collectors.joining(", ")));
         }
         extension.setLatest(null);
+        extension.setPreview(null);
         for (var extVersion : extension.getVersions()) {
             removeExtensionVersion(extVersion);
         }
@@ -81,7 +88,11 @@ public class AdminService {
             entityManager.remove(review);
         }
         entityManager.remove(extension);
-        return logAdminAction(admin, "Deleted " + namespace.getName() + "." + extension.getName());
+        search.removeSearchEntry(extension);
+
+        var result = ResultJson.success("Deleted " + namespace.getName() + "." + extension.getName());
+        logAdminAction(admin, result);
+        return result;
     }
 
     protected ResultJson deleteExtension(ExtensionVersion extVersion, UserData admin) {
@@ -93,9 +104,19 @@ public class AdminService {
         if (extVersion.equals(extension.getLatest())) {
             var versions = extension.getVersions();
             versions.remove(extVersion);
-            extension.setLatest(getLatestVersion(versions));
+            extension.setLatest(getLatestVersion(versions, false));
+            if (extension.getLatest() == null)
+                extension.setLatest(getLatestVersion(versions, true));
         }
-        return logAdminAction(admin, "Deleted " + extension.getNamespace().getName() + "." + extension.getName() + " version " + extVersion.getVersion());
+        if (extVersion.equals(extension.getPreview())) {
+            var versions = extension.getVersions();
+            versions.remove(extVersion);
+            extension.setPreview(getLatestVersion(versions, true));
+        }
+    
+        var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName() + " version " + extVersion.getVersion());
+        logAdminAction(admin, result);
+        return result;
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
@@ -103,30 +124,55 @@ public class AdminService {
         entityManager.remove(extVersion);
     }
 
-    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions) {
+    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean preview) {
         ExtensionVersion latest = null;
         SemanticVersion latestSemver = null;
         for (var extVer : versions) {
-            var semver = new SemanticVersion(extVer.getVersion());
-            if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
-                latest = extVer;
-                latestSemver = semver;
+            if (extVer.isPreview() == preview) {
+                var semver = new SemanticVersion(extVer.getVersion());
+                if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
+                    latest = extVer;
+                    latestSemver = semver;
+                }
             }
         }
         return latest;
     }
 
-    @Transactional
-    public ResultJson logAdminAction(UserData admin, String message) {
-        if(admin == null) {
-            return null;
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role, UserData admin)
+            throws ErrorResultException {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new ErrorResultException("Namespace not found: " + namespaceName);
         }
-        var log = new PersistedLog();
-        log.setUser(admin);
-        log.setTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
-        log.setMessage(message);
-        entityManager.persist(log);
-        return ResultJson.success(message);
+        if (Strings.isNullOrEmpty(provider)) {
+            provider = "github";
+        }
+        var user = repositories.findUserByLoginName(provider, userName);
+        if (user == null) {
+            throw new ErrorResultException("User not found: " + provider + "/" + userName);
+        }
+
+        ResultJson result;
+        if (role.equals("remove")) {
+            result = users.removeNamespaceMember(namespace, user);
+        } else {
+            result = users.addNamespaceMember(namespace, user, role);
+        }
+        logAdminAction(admin, result);
+        return result;
+    }
+
+    @Transactional
+    public void logAdminAction(UserData admin, ResultJson result) {
+        if (result.success != null) {
+            var log = new PersistedLog();
+            log.setUser(admin);
+            log.setTimestamp(TimeUtil.getCurrentUTC());
+            log.setMessage(result.success);
+            entityManager.persist(log);
+        }
     }
 
 }

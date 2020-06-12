@@ -8,15 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { utcToZonedTime } from "date-fns-tz";
-import { ErrorResponse } from "./server-request";
+import { ErrorResponse } from './server-request';
 
-export function addQuery(url: string, queries: { key: string, value: string | number }[]) {
-    const nonEmpty = queries.filter(q => !!q.value);
+export function addQuery(url: string, queries: { key: string, value: string | number | undefined }[]) {
+    const nonEmpty = queries.filter(q => q.value !== undefined);
     if (nonEmpty.length === 0) {
         return url;
     }
-    return url + '?' + nonEmpty.map<string>(q => q.key + '=' + encodeURIComponent(q.value)).join('&');
+    return url + '?' + nonEmpty.map<string>(q => q.key + '=' + encodeURIComponent(q.value!)).join('&');
 }
 
 export function createAbsoluteURL(arr: string[], queries?: { key: string, value: string | number }[]): string {
@@ -38,12 +37,19 @@ export function debounce(task: () => void, token: { timeout?: number }, delay: n
     token.timeout = setTimeout(task, delay);
 }
 
-export function toLocalTime(timestamp?: string): Date | undefined {
+export function toLocalTime(timestamp?: string): string | undefined {
     if (!timestamp) {
         return undefined;
     }
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return utcToZonedTime(timestamp, timeZone);
+    const date = new Date(timestamp);
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+    };
+    return new Intl.DateTimeFormat(undefined, options).format(date);
 }
 
 export function handleError(err?: Error | Partial<ErrorResponse>): string {
@@ -59,7 +65,7 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
         else if (err.error)
             errorMessage = `The server responded with an error: ${err.error}`;
     } else {
-        errorMessage = "An unexpected error occurred.";
+        errorMessage = 'An unexpected error occurred.';
     }
     return errorMessage;
 }

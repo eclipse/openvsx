@@ -7,18 +7,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx.json;
+package org.eclipse.openvsx.util;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
-@JsonInclude(Include.NON_NULL)
-public class NamespaceMembershipJson {
+public final class TimeUtil {
 
-    public String namespace;
+    private TimeUtil() {
+    }
 
-    public String role;
+    public static LocalDateTime getCurrentUTC() {
+        return LocalDateTime.now(ZoneId.of("UTC"));
+    }
 
-    public UserJson user;
-
+    public static String toUTCString(LocalDateTime dateTime) {
+        return dateTime.toString() + 'Z';
+    }
+    
 }

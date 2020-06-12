@@ -186,14 +186,14 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
             this.setState({ extension, loading: false });
         } catch (err) {
-            this.props.setError(err);
+            this.props.handleError(err);
             this.setState({ loading: false });
         }
     }
 
     protected onReviewUpdate = () => {
-        const params = this.props.match.params as { namespace: string; name: string; };
-        const extensionUrl = this.props.service.getExtensionApiUrl(params);
+        const params = this.props.match.params as ExtensionDetailComponent.Params;
+        const extensionUrl = this.getExtensionApiUrl(params);
         this.updateExtension(extensionUrl);
     }
     protected onVersionSelect = (version: string) => {
@@ -248,7 +248,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                     reviewsDidUpdate={this.onReviewUpdate}
                                     service={this.props.service}
                                     user={this.props.user}
-                                    setError={this.props.setError}
+                                    handleError={this.props.handleError}
                                 />
                             </Route>
                             <Route path={ExtensionDetailRoutes.LATEST}>
@@ -257,7 +257,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                     service={this.props.service}
                                     pageSettings={this.props.pageSettings}
                                     selectVersion={this.onVersionSelect}
-                                    setError={this.props.setError}
+                                    handleError={this.props.handleError}
                                 />
                             </Route>
                         </Switch>
@@ -450,7 +450,7 @@ export namespace ExtensionDetailComponent {
         user?: UserData;
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

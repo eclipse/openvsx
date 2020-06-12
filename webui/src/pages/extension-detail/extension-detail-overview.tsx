@@ -172,7 +172,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 const readme = await this.props.service.getExtensionReadme(this.props.extension);
                 this.setState({ readme, loading: false });
             } catch (err) {
-                this.props.setError(err);
+                this.props.handleError(err);
                 this.setState({ loading: false });
             }
         } else {
@@ -269,7 +269,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     protected renderVersionSection(): React.ReactNode {
         const { classes, extension } = this.props;
-        const zonedDate = toLocalTime(extension.timestamp);
+        const localTime = toLocalTime(extension.timestamp);
         const allVersions = Object.keys(extension.allVersions)
             .filter(version => VERSION_ALIASES.indexOf(version) < 0);
         const otherAliases = Object.keys(extension.allVersions)
@@ -296,8 +296,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 )
             }
             {
-                zonedDate ?
-                <Box mt={1} mb={1}>Published on {zonedDate.toLocaleString()}</Box>
+                localTime ?
+                <Box mt={1} mb={1}>Published on {localTime}</Box>
                 : null
             }
             {
@@ -403,7 +403,7 @@ export namespace ExtensionDetailOverview {
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
         selectVersion: (version: string) => void;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         readme?: string;

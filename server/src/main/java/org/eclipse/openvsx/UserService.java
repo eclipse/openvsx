@@ -9,14 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-
-import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.Namespace;
@@ -25,6 +21,7 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -40,9 +37,6 @@ public class UserService {
 
     @Autowired
     RepositoryService repositories;
-
-    @Autowired
-    AdminService admins;
 
     public OAuth2User getOAuth2Principal() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -102,7 +96,7 @@ public class UserService {
         if (token == null || !token.isActive()) {
             return null;
         }
-        token.setAccessedTimestamp(LocalDateTime.now(ZoneId.of("UTC")));
+        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
         return token;
     }
 
@@ -139,52 +133,51 @@ public class UserService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role, UserData admin)
-            throws ErrorResultException {
+    public ResultJson setNamespaceMember(UserData requestingUser, String namespaceName, String provider, String userLogin, String role) {
         var namespace = repositories.findNamespace(namespaceName);
-        if (namespace == null) {
-            throw new ErrorResultException("Namespace not found: " + namespaceName);
+        var userMembership = repositories.findMembership(requestingUser, namespace);
+        if (userMembership == null || !userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
+            throw new ErrorResultException("You must be an owner of this namespace.");
         }
-        if (Strings.isNullOrEmpty(provider)) {
-            provider = "github";
-        }
-        var user = repositories.findUserByLoginName(provider, userName);
-        if (user == null) {
-            throw new ErrorResultException("User not found: " + provider + "/" + userName);
+        var targetUser = repositories.findUserByLoginName(provider, userLogin);
+        if (targetUser == null) {
+            throw new ErrorResultException("User not found: " + provider + "/" + userLogin);
         }
 
-        if (Strings.isNullOrEmpty(role)) {
-            return removeNamespaceMember(namespace, user, admin);
+        if (role.equals("remove")) {
+            return removeNamespaceMember(namespace, targetUser);
         } else {
-            if (!(role.equals(NamespaceMembership.ROLE_OWNER)
-                    || role.equals(NamespaceMembership.ROLE_CONTRIBUTOR))) {
-                throw new ErrorResultException("Invalid role: " + role);
-            }
-            return addNamespaceMember(namespace, user, role, admin);
+            return addNamespaceMember(namespace, targetUser, role);
         }
     }
 
-    protected ResultJson removeNamespaceMember(Namespace namespace, UserData user, UserData admin) throws ErrorResultException {
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson removeNamespaceMember(Namespace namespace, UserData user) throws ErrorResultException {
         var membership = repositories.findMembership(user, namespace);
         if (membership == null) {
             throw new ErrorResultException("User " + user.getLoginName() + " is not a member of " + namespace.getName());
         }
         entityManager.remove(membership);
-        return admins.logAdminAction(admin, "Removed " + user.getLoginName() + " from namespace " + namespace.getName());
+        return ResultJson.success("Removed " + user.getLoginName() + " from namespace " + namespace.getName());
     }
 
-    protected ResultJson addNamespaceMember(Namespace namespace, UserData user, String role, UserData admin) {
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson addNamespaceMember(Namespace namespace, UserData user, String role) {
+        if (!(role.equals(NamespaceMembership.ROLE_OWNER)
+                || role.equals(NamespaceMembership.ROLE_CONTRIBUTOR))) {
+            throw new ErrorResultException("Invalid role: " + role);
+        }
         var membership = repositories.findMembership(user, namespace);
         if (membership != null) {
             membership.setRole(role);
-            return admins.logAdminAction(admin, "Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role);
+            return ResultJson.success("Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role);
         }
         membership = new NamespaceMembership();
         membership.setNamespace(namespace);
         membership.setUser(user);
         membership.setRole(role);
         entityManager.persist(membership);
-        return admins.logAdminAction(admin, "Added " + user.getLoginName() + " as " + role + " of " + namespace.getName());
+        return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName());
     }
 
 }

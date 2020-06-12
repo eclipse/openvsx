@@ -11,7 +11,6 @@ package org.eclipse.openvsx.search;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -24,6 +23,7 @@ import com.google.common.base.Strings;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -114,6 +114,15 @@ public class SearchService {
                     .withObject(toSearchEntry(extension, stats))
                     .build();
             searchOperations.index(indexQuery);
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
+    public void removeSearchEntry(Extension extension) {
+        try {
+            rwLock.writeLock().lock();
+            searchOperations.delete(ExtensionSearch.class, Long.toString(extension.getId()));
         } finally {
             rwLock.writeLock().unlock();
         }
@@ -225,7 +234,7 @@ public class SearchService {
         protected final LocalDateTime oldest;
 
         public SearchStats() {
-            var now = LocalDateTime.now(ZoneId.of("UTC"));
+            var now = TimeUtil.getCurrentUTC();
             var maxDownloads = repositories.getMaxExtensionDownloadCount();
             var oldestTimestamp = repositories.getOldestExtensionTimestamp();
             this.downloadRef = maxDownloads * 1.5 + 100;

@@ -149,22 +149,16 @@ export interface NamespaceMembership {
     namespace: string;
     role: MembershipRole;
     user: UserData;
-    removeMembershipUrl: string;
-    setMembershipRoleUrl: string;
 }
 
 export interface Namespace {
     name: string;
     extensions: { [key: string]: string };
-    memberships: NamespaceMembership[];
-    addMembershipUrl: string;
-    getMembersUrl: string;
+    access: 'public' | 'restricted';
+    membersUrl: UrlString;
+    roleUrl: UrlString;
 }
 
-export enum MembershipRole {
-    CONTRIBUTOR = 'contributor',
-    OWNER = 'owner'
-}
-
+export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'averageRating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';

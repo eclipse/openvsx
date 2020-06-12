@@ -64,7 +64,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             const reviewList = await this.props.service.getExtensionReviews(this.props.extension);
             this.setState({ reviewList, loading: false, revoked: false });
         } catch (err) {
-            this.props.setError(err);
+            this.props.handleError(err);
             this.setState({ loading: false, revoked: false });
         }
     }
@@ -84,7 +84,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
             }
             this.saveCompleted();
         } catch (err) {
-            this.props.setError(err);
+            this.props.handleError(err);
         }
     }
 
@@ -112,11 +112,11 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         }
         const existingReview = this.state.reviewList.reviews.find(r => isEqualUser(r.user, this.props.user!));
         if (existingReview) {
-            const zonedDate = toLocalTime(existingReview.timestamp);
+            const localTime = toLocalTime(existingReview.timestamp);
             return <ButtonWithProgress
                     working={this.state.revoked}
                     onClick={this.handleRevokeButton}
-                    title={`Revoke review written by ${this.props.user.loginName} on ${zonedDate ? zonedDate.toLocaleString() : ''}`} >
+                    title={`Revoke review written by ${this.props.user.loginName} on ${localTime}`} >
                 Revoke my Review
             </ButtonWithProgress>;
         } else {
@@ -127,7 +127,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                     reviewPostUrl={this.state.reviewList.postUrl}
                     user={this.props.user}
                     service={this.props.service}
-                    setError={this.props.setError}
+                    setError={this.props.handleError}
                 />
             </Box>;
         }
@@ -146,11 +146,11 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     }
 
     protected renderReview(r: ExtensionReview): React.ReactNode {
-        const zonedDate = toLocalTime(r.timestamp);
+        const localTime = toLocalTime(r.timestamp);
         return <React.Fragment key={r.user.loginName + r.timestamp}>
             <Box my={2}>
                 <Box display='flex'>
-                    <Typography variant='body2'>{zonedDate ? zonedDate.toLocaleString() : '-'}</Typography>
+                    <Typography variant='body2'>{localTime ? localTime : '-'}</Typography>
                     <TextDivider />
                     <Typography variant='body2'>
                         {
@@ -181,7 +181,7 @@ export namespace ExtensionDetailReviewsComponent {
         user?: UserData;
         service: ExtensionRegistryService;
         reviewsDidUpdate: () => void;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         reviewList?: ExtensionReviewList;

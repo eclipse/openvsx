@@ -9,9 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.time.LocalDateTime;
 import java.time.Period;
-import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 
@@ -24,6 +22,7 @@ import org.eclipse.openvsx.json.StatsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
@@ -88,7 +87,7 @@ public class AdminAPI {
         } else {
             try {
                 var period = Period.parse(periodString);
-                var now = LocalDateTime.now(ZoneId.of("UTC"));
+                var now = TimeUtil.getCurrentUTC();
                 logs = repositories.findPersistedLogsAfter(now.minus(period));
             } catch (DateTimeParseException exc) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid period");
@@ -118,7 +117,10 @@ public class AdminAPI {
         }
 
         search.updateSearchIndex();
-        return admins.logAdminAction(token.getUser(), "Updated search index");
+
+        var result = ResultJson.success("Updated search index");
+        admins.logAdminAction(token.getUser(), result);
+        return result;
     }
 
     @PostMapping(
@@ -129,7 +131,7 @@ public class AdminAPI {
                                          @RequestParam("namespace") String namespaceName,
                                          @RequestParam("user") String userName,
                                          @RequestParam(required = false) String provider,
-                                         @RequestParam(required = false) String role) {
+                                         @RequestParam String role) {
         var token = users.useAccessToken(tokenValue);
         if (token == null) {
             return ResultJson.error("Invalid access token.");
@@ -138,7 +140,7 @@ public class AdminAPI {
             return ResultJson.error("Administration role is required.");
         }
         try {
-            return users.editNamespaceMember(namespaceName, userName, provider, role, token.getUser());
+            return admins.editNamespaceMember(namespaceName, userName, provider, role, token.getUser());
         } catch (ErrorResultException exc) {
             return ResultJson.error(exc.getMessage());
         }

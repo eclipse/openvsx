@@ -103,7 +103,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                     query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10,
                     sortBy: this.state.sortBy, sortOrder: this.state.sortOrder
                 }}
-                setError={this.props.setError}
+                handleError={this.props.handleError}
                 onUpdate={this.handleUpdate}
             />
         </Box>;
@@ -114,7 +114,7 @@ export namespace ExtensionListContainer {
     export interface Props extends RouteComponentProps {
         service: ExtensionRegistryService;
         pageSettings: PageSettings;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         searchQuery: string,

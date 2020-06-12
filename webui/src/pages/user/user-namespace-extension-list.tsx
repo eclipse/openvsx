@@ -82,12 +82,13 @@ class UserNamespaceExtensionListComponent extends React.Component<UserNamespaceE
             <section className={classes.container}>
                 <Typography variant="h5">Extensions</Typography>
                 <div className={classes.extensions}>
+                    <DelayedLoadIndicator loading={this.state.loading}/>
                     {
                         this.state.extensions ? this.state.extensions.map((extension: Extension, i: number) => <UserNamespaceExtensionListItem
                             pageSettings={this.props.pageSettings}
                             key={`${i}${extension.displayName}`}
                             extension={extension}
-                        />) : <DelayedLoadIndicator loading={this.state.loading}/>
+                        />) : null
                     }
                 </div>
             </section>

@@ -23,6 +23,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import org.eclipse.openvsx.json.AccessTokenJson;
+import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = "value") })
@@ -59,9 +60,9 @@ public class PersonalAccessToken {
         var json = new AccessTokenJson();
         json.id = this.getId();
         // The value is not included: it is displayed only when the token is created
-        json.createdTimestamp = this.getCreatedTimestamp().toString();
+        json.createdTimestamp = TimeUtil.toUTCString(this.getCreatedTimestamp());
         if (this.getAccessedTimestamp() != null)
-            json.accessedTimestamp = this.getAccessedTimestamp().toString();
+            json.accessedTimestamp = TimeUtil.toUTCString(this.getAccessedTimestamp());
         json.description = this.getDescription();
         return json;
     }

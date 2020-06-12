@@ -124,7 +124,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         }
     }
 
-    setError = (err: {}) => {
+    handleError = (err: {}) => {
         const error = handleError(err);
         this.setState({ error, isErrorDialogOpen: true });
     }
@@ -154,7 +154,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     <UserAvatar
                                         user={this.state.user}
                                         service={this.props.service}
-                                        setError={this.setError}
+                                        setError={this.handleError}
                                     />
                                     :
                                     <IconButton href={this.props.service.getLoginUrl()} title="Log In">
@@ -172,7 +172,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     {...routeProps}
                                     service={this.props.service}
                                     pageSettings={this.props.pageSettings}
-                                    setError={this.setError}
+                                    handleError={this.handleError}
                                 />
                             } />
                         <Route path={UserSettingsRoutes.MAIN}
@@ -183,7 +183,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     userLoading={this.state.userLoading}
                                     service={this.props.service}
                                     pageSettings={this.props.pageSettings}
-                                    setError={this.setError}
+                                    handleError={this.handleError}
                                 />
                             } />
                         <Route path={ExtensionDetailRoutes.MAIN}
@@ -193,7 +193,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     user={this.state.user}
                                     service={this.props.service}
                                     pageSettings={this.props.pageSettings}
-                                    setError={this.setError}
+                                    handleError={this.handleError}
                                 />
                             } />
                         {AdditionalRoutes ? <AdditionalRoutes /> : null}

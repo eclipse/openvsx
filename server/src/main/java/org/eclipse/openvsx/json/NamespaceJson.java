@@ -32,8 +32,8 @@ public class NamespaceJson extends ResultJson {
 
     public String access;
 
-    public String addMembershipUrl;
+    public String membersUrl;
 
-    public String getMembersUrl;
+    public String roleUrl;
 
 }
