@@ -198,7 +198,20 @@ public class SearchService {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
 
-        if (!"asc".equals(sortOrder) && !"desc".equals(sortOrder)) {
+        if (sortOrder == "asc") {
+            sortOrder = "1";
+        } else if (sortOrder == "desc") {
+            sortOrder = "0";
+        }
+
+        if (sortOrder instanceof String) {
+            sortOrder = Integer.parseInt(sortOrder);
+        } else {
+            logger.debug(sortOrder.getClass().getName());
+        }
+
+        if (!(sortOrder == 0) && !(sortOrder == 1)) {
+            logger.error("value of sortOrder is {}", sortOrder);
             throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
         }
 
