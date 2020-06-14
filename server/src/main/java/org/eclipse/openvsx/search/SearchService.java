@@ -198,9 +198,9 @@ public class SearchService {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
 
-        if (sortOrder == "asc" || sortOrder == 1) {
+        if (sortOrder == "asc") {
             sortOrder = "1";
-        } else if (sortOrder == "desc" || sortOrder == 0) {
+        } else if (sortOrder == "desc") {
             sortOrder = "0";
         }
 
