@@ -198,21 +198,15 @@ public class SearchService {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
 
-        if (sortOrder == "asc") {
+        if (sortOrder == "asc" || sortOrder == 1) {
             sortOrder = "1";
-        } else if (sortOrder == "desc") {
+        } else if (sortOrder == "desc" || sortOrder == 0) {
             sortOrder = "0";
         }
 
-        if (sortOrder instanceof String) {
-            (int) sortOrder = Integer.parseInt(sortOrder);
-        } else {
-            logger.debug(sortOrder.getClass().getName());
-        }
-
-        if (!(sortOrder == 0) && !(sortOrder == 1)) {
+        if (!(sortOrder == "0") && !(sortOrder == "1")) {
             logger.error("value of sortOrder is {}", sortOrder);
-            throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
+            throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc', or '0' or '1'.");
         }
 
         if ("relevance".equals(sortBy)) {
