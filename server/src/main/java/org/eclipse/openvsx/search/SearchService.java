@@ -205,7 +205,7 @@ public class SearchService {
         }
 
         if (sortOrder instanceof String) {
-            sortOrder = Integer.parseInt(sortOrder);
+            (int) sortOrder = Integer.parseInt(sortOrder);
         } else {
             logger.debug(sortOrder.getClass().getName());
         }
