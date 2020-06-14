@@ -198,13 +198,7 @@ public class SearchService {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
 
-        if (sortOrder == "asc") {
-            sortOrder = "1";
-        } else if (sortOrder == "desc") {
-            sortOrder = "0";
-        }
-
-        if (!(sortOrder == "0") && !(sortOrder == "1")) {
+        if (!(sortOrder == "0" || sortOrder == "1") || !(sortOrder == "asc" || sortOrder == "desc")) {
             logger.error("value of sortOrder is {}", sortOrder);
             throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc', or '0' or '1'.");
         }
