@@ -198,7 +198,7 @@ public class SearchService {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
 
-        if (!"asc".equals(sortOrder) && !"desc".equals(sortOrder)) {
+        if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
             throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
         }
 

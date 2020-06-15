@@ -34,6 +34,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.CollectionUtil;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,8 +83,12 @@ public class VSCodeAdapter {
         String queryString = null;
         String category = null;
         PageRequest pageRequest;
+        String sortOrder;
+        String sortBy;
         if (param.filters == null || param.filters.isEmpty()) {
             pageRequest = PageRequest.of(0, 20);
+            sortBy = "relevance";
+            sortOrder = "desc";
         } else {
             var filter = param.filters.get(0);
             var extensionId = filter.findCriterion(FILTER_EXTENSION_ID);
@@ -100,10 +105,16 @@ public class VSCodeAdapter {
                 queryString = filter.findCriterion(FILTER_TAG);
             category = filter.findCriterion(FILTER_CATEGORY);
             pageRequest = PageRequest.of(filter.pageNumber - 1, filter.pageSize);
+            sortOrder = getSortOrder(filter.sortOrder);
+            sortBy = getSortBy(filter.sortBy);
         }
 
-        var searchResult = search.search(queryString, category, pageRequest, null, null);
-        return findExtensions(searchResult, param.flags);
+        try {
+            var searchResult = search.search(queryString, category, pageRequest, sortOrder, sortBy);
+            return findExtensions(searchResult, param.flags);
+        } catch (ErrorResultException exc) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exc.getMessage(), exc);
+        }
     }
 
     private ExtensionQueryResult findExtension(long id, int flags) {
@@ -147,6 +158,28 @@ public class VSCodeAdapter {
         var result = new ExtensionQueryResult();
         result.results = Lists.newArrayList(resultItem);
         return result;
+    }
+
+    private String getSortBy(int sortBy) {
+        switch (sortBy) {
+            case 4: // InstallCount
+                return "downloadCount";
+            case 5: // PublishedDate
+                return "timestamp";
+            case 6: // AverageRating
+                return "averageRating";
+            default:
+                return "relevance";
+        }
+    }
+
+    private String getSortOrder(int sortOrder) {
+        switch (sortOrder) {
+            case 1: // Ascending
+                return "asc";
+            default:
+                return "desc";
+        }
     }
 
     @GetMapping("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType:.+}")
