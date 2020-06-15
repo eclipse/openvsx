@@ -198,9 +198,7 @@ public class SearchService {
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
         }
 
-        if (!"asc".equals(sortOrder) && !"desc".equals(sortOrder)) {
-            throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
-        }
+        SortOrder order = extractSortOrder(sortOrder);
 
         if ("relevance".equals(sortBy)) {
             queryBuilder.withSort(SortBuilders.scoreSort());
@@ -208,13 +206,13 @@ public class SearchService {
 
         if ("relevance".equals(sortBy) || "averageRating".equals(sortBy)) {
             queryBuilder.withSort(
-                    SortBuilders.fieldSort(sortBy).unmappedType("float").order(SortOrder.fromString(sortOrder)));
+                    SortBuilders.fieldSort(sortBy).unmappedType("float").order(order));
         } else if ("timestamp".equals(sortBy)) {
             queryBuilder.withSort(
-                    SortBuilders.fieldSort(sortBy).unmappedType("long").order(SortOrder.fromString(sortOrder)));
+                    SortBuilders.fieldSort(sortBy).unmappedType("long").order(order));
         } else if ("downloadCount".equals(sortBy)) {
             queryBuilder.withSort(
-                    SortBuilders.fieldSort(sortBy).unmappedType("integer").order(SortOrder.fromString(sortOrder)));
+                    SortBuilders.fieldSort(sortBy).unmappedType("integer").order(order));
         } else {
             throw new ErrorResultException(
                     "sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'");
@@ -225,6 +223,23 @@ public class SearchService {
             return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
         } finally {
             rwLock.readLock().unlock();
+        }
+    }
+
+    private SortOrder extractSortOrder(String sortOrder) {
+        switch (sortOrder == null ? "" : sortOrder) {
+            case "asc":
+                // Below for serving VSCode requests
+            case "1":
+                return SortOrder.ASC;
+            case "desc":
+                // Below for serving VSCode requests
+            case "":
+            case "0":
+            case "2":
+                return SortOrder.DESC;
+            default:
+                throw new ErrorResultException("sortOrder parameter invalid, must be one of '0', '1', '2', 'asc' or 'desc'.");
         }
     }
 
