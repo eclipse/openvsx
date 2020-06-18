@@ -9,7 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,9 +27,8 @@ import org.spdx.rdfparser.license.LicenseInfoFactory;
 
 public class LicenseDetection {
 
-    protected static final String[] DEFAULT_LICENSE_IDS = {
-        "MIT", "Apache-2.0", "Apache-1.1", "EPL-2.0", "EPL-1.0", "ISC", "BSD-2-Clause", "BSD-3-Clause"
-    };
+    protected static final String[] DEFAULT_LICENSE_IDS = { "MIT", "Apache-2.0", "Apache-1.1", "EPL-2.0", "EPL-1.0",
+            "ISC", "BSD-2-Clause", "BSD-3-Clause" };
 
     protected final Logger logger = LoggerFactory.getLogger(LicenseDetection.class);
 
@@ -55,6 +58,15 @@ public class LicenseDetection {
         try {
             for (var licenseId : licenseIds) {
                 var license = LicenseInfoFactory.getListedLicenseById(licenseId);
+                var resource = getClass().getResource("/spdx-templates/" + licenseId.toLowerCase() + ".txt");
+                if (resource != null) {
+                    try {
+                        var data = new String(Files.readAllBytes(Paths.get(resource.toURI())));
+                        license.setStandardLicenseTemplate(data);
+                    } catch (URISyntaxException | IOException e) {
+                        logger.error("Failed to load spdx template", e);
+                    } 
+                }
                 var diff = LicenseCompareHelper.isTextStandardLicense(license, content);
                 if (!diff.isDifferenceFound()) {
                     return license.getLicenseId();
