@@ -130,7 +130,13 @@ public class SearchService {
 
     protected ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
         var entry = extension.toSearch();
-        var ratingValue = (entry.averageRating != null ? entry.averageRating : 0.0) / 5.0;
+        var ratingValue = 0.0;
+        if (entry.averageRating != null) {
+            var reviewCount = repositories.countActiveReviews(extension);
+            // Reduce the rating relevance if there are only few reviews
+            var countRelevance = saturate(reviewCount, 0.25);
+            ratingValue = (entry.averageRating / 5.0) * countRelevance;
+        }
         var downloadsValue = entry.downloadCount / stats.downloadRef;
         var timestamp = extension.getLatest().getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
@@ -163,6 +169,10 @@ public class SearchService {
             return 1.0;
         else
             return value;
+    }
+
+    private double saturate(double value, double factor) {
+        return 1 - 1.0 / (value * factor + 1);
     }
 
     public Page<ExtensionSearch> search(String queryString, String category, Pageable pageRequest, String sortOrder, String sortBy) {
