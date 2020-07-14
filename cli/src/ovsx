@@ -1,2 +1,8 @@
 #!/usr/bin/env node
+
+if (global.URL === undefined) {
+    console.error('ovsx requires at least NodeJS version 10. Check your installed version with `node --version`.');
+    process.exit(1);
+}
+
 require('./main')(process.argv);

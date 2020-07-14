@@ -28,7 +28,7 @@
         "ovsx": "lib/ovsx"
     },
     "engines": {
-        "node": ">= 8"
+        "node": ">= 10"
     },
     "dependencies": {
         "vsce": "^1.75.0"
