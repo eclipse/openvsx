@@ -202,12 +202,13 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private List<SearchEntryJson> toSearchEntries(Page<ExtensionSearch> page, int size, int offset) {
+        var serverUrl = UrlUtil.getBaseUrl();
         if (offset > 0 || size < page.getNumberOfElements())
             return CollectionUtil.map(
                     Iterables.limit(Iterables.skip(page.getContent(), offset), size),
-                    this::toSearchEntry);
+                    es -> toSearchEntry(es, serverUrl));
         else
-            return CollectionUtil.map(page.getContent(), this::toSearchEntry);
+            return CollectionUtil.map(page.getContent(), es -> toSearchEntry(es, serverUrl));
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -432,18 +433,28 @@ public class LocalRegistryService implements IExtensionRegistry {
         return (double) sum / count;
     }
 
-    private SearchEntryJson toSearchEntry(ExtensionSearch searchItem) {
+    private SearchEntryJson toSearchEntry(ExtensionSearch searchItem, String serverUrl) {
         var extension = entityManager.find(Extension.class, searchItem.id);
         if (extension == null)
             return null;
         var extVer = extension.getLatest();
         var entry = extVer.toSearchEntryJson();
-        var serverUrl = UrlUtil.getBaseUrl();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
         entry.files = new LinkedHashMap<>();
         entry.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getExtensionFileName()));
         entry.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getIconFileName()));
+        entry.allVersions = repositories.findVersions(extension)
+                .map(ev -> toVersionReference(ev, serverUrl))
+                .toList();
         return entry;
+    }
+
+    private SearchEntryJson.VersionReference toVersionReference(ExtensionVersion extVersion, String serverUrl) {
+        var json = new SearchEntryJson.VersionReference();
+        json.version = extVersion.getVersion();
+        json.engines = extVersion.getEnginesMap();
+        json.url = createApiUrl(serverUrl, "api", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion());
+        return json;
     }
 
     private ExtensionJson toJson(ExtensionVersion extVersion) {

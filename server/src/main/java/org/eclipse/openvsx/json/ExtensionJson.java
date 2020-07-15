@@ -37,6 +37,8 @@ public class ExtensionJson extends ResultJson {
 
     public String namespace;
 
+    public String version;
+
     public UserJson publishedBy;
 
     public boolean unrelatedPublisher;
@@ -54,8 +56,6 @@ public class ExtensionJson extends ResultJson {
 
     public long reviewCount;
 
-    public String version;
-
     // latest or preview
     public List<String> versionAlias;
 
@@ -70,9 +70,9 @@ public class ExtensionJson extends ResultJson {
     @Nullable
     public String description;
 
-    // format: engine@version
     @Nullable
-    public List<String> engines;
+    // key: engine, value: version constraint
+    public Map<String, String> engines;
 
     @Nullable
     public List<String> categories;

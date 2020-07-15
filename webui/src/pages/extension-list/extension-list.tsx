@@ -12,7 +12,7 @@ import * as React from "react";
 import * as InfiniteScroll from "react-infinite-scroller";
 import { Grid, Theme, createStyles, withStyles, WithStyles, CircularProgress, Container } from "@material-ui/core";
 import { ExtensionListItem } from "./extension-list-item";
-import { ExtensionRaw, isError } from "../../extension-registry-types";
+import { isError, SearchEntry } from "../../extension-registry-types";
 import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
 import { debounce } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
@@ -168,7 +168,7 @@ export namespace ExtensionListComponent {
         onUpdate: (resultNumber: number) => void;
     }
     export interface State {
-        extensions: ExtensionRaw[];
+        extensions: SearchEntry[];
         extensionKeys: Set<string>;
         appliedFilter: ExtensionFilter;
         hasMore: boolean;

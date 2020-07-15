@@ -183,26 +183,32 @@ export interface Response {
 }
 
 export interface Extension extends Response {
-    name: string;
-    namespace: string;
-    publishedBy: UserData;
-    namespaceAccess: 'public' | 'restricted';
-    displayName?: string;
-    version: string;
-    versionAlias: string[];
-    preview?: boolean;
-    timestamp?: string;
-    description?: string;
-    averageRating?: number;
-    reviewCount?: number;
-
-    url: string;
     namespaceUrl: string;
     reviewsUrl: string;
-    files: { [id: string]: string };
+    // key: file type, value: url
+    files: { [type: string]: string };
 
-    allVersions: { [key: string]: string };
-    engines?: string[];
+    name: string;
+    namespace: string;
+    version: string;
+    publishedBy: UserData;
+    unrelatedPublisher: boolean;
+    namespaceAccess: 'public' | 'restricted';
+    // key: version, value: url
+    allVersions: { [version: string]: string };
+
+    averageRating?: number;
+    downloadCount: number;
+    reviewCount: number;
+
+    versionAlias: string[];
+    timestamp: string;
+    preview?: boolean;
+    displayName?: string;
+    description?: string;
+
+    // key: engine, value: version constraint
+    engines?: { [engine: string]: string };
     categories?: string[];
     tags?: string[];
     license?: string;
