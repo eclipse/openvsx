@@ -41,9 +41,13 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         const searchParams = new URLSearchParams(this.props.location.search);
         const search = searchParams.get('search');
         const category = searchParams.get('category') as ExtensionCategory;
+        const sortBy = searchParams.get('sortBy') as SortBy;
+        const sortOrder = searchParams.get('sortOrder') as SortOrder;
         this.setState({
             searchQuery: search || '',
-            category: category || ''
+            category: category || '',
+            sortBy: sortBy || 'relevance',
+            sortOrder: sortOrder || 'desc'
         });
     }
 
@@ -90,6 +94,8 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                 resultNumber={this.state.resultNumber}
                 searchQuery={this.state.searchQuery}
                 category={this.state.category}
+                sortBy={this.state.sortBy}
+                sortOrder={this.state.sortOrder}
                 onSearchChanged={this.onSearchChanged}
                 onCategoryChanged={this.onCategoryChanged}
                 onSortByChanged={this.onSortByChanged}
