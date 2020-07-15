@@ -335,11 +335,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (split.length != 2) {
             throw new ErrorResultException("Invalid 'extensionDependencies' format. Expected: '${namespace}.${name}'");
         }
-        var namespace = repositories.findNamespace(split[0]);
-        if (namespace == null) {
-            throw new ErrorResultException("Cannot resolve dependency: " + dependency);
-        }
-        var extension = repositories.findExtension(split[1], namespace);
+        var extension = repositories.findExtension(split[1], split[0]);
         if (extension == null) {
             throw new ErrorResultException("Cannot resolve dependency: " + dependency);
         }
@@ -356,11 +352,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (split.length != 2) {
             throw new ErrorResultException("Invalid 'extensionPack' format. Expected: '${namespace}.${name}'");
         }
-        var namespace = repositories.findNamespace(split[0]);
-        if (namespace == null) {
-            throw new ErrorResultException("Cannot resolve bundled extension: " + bundled);
-        }
-        var extension = repositories.findExtension(split[1], namespace);
+        var extension = repositories.findExtension(split[1], split[0]);
         if (extension == null) {
             throw new ErrorResultException("Cannot resolve bundled extension: " + bundled);
         }

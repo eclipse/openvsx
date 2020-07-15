@@ -17,14 +17,14 @@ import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Property.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Statistic.*;
 
 import java.net.URLConnection;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.entities.Extension;
@@ -91,15 +91,18 @@ public class VSCodeAdapter {
             sortOrder = "desc";
         } else {
             var filter = param.filters.get(0);
-            var extensionId = filter.findCriterion(FILTER_EXTENSION_ID);
-            if (!Strings.isNullOrEmpty(extensionId)) {
-                try {
-                    // Find a single extension by identifier
-                    return findExtension(Long.parseLong(extensionId), param.flags);
-                } catch (NumberFormatException exc) {
-                    // Ignore the filter and proceed with search
-                }
+    
+            var extensionIds = filter.findCriteria(FILTER_EXTENSION_ID);
+            if (!extensionIds.isEmpty()) {
+                // Find extensions by identifier
+                return findExtensionsById(extensionIds, param.flags);
             }
+            var extensionNames = filter.findCriteria(FILTER_EXTENSION_NAME);
+            if (!extensionNames.isEmpty()) {
+                // Find extensions by qualified name
+                return findExtensionsByName(extensionNames, param.flags);
+            }
+    
             queryString = filter.findCriterion(FILTER_SEARCH_TEXT);
             if (queryString == null)
                 queryString = filter.findCriterion(FILTER_TAG);
@@ -117,17 +120,42 @@ public class VSCodeAdapter {
         }
     }
 
-    private ExtensionQueryResult findExtension(long id, int flags) {
-        var extension = entityManager.find(Extension.class, id);
+    private ExtensionQueryResult findExtensionsById(List<String> ids, int flags) {
+        var extensions = new ArrayList<ExtensionQueryResult.Extension>(ids.size());
+        for (var uuid : ids) {
+            try {
+                var extension = entityManager.find(Extension.class, Long.parseLong(uuid));
+                if (extension != null) {
+                    extensions.add(toQueryExtension(extension, flags));
+                }
+            } catch (NumberFormatException exc) {
+                // Invalid UUID format - skip this extension
+            }
+        }
+        return toQueryResult(extensions);
+    }
+
+    private ExtensionQueryResult findExtensionsByName(List<String> names, int flags) {
+        var extensions = new ArrayList<ExtensionQueryResult.Extension>(names.size());
+        for (var qualifiedName : names) {
+            var split = qualifiedName.split("\\.");
+            if (split.length == 2) {
+                var extension = repositories.findExtension(split[1], split[0]);
+                if (extension != null) {
+                    extensions.add(toQueryExtension(extension, flags));
+                }
+            }
+        }
+        return toQueryResult(extensions);
+    }
+
+    private ExtensionQueryResult toQueryResult(List<ExtensionQueryResult.Extension> extensions) {
         var resultItem = new ExtensionQueryResult.ResultItem();
-        if (extension == null)
-            resultItem.extensions = Collections.emptyList();
-        else
-            resultItem.extensions = Lists.newArrayList(toQueryExtension(extension, flags));
+        resultItem.extensions = extensions;
 
         var countMetadataItem = new ExtensionQueryResult.ResultMetadataItem();
         countMetadataItem.name = "TotalCount";
-        countMetadataItem.count = extension == null ? 0 : 1;
+        countMetadataItem.count = resultItem.extensions.size();
         var countMetadata = new ExtensionQueryResult.ResultMetadata();
         countMetadata.metadataType = "ResultCount";
         countMetadata.metadataItems = Lists.newArrayList(countMetadataItem);

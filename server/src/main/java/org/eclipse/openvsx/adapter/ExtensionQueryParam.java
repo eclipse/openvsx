@@ -9,7 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ExtensionQueryParam {
 
@@ -43,6 +45,15 @@ public class ExtensionQueryParam {
                     .findFirst()
                     .map(c -> c.value)
                     .orElse(null);
+        }
+
+        public List<String> findCriteria(int type) {
+            if (criteria == null || criteria.isEmpty())
+                return Collections.emptyList();
+            return criteria.stream()
+                    .filter(c -> c.filterType == type)
+                    .map(c -> c.value)
+                    .collect(Collectors.toList());
         }
     }
 
