@@ -41,7 +41,7 @@ const App = () => {
                     secondary: {
                         main: prefersDarkMode ? '#c160ef' : '#a60ee5', 
                         contrastText: '#edf5ea',
-                        light: prefersDarkMode ? '#777' : '#fff',
+                        light: prefersDarkMode ? '#000' : '#e6e6e6',
                         dark: prefersDarkMode ? '#333' : '#fff', 
                     },
                     type: prefersDarkMode ? 'dark' : 'light'
