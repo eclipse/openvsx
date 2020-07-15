@@ -11,6 +11,7 @@ package org.eclipse.openvsx.entities;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -22,6 +23,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
+import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
@@ -113,7 +115,7 @@ public class ExtensionVersion {
         json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         json.displayName = this.getDisplayName();
         json.description = this.getDescription();
-        json.engines = this.getEngines();
+        json.engines = this.getEnginesMap();
         json.categories = this.getCategories();
         json.tags = this.getTags();
         json.license = this.getLicense();
@@ -161,6 +163,18 @@ public class ExtensionVersion {
         entry.displayName = this.getDisplayName();
         entry.description = this.getDescription();
         return entry;
+    }
+
+    public Map<String, String> getEnginesMap() {
+        var engines = this.getEngines();
+        var result = Maps.<String, String>newLinkedHashMapWithExpectedSize(engines.size());
+        for (var engine : engines) {
+            var split = engine.split("@");
+            if (split.length == 2) {
+                result.put(split[0], split[1]);
+            }
+        }
+        return result;
     }
 
 	public long getId() {

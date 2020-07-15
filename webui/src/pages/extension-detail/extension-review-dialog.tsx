@@ -13,7 +13,7 @@ import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextFiel
 import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
 import { ButtonWithProgress } from "../../custom-mui-components/button-with-progress";
 import { ExtensionRegistryService } from "../../extension-registry-service";
-import { UserData, ExtensionRaw, isError } from "../../extension-registry-types";
+import { UserData, Extension, isError } from "../../extension-registry-types";
 import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
 import { ErrorResponse } from '../../server-request';
 
@@ -145,7 +145,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
 
 export namespace ExtensionReviewDialogComponent {
     export interface Props extends WithStyles<typeof reviewDialogStyles> {
-        extension: ExtensionRaw;
+        extension: Extension;
         reviewPostUrl: string;
         user: UserData;
         service: ExtensionRegistryService;

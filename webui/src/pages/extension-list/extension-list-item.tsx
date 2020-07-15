@@ -13,7 +13,7 @@ import { Link as RouteLink } from "react-router-dom";
 import { Paper, Typography, Box, Grid, Fade } from "@material-ui/core";
 import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
 import { ExtensionDetailRoutes } from "../extension-detail/extension-detail";
-import { ExtensionRaw } from "../../extension-registry-types";
+import { SearchEntry } from "../../extension-registry-types";
 import { ExportRatingStars } from "../extension-detail/extension-rating-stars";
 import { createRoute } from "../../utils";
 import { PageSettings } from "../../page-settings";
@@ -81,7 +81,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
 
 export namespace ExtensionListItemComponent {
     export interface Props extends WithStyles<typeof itemStyles> {
-        extension: ExtensionRaw;
+        extension: SearchEntry;
         idx: number;
         pageSettings: PageSettings;
         filterSize: number;

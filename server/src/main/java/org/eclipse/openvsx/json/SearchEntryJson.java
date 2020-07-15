@@ -9,10 +9,15 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+
+@JsonInclude(Include.NON_NULL)
 public class SearchEntryJson {
 
     public String url;
@@ -28,6 +33,8 @@ public class SearchEntryJson {
 
     public String timestamp;
 
+    public List<VersionReference> allVersions;
+
     @Nullable
     public Double averageRating;
 
@@ -38,5 +45,15 @@ public class SearchEntryJson {
 
     @Nullable
     public String description;
+
+    public static class VersionReference {
+
+        public String url;
+
+        public String version;
+
+        public Map<String, String> engines;
+
+    }
 
 }

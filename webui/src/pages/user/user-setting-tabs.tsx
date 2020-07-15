@@ -12,7 +12,6 @@ import * as React from "react";
 import { Tabs, Tab, useTheme, useMediaQuery } from "@material-ui/core";
 import { RouteComponentProps } from "react-router-dom";
 import { createRoute } from "../../utils";
-import { ExtensionRaw } from "../../extension-registry-types";
 import { UserSettingsRoutes } from "./user-settings";
 
 export const UserSettingTabs = (props: UserSettingTabs.Props) => {
@@ -50,7 +49,7 @@ export namespace UserSettingTabs {
     export interface Props extends RouteComponentProps {
     }
 
-    export interface Params extends ExtensionRaw {
+    export interface Params {
         tab: string;
     }
 }

@@ -27,40 +27,60 @@ export function isError(obj: any): obj is ErrorResult {
 export interface SearchResult {
     offset: number;
     totalSize: number;
-    extensions: ExtensionRaw[];
+    extensions: SearchEntry[];
 }
 
-export interface ExtensionRaw {
+export interface SearchEntry {
+    url: UrlString;
+    // key: file type, value: url
+    files: { [id: string]: UrlString };
     name: string;
     namespace: string;
-    url: UrlString;
-    files: { [id: string]: UrlString };
-    displayName?: string;
-    version?: string;
+    version: string;
+    timestamp?: string;
+    allVersions: {
+        url: UrlString;
+        version: string;
+        // key: engine, value: version constraint
+        engines?: { [engine: string]: string };
+    }[];
     averageRating?: number;
     downloadCount?: number;
-    timestamp?: string;
+    displayName?: string;
     description?: string;
 }
 
 export const VERSION_ALIASES = ['latest', 'preview'];
 
-export interface Extension extends ExtensionRaw {
+export interface Extension {
     namespaceUrl: UrlString;
     reviewsUrl: UrlString;
+    // key: file type, value: url
+    files: { [id: string]: UrlString };
 
+    name: string;
+    namespace: string;
+    version: string;
     publishedBy: UserData;
     unrelatedPublisher: boolean;
     namespaceAccess: 'public' | 'restricted';
-
+    // key: version, value: url
     allVersions: { [version: string]: UrlString };
-    versionAlias: string[];
-    preview?: boolean;
 
+    averageRating?: number;
+    downloadCount: number;
+    reviewCount: number;
+
+    versionAlias: string[];
+    timestamp: string;
+    preview?: boolean;
+    displayName?: string;
+    description?: string;
+
+    // key: engine, value: version constraint
     engines?: string[];
     categories?: string[];
     tags?: string[];
-    reviewCount: number;
     license?: string;
     homepage?: string;
     repository?: string;
