@@ -36,7 +36,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         document.title = this.props.pageSettings.pageTitle;
         const searchParams = new URLSearchParams(this.props.location.search);
         const search = searchParams.get('search');
@@ -46,29 +46,29 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         this.setState({
             searchQuery: search || '',
             category: category || '',
-            sortBy: sortBy || 'relevance',
+            sortBy: sortBy || 'relevance',
             sortOrder: sortOrder || 'desc'
         });
     }
 
-    protected onSearchChanged = (searchQuery: string) => {
+    protected onSearchChanged = (searchQuery: string): void => {
         this.setState({ searchQuery });
         this.updateURL(searchQuery, this.state.category, this.state.sortBy, this.state.sortOrder);
     }
-    protected onCategoryChanged = (category: ExtensionCategory) => {
+    protected onCategoryChanged = (category: ExtensionCategory): void => {
         this.setState({ category });
         this.updateURL(this.state.searchQuery, category, this.state.sortBy, this.state.sortOrder);
     }
-    protected onSortByChanged = (sortBy: SortBy) => {
+    protected onSortByChanged = (sortBy: SortBy): void => {
         this.setState({ sortBy });
         this.updateURL(this.state.searchQuery, this.state.category, sortBy, this.state.sortOrder);
     }
-    protected onSortOrderChanged = (sortOrder: SortOrder) => {
+    protected onSortOrderChanged = (sortOrder: SortOrder): void => {
         this.setState({ sortOrder });
         this.updateURL(this.state.searchQuery, this.state.category, this.state.sortBy, sortOrder);
     }
 
-    protected updateURL(searchQuery: string, category: ExtensionCategory | '', sortBy?: SortBy, sortOrder?: SortOrder) {
+    protected updateURL(searchQuery: string, category: ExtensionCategory | '', sortBy?: SortBy, sortOrder?: SortOrder): void {
         const queries: { key: string, value: string }[] = [
             { key: 'search', value: searchQuery },
             { key: 'category', value: category }
@@ -83,12 +83,12 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
         history.replaceState(null, '', url);
     }
 
-    protected handleUpdate = (resultNumber: number) => this.doHandleUpdate(resultNumber);
-    protected doHandleUpdate(resultNumber: number) {
+    protected handleUpdate = (resultNumber: number): void => this.doHandleUpdate(resultNumber);
+    protected doHandleUpdate(resultNumber: number): void {
         this.setState({ resultNumber });
     }
 
-    render() {
+    render(): React.ReactNode {
         return <Box display='flex' flexDirection='column' >
             <ExtensionListHeader
                 resultNumber={this.state.resultNumber}

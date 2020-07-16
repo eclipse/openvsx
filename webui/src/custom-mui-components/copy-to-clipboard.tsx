@@ -15,7 +15,7 @@ interface ChildProps {
     copy: (content: any) => void;
 }
 
-export function CopyToClipboard(props: CopyToClipboard.Props) {
+export function CopyToClipboard(props: CopyToClipboard.Props): React.ReactElement {
     const [showTooltip, setTooltip] = React.useState<boolean>(false);
 
     const handleOnTooltipClose = () => {

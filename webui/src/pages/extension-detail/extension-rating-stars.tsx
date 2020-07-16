@@ -19,13 +19,13 @@ interface ExportRatingStarsProps {
 }
 
 export class ExportRatingStars extends React.Component<ExportRatingStarsProps> {
-    render() {
+    render(): React.ReactNode {
         return <React.Fragment>
             {this.getStar(1)}{this.getStar(2)}{this.getStar(3)}{this.getStar(4)}{this.getStar(5)}
         </React.Fragment>;
     }
 
-    protected getStar(i: number) {
+    protected getStar(i: number): React.ReactNode {
         const starsNumber = this.props.number;
         const fontSize = this.props.fontSize || 'default';
         if (i <= starsNumber) {

@@ -14,7 +14,7 @@ import { RouteComponentProps } from "react-router-dom";
 import { createRoute } from "../../utils";
 import { UserSettingsRoutes } from "./user-settings";
 
-export const UserSettingTabs = (props: UserSettingTabs.Props) => {
+export const UserSettingTabs = (props: UserSettingTabs.Props): React.ReactElement => {
 
     const theme = useTheme();
     const isATablet = useMediaQuery(theme.breakpoints.down('md'));

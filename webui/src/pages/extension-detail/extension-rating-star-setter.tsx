@@ -22,25 +22,25 @@ export class ExtensionRatingStarSetter extends React.Component<{}, { number: Sta
         this.state = { number: 1 };
     }
 
-    protected handleStarClick = (number: StarRating) => {
+    protected handleStarClick = (number: StarRating): void => {
         this.setState({ number });
     }
 
-    protected renderStarButton(number: StarRating): React.ReactElement {
+    protected renderStarButton(number: StarRating): React.ReactNode {
         return <IconButton key={'starbtn' + number} onClick={() => this.handleStarClick(number)}>
             {number <= this.state.number ? <StarIcon /> : <StarBorderIcon />}
         </IconButton>;
     }
 
-    protected renderStars(): React.ReactElement[] {
-        const stars: React.ReactElement[] = [];
+    protected renderStars(): React.ReactNode[] {
+        const stars: React.ReactNode[] = [];
         for (let i = 1; i <= 5; i++) {
             stars.push(this.renderStarButton(i as StarRating));
         }
         return stars;
     }
 
-    render() {
+    render(): React.ReactNode {
         return <React.Fragment>
             <Box>
                 {this.renderStars()}

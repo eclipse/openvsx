@@ -155,7 +155,9 @@ export class Registry {
                                 reject(new Error(error.message));
                                 return;
                             }
-                        } catch (err) {}
+                        } catch (err) {
+                            // Ignore the error and reject with response status
+                        }
                     }
                     reject(statusError(response));
                 } else if (json.startsWith('<!DOCTYPE html>')) {

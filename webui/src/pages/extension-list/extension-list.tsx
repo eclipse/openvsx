@@ -50,17 +50,17 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.enableLoadMore = true;
         this.componentDidUpdate({ filter: {} } as ExtensionListComponent.Props);
     }
 
-    componentWillUnmount() {
+    componentWillUnmount(): void {
         clearTimeout(this.cancellationToken.timeout);
         this.enableLoadMore = false;
     }
 
-    componentDidUpdate(prevProps: ExtensionListComponent.Props) {
+    componentDidUpdate(prevProps: ExtensionListComponent.Props): void {
         const newFilter = copyFilter(this.props.filter);
         if (isSameFilter(prevProps.filter, newFilter)) {
             return;
@@ -96,7 +96,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         );
     }
 
-    protected loadMore = async (p: number) => {
+    protected loadMore = async (p: number): Promise<void> => {
         this.lastRequestedPage = p;
         const filter = copyFilter(this.state.appliedFilter);
         if (!isSameFilter(this.props.filter, filter)) {
@@ -130,7 +130,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         }
     }
 
-    render() {
+    render(): React.ReactNode {
         const extensionList = this.state.extensions.map((ext, idx) => (
             <ExtensionListItem
                 idx={idx}

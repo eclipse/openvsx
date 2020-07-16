@@ -2,11 +2,16 @@
     "name": "ovsx",
     "version": "0.0.0",
     "description": "Command line interface for Eclipse Open VSX",
-    "keywords": ["cli", "vscode", "extensions", "publish"],
+    "keywords": [
+        "cli",
+        "vscode",
+        "extensions",
+        "publish"
+    ],
     "license": "EPL-2.0",
     "homepage": "https://open-vsx.org",
-    "repository" : {
-        "type" : "git",
+    "repository": {
+        "type": "git",
         "url": "ssh://git@github.com:eclipse/openvsx.git",
         "directory": "cli"
     },
@@ -37,15 +42,17 @@
         "@types/node": "^10.14.18",
         "@types/semver": "^7.1.0",
         "@types/tmp": "^0.1.0",
+        "@typescript-eslint/eslint-plugin": "^3.6.1",
+        "@typescript-eslint/parser": "^3.6.1",
+        "eslint": "^7.4.0",
         "rimraf": "^3.0.2",
-        "tslint": "^6.1.1",
         "typescript": "3.8.3"
     },
     "scripts": {
         "clean": "rimraf lib",
         "build": "tsc -p ./tsconfig.json && yarn run lint && cp src/ovsx lib/ovsx",
         "watch": "tsc -w -p ./tsconfig.json",
-        "lint": "tslint -c ../webui/configs/tslint.json -p ./tsconfig.json",
+        "lint": "eslint -c ../webui/configs/eslintrc.json --ext .ts src",
         "prepare": "yarn run clean && yarn run build",
         "publish:next": "yarn publish --new-version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" --tag next --no-git-tag-version",
         "publish:latest": "yarn publish --tag latest"

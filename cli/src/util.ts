@@ -15,7 +15,7 @@ import * as http from 'http';
 export { promisify } from 'util';
 
 export function matchExtensionId(id: string): RegExpExecArray | null {
-    return /^([\w\-]+)(?:\.|\/)([\w\-]+)$/.exec(id);
+    return /^([\w-]+)(?:\.|\/)([\w-]+)$/.exec(id);
 }
 
 export function optionalStat(path: fs.PathLike): Promise<fs.Stats | undefined> {

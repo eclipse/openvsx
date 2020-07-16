@@ -16,7 +16,7 @@ import { ExtensionDetailRoutes } from "./extension-detail";
 
 export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetailTabs.Props> {
 
-    protected handleChange = (event: React.ChangeEvent, newTab: string) => {
+    protected handleChange = (event: React.ChangeEvent, newTab: string): void => {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
         const previousTab = params.version === 'reviews' ? 'reviews' : 'overview';
         if (newTab !== previousTab) {
@@ -32,7 +32,7 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
         }
     }
 
-    render() {
+    render(): React.ReactNode {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
         const tab = params.version === 'reviews' ? 'reviews' : 'overview';
         return <React.Fragment>

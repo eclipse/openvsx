@@ -27,7 +27,7 @@ const buttonStyles = (theme: Theme) => createStyles({
 });
 
 export class ButtonComponent extends React.Component<ButtonComponent.Props> {
-    render() {
+    render(): React.ReactNode {
         return <div className={this.props.classes.buttonWrapper}>
             <Button
                 variant='contained'

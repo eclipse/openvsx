@@ -1,4 +1,7 @@
 {
-   "java.configuration.updateBuildConfiguration": "automatic",
-   "typescript.tsdk": "webui/node_modules/typescript/lib"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "typescript.tsdk": "webui/node_modules/typescript/lib",
+    "eslint.options": {
+        "configFile": "webui/configs/eslintrc.json"
+    }
 }

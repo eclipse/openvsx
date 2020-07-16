@@ -27,7 +27,7 @@ export class HoverPopoverComponent extends React.Component<HoverPopoverComponent
         this.state = {};
     }
 
-    render() {
+    render(): React.ReactNode {
         return <React.Fragment>
             <div
                 className={this.props.className}

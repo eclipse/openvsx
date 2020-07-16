@@ -13,15 +13,15 @@ export type UrlString = string;
 export interface SuccessResult {
     success: string;
 }
-export function isSuccess(obj: any): obj is SuccessResult {
-    return obj && typeof obj.success === 'string';
+export function isSuccess(obj: unknown): obj is SuccessResult {
+    return obj && typeof (obj as any).success === 'string';
 }
 
 export interface ErrorResult {
     error: string;
 }
-export function isError(obj: any): obj is ErrorResult {
-    return obj && typeof obj.error === 'string';
+export function isError(obj: unknown): obj is ErrorResult {
+    return obj && typeof (obj as any).error === 'string';
 }
 
 export interface SearchResult {

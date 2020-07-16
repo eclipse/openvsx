@@ -10,7 +10,7 @@
 
 import { ErrorResponse } from './server-request';
 
-export function addQuery(url: string, queries: { key: string, value: string | number | undefined }[]) {
+export function addQuery(url: string, queries: { key: string, value: string | number | undefined }[]): string {
     const nonEmpty = queries.filter(q => q.value !== undefined);
     if (nonEmpty.length === 0) {
         return url;
@@ -32,7 +32,7 @@ export function createRoute(arr: string[], queries?: { key: string, value: strin
     return url.startsWith('/') ? url : '/' + url;
 }
 
-export function debounce(task: () => void, token: { timeout?: number }, delay: number = 150) {
+export function debounce(task: () => void, token: { timeout?: number }, delay: number = 150): void {
     clearTimeout(token.timeout);
     token.timeout = setTimeout(task, delay);
 }

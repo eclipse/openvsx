@@ -150,13 +150,13 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         this.state = { loading: true };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         document.title = `${params.name} – ${this.props.pageSettings.pageTitle}`;
         this.updateExtension(this.getExtensionApiUrl(params));
     }
 
-    componentDidUpdate(prevProps: ExtensionDetailComponent.Props) {
+    componentDidUpdate(prevProps: ExtensionDetailComponent.Props): void {
         const prevParams = prevProps.match.params as ExtensionDetailComponent.Params;
         const newParams = this.props.match.params as ExtensionDetailComponent.Params;
         if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name
@@ -170,14 +170,14 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         }
     }
 
-    protected getExtensionApiUrl(params: ExtensionDetailComponent.Params) {
+    protected getExtensionApiUrl(params: ExtensionDetailComponent.Params): string {
         if (params.version === 'reviews') {
             return this.props.service.getExtensionApiUrl({ namespace: params.namespace, name: params.name });
         }
         return this.props.service.getExtensionApiUrl(params);
     }
 
-    protected async updateExtension(extensionUrl: string) {
+    protected async updateExtension(extensionUrl: string): Promise<void> {
         try {
             const extension = await this.props.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
@@ -191,12 +191,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         }
     }
 
-    protected onReviewUpdate = () => {
+    protected onReviewUpdate = (): void => {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         const extensionUrl = this.getExtensionApiUrl(params);
         this.updateExtension(extensionUrl);
     }
-    protected onVersionSelect = (version: string) => {
+    protected onVersionSelect = (version: string): void => {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         let newRoute: string;
         if (version === 'latest') {
@@ -207,7 +207,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         this.props.history.push(newRoute);
     }
 
-    render() {
+    render(): React.ReactNode {
         const { extension } = this.state;
         if (!extension) {
             return <DelayedLoadIndicator loading={this.state.loading} />;
@@ -277,7 +277,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 <Box ml={1}>
                     The namespace <span className={classes.code}>{extension.namespace}</span> is public,
                     which means that everyone can publish new versions of
-                    the "{extension.displayName || extension.name}" extension.
+                    the &ldquo;{extension.displayName || extension.name}&rdquo; extension.
                     If you would like to become the owner of <span className={classes.code}>{extension.namespace}</span>,
                     please <Link
                         href={this.props.pageSettings.urls.namespaceAccessInfo}
@@ -291,7 +291,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
                 <WarningIcon fontSize='large' />
                 <Box ml={1}>
-                    The "{extension.displayName || extension.name}" extension was published
+                    The &ldquo;{extension.displayName || extension.name}&rdquo; extension was published
                     by <Link href={extension.publishedBy.homepage}
                         className={`${classes.link}`}>
                         {extension.publishedBy.loginName}
@@ -395,7 +395,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         </Link>;
     }
 
-    protected renderUser(user: UserData, themeClass: string) {
+    protected renderUser(user: UserData, themeClass: string): React.ReactNode {
         const popupContent = <Box display='flex' flexDirection='row'>
             {
                 user.avatarUrl ?

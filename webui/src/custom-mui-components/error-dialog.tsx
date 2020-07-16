@@ -13,21 +13,21 @@ import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogAc
 
 export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
 
-    handleEnter = (e: KeyboardEvent) => {
+    handleEnter = (e: KeyboardEvent): void => {
         if (e.code ===  'Enter') {
             this.props.handleCloseDialog();
         }
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         document.addEventListener('keydown', this.handleEnter);
     }
 
-    componentWillUnmount() {
+    componentWillUnmount(): void {
         document.removeEventListener('keydown', this.handleEnter);
     }
 
-    render() {
+    render(): React.ReactNode {
         return (
             <Dialog
                 open={this.props.isErrorDialogOpen}

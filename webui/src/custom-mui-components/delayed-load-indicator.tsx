@@ -21,15 +21,15 @@ export class DelayedLoadIndicator extends React.Component<DelayedLoadIndicator.P
         this.state = { waiting: false };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.componentDidUpdate({ loading: false });
     }
 
-    componentWillUnmount() {
+    componentWillUnmount(): void {
         clearTimeout(this.timeout);
     }
 
-    componentDidUpdate(prevProps: DelayedLoadIndicator.Props) {
+    componentDidUpdate(prevProps: DelayedLoadIndicator.Props): void {
         if (this.props.loading !== prevProps.loading) {
             clearTimeout(this.timeout);
         }
@@ -41,7 +41,7 @@ export class DelayedLoadIndicator extends React.Component<DelayedLoadIndicator.P
         }
     }
 
-    render() {
+    render(): React.ReactNode {
         if (this.props.loading && !this.state.waiting) {
             return <LinearProgress color={this.props.color || 'secondary'}/>;
         } else {

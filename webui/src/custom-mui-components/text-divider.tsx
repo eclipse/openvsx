@@ -34,7 +34,7 @@ const dividerStyles = (theme: Theme) => createStyles({
 });
 
 export class TextDividerComponent extends React.Component<TextDividerComponent.Props> {
-    render() {
+    render(): React.ReactNode {
         const classes = [this.props.classes.root];
         if (this.props.themeType === 'dark') {
             classes.push(this.props.classes.darkTheme);

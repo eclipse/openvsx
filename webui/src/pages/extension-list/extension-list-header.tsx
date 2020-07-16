@@ -124,7 +124,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
     }
 
     componentDidUpdate(prevProps: ExtensionListHeaderComp.Props) {
-        if (this.props.category !== prevProps.category || this.props.sortBy !== prevProps.sortBy || this.props.sortOrder !== prevProps.sortOrder) {
+        if (this.props.category !== prevProps.category || this.props.sortBy !== prevProps.sortBy || this.props.sortOrder !== prevProps.sortOrder) {
             this.setState({
                 category: this.props.category || '',
                 sortBy: this.props.sortBy,
