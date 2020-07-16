@@ -129,7 +129,7 @@ public class AdminService {
         SemanticVersion latestSemver = null;
         for (var extVer : versions) {
             if (extVer.isPreview() == preview) {
-                var semver = new SemanticVersion(extVer.getVersion());
+                var semver = extVer.getSemanticVersion();
                 if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
                     latest = extVer;
                     latestSemver = semver;

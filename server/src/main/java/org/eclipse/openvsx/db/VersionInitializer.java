@@ -39,7 +39,7 @@ public class VersionInitializer {
             ExtensionVersion preview = null;
             SemanticVersion previewVer = null;
             for (var extVersion : extension.getVersions()) {
-                var ver = new SemanticVersion(extVersion.getVersion());
+                var ver = extVersion.getSemanticVersion();
                 if (extVersion.isPreview() && isGreater(extVersion, ver, preview, previewVer)) {
                     preview = extVersion;
                     previewVer = ver;

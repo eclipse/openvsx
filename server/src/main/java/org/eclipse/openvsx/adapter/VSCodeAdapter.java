@@ -18,6 +18,7 @@ import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Statistic.*;
 
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -299,6 +300,13 @@ public class VSCodeAdapter {
         return new ModelAndView("redirect:" + UrlUtil.createApiUrl(webuiUrl, "extension", namespace, extension), model);
     }
 
+    @GetMapping("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage")
+    public ModelAndView download(@PathVariable String namespace, @PathVariable String extension,
+                                 @PathVariable String version, ModelMap model) {
+        var serverUrl = UrlUtil.getBaseUrl();
+        return new ModelAndView("redirect:" + UrlUtil.createApiUrl(serverUrl, "vscode", "asset", namespace, extension, version, FILE_VSIX), model);
+    }
+
     private ExtensionQueryResult.Extension toQueryExtension(Extension extension, int flags) {
         var queryExt = new ExtensionQueryResult.Extension();
         var namespace = extension.getNamespace();
@@ -314,8 +322,10 @@ public class VSCodeAdapter {
 
         if (test(flags, FLAG_INCLUDE_LATEST_VERSION_ONLY)) {
             queryExt.versions = Lists.newArrayList(toQueryVersion(latest, flags));
-        } else if (test(flags, FLAG_INCLUDE_VERSIONS)) {
-            queryExt.versions = CollectionUtil.map(extension.getVersions(), ev -> toQueryVersion(ev, flags));
+        } else if (test(flags, FLAG_INCLUDE_VERSIONS) || test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {
+            var allVersions = Lists.newArrayList(repositories.findVersions(extension));
+            Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
+            queryExt.versions = CollectionUtil.map(allVersions, ev -> toQueryVersion(ev, flags));
         }
 
         if (test(flags, FLAG_INCLUDE_STATISTICS)) {

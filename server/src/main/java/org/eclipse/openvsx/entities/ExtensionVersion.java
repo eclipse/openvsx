@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.entities;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -22,16 +23,23 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.Transient;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.util.CollectionUtil;
+import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
 public class ExtensionVersion {
+
+    public static final Comparator<ExtensionVersion> SORT_COMPARATOR =
+        Comparator.<ExtensionVersion, SemanticVersion>comparing(ev -> ev.getSemanticVersion())
+                .thenComparing(Comparator.comparing(ev -> ev.getTimestamp()))
+                .reversed();
 
     @Id
     @GeneratedValue
@@ -44,6 +52,9 @@ public class ExtensionVersion {
     Extension latestInverse;
 
     String version;
+
+    @Transient
+    SemanticVersion semver;
 
     boolean preview;
 
@@ -199,7 +210,16 @@ public class ExtensionVersion {
 
 	public void setVersion(String version) {
 		this.version = version;
-	}
+    }
+    
+    public SemanticVersion getSemanticVersion() {
+        if (semver == null) {
+            var version = getVersion();
+            if (version != null)
+                semver = new SemanticVersion(version);
+        }
+        return semver;
+    }
 
 	public boolean isPreview() {
 		return preview;

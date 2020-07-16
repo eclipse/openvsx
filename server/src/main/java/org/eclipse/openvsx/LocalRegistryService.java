@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -24,6 +23,7 @@ import javax.transaction.Transactional;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
@@ -318,7 +318,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private boolean isLatestVersion(String version, boolean preview, Extension extension) {
         var newSemver = new SemanticVersion(version);
         for (var publishedVersion : repositories.findVersions(extension, preview)) {
-            var oldSemver = new SemanticVersion(publishedVersion.getVersion());
+            var oldSemver = publishedVersion.getSemanticVersion();
             if (newSemver.compareTo(oldSemver) < 0)
                 return false;
         }
@@ -326,8 +326,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private boolean isGreater(ExtensionVersion v1, ExtensionVersion v2) {
-        var sv1 = new SemanticVersion(v1.getVersion());
-        var sv2 = new SemanticVersion(v2.getVersion());
+        var sv1 = v1.getSemanticVersion();
+        var sv2 = v2.getSemanticVersion();
         return sv1.compareTo(sv2) > 0;
     }
 
@@ -443,9 +443,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         entry.files = new LinkedHashMap<>();
         entry.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getExtensionFileName()));
         entry.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getIconFileName()));
-        entry.allVersions = repositories.findVersions(extension)
-                .map(ev -> toVersionReference(ev, serverUrl))
-                .toList();
+        var allVersions = Lists.newArrayList(repositories.findVersions(extension));
+        Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
+        entry.allVersions = CollectionUtil.map(allVersions, ev -> toVersionReference(ev, serverUrl));
         return entry;
     }
 
@@ -478,12 +478,11 @@ public class LocalRegistryService implements IExtensionRegistry {
             json.allVersions.put("latest", createApiUrl(serverUrl, "api", json.namespace, json.name, "latest"));
         if (extension.getPreview() != null)
             json.allVersions.put("preview", createApiUrl(serverUrl, "api", json.namespace, json.name, "preview"));
-        var allVersions = CollectionUtil.map(repositories.findVersions(extension),
-                extVer -> new SemanticVersion(extVer.getVersion()));
-        Collections.sort(allVersions, Comparator.reverseOrder());
-        for (var semVer : allVersions) {
-            String url = createApiUrl(serverUrl, "api", json.namespace, json.name, semVer.toString());
-            json.allVersions.put(semVer.toString(), url);
+        var allVersions = Lists.newArrayList(repositories.findVersions(extension));
+        Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
+        for (var ev : allVersions) {
+            String url = createApiUrl(serverUrl, "api", json.namespace, json.name, ev.getVersion());
+            json.allVersions.put(ev.getVersion(), url);
         }
     
         json.files = new LinkedHashMap<>();
