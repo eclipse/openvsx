@@ -21,13 +21,13 @@ jobs:
       with:
         java-version: 11
     - uses: actions/checkout@v2
-    - name: Build CLI
-      run: yarn --cwd cli
     - name: Build Web UI
       run: |
         yarn --cwd webui
         yarn --cwd webui test
         yarn --cwd webui build:dev
+    - name: Build CLI
+      run: yarn --cwd cli
     - name: Build Server
       run: |
         server/gradlew --no-daemon -p server build
