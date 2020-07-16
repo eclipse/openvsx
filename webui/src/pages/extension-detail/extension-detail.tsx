@@ -312,6 +312,9 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     protected renderHeaderInfo(extension: Extension, themeType: 'light' | 'dark'): React.ReactNode {
         const classes = this.props.classes;
         const themeClass = themeType === 'dark' ? classes.darkTheme : classes.lightTheme;
+        const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
+        const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
+        const reviewCountFormatted = numberFormat.format(extension.reviewCount || 0);
         return (
         <Box overflow='auto'>
             <Typography variant='h5' className={classes.titleRow}>
@@ -338,18 +341,21 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 <Typography classes={{ root: classes.description }}>{extension.description}</Typography>
             </Box>
             <Box className={`${themeClass} ${classes.infoRowNonBreak} ${classes.alignVertically}`}>
-                <SaveAltIcon fontSize='small' />&nbsp;{extension.downloadCount || 0}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
+                <span className={classes.alignVertically}
+                    title={extension.downloadCount && extension.downloadCount >= 1000 ? `${extension.downloadCount} downloads` : undefined}>
+                    <SaveAltIcon fontSize='small' />&nbsp;{downloadCountFormatted}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
+                </span>
                 <TextDivider themeType={themeType} />
                 <RouteLink
                     to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, 'reviews'])}
                     className={`${classes.link} ${themeClass} ${classes.alignVertically}`}
                     title={
                         extension.averageRating !== undefined ?
-                            `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5`
+                            `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5 (${extension.reviewCount} reviews)`
                             : 'Not rated yet'
                     }>
                     <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
-                    ({extension.reviewCount})
+                    ({reviewCountFormatted})
                 </RouteLink>
                 </Box>
             </Box>
