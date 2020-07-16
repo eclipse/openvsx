@@ -116,12 +116,20 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
     }
 
     componentDidMount() {
-        this.setState({ category: this.props.category || '' });
+        this.setState({
+            category: this.props.category || '',
+            sortBy: this.props.sortBy,
+            sortOrder: this.props.sortOrder
+        });
     }
 
     componentDidUpdate(prevProps: ExtensionListHeaderComp.Props) {
-        if (this.props.category !== prevProps.category) {
-            this.setState({ category: this.props.category || '' });
+        if (this.props.category !== prevProps.category || this.props.sortBy !== prevProps.sortBy || this.props.sortOrder !== prevProps.sortOrder) {
+            this.setState({
+                category: this.props.category || '',
+                sortBy: this.props.sortBy,
+                sortOrder: this.props.sortOrder
+            });
         }
     }
 
@@ -242,6 +250,8 @@ namespace ExtensionListHeaderComp {
         pageSettings: PageSettings;
         searchQuery?: string;
         category?: ExtensionCategory | '';
+        sortBy: SortBy,
+        sortOrder: SortOrder,
         service: ExtensionRegistryService;
         resultNumber: number;
     }
