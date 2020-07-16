@@ -8,16 +8,17 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Link } from "@material-ui/core";
-import { toLocalTime } from "../../utils";
-import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from "../../extension-registry-types";
-import { TextDivider } from "../../custom-mui-components/text-divider";
-import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
-import { ButtonWithProgress } from "../../custom-mui-components/button-with-progress";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { ExportRatingStars } from "./extension-rating-stars";
-import { ExtensionReviewDialog } from "./extension-review-dialog";
+import * as React from 'react';
+import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Link } from '@material-ui/core';
+import { toLocalTime } from '../../utils';
+import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from '../../extension-registry-types';
+import { TextDivider } from '../../custom-mui-components/text-divider';
+import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { ButtonWithProgress } from '../../custom-mui-components/button-with-progress';
+import { Timestamp } from '../../custom-mui-components/timestamp';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { ExportRatingStars } from './extension-rating-stars';
+import { ExtensionReviewDialog } from './extension-review-dialog';
 import { ErrorResponse } from '../../server-request';
 
 const reviewStyles = (theme: Theme) => createStyles({
@@ -146,12 +147,17 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     }
 
     protected renderReview(r: ExtensionReview): React.ReactNode {
-        const localTime = toLocalTime(r.timestamp);
         return <React.Fragment key={r.user.loginName + r.timestamp}>
             <Box my={2}>
                 <Box display='flex'>
-                    <Typography variant='body2'>{localTime ? localTime : '-'}</Typography>
-                    <TextDivider />
+                    {
+                        r.timestamp ?
+                        <React.Fragment>
+                            <Typography variant='body2'><Timestamp value={r.timestamp}/></Typography>
+                            <TextDivider />
+                        </React.Fragment>
+                        : null
+                    }
                     <Typography variant='body2'>
                         {
                             r.user.homepage ?

@@ -52,6 +52,37 @@ export function toLocalTime(timestamp?: string): string | undefined {
     return new Intl.DateTimeFormat(undefined, options).format(date);
 }
 
+const msPerMinute = 60 * 1000;
+const msPerHour = msPerMinute * 60;
+const msPerDay = msPerHour * 24;
+const msPerMonth = msPerDay * 30.4;
+const msPerYear = msPerDay * 365;
+export function toRelativeTime(timestamp?: string): string | undefined {
+    if (!timestamp) {
+        return undefined;
+    }
+    const date = new Date(timestamp);
+    const elapsed = Date.now() - date.getTime();
+    if (elapsed < msPerMinute) {
+        return 'now';
+    } else if (elapsed < msPerHour) {
+        const value = Math.round(elapsed / msPerMinute);
+        return `${value} minute${value !== 1 ? 's' : ''} ago`;
+    } else if (elapsed < msPerDay) {
+        const value = Math.round(elapsed / msPerHour);
+        return `${value} hour${value !== 1 ? 's' : ''} ago`;
+    } else if (elapsed < msPerMonth) {
+        const value = Math.round(elapsed / msPerDay);
+        return `${value} day${value !== 1 ? 's' : ''} ago`;
+    } else if (elapsed < msPerYear) {
+        const value = Math.round(elapsed / msPerMonth);
+        return `${value} month${value !== 1 ? 's' : ''} ago`;
+    } else {
+        const value = Math.round(elapsed / msPerYear);
+        return `${value} year${value !== 1 ? 's' : ''} ago`;
+    }
+}
+
 export function handleError(err?: Error | Partial<ErrorResponse>): string {
     let errorMessage: string = '';
     if (err) {

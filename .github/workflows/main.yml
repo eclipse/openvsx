@@ -26,6 +26,7 @@ jobs:
     - name: Build Web UI
       run: |
         yarn --cwd webui
+        yarn --cwd webui test
         yarn --cwd webui build:dev
     - name: Build Server
       run: |

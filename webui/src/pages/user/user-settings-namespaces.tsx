@@ -153,6 +153,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
     render() {
         const namespace = this.state.chosenNamespace;
+        const namespaceAccessUrl = this.props.pageSettings.urls.namespaceAccessInfo;
         return <React.Fragment>
             <DelayedLoadIndicator loading={this.state.loading} />
             {
@@ -193,9 +194,14 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                         </Box>
                         {this.renderAddDialog()}
                     </React.Fragment>
-                    : !this.state.loading ? <div>No Namespaces Available.
-                        Read <Link color='secondary' href='https://github.com/eclipse/openvsx/wiki/Publishing-Extensions' target='_blank'>here</Link> about creating namespaces.
-                    </div> : ''
+                    : !this.state.loading ? <Typography variant='body1'>No namespaces available. {
+                        namespaceAccessUrl ?
+                        <React.Fragment>
+                            Read <Link color='secondary' href={namespaceAccessUrl} target='_blank'>here</Link> about claiming namespaces.
+                        </React.Fragment>
+                        : null
+                        }
+                    </Typography> : null
             }
         </React.Fragment>;
     }

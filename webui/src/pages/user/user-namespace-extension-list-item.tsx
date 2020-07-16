@@ -12,8 +12,9 @@ import * as React from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Theme, createStyles, WithStyles, withStyles, Box } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
-import { createRoute, toLocalTime } from '../../utils';
+import { createRoute } from '../../utils';
 import { PageSettings } from '../../page-settings';
+import { Timestamp } from '../../custom-mui-components/timestamp';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 
 const itemStyles = (theme: Theme) => createStyles({
@@ -44,7 +45,6 @@ const itemStyles = (theme: Theme) => createStyles({
 
 const UserNamespaceExtensionListItemComponent = ({ extension, classes, pageSettings }: UserNamespaceExtensionListItemComponent.Props) => {
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
-    const localTime = toLocalTime(extension.timestamp);
     return (
         extension ? (
             <RouteLink to={route} className={classes.link}>
@@ -63,10 +63,10 @@ const UserNamespaceExtensionListItemComponent = ({ extension, classes, pageSetti
                             <span>{extension.version}</span>
                         </Box>
                         {
-                            localTime ?
+                            extension.timestamp ?
                             <Box className={classes.paragraph} mt={0.25}>
-                                <span>Released on:</span>
-                                <span>{localTime}</span>
+                                <span>Released:</span>
+                                <Timestamp value={extension.timestamp}/>
                             </Box>
                             : null
                         }

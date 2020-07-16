@@ -1,0 +1,8 @@
+{
+    "require": "ts-node/register",
+    "reporter": "spec",
+    "colors": true,
+    "watch-extensions": ["ts", "tsx"],
+    "timeout": 10000,
+    "spec": "test/**/*.spec.{ts,tsx}"
+}

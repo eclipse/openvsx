@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from "@material-ui/core";
-import { toLocalTime } from "../../utils";
-import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
-import { UserData, PersonalAccessToken } from "../../extension-registry-types";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { GenerateTokenDialog } from "./generate-token-dialog";
+import * as React from 'react';
+import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from '@material-ui/core';
+import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { Timestamp } from '../../custom-mui-components/timestamp';
+import { UserData, PersonalAccessToken } from '../../extension-registry-types';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { GenerateTokenDialog } from './generate-token-dialog';
 import { ErrorResponse } from '../../server-request';
 
 const tokensStyle = (theme: Theme) => createStyles({
@@ -142,8 +142,8 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
         return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
             <Box alignItems='center' overflow='auto'>
                 <Typography classes={{ root: this.props.classes.description }}>{token.description}</Typography>
-                <Typography variant='body2'>Created: {toLocalTime(token.createdTimestamp)}</Typography>
-                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? toLocalTime(token.accessedTimestamp) : 'never'}</Typography>
+                <Typography variant='body2'>Created: <Timestamp value={token.createdTimestamp}/></Typography>
+                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? <Timestamp value={token.accessedTimestamp}/> : 'never'}</Typography>
             </Box>
             <Box display='flex' alignItems='center'>
                 <Button

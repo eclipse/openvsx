@@ -17,8 +17,9 @@ import HomeIcon from '@material-ui/icons/Home';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
-import { toLocalTime, addQuery, createRoute } from "../../utils";
+import { addQuery, createRoute } from "../../utils";
 import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
+import { Timestamp } from "../../custom-mui-components/timestamp";
 import { ExtensionRegistryService } from "../../extension-registry-service";
 import { Extension, ExtensionReference, VERSION_ALIASES } from "../../extension-registry-types";
 import { ExtensionListRoutes } from "../extension-list/extension-list-container";
@@ -269,7 +270,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     protected renderVersionSection(): React.ReactNode {
         const { classes, extension } = this.props;
-        const localTime = toLocalTime(extension.timestamp);
         const allVersions = Object.keys(extension.allVersions)
             .filter(version => VERSION_ALIASES.indexOf(version) < 0);
         const otherAliases = Object.keys(extension.allVersions)
@@ -296,8 +296,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 )
             }
             {
-                localTime ?
-                <Box mt={1} mb={1}>Published on {localTime}</Box>
+                extension.timestamp ?
+                <Box mt={1} mb={1}>Published <Timestamp value={extension.timestamp}/></Box>
                 : null
             }
             {
