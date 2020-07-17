@@ -53,9 +53,15 @@ dependencies {
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
     runtimeOnly "org.postgresql:postgresql"
+
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
+    testRuntimeOnly "com.h2database:h2"
 }
 
 task runServer(type: JavaExec) {
