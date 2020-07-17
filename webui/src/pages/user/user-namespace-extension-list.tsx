@@ -73,14 +73,14 @@ class UserNamespaceExtensionListComponent extends React.Component<UserNamespaceE
             extensionsURLs.map((url: string) => getExtension(url))
         );
 
-        this.setState({extensions, loading: false});
+        this.setState({ extensions, loading: false });
     }
 
     render() {
         const { classes } = this.props;
         return (
             <section className={classes.container}>
-                <Typography variant="h5">Extensions</Typography>
+                <Typography variant='h5'>Extensions</Typography>
                 <div className={classes.extensions}>
                     <DelayedLoadIndicator loading={this.state.loading}/>
                     {

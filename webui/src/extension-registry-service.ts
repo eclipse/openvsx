@@ -11,9 +11,9 @@
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
     SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceMembership, MembershipRole, SortBy, SortOrder, UrlString
-} from "./extension-registry-types";
-import { createAbsoluteURL, addQuery } from "./utils";
-import { sendRequest } from "./server-request";
+} from './extension-registry-types';
+import { createAbsoluteURL, addQuery } from './utils';
+import { sendRequest } from './server-request';
 
 export class ExtensionRegistryService {
 
@@ -184,14 +184,14 @@ export class ExtensionRegistryService {
     getCsrfToken(): Promise<Readonly<CsrfTokenJson | ErrorResult>> {
         return sendRequest({
             credentials: true,
-            endpoint: createAbsoluteURL([this.serverUrl, "user", "csrf"])
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'csrf'])
         });
     }
 
     getNamespaces(): Promise<Readonly<Namespace>[]> {
         return sendRequest({
             credentials: true,
-            endpoint: createAbsoluteURL([this.serverUrl, "user", "namespaces"])
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'namespaces'])
         });
     }
 

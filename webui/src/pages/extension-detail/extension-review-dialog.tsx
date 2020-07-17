@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme } from "@material-ui/core";
-import { withStyles, createStyles, WithStyles } from "@material-ui/styles";
-import { ButtonWithProgress } from "../../custom-mui-components/button-with-progress";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { UserData, Extension, isError } from "../../extension-registry-types";
-import { ExtensionRatingStarSetter } from "./extension-rating-star-setter";
+import * as React from 'react';
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme } from '@material-ui/core';
+import { withStyles, createStyles, WithStyles } from '@material-ui/styles';
+import { ButtonWithProgress } from '../../custom-mui-components/button-with-progress';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { UserData, Extension, isError } from '../../extension-registry-types';
+import { ExtensionRatingStarSetter } from './extension-rating-star-setter';
 import { ErrorResponse } from '../../server-request';
 
 const REVIEW_COMMENT_SIZE = 2048;
@@ -55,7 +55,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
         if (this.props.user) {
             this.setState({ open: true, posted: false });
         }
-    }
+    };
 
     protected handleCancel = () => this.setState({ open: false });
 
@@ -75,7 +75,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
         } catch (err) {
             this.props.setError(err);
         }
-    }
+    };
 
     protected handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         const comment = event.target.value;
@@ -84,13 +84,13 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             commentError = `The review comment must not be longer than ${REVIEW_COMMENT_SIZE} characters.`;
         }
         this.setState({ comment, commentError });
-    }
+    };
 
     handleEnter = (e: KeyboardEvent) => {
         if (e.code ===  'Enter') {
             this.handlePost();
         }
-    }
+    };
 
     componentDidMount() {
         document.addEventListener('keydown', this.handleEnter);
@@ -115,11 +115,11 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                         <ExtensionRatingStarSetter ref={(ref: any) => this.starSetter = ref} />
                     </div>
                     <TextField
-                        margin="dense"
-                        label="Your Review..."
+                        margin='dense'
+                        label='Your Review...'
                         fullWidth
                         multiline
-                        variant="outlined"
+                        variant='outlined'
                         rows={4}
                         error={Boolean(this.state.commentError)}
                         helperText={this.state.commentError}
@@ -128,7 +128,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                 <DialogActions className={this.props.classes.dialogActions}>
                     <Button
                         onClick={this.handleCancel}
-                        color="secondary" >
+                        color='secondary' >
                         Cancel
                     </Button>
                     <ButtonWithProgress

@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React = require("react");
-import { Link as RouteLink } from "react-router-dom";
-import { Paper, Typography, Box, Grid, Fade } from "@material-ui/core";
+import * as React from 'react';
+import { Link as RouteLink } from 'react-router-dom';
+import { Paper, Typography, Box, Grid, Fade } from '@material-ui/core';
 import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
-import { ExtensionDetailRoutes } from "../extension-detail/extension-detail";
-import { SearchEntry } from "../../extension-registry-types";
-import { ExportRatingStars } from "../extension-detail/extension-rating-stars";
-import { createRoute } from "../../utils";
-import { PageSettings } from "../../page-settings";
+import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
+import { SearchEntry } from '../../extension-registry-types';
+import { ExportRatingStars } from '../extension-detail/extension-rating-stars';
+import { createRoute } from '../../utils';
+import { PageSettings } from '../../page-settings';
 
 
 const itemStyles = (theme: Theme) => createStyles({
@@ -56,7 +56,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                                     alt={extension.displayName || extension.name} />
                             </Box>
                             <Box display='flex' justifyContent='center'>
-                                <Typography variant='h6' noWrap style={{fontSize: '1.15rem'}}>
+                                <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
                                     {extension.displayName || extension.name}
                                 </Typography>
                             </Box>
@@ -69,7 +69,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                                 </Typography>
                             </Box>
                             <Box display='flex' justifyContent='center'>
-                                <ExportRatingStars number={extension.averageRating || 0} fontSize="small"/>
+                                <ExportRatingStars number={extension.averageRating || 0} fontSize='small'/>
                             </Box>
                         </Paper>
                     </RouteLink>

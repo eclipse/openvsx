@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import * as InfiniteScroll from "react-infinite-scroller";
-import { Grid, Theme, createStyles, withStyles, WithStyles, CircularProgress, Container } from "@material-ui/core";
-import { ExtensionListItem } from "./extension-list-item";
-import { isError, SearchEntry } from "../../extension-registry-types";
-import { ExtensionRegistryService, ExtensionFilter } from "../../extension-registry-service";
-import { debounce } from "../../utils";
-import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
-import { PageSettings } from "../../page-settings";
+import * as React from 'react';
+import * as InfiniteScroll from 'react-infinite-scroller';
+import { Grid, Theme, createStyles, withStyles, WithStyles, CircularProgress, Container } from '@material-ui/core';
+import { ExtensionListItem } from './extension-list-item';
+import { isError, SearchEntry } from '../../extension-registry-types';
+import { ExtensionRegistryService, ExtensionFilter } from '../../extension-registry-service';
+import { debounce } from '../../utils';
+import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { PageSettings } from '../../page-settings';
 import { ErrorResponse } from '../../server-request';
 
 const itemStyles = (theme: Theme) => createStyles({
@@ -128,7 +128,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         } catch (err) {
             this.props.handleError(err);
         }
-    }
+    };
 
     render(): React.ReactNode {
         const extensionList = this.state.extensions.map((ext, idx) => (
@@ -149,7 +149,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 hasMore={this.state.hasMore}
                 loader={loader}
                 threshold={200} >
-                <Container maxWidth="xl">
+                <Container maxWidth='xl'>
                     <Grid container spacing={2} className={this.props.classes.container}>
                         {extensionList}
                     </Grid>

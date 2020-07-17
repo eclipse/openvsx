@@ -8,24 +8,24 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar, Paper } from "@material-ui/core";
-import { RouteComponentProps, Switch, Route, Link as RouteLink } from "react-router-dom";
+import * as React from 'react';
+import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar, Paper } from '@material-ui/core';
+import { RouteComponentProps, Switch, Route, Link as RouteLink } from 'react-router-dom';
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import PublicIcon from '@material-ui/icons/Public';
 import WarningIcon from '@material-ui/icons/Warning';
-import { createRoute } from "../../utils";
-import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
-import { HoverPopover } from "../../custom-mui-components/hover-popover";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension, UserData, isError } from "../../extension-registry-types";
-import { TextDivider } from "../../custom-mui-components/text-divider";
-import { PageSettings } from "../../page-settings";
-import { ExtensionDetailOverview } from "./extension-detail-overview";
-import { ExtensionDetailReviews } from "./extension-detail-reviews";
-import { ExtensionDetailTabs } from "./extension-detail-tabs";
-import { ExportRatingStars } from "./extension-rating-stars";
+import { createRoute } from '../../utils';
+import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { HoverPopover } from '../../custom-mui-components/hover-popover';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { Extension, UserData, isError } from '../../extension-registry-types';
+import { TextDivider } from '../../custom-mui-components/text-divider';
+import { PageSettings } from '../../page-settings';
+import { ExtensionDetailOverview } from './extension-detail-overview';
+import { ExtensionDetailReviews } from './extension-detail-reviews';
+import { ExtensionDetailTabs } from './extension-detail-tabs';
+import { ExportRatingStars } from './extension-rating-stars';
 import { ErrorResponse } from '../../server-request';
 
 export namespace ExtensionDetailRoutes {
@@ -195,7 +195,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         const extensionUrl = this.getExtensionApiUrl(params);
         this.updateExtension(extensionUrl);
-    }
+    };
     protected onVersionSelect = (version: string): void => {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         let newRoute: string;
@@ -205,7 +205,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             newRoute = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, version]);
         }
         this.props.history.push(newRoute);
-    }
+    };
 
     render(): React.ReactNode {
         const { extension } = this.state;

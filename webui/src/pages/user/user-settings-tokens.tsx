@@ -79,7 +79,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
         } catch (err) {
             this.props.setError(err);
         }
-    }
+    };
 
     protected handleDeleteAll = async () => {
         this.setState({ loading: true });
@@ -89,12 +89,12 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
         } catch (err) {
             this.props.setError(err);
         }
-    }
+    };
 
     protected handleTokenGenerated = () => {
         this.setState({ loading: true });
         this.updateTokens();
-    }
+    };
 
     render() {
         return <React.Fragment>

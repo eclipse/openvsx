@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
+import * as React from 'react';
 import {
     Theme, createStyles, WithStyles,
     withStyles, Box, Paper, Typography,
@@ -16,15 +16,15 @@ import {
     DialogContent, DialogContentText,
     TextField, DialogActions, Popper,
     Fade, Tabs, Tab, useTheme, useMediaQuery, Link
-} from "@material-ui/core";
-import { UserData, Namespace, NamespaceMembership, isError } from "../../extension-registry-types";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { makeStyles } from "@material-ui/styles";
-import { UserNamespaceMember } from "./user-namespace-member-component";
-import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
-import { UserNamespaceExtensionList } from "./user-namespace-extension-list";
-import { ErrorResponse } from "../../server-request";
-import { PageSettings } from "../../page-settings";
+} from '@material-ui/core';
+import { UserData, Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { makeStyles } from '@material-ui/styles';
+import { UserNamespaceMember } from './user-namespace-member-component';
+import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { UserNamespaceExtensionList } from './user-namespace-extension-list';
+import { ErrorResponse } from '../../server-request';
+import { PageSettings } from '../../page-settings';
 
 
 const namespacesStyle = (theme: Theme) => createStyles({
@@ -208,18 +208,18 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
     protected renderAddDialog() {
         return <React.Fragment>
-            <Dialog onClose={this.handleCloseAddDialog} open={this.state.addDialogIsOpen} aria-labelledby="form-dialog-title">
-                <DialogTitle id="form-dialog-title">Add User to Namespace</DialogTitle>
+            <Dialog onClose={this.handleCloseAddDialog} open={this.state.addDialogIsOpen} aria-labelledby='form-dialog-title'>
+                <DialogTitle id='form-dialog-title'>Add User to Namespace</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Enter the Login Name of the User you want to add.
                     </DialogContentText>
                     <TextField
                         autoFocus
-                        margin="dense"
-                        id="name"
-                        autoComplete="off"
-                        label="Open VSX User"
+                        margin='dense'
+                        id='name'
+                        autoComplete='off'
+                        label='Open VSX User'
                         fullWidth
                         onChange={this.handleUserSearch}
                         onKeyPress={(e: React.KeyboardEvent) => {
@@ -232,7 +232,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={this.handleCloseAddDialog} color="secondary">
+                    <Button onClick={this.handleCloseAddDialog} color='secondary'>
                         Cancel
                     </Button>
                 </DialogActions>
@@ -250,7 +250,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                                 this.state.foundUsers.map(user => {
                                     if (this.props.user.loginName !== user.loginName || this.props.user.provider !== user.provider) {
                                         return <Box
-                                            onClick={() => { this.addUser(user); }}
+                                            onClick={() => this.addUser(user)}
                                             className={this.props.classes.foundUserContainer}
                                             key={'found' + user.loginName}>
                                             <Box flex='1' marginLeft='10px'>
@@ -314,7 +314,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
         }
     }
 
-    protected handleUserSearch = (ev: React.ChangeEvent<HTMLInputElement>) => { this.doHandleUserSearch(ev); };
+    protected handleUserSearch = (ev: React.ChangeEvent<HTMLInputElement>) => this.doHandleUserSearch(ev);
     protected async doHandleUserSearch(ev: React.ChangeEvent<HTMLInputElement>) {
         const popperTarget = ev.currentTarget;
         const val = popperTarget.value;
@@ -342,7 +342,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
     protected handleChangeNamespace = (event: React.ChangeEvent<{}>, value: Namespace) => {
         this.doHandleChangeNamespace(value);
-    }
+    };
 
     protected async doHandleChangeNamespace(chosenNamespace: Namespace) {
         const members = await this.props.service.getNamespaceMembers(chosenNamespace);

@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
+import * as React from 'react';
 import {
     Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle,
     DialogContent, DialogContentText, Box, TextField, DialogActions, Typography
-} from "@material-ui/core";
-import { ButtonWithProgress } from "../../custom-mui-components/button-with-progress";
-import { CopyToClipboard } from "../../custom-mui-components/copy-to-clipboard";
-import { UserData, PersonalAccessToken, isError } from "../../extension-registry-types";
-import { ExtensionRegistryService } from "../../extension-registry-service";
+} from '@material-ui/core';
+import { ButtonWithProgress } from '../../custom-mui-components/button-with-progress';
+import { CopyToClipboard } from '../../custom-mui-components/copy-to-clipboard';
+import { UserData, PersonalAccessToken, isError } from '../../extension-registry-types';
+import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ErrorResponse } from '../../server-request';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
@@ -42,7 +42,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
     protected handleOpenDialog = () => {
         this.setState({ open: true, posted: false });
-    }
+    };
 
     protected handleCancel = () => {
         this.setState({
@@ -50,7 +50,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
             description: '',
             token: undefined
         });
-    }
+    };
 
     protected handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const description = event.target.value;
@@ -59,7 +59,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
             descriptionError = `The description must not be longer than ${TOKEN_DESCRIPTION_SIZE} characters.`;
         }
         this.setState({ description, descriptionError });
-    }
+    };
 
     protected handleGenerate = async () => {
         this.setState({ posted: true });
@@ -73,13 +73,13 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
         } catch (err) {
             this.props.setError(err);
         }
-    }
+    };
 
     handleEnter = (e: KeyboardEvent) => {
         if (e.code ===  'Enter') {
             this.handleGenerate();
         }
-    }
+    };
 
     componentDidMount() {
         document.addEventListener('keydown', this.handleEnter);
@@ -109,11 +109,11 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                     </Box>
                     <TextField
                         disabled={!this.state.token}
-                        margin="dense"
-                        label="Generated Token..."
+                        margin='dense'
+                        label='Generated Token...'
                         fullWidth
                         multiline
-                        variant="outlined"
+                        variant='outlined'
                         rows={4}
                         value={this.state.token ? this.state.token.value : ''}
                     />
@@ -132,8 +132,8 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                         <CopyToClipboard tooltipProps={{ placement: 'left' }}>
                             {({ copy }) => (
                                 <Button
-                                    variant="contained"
-                                    color="secondary"
+                                    variant='contained'
+                                    color='secondary'
                                     onClick={() => {
                                         copy(this.state.token!.value);
                                     }}
@@ -143,7 +143,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                             )}
                         </CopyToClipboard> : null
                     }
-                    <Button onClick={this.handleCancel} color="secondary">
+                    <Button onClick={this.handleCancel} color='secondary'>
                         {this.state.token ? 'Close' : 'Cancel'}
                     </Button>
                     {

@@ -17,7 +17,7 @@ export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
         if (e.code ===  'Enter') {
             this.props.handleCloseDialog();
         }
-    }
+    };
 
     componentDidMount(): void {
         document.addEventListener('keydown', this.handleEnter);

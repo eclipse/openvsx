@@ -23,7 +23,7 @@ import { UserData, isError } from './extension-registry-types';
 import { PageSettings } from './page-settings';
 import { handleError } from './utils';
 import { ErrorDialog } from './custom-mui-components/error-dialog';
-import "../src/main.css";
+import '../src/main.css';
 
 const mainStyles = (theme: Theme) => createStyles({
     main: {
@@ -81,7 +81,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.scrollListener = () => {
             const element = document.scrollingElement;
             if (!element) {
@@ -104,7 +104,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         this.updateUser();
     }
 
-    componentWillUnmount() {
+    componentWillUnmount(): void {
         clearTimeout(this.scrollTimeout);
         if (this.scrollListener) {
             document.removeEventListener('scroll', this.scrollListener);
@@ -127,13 +127,13 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     handleError = (err: {}) => {
         const error = handleError(err);
         this.setState({ error, isErrorDialogOpen: true });
-    }
+    };
 
     handleDialogClose = () => {
         this.setState({ isErrorDialogOpen: false });
-    }
+    };
 
-    render() {
+    render(): React.ReactNode {
         const {
             toolbarContent: ToolbarContent,
             footerContent: FooterContent,
@@ -157,7 +157,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                         setError={this.handleError}
                                     />
                                     :
-                                    <IconButton href={this.props.service.getLoginUrl()} title="Log In">
+                                    <IconButton href={this.props.service.getLoginUrl()} title='Log In'>
                                         <AccountBoxIcon />
                                     </IconButton>
                             }

@@ -8,23 +8,23 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
+import * as React from 'react';
 import * as MarkdownIt from 'markdown-it';
 import * as DOMPurify from 'dompurify';
-import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link, NativeSelect } from "@material-ui/core";
-import { RouteComponentProps, Link as RouteLink, withRouter } from "react-router-dom";
+import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link, NativeSelect } from '@material-ui/core';
+import { RouteComponentProps, Link as RouteLink, withRouter } from 'react-router-dom';
 import HomeIcon from '@material-ui/icons/Home';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
-import { addQuery, createRoute } from "../../utils";
-import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
-import { Timestamp } from "../../custom-mui-components/timestamp";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { Extension, ExtensionReference, VERSION_ALIASES } from "../../extension-registry-types";
-import { ExtensionListRoutes } from "../extension-list/extension-list-container";
-import { PageSettings } from "../../page-settings";
-import { ExtensionDetailRoutes } from "./extension-detail";
+import { addQuery, createRoute } from '../../utils';
+import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { Timestamp } from '../../custom-mui-components/timestamp';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-registry-types';
+import { ExtensionListRoutes } from '../extension-list/extension-list-container';
+import { PageSettings } from '../../page-settings';
+import { ExtensionDetailRoutes } from './extension-detail';
 import { ErrorResponse } from '../../server-request';
 
 const overviewStyles = (theme: Theme) => createStyles({
@@ -38,7 +38,7 @@ const overviewStyles = (theme: Theme) => createStyles({
     resourcesWrapper: {
         flex: 1,
         display: 'flex',
-        width: "100%",
+        width: '100%',
         minWidth: '290px',
         margin: '0 0 0 4.8rem',
         [theme.breakpoints.down('lg')]: {
@@ -190,7 +190,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const ReportAbuse = this.props.pageSettings.reportAbuse;
         return <React.Fragment>
             <Box className={this.props.classes.overview}>
-                <Box className={classes.markdown} flex={5} overflow="auto">
+                <Box className={classes.markdown} flex={5} overflow='auto'>
                     {this.renderMarkdown(this.state.readme)}
                 </Box>
                 <Box className={this.props.classes.resourcesWrapper}>

@@ -8,18 +8,18 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography } from "@material-ui/core";
-import { RouteComponentProps, Route } from "react-router-dom";
-import { createRoute } from "../../utils";
-import { DelayedLoadIndicator } from "../../custom-mui-components/delayed-load-indicator";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { UserData } from "../../extension-registry-types";
-import { PageSettings } from "../../page-settings";
-import { UserSettingTabs } from "./user-setting-tabs";
-import { UserSettingsTokens } from "./user-settings-tokens";
-import { UserSettingsProfile } from "./user-settings-profile";
-import { UserSettingsNamespaces } from "./user-settings-namespaces";
+import * as React from 'react';
+import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography } from '@material-ui/core';
+import { RouteComponentProps, Route } from 'react-router-dom';
+import { createRoute } from '../../utils';
+import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { UserData } from '../../extension-registry-types';
+import { PageSettings } from '../../page-settings';
+import { UserSettingTabs } from './user-setting-tabs';
+import { UserSettingsTokens } from './user-settings-tokens';
+import { UserSettingsProfile } from './user-settings-profile';
+import { UserSettingsNamespaces } from './user-settings-namespaces';
 import { ErrorResponse } from '../../server-request';
 
 export namespace UserSettingsRoutes {

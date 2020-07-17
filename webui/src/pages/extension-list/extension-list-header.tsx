@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React = require("react");
+import * as React from 'react';
 import {
     Box, WithStyles, createStyles, Theme, withStyles, Paper, IconButton, InputBase,
     Select, MenuItem, Container
-} from "@material-ui/core";
+} from '@material-ui/core';
 import SearchIcon from '@material-ui/icons/Search';
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { ExtensionCategory, SortBy, SortOrder } from "../../extension-registry-types";
-import { PageSettings } from "../../page-settings";
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
+import { PageSettings } from '../../page-settings';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
 
@@ -137,11 +137,11 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
         const category = event.target.value as ExtensionCategory;
         this.setState({ category });
         this.props.onCategoryChanged(category);
-    }
+    };
 
     protected handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         this.props.onSearchChanged(event.target.value);
-    }
+    };
 
     protected renderValue = (value: string) => {
         if (value === '') {
@@ -149,19 +149,19 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
         } else {
             return value;
         }
-    }
+    };
 
     protected handleSortByChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const sortBy = event.target.value as SortBy;
         this.setState({ sortBy });
         this.props.onSortByChanged(sortBy);
-    }
+    };
 
     protected handleSortOrderChange = () => {
         const sortOrder = this.state.sortOrder === 'asc' ? 'desc' : 'asc';
         this.setState({ sortOrder });
         this.props.onSortOrderChanged(sortOrder);
-    }
+    };
 
     render() {
         const classes = this.props.classes;
@@ -179,13 +179,13 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                                     onChange={this.handleSearchChange}
                                     className={classes.inputBase}
                                     placeholder='Search by Name, Tag, or Description'
-                                    id="search-input" />
+                                    id='search-input' />
                                 <label
-                                    htmlFor="search-input"
-                                    className="visually-hidden" >
+                                    htmlFor='search-input'
+                                    className='visually-hidden' >
                                     Search for Name, Tags or Description
                                 </label>
-                                <IconButton color='primary' aria-label="Search" classes={{ root: classes.iconButton }}>
+                                <IconButton color='primary' aria-label='Search' classes={{ root: classes.iconButton }}>
                                     <SearchIcon />
                                 </IconButton>
                             </Paper>

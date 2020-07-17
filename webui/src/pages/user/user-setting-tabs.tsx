@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Tabs, Tab, useTheme, useMediaQuery } from "@material-ui/core";
-import { RouteComponentProps } from "react-router-dom";
-import { createRoute } from "../../utils";
-import { UserSettingsRoutes } from "./user-settings";
+import * as React from 'react';
+import { Tabs, Tab, useTheme, useMediaQuery } from '@material-ui/core';
+import { RouteComponentProps } from 'react-router-dom';
+import { createRoute } from '../../utils';
+import { UserSettingsRoutes } from './user-settings';
 
 export const UserSettingTabs = (props: UserSettingTabs.Props): React.ReactElement => {
 

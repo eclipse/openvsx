@@ -74,7 +74,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         this.setState({ loading: true });
         this.updateReviews();
         this.props.reviewsDidUpdate();
-    }
+    };
 
     protected handleRevokeButton = async () => {
         this.setState({ revoked: true });
@@ -87,7 +87,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         } catch (err) {
             this.props.handleError(err);
         }
-    }
+    };
 
     render() {
         return <React.Fragment>

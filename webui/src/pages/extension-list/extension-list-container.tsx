@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Box } from "@material-ui/core";
-import { RouteComponentProps } from "react-router-dom";
-import { createRoute, addQuery } from "../../utils";
-import { ExtensionCategory, SortOrder, SortBy } from "../../extension-registry-types";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { PageSettings } from "../../page-settings";
-import { ExtensionList } from "./extension-list";
-import { ExtensionListHeader } from "./extension-list-header";
-import { ErrorResponse } from "../../server-request";
+import * as React from 'react';
+import { Box } from '@material-ui/core';
+import { RouteComponentProps } from 'react-router-dom';
+import { createRoute, addQuery } from '../../utils';
+import { ExtensionCategory, SortOrder, SortBy } from '../../extension-registry-types';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { PageSettings } from '../../page-settings';
+import { ExtensionList } from './extension-list';
+import { ExtensionListHeader } from './extension-list-header';
+import { ErrorResponse } from '../../server-request';
 
 export namespace ExtensionListRoutes {
     export const MAIN = createRoute([]);
@@ -54,19 +54,19 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     protected onSearchChanged = (searchQuery: string): void => {
         this.setState({ searchQuery });
         this.updateURL(searchQuery, this.state.category, this.state.sortBy, this.state.sortOrder);
-    }
+    };
     protected onCategoryChanged = (category: ExtensionCategory): void => {
         this.setState({ category });
         this.updateURL(this.state.searchQuery, category, this.state.sortBy, this.state.sortOrder);
-    }
+    };
     protected onSortByChanged = (sortBy: SortBy): void => {
         this.setState({ sortBy });
         this.updateURL(this.state.searchQuery, this.state.category, sortBy, this.state.sortOrder);
-    }
+    };
     protected onSortOrderChanged = (sortOrder: SortOrder): void => {
         this.setState({ sortOrder });
         this.updateURL(this.state.searchQuery, this.state.category, this.state.sortBy, sortOrder);
-    }
+    };
 
     protected updateURL(searchQuery: string, category: ExtensionCategory | '', sortBy?: SortBy, sortOrder?: SortOrder): void {
         const queries: { key: string, value: string }[] = [

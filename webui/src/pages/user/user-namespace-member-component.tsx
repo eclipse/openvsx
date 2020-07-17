@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Box, Typography, Avatar, Select, MenuItem, Button, Theme, createStyles } from "@material-ui/core";
-import { withStyles, WithStyles } from "@material-ui/styles";
-import { NamespaceMembership, MembershipRole, UserData, isError, Namespace } from "../../extension-registry-types";
-import { ExtensionRegistryService } from "../../extension-registry-service";
-import { ErrorResponse } from "../../server-request";
+import * as React from 'react';
+import { Box, Typography, Avatar, Select, MenuItem, Button, Theme, createStyles } from '@material-ui/core';
+import { withStyles, WithStyles } from '@material-ui/styles';
+import { NamespaceMembership, MembershipRole, UserData, isError, Namespace } from '../../extension-registry-types';
+import { ExtensionRegistryService } from '../../extension-registry-service';
+import { ErrorResponse } from '../../server-request';
 
 const memberStyle = (theme: Theme) => createStyles({
     memberName: {
@@ -93,7 +93,7 @@ class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.P
                     this.props.member.user.loginName === this.props.user.loginName && this.props.member.user.provider === this.props.user.provider ?
                         '' :
                         <Box m={1}>
-                            <Select variant='outlined' classes={{outlined: this.props.classes.selectOutlined}} value={this.state.role} onChange={this.changeRole}>
+                            <Select variant='outlined' classes={{ outlined: this.props.classes.selectOutlined }} value={this.state.role} onChange={this.changeRole}>
                                 <MenuItem value='contributor'>Contributor</MenuItem>
                                 <MenuItem value='owner'>Owner</MenuItem>
                             </Select>

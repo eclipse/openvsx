@@ -8,10 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles, Grid, Typography, Avatar } from "@material-ui/core";
-import { UserData } from "../../extension-registry-types";
-import { ExtensionRegistryService } from "../../extension-registry-service";
+import * as React from 'react';
+import { Theme, createStyles, WithStyles, withStyles, Grid, Typography, Avatar } from '@material-ui/core';
+import { UserData } from '../../extension-registry-types';
+import { ExtensionRegistryService } from '../../extension-registry-service';
 
 const profileStyle = (theme: Theme) => createStyles({
     profile: {

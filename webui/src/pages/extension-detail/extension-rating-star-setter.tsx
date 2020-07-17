@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Box, IconButton } from "@material-ui/core";
+import * as React from 'react';
+import { Box, IconButton } from '@material-ui/core';
 import StarIcon from '@material-ui/icons/Star';
 import StarBorderIcon from '@material-ui/icons/StarBorder';
-import { StarRating } from "../../extension-registry-types";
+import { StarRating } from '../../extension-registry-types';
 
 export class ExtensionRatingStarSetter extends React.Component<{}, { number: StarRating }> {
 
@@ -24,7 +24,7 @@ export class ExtensionRatingStarSetter extends React.Component<{}, { number: Sta
 
     protected handleStarClick = (number: StarRating): void => {
         this.setState({ number });
-    }
+    };
 
     protected renderStarButton(number: StarRating): React.ReactNode {
         return <IconButton key={'starbtn' + number} onClick={() => this.handleStarClick(number)}>

@@ -69,10 +69,10 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
 
     protected readonly handleAvatarClick = () => {
         this.setState({ open: !this.state.open });
-    }
+    };
     protected readonly handleClose = () => {
         this.setState({ open: false });
-    }
+    };
 
     render() {
         return <React.Fragment>
@@ -107,9 +107,9 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                     </RouteLink>
                 </MenuItem>
                 <MenuItem className={this.props.classes.menuItem}>
-                    <form method="post" action={this.props.service.getLogoutUrl()}>
-                        {this.state.csrf ? <input name="_csrf" type="hidden" value={this.state.csrf} /> : null }
-                        <button type="submit" className={`${this.props.classes.link} ${this.props.classes.menuButton}`}>
+                    <form method='post' action={this.props.service.getLogoutUrl()}>
+                        {this.state.csrf ? <input name='_csrf' type='hidden' value={this.state.csrf} /> : null }
+                        <button type='submit' className={`${this.props.classes.link} ${this.props.classes.menuButton}`}>
                             <Typography variant='button' className={this.props.classes.logoutButton}>
                                 Log Out
                             </Typography>

@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Tabs, Tab } from "@material-ui/core";
-import { RouteComponentProps, withRouter } from "react-router-dom";
-import { createRoute } from "../../utils";
-import { ExtensionDetailRoutes } from "./extension-detail";
+import * as React from 'react';
+import { Tabs, Tab } from '@material-ui/core';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { createRoute } from '../../utils';
+import { ExtensionDetailRoutes } from './extension-detail';
 
 export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetailTabs.Props> {
 
@@ -30,7 +30,7 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
             }
             this.props.history.push(route);
         }
-    }
+    };
 
     render(): React.ReactNode {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
