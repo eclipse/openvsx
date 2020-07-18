@@ -16,10 +16,6 @@ jobs:
         node-version: 10.x
     - name: Set up Yarn
       run: npm install --global yarn
-    - name: Set up Java JDK
-      uses: actions/setup-java@v1
-      with:
-        java-version: 11
     - uses: actions/checkout@v2
     - name: Build Web UI
       run: |
