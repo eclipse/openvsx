@@ -5,6 +5,8 @@ on: [push, pull_request]
 env:
   SERVER_TAG: docker.pkg.github.com/eclipse/openvsx/openvsx-server
   SERVER_VERSION: snapshot
+  WEB_UI_TAG: docker.pkg.github.com/eclipse/openvsx/openvsx-webui
+  WEB_UI_VERSION: snapshot
 
 jobs:
   build:
@@ -22,6 +24,8 @@ jobs:
         yarn --cwd webui
         yarn --cwd webui test
         yarn --cwd webui build:dev
+    - name: Build Web UI Docker Image
+      run: docker build -t $WEB_UI_TAG:$WEB_UI_VERSION webui
     - name: Build CLI
       run: yarn --cwd cli
     - name: Build Server
@@ -30,4 +34,5 @@ jobs:
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
         docker push $SERVER_TAG:$SERVER_VERSION
+        docker push $WEB_UI_TAG:$WEB_UI_VERSION
       if: github.repository == 'eclipse/openvsx' && github.ref == 'refs/heads/master'
