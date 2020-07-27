@@ -18,8 +18,8 @@ import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 import { addQuery, createRoute } from '../../utils';
-import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
-import { Timestamp } from '../../custom-mui-components/timestamp';
+import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
+import { Timestamp } from '../../components/timestamp';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-registry-types';
 import { ExtensionListRoutes } from '../extension-list/extension-list-container';
@@ -186,8 +186,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
         const { classes, extension } = this.props;
-        const ClaimNamespace = this.props.pageSettings.claimNamespace;
-        const ReportAbuse = this.props.pageSettings.reportAbuse;
+        const ClaimNamespace = this.props.pageSettings.elements.claimNamespace;
+        const ReportAbuse = this.props.pageSettings.elements.reportAbuse;
         return <React.Fragment>
             <Box className={this.props.classes.overview}>
                 <Box className={classes.markdown} flex={5} overflow='auto'>

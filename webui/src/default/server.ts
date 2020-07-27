@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2019 TypeFox and others
+ * Copyright (c) 2019-2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -8,18 +8,19 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-const express = require('express');
-const path = require('path');
-
-const port = 3000;
-const staticPath = path.join(__dirname, '..', 'static');
+import * as express from 'express';
+import * as path from 'path';
 
 const app = express();
 
+// Serve static resources
+const staticPath = path.join(__dirname, '..', '..', 'static');
 app.use(express.static(staticPath));
 
+// Enable react-router by forwarding the main page to all paths that don't match a resource
 app.get('*', (req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-app.listen(port, () => console.log(`Dev server running on port ${port}...`));
+const port = 3000;
+app.listen(port, () => console.log(`Web UI server running on port ${port}...`));

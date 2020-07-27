@@ -19,16 +19,11 @@ jobs:
     - name: Set up Yarn
       run: npm install --global yarn
     - uses: actions/checkout@v2
-    - name: Build Web UI
-      run: |
-        yarn --cwd webui
-        yarn --cwd webui test
-        yarn --cwd webui build:dev
-    - name: Build Web UI Docker Image
-      run: docker build -t $WEB_UI_TAG:$WEB_UI_VERSION webui
     - name: Build CLI
       run: yarn --cwd cli
-    - name: Build Server
+    - name: Build Web UI Image
+      run: docker build -t $WEB_UI_TAG:$WEB_UI_VERSION webui
+    - name: Build Server Image
       run: docker build -t $SERVER_TAG:$SERVER_VERSION server
     - name: Push Docker Images
       run: |

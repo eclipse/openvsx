@@ -14,7 +14,7 @@ import { Namespace, isError, Extension, ErrorResult } from '../../extension-regi
 import { UserNamespaceExtensionListItem } from './user-namespace-extension-list-item';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ErrorResponse } from '../../server-request';
-import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { PageSettings } from '../../page-settings';
 
 const extensionListStyles = (theme: Theme) => createStyles({

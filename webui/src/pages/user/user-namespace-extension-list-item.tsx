@@ -14,7 +14,7 @@ import { Paper, Typography, Theme, createStyles, WithStyles, withStyles, Box } f
 import { Link as RouteLink } from 'react-router-dom';
 import { createRoute } from '../../utils';
 import { PageSettings } from '../../page-settings';
-import { Timestamp } from '../../custom-mui-components/timestamp';
+import { Timestamp } from '../../components/timestamp';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 
 const itemStyles = (theme: Theme) => createStyles({

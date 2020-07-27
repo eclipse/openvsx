@@ -20,7 +20,7 @@ tasks:
 - init: |
     # Build all components
     yarn --cwd webui
-    yarn --cwd webui build:dev
+    yarn --cwd webui build:default
     yarn --cwd cli
     server/gradlew -p server build downloadTestExtensions
   name: Server
@@ -42,7 +42,7 @@ tasks:
     gp await-port 8080
     # Start Express for serving frontend resources
     cd webui
-    yarn start:dev
+    yarn start:default
 - name: Publisher
   command: |
     gp await-port 8080

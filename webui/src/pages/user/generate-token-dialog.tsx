@@ -13,8 +13,8 @@ import {
     Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle,
     DialogContent, DialogContentText, Box, TextField, DialogActions, Typography
 } from '@material-ui/core';
-import { ButtonWithProgress } from '../../custom-mui-components/button-with-progress';
-import { CopyToClipboard } from '../../custom-mui-components/copy-to-clipboard';
+import { ButtonWithProgress } from '../../components/button-with-progress';
+import { CopyToClipboard } from '../../components/copy-to-clipboard';
 import { UserData, PersonalAccessToken, isError } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ErrorResponse } from '../../server-request';

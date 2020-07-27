@@ -34,7 +34,7 @@ export function createRoute(arr: string[], queries?: { key: string, value: strin
 
 export function debounce(task: () => void, token: { timeout?: number }, delay: number = 150): void {
     clearTimeout(token.timeout);
-    token.timeout = setTimeout(task, delay);
+    token.timeout = window.setTimeout(task, delay);
 }
 
 export function toLocalTime(timestamp?: string): string | undefined {
@@ -84,19 +84,20 @@ export function toRelativeTime(timestamp?: string): string | undefined {
 }
 
 export function handleError(err?: Error | Partial<ErrorResponse>): string {
-    let errorMessage: string = '';
     if (err) {
         console.error(err);
-        if (err instanceof Error)
-            errorMessage = `An unexpected error occurred: ${err.message}`;
-        else if (err.error && err.status && err.message)
-            errorMessage = `The server responded with an error: ${err.error} (status ${err.status}, ${err.message})`;
-        else if (err.error && err.status)
-            errorMessage = `The server responded with an error: ${err.error} (status ${err.status})`;
-        else if (err.error)
-            errorMessage = `The server responded with an error: ${err.error}`;
-    } else {
-        errorMessage = 'An unexpected error occurred.';
+        if (err instanceof Error) {
+            if (err.message === 'Failed to fetch') {
+                return 'The registry server is not available. Please contact the site administrators.';
+            }
+            return `An unexpected error occurred: ${err.message}`;
+        } else if (err.error && err.status && err.message) {
+            return `The server responded with an error: ${err.error} (status ${err.status}, ${err.message})`;
+        } else if (err.error && err.status) {
+            return `The server responded with an error: ${err.error} (status ${err.status})`;
+        } else if (err.error) {
+            return `The server responded with an error: ${err.error}`;
+        }
     }
-    return errorMessage;
+    return 'An unexpected error occurred.';
 }

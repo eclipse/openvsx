@@ -1,0 +1,45 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+        "@typescript-eslint"
+    ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+        "@typescript-eslint/ban-types": "off",
+        "@typescript-eslint/brace-style": ["warn", "1tbs"],
+        "@typescript-eslint/comma-spacing": ["warn", { "before": false, "after": true }],
+        "@typescript-eslint/func-call-spacing": ["warn", "never"],
+        "@typescript-eslint/keyword-spacing": ["warn", { "before": true, "after": true }],
+        "@typescript-eslint/no-empty-function": "off",
+        "@typescript-eslint/no-empty-interface": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/no-namespace": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/semi": ["error", "always"],
+        "@typescript-eslint/type-annotation-spacing": "warn",
+        "array-bracket-spacing": ["warn", "never"],
+        "arrow-spacing": ["warn", { "before": true, "after": true }],
+        "computed-property-spacing": ["warn", "never"],
+        "jsx-quotes": ["error", "prefer-single"],
+        "key-spacing": ["warn", { "beforeColon": false, "afterColon": true }],
+        "linebreak-style": ["warn", "unix"],
+        "new-parens": "error",
+        "no-trailing-spaces": "warn",
+        "no-whitespace-before-property": "warn",
+        "object-curly-spacing": ["warn", "always"],
+        "semi-spacing": ["warn", { "before": false, "after": true }],
+        "space-before-blocks": ["warn", "always"],
+        "space-in-parens": ["warn", "never"],
+        "space-infix-ops": "warn",
+        "space-unary-ops": "warn",
+        "switch-colon-spacing": ["warn", { "before": false, "after": true }]
+    }
+}
