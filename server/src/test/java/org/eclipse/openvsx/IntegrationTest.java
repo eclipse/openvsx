@@ -16,8 +16,7 @@ import com.google.common.io.ByteStreams;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.repositories.RepositoryService;
-import org.junit.jupiter.api.Disabled;
+import org.eclipse.openvsx.json.SearchResultJson;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,8 +24,10 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 public class IntegrationTest {
 
     @LocalServerPort
@@ -36,20 +37,8 @@ public class IntegrationTest {
     TestRestTemplate restTemplate;
 
     @Autowired
-    RepositoryService repositories;
-
-    @Autowired
     TestService testService;
-
-	@Test
-	public void testEmptySearch() throws Exception {
-        var response = restTemplate.getForEntity("http://localhost:" + port + "/api/-/search", String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody()).isEqualTo("{\"offset\":0,\"totalSize\":0,\"extensions\":[]}");
-    }
     
-    // Currently fails in Docker image build
-    @Disabled
     @Test
     public void testPublishExtension() throws Exception {
         testService.createUser();
@@ -80,6 +69,15 @@ public class IntegrationTest {
                 ExtensionJson.class);
         assertThat(response3.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response3.getBody().description).isEqualTo("The most epic theme now for Visual Studio Code");
+
+        // Wait a bit until the new entry has landed in the search index
+        Thread.sleep(2000);
+
+        // Find the extension by searching for "material"
+        var response = restTemplate.getForEntity("http://localhost:" + port + "/api/-/search?query=material", SearchResultJson.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody().extensions.size()).isEqualTo(1);
+		assertThat(response.getBody().extensions.get(0).description).isEqualTo("The most epic theme now for Visual Studio Code");
     }
     
 }

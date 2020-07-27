@@ -15,7 +15,8 @@ def versions = [
     flyway: '6.3.3',
     spdx: '2.2.1',
     guava: '28.2-jre',
-    junit: '5.6.2'
+    junit: '5.6.2',
+    testcontainers: '1.14.3'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -59,9 +60,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
+    testImplementation "org.testcontainers:elasticsearch:${versions.testcontainers}"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
-    testRuntimeOnly "com.h2database:h2"
+    testRuntimeOnly "org.testcontainers:postgresql:${versions.testcontainers}"
 }
 
 task runServer(type: JavaExec) {

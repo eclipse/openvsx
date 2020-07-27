@@ -1,18 +1,17 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:test_db;MODE=PostgreSQL
-  flyway:
-    enabled: false
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:postgresql:9.6.8:///test
   jpa:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
   session:
     store-type: jdbc
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
 
   security:
       oauth2:
@@ -21,7 +20,3 @@ spring:
             github:
               client-id: dummy-client-id
               client-secret: dummy-client-secret
-
-ovsx:
-  elasticsearch:
-    enabled: false

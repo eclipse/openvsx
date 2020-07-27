@@ -6,8 +6,8 @@ COPY --chown=gradle:gradle gradlew *.gradle ./
 COPY --chown=gradle:gradle gradle ./gradle/
 COPY --chown=gradle:gradle src ./src/
 
-# Build and test the server application
-RUN ./gradlew --no-daemon build
+# Build the server application
+RUN ./gradlew --no-daemon assemble
 
 
 FROM openjdk:11.0.7-jdk
