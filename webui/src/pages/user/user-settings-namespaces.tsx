@@ -21,7 +21,7 @@ import { UserData, Namespace, NamespaceMembership, isError } from '../../extensi
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { makeStyles } from '@material-ui/styles';
 import { UserNamespaceMember } from './user-namespace-member-component';
-import { DelayedLoadIndicator } from '../../custom-mui-components/delayed-load-indicator';
+import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserNamespaceExtensionList } from './user-namespace-extension-list';
 import { ErrorResponse } from '../../server-request';
 import { PageSettings } from '../../page-settings';

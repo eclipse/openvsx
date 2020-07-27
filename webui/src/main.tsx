@@ -22,7 +22,7 @@ import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { PageSettings } from './page-settings';
 import { handleError } from './utils';
-import { ErrorDialog } from './custom-mui-components/error-dialog';
+import { ErrorDialog } from './components/error-dialog';
 import '../src/main.css';
 
 const mainStyles = (theme: Theme) => createStyles({
@@ -94,7 +94,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 this.setState({ showNormalFooter: false, showFixedFooter: true, fadeFooter: true });
             } else if (!fixFooter && this.state.showFixedFooter) {
                 this.setState({ showNormalFooter: true, fadeFooter: true });
-                this.scrollTimeout = setTimeout(
+                this.scrollTimeout = window.setTimeout(
                     () => this.setState({ showFixedFooter: false, fadeFooter: false }),
                     2000
                 );
@@ -138,7 +138,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             toolbarContent: ToolbarContent,
             footerContent: FooterContent,
             additionalRoutes: AdditionalRoutes
-        } = this.props.pageSettings;
+        } = this.props.pageSettings.elements;
         const classes = this.props.classes;
         return <React.Fragment>
             <CssBaseline />

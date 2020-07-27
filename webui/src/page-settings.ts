@@ -14,12 +14,14 @@ import { Extension } from "./extension-registry-types";
 export interface PageSettings {
     pageTitle: string;
     themeType?: 'light' | 'dark';
-    toolbarContent?: React.FunctionComponent;
-    footerContent?: React.FunctionComponent;
-    searchHeader?: React.FunctionComponent;
-    reportAbuse?: React.FunctionComponent<{ extension: Extension } & Styleable>;
-    claimNamespace?: React.FunctionComponent<{ extension: Extension } & Styleable>;
-    additionalRoutes?: React.FunctionComponent;
+    elements: {
+        toolbarContent?: React.FunctionComponent;
+        footerContent?: React.FunctionComponent;
+        searchHeader?: React.FunctionComponent;
+        reportAbuse?: React.FunctionComponent<{ extension: Extension } & Styleable>;
+        claimNamespace?: React.FunctionComponent<{ extension: Extension } & Styleable>;
+        additionalRoutes?: React.FunctionComponent;
+    };
     metrics?: {
         maxFooterHeight?: number;
     };

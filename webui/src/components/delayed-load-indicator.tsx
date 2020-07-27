@@ -35,7 +35,7 @@ export class DelayedLoadIndicator extends React.Component<DelayedLoadIndicator.P
         }
         if (this.props.loading && !prevProps.loading) {
             this.setState({ waiting: true });
-            this.timeout = setTimeout(() => {
+            this.timeout = window.setTimeout(() => {
                 this.setState({ waiting: false });
             }, this.props.delay || 200);
         }

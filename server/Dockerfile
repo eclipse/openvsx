@@ -1,9 +1,12 @@
 FROM gradle:jdk11 as builder
 
-COPY --chown=gradle:gradle . /home/gradle
+# Copy sources
 WORKDIR /home/gradle
+COPY --chown=gradle:gradle gradlew *.gradle ./
+COPY --chown=gradle:gradle gradle ./gradle/
+COPY --chown=gradle:gradle src ./src/
 
-# Compile server
+# Build and test the server application
 RUN ./gradlew --no-daemon build
 
 

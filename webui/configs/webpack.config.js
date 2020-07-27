@@ -1,18 +1,19 @@
+// @ts-check
+
+/* eslint-disable no-undef */
 const webpack = require('webpack');
 const path = require('path');
 
-const outputPath = path.resolve(__dirname, '../dev/static')
-
-module.exports = {
-    mode: 'development',
+/** @type {webpack.Configuration} */
+const config = {
     devtool: 'source-map',
 
     entry: [
-        './dev/index.tsx'
+        './src/default/default-app.tsx'
     ],
     output: {
         filename: 'bundle.js',
-        path: outputPath,
+        path: path.resolve(__dirname, '../static'),
         publicPath: '/'
     },
 
@@ -47,3 +48,4 @@ module.exports = {
         new webpack.ProgressPlugin()
     ]
 };
+module.exports = config;

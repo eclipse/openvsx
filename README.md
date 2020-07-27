@@ -29,9 +29,9 @@ The command line tool is available at `cli/lib/ovsx`.
 
  * `yarn build` &mdash; build the library
  * `yarn watch` &mdash; watch (build continuously)
- * `yarn build:dev` &mdash; build the dev frontend (run webpack)
- * `yarn watch:dev` &mdash; run webpack in watch mode
- * `yarn start:dev` &mdash; start Express to serve the frontend on port 3000
+ * `yarn build:default` &mdash; build the default frontend (run webpack)
+ * `yarn watch:default` &mdash; run webpack in watch mode
+ * `yarn start:default` &mdash; start Express to serve the frontend on port 3000
 
  The Express server is started automatically in Gitpod. A restart is usually not necessary.
 

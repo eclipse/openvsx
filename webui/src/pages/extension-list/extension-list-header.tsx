@@ -165,7 +165,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
 
     render() {
         const classes = this.props.classes;
-        const SearchHeader = this.props.pageSettings.searchHeader;
+        const SearchHeader = this.props.pageSettings.elements.searchHeader;
         return <React.Fragment>
             <Container>
                 <Box display='flex' flexDirection='column' alignItems='center' py={6}>
