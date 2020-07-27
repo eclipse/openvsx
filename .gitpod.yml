@@ -19,10 +19,10 @@ ports:
 tasks:
 - init: |
     # Build all components
+    yarn --cwd cli
     yarn --cwd webui
     yarn --cwd webui build:default
-    yarn --cwd cli
-    server/gradlew -p server build downloadTestExtensions
+    server/gradlew -p server assemble downloadTestExtensions
   name: Server
   command: |
     if [[ $NPM_TOKEN ]]; then echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc; fi

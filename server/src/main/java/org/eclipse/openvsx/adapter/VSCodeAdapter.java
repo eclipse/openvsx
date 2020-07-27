@@ -113,6 +113,9 @@ public class VSCodeAdapter {
             sortBy = getSortBy(filter.sortBy);
         }
 
+        if (!search.isEnabled()) {
+            return toQueryResult(Collections.emptyList());
+        }
         try {
             var searchResult = search.search(queryString, category, pageRequest, sortOrder, sortBy);
             return findExtensions(searchResult, param.flags);

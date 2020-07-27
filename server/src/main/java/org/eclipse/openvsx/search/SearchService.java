@@ -107,6 +107,9 @@ public class SearchService {
     }
 
     public void updateSearchEntry(Extension extension) {
+        if (!isEnabled()) {
+            return;
+        }
         try {
             rwLock.writeLock().lock();
             var stats = new SearchStats();
@@ -120,6 +123,9 @@ public class SearchService {
     }
 
     public void removeSearchEntry(Extension extension) {
+        if (!isEnabled()) {
+            return;
+        }
         try {
             rwLock.writeLock().lock();
             searchOperations.delete(ExtensionSearch.class, Long.toString(extension.getId()));

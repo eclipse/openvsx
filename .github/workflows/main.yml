@@ -18,11 +18,22 @@ jobs:
         node-version: 10.x
     - name: Set up Yarn
       run: npm install --global yarn
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
     - uses: actions/checkout@v2
     - name: Build CLI
       run: yarn --cwd cli
     - name: Build Web UI Image
       run: docker build -t $WEB_UI_TAG:$WEB_UI_VERSION webui
+    - name: Run Server Tests
+      run: server/gradlew --no-daemon -p server check
+    - name: Upload Test Report
+      uses: actions/upload-artifact@v2
+      with:
+        name: server-test-report
+        path: server/build/reports/tests/
     - name: Build Server Image
       run: docker build -t $SERVER_TAG:$SERVER_VERSION server
     - name: Push Docker Images

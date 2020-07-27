@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2019 TypeFox and others
+ * Copyright (c) 2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -7,33 +7,26 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx.search;
+package org.eclipse.openvsx;
 
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.Strings;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.RestClients;
 import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfiguration;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 @Configuration
-@Profile("!test")
-public class SearchConfig extends AbstractElasticsearchConfiguration {
-
-    @Value("${ovsx.elasticsearch.host:}")
-    String searchHost;
+@Profile("test")
+public class TestSearchConfig extends AbstractElasticsearchConfiguration {
 
     @Override
     public RestHighLevelClient elasticsearchClient() {
-        ClientConfiguration config;
-        if (Strings.isNullOrEmpty(searchHost)) {
-            config = ClientConfiguration.localhost();
-        } else {
-            config = ClientConfiguration.create(searchHost);
-        }
+        var container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.8.6");
+        container.start();
+        var config = ClientConfiguration.create(container.getHttpHostAddress());
         return RestClients.create(config).rest();
     }
-
+    
 }
