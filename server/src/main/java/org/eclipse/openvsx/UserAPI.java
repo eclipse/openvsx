@@ -197,9 +197,10 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var user = users.updateUser(principal);
+
         var namespace = repositories.findNamespace(name);
         var userMembership = repositories.findMembership(user, namespace);
-        if(userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
+        if (userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
             var memberships = repositories.findMemberships(namespace);
             return memberships.map(membership -> membership.toJson()).toList();
         } else {

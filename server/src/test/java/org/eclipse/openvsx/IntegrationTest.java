@@ -11,6 +11,8 @@ package org.eclipse.openvsx;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+
 import com.google.common.io.ByteStreams;
 
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -31,53 +33,66 @@ import org.springframework.test.context.ActiveProfiles;
 public class IntegrationTest {
 
     @LocalServerPort
-	int port;
+    int port;
 
-	@Autowired
+    @Autowired
     TestRestTemplate restTemplate;
 
     @Autowired
     TestService testService;
-    
+
+    private String apiCall(String path) {
+        return "http://localhost:" + port + path;
+    }
+
     @Test
     public void testPublishExtension() throws Exception {
         testService.createUser();
-
-        // Create the namespace
-        var requestBody = new NamespaceJson();
-        requestBody.name = "Equinusocio";
-        var response1 = restTemplate.postForEntity("http://localhost:" + port + "/api/-/namespace/create?token={token}",
-                    requestBody, ResultJson.class, "test_token");
-        assertThat(response1.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response1.getBody().error).isNull();
-        assertThat(response1.getBody().success).isEqualTo("Created namespace " + requestBody.name);
-
-        try (
-            var stream = getClass().getResourceAsStream("vsc-material-theme.vsix");
-        ) {
-            // Publish the extension
-            var bytes = ByteStreams.toByteArray(stream);
-            var response2 = restTemplate.postForEntity("http://localhost:" + port + "/api/-/publish?token={token}",
-                    bytes, ExtensionJson.class, "test_token");
-            assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(response2.getBody().error).isNull();
-            assertThat(response2.getBody().name).isEqualTo("vsc-material-theme");
-        }
-
-        // Query the metadata of the published extension
-        var response3 = restTemplate.getForEntity("http://localhost:" + port + "/api/Equinusocio/vsc-material-theme",
-                ExtensionJson.class);
-        assertThat(response3.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response3.getBody().description).isEqualTo("The most epic theme now for Visual Studio Code");
+        createNamespace();
+        publishExtension();
+        getExtensionMetadata();
 
         // Wait a bit until the new entry has landed in the search index
         Thread.sleep(2000);
 
-        // Find the extension by searching for "material"
-        var response = restTemplate.getForEntity("http://localhost:" + port + "/api/-/search?query=material", SearchResultJson.class);
+        searchExtension();
+    }
+
+    private void createNamespace() {
+        var requestBody = new NamespaceJson();
+        requestBody.name = "Equinusocio";
+        var response = restTemplate.postForEntity(apiCall("/api/-/namespace/create?token={token}"), requestBody,
+                ResultJson.class, "test_token");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody().extensions.size()).isEqualTo(1);
-		assertThat(response.getBody().extensions.get(0).description).isEqualTo("The most epic theme now for Visual Studio Code");
+        assertThat(response.getBody().error).isNull();
+        assertThat(response.getBody().success).isEqualTo("Created namespace " + requestBody.name);
+    }
+
+    private void publishExtension() throws IOException {
+        try (
+            var stream = getClass().getResourceAsStream("vsc-material-theme.vsix");
+        ) {
+            var bytes = ByteStreams.toByteArray(stream);
+            var response = restTemplate.postForEntity(apiCall("/api/-/publish?token={token}"),
+                    bytes, ExtensionJson.class, "test_token");
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().error).isNull();
+            assertThat(response.getBody().name).isEqualTo("vsc-material-theme");
+        }
+    }
+
+    private void getExtensionMetadata() {
+        var response = restTemplate.getForEntity(apiCall("/api/Equinusocio/vsc-material-theme"), ExtensionJson.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().description).isEqualTo("The most epic theme now for Visual Studio Code");
+    }
+
+    private void searchExtension() {
+        var response = restTemplate.getForEntity(apiCall("/api/-/search?query=material"), SearchResultJson.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().extensions.size()).isEqualTo(1);
+        assertThat(response.getBody().extensions.get(0).description)
+                .isEqualTo("The most epic theme now for Visual Studio Code");
     }
     
 }

@@ -22,6 +22,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 public class TestSearchConfig extends AbstractElasticsearchConfiguration {
 
     @Override
+    @SuppressWarnings("resource")
     public RestHighLevelClient elasticsearchClient() {
         var container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.8.6");
         container.start();

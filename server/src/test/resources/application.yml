@@ -20,3 +20,7 @@ spring:
             github:
               client-id: dummy-client-id
               client-secret: dummy-client-secret
+
+ovsx:
+  webui:
+    url: "https://test.openvsx.eclipse.org/"
