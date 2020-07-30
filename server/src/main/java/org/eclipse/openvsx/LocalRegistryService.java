@@ -105,8 +105,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null)
             throw new NotFoundException();
-        ExtensionJson json = toJson(extension.getLatest());
-        return json;
+        return toJson(extension.getLatest());
     }
 
     @Override
@@ -114,8 +113,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extVersion = findVersion(namespace, extensionName, version);
         if (extVersion == null)
             throw new NotFoundException();
-        ExtensionJson json = toJson(extVersion);
-        return json;
+        return toJson(extVersion);
     }
 
     private ExtensionVersion findVersion(String namespace, String extensionName, String version) {
@@ -285,7 +283,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         } else {
             if (repositories.findVersion(extVersion.getVersion(), extension) != null) {
                 throw new ErrorResultException(
-                        "Extension " + extension.getName()
+                        "Extension " + namespace.getName() + "." + extension.getName()
                         + " version " + extVersion.getVersion()
                         + " is already published.");
             }

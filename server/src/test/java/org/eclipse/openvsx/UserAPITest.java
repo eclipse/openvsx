@@ -430,7 +430,7 @@ public class UserAPITest {
         return principal;
     }
 
-    private static class MockPrincipal implements OAuth2User {
+    static class MockPrincipal implements OAuth2User {
 
         @Override
         public String getName() {

@@ -178,6 +178,8 @@ public class ExtensionVersion {
 
     public Map<String, String> getEnginesMap() {
         var engines = this.getEngines();
+        if (engines == null)
+            return null;
         var result = Maps.<String, String>newLinkedHashMapWithExpectedSize(engines.size());
         for (var engine : engines) {
             var split = engine.split("@");
