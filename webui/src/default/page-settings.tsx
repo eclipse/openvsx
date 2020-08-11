@@ -10,11 +10,12 @@
 
 import * as React from 'react';
 import { makeStyles } from '@material-ui/styles';
-import { Link, Typography, Theme } from '@material-ui/core';
+import { Link, Typography, Theme, Box } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import { PageSettings } from '../page-settings';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-container';
+import { InfoMenu } from './info-menu';
 import OpenVSXLogo from './openvsx-registry-logo';
 
 export default function createPageSettings(theme: Theme, prefersDarkMode: boolean): PageSettings {
@@ -26,9 +27,12 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
         }
     });
     const toolbarContent = () =>
-        <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
-            <OpenVSXLogo prefersDarkMode={prefersDarkMode} className={toolbarStyle().logo}/>
-        </RouteLink>;
+        <Box display='flex' alignItems='center' justifyContent='space-between' flex='1'>
+            <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
+                <OpenVSXLogo prefersDarkMode={prefersDarkMode} className={toolbarStyle().logo}/>
+            </RouteLink>
+            <InfoMenu />
+        </Box>;
 
     const footerStyle = makeStyles({
         repositoryLink: {
@@ -64,7 +68,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             searchHeader
         },
         metrics: {
-            maxFooterHeight: 85
+            maxFooterHeight: 50
         },
         urls: {
             extensionDefaultIcon: '/default-icon.png',

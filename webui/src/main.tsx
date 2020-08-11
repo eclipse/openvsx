@@ -65,50 +65,18 @@ const mainStyles = (theme: Theme) => createStyles({
 
 class MainComponent extends React.Component<MainComponent.Props, MainComponent.State> {
 
-    private scrollListener?: () => void;
-    private scrollTimeout?: number;
-
     constructor(props: MainComponent.Props) {
         super(props);
 
         this.state = {
             userLoading: true,
-            showNormalFooter: false,
-            showFixedFooter: true,
-            fadeFooter: false,
             error: '',
             isErrorDialogOpen: false
         };
     }
 
     componentDidMount(): void {
-        this.scrollListener = () => {
-            const element = document.scrollingElement;
-            if (!element) {
-                return;
-            }
-            clearTimeout(this.scrollTimeout);
-            const fixFooter = element.scrollTop === 0
-                && element.scrollHeight > element.clientHeight + this.getContentPadding();
-            if (fixFooter && this.state.showNormalFooter) {
-                this.setState({ showNormalFooter: false, showFixedFooter: true, fadeFooter: true });
-            } else if (!fixFooter && this.state.showFixedFooter) {
-                this.setState({ showNormalFooter: true, fadeFooter: true });
-                this.scrollTimeout = window.setTimeout(
-                    () => this.setState({ showFixedFooter: false, fadeFooter: false }),
-                    2000
-                );
-            }
-        };
-        document.addEventListener('scroll', this.scrollListener);
         this.updateUser();
-    }
-
-    componentWillUnmount(): void {
-        clearTimeout(this.scrollTimeout);
-        if (this.scrollListener) {
-            document.removeEventListener('scroll', this.scrollListener);
-        }
     }
 
     protected async updateUser() {
@@ -145,10 +113,10 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             <Box className={classes.main}>
                 <AppBar position='relative'>
                     <Toolbar classes={{ root: classes.spreadHorizontally }}>
-                        <Box className={classes.alignVertically}>
+                        <Box className={classes.alignVertically} flex='1'>
                             {ToolbarContent ? <ToolbarContent /> : null}
                         </Box>
-                        <Box display='flex' alignItems='center'>
+                        <Box className={classes.alignVertically}>
                             {
                                 this.state.user ?
                                     <UserAvatar
@@ -157,7 +125,10 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                         setError={this.handleError}
                                     />
                                     :
-                                    <IconButton href={this.props.service.getLoginUrl()} title='Log In'>
+                                    <IconButton
+                                        href={this.props.service.getLoginUrl()}
+                                        title='Log In'
+                                        aria-label='Log In' >
                                         <AccountBoxIcon />
                                     </IconButton>
                             }
@@ -216,22 +187,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                         : null
                 }
                 {
-                    FooterContent && this.state.showNormalFooter ?
+                    FooterContent ?
                         <footer className={classes.footer}>
-                            <FooterContent />
-                        </footer>
-                        : null
-                }
-                {
-                    FooterContent && this.state.showFixedFooter ?
-                        <footer className={
-                            this.state.fadeFooter ?
-                            `${classes.footer} ${classes.fixed} ${
-                                this.state.showNormalFooter ? classes.fadeOut : classes.fadeIn
-                            }`
-                            :
-                            `${classes.footer} ${classes.fixed}`
-                        }>
                             <FooterContent />
                         </footer>
                         : null
@@ -243,7 +200,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     protected getContentPadding(): number {
         const metrics = this.props.pageSettings.metrics;
         if (metrics && metrics.maxFooterHeight) {
-            return metrics.maxFooterHeight + 8;
+            return metrics.maxFooterHeight + 24;
         } else {
             return 0;
         }
@@ -259,9 +216,6 @@ export namespace MainComponent {
     export interface State {
         user?: UserData;
         userLoading: boolean;
-        showNormalFooter: boolean;
-        showFixedFooter: boolean;
-        fadeFooter: boolean;
         error: string;
         isErrorDialogOpen: boolean
     }

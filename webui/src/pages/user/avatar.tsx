@@ -10,7 +10,7 @@
 
 import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
-import { Theme, WithStyles, Avatar, Menu, Typography, MenuItem, Link, Divider } from '@material-ui/core';
+import { Theme, WithStyles, Avatar, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
 import { UserData, isError } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
@@ -19,7 +19,6 @@ import { ErrorResponse } from '../../server-request';
 
 const avatarStyle = (theme: Theme) => createStyles({
     avatar: {
-        cursor: 'pointer',
         width: '30px',
         height: '30px'
     },
@@ -74,27 +73,32 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
         this.setState({ open: false });
     };
 
-    render() {
+    render(): React.ReactElement {
+        const user = this.props.user;
         return <React.Fragment>
-            <Avatar
+            <IconButton
+                title={`Logged in as ${user.loginName}`}
+                aria-label='User Info'
                 onClick={this.handleAvatarClick}
-                src={this.props.user.avatarUrl}
-                alt={this.props.user.loginName}
-                variant='rounded'
-                classes={{ root: this.props.classes.avatar }}
-                ref={ref => this.avatarButton = ref} />
+                ref={ref => this.avatarButton = ref} >
+                <Avatar
+                    src={user.avatarUrl}
+                    alt={user.loginName}
+                    variant='rounded'
+                    classes={{ root: this.props.classes.avatar }} />
+            </IconButton>
             <Menu
                 open={this.state.open}
                 anchorEl={this.avatarButton}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 onClose={this.handleClose} >
                 <MenuItem className={this.props.classes.menuItem}>
-                    <Link href={this.props.user.homepage}>
+                    <Link href={user.homepage}>
                         <Typography variant='body2' color='textPrimary'>
                             Logged in as
                         </Typography>
                         <Typography variant='overline' color='textPrimary'>
-                            {this.props.user.loginName}
+                            {user.loginName}
                         </Typography>
                     </Link>
                 </MenuItem>
