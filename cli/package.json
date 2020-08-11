@@ -36,7 +36,7 @@
         "node": ">= 10"
     },
     "dependencies": {
-        "vsce": "^1.75.0"
+        "vsce": "~1.77.0"
     },
     "devDependencies": {
         "@types/node": "^10.14.18",
