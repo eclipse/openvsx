@@ -15,12 +15,14 @@ export interface PageSettings {
     pageTitle: string;
     themeType?: 'light' | 'dark';
     elements: {
-        toolbarContent?: React.FunctionComponent;
-        footerContent?: React.FunctionComponent;
-        searchHeader?: React.FunctionComponent;
-        reportAbuse?: React.FunctionComponent<{ extension: Extension } & Styleable>;
-        claimNamespace?: React.FunctionComponent<{ extension: Extension } & Styleable>;
-        additionalRoutes?: React.FunctionComponent;
+        toolbarContent?: React.ComponentType;
+        defaultMenuContent?: React.ComponentType;
+        mobileMenuContent?: React.ComponentType;
+        footerContent?: React.ComponentType;
+        searchHeader?: React.ComponentType;
+        reportAbuse?: React.ComponentType<{ extension: Extension } & Styleable>;
+        claimNamespace?: React.ComponentType<{ extension: Extension } & Styleable>;
+        additionalRoutes?: React.ComponentType;
     };
     metrics?: {
         maxFooterHeight?: number;
