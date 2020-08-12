@@ -9,11 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
+
+import org.junit.jupiter.api.Test;
 
 public class ExtensionProcessorTest {
 
@@ -23,22 +23,22 @@ public class ExtensionProcessorTest {
             var stream = getClass().getResourceAsStream("util/todo-tree.zip");
             var processor = new ExtensionProcessor(stream);
         ) {
-            assertEquals("Gruntfuggly", processor.getNamespace());
-            assertEquals("todo-tree", processor.getExtensionName());
+            assertThat(processor.getNamespace()).isEqualTo("Gruntfuggly");
+            assertThat(processor.getExtensionName()).isEqualTo("todo-tree");
 
             var metadata = processor.getMetadata();
-            assertEquals("0.0.160", metadata.getVersion());
-            assertEquals("Todo Tree", metadata.getDisplayName());
-            assertEquals("Show TODO, FIXME, etc. comment tags in a tree view", metadata.getDescription());
-            assertEquals(Arrays.asList("vscode@^1.5.0"), metadata.getEngines());
-            assertEquals(Arrays.asList("Other"), metadata.getCategories());
-            assertEquals(Arrays.asList("todo", "task", "tasklist", "multi-root ready"), metadata.getTags());
-            assertEquals("MIT", metadata.getLicense());
-            assertEquals("https://github.com/Gruntfuggly/todo-tree", metadata.getRepository());
+            assertThat(metadata.getVersion()).isEqualTo("0.0.160");
+            assertThat(metadata.getDisplayName()).isEqualTo("Todo Tree");
+            assertThat(metadata.getDescription()).isEqualTo("Show TODO, FIXME, etc. comment tags in a tree view");
+            assertThat(metadata.getEngines()).isEqualTo(Arrays.asList("vscode@^1.5.0"));
+            assertThat(metadata.getCategories()).isEqualTo(Arrays.asList("Other"));
+            assertThat(metadata.getTags()).isEqualTo(Arrays.asList("todo", "task", "tasklist", "multi-root ready"));
+            assertThat(metadata.getLicense()).isEqualTo("MIT");
+            assertThat(metadata.getRepository()).isEqualTo("https://github.com/Gruntfuggly/todo-tree");
             processor.getResources(metadata);
-            assertEquals("README.md", metadata.getReadmeFileName());
-            assertEquals("todo-tree.png", metadata.getIconFileName());
-            assertEquals("LICENSE.txt", metadata.getLicenseFileName());
+            assertThat(metadata.getReadmeFileName()).isEqualTo("README.md");
+            assertThat(metadata.getIconFileName()).isEqualTo("todo-tree.png");
+            assertThat(metadata.getLicenseFileName()).isEqualTo("LICENSE.txt");
         }
     }
 

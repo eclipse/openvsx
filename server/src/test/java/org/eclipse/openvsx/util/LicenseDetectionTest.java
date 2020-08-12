@@ -9,11 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.io.ByteStreams;
+
+import org.junit.jupiter.api.Test;
 
 public class LicenseDetectionTest {
 
@@ -21,7 +21,7 @@ public class LicenseDetectionTest {
     public void testInvalid() throws Exception {
         var detection = new LicenseDetection();
         var result = detection.detectLicense("This is a funny license.");
-        assertNull(result);
+        assertThat(result).isNull();;
     }
 
     @Test
@@ -32,7 +32,7 @@ public class LicenseDetectionTest {
             var bytes = ByteStreams.toByteArray(stream);
             var detection = new LicenseDetection();
             var result = detection.detectLicense(bytes);
-            assertEquals("MIT", result);
+            assertThat(result).isEqualTo("MIT");
         }
     }
 

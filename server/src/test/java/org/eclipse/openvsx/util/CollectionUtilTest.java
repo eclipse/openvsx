@@ -9,11 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.collect.Lists;
 
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class CollectionUtilTest {
 
@@ -21,7 +21,7 @@ public class CollectionUtilTest {
     public void testLimit() throws Exception {
         var source = Lists.newArrayList(1, 2, 3, 4, 5);
         var result = CollectionUtil.limit(source, 3);
-        assertEquals(Lists.newArrayList(1, 2, 3), result);
+        assertThat(result).isEqualTo(Lists.newArrayList(1, 2, 3));
     }
 
 }

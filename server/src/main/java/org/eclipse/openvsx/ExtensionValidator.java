@@ -14,6 +14,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -164,9 +165,7 @@ public class ExtensionValidator {
         if (Strings.isNullOrEmpty(value)) {
             return;
         }
-        try {
-            new URL(value);
-        } catch (MalformedURLException exc) {
+        if (!isURL(value)) {
             issues.add(new Issue("Invalid URL in field '" + field + "': " + value));
         }
     }
@@ -176,7 +175,10 @@ public class ExtensionValidator {
             return false;
         }
         try {
-            new URL(value);
+            if (value.startsWith("git+") && value.length() > 4)
+                new URL(value.substring(4));
+            else
+                new URL(value);
             return true;
         } catch (MalformedURLException exc) {
             return false;
@@ -188,8 +190,23 @@ public class ExtensionValidator {
 
         private final String message;
 
-        private Issue(String message) {
+        Issue(String message) {
             this.message = message;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Issue))
+                return false;
+            var other = (Issue) obj;
+            if (!Objects.equals(this.message, other.message))
+                return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return message.hashCode();
         }
 
         @Override

@@ -9,24 +9,24 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class UriUtilTest {
 
     @Test
     public void testApiUrl() throws Exception {
         var baseUrl = "http://localhost/";
-        assertEquals("http://localhost/api/foo/b%09a%2Fr",
-                UrlUtil.createApiUrl(baseUrl, "api", "foo", "b\ta/r"));
+        assertThat(UrlUtil.createApiUrl(baseUrl, "api", "foo", "b\ta/r"))
+                .isEqualTo("http://localhost/api/foo/b%09a%2Fr");
     }
 
     @Test
     public void testQuery() throws Exception {
         var url = "http://localhost/api/foo";
-        assertEquals("http://localhost/api/foo?a=1&c=b%09a%2Fr",
-                UrlUtil.addQuery(url, "a", "1", "b", null, "c", "b\ta/r"));
+        assertThat(UrlUtil.addQuery(url, "a", "1", "b", null, "c", "b\ta/r"))
+                .isEqualTo("http://localhost/api/foo?a=1&c=b%09a%2Fr");
     }
 
 }

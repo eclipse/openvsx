@@ -9,11 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.io.ByteStreams;
 
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class ArchiveUtilTest {
 
@@ -24,9 +24,9 @@ public class ArchiveUtilTest {
         ) {
             var bytes = ByteStreams.toByteArray(stream);
             var packageJson = ArchiveUtil.readEntry(bytes, "extension/package.json");
-            assertEquals(24052, packageJson.length);
+            assertThat(packageJson.length).isEqualTo(24052);
             var icon = ArchiveUtil.readEntry(bytes, "extension/resources/todo-tree.png");
-            assertEquals(8854, icon.length);
+            assertThat(icon.length).isEqualTo(8854);
         }
     }
 
