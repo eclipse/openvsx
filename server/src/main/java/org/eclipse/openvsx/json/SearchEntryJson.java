@@ -50,6 +50,9 @@ public class SearchEntryJson {
 
         public String url;
 
+        // key: file type (see constants in FileResource), value: url
+        public Map<String, String> files;
+
         public String version;
 
         public Map<String, String> engines;

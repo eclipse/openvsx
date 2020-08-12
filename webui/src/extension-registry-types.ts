@@ -40,6 +40,8 @@ export interface SearchEntry {
     timestamp?: string;
     allVersions: {
         url: UrlString;
+        // key: file type, value: url
+        files: { [id: string]: UrlString };
         version: string;
         // key: engine, value: version constraint
         engines?: { [engine: string]: string };

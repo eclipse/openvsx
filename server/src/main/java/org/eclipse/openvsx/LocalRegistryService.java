@@ -443,15 +443,17 @@ public class LocalRegistryService implements IExtensionRegistry {
         entry.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getIconFileName()));
         var allVersions = Lists.newArrayList(repositories.findVersions(extension));
         Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
-        entry.allVersions = CollectionUtil.map(allVersions, ev -> toVersionReference(ev, serverUrl));
+        entry.allVersions = CollectionUtil.map(allVersions, ev -> toVersionReference(ev, entry, serverUrl));
         return entry;
     }
 
-    private SearchEntryJson.VersionReference toVersionReference(ExtensionVersion extVersion, String serverUrl) {
+    private SearchEntryJson.VersionReference toVersionReference(ExtensionVersion extVersion, SearchEntryJson entry, String serverUrl) {
         var json = new SearchEntryJson.VersionReference();
         json.version = extVersion.getVersion();
         json.engines = extVersion.getEnginesMap();
-        json.url = createApiUrl(serverUrl, "api", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion());
+        json.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name, extVersion.getVersion());
+        json.files = new LinkedHashMap<>();
+        json.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", entry.namespace, entry.name, extVersion.getVersion(), "file", extVersion.getExtensionFileName()));
         return json;
     }
 
