@@ -24,6 +24,7 @@ import { PageSettings } from './page-settings';
 import { handleError } from './utils';
 import { ErrorDialog } from './components/error-dialog';
 import '../src/main.css';
+import { HeaderMenu } from './header-menu';
 
 const mainStyles = (theme: Theme) => createStyles({
     main: {
@@ -113,10 +114,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             <Box className={classes.main}>
                 <AppBar position='relative'>
                     <Toolbar classes={{ root: classes.spreadHorizontally }}>
-                        <Box className={classes.alignVertically} flex='1'>
+                        <Box className={classes.alignVertically}>
                             {ToolbarContent ? <ToolbarContent /> : null}
                         </Box>
                         <Box className={classes.alignVertically}>
+                            <HeaderMenu pageSettings={this.props.pageSettings} />
                             {
                                 this.state.user ?
                                     <UserAvatar
