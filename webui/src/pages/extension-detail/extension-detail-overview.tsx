@@ -10,6 +10,7 @@
 
 import * as React from 'react';
 import * as MarkdownIt from 'markdown-it';
+import * as MarkdownItAnchor from 'markdown-it-anchor';
 import * as DOMPurify from 'dompurify';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link, NativeSelect } from '@material-ui/core';
 import { RouteComponentProps, Link as RouteLink, withRouter } from 'react-router-dom';
@@ -79,6 +80,12 @@ const overviewStyles = (theme: Theme) => createStyles({
                 textDecoration: 'underline'
             }
         },
+        '& a.header-anchor': {
+            fontSize: '0.8em',
+            color: theme.palette.text.hint,
+            opacity: 0.5,
+            marginLeft: theme.spacing(0.5)
+        },
         '& img': {
             maxWidth: '100%'
         },
@@ -146,10 +153,14 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     constructor(props: ExtensionDetailOverview.Props) {
         super(props);
+        const anchorPlugin: MarkdownIt.PluginWithOptions<MarkdownItAnchor.AnchorOptions> = (MarkdownItAnchor as any).default;
         this.markdownIt = new MarkdownIt({
             html: true,
             linkify: true,
             typographer: true
+        }).use(anchorPlugin, {
+            permalink: true,
+            permalinkSymbol: '\uD83D\uDD17'
         });
         this.state = { loading: true };
     }
@@ -171,13 +182,23 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         if (this.props.extension.files.readme) {
             try {
                 const readme = await this.props.service.getExtensionReadme(this.props.extension);
-                this.setState({ readme, loading: false });
+                this.setState({ readme, loading: false }, () => this.scrollToHeading());
             } catch (err) {
                 this.props.handleError(err);
                 this.setState({ loading: false });
             }
         } else {
             this.setState({ readme: '## No README available', loading: false });
+        }
+    }
+
+    protected scrollToHeading() {
+        const anchor = location.hash;
+        if (anchor && anchor.length > 1) {
+            const heading = document.getElementById(anchor.substring(1));
+            if (heading) {
+                heading.scrollIntoView();
+            }
         }
     }
 
