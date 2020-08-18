@@ -10,20 +10,21 @@
 
 import * as React from 'react';
 import { makeStyles } from '@material-ui/styles';
-import { Link, Typography, Theme } from '@material-ui/core';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link, Typography, Theme, Box } from '@material-ui/core';
+import { Link as RouteLink, Route } from 'react-router-dom';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import { PageSettings } from '../page-settings';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-container';
 import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
+import About from './about';
 
 export default function createPageSettings(theme: Theme, prefersDarkMode: boolean): PageSettings {
     const toolbarStyle = makeStyles({
         logo: {
             width: 'auto',
             height: '40px',
-            marginTop: '7px'
+            marginTop: '8px'
         }
     });
     const toolbarContent = () =>
@@ -32,16 +33,43 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
         </RouteLink>;
 
     const footerStyle = makeStyles({
+        wrapper: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            [theme.breakpoints.down('sm')]: {
+                flexDirection: 'column'
+            }
+        },
+        link: {
+            textDecoration: 'none',
+            color: theme.palette.primary.main,
+            '&:hover': {
+                color: theme.palette.secondary.main,
+                textDecoration: 'none'
+            }
+        },
         repositoryLink: {
             display: 'flex',
             alignItems: 'center',
-            fontSize: '1.1rem'
+            fontSize: '1.1rem',
+            [theme.breakpoints.down('sm')]: {
+                marginBottom: theme.spacing(1)
+            }
         }
     });
     const footerContent = () =>
-        <Link target='_blank' href='https://github.com/eclipse/openvsx' className={footerStyle().repositoryLink}>
-            <GitHubIcon />&nbsp;eclipse/openvsx
-        </Link>;
+        <Box className={footerStyle().wrapper}>
+            <Link
+                target='_blank'
+                href='https://github.com/eclipse/openvsx'
+                className={`${footerStyle().link} ${footerStyle().repositoryLink}`} >
+                <GitHubIcon />&nbsp;eclipse/openvsx
+            </Link>
+            <RouteLink to='/about' className={footerStyle().link}>
+                About This Service
+            </RouteLink>
+        </Box>;
 
     const searchStyle = makeStyles({
         typography: {
@@ -56,6 +84,8 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             Extensions for VS Code Compatible Editors
         </Typography>;
 
+    const additionalRoutes = () => <Route path='/about' render={() => <About />} />;
+
     return {
         pageTitle: 'Open VSX Registry',
         themeType: prefersDarkMode ? 'dark' : 'light',
@@ -64,7 +94,8 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             defaultMenuContent: DefaultMenuContent,
             mobileMenuContent: MobileMenuContent,
             footerContent,
-            searchHeader
+            searchHeader,
+            additionalRoutes
         },
         metrics: {
             maxFooterHeight: 50

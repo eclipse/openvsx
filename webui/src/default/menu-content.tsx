@@ -11,23 +11,31 @@
 import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Typography, MenuItem, Link } from '@material-ui/core';
+import { Link as RouteLink } from 'react-router-dom';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import MenuBookIcon from '@material-ui/icons/MenuBook';
 import ForumIcon from '@material-ui/icons/Forum';
-
-//-------------------- Mobile View --------------------//
+import InfoIcon from '@material-ui/icons/Info';
 
 const menuContentStyle = (theme: Theme) => createStyles({
     headerItem: {
-        margin: theme.spacing(2)
-    },
-    headerLink: {
+        margin: theme.spacing(2.5),
+        color: theme.palette.text.primary,
+        textDecoration: 'none',
+        fontSize: '1.1rem',
+        fontFamily: theme.typography.fontFamily,
+        fontWeight: theme.typography.fontWeightLight,
+        letterSpacing: 1,
         '&:hover': {
-            color: theme.palette.secondary.main
+            color: theme.palette.secondary.main,
+            textDecoration: 'none'
         }
     },
     menuItem: {
-        cursor: 'auto'
+        cursor: 'auto',
+        '&>a': {
+            textDecoration: 'none'
+        }
     },
     itemIcon: {
         marginRight: theme.spacing(1),
@@ -40,6 +48,9 @@ const menuContentStyle = (theme: Theme) => createStyles({
     }
 });
 
+
+//-------------------- Mobile View --------------------//
+
 export class MobileMenuContentComponent extends React.Component<WithStyles<typeof menuContentStyle>> {
     render(): React.ReactElement {
         const classes = this.props.classes;
@@ -48,7 +59,7 @@ export class MobileMenuContentComponent extends React.Component<WithStyles<typeo
                 <Link target='_blank' href='https://github.com/eclipse/openvsx'>
                     <Typography variant='body2' color='textPrimary' className={classes.alignVertically}>
                         <GitHubIcon className={classes.itemIcon} />
-                        Repository
+                        Source Code
                     </Typography>
                 </Link>
             </MenuItem>
@@ -68,6 +79,14 @@ export class MobileMenuContentComponent extends React.Component<WithStyles<typeo
                     </Typography>
                 </Link>
             </MenuItem>
+            <MenuItem className={classes.menuItem}>
+                <RouteLink to='/about'>
+                    <Typography variant='body2' color='textPrimary' className={classes.alignVertically}>
+                        <InfoIcon className={classes.itemIcon} />
+                        About This Service
+                    </Typography>
+                </RouteLink>
+            </MenuItem>
         </React.Fragment>;
     }
 }
@@ -82,15 +101,14 @@ export class DefaultMenuConentComponent extends React.Component<WithStyles<typeo
         const classes = this.props.classes;
         return <React.Fragment>
             <Link href='https://github.com/eclipse/openvsx/wiki' className={classes.headerItem}>
-                <Typography variant='body1' color='textPrimary' className={classes.headerLink}>
-                    Documentation
-                </Typography>
+                Documentation
             </Link>
             <Link href='https://gitter.im/eclipse/openvsx' className={classes.headerItem}>
-                <Typography variant='body1' color='textPrimary' className={classes.headerLink}>
-                    Community Chat
-                </Typography>
+                Community
             </Link>
+            <RouteLink to='/about' className={classes.headerItem}>
+                About
+            </RouteLink>
         </React.Fragment>;
     }
 }
