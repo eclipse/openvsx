@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx;
+package org.eclipse.openvsx.web;
 
 import org.eclipse.openvsx.util.UrlUtil;
 import org.elasticsearch.common.Strings;
