@@ -1,3 +1,12 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
 package org.eclipse.openvsx;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -80,8 +89,8 @@ public class RegistryAPITest {
     @Test
     public void testPublicNamespace() throws Exception {
         var namespace = mockNamespace();
-        Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                .thenReturn(0l);
         
         mockMvc.perform(get("/api/{namespace}", "foobar"))
                 .andExpect(status().isOk())
@@ -96,12 +105,8 @@ public class RegistryAPITest {
         var namespace = mockNamespace();
         var user = new UserData();
         user.setLoginName("test_user");
-        var membership = new NamespaceMembership();
-        membership.setUser(user);
-        membership.setNamespace(namespace);
-        membership.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(Streamable.of(membership));
+        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                .thenReturn(1l);
 
         mockMvc.perform(get("/api/{namespace}", "foobar"))
                 .andExpect(status().isOk())
@@ -606,8 +611,8 @@ public class RegistryAPITest {
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
-        Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                .thenReturn(0l);
         Mockito.when(repositories.countActiveReviews(extension))
                 .thenReturn(0l);
         return extVersion;
@@ -741,8 +746,12 @@ public class RegistryAPITest {
             ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.of(ownerMem));
+            Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                    .thenReturn(1l);
             Mockito.when(repositories.findMembership(token.getUser(), namespace))
                     .thenReturn(ownerMem);
+            Mockito.when(repositories.countMemberships(token.getUser(), namespace))
+                    .thenReturn(1l);
         } else if (mode.equals("contributor")) {
             var otherUser = new UserData();
             otherUser.setLoginName("other_user");
@@ -756,8 +765,12 @@ public class RegistryAPITest {
             contribMem.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.of(ownerMem));
+            Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                    .thenReturn(1l);
             Mockito.when(repositories.findMembership(token.getUser(), namespace))
                     .thenReturn(contribMem);
+            Mockito.when(repositories.countMemberships(token.getUser(), namespace))
+                    .thenReturn(1l);
         } else if (mode.equals("privileged") || mode.equals("unrelated")) {
             var otherUser = new UserData();
             otherUser.setLoginName("other_user");
@@ -767,12 +780,16 @@ public class RegistryAPITest {
             ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.of(ownerMem));
+            Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                    .thenReturn(1l);
             if (mode.equals("privileged")) {
                 token.getUser().setRole(UserData.ROLE_PRIVILEGED);
             }
         } else {
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.empty());
+            Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                    .thenReturn(0l);
         }
     }
 

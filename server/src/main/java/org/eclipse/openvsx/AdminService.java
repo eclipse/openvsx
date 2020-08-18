@@ -160,6 +160,9 @@ public class AdminService {
         } else {
             result = users.addNamespaceMember(namespace, user, role);
         }
+        for (var extension : repositories.findExtensions(namespace)) {
+            search.updateSearchEntry(extension);
+        }
         logAdminAction(admin, result);
         return result;
     }

@@ -96,8 +96,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private String getAccessString(Namespace namespace) {
-        var ownerships = repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER);
-        return ownerships.isEmpty() ? NamespaceJson.PUBLIC_ACCESS : NamespaceJson.RESTRICTED_ACCESS;
+        var ownerships = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER);
+        return ownerships == 0 ? NamespaceJson.PUBLIC_ACCESS : NamespaceJson.RESTRICTED_ACCESS;
     }
 
     @Override
@@ -510,8 +510,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             return false;
         var user = extVersion.getPublishedWith().getUser();
         var namespace = extVersion.getExtension().getNamespace();
-        var membership = repositories.findMembership(user, namespace);
-        return membership == null;
+        var memberships = repositories.countMemberships(user, namespace);
+        return memberships == 0;
     }
 
 }

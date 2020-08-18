@@ -150,8 +150,16 @@ public class RepositoryService {
         return membershipRepo.findByUserAndNamespace(user, namespace);
     }
 
+    public long countMemberships(UserData user, Namespace namespace) {
+        return membershipRepo.countByUserAndNamespace(user, namespace);
+    }
+
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace, String role) {
         return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
+    }
+
+    public long countMemberships(Namespace namespace, String role) {
+        return membershipRepo.countByNamespaceAndRoleIgnoreCase(namespace, role);
     }
 
     public Streamable<NamespaceMembership> findMemberships(UserData user, String role) {

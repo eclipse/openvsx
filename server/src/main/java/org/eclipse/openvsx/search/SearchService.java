@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -63,8 +64,10 @@ public class SearchService {
     double downloadsRelevance;
     @Value("${ovsx.elasticsearch.relevance.timestamp:1.0}")
     double timestampRelevance;
-    @Value("${ovsx.elasticsearch.relevance.builtin:0.5}")
-    double builtinRelevance;
+    @Value("${ovsx.elasticsearch.relevance.public:0.8}")
+    double publicRelevance;
+    @Value("${ovsx.elasticsearch.relevance.unrelated:0.5}")
+    double unrelatedRelevance;
 
     public boolean isEnabled() {
         return enableSearch;
@@ -150,9 +153,11 @@ public class SearchService {
                 + downloadsRelevance * limit(downloadsValue)
                 + timestampRelevance * limit(timestampValue);
 
-        // Reduce the relevance value of built-in extensions to show other results first
-        if ("vscode".equals(entry.namespace)) {
-            entry.relevance *= builtinRelevance;
+        // Reduce the relevance value of extensions with unrelated publisher or public namespace
+        if (isPublicNamespace(extension)) {
+            entry.relevance *= publicRelevance;
+        } else if (isUnrelatedPublisher(extension)) {
+            entry.relevance *= unrelatedRelevance;
         }
     
         if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
@@ -179,6 +184,22 @@ public class SearchService {
 
     private double saturate(double value, double factor) {
         return 1 - 1.0 / (value * factor + 1);
+    }
+
+    private boolean isPublicNamespace(Extension extension) {
+        var namespace = extension.getNamespace();
+        var ownerships = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER);
+        return ownerships == 0;
+    }
+
+    private boolean isUnrelatedPublisher(Extension extension) {
+        var extVersion = extension.getLatest();
+        if (extVersion.getPublishedWith() == null)
+            return false;
+        var user = extVersion.getPublishedWith().getUser();
+        var namespace = extension.getNamespace();
+        var memberships = repositories.countMemberships(user, namespace);
+        return memberships == 0;
     }
 
     public Page<ExtensionSearch> search(String queryString, String category, Pageable pageRequest, String sortOrder, String sortBy) {
