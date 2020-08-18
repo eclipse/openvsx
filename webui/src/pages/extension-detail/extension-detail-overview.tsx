@@ -27,6 +27,7 @@ import { ExtensionListRoutes } from '../extension-list/extension-list-container'
 import { PageSettings } from '../../page-settings';
 import { ExtensionDetailRoutes } from './extension-detail';
 import { ErrorResponse } from '../../server-request';
+import linkIcon from '../../components/link-icon';
 
 const overviewStyles = (theme: Theme) => createStyles({
     overview: {
@@ -81,10 +82,12 @@ const overviewStyles = (theme: Theme) => createStyles({
             }
         },
         '& a.header-anchor': {
-            fontSize: '0.8em',
-            color: theme.palette.text.hint,
-            opacity: 0.5,
-            marginLeft: theme.spacing(0.5)
+            fill: theme.palette.text.hint,
+            opacity: 0.4,
+            marginLeft: theme.spacing(0.5),
+            '&:hover': {
+                opacity: 1
+            }
         },
         '& img': {
             maxWidth: '100%'
@@ -160,7 +163,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             typographer: true
         }).use(anchorPlugin, {
             permalink: true,
-            permalinkSymbol: '\uD83D\uDD17'
+            permalinkSymbol: linkIcon({ x: 0, y: 0, width: 24, height: 10 })
         });
         this.state = { loading: true };
     }
