@@ -1,6 +1,6 @@
 {
     "name": "openvsx-webui",
-    "version": "0.0.0",
+    "version": "0.1.0-next.318d238",
     "description": "User interface for Eclipse Open VSX",
     "keywords": [
         "react",
@@ -42,10 +42,12 @@
         "dompurify": "^2.0.12",
         "markdown-it": "^11.0.0",
         "markdown-it-anchor": "^5.3.0",
+        "mocha": "^8.1.1",
         "react": "^16.13.1",
         "react-dom": "^16.13.1",
         "react-infinite-scroller": "^1.2.4",
-        "react-router-dom": "^5.2.0"
+        "react-router-dom": "^5.2.0",
+        "ts-mocha": "^7.0.0"
     },
     "peerDependencies": {
         "express": "^4.17.1"
@@ -70,11 +72,9 @@
         "eslint": "^7.4.0",
         "eslint-plugin-react": "^7.20.3",
         "express": "^4.17.1",
-        "mocha": "^8.0.1",
         "source-map-loader": "^0.2.4",
         "style-loader": "^1.1.4",
         "ts-loader": "^8.0.1",
-        "ts-node": "^8.10.2",
         "typescript": "3.8.3",
         "webpack": "^4.42.1",
         "webpack-bundle-analyzer": "^3.8.0",
@@ -83,7 +83,7 @@
     "scripts": {
         "clean": "rimraf lib",
         "build": "tsc -p ./tsconfig.json && yarn run lint",
-        "test": "mocha --config ./configs/mocharc.json",
+        "test": "ts-mocha --project ./configs/test.tsconfig.json --config ./configs/mocharc.json",
         "lint": "eslint -c ./configs/eslintrc.json --ext .ts,.tsx src",
         "watch": "tsc -w -p ./tsconfig.json",
         "prepare": "yarn run clean && yarn run build",
