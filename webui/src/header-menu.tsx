@@ -30,14 +30,14 @@ export const HeaderMenu: React.FunctionComponent<{ pageSettings: PageSettings; }
     }
 };
 
-export class MobileHeaderMenuComponent extends React.Component<MobileHeaderMenuComponent.Props, MobileHeaderMenuComponent.State> {
+export class MobileHeaderMenuComponent extends React.Component<MobileHeaderMenu.Props, MobileHeaderMenu.State> {
 
-    constructor(props: MobileHeaderMenuComponent.Props) {
+    constructor(props: MobileHeaderMenu.Props) {
         super(props);
         this.state = { open: false };
     }
 
-    componentDidUpdate(prevProps: MobileHeaderMenuComponent.Props): void {
+    componentDidUpdate(prevProps: MobileHeaderMenu.Props): void {
         const currProps = this.props;
         if (currProps.location !== prevProps.location) {
             this.setState({ open: false });
@@ -67,7 +67,7 @@ export class MobileHeaderMenuComponent extends React.Component<MobileHeaderMenuC
     }
 }
 
-export namespace MobileHeaderMenuComponent {
+export namespace MobileHeaderMenu {
     export interface Props extends RouteComponentProps {
         menuContent: React.ComponentType;
     }

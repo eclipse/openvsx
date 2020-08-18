@@ -3,6 +3,7 @@
 /* eslint-disable no-undef */
 const webpack = require('webpack');
 const path = require('path');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 /** @type {webpack.Configuration} */
 const config = {
@@ -45,7 +46,11 @@ const config = {
             /\.js$/,
             /\.d\.ts$/
         ]),
-        new webpack.ProgressPlugin()
+        new webpack.ProgressPlugin(),
+        new BundleAnalyzerPlugin({
+            analyzerMode: 'static',
+            reportFilename: 'webpack-report.html'
+        })
     ]
 };
 module.exports = config;

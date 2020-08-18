@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 import * as React from 'react';
-import copy = require('clipboard-copy');
+import copy from 'clipboard-copy';
 import { Tooltip, TooltipProps } from '@material-ui/core';
 
 interface ChildProps {
