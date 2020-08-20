@@ -11,9 +11,18 @@ package org.eclipse.openvsx.json;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "ReviewList",
+    description = "List of reviews of an extension"
+)
 @JsonInclude(Include.NON_NULL)
 public class ReviewListJson extends ResultJson {
 
@@ -23,10 +32,15 @@ public class ReviewListJson extends ResultJson {
         return info;
     }
 
+    @ApiModelProperty(hidden = true)
+    @NotNull
     public String postUrl;
 
+    @ApiModelProperty(hidden = true)
+    @NotNull
     public String deleteUrl;
 
+    @NotNull
     public List<ReviewJson> reviews;
 
 }

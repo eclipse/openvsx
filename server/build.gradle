@@ -13,6 +13,7 @@ plugins {
 def versions = [
     java: '11',
     flyway: '6.3.3',
+    springfox: '3.0.0',
     spdx: '2.2.1',
     guava: '28.2-jre',
     junit: '5.6.2',
@@ -47,6 +48,7 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
+    implementation "io.springfox:springfox-boot-starter:${versions.springfox}"
     implementation "com.google.guava:guava:${versions.guava}"
     implementation("org.spdx:spdx-tools:${versions.spdx}") {
         exclude group: 'net.sf.saxon'

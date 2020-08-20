@@ -9,11 +9,18 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "User",
+    description = "User data"
+)
 @JsonInclude(Include.NON_NULL)
 public class UserJson extends ResultJson {
 
@@ -23,22 +30,26 @@ public class UserJson extends ResultJson {
         return user;
     }
 
+    @ApiModelProperty("Login name")
+    @NotNull
     public String loginName;
 
+    @ApiModelProperty(hidden = true)
     public String tokensUrl;
 
+    @ApiModelProperty(hidden = true)
     public String createTokenUrl;
 
-    @Nullable
+    @ApiModelProperty("Full name")
     public String fullName;
 
-    @Nullable
+    @ApiModelProperty("URL to the user's avatar image")
     public String avatarUrl;
 
-    @Nullable
+    @ApiModelProperty("URL to the user's profile page")
     public String homepage;
 
-    @Nullable
+    @ApiModelProperty("Authentication provider (e.g. github)")
     public String provider;
 
 }

@@ -12,11 +12,19 @@ package org.eclipse.openvsx.json;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nullable;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "Extension",
+    description = "Metadata of an extension"
+)
 @JsonInclude(Include.NON_NULL)
 public class ExtensionJson extends ResultJson {
 
@@ -26,91 +34,108 @@ public class ExtensionJson extends ResultJson {
         return info;
     }
 
+    @ApiModelProperty("URL to get metadata of the extension's namespace")
+    @NotNull
     public String namespaceUrl;
 
+    @ApiModelProperty("URL to get the list of reviews of this extension")
+    @NotNull
     public String reviewsUrl;
 
-    // key: file type (see constants in FileResource), value: url
+    @ApiModelProperty("Map of file types (download, manifest, icon, readme, license) to their respective URLs")
     public Map<String, String> files;
 
+    @ApiModelProperty("Name of the extension")
+    @NotNull
     public String name;
 
+    @ApiModelProperty("Namespace of the extension")
+    @NotNull
     public String namespace;
 
+    @ApiModelProperty("Selected version, or the latest version if none was specified")
+    @NotNull
     public String version;
 
+    @ApiModelProperty("Data of the user who published this version")
+    @NotNull
     public UserJson publishedBy;
 
+    @ApiModelProperty("The value 'true' means the extension's namespace is restricted, but the publishing user is not a member of that namespace")
+    @NotNull
     public boolean unrelatedPublisher;
 
-    // see constants in NamespaceJson
+    @ApiModelProperty(value = "Access level of the extension's namespace", allowableValues = "public,restricted")
+    @NotNull
     public String namespaceAccess;
 
-    // key: version, value: url
+    @ApiModelProperty("Map of available versions to their metadata URLs")
     public Map<String, String> allVersions;
 
-    @Nullable
+    @ApiModelProperty(value = "Average rating", allowableValues = "range[0,5]")
     public Double averageRating;
 
+    @ApiModelProperty("Number of downloads of the extension package")
+    @Min(0)
     public int downloadCount;
 
+    @ApiModelProperty("Number of reviews")
+    @Min(0)
     public long reviewCount;
 
-    // latest or preview
+    @ApiModelProperty("Available version aliases ('latest' or 'preview')")
     public List<String> versionAlias;
 
+    @ApiModelProperty("Date and time when this version was published (ISO-8601)")
+    @NotNull
     public String timestamp;
 
-    @Nullable
+    @ApiModelProperty("Indicates whether this is a preview version")
     public Boolean preview;
 
-    @Nullable
+    @ApiModelProperty("Name to be displayed in user interfaces")
     public String displayName;
 
-    @Nullable
     public String description;
 
-    @Nullable
-    // key: engine, value: version constraint
+    @ApiModelProperty("Map of engine names to the respective version constraints")
     public Map<String, String> engines;
 
-    @Nullable
     public List<String> categories;
 
-    @Nullable
     public List<String> tags;
 
-    @Nullable
+    @ApiModelProperty("License identifier")
     public String license;
 
-    @Nullable
+    @ApiModelProperty("URL of the extension's homepage")
     public String homepage;
 
-    @Nullable
+    @ApiModelProperty("URL of the extension's source repository")
     public String repository;
 
-    @Nullable
+    @ApiModelProperty("URL of the extension's bug tracker")
     public String bugs;
 
-    @Nullable
+    @ApiModelProperty(value = "Markdown rendering engine to use in user interfaces", allowableValues = "standard,github")
     public String markdown;
 
-    @Nullable
+    @ApiModelProperty("CSS color to use as background in user interfaces")
     public String galleryColor;
 
-    @Nullable
+    @ApiModelProperty(value = "Theme type for user interfaces", allowableValues = "light,dark")
     public String galleryTheme;
 
-    @Nullable
+    @ApiModelProperty("URL of the extension's Q&A page")
     public String qna;
 
-    @Nullable
+    @ApiModelProperty("List of badges to display in user interfaces")
     public List<BadgeJson> badges;
 
-    @Nullable
+    @ApiModelProperty("List of dependencies to other extensions")
     public List<ExtensionReferenceJson> dependencies;
 
-    @Nullable
+    @ApiModelProperty("List of extensions bundled with this extension")
     public List<ExtensionReferenceJson> bundledExtensions;
 
 }

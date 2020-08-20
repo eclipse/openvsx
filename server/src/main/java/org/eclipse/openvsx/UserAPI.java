@@ -34,6 +34,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -114,9 +115,9 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Transactional(rollbackOn = ResponseStatusException.class)
-    public AccessTokenJson createAccessToken(@RequestParam(required = false) String description) {
+    public ResponseEntity<AccessTokenJson> createAccessToken(@RequestParam(required = false) String description) {
         if (description != null && description.length() > TOKEN_DESCRIPTION_SIZE) {
-            return AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
+            return ResponseEntity.ok(AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters."));
         }
         var principal = users.getOAuth2Principal();
         if (principal == null) {
@@ -135,7 +136,7 @@ public class UserAPI {
         json.value = token.getValue();
         var serverUrl = UrlUtil.getBaseUrl();
         json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId()));
-        return json;
+        return new ResponseEntity<>(json, HttpStatus.CREATED);
     }
 
     @PostMapping(

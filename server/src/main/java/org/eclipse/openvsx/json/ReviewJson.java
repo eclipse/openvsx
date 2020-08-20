@@ -9,24 +9,40 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import javax.annotation.Nullable;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "Review",
+    description = "A review of an extension"
+)
 @JsonInclude(Include.NON_NULL)
 public class ReviewJson {
 
+    @ApiModelProperty("Data of the user who posted this review")
+    @NotNull
     public UserJson user;
 
+    @ApiModelProperty("Date and time when this review was posted (ISO-8601)")
+    @NotNull
     public String timestamp;
 
-    @Nullable
+    @ApiModelProperty(hidden = true)
     public String title;
 
-    @Nullable
     public String comment;
 
+    @ApiModelProperty(value = "Number of stars")
+    @NotNull
+    @Min(0)
+    @Max(5)
     public int rating;
 
 }

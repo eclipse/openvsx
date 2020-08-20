@@ -257,7 +257,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foobar"; })))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(successJson("Created namespace foobar")));
     }
     
@@ -314,7 +314,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
@@ -355,7 +355,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
@@ -373,7 +373,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
@@ -391,7 +391,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
@@ -464,7 +464,7 @@ public class RegistryAPITest {
                 .content(reviewJson(r -> {
                     r.rating = 3;
                 })).with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(successJson("Added review for foo.bar")));
     }
     

@@ -11,9 +11,19 @@ package org.eclipse.openvsx.json;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "SearchResult",
+    description = "List of extensions matching a search query"
+)
 @JsonInclude(Include.NON_NULL)
 public class SearchResultJson extends ResultJson {
 
@@ -23,10 +33,18 @@ public class SearchResultJson extends ResultJson {
         return result;
     }
 
+    @ApiModelProperty("Number of skipped entries according to the search query")
+    @NotNull
+    @Min(0)
     public int offset;
 
+    @ApiModelProperty("Total number of entries that match the search query")
+    @NotNull
+    @Min(0)
     public int totalSize;
 
+    @ApiModelProperty("List of matching entries, limited to the size specified in the search query")
+    @NotNull
     public List<SearchEntryJson> extensions;
 
 }

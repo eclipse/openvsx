@@ -9,11 +9,19 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import javax.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "Result",
+    description = "Generic result indicator",
+    subTypes = {
+        ExtensionJson.class, NamespaceJson.class, ReviewListJson.class, SearchResultJson.class, UserJson.class
+    }
+)
 @JsonInclude(Include.NON_NULL)
 public class ResultJson {
 
@@ -29,10 +37,10 @@ public class ResultJson {
         return result;
     }
 
-    @Nullable
+    @ApiModelProperty("Indicates success of the operation (omitted if a more specific result type is returned)")
     public String success;
 
-    @Nullable
+    @ApiModelProperty("Indicates an error; when this is present, all other properties should be ignored")
     public String error;
 
 }

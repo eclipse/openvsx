@@ -11,9 +11,18 @@ package org.eclipse.openvsx.json;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "Namespace",
+    description = "Metadata of a namespace"
+)
 @JsonInclude(Include.NON_NULL)
 public class NamespaceJson extends ResultJson {
 
@@ -26,14 +35,20 @@ public class NamespaceJson extends ResultJson {
         return result;
     }
 
+    @ApiModelProperty("Name of the namespace")
+    @NotNull
     public String name;
 
+    @ApiModelProperty("Map of extension names to their metadata URLs (not required for creating)")
     public Map<String, String> extensions;
 
+    @ApiModelProperty(value = "Access level of the namespace (not required for creating)", allowableValues = "public,restricted")
     public String access;
 
+    @ApiModelProperty(hidden = true)
     public String membersUrl;
 
+    @ApiModelProperty(hidden = true)
     public String roleUrl;
 
 }

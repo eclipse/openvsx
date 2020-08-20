@@ -109,7 +109,7 @@ public class UserAPITest {
         mockUserData();
         Mockito.doReturn("foobar").when(users).generateTokenValue();
         mockMvc.perform(post("/user/token/create?description={description}", "This is my token").with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(accessTokenJson(t -> {
                     t.value = "foobar";
                     t.description = "This is my token";

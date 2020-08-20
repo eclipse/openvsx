@@ -10,16 +10,22 @@
 package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-/**
- * A badge to be shown in the sidebar of the extension page in the marketplace.
- */
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;;
+
+@ApiModel(
+    value = "Badge",
+    description = "A badge to be shown in the sidebar of the extension page in the registry"
+)
 @JsonInclude(Include.NON_NULL)
 public class BadgeJson {
 
+    @ApiModelProperty("Image URL of the badge")
     public String url;
 
+    @ApiModelProperty("The link users will follow when clicking the badge")
     public String href;
 
     public String description;

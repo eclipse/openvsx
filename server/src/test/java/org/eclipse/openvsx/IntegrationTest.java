@@ -63,7 +63,7 @@ public class IntegrationTest {
         requestBody.name = "Equinusocio";
         var response = restTemplate.postForEntity(apiCall("/api/-/namespace/create?token={token}"), requestBody,
                 ResultJson.class, "test_token");
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody().error).isNull();
         assertThat(response.getBody().success).isEqualTo("Created namespace " + requestBody.name);
     }
@@ -75,7 +75,7 @@ public class IntegrationTest {
             var bytes = ByteStreams.toByteArray(stream);
             var response = restTemplate.postForEntity(apiCall("/api/-/publish?token={token}"),
                     bytes, ExtensionJson.class, "test_token");
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
             assertThat(response.getBody().error).isNull();
             assertThat(response.getBody().name).isEqualTo("vsc-material-theme");
         }
