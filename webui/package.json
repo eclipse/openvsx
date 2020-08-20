@@ -82,7 +82,7 @@
     },
     "scripts": {
         "clean": "rimraf lib",
-        "build": "tsc -p ./tsconfig.json && yarn run lint",
+        "build": "tsc -p ./tsconfig.json && tsc -p ./configs/server.tsconfig.json && yarn run lint",
         "test": "ts-mocha --project ./configs/test.tsconfig.json --config ./configs/mocharc.json",
         "lint": "eslint -c ./configs/eslintrc.json --ext .ts,.tsx src",
         "watch": "tsc -w -p ./tsconfig.json",
