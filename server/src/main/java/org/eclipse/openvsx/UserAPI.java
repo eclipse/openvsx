@@ -155,7 +155,7 @@ public class UserAPI {
             return ResultJson.error("Token does not exist.");
         }
         token.setActive(false);
-        return ResultJson.success("Deleted access token for user " + user.getLoginName());
+        return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
     }
 
     @GetMapping(
@@ -213,7 +213,6 @@ public class UserAPI {
         path = "/user/namespace/{namespace}/role",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional(rollbackOn = ResponseStatusException.class)
     public ResultJson setNamespaceMember(@PathVariable String namespace, @RequestParam String user,
             @RequestParam String role, @RequestParam(required = false) String provider) {
         var principal = users.getOAuth2Principal();

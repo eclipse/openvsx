@@ -155,10 +155,10 @@ public class UserService {
     public ResultJson removeNamespaceMember(Namespace namespace, UserData user) throws ErrorResultException {
         var membership = repositories.findMembership(user, namespace);
         if (membership == null) {
-            throw new ErrorResultException("User " + user.getLoginName() + " is not a member of " + namespace.getName());
+            throw new ErrorResultException("User " + user.getLoginName() + " is not a member of " + namespace.getName() + ".");
         }
         entityManager.remove(membership);
-        return ResultJson.success("Removed " + user.getLoginName() + " from namespace " + namespace.getName());
+        return ResultJson.success("Removed " + user.getLoginName() + " from namespace " + namespace.getName() + ".");
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -169,15 +169,18 @@ public class UserService {
         }
         var membership = repositories.findMembership(user, namespace);
         if (membership != null) {
+            if (role.equals(membership.getRole())) {
+                throw new ErrorResultException("User " + user.getLoginName() + " already has the role " + role + ".");
+            }
             membership.setRole(role);
-            return ResultJson.success("Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role);
+            return ResultJson.success("Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role + ".");
         }
         membership = new NamespaceMembership();
         membership.setNamespace(namespace);
         membership.setUser(user);
         membership.setRole(role);
         entityManager.persist(membership);
-        return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName());
+        return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName() + ".");
     }
 
 }

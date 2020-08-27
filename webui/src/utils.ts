@@ -92,11 +92,17 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
             }
             return `An unexpected error occurred: ${err.message}`;
         } else if (err.error && err.status && err.message) {
-            return `The server responded with an error: ${err.error} (status ${err.status}, ${err.message})`;
+            return `${err.error} (status ${err.status}: ${err.message})`;
         } else if (err.error && err.status) {
-            return `The server responded with an error: ${err.error} (status ${err.status})`;
+            return `${err.error} (status ${err.status})`;
+        } else if (err.error && err.message) {
+            return `${err.error} (${err.message})`;
         } else if (err.error) {
-            return `The server responded with an error: ${err.error}`;
+            return err.error;
+        } else if (err.status && err.message) {
+            return `Status ${err.status}: ${err.message}`;
+        } else if (err.message) {
+            return err.message;
         }
     }
     return 'An unexpected error occurred.';

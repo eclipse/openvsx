@@ -11,7 +11,7 @@
 import * as React from 'react';
 import { Box, Typography, Avatar, Select, MenuItem, Button, Theme, createStyles } from '@material-ui/core';
 import { withStyles, WithStyles } from '@material-ui/styles';
-import { NamespaceMembership, MembershipRole, UserData, isError, Namespace } from '../../extension-registry-types';
+import { NamespaceMembership, MembershipRole, UserData, Namespace } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ErrorResponse } from '../../server-request';
 
@@ -50,65 +50,46 @@ const memberStyle = (theme: Theme) => createStyles({
     }
 });
 
-class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.Props, UserNamespaceMember.State> {
-
-    constructor(props: UserNamespaceMember.Props) {
-        super(props);
-
-        this.state = {
-            role: this.props.member.role
-        };
-    }
-
-    protected changeRole = (event: React.ChangeEvent<{ value: unknown }>) => this.doChangeRole(event.target.value as MembershipRole);
-    protected async doChangeRole(role: MembershipRole): Promise<void> {
-        try {
-            const endpoint = this.props.namespace.roleUrl;
-            const membership = this.props.member;
-            const result = await this.props.service.setNamespaceMember(endpoint, membership.user, role);
-            if (isError(result)) {
-                throw (result);
-            }
-            this.setState({ role });
-        } catch (err) {
-            this.props.handleError(err);
-        }
-    }
-
+class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.Props> {
     render(): React.ReactNode {
-        return <Box key={'member:' + this.props.member.user.loginName} p={2} display='flex' alignItems='center'>
+        const memberUser = this.props.member.user;
+        return <Box key={'member:' + memberUser.loginName} p={2} display='flex' alignItems='center'>
             <Box alignItems='center' overflow='auto' width='33%'>
-                <Typography classes={{ root: this.props.classes.memberName }}>{this.props.member.user.loginName}</Typography>
-                {this.props.member.user.fullName ? <Typography variant='body2'>{this.props.member.user.fullName}</Typography> : ''}
+                <Typography classes={{ root: this.props.classes.memberName }}>{memberUser.loginName}</Typography>
+                {memberUser.fullName ? <Typography variant='body2'>{memberUser.fullName}</Typography> : ''}
             </Box>
             {
-                this.props.member.user.avatarUrl ?
+                memberUser.avatarUrl ?
                     <Box display='flex' alignItems='center'>
-                        <Avatar src={this.props.member.user.avatarUrl}></Avatar>
+                        <Avatar src={memberUser.avatarUrl}></Avatar>
                     </Box>
                     : ''
             }
             <Box className={this.props.classes.buttonContainer}>
                 {
-                    this.props.member.user.loginName === this.props.user.loginName && this.props.member.user.provider === this.props.user.provider ?
+                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider ?
                         '' :
                         <Box m={1}>
-                            <Select variant='outlined' classes={{ outlined: this.props.classes.selectOutlined }} value={this.state.role} onChange={this.changeRole}>
+                            <Select
+                                variant='outlined'
+                                classes={{ outlined: this.props.classes.selectOutlined }}
+                                value={this.props.member.role}
+                                onChange={(event: React.ChangeEvent<{ value: MembershipRole }>) => this.props.onChangeRole(event.target.value)}>
                                 <MenuItem value='contributor'>Contributor</MenuItem>
                                 <MenuItem value='owner'>Owner</MenuItem>
                             </Select>
                         </Box>
                 }
                 {
-                    this.props.member.user.loginName === this.props.user.loginName && this.props.member.user.provider === this.props.user.provider ?
+                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider ?
                         <Box className={this.props.classes.owner}>
                             Owner
                         </Box>
                         :
                         <Button
                             variant='outlined'
-                            onClick={() => this.props.onRemoveUser(this.props.member)}
-                            classes={{ root: this.props.classes.deleteBtn }}>
+                            classes={{ root: this.props.classes.deleteBtn }}
+                            onClick={() => this.props.onRemoveUser()}>
                             Delete
                         </Button>
                 }
@@ -123,11 +104,9 @@ export namespace UserNamespaceMember {
         member: NamespaceMembership;
         user: UserData;
         service: ExtensionRegistryService;
-        onRemoveUser: (member: NamespaceMembership) => void;
+        onChangeRole: (role: MembershipRole) => void;
+        onRemoveUser: () => void;
         handleError: (err: Error | Partial<ErrorResponse>) => void;
-    }
-    export interface State {
-        role: MembershipRole
     }
 }
 

@@ -17,7 +17,7 @@ import {
     TextField, DialogActions, Popper,
     Fade, Tabs, Tab, useTheme, useMediaQuery, Link
 } from '@material-ui/core';
-import { UserData, Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
+import { UserData, Namespace, NamespaceMembership, isError, MembershipRole } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { makeStyles } from '@material-ui/styles';
 import { UserNamespaceMember } from './user-namespace-member-component';
@@ -181,6 +181,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                                             member={member}
                                             user={this.props.user}
                                             service={this.props.service}
+                                            onChangeRole={role => this.changeRole(member, role)}
                                             onRemoveUser={() => this.removeUser(member)}
                                             handleError={this.props.handleError} />)}
                                 </Paper>
@@ -277,37 +278,62 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
         </React.Fragment>;
     }
 
-    protected async addUser(user: UserData) {
+    protected async addUser(user: UserData): Promise<void> {
         try {
-            if (this.state.chosenNamespace) {
-                const endpoint = this.state.chosenNamespace.roleUrl;
-                const result = await this.props.service.setNamespaceMember(endpoint, user, 'contributor');
-                if (isError(result)) {
-                    throw result;
-                }
-                this.setState({ loading: true });
-                const members = await this.props.service.getNamespaceMembers(this.state.chosenNamespace);
-                this.setState({ members, loading: false });
-                this.doCloseAddDialog();
+            if (!this.state.chosenNamespace) {
+                return;
             }
+            if (this.state.members.find(m => m.user.loginName === user.loginName && m.user.provider === user.provider)) {
+                this.setState({ showUserPopper: false });
+                this.props.handleError({ message: `User ${user.loginName} is already a member of ${this.state.chosenNamespace.name}.` });
+                return;
+            }
+            this.setState({ loading: true });
+            const endpoint = this.state.chosenNamespace.roleUrl;
+            const result = await this.props.service.setNamespaceMember(endpoint, user, 'contributor');
+            if (isError(result)) {
+                throw result;
+            }
+            const members = await this.props.service.getNamespaceMembers(this.state.chosenNamespace);
+            this.setState({ members, loading: false });
+            this.doCloseAddDialog();
         } catch (err) {
+            this.setState({ showUserPopper: false, loading: false });
             this.props.handleError(err);
-            this.setState({ loading: false });
         }
     }
 
-    protected async removeUser(membership: NamespaceMembership) {
+    protected async changeRole(membership: NamespaceMembership, role: MembershipRole): Promise<void> {
         try {
-            if (this.state.chosenNamespace) {
-                const endpoint = this.state.chosenNamespace.roleUrl;
-                const result = await this.props.service.setNamespaceMember(endpoint, membership.user, 'remove');
-                if (isError(result)) {
-                    throw result;
-                }
-                this.setState({ loading: true });
-                const members = await this.props.service.getNamespaceMembers(this.state.chosenNamespace);
-                this.setState({ members, loading: false });
+            if (!this.state.chosenNamespace) {
+                return;
             }
+            this.setState({ loading: true });
+            const endpoint = this.state.chosenNamespace.roleUrl;
+            const result = await this.props.service.setNamespaceMember(endpoint, membership.user, role);
+            if (isError(result)) {
+                throw result;
+            }
+            const members = await this.props.service.getNamespaceMembers(this.state.chosenNamespace);
+            this.setState({ members, loading: false });
+        } catch (err) {
+            this.props.handleError(err);
+        }
+    }
+
+    protected async removeUser(membership: NamespaceMembership): Promise<void> {
+        try {
+            if (!this.state.chosenNamespace) {
+                return;
+            }
+            this.setState({ loading: true });
+            const endpoint = this.state.chosenNamespace.roleUrl;
+            const result = await this.props.service.setNamespaceMember(endpoint, membership.user, 'remove');
+            if (isError(result)) {
+                throw result;
+            }
+            const members = await this.props.service.getNamespaceMembers(this.state.chosenNamespace);
+            this.setState({ members, loading: false });
         } catch (err) {
             this.props.handleError(err);
             this.setState({ loading: false });
@@ -315,7 +341,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     }
 
     protected handleUserSearch = (ev: React.ChangeEvent<HTMLInputElement>) => this.doHandleUserSearch(ev);
-    protected async doHandleUserSearch(ev: React.ChangeEvent<HTMLInputElement>) {
+    protected async doHandleUserSearch(ev: React.ChangeEvent<HTMLInputElement>): Promise<void> {
         const popperTarget = ev.currentTarget;
         const val = popperTarget.value;
         let showUserPopper = false;
@@ -331,25 +357,25 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     }
 
     protected handleOpenAddDialog = () => this.doOpenAddDialog();
-    protected doOpenAddDialog() {
+    protected doOpenAddDialog(): void {
         this.setState({ addDialogIsOpen: true });
     }
 
     protected handleCloseAddDialog = () => this.doCloseAddDialog();
-    protected doCloseAddDialog() {
+    protected doCloseAddDialog(): void {
         this.setState({ addDialogIsOpen: false, showUserPopper: false });
     }
 
-    protected handleChangeNamespace = (event: React.ChangeEvent<{}>, value: Namespace) => {
+    protected handleChangeNamespace = (event: React.ChangeEvent<{}>, value: Namespace): void => {
         this.doHandleChangeNamespace(value);
     };
 
-    protected async doHandleChangeNamespace(chosenNamespace: Namespace) {
+    protected async doHandleChangeNamespace(chosenNamespace: Namespace): Promise<void> {
         const members = await this.props.service.getNamespaceMembers(chosenNamespace);
         this.setState({ members, chosenNamespace });
     }
 
-    protected async initNamespaces() {
+    protected async initNamespaces(): Promise<void> {
         const namespaces = await this.props.service.getNamespaces();
         const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
         let members: NamespaceMembership[] = [];

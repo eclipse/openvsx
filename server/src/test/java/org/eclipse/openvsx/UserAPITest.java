@@ -128,7 +128,7 @@ public class UserAPITest {
 
         mockMvc.perform(post("/user/token/delete/{id}", 100).with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted access token for user test_user")));
+                .andExpect(content().json(successJson("Deleted access token for user test_user.")));
     }
 
     @Test
@@ -231,7 +231,7 @@ public class UserAPITest {
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
                     "other_user", "contributor").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Added other_user as contributor of foobar")));
+                .andExpect(content().json(successJson("Added other_user as contributor of foobar.")));
     }
 
     @Test
@@ -261,7 +261,7 @@ public class UserAPITest {
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
                     "other_user", "contributor").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Changed role of other_user in foobar to contributor")));
+                .andExpect(content().json(successJson("Changed role of other_user in foobar to contributor.")));
     }
 
     @Test
@@ -291,7 +291,7 @@ public class UserAPITest {
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
                     "other_user", "remove").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Removed other_user from namespace foobar")));
+                .andExpect(content().json(successJson("Removed other_user from namespace foobar.")));
     }
 
     @Test
@@ -312,6 +312,36 @@ public class UserAPITest {
                     "other_user", "contributor").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(errorJson("You must be an owner of this namespace.")));
+    }
+
+    @Test
+    public void testChangeNamespaceMemberSameRole() throws Exception {
+        var userData1 = mockUserData();
+        var namespace = new Namespace();
+        namespace.setName("foobar");
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(namespace);
+        var membership1 = new NamespaceMembership();
+        membership1.setUser(userData1);
+        membership1.setNamespace(namespace);
+        membership1.setRole(NamespaceMembership.ROLE_OWNER);
+        Mockito.when(repositories.findMembership(userData1, namespace))
+                .thenReturn(membership1);
+        var userData2 = new UserData();
+        userData2.setLoginName("other_user");
+        Mockito.when(repositories.findUserByLoginName(null, "other_user"))
+                .thenReturn(userData2);
+        var membership2 = new NamespaceMembership();
+        membership2.setUser(userData2);
+        membership2.setNamespace(namespace);
+        membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+        Mockito.when(repositories.findMembership(userData2, namespace))
+                .thenReturn(membership2);
+
+        mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
+                    "other_user", "contributor").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(errorJson("User other_user already has the role contributor.")));
     }
 
 
