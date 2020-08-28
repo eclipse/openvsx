@@ -24,3 +24,5 @@ spring:
 ovsx:
   webui:
     url: "https://test.openvsx.eclipse.org/"
+  vscode:
+    id-prefix: "test-"

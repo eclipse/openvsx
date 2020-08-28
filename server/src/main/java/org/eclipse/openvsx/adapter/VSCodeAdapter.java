@@ -74,6 +74,9 @@ public class VSCodeAdapter {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
+    @Value("${ovsx.vscode.id-prefix:}")
+    String idPrefix;
+
     @PostMapping(
         path = "/vscode/gallery/extensionquery",
         consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -128,7 +131,8 @@ public class VSCodeAdapter {
         var extensions = new ArrayList<ExtensionQueryResult.Extension>(ids.size());
         for (var uuid : ids) {
             try {
-                var extension = entityManager.find(Extension.class, Long.parseLong(uuid));
+                var primaryKey = Long.parseLong(uuid.startsWith(idPrefix) ? uuid.substring(idPrefix.length()) : uuid);
+                var extension = entityManager.find(Extension.class, primaryKey);
                 if (extension != null) {
                     extensions.add(toQueryExtension(extension, flags));
                 }
@@ -225,7 +229,7 @@ public class VSCodeAdapter {
         if (extVersion == null)
             throw new NotFoundException();
         var fileNameAndResource = getFile(extVersion, assetType);
-        if (fileNameAndResource == null || fileNameAndResource.getSecond() == null)
+        if (fileNameAndResource == null)
             throw new NotFoundException();
         if (fileNameAndResource.getSecond().getType().equals(FileResource.DOWNLOAD)) {
             var extension = extVersion.getExtension();
@@ -238,35 +242,36 @@ public class VSCodeAdapter {
     }
     
     private Pair<String, FileResource> getFile(ExtensionVersion extVersion, String assetType) {
+        String fileName = null;
+        FileResource resource = null;
         switch (assetType) {
             case FILE_VSIX:
-                return Pair.of(
-                    extVersion.getExtensionFileName(),
-                    repositories.findFile(extVersion, FileResource.DOWNLOAD)
-                );
+                fileName = extVersion.getExtensionFileName();
+                resource = repositories.findFile(extVersion, FileResource.DOWNLOAD);
+                break;
             case FILE_MANIFEST:
-                return Pair.of(
-                    "package.json",
-                    repositories.findFile(extVersion, FileResource.MANIFEST)
-                );
+                fileName = "package.json";
+                resource = repositories.findFile(extVersion, FileResource.MANIFEST);
+                break;
             case FILE_DETAILS:
-                return Pair.of(
-                    extVersion.getReadmeFileName(),
-                    repositories.findFile(extVersion, FileResource.README)
-                );
+                fileName = extVersion.getReadmeFileName();
+                resource = repositories.findFile(extVersion, FileResource.README);
+                break;
             case FILE_LICENSE:
-                return Pair.of(
-                    extVersion.getLicenseFileName(),
-                    repositories.findFile(extVersion, FileResource.LICENSE)
-                );
+                fileName = extVersion.getLicenseFileName();
+                resource = repositories.findFile(extVersion, FileResource.LICENSE);
+                break;
             case FILE_ICON:
-                return Pair.of(
-                    extVersion.getIconFileName(),
-                    repositories.findFile(extVersion, FileResource.ICON)
-                );
-            default:
-               return null;
+                fileName = extVersion.getIconFileName();
+                resource = repositories.findFile(extVersion, FileResource.ICON);
+                break;
         }
+        if (resource == null)
+            return null;
+        else if (fileName == null)
+            return Pair.of("", resource);
+        else
+            return Pair.of(fileName, resource);
     }
 
     private HttpHeaders getFileResponseHeaders(String fileName) {
@@ -314,9 +319,9 @@ public class VSCodeAdapter {
         var queryExt = new ExtensionQueryResult.Extension();
         var namespace = extension.getNamespace();
         queryExt.publisher = new ExtensionQueryResult.Publisher();
-        queryExt.publisher.publisherId = Long.toString(namespace.getId());
+        queryExt.publisher.publisherId = idPrefix + Long.toString(namespace.getId());
         queryExt.publisher.publisherName = namespace.getName();
-        queryExt.extensionId = Long.toString(extension.getId());
+        queryExt.extensionId = idPrefix + Long.toString(extension.getId());
         queryExt.extensionName = extension.getName();
         var latest = extension.getLatest();
         queryExt.displayName = latest.getDisplayName();

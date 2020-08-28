@@ -1,0 +1,26 @@
+{
+    "filters": [
+        {
+            "criteria": [
+                {
+                    "filterType": 8,
+                    "value": "Microsoft.VisualStudio.Code"
+                },
+                {
+                    "filterType": 10,
+                    "value": "yaml"
+                },
+                {
+                    "filterType": 12,
+                    "value": "4096"
+                }
+            ],
+            "pageNumber": 1,
+            "pageSize": 50,
+            "sortBy": 0,
+            "sortOrder": 0
+        }
+    ],
+    "assetTypes": [],
+    "flags": 946
+}
