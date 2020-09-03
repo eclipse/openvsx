@@ -32,6 +32,9 @@ const App = () => {
     if (serverHost.startsWith('3000-')) {
         // Gitpod dev environment: the frontend runs on port 3000, but the server runs on port 8080
         serverHost = '8080-' + serverHost.substring(5);
+    } else if (location.port === '3000') {
+        // Localhost dev environment
+        serverHost = serverHost + ':8080'
     }
     const service = new ExtensionRegistryService(`${location.protocol}//${serverHost}`);
     const pageSettings = createPageSettings(theme, prefersDarkMode);
