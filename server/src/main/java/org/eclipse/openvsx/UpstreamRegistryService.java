@@ -41,7 +41,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Autowired
     RestTemplate restTemplate;
 
-    @Value("${ovsx.upstream.url}")
+    @Value("${ovsx.upstream.url:}")
     String upstreamUrl;
 
     public boolean isValid() {
