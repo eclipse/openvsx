@@ -110,7 +110,15 @@ public class RepositoryService {
         return fileResourceRepo.findByExtension(extVersion);
     }
 
-    public FileResource findFile(ExtensionVersion extVersion, String type) {
+    public Streamable<FileResource> findAllFiles() {
+        return fileResourceRepo.findAll();
+    }
+
+    public FileResource findFileByName(ExtensionVersion extVersion, String name) {
+        return fileResourceRepo.findByExtensionAndNameIgnoreCase(extVersion, name);
+    }
+
+    public FileResource findFileByType(ExtensionVersion extVersion, String type) {
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }
 

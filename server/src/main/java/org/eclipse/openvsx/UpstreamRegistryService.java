@@ -23,6 +23,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
@@ -82,23 +83,18 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public byte[] getFile(String namespace, String extension, String version, String fileName) {
+    public ResponseEntity<byte[]> getFile(String namespace, String extension, String version, String fileName) {
         return getFile(createApiUrl(upstreamUrl, "api", namespace, extension, version, "file", fileName));
     }
 
-    private byte[] getFile(String url) {
+    private ResponseEntity<byte[]> getFile(String url) {
         var headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
         var response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<String>(headers), byte[].class);
-        switch (response.getStatusCode()) {
-            case OK:
-                return response.getBody();
-            case NOT_FOUND:
-                throw new NotFoundException();
-            default:
-                throw new ResponseStatusException(response.getStatusCode(),
-                        "Upstream registry responded with status \"" + response.getStatusCode().getReasonPhrase() + "\".");
+        if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
+            throw new NotFoundException();
         }
+        return response;
     }
 
     @Override

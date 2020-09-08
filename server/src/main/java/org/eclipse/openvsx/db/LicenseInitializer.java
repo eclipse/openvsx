@@ -41,7 +41,7 @@ public class LicenseInitializer {
         var detection = new LicenseDetection(Arrays.asList(detectLicenseIds));
         var undetected = new int[1];
         repositories.findVersionsByLicense(null).forEach(extVersion -> {
-            var license = repositories.findFile(extVersion, FileResource.LICENSE);
+            var license = repositories.findFileByType(extVersion, FileResource.LICENSE);
             if (license != null) {
                 var detectedId = detection.detectLicense(license.getContent());
                 if (detectedId == null) {

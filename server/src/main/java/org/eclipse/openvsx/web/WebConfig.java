@@ -9,7 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.web;
 
-import org.eclipse.openvsx.util.UrlUtil;
+import java.net.URI;
+
 import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if (!Strings.isNullOrEmpty(webuiUrl) && UrlUtil.isAbsolute(webuiUrl)) {
+        if (!Strings.isNullOrEmpty(webuiUrl) && URI.create(webuiUrl).isAbsolute()) {
             // The Web UI is given with an absolute URL, so we need to enable CORS with credentials.
             var authorizedEndpoints = new String[] {
                 "/user/**",

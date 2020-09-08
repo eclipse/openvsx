@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 
+import org.eclipse.openvsx.entities.FileResource;
 import org.junit.jupiter.api.Test;
 
 public class ExtensionProcessorTest {
@@ -35,10 +36,23 @@ public class ExtensionProcessorTest {
             assertThat(metadata.getTags()).isEqualTo(Arrays.asList("todo", "task", "tasklist", "multi-root ready"));
             assertThat(metadata.getLicense()).isEqualTo("MIT");
             assertThat(metadata.getRepository()).isEqualTo("https://github.com/Gruntfuggly/todo-tree");
-            processor.getResources(metadata);
-            assertThat(metadata.getReadmeFileName()).isEqualTo("README.md");
-            assertThat(metadata.getIconFileName()).isEqualTo("todo-tree.png");
-            assertThat(metadata.getLicenseFileName()).isEqualTo("LICENSE.txt");
+
+            var resources = processor.getResources(metadata);
+            var readmeFile = resources.stream()
+                    .filter(res -> res.getType().equals(FileResource.README))
+                    .findFirst();
+            assertThat(readmeFile).isPresent();
+            assertThat(readmeFile.get().getName()).isEqualTo("README.md");
+            var iconFile = resources.stream()
+                    .filter(res -> res.getType().equals(FileResource.ICON))
+                    .findFirst();
+            assertThat(iconFile).isPresent();
+            assertThat(iconFile.get().getName()).isEqualTo("todo-tree.png");
+            var licenseFile = resources.stream()
+                    .filter(res -> res.getType().equals(FileResource.LICENSE))
+                    .findFirst();
+            assertThat(licenseFile).isPresent();
+            assertThat(licenseFile.get().getName()).isEqualTo("LICENSE.txt");
         }
     }
 

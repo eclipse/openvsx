@@ -46,6 +46,8 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +70,7 @@ import com.google.common.collect.Lists;
 
 @WebMvcTest(RegistryAPI.class)
 @AutoConfigureWebClient
-@MockBean({ ClientRegistrationRepository.class, UpstreamRegistryService.class })
+@MockBean({ ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class })
 public class RegistryAPITest {
 
     @SpyBean
@@ -626,24 +628,26 @@ public class RegistryAPITest {
 
     private FileResource mockReadme() {
         var extVersion = mockExtension();
-        extVersion.setReadmeFileName("README");
         var resource = new FileResource();
         resource.setExtension(extVersion);
+        resource.setName("README");
         resource.setType(FileResource.README);
         resource.setContent("Please read me".getBytes());
-        Mockito.when(repositories.findFile(extVersion, FileResource.README))
+        resource.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByName(extVersion, "README"))
                 .thenReturn(resource);
         return resource;
     }
 
     private FileResource mockLicense() {
         var extVersion = mockExtension();
-        extVersion.setLicenseFileName("LICENSE");
         var resource = new FileResource();
         resource.setExtension(extVersion);
+        resource.setName("LICENSE");
         resource.setType(FileResource.LICENSE);
         resource.setContent("I never broke the Law! I am the law!".getBytes());
-        Mockito.when(repositories.findFile(extVersion, FileResource.LICENSE))
+        resource.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByName(extVersion, "LICENSE"))
                 .thenReturn(resource);
         return resource;
     }
@@ -844,6 +848,11 @@ public class RegistryAPITest {
         @Bean
         ExtensionValidator extensionValidator() {
             return new ExtensionValidator();
+        }
+
+        @Bean
+        StorageUtilService storageUtilService() {
+            return new StorageUtilService();
         }
     }
     

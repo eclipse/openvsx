@@ -16,15 +16,13 @@ import static org.eclipse.openvsx.adapter.ExtensionQueryResult.ExtensionFile.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Property.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Statistic.*;
 
-import java.net.URLConnection;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
 
 import com.google.common.collect.Lists;
 
@@ -34,6 +32,8 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -42,9 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.util.Pair;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -70,6 +67,12 @@ public class VSCodeAdapter {
 
     @Autowired
     SearchService search;
+
+    @Autowired
+    StorageUtilService storageUtil;
+
+    @Autowired
+    GoogleCloudStorageService googleStorage;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
@@ -220,81 +223,43 @@ public class VSCodeAdapter {
 
     @GetMapping("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType:.+}")
     @CrossOrigin
-    @Transactional
-    public ResponseEntity<byte[]> getFile(@PathVariable String namespace,
+    public ResponseEntity<byte[]> getAsset(@PathVariable String namespace,
                                           @PathVariable String extensionName,
                                           @PathVariable String version,
                                           @PathVariable String assetType) {
         var extVersion = repositories.findVersion(version, extensionName, namespace);
         if (extVersion == null)
             throw new NotFoundException();
-        var fileNameAndResource = getFile(extVersion, assetType);
-        if (fileNameAndResource == null)
+        var resource = getFileFromDB(extVersion, assetType);
+        if (resource == null)
             throw new NotFoundException();
-        if (fileNameAndResource.getSecond().getType().equals(FileResource.DOWNLOAD)) {
-            var extension = extVersion.getExtension();
-            extension.setDownloadCount(extension.getDownloadCount() + 1);
-            search.updateSearchEntry(extension);
+        if (resource.getType().equals(FileResource.DOWNLOAD))
+            storageUtil.increaseDownloadCount(extVersion);
+        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+            var headers = storageUtil.getFileResponseHeaders(resource.getName());
+            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
+        } else {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(resource.getUrl()))
+                    .build();
         }
-        var content = fileNameAndResource.getSecond().getContent();
-        var headers = getFileResponseHeaders(fileNameAndResource.getFirst());
-        return new ResponseEntity<>(content, headers, HttpStatus.OK);
     }
     
-    private Pair<String, FileResource> getFile(ExtensionVersion extVersion, String assetType) {
-        String fileName = null;
-        FileResource resource = null;
+    private FileResource getFileFromDB(ExtensionVersion extVersion, String assetType) {
         switch (assetType) {
             case FILE_VSIX:
-                fileName = extVersion.getExtensionFileName();
-                resource = repositories.findFile(extVersion, FileResource.DOWNLOAD);
-                break;
+                return repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
             case FILE_MANIFEST:
-                fileName = "package.json";
-                resource = repositories.findFile(extVersion, FileResource.MANIFEST);
-                break;
+                return repositories.findFileByType(extVersion, FileResource.MANIFEST);
             case FILE_DETAILS:
-                fileName = extVersion.getReadmeFileName();
-                resource = repositories.findFile(extVersion, FileResource.README);
-                break;
+                return repositories.findFileByType(extVersion, FileResource.README);
             case FILE_LICENSE:
-                fileName = extVersion.getLicenseFileName();
-                resource = repositories.findFile(extVersion, FileResource.LICENSE);
-                break;
+                return repositories.findFileByType(extVersion, FileResource.LICENSE);
             case FILE_ICON:
-                fileName = extVersion.getIconFileName();
-                resource = repositories.findFile(extVersion, FileResource.ICON);
-                break;
+                return repositories.findFileByType(extVersion, FileResource.ICON);
+            default:
+                return null;
         }
-        if (resource == null)
-            return null;
-        else if (fileName == null)
-            return Pair.of("", resource);
-        else
-            return Pair.of(fileName, resource);
-    }
-
-    private HttpHeaders getFileResponseHeaders(String fileName) {
-        var headers = new HttpHeaders();
-        MediaType fileType = getFileType(fileName);
-        headers.setContentType(fileType);
-        // Files are requested with a version string in the URL, so their content cannot change
-        headers.setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS));
-        if (fileName.endsWith(".vsix")) {
-            headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        }
-        return headers;
-    }
-
-    private MediaType getFileType(String fileName) {
-        if (fileName.endsWith(".vsix")) {
-            return MediaType.APPLICATION_OCTET_STREAM;
-        }
-        var contentType = URLConnection.guessContentTypeFromName(fileName);
-        if (contentType != null) {
-            return MediaType.parseMediaType(contentType);
-        }
-        return MediaType.TEXT_PLAIN;
     }
 
     @GetMapping("/vscode/item")
@@ -311,6 +276,18 @@ public class VSCodeAdapter {
     @GetMapping("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage")
     public ModelAndView download(@PathVariable String namespace, @PathVariable String extension,
                                  @PathVariable String version, ModelMap model) {
+        if (googleStorage.isEnabled()) {
+            var extVersion = repositories.findVersion(version, extension, namespace);
+            if (extVersion == null)
+                throw new NotFoundException();
+            var resource = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
+            if (resource == null)
+                throw new NotFoundException();
+            if (resource.getStorageType().equals(FileResource.STORAGE_GOOGLE)) {
+                storageUtil.increaseDownloadCount(extVersion);
+                return new ModelAndView("redirect:" + resource.getUrl(), model);
+            }
+        }
         var serverUrl = UrlUtil.getBaseUrl();
         return new ModelAndView("redirect:" + UrlUtil.createApiUrl(serverUrl, "vscode", "asset", namespace, extension, version, FILE_VSIX), model);
     }
@@ -371,16 +348,11 @@ public class VSCodeAdapter {
 
         if (test(flags, FLAG_INCLUDE_FILES)) {
             queryVer.files = Lists.newArrayList();
-            queryVer.addFile(FILE_MANIFEST,
-                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", "package.json"));
-            queryVer.addFile(FILE_DETAILS,
-                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getReadmeFileName()));
-            queryVer.addFile(FILE_LICENSE,
-                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getLicenseFileName()));
-            queryVer.addFile(FILE_ICON,
-                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getIconFileName()));
-            queryVer.addFile(FILE_VSIX,
-                    UrlUtil.createApiUrl(serverUrl, "api", namespace, extensionName, extVer.getVersion(), "file", extVer.getExtensionFileName()));
+            queryVer.addFile(FILE_MANIFEST, storageUtil.getFileUrl(extVer, serverUrl, FileResource.MANIFEST));
+            queryVer.addFile(FILE_DETAILS, storageUtil.getFileUrl(extVer, serverUrl, FileResource.README));
+            queryVer.addFile(FILE_LICENSE, storageUtil.getFileUrl(extVer, serverUrl, FileResource.LICENSE));
+            queryVer.addFile(FILE_ICON, storageUtil.getFileUrl(extVer, serverUrl, FileResource.ICON));
+            queryVer.addFile(FILE_VSIX, storageUtil.getFileUrl(extVer, serverUrl, FileResource.DOWNLOAD));
         }
 
         if (test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {

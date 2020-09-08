@@ -23,6 +23,8 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -43,6 +45,12 @@ public class AdminService {
 
     @Autowired
     SearchService search;
+
+    @Autowired
+    StorageUtilService storageUtil;
+
+    @Autowired
+    GoogleCloudStorageService googleStorage;
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, String version, UserData admin)
@@ -120,7 +128,12 @@ public class AdminService {
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
-        repositories.findFiles(extVersion).forEach(file -> entityManager.remove(file));
+        repositories.findFiles(extVersion).forEach(file -> {
+            if (file.getContent() == null && googleStorage.isEnabled()) {
+                googleStorage.removeFile(file.getName(), extVersion);
+            }
+            entityManager.remove(file);
+        });
         entityManager.remove(extVersion);
     }
 

@@ -12,10 +12,8 @@ package org.eclipse.openvsx;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Iterables;
 
@@ -31,7 +29,6 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -52,6 +49,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+import io.swagger.annotations.ResponseHeader;
 import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
@@ -161,6 +159,15 @@ public class RegistryAPI {
             message = "The file content is returned"
         ),
         @ApiResponse(
+            code = 302,
+            message = "The file is found at the specified location",
+            responseHeaders = @ResponseHeader(
+                name = "Location",
+                description = "The actual URL where the file can be accessed",
+                response = String.class
+            )
+        ),
+        @ApiResponse(
             code = 404,
             message = "The specified file could not be found"
         )
@@ -175,37 +182,12 @@ public class RegistryAPI {
                                           String fileName) {
         for (var registry : getRegistries()) {
             try {
-                var content = registry.getFile(namespace, extension, version, fileName);
-                var headers = getFileResponseHeaders(fileName);
-                return new ResponseEntity<>(content, headers, HttpStatus.OK);
+                return registry.getFile(namespace, extension, version, fileName);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         throw new NotFoundException();
-    }
-
-    private HttpHeaders getFileResponseHeaders(String fileName) {
-        var headers = new HttpHeaders();
-        MediaType fileType = getFileType(fileName);
-        headers.setContentType(fileType);
-        // Files are requested with a version string in the URL, so their content cannot change
-        headers.setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS));
-        if (fileName.endsWith(".vsix")) {
-            headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        }
-        return headers;
-    }
-
-    private MediaType getFileType(String fileName) {
-        if (fileName.endsWith(".vsix")) {
-            return MediaType.APPLICATION_OCTET_STREAM;
-        }
-        var contentType = URLConnection.guessContentTypeFromName(fileName);
-        if (contentType != null) {
-            return MediaType.parseMediaType(contentType);
-        }
-        return MediaType.TEXT_PLAIN;
     }
 
     @GetMapping(

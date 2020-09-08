@@ -232,7 +232,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return resources;
     }
 
-    public FileResource getBinary(ExtensionVersion extension) {
+    protected FileResource getBinary(ExtensionVersion extension) {
         var binary = new FileResource();
         binary.setExtension(extension);
         binary.setType(FileResource.DOWNLOAD);
@@ -240,7 +240,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return binary;
     }
 
-    public FileResource getManifest(ExtensionVersion extension) {
+    protected FileResource getManifest(ExtensionVersion extension) {
         readInputStream();
         var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
         if (bytes == null) {
@@ -248,12 +248,13 @@ public class ExtensionProcessor implements AutoCloseable {
         }
         var manifest = new FileResource();
         manifest.setExtension(extension);
+        manifest.setName("package.json");
         manifest.setType(FileResource.MANIFEST);
         manifest.setContent(bytes);
         return manifest;
     }
 
-    public FileResource getReadme(ExtensionVersion extension) {
+    protected FileResource getReadme(ExtensionVersion extension) {
         readInputStream();
         var result = readFromAlternateNames(README);
         if (result == null) {
@@ -261,13 +262,13 @@ public class ExtensionProcessor implements AutoCloseable {
         }
         var readme = new FileResource();
         readme.setExtension(extension);
+        readme.setName(result.getSecond());
         readme.setType(FileResource.README);
         readme.setContent(result.getFirst());
-        extension.setReadmeFileName(result.getSecond());
         return readme;
     }
 
-    public FileResource getLicense(ExtensionVersion extension) {
+    protected FileResource getLicense(ExtensionVersion extension) {
         readInputStream();
         var license = new FileResource();
         license.setExtension(extension);
@@ -277,10 +278,10 @@ public class ExtensionProcessor implements AutoCloseable {
             extension.setLicense(null);
             var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
             if (bytes != null) {
-                license.setContent(bytes);
                 var lastSegmentIndex = fileName.lastIndexOf('/');
                 var lastSegment = fileName.substring(lastSegmentIndex + 1);
-                extension.setLicenseFileName(lastSegment);
+                license.setName(lastSegment);
+                license.setContent(bytes);
                 var detection = new LicenseDetection(detectedLicenseIds);
                 extension.setLicense(detection.detectLicense(bytes));
                 return license;
@@ -291,8 +292,8 @@ public class ExtensionProcessor implements AutoCloseable {
         if (result == null) {
             return null;
         }
+        license.setName(result.getSecond());
         license.setContent(result.getFirst());
-        extension.setLicenseFileName(result.getSecond());
         if (Strings.isNullOrEmpty(extension.getLicense())) {
             var detection = new LicenseDetection(detectedLicenseIds);
             extension.setLicense(detection.detectLicense(result.getFirst()));
@@ -312,7 +313,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    public FileResource getIcon(ExtensionVersion extension) {
+    protected FileResource getIcon(ExtensionVersion extension) {
         loadPackageJson();
         var iconPath = packageJson.get("icon");
         if (iconPath == null || !iconPath.isTextual())
@@ -323,13 +324,13 @@ public class ExtensionProcessor implements AutoCloseable {
             return null;
         var icon = new FileResource();
         icon.setExtension(extension);
-        icon.setType(FileResource.ICON);
-        icon.setContent(bytes);
         var fileNameIndex = iconPathStr.lastIndexOf('/');
         if (fileNameIndex >= 0)
-            extension.setIconFileName(iconPathStr.substring(fileNameIndex + 1));
+            icon.setName(iconPathStr.substring(fileNameIndex + 1));
         else
-            extension.setIconFileName(iconPathStr);
+            icon.setName(iconPathStr);
+        icon.setType(FileResource.ICON);
+        icon.setContent(bytes);
         return icon;
     }
 

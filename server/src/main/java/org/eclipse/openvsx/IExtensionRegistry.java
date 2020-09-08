@@ -13,6 +13,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
+import org.springframework.http.ResponseEntity;
 
 /**
  * Declaration of the registry API methods that can be accessed without authentication.
@@ -25,7 +26,7 @@ public interface IExtensionRegistry {
 
     ExtensionJson getExtension(String namespace, String extension, String version);
 
-    byte[] getFile(String namespace, String extension, String version, String fileName);
+    ResponseEntity<byte[]> getFile(String namespace, String extension, String version, String fileName);
 
     ReviewListJson getReviews(String namespace, String extension);
 
