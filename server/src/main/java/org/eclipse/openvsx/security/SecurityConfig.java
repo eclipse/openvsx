@@ -9,7 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import org.eclipse.openvsx.util.UrlUtil;
+import java.net.URI;
+
 import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,7 +26,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        if (Strings.isNullOrEmpty(webuiUrl) || !UrlUtil.isAbsolute(webuiUrl)) {
+        if (Strings.isNullOrEmpty(webuiUrl) || !URI.create(webuiUrl).isAbsolute()) {
             // Default configuration: mark endpoints that require a user principal as authenticated.
             http.authorizeRequests()
                 .antMatchers("/user/tokens", "/user/token/**", "/user/namespaces", 

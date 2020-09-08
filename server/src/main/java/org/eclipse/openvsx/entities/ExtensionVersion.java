@@ -63,14 +63,6 @@ public class ExtensionVersion {
     @ManyToOne
     PersonalAccessToken publishedWith;
 
-    String extensionFileName;
-
-    String iconFileName;
-
-    String readmeFileName;
-
-    String licenseFileName;
-
     String displayName;
 
     @Column(length = 2048)
@@ -245,38 +237,6 @@ public class ExtensionVersion {
 
     public void setPublishedWith(PersonalAccessToken publishedWith) {
         this.publishedWith = publishedWith;
-    }
-
-	public String getExtensionFileName() {
-		return extensionFileName;
-	}
-
-	public void setExtensionFileName(String extensionFileName) {
-		this.extensionFileName = extensionFileName;
-	}
-
-	public String getIconFileName() {
-		return iconFileName;
-	}
-
-	public void setIconFileName(String iconFileName) {
-		this.iconFileName = iconFileName;
-	}
-
-	public String getReadmeFileName() {
-		return readmeFileName;
-	}
-
-	public void setReadmeFileName(String readmeFileName) {
-		this.readmeFileName = readmeFileName;
-	}
-
-    public String getLicenseFileName() {
-        return licenseFileName;
-    }
-
-    public void setLicenseFileName(String licenseFileName) {
-        this.licenseFileName = licenseFileName;
     }
 
 	public String getDisplayName() {

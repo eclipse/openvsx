@@ -32,12 +32,16 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.util.Streamable;
@@ -47,7 +51,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(VSCodeAdapter.class)
 @AutoConfigureWebClient
-@MockBean({ ClientRegistrationRepository.class })
+@MockBean({ ClientRegistrationRepository.class, GoogleCloudStorageService.class })
 public class VSCodeAdapterTest {
 
     @MockBean
@@ -94,7 +98,7 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testAsset() throws Exception {
-        mockAsset();
+        mockExtension();
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
                     "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
                 .andExpect(status().isOk())
@@ -103,11 +107,14 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testAssetNotFound() throws Exception {
-        mockAsset();
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.MANIFEST))
+                .thenReturn(null);
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
-                    "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Services.Content.Details"))
+                    "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
                 .andExpect(status().isNotFound());
     }
+
 
     // ---------- UTILITY ----------//
 
@@ -124,16 +131,6 @@ public class VSCodeAdapterTest {
                 .thenReturn(page);
         Mockito.when(entityManager.find(Extension.class, 1l))
                 .thenReturn(extension);
-    }
-
-    private void mockAsset() {
-        var extension = mockExtension();
-        var manifest = new FileResource();
-        manifest.setExtension(extension);
-        manifest.setType(FileResource.MANIFEST);
-        manifest.setContent("{\"foo\":\"bar\"}".getBytes());
-        Mockito.when(repositories.findFile(extension, FileResource.MANIFEST))
-                .thenReturn(manifest);
     }
     
     private ExtensionVersion mockExtension() {
@@ -154,10 +151,6 @@ public class VSCodeAdapterTest {
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         extVersion.setDisplayName("YAML");
         extVersion.setDescription("YAML Language Support");
-        extVersion.setReadmeFileName("README.md");
-        extVersion.setLicenseFileName("LICENSE.txt");
-        extVersion.setIconFileName("icon128.png");
-        extVersion.setExtensionFileName("redhat.vscode-yaml-0.5.2.vsix");
         extVersion.setRepository("https://github.com/redhat-developer/vscode-yaml");
         extVersion.setEngines(Lists.newArrayList("vscode@^1.31.0"));
         extVersion.setDependencies(Lists.newArrayList());
@@ -172,6 +165,42 @@ public class VSCodeAdapterTest {
                 .thenReturn(0l);
         Mockito.when(repositories.countActiveReviews(extension))
                 .thenReturn(10l);
+        var extensionFile = new FileResource();
+        extensionFile.setExtension(extVersion);
+        extensionFile.setName("redhat.vscode-yaml-0.5.2.vsix");
+        extensionFile.setType(FileResource.DOWNLOAD);
+        extensionFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD))
+                .thenReturn(extensionFile);
+        var manifestFile = new FileResource();
+        manifestFile.setExtension(extVersion);
+        manifestFile.setName("package.json");
+        manifestFile.setType(FileResource.MANIFEST);
+        manifestFile.setContent("{\"foo\":\"bar\"}".getBytes());
+        manifestFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.MANIFEST))
+                .thenReturn(manifestFile);
+        var readmeFile = new FileResource();
+        readmeFile.setExtension(extVersion);
+        readmeFile.setName("README.md");
+        readmeFile.setType(FileResource.README);
+        readmeFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.README))
+                .thenReturn(readmeFile);
+        var licenseFile = new FileResource();
+        licenseFile.setExtension(extVersion);
+        licenseFile.setName("LICENSE.txt");
+        licenseFile.setType(FileResource.LICENSE);
+        licenseFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.LICENSE))
+                .thenReturn(licenseFile);
+        var iconFile = new FileResource();
+        iconFile.setExtension(extVersion);
+        iconFile.setName("icon128.png");
+        iconFile.setType(FileResource.ICON);
+        iconFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.ICON))
+                .thenReturn(iconFile);
         return extVersion;
     }
 
@@ -180,6 +209,14 @@ public class VSCodeAdapterTest {
             var stream = getClass().getResourceAsStream(name);
         ) {
             return CharStreams.toString(new InputStreamReader(stream, "UTF-8"));
+        }
+    }
+    
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        StorageUtilService storageUtilService() {
+            return new StorageUtilService();
         }
     }
 

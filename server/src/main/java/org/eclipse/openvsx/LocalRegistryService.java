@@ -12,6 +12,7 @@ package org.eclipse.openvsx;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,6 +44,8 @@ import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -54,6 +57,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -74,6 +78,12 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     ExtensionValidator validator;
+
+    @Autowired
+    StorageUtilService storageUtil;
+
+    @Autowired
+    GoogleCloudStorageService googleStorage;
 
     @Value("${ovsx.licenses.detect:}")
     String[] detectedLicenseIds;
@@ -133,34 +143,23 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Transactional
-    public byte[] getFile(String namespace, String extensionName, String version, String fileName) {
+    public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String version, String fileName) {
         var extVersion = findVersion(namespace, extensionName, version);
         if (extVersion == null)
             throw new NotFoundException();
-        var resource = getFile(extVersion, fileName);
+        var resource = repositories.findFileByName(extVersion, fileName);
         if (resource == null)
             throw new NotFoundException();
-        if (resource.getType().equals(FileResource.DOWNLOAD)) {
-            var extension = extVersion.getExtension();
-            extension.setDownloadCount(extension.getDownloadCount() + 1);
-            search.updateSearchEntry(extension);
+        if (resource.getType().equals(FileResource.DOWNLOAD))
+            storageUtil.increaseDownloadCount(extVersion);
+        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+            var headers = storageUtil.getFileResponseHeaders(fileName);
+            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
+        } else {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(resource.getUrl()))
+                    .build();
         }
-        return resource.getContent();
-    }
-
-    private FileResource getFile(ExtensionVersion extVersion, String fileName) {
-        if (fileName.equals(extVersion.getExtensionFileName()))
-            return repositories.findFile(extVersion, FileResource.DOWNLOAD);
-        if (fileName.equals("package.json"))
-            return repositories.findFile(extVersion, FileResource.MANIFEST);
-        if (fileName.equals(extVersion.getReadmeFileName()))
-            return repositories.findFile(extVersion, FileResource.README);
-        if (fileName.equals(extVersion.getLicenseFileName()))
-            return repositories.findFile(extVersion, FileResource.LICENSE);
-        if (fileName.equals(extVersion.getIconFileName()))
-            return repositories.findFile(extVersion, FileResource.ICON);
-        return null;
     }
 
     @Override
@@ -238,7 +237,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 throw new ErrorResultException("Invalid access token.");
             }
             var extVersion = createExtensionVersion(processor, token.getUser(), token);
-            processor.getResources(extVersion).forEach(resource -> entityManager.persist(resource));
+            storeResources(processor.getResources(extVersion), extVersion);
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
 
@@ -297,11 +296,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             }
         }
         extVersion.setExtension(extension);
-        extVersion.setExtensionFileName(
-                namespace.getName()
-                + "." + extension.getName()
-                + "-" + extVersion.getVersion()
-                + ".vsix");
         var metadataIssues = validator.validateMetadata(extVersion);
         if (!metadataIssues.isEmpty()) {
             if (metadataIssues.size() == 1) {
@@ -327,6 +321,26 @@ public class LocalRegistryService implements IExtensionRegistry {
         var sv1 = v1.getSemanticVersion();
         var sv2 = v2.getSemanticVersion();
         return sv1.compareTo(sv2) > 0;
+    }
+
+    private void storeResources(List<FileResource> resources, ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        resources.forEach(resource -> {
+            if (resource.getType().equals(FileResource.DOWNLOAD)) {
+                resource.setName(namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + ".vsix");
+            }
+            if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
+                googleStorage.uploadFile(resource);
+                // Don't store the binary content in the DB - it's already stored externally
+                resource.setContent(null);
+            } else {
+                resource.setUrl(createApiUrl("", "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
+                        "file", resource.getName()));
+                resource.setStorageType(FileResource.STORAGE_DB);
+            }
+            entityManager.persist(resource);
+        });
     }
 
     private void addDependency(String dependency, ExtensionVersion extVersion) {
@@ -439,8 +453,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var entry = extVer.toSearchEntryJson();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
         entry.files = new LinkedHashMap<>();
-        entry.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getExtensionFileName()));
-        entry.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", entry.namespace, entry.name, entry.version, "file", extVer.getIconFileName()));
+        storageUtil.addFileUrls(extVer, serverUrl, entry.files, FileResource.DOWNLOAD, FileResource.ICON);
         var allVersions = Lists.newArrayList(repositories.findVersions(extension));
         Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
         entry.allVersions = CollectionUtil.map(allVersions, ev -> toVersionReference(ev, entry, serverUrl));
@@ -453,7 +466,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.engines = extVersion.getEnginesMap();
         json.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name, extVersion.getVersion());
         json.files = new LinkedHashMap<>();
-        json.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", entry.namespace, entry.name, extVersion.getVersion(), "file", extVersion.getExtensionFileName()));
+        storageUtil.addFileUrls(extVersion, serverUrl, json.files, FileResource.DOWNLOAD);
         return json;
     }
 
@@ -486,11 +499,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
     
         json.files = new LinkedHashMap<>();
-        json.files.put(FileResource.DOWNLOAD, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getExtensionFileName()));
-        json.files.put(FileResource.MANIFEST, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", "package.json"));
-        json.files.put(FileResource.ICON, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getIconFileName()));
-        json.files.put(FileResource.README, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getReadmeFileName()));
-        json.files.put(FileResource.LICENSE, createApiUrl(serverUrl, "api", json.namespace, json.name, json.version, "file", extVersion.getLicenseFileName()));
+        storageUtil.addFileUrls(extVersion, serverUrl, json.files,
+                FileResource.DOWNLOAD, FileResource.MANIFEST, FileResource.ICON, FileResource.README, FileResource.LICENSE);
     
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {

@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.web;
 
+import java.net.URI;
 import java.time.format.DateTimeFormatter;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -80,7 +81,7 @@ public class SitemapController {
     private String getBaseUrl() {
         if (Strings.isNullOrEmpty(webuiUrl))
             return UrlUtil.getBaseUrl();
-        else if (UrlUtil.isAbsolute(webuiUrl))
+        else if (URI.create(webuiUrl).isAbsolute())
             return webuiUrl;
         else
             return UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), webuiUrl.split("/"));

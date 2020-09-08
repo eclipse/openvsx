@@ -10,8 +10,6 @@
 package org.eclipse.openvsx.util;
 
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLEncoder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,8 +26,13 @@ public final class UrlUtil {
      * Create a URL pointing to an API path.
      */
     public static String createApiUrl(String baseUrl, String... segments) {
+        var initialCapacity = baseUrl.length() + 8;
+        for (var segment : segments) {
+            initialCapacity += segment.length() + 1;
+        }
         try {
-            var result = new StringBuilder(baseUrl);
+            var result = new StringBuilder(initialCapacity);
+            result.append(baseUrl);
             for (var segment : segments) {
                 if (segment == null)
                     return null;
@@ -46,8 +49,8 @@ public final class UrlUtil {
     }
 
     /**
-     * Add a query to a URL. The parameters array must contain a sequence of key and value
-     * pairs, so its length is expected to be even.
+     * Add a query to a URL. The parameters array must contain a sequence of key and
+     * value pairs, so its length is expected to be even.
      */
     public static String addQuery(String url, String... parameters) {
         if (parameters.length % 2 != 0)
@@ -119,31 +122,18 @@ public final class UrlUtil {
         }
         url.append(host);
         switch (scheme) {
-        case "http":
-            if (port != 80 && port > 0)
-                url.append(":").append(port);
-            break;
-        case "https":
-            if (port != 443 && port > 0)
-                url.append(":").append(port);
-            break;
+            case "http":
+                if (port != 80 && port > 0)
+                    url.append(":").append(port);
+                break;
+            case "https":
+                if (port != 443 && port > 0)
+                    url.append(":").append(port);
+                break;
         }
 
         url.append(request.getContextPath());
         return url.toString();
-    }
-
-    /**
-     * Determine whether the given URL is absolute. A URL is regarded as absolute if
-     * it specifies a host.
-     */
-    public static boolean isAbsolute(String urlString) {
-        try {
-            var url = new URL(urlString);
-            return url.getHost() != null;
-        } catch (MalformedURLException exc) {
-            throw new RuntimeException(exc);
-        }
     }
 
 }

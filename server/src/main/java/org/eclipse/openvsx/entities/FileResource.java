@@ -9,8 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
@@ -18,11 +20,16 @@ import javax.persistence.OneToOne;
 @Entity
 public class FileResource {
 
+    // Resource types
     public static final String DOWNLOAD = "download";
     public static final String MANIFEST = "manifest";
     public static final String ICON = "icon";
     public static final String README = "readme";
     public static final String LICENSE = "license";
+
+    // Storage types
+    public static final String STORAGE_DB = "database";
+    public static final String STORAGE_GOOGLE = "google-cloud";
 
     @Id
     @GeneratedValue
@@ -31,10 +38,18 @@ public class FileResource {
     @OneToOne
     ExtensionVersion extension;
 
+    String name;
+
     @Column(length = 32)
     String type;
 
+    @Basic(fetch = FetchType.LAZY)
     byte[] content;
+
+    String url;
+
+    @Column(length = 32)
+    String storageType;
 
 
     public long getId() {
@@ -53,6 +68,14 @@ public class FileResource {
 		this.extension = extension;
 	}
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getType() {
         return type;
     }
@@ -68,5 +91,21 @@ public class FileResource {
 	public void setContent(byte[] content) {
 		this.content = content;
 	}
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public void setStorageType(String storageType) {
+        this.storageType = storageType;
+    }
     
 }
