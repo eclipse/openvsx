@@ -7,6 +7,21 @@
             "request": "launch",
             "mainClass": "org.eclipse.openvsx.RegistryApplication",
             "projectName": "openvsx-server"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "CLI create-namespace",
+            "program": "${workspaceFolder}/cli/lib/ovsx",
+            "args": [
+                "-r",
+                "http://localhost:8080",
+                "-p",
+                "super_token",
+                "create-namespace",
+                "foo"
+            ],
+            "sourceMaps": true
         }
     ]
 }
