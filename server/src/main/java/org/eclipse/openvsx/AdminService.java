@@ -18,6 +18,7 @@ import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
@@ -129,7 +130,7 @@ public class AdminService {
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
         repositories.findFiles(extVersion).forEach(file -> {
-            if (file.getContent() == null && googleStorage.isEnabled()) {
+            if (file.getStorageType().equals(FileResource.STORAGE_GOOGLE) && googleStorage.isEnabled()) {
                 googleStorage.removeFile(file.getName(), extVersion);
             }
             entityManager.remove(file);
