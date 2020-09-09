@@ -12,13 +12,18 @@ import * as http from 'http';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
+import * as followRedirects from 'follow-redirects';
 import { statusError } from './util';
 
 export const DEFAULT_URL = 'https://open-vsx.org';
+export const DEFAULT_NAMESPACE_SIZE = 1024;
+export const DEFAULT_PUBLISH_SIZE = 512 * 1024 * 1024;
 
 export class Registry {
 
     readonly url: string;
+    readonly maxNamespaceSize: number;
+    readonly maxPublishSize: number;
 
     constructor(options: RegistryOptions = {}) {
         if (options.url && options.url.endsWith('/'))
@@ -27,6 +32,8 @@ export class Registry {
             this.url = options.url;
         else
             this.url = DEFAULT_URL;
+        this.maxNamespaceSize = options.maxNamespaceSize || DEFAULT_NAMESPACE_SIZE;
+        this.maxPublishSize = options.maxPublishSize || DEFAULT_PUBLISH_SIZE;
     }
 
     createNamespace(name: string, pat: string): Promise<Response> {
@@ -36,7 +43,7 @@ export class Registry {
             const namespace = { name };
             return this.post(JSON.stringify(namespace), url, {
                 'Content-Type': 'application/json'
-            });
+            }, this.maxNamespaceSize);
         } catch (err) {
             return Promise.reject(err);
         }
@@ -48,7 +55,7 @@ export class Registry {
             const url = this.getUrl('api/-/publish', query);
             return this.postFile(file, url, {
                 'Content-Type': 'application/octet-stream'
-            });
+            }, this.maxPublishSize);
         } catch (err) {
             return Promise.reject(err);
         }
@@ -98,21 +105,23 @@ export class Registry {
         });
     }
 
-    post<T extends Response>(content: string | Buffer | Uint8Array, url: URL, headers?: http.OutgoingHttpHeaders): Promise<T> {
+    post<T extends Response>(content: string | Buffer | Uint8Array, url: URL, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): Promise<T> {
         return new Promise((resolve, reject) => {
+            const requestOptions = { method: 'POST', headers, maxBodyLength } as http.RequestOptions;
             const request = this.getProtocol(url)
-                                .request(url, { method: 'POST', headers }, this.getJsonResponse<T>(resolve, reject));
+                                .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             request.on('error', reject);
             request.write(content);
             request.end();
         });
     }
 
-    postFile<T extends Response>(file: string, url: URL, headers?: http.OutgoingHttpHeaders): Promise<T> {
+    postFile<T extends Response>(file: string, url: URL, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): Promise<T> {
         return new Promise((resolve, reject) => {
             const stream = fs.createReadStream(file);
+            const requestOptions = { method: 'POST', headers, maxBodyLength } as http.RequestOptions;
             const request = this.getProtocol(url)
-                                .request(url, { method: 'POST', headers }, this.getJsonResponse<T>(resolve, reject));
+                                .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             stream.on('error', err => {
                 request.abort();
                 reject(err);
@@ -136,9 +145,9 @@ export class Registry {
 
     private getProtocol(url: URL) {
         if (url.protocol === 'https:')
-            return https;
+            return followRedirects.https as typeof https;
         else
-            return http;
+            return followRedirects.http as typeof http;
     }
 
     private getJsonResponse<T extends Response>(resolve: (value: T) => void, reject: (reason: any) => void): (res: http.IncomingMessage) => void {
@@ -177,6 +186,8 @@ export class Registry {
 
 export interface RegistryOptions {
     url?: string;
+    maxNamespaceSize?: number;
+    maxPublishSize?: number;
 }
 
 export interface Response {

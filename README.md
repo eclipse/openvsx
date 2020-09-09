@@ -57,6 +57,16 @@ After you created the GitHub OAuth app, the next step is to copy the _Client ID_
 
 With these settings in place, you should be able to log in by authorizing your OAuth app.
 
+### Google Cloud Setup
+
+If you would like to test file storage via Google Cloud, follow these steps:
+
+ * Create a [GCP](https://cloud.google.com/) project and a bucket. If you use an existing bucket, make sure it is empty before starting the server.
+ * Make the bucket public by granting the role "Storage Object Viewer" to `allUsers`.
+ * Create environment variables named `GCP_PROJECT_ID` and `GCS_BUCKET_ID` containing your GCP project and bucket identifiers.
+ * Create a GCP service account with role "Storage Object Admin" and copy its credentials file into your workspace.
+ * Create an environment variable `GOOGLE_APPLICATION_CREDENTIALS` containing the path to the credentials file.
+
 ## License
 
 [Eclipse Public License 2.0](https://www.eclipse.org/legal/epl-2.0/)

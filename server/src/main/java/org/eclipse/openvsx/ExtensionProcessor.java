@@ -44,6 +44,8 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String[] README = { "extension/README.md", "extension/README", "extension/README.txt" };
     private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
 
+    private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
+
     private final InputStream inputStream;
     private final List<String> detectedLicenseIds;
     private byte[] content;
@@ -77,6 +79,8 @@ public class ExtensionProcessor implements AutoCloseable {
         }
         try {
             content = ByteStreams.toByteArray(inputStream);
+            if (content.length > MAX_CONTENT_SIZE)
+                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.");
             var tempFile = File.createTempFile("extension_", ".vsix");
             Files.write(content, tempFile);
             zipFile = new ZipFile(tempFile);

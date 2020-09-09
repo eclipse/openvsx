@@ -36,9 +36,11 @@
         "node": ">= 10"
     },
     "dependencies": {
-        "vsce": "~1.77.0"
+        "follow-redirects": "^1.13.0",
+        "vsce": "~1.79.5"
     },
     "devDependencies": {
+        "@types/follow-redirects": "^1.13.0",
         "@types/node": "^10.14.18",
         "@types/semver": "^7.1.0",
         "@types/tmp": "^0.1.0",
