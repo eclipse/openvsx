@@ -63,6 +63,7 @@ If you would like to test file storage via Google Cloud, follow these steps:
 
  * Create a [GCP](https://cloud.google.com/) project and a bucket. If you use an existing bucket, make sure it is empty before starting the server.
  * Make the bucket public by granting the role "Storage Object Viewer" to `allUsers`.
+ * [Configure CORS](https://cloud.google.com/storage/docs/configuring-cors#configure-cors-bucket) on the bucket with origin `"*"` and method `"GET"`.
  * Create environment variables named `GCP_PROJECT_ID` and `GCS_BUCKET_ID` containing your GCP project and bucket identifiers. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
  * Create a GCP service account with role "Storage Object Admin" and copy its credentials file into your workspace.
  * Create an environment variable `GOOGLE_APPLICATION_CREDENTIALS` containing the path to the credentials file.

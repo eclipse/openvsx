@@ -12,6 +12,7 @@ export interface ServerAPIRequest {
     endpoint: string;
     method?: 'GET' | 'DELETE' | 'POST' | 'PUT';
     headers?: Record<string, string>;
+    followRedirect?: boolean;
     credentials?: boolean;
     payload?: any;
 }
@@ -43,6 +44,9 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         param.body = JSON.stringify(req.payload);
     }
     param.headers = req.headers;
+    if (req.followRedirect) {
+        param.redirect = 'follow';
+    }
     if (req.credentials) {
         param.credentials = 'include';
     }

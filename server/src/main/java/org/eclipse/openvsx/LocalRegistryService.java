@@ -332,8 +332,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             }
             if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
                 googleStorage.uploadFile(resource);
-                // Don't store the binary content in the DB - it's already stored externally
-                resource.setContent(null);
             } else {
                 resource.setUrl(createApiUrl("", "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
                         "file", resource.getName()));

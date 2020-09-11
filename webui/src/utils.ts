@@ -88,7 +88,7 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
         console.error(err);
         if (err instanceof Error) {
             if (err.message === 'Failed to fetch') {
-                return 'The registry server is not available. Please contact the site administrators.';
+                return 'Something went wrong while fetching data. Please contact the site administrators.';
             }
             return `An unexpected error occurred: ${err.message}`;
         } else if (err.error && err.status && err.message) {

@@ -62,7 +62,8 @@ export class ExtensionRegistryService {
     getExtensionReadme(extension: Extension): Promise<string> {
         return sendRequest({
             endpoint: extension.files.readme!,
-            headers: { 'Accept': 'text/plain' }
+            headers: { 'Accept': 'text/plain' },
+            followRedirect: true
         });
     }
 

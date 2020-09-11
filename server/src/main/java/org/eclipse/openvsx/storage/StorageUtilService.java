@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.storage;
 
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +24,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -37,17 +39,11 @@ public class StorageUtilService {
     @Autowired
     SearchService search;
 
-    public boolean shouldStoreExternally(FileResource resource) {
-        return resource.getType().equals(FileResource.DOWNLOAD);
-    }
+    @Value("${ovsx.storage.external-resource-types:download,icon,readme}")
+    String[] externalResourceTypes;
 
-    public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url,
-            String... types) {
-        for (var type : types) {
-            var fileUrl = getFileUrl(extVersion, serverUrl, type);
-            if (fileUrl != null)
-                type2Url.put(type, fileUrl);
-        }
+    public boolean shouldStoreExternally(FileResource resource) {
+        return Arrays.asList(externalResourceTypes).contains(resource.getType());
     }
 
     public String getFileUrl(ExtensionVersion extVersion, String serverUrl, String type) {
@@ -65,6 +61,24 @@ public class StorageUtilService {
         var namespace = extension.getNamespace();
         return UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
                         "file", resource.getName());
+    }
+
+    public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url,
+            String... types) {
+        for (var type : types) {
+            var fileUrl = getFileUrl(extVersion, serverUrl, type);
+            if (fileUrl != null)
+                type2Url.put(type, fileUrl);
+        }
+    }
+
+    @Transactional
+    public void setInternalFileUrl(FileResource resource) {
+        var extVersion = resource.getExtension();
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        resource.setUrl(UrlUtil.createApiUrl("", "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
+                "file", resource.getName()));
     }
 
     @Transactional
