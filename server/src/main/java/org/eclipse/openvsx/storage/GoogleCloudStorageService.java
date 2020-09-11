@@ -12,6 +12,7 @@ package org.eclipse.openvsx.storage;
 import java.net.URI;
 
 import javax.transaction.Transactional;
+import javax.transaction.Transactional.TxType;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
@@ -55,12 +56,19 @@ public class GoogleCloudStorageService {
         return storage;
     }
 
-    @Transactional(Transactional.TxType.MANDATORY)
+    @Transactional(TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var objectId = getObjectId(resource.getName(), resource.getExtension());
         uploadFile(resource.getContent(), objectId);
         resource.setUrl(BASE_URL + bucketId + "/" + objectId);
         resource.setStorageType(FileResource.STORAGE_GOOGLE);
+        // Don't store the binary content in the DB - it's already stored externally
+        resource.setContent(null);
+    }
+
+    @Transactional(TxType.REQUIRES_NEW)
+    public void uploadFileNewTx(FileResource resource) {
+        uploadFile(resource);
     }
 
     protected void uploadFile(byte[] content, String objectId) {
