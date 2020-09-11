@@ -19,18 +19,6 @@ spring:
     jdbc:
       initialize-schema: never
 
-  security:
-      oauth2:
-        client:
-          registration:
-            github:
-              client-id: ${GITHUB_CLIENT_ID}
-              client-secret: ${GITHUB_CLIENT_SECRET}
-
 ovsx:
-  storage:
-    gcp:
-      project-id: ${GCP_PROJECT_ID}
-      bucket-id: ${GCS_BUCKET_ID}
   vscode:
     id-prefix: "openvsx-dev:"
