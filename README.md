@@ -45,15 +45,15 @@ The Spring server is started automatically in Gitpod. It includes `spring-boot-d
 
 ### OAuth Setup
 
-If you would like to test authorization through GitHub, you need to [create an OAuth app](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) with a callback URL pointing to the exposed port 8080 of your Gitpod workspace. You can get it by printing a predefined variable in the "Server" terminal in Gitpod:
+If you would like to test authorization through GitHub, you need to [create an OAuth app](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) with a callback URL pointing to the exposed port 8080 of your Gitpod workspace. You can get it by calling a script:
 
 ```
-echo $GITHUB_CALLBACK_URL
+server/scripts/callback-url.sh github
 ```
 
 Note that the callback URL needs to be [updated on GitHub](https://github.com/settings/developers) whenever you create a fresh Gitpod workspace.
 
-After you created the GitHub OAuth app, the next step is to copy the _Client ID_ and _Client Secret_ into [Gitpod environment variables](https://www.gitpod.io/docs/environment-variables/) named `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` and bound to this repository.
+After you created the GitHub OAuth app, the next step is to copy the _Client ID_ and _Client Secret_ into [Gitpod environment variables](https://www.gitpod.io/docs/environment-variables/) named `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` and bound to this repository. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
 
 With these settings in place, you should be able to log in by authorizing your OAuth app.
 
@@ -63,7 +63,7 @@ If you would like to test file storage via Google Cloud, follow these steps:
 
  * Create a [GCP](https://cloud.google.com/) project and a bucket. If you use an existing bucket, make sure it is empty before starting the server.
  * Make the bucket public by granting the role "Storage Object Viewer" to `allUsers`.
- * Create environment variables named `GCP_PROJECT_ID` and `GCS_BUCKET_ID` containing your GCP project and bucket identifiers.
+ * Create environment variables named `GCP_PROJECT_ID` and `GCS_BUCKET_ID` containing your GCP project and bucket identifiers. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
  * Create a GCP service account with role "Storage Object Admin" and copy its credentials file into your workspace.
  * Create an environment variable `GOOGLE_APPLICATION_CREDENTIALS` containing the path to the credentials file.
 
