@@ -6,8 +6,8 @@ import { NavigationItem } from '../sidepanel/navigation-item';
 import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
 import ExtensionSharpIcon from '@material-ui/icons/ExtensionSharp';
 import { Route, Switch } from 'react-router-dom';
-import { NamespaceAdmin } from './NamespaceAdmin';
-import { ExtensionAdmin } from './ExtensionAdmin';
+import { NamespaceAdmin } from './namespace-admin';
+import { ExtensionAdmin } from './extension-admin';
 // import { ServiceContext } from '../../default/default-app';
 
 export namespace AdminDashboardRoutes {
@@ -20,7 +20,8 @@ export namespace AdminDashboardRoutes {
 const useStyles = makeStyles((theme) => ({
     container: {
         paddingTop: theme.spacing(4),
-        paddingBottom: theme.spacing(4)
+        paddingBottom: theme.spacing(4),
+        height: '100%'
     }
 }));
 
