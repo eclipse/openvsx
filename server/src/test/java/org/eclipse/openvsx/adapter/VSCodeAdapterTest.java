@@ -58,6 +58,9 @@ public class VSCodeAdapterTest {
     RepositoryService repositories;
 
     @MockBean
+    VSCodeIdService idService;
+
+    @MockBean
     SearchService search;
 
     @MockBean
@@ -120,8 +123,6 @@ public class VSCodeAdapterTest {
 
     private void mockSearch() {
         var extVersion = mockExtension();
-        var extension = extVersion.getExtension();
-        extension.setId(1l);
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
         var page = new PageImpl<>(Lists.newArrayList(entry1));
@@ -130,19 +131,21 @@ public class VSCodeAdapterTest {
         Mockito.when(search.search("yaml", null, PageRequest.of(0, 50), "desc", "relevance"))
                 .thenReturn(page);
         Mockito.when(entityManager.find(Extension.class, 1l))
-                .thenReturn(extension);
+                .thenReturn(extVersion.getExtension());
     }
     
     private ExtensionVersion mockExtension() {
-        var namespace = new Namespace();
-        namespace.setId(2);
-        namespace.setName("redhat");
         var extension = new Extension();
         extension.setId(1);
+        extension.setPublicId("test-1");
         extension.setName("vscode-yaml");
-        extension.setNamespace(namespace);
         extension.setDownloadCount(100);
         extension.setAverageRating(3.0);
+        var namespace = new Namespace();
+        namespace.setId(2);
+        namespace.setPublicId("test-2");
+        namespace.setName("redhat");
+        extension.setNamespace(namespace);
         var extVersion = new ExtensionVersion();
         extension.setLatest(extVersion);
         extVersion.setExtension(extension);
@@ -155,6 +158,8 @@ public class VSCodeAdapterTest {
         extVersion.setEngines(Lists.newArrayList("vscode@^1.31.0"));
         extVersion.setDependencies(Lists.newArrayList());
         extVersion.setBundledExtensions(Lists.newArrayList());
+        Mockito.when(repositories.findExtensionByPublicId("test-1"))
+                .thenReturn(extension);
         Mockito.when(repositories.findExtension("vscode-yaml", "redhat"))
                 .thenReturn(extension);
         Mockito.when(repositories.findVersion("0.5.2", "vscode-yaml", "redhat"))

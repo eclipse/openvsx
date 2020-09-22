@@ -11,6 +11,7 @@ package org.eclipse.openvsx.entities;
 
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -19,12 +20,15 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(uniqueConstraints = { @UniqueConstraint(columnNames = "name") })
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "publicId", "name" }))
 public class Namespace {
 
     @Id
     @GeneratedValue
     long id;
+
+    @Column(length = 128)
+    String publicId;
 
     String name;
 
@@ -41,6 +45,14 @@ public class Namespace {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public String getPublicId() {
+		return publicId;
+	}
+
+	public void setPublicId(String publicId) {
+		this.publicId = publicId;
 	}
 
 	public String getName() {

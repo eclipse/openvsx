@@ -26,6 +26,8 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
 
+    Extension findByPublicId(String publicId);
+
     Streamable<Extension> findAll();
 
     long count();

@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.entities.Extension;
@@ -65,6 +66,9 @@ public class VSCodeAdapter {
     RepositoryService repositories;
 
     @Autowired
+    VSCodeIdService idService;
+
+    @Autowired
     SearchService search;
 
     @Autowired
@@ -75,9 +79,6 @@ public class VSCodeAdapter {
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
-
-    @Value("${ovsx.vscode.id-prefix:}")
-    String idPrefix;
 
     @PostMapping(
         path = "/vscode/gallery/extensionquery",
@@ -132,14 +133,20 @@ public class VSCodeAdapter {
     private ExtensionQueryResult findExtensionsById(List<String> ids, int flags) {
         var extensions = new ArrayList<ExtensionQueryResult.Extension>(ids.size());
         for (var uuid : ids) {
-            try {
-                var primaryKey = Long.parseLong(uuid.startsWith(idPrefix) ? uuid.substring(idPrefix.length()) : uuid);
-                var extension = entityManager.find(Extension.class, primaryKey);
-                if (extension != null) {
-                    extensions.add(toQueryExtension(extension, flags));
+            var extension = repositories.findExtensionByPublicId(uuid);
+            if (extension != null) {
+                extensions.add(toQueryExtension(extension, flags));
+            } else {
+                // Deprecated access to internal id
+                // TODO remove this code after some time
+                try {
+                    var primaryKey = Long.parseLong(uuid);
+                    extension = entityManager.find(Extension.class, primaryKey);
+                    if (extension != null) {
+                        extensions.add(toQueryExtension(extension, flags));
+                    }
+                } catch (NumberFormatException exc) {
                 }
-            } catch (NumberFormatException exc) {
-                // Invalid UUID format - skip this extension
             }
         }
         return toQueryResult(extensions);
@@ -292,12 +299,15 @@ public class VSCodeAdapter {
     }
 
     private ExtensionQueryResult.Extension toQueryExtension(Extension extension, int flags) {
+        if (Strings.isNullOrEmpty(extension.getPublicId())) {
+            idService.createPublicId(extension);
+        }
         var queryExt = new ExtensionQueryResult.Extension();
         var namespace = extension.getNamespace();
         queryExt.publisher = new ExtensionQueryResult.Publisher();
-        queryExt.publisher.publisherId = idPrefix + Long.toString(namespace.getId());
+        queryExt.publisher.publisherId = namespace.getPublicId();
         queryExt.publisher.publisherName = namespace.getName();
-        queryExt.extensionId = idPrefix + Long.toString(extension.getId());
+        queryExt.extensionId = extension.getPublicId();
         queryExt.extensionName = extension.getName();
         var latest = extension.getLatest();
         queryExt.displayName = latest.getDisplayName();

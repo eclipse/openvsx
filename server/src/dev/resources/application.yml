@@ -18,7 +18,3 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: never
-
-ovsx:
-  vscode:
-    id-prefix: "openvsx-dev:"
