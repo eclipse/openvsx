@@ -12,7 +12,6 @@ package org.eclipse.openvsx;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.io.InputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -157,7 +156,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(resource.getUrl()))
+                    .location(storageUtil.getLocation(resource))
                     .build();
         }
     }
@@ -333,8 +332,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
                 googleStorage.uploadFile(resource);
             } else {
-                resource.setUrl(createApiUrl("", "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
-                        "file", resource.getName()));
                 resource.setStorageType(FileResource.STORAGE_DB);
             }
             entityManager.persist(resource);

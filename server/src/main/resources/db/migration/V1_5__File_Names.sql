@@ -1,6 +1,5 @@
 ALTER TABLE public.file_resource
     ADD name character varying(255),
-    ADD url character varying(255),
     ADD storage_type character varying(32);
 
 UPDATE public.file_resource
