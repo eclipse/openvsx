@@ -54,6 +54,10 @@ public class RepositoryService {
         return extensionRepo.findByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespace);
     }
 
+    public Extension findExtensionByPublicId(String publicId) {
+        return extensionRepo.findByPublicId(publicId);
+    }
+
     public Streamable<Extension> findExtensions(Namespace namespace) {
         return extensionRepo.findByNamespaceOrderByNameAsc(namespace);
     }
