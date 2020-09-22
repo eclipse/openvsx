@@ -9,14 +9,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import java.net.URI;
 import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.transaction.Transactional;
-
-import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -39,30 +38,51 @@ public class StorageUtilService {
     @Autowired
     SearchService search;
 
-    @Value("${ovsx.storage.external-resource-types:download,icon,readme}")
+    @Autowired
+    GoogleCloudStorageService googleStorage;
+
+    /** Determines which resource types are stored externally. Default: all except the manifest (package.json) */
+    @Value("${ovsx.storage.external-resource-types:download,icon,readme,license}")
     String[] externalResourceTypes;
 
     public boolean shouldStoreExternally(FileResource resource) {
         return Arrays.asList(externalResourceTypes).contains(resource.getType());
     }
 
+    /**
+     * Returns an API URL to the file of the given type, if it exists. To be used in JSON response data.
+     */
     public String getFileUrl(ExtensionVersion extVersion, String serverUrl, String type) {
         var resource = repositories.findFileByType(extVersion, type);
         if (resource == null)
             return null;
-        if (resource.getStorageType().equals(FileResource.STORAGE_DB) && !Strings.isNullOrEmpty(resource.getUrl())) {
-            // Locally stored resources are expected to hold a relative URL starting with "/"
-            if (serverUrl.endsWith("/"))
-                return serverUrl + resource.getUrl().substring(1);
-            else
-                return serverUrl + resource.getUrl();
-        }
+        return getFileUrl(resource, extVersion, serverUrl);
+    }
+
+    private String getFileUrl(FileResource resource, ExtensionVersion extVersion, String serverUrl) {
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
         return UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
-                        "file", resource.getName());
+                "file", resource.getName());
     }
 
+    /**
+     * Returns the actual access location of a resource.
+     */
+    public URI getLocation(FileResource resource) {
+        switch (resource.getStorageType()) {
+            case FileResource.STORAGE_GOOGLE:
+                return googleStorage.getLocation(resource.getName(), resource.getExtension());
+            case FileResource.STORAGE_DB:
+                return URI.create(getFileUrl(resource, resource.getExtension(), UrlUtil.getBaseUrl()));
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Adds URLs for the given file types to a map to be used in JSON response data.
+     */
     public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url,
             String... types) {
         for (var type : types) {
@@ -72,15 +92,9 @@ public class StorageUtilService {
         }
     }
 
-    @Transactional
-    public void setInternalFileUrl(FileResource resource) {
-        var extVersion = resource.getExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        resource.setUrl(UrlUtil.createApiUrl("", "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
-                "file", resource.getName()));
-    }
-
+    /**
+     * Register a package file download by increasing its download count.
+     */
     @Transactional
     public void increaseDownloadCount(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();

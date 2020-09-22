@@ -37,21 +37,18 @@ public class StorageInitializer {
     @EventListener
     @Transactional
     public void initFileStorage(ApplicationStartedEvent event) {
-        var updated = new int[2];
+        var updated = new int[1];
         repositories.findFilesByStorageType(FileResource.STORAGE_DB).forEach(resource -> {
             if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
+                if (updated[0] == 0)
+                    logger.info("Starting migration to Google Cloud Storage...");
                 googleStorage.uploadFileNewTx(resource);
                 updated[0]++;
-            } else if (resource.getUrl() == null) {
-                storageUtil.setInternalFileUrl(resource);
-                updated[1]++;
             }
         });
 
         if (updated[0] > 0)
             logger.info("Uploaded " + updated[0] + " resources to Google Cloud Storage.");
-        if (updated[1] > 0)
-            logger.info("Updated " + updated[1] + " resource URLs.");
     }
 
 }

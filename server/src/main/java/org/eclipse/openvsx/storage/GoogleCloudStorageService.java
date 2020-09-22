@@ -60,7 +60,6 @@ public class GoogleCloudStorageService {
     public void uploadFile(FileResource resource) {
         var objectId = getObjectId(resource.getName(), resource.getExtension());
         uploadFile(resource.getContent(), objectId);
-        resource.setUrl(BASE_URL + bucketId + "/" + objectId);
         resource.setStorageType(FileResource.STORAGE_GOOGLE);
         // Don't store the binary content in the DB - it's already stored externally
         resource.setContent(null);
@@ -85,7 +84,7 @@ public class GoogleCloudStorageService {
         getStorage().delete(BlobId.of(bucketId, objectId));
     }
 
-    public URI getFileURI(String name, ExtensionVersion extVersion) {
+    public URI getLocation(String name, ExtensionVersion extVersion) {
         return URI.create(BASE_URL + bucketId + "/" + getObjectId(name, extVersion));
     }
 

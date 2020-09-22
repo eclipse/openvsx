@@ -16,7 +16,6 @@ import static org.eclipse.openvsx.adapter.ExtensionQueryResult.ExtensionFile.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Property.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Statistic.*;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -240,7 +239,7 @@ public class VSCodeAdapter {
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(resource.getUrl()))
+                    .location(storageUtil.getLocation(resource))
                     .build();
         }
     }
@@ -285,7 +284,7 @@ public class VSCodeAdapter {
                 throw new NotFoundException();
             if (resource.getStorageType().equals(FileResource.STORAGE_GOOGLE)) {
                 storageUtil.increaseDownloadCount(extVersion);
-                return new ModelAndView("redirect:" + resource.getUrl(), model);
+                return new ModelAndView("redirect:" + storageUtil.getLocation(resource), model);
             }
         }
         var serverUrl = UrlUtil.getBaseUrl();
