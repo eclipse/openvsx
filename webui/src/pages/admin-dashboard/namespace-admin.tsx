@@ -43,11 +43,23 @@ export const NamespaceAdmin: FunctionComponent<NamespaceAdminProps> = props => {
         }
     };
 
+    const [inputValue, setInputValue] = useState('');
+    const onChangeInput = (name: string) => {
+        setInputValue(name);
+    };
+
+    const onCreate = async () => {
+        await service.createNamespace({
+            name: inputValue
+        });
+        await fetchNamespace(inputValue);
+    };
+
     return (<>
         <DelayedLoadIndicator loading={loading} />
         <SearchListContainer
             searchContainer={
-                <NamespaceInput onSubmit={fetchNamespace} />
+                <NamespaceInput onSubmit={fetchNamespace} onChange={onChangeInput} />
             }
             listContainer={
                 currentNamespace && pageSettings && user ?
@@ -60,12 +72,11 @@ export const NamespaceAdmin: FunctionComponent<NamespaceAdminProps> = props => {
                         user={user}
                     />
                     : notFound ?
-                        <Box>
+                        <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center'>
                             <Typography variant='body1'>
                                 Namespace {notFound} not found. Do you want to create it?
-                                </Typography>
-                            <Button>Create Namespace {notFound}</Button>
-
+                            </Typography>
+                            <Button variant='contained' color='primary' onClick={onCreate}>Create Namespace {notFound}</Button>
                         </Box>
                         : ''
             }

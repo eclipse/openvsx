@@ -67,7 +67,7 @@ class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.P
             }
             <Box className={this.props.classes.buttonContainer}>
                 {
-                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider ?
+                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider && memberUser.role && memberUser.role !== 'admin' ?
                         '' :
                         <Box m={1}>
                             <Select
@@ -81,7 +81,7 @@ class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.P
                         </Box>
                 }
                 {
-                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider ?
+                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider && memberUser.role !== 'admin' ?
                         <Box className={this.props.classes.owner}>
                             Owner
                         </Box>

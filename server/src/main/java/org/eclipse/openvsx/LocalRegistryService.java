@@ -95,11 +95,11 @@ public class LocalRegistryService implements IExtensionRegistry {
     public NamespaceJson getNamespace(String namespaceName) {
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null)
-        throw new NotFoundException();
+            throw new NotFoundException();
         var json = new NamespaceJson();
         json.name = namespace.getName();
         json.extensions = new LinkedHashMap<>();
-        
+
         var serverUrl = UrlUtil.getBaseUrl();
 
         var principal = users.getOAuth2Principal();
@@ -107,8 +107,9 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var user = users.updateUser(principal);
-        if(user.getRole() == "admin") {
+        if (user.getRole().equals("admin")) {
             json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
+            json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
         }
 
         for (var ext : repositories.findExtensions(namespace)) {
@@ -324,9 +325,20 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (namespaceIssue.isPresent()) {
             throw new ErrorResultException(namespaceIssue.get().toString());
         }
-        var token = users.useAccessToken(tokenValue);
-        if (token == null) {
-            throw new ErrorResultException("Invalid access token.");
+        if (tokenValue == null) {
+            var principal = users.getOAuth2Principal();
+            if (principal == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+            var user = users.updateUser(principal);
+            if(!user.getRole().equals("admin")) {
+                throw new ErrorResultException("Not Authorized.");
+            }
+        } else {
+            var token = users.useAccessToken(tokenValue);
+            if (token == null) {
+                throw new ErrorResultException("Invalid access token.");
+            }
         }
         var namespace = repositories.findNamespace(json.name);
         if (namespace != null) {

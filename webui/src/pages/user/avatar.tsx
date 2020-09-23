@@ -16,6 +16,7 @@ import { UserData, isError } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { UserSettingsRoutes } from './user-settings';
 import { ErrorResponse } from '../../server-request';
+import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
 
 const avatarStyle = (theme: Theme) => createStyles({
     avatar: {
@@ -102,7 +103,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                         </Typography>
                     </Link>
                 </MenuItem>
-                <Divider/>
+                <Divider />
                 <MenuItem className={this.props.classes.menuItem}>
                     <RouteLink onClick={this.handleClose} to={UserSettingsRoutes.PROFILE} className={this.props.classes.link}>
                         <Typography variant='button' color='textPrimary'>
@@ -110,9 +111,21 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                         </Typography>
                     </RouteLink>
                 </MenuItem>
+                {
+                    user.role && user.role === 'admin' ?
+                        <MenuItem className={this.props.classes.menuItem}>
+                            <RouteLink onClick={this.handleClose} to={AdminDashboardRoutes.MAIN} className={this.props.classes.link}>
+                                <Typography variant='button' color='textPrimary'>
+                                    Admin Dashboard
+                                </Typography>
+                            </RouteLink>
+                        </MenuItem>
+                        :
+                        ''
+                }
                 <MenuItem className={this.props.classes.menuItem}>
                     <form method='post' action={this.props.service.getLogoutUrl()}>
-                        {this.state.csrf ? <input name='_csrf' type='hidden' value={this.state.csrf} /> : null }
+                        {this.state.csrf ? <input name='_csrf' type='hidden' value={this.state.csrf} /> : null}
                         <button type='submit' className={`${this.props.classes.link} ${this.props.classes.menuButton}`}>
                             <Typography variant='button' className={this.props.classes.logoutButton}>
                                 Log Out

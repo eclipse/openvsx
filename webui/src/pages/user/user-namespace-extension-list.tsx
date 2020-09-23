@@ -18,9 +18,6 @@ import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { PageSettings } from '../../page-settings';
 
 const extensionListStyles = (theme: Theme) => createStyles({
-    container: {
-        padding: theme.spacing(5, 0),
-    },
     extensions: {
         display: 'grid',
         gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
@@ -78,20 +75,19 @@ class UserNamespaceExtensionListComponent extends React.Component<UserNamespaceE
 
     render() {
         const { classes } = this.props;
-        return (
-            <section className={classes.container}>
-                <Typography variant='h5'>Extensions</Typography>
-                <div className={classes.extensions}>
-                    <DelayedLoadIndicator loading={this.state.loading}/>
-                    {
-                        this.state.extensions ? this.state.extensions.map((extension: Extension, i: number) => <UserNamespaceExtensionListItem
-                            pageSettings={this.props.pageSettings}
-                            key={`${i}${extension.displayName}`}
-                            extension={extension}
-                        />) : null
-                    }
-                </div>
-            </section>
+        return (<>
+            <Typography variant='h5'>Extensions</Typography>
+            <div className={classes.extensions}>
+                <DelayedLoadIndicator loading={this.state.loading} />
+                {
+                    this.state.extensions ? this.state.extensions.map((extension: Extension, i: number) => <UserNamespaceExtensionListItem
+                        pageSettings={this.props.pageSettings}
+                        key={`${i}${extension.displayName}`}
+                        extension={extension}
+                    />) : null
+                }
+            </div>
+        </>
         );
     }
 }

@@ -127,7 +127,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                         namespaceAccessUrl ?
                             <React.Fragment>
                                 Read <Link color='secondary' href={namespaceAccessUrl} target='_blank'>here</Link> about claiming namespaces.
-                        </React.Fragment>
+                            </React.Fragment>
                             : null
                     }
                     </Typography> : null

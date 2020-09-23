@@ -191,7 +191,25 @@ export class ExtensionRegistryService {
 
     findNamespace(name: string): Promise<Namespace> {
         return sendRequest({
+            credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, 'api', name])
+        });
+    }
+
+    async createNamespace(namespace: { name: string }): Promise<SuccessResult> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', '-', 'namespace', 'create']),
+            method: 'POST',
+            payload: namespace,
+            headers
         });
     }
 

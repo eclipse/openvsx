@@ -71,6 +71,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
 
     const handleUserSearch = async (ev: React.ChangeEvent<HTMLInputElement>) => {
         const popperTarget = ev.currentTarget;
+        setPopperTarget(popperTarget);
         const val = popperTarget.value;
         let showUserPopper = false;
         let foundUsers: UserData[] = [];
@@ -83,7 +84,6 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
         }
         setShowUserPopper(showUserPopper);
         setFoundUsers(foundUsers);
-        setPopperTarget(popperTarget);
     };
 
     return <>

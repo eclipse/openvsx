@@ -136,7 +136,7 @@ public class UserService {
     public ResultJson setNamespaceMember(UserData requestingUser, String namespaceName, String provider, String userLogin, String role) {
         var namespace = repositories.findNamespace(namespaceName);
         var userMembership = repositories.findMembership(requestingUser, namespace);
-        if (userMembership == null || !userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
+        if ((userMembership == null || !userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) && !requestingUser.getRole().equals("admin")) {
             throw new ErrorResultException("You must be an owner of this namespace.");
         }
         var targetUser = repositories.findUserByLoginName(provider, userLogin);

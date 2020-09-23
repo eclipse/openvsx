@@ -31,6 +31,7 @@ const useStyles = makeStyles(theme =>
 
 interface NamespaceInputProps {
     onSubmit: (namespaceName: string) => void;
+    onChange: (namespaceName: string) => void;
 }
 
 export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
@@ -38,6 +39,7 @@ export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
     const [namespaceName, setNamespaceName] = useState('');
     const onChangeNamespaceInput = (ev: React.ChangeEvent<HTMLInputElement>) => {
         const namespaceName = ev.target.value;
+        props.onChange(namespaceName);
         setNamespaceName(namespaceName);
     };
     const onSubmit = () => {
@@ -47,7 +49,7 @@ export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
         <InputBase
             autoFocus
             className={classes.input}
-            placeholder='Search Namespaces'
+            placeholder='Namespace'
             onChange={onChangeNamespaceInput}
             onKeyPress={(e: React.KeyboardEvent) => {
                 if (e.charCode === 13) {

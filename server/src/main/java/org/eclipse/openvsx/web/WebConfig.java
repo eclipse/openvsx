@@ -34,7 +34,9 @@ public class WebConfig implements WebMvcConfigurer {
             var authorizedEndpoints = new String[] {
                 "/user/**",
                 "/logout",
-                "/api/*/*/review/**"
+                "/api/-/namespace/create",
+                "/api/*/*/review/**",
+                "/api/*"
             };
             for (var endpoint : authorizedEndpoints) {
                 registry.addMapping(endpoint)
