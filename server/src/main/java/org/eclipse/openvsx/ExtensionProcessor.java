@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
@@ -45,6 +46,7 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
 
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
+    private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");
 
     private final InputStream inputStream;
     private final List<String> detectedLicenseIds;
@@ -277,18 +279,24 @@ public class ExtensionProcessor implements AutoCloseable {
         var license = new FileResource();
         license.setExtension(extension);
         license.setType(FileResource.LICENSE);
-        if (extension.getLicense() != null && extension.getLicense().toUpperCase().startsWith("SEE LICENSE IN ")) {
-            var fileName = extension.getLicense().substring("SEE LICENSE IN ".length()).trim();
-            extension.setLicense(null);
-            var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
-            if (bytes != null) {
-                var lastSegmentIndex = fileName.lastIndexOf('/');
-                var lastSegment = fileName.substring(lastSegmentIndex + 1);
-                license.setName(lastSegment);
-                license.setContent(bytes);
-                var detection = new LicenseDetection(detectedLicenseIds);
-                extension.setLicense(detection.detectLicense(bytes));
-                return license;
+        // Parse specifications in the form "SEE MIT LICENSE IN LICENSE.txt"
+        if (!Strings.isNullOrEmpty(extension.getLicense())) {
+            var matcher = LICENSE_PATTERN.matcher(extension.getLicense());
+            if (matcher.find()) {
+                extension.setLicense(matcher.group("license"));
+                var fileName = matcher.group("file");
+                var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
+                if (bytes != null) {
+                    var lastSegmentIndex = fileName.lastIndexOf('/');
+                    var lastSegment = fileName.substring(lastSegmentIndex + 1);
+                    license.setName(lastSegment);
+                    license.setContent(bytes);
+                    if (extension.getLicense() == null) {
+                        var detection = new LicenseDetection(detectedLicenseIds);
+                        extension.setLicense(detection.detectLicense(bytes));
+                    }
+                    return license;
+                }
             }
         }
 

@@ -444,8 +444,15 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 title={extension.license ? 'License type' : undefined} >
                 {extension.license || 'Provided license'}
             </Link>;
+        } else if (extension.license) {
+            return <Link
+                href={`https://spdx.org/licenses/${encodeURIComponent(extension.license)}.html`}
+                className={`${this.props.classes.link} ${themeClass}`}
+                title={extension.license ? 'License type' : undefined} >
+                {extension.license}
+            </Link>;
         } else {
-            return extension.license || 'Unlicensed';
+            return 'Unlicensed';
         }
     }
 
