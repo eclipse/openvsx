@@ -25,6 +25,9 @@ import { handleError } from './utils';
 import { ErrorDialog } from './components/error-dialog';
 import '../src/main.css';
 import { HeaderMenu } from './header-menu';
+import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
+
+export const UserContext = React.createContext<UserData | undefined>(undefined);
 
 const mainStyles = (theme: Theme) => createStyles({
     main: {
@@ -111,91 +114,100 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         const classes = this.props.classes;
         return <React.Fragment>
             <CssBaseline />
-            <Box className={classes.main}>
-                <AppBar position='relative'>
-                    <Toolbar classes={{ root: classes.spreadHorizontally }}>
-                        <Box className={classes.alignVertically}>
-                            {ToolbarContent ? <ToolbarContent /> : null}
-                        </Box>
-                        <Box className={classes.alignVertically}>
-                            <HeaderMenu pageSettings={this.props.pageSettings} />
-                            {
-                                this.state.user ?
-                                    <UserAvatar
-                                        user={this.state.user}
-                                        service={this.props.service}
-                                        setError={this.handleError}
-                                    />
-                                    :
-                                    <IconButton
-                                        href={this.props.service.getLoginUrl()}
-                                        title='Log In'
-                                        aria-label='Log In' >
-                                        <AccountBoxIcon />
-                                    </IconButton>
-                            }
-                        </Box>
-                    </Toolbar>
-                </AppBar>
-                <Box pb={`${this.getContentPadding()}px`}>
-                    <Switch>
-                        <Route exact path={[ExtensionListRoutes.MAIN]}
-                            render={routeProps =>
-                                <ExtensionListContainer
-                                    {...routeProps}
-                                    service={this.props.service}
-                                    pageSettings={this.props.pageSettings}
-                                    handleError={this.handleError}
-                                />
-                            } />
-                        <Route path={UserSettingsRoutes.MAIN}
-                            render={routeProps =>
-                                <UserSettings
-                                    {...routeProps}
-                                    user={this.state.user}
-                                    userLoading={this.state.userLoading}
-                                    service={this.props.service}
-                                    pageSettings={this.props.pageSettings}
-                                    handleError={this.handleError}
-                                />
-                            } />
-                        <Route path={ExtensionDetailRoutes.MAIN}
-                            render={routeProps =>
-                                <ExtensionDetail
-                                    {...routeProps}
-                                    user={this.state.user}
-                                    service={this.props.service}
-                                    pageSettings={this.props.pageSettings}
-                                    handleError={this.handleError}
-                                />
-                            } />
-                        {AdditionalRoutes ? <AdditionalRoutes /> : null}
-                        <Route path='*'>
-                            <Container>
-                                <Box height='30vh' display='flex' flexWrap='wrap' justifyContent='center' alignItems='center'>
-                                    <Typography variant='h3'>Oooups...this is a 404 page.</Typography>
-                                    <BrokenImageIcon style={{ fontSize: '4rem', flexBasis: '100%' }} />
+            <Switch>
+                <Route path={AdminDashboardRoutes.MAIN}>
+                    <UserContext.Provider value={this.state.user}>
+                        <AdminDashboard></AdminDashboard>
+                    </UserContext.Provider>
+                </Route>
+                <Route path='*'>
+                    <Box className={classes.main}>
+                        <AppBar position='relative'>
+                            <Toolbar classes={{ root: classes.spreadHorizontally }}>
+                                <Box className={classes.alignVertically}>
+                                    {ToolbarContent ? <ToolbarContent /> : null}
                                 </Box>
-                            </Container>
-                        </Route>
-                    </Switch>
-                </Box>
-                {
-                    this.state.error ?
-                        <ErrorDialog
-                            errorMessage={this.state.error}
-                            isErrorDialogOpen={this.state.isErrorDialogOpen}
-                            handleCloseDialog={this.handleDialogClose} />
-                        : null
-                }
-                {
-                    FooterContent ?
-                        <footer className={classes.footer}>
-                            <FooterContent />
-                        </footer>
-                        : null
-                }
-            </Box>
+                                <Box className={classes.alignVertically}>
+                                    <HeaderMenu pageSettings={this.props.pageSettings} />
+                                    {
+                                        this.state.user ?
+                                            <UserAvatar
+                                                user={this.state.user}
+                                                service={this.props.service}
+                                                setError={this.handleError}
+                                            />
+                                            :
+                                            <IconButton
+                                                href={this.props.service.getLoginUrl()}
+                                                title='Log In'
+                                                aria-label='Log In' >
+                                                <AccountBoxIcon />
+                                            </IconButton>
+                                    }
+                                </Box>
+                            </Toolbar>
+                        </AppBar>
+                        <Box pb={`${this.getContentPadding()}px`}>
+                            <Switch>
+                                <Route exact path={[ExtensionListRoutes.MAIN]}
+                                    render={routeProps =>
+                                        <ExtensionListContainer
+                                            {...routeProps}
+                                            service={this.props.service}
+                                            pageSettings={this.props.pageSettings}
+                                            handleError={this.handleError}
+                                        />
+                                    } />
+                                <Route path={UserSettingsRoutes.MAIN}
+                                    render={routeProps =>
+                                        <UserSettings
+                                            {...routeProps}
+                                            user={this.state.user}
+                                            userLoading={this.state.userLoading}
+                                            service={this.props.service}
+                                            pageSettings={this.props.pageSettings}
+                                            handleError={this.handleError}
+                                        />
+                                    } />
+                                <Route path={ExtensionDetailRoutes.MAIN}
+                                    render={routeProps =>
+                                        <ExtensionDetail
+                                            {...routeProps}
+                                            user={this.state.user}
+                                            service={this.props.service}
+                                            pageSettings={this.props.pageSettings}
+                                            handleError={this.handleError}
+                                        />
+                                    } />
+                                {AdditionalRoutes ? <AdditionalRoutes /> : null}
+                                <Route path='*'>
+                                    <Container>
+                                        <Box height='30vh' display='flex' flexWrap='wrap' justifyContent='center' alignItems='center'>
+                                            <Typography variant='h3'>Oooups...this is a 404 page.</Typography>
+                                            <BrokenImageIcon style={{ fontSize: '4rem', flexBasis: '100%' }} />
+                                        </Box>
+                                    </Container>
+                                </Route>
+                            </Switch>
+                        </Box>
+                        {
+                            this.state.error ?
+                                <ErrorDialog
+                                    errorMessage={this.state.error}
+                                    isErrorDialogOpen={this.state.isErrorDialogOpen}
+                                    handleCloseDialog={this.handleDialogClose} />
+                                : null
+                        }
+                        {
+                            FooterContent ?
+                                <footer className={classes.footer}>
+                                    <FooterContent />
+                                </footer>
+                                : null
+                        }
+                    </Box>
+                </Route>
+            </Switch>
         </React.Fragment>;
     }
 
@@ -222,5 +234,4 @@ export namespace MainComponent {
         isErrorDialogOpen: boolean
     }
 }
-
 export const Main = withStyles(mainStyles)(MainComponent);

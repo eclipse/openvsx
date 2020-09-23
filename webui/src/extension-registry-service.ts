@@ -189,6 +189,12 @@ export class ExtensionRegistryService {
         });
     }
 
+    findNamespace(name: string): Promise<Namespace> {
+        return sendRequest({
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', name])
+        });
+    }
+
     getNamespaces(): Promise<Readonly<Namespace>[]> {
         return sendRequest({
             credentials: true,

@@ -134,6 +134,7 @@ export interface UserData {
     avatarUrl?: UrlString;
     homepage?: string;
     provider?: string;
+    role?: string;
 }
 
 export function isEqualUser(u1: UserData, u2: UserData): boolean {

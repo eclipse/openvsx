@@ -10,14 +10,14 @@
 
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@material-ui/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { ExtensionRegistryService } from '../extension-registry-service';
 import { Main } from '../main';
 import createPageSettings from './page-settings';
 import createDefaultTheme from './theme';
-import { AdminDashboardRoutes, AdminDashboard } from '../pages/admin-dashboard/admin-dashboard';
+import { PageSettings } from '../page-settings';
 
 // This is the default entry point for the webui Docker image and for development.
 // The production code for open-vsx.org is at https://github.com/eclipse/open-vsx.org
@@ -30,6 +30,7 @@ if (serverHost.startsWith('3000-')) {
 }
 const service = new ExtensionRegistryService(`${location.protocol}//${serverHost}`);
 export const ServiceContext = React.createContext(service);
+export const PageSettingsContext = React.createContext<PageSettings | undefined>(undefined);
 
 const App = () => {
     const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
@@ -42,17 +43,12 @@ const App = () => {
 
     return (
         <ThemeProvider theme={theme}>
-            <Switch>
-                <Route path={AdminDashboardRoutes.MAIN}>
-                    <AdminDashboard></AdminDashboard>
-                </Route>
-                <Route path='*'>
-                    <Main
-                        service={service}
-                        pageSettings={pageSettings}
-                    />
-                </Route>
-            </Switch>
+            <PageSettingsContext.Provider value={pageSettings}>
+                <Main
+                    service={service}
+                    pageSettings={pageSettings}
+                />
+            </PageSettingsContext.Provider>
         </ThemeProvider>
     );
 };

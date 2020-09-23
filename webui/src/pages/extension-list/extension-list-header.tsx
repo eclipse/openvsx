@@ -10,15 +10,15 @@
 
 import * as React from 'react';
 import {
-    Box, WithStyles, createStyles, Theme, withStyles, Paper, IconButton, InputBase,
+    Box, WithStyles, createStyles, Theme, withStyles, Paper, InputBase,
     Select, MenuItem, Container
 } from '@material-ui/core';
-import SearchIcon from '@material-ui/icons/Search';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
 import { PageSettings } from '../../page-settings';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
+import { ExtensionListSearchfield } from './extension-list-searchfield';
 
 const headerStyles = (theme: Theme) => createStyles({
     formContainer: {
@@ -68,15 +68,6 @@ const headerStyles = (theme: Theme) => createStyles({
     resultSortBySelectIcon: {
         display: 'none'
     },
-    search: {
-        flex: 2,
-        display: 'flex',
-        marginRight: theme.spacing(1),
-        [theme.breakpoints.down('sm')]: {
-            marginRight: 0,
-            marginBottom: theme.spacing(2),
-        },
-    },
     category: {
         flex: 1,
         display: 'flex'
@@ -84,15 +75,6 @@ const headerStyles = (theme: Theme) => createStyles({
     inputBase: {
         flex: 1,
         paddingLeft: theme.spacing(1)
-    },
-    iconButton: {
-        backgroundColor: theme.palette.secondary.main,
-        borderRadius: '0 4px 4px 0',
-        padding: theme.spacing(1),
-        transition: 'all 0s',
-        '&:hover': {
-            filter: 'invert(100%)',
-        }
     },
     placeholder: {
         opacity: 0.4
@@ -139,8 +121,8 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
         this.props.onCategoryChanged(category);
     };
 
-    protected handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        this.props.onSearchChanged(event.target.value);
+    protected handleSearchChange = (value: string) => {
+        this.props.onSearchChanged(value);
     };
 
     protected renderValue = (value: string) => {
@@ -172,23 +154,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                     {SearchHeader ? <SearchHeader /> : ''}
                     <Box className={classes.formContainer}>
                         <Box className={classes.form}>
-                            <Paper className={classes.search}>
-                                <InputBase
-                                    autoFocus
-                                    value={this.props.searchQuery || ''}
-                                    onChange={this.handleSearchChange}
-                                    className={classes.inputBase}
-                                    placeholder='Search by Name, Tag, or Description'
-                                    id='search-input' />
-                                <label
-                                    htmlFor='search-input'
-                                    className='visually-hidden' >
-                                    Search for Name, Tags or Description
-                                </label>
-                                <IconButton color='primary' aria-label='Search' classes={{ root: classes.iconButton }}>
-                                    <SearchIcon />
-                                </IconButton>
-                            </Paper>
+                            <ExtensionListSearchfield onSearchChanged={this.handleSearchChange} searchQuery={this.props.searchQuery} />
                             <Paper className={classes.category}>
                                 <Select
                                     value={this.state.category}

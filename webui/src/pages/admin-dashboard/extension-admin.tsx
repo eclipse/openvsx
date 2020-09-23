@@ -1,6 +1,20 @@
 import React, { FunctionComponent } from 'react';
-import { Typography } from '@material-ui/core';
+import { SearchListContainer } from './search-list-container';
+import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
+import { Box } from '@material-ui/core';
 
 export const ExtensionAdmin: FunctionComponent = props => {
-    return <Typography variant='h4'>Extension Administration</Typography>;
+    const handleSearchChange = (value: string) => {
+        console.log(value);
+    };
+    return (<>
+        <SearchListContainer
+            searchContainer={
+                <ExtensionListSearchfield onSearchChanged={handleSearchChange} />
+            }
+            listContainer={
+                <Box>A List of Extensions</Box>
+            }
+        />
+    </>);
 };

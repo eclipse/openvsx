@@ -66,7 +66,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
- 
+
     @Autowired
     EntityManager entityManager;
 
@@ -95,11 +95,22 @@ public class LocalRegistryService implements IExtensionRegistry {
     public NamespaceJson getNamespace(String namespaceName) {
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null)
-            throw new NotFoundException();
+        throw new NotFoundException();
         var json = new NamespaceJson();
         json.name = namespace.getName();
         json.extensions = new LinkedHashMap<>();
+        
         var serverUrl = UrlUtil.getBaseUrl();
+
+        var principal = users.getOAuth2Principal();
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        var user = users.updateUser(principal);
+        if(user.getRole() == "admin") {
+            json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
+        }
+
         for (var ext : repositories.findExtensions(namespace)) {
             String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
             json.extensions.put(ext.getName(), url);
@@ -172,11 +183,11 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         var list = new ReviewListJson();
         var serverUrl = UrlUtil.getBaseUrl();
-        list.postUrl = createApiUrl(serverUrl, "api", extension.getNamespace().getName(), extension.getName(), "review");
-        list.deleteUrl = createApiUrl(serverUrl, "api", extension.getNamespace().getName(), extension.getName(), "review", "delete");
-        list.reviews = repositories.findActiveReviews(extension)
-                .map(extReview -> extReview.toReviewJson())
-                .toList();
+        list.postUrl = createApiUrl(serverUrl, "api", extension.getNamespace().getName(), extension.getName(),
+                "review");
+        list.deleteUrl = createApiUrl(serverUrl, "api", extension.getNamespace().getName(), extension.getName(),
+                "review", "delete");
+        list.reviews = repositories.findActiveReviews(extension).map(extReview -> extReview.toReviewJson()).toList();
         return list;
     }
 
@@ -345,7 +356,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
     }
 
-    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token) {
+    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user,
+            PersonalAccessToken token) {
         var namespaceName = processor.getNamespace();
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
@@ -380,10 +392,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             entityManager.persist(extension);
         } else {
             if (repositories.findVersion(extVersion.getVersion(), extension) != null) {
-                throw new ErrorResultException(
-                        "Extension " + namespace.getName() + "." + extension.getName()
-                        + " version " + extVersion.getVersion()
-                        + " is already published.");
+                throw new ErrorResultException("Extension " + namespace.getName() + "." + extension.getName()
+                        + " version " + extVersion.getVersion() + " is already published.");
             }
             if (extension.getLatest() == null
                     || extension.getLatest().isPreview() && isGreater(extVersion, extension.getLatest())
@@ -400,8 +410,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             if (metadataIssues.size() == 1) {
                 throw new ErrorResultException(metadataIssues.get(0).toString());
             }
-            throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
-                    + Joiner.on("\n").join(metadataIssues));
+            throw new ErrorResultException(
+                    "Multiple issues were found in the extension metadata:\n" + Joiner.on("\n").join(metadataIssues));
         }
         return extVersion;
     }
@@ -523,7 +533,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         extension.setAverageRating(computeAverageRating(extension));
         search.updateSearchEntry(extension);
-        return ResultJson.success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
+        return ResultJson
+                .success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 
     private Double computeAverageRating(Extension extension) {
@@ -557,7 +568,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         return entry;
     }
 
-    private SearchEntryJson.VersionReference toVersionReference(ExtensionVersion extVersion, SearchEntryJson entry, String serverUrl) {
+    private SearchEntryJson.VersionReference toVersionReference(ExtensionVersion extVersion, SearchEntryJson entry,
+            String serverUrl) {
         var json = new SearchEntryJson.VersionReference();
         json.version = extVersion.getVersion();
         json.engines = extVersion.getEnginesMap();

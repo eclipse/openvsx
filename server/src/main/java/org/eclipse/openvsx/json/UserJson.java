@@ -40,6 +40,9 @@ public class UserJson extends ResultJson {
     @ApiModelProperty(hidden = true)
     public String createTokenUrl;
 
+    @ApiModelProperty(hidden = true)
+    public String role;
+
     @ApiModelProperty("Full name")
     public String fullName;
 
