@@ -19,6 +19,27 @@ spring:
     jdbc:
       initialize-schema: never
 
+  security:
+      oauth2:
+        client:
+          registration:
+            github:
+              client-id: ${GITHUB_CLIENT_ID}
+              client-secret: ${GITHUB_CLIENT_SECRET}
+            eclipse:
+              client-id: ${ECLIPSE_CLIENT_ID}
+              client-secret: ${ECLIPSE_CLIENT_SECRET}
+              authorization-grant-type: authorization_code
+              redirect-uri: ${ECLIPSE_REDIRECT_URI}
+              scope: openvsx_publisher_agreement, openid, profile
+          provider:
+            eclipse:
+              authorization-uri: https://accounts.eclipse.org/oauth2/authorize
+              token-uri: https://accounts.eclipse.org/oauth2/token
+              user-info-uri: https://accounts.eclipse.org/oauth2/UserInfo
+              user-name-attribute: name
+              user-info-authentication-method: header
+
 ovsx:
   elasticsearch:
     clear-on-start: true

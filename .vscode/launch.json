@@ -1,12 +1,20 @@
 {
     "version": "0.2.0",
     "configurations": [
+
         {
             "type": "java",
             "name": "Launch RegistryApplication",
             "request": "launch",
             "mainClass": "org.eclipse.openvsx.RegistryApplication",
             "projectName": "openvsx-server"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Attach)",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 5005
         },
         {
             "type": "node",
