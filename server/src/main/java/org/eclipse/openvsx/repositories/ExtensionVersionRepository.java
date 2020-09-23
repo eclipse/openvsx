@@ -36,6 +36,9 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findAll();
 
+    @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 order by ev.timestamp desc")
+    Streamable<String> getVersionStrings(Extension extension);
+
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();
 

@@ -19,6 +19,7 @@ import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Statistic.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -26,6 +27,7 @@ import javax.persistence.EntityManager;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
+import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -123,7 +125,9 @@ public class VSCodeAdapter {
             return toQueryResult(Collections.emptyList());
         }
         try {
-            var searchResult = search.search(queryString, category, pageRequest, sortOrder, sortBy);
+            var searchOptions = new SearchService.Options(queryString, category, pageRequest.getPageSize(),
+                    pageRequest.getPageNumber() * pageRequest.getPageSize(), sortOrder, sortBy, false);
+            var searchResult = search.search(searchOptions, pageRequest);
             return findExtensions(searchResult, param.flags);
         } catch (ErrorResultException exc) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exc.getMessage(), exc);
@@ -356,12 +360,15 @@ public class VSCodeAdapter {
         }
 
         if (test(flags, FLAG_INCLUDE_FILES)) {
+            Map<String, String> type2Url = Maps.newHashMapWithExpectedSize(5);
+            storageUtil.addFileUrls(extVer, serverUrl, type2Url,
+                    FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD);
             queryVer.files = Lists.newArrayList();
-            queryVer.addFile(FILE_MANIFEST, storageUtil.getFileUrl(extVer, serverUrl, FileResource.MANIFEST));
-            queryVer.addFile(FILE_DETAILS, storageUtil.getFileUrl(extVer, serverUrl, FileResource.README));
-            queryVer.addFile(FILE_LICENSE, storageUtil.getFileUrl(extVer, serverUrl, FileResource.LICENSE));
-            queryVer.addFile(FILE_ICON, storageUtil.getFileUrl(extVer, serverUrl, FileResource.ICON));
-            queryVer.addFile(FILE_VSIX, storageUtil.getFileUrl(extVer, serverUrl, FileResource.DOWNLOAD));
+            queryVer.addFile(FILE_MANIFEST, type2Url.get(FileResource.MANIFEST));
+            queryVer.addFile(FILE_DETAILS, type2Url.get(FileResource.README));
+            queryVer.addFile(FILE_LICENSE, type2Url.get(FileResource.LICENSE));
+            queryVer.addFile(FILE_ICON, type2Url.get(FileResource.ICON));
+            queryVer.addFile(FILE_VSIX, type2Url.get(FileResource.DOWNLOAD));
         }
 
         if (test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {

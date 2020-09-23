@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 import javax.persistence.EntityManager;
 
@@ -128,7 +129,8 @@ public class VSCodeAdapterTest {
         var page = new PageImpl<>(Lists.newArrayList(entry1));
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        Mockito.when(search.search("yaml", null, PageRequest.of(0, 50), "desc", "relevance"))
+        var searchOptions = new SearchService.Options("yaml", null, 50, 0, "desc", "relevance", false);
+        Mockito.when(search.search(searchOptions, PageRequest.of(0, 50)))
                 .thenReturn(page);
         Mockito.when(entityManager.find(Extension.class, 1l))
                 .thenReturn(extVersion.getExtension());
@@ -166,6 +168,8 @@ public class VSCodeAdapterTest {
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
+        Mockito.when(repositories.getVersionStrings(extension))
+                .thenReturn(Streamable.of(extVersion.getVersion()));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0l);
         Mockito.when(repositories.countActiveReviews(extension))
@@ -206,6 +210,8 @@ public class VSCodeAdapterTest {
         iconFile.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.ICON))
                 .thenReturn(iconFile);
+        Mockito.when(repositories.findFilesByType(extVersion, Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD)))
+                .thenReturn(Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile));
         return extVersion;
     }
 

@@ -11,6 +11,9 @@ package org.eclipse.openvsx.repositories;
 
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
+
+import java.util.Collection;
+
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 
@@ -23,5 +26,7 @@ public interface FileResourceRepository extends Repository<FileResource, Long> {
     FileResource findByExtensionAndNameIgnoreCase(ExtensionVersion extVersion, String name);
 
     FileResource findByExtensionAndType(ExtensionVersion extVersion, String type);
+
+    Streamable<FileResource> findByExtensionAndTypeIn(ExtensionVersion extVersion, Collection<String> types);
 
 }

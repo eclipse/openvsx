@@ -13,6 +13,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.search.SearchService;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -30,6 +31,6 @@ public interface IExtensionRegistry {
 
     ReviewListJson getReviews(String namespace, String extension);
 
-    SearchResultJson search(String query, String category, int size, int offset, String sortOrder, String sortBy);
+    SearchResultJson search(SearchService.Options options);
 
 }

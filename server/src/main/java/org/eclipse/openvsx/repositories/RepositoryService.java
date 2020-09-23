@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.entities.PersistedLog;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
@@ -86,6 +87,10 @@ public class RepositoryService {
          return extensionVersionRepo.findByExtension(extension);
     }
 
+    public Streamable<String> getVersionStrings(Extension extension) {
+        return extensionVersionRepo.getVersionStrings(extension);
+    }
+
     public Streamable<ExtensionVersion> findVersions(Extension extension, boolean preview) {
          return extensionVersionRepo.findByExtensionAndPreview(extension, preview);
     }
@@ -124,6 +129,10 @@ public class RepositoryService {
 
     public FileResource findFileByType(ExtensionVersion extVersion, String type) {
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
+    }
+
+    public Streamable<FileResource> findFilesByType(ExtensionVersion extVersion, Collection<String> types) {
+        return fileResourceRepo.findByExtensionAndTypeIn(extVersion, types);
     }
 
     public Streamable<ExtensionReview> findActiveReviews(Extension extension) {

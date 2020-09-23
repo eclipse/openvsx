@@ -24,6 +24,7 @@ import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
@@ -246,7 +247,10 @@ public class RegistryAPI {
             String sortOrder,
             @RequestParam(defaultValue = "relevance")
             @ApiParam(value = "Sort key (relevance is a weighted mix of various properties)", allowableValues = "relevance,timestamp,averageRating,downloadCount")
-            String sortBy
+            String sortBy,
+            @RequestParam(required = false)
+            @ApiParam(value = "Whether to include information on all available versions for each returned entry")
+            boolean includeAllVersions
         ) {
         if (size < 0) {
             return SearchResultJson.error("The parameter 'size' must not be negative.");
@@ -255,6 +259,7 @@ public class RegistryAPI {
             return SearchResultJson.error("The parameter 'offset' must not be negative.");
         }
 
+        var options = new SearchService.Options(query, category, size, offset, sortOrder, sortBy, includeAllVersions);
         var result = new SearchResultJson();
         result.extensions = new ArrayList<>(size);
         for (var registry : getRegistries()) {
@@ -262,7 +267,7 @@ public class RegistryAPI {
                 return result;
             }
             try {
-                var subResult = registry.search(query, category, size, offset, sortOrder, sortBy);
+                var subResult = registry.search(options);
                 if (subResult.extensions != null && subResult.extensions.size() > 0) {
                     int limit = size - result.extensions.size();
                     var subResultSize = mergeSearchResults(result, subResult.extensions, limit);

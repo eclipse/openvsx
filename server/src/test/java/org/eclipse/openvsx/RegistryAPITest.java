@@ -10,6 +10,8 @@
 package org.eclipse.openvsx;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -613,10 +615,14 @@ public class RegistryAPITest {
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
+        Mockito.when(repositories.getVersionStrings(extension))
+                .thenReturn(Streamable.of(extVersion.getVersion()));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0l);
         Mockito.when(repositories.countActiveReviews(extension))
                 .thenReturn(0l);
+        Mockito.when(repositories.findFilesByType(eq(extVersion), anyCollection()))
+                .thenReturn(Streamable.empty());
         return extVersion;
     }
 
@@ -693,7 +699,8 @@ public class RegistryAPITest {
         var page = new PageImpl<>(Lists.newArrayList(entry1));
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        Mockito.when(search.search("foo", null, PageRequest.of(0, 10), "desc", "relevance"))
+        var searchOptions = new SearchService.Options("foo", null, 10, 0, "desc", "relevance", false);
+        Mockito.when(search.search(searchOptions, PageRequest.of(0, 10)))
                 .thenReturn(page);
         Mockito.when(entityManager.find(Extension.class, 1l))
                 .thenReturn(extension);
@@ -742,6 +749,10 @@ public class RegistryAPITest {
         Mockito.when(repositories.countActiveReviews(any(Extension.class)))
                 .thenReturn(0l);
         Mockito.when(repositories.findVersions(any(Extension.class)))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.getVersionStrings(any(Extension.class)))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findFilesByType(any(ExtensionVersion.class), anyCollection()))
                 .thenReturn(Streamable.empty());
         if (mode.equals("owner")) {
             var ownerMem = new NamespaceMembership();
