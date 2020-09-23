@@ -50,23 +50,6 @@ public class StorageUtilService {
     }
 
     /**
-     * Returns an API URL to the file of the given type, if it exists. To be used in JSON response data.
-     */
-    public String getFileUrl(ExtensionVersion extVersion, String serverUrl, String type) {
-        var resource = repositories.findFileByType(extVersion, type);
-        if (resource == null)
-            return null;
-        return getFileUrl(resource, extVersion, serverUrl);
-    }
-
-    private String getFileUrl(FileResource resource, ExtensionVersion extVersion, String serverUrl) {
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        return UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
-                "file", resource.getName());
-    }
-
-    /**
      * Returns the actual access location of a resource.
      */
     public URI getLocation(FileResource resource) {
@@ -74,21 +57,30 @@ public class StorageUtilService {
             case FileResource.STORAGE_GOOGLE:
                 return googleStorage.getLocation(resource.getName(), resource.getExtension());
             case FileResource.STORAGE_DB:
-                return URI.create(getFileUrl(resource, resource.getExtension(), UrlUtil.getBaseUrl()));
+                return URI.create(getFileUrl(resource.getName(), resource.getExtension(), UrlUtil.getBaseUrl()));
             default:
                 return null;
         }
     }
 
+    private String getFileUrl(String name, ExtensionVersion extVersion, String serverUrl) {
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        return UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
+                "file", name);
+    }
+
     /**
      * Adds URLs for the given file types to a map to be used in JSON response data.
      */
-    public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url,
-            String... types) {
-        for (var type : types) {
-            var fileUrl = getFileUrl(extVersion, serverUrl, type);
-            if (fileUrl != null)
-                type2Url.put(type, fileUrl);
+    public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url, String... types) {
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        var versionUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion());
+        var resources = repositories.findFilesByType(extVersion, Arrays.asList(types));
+        for (var resource : resources) {
+            var fileUrl = UrlUtil.createApiUrl(versionUrl, "file", resource.getName());
+            type2Url.put(resource.getType(), fileUrl);
         }
     }
 

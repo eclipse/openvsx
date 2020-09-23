@@ -25,6 +25,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -177,34 +178,36 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public SearchResultJson search(String queryString, String category, int size, int offset, String sortOrder, String sortBy) {
+    public SearchResultJson search(SearchService.Options options) {
         var json = new SearchResultJson();
+        var size = options.requestedSize;
         if (size <= 0 || !search.isEnabled()) {
             json.extensions = Collections.emptyList();
             return json;
         }
 
+        var offset = options.requestedOffset;
         var pageRequest = PageRequest.of(offset / size, size);
-        var searchResult = search.search(queryString, category, pageRequest, sortOrder, sortBy);
-        json.extensions = toSearchEntries(searchResult, size, offset % size);
+        var searchResult = search.search(options, pageRequest);
+        json.extensions = toSearchEntries(searchResult, size, offset % size, options);
         json.offset = offset;
         json.totalSize = (int) searchResult.getTotalElements();
         if (json.extensions.size() < size && searchResult.hasNext()) {
             // This is necessary when offset % size > 0
-            var remainder = search.search(queryString, category, pageRequest.next(), sortOrder, sortBy);
-            json.extensions.addAll(toSearchEntries(remainder, size - json.extensions.size(), 0));
+            var remainder = search.search(options, pageRequest.next());
+            json.extensions.addAll(toSearchEntries(remainder, size - json.extensions.size(), 0, options));
         }
         return json;
     }
 
-    private List<SearchEntryJson> toSearchEntries(Page<ExtensionSearch> page, int size, int offset) {
+    private List<SearchEntryJson> toSearchEntries(Page<ExtensionSearch> page, int size, int offset, SearchService.Options options) {
         var serverUrl = UrlUtil.getBaseUrl();
         if (offset > 0 || size < page.getNumberOfElements())
             return CollectionUtil.map(
                     Iterables.limit(Iterables.skip(page.getContent(), offset), size),
-                    es -> toSearchEntry(es, serverUrl));
+                    es -> toSearchEntry(es, serverUrl, options));
         else
-            return CollectionUtil.map(page.getContent(), es -> toSearchEntry(es, serverUrl));
+            return CollectionUtil.map(page.getContent(), es -> toSearchEntry(es, serverUrl, options));
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -440,18 +443,20 @@ public class LocalRegistryService implements IExtensionRegistry {
         return (double) sum / count;
     }
 
-    private SearchEntryJson toSearchEntry(ExtensionSearch searchItem, String serverUrl) {
+    private SearchEntryJson toSearchEntry(ExtensionSearch searchItem, String serverUrl, SearchService.Options options) {
         var extension = entityManager.find(Extension.class, searchItem.id);
         if (extension == null)
             return null;
         var extVer = extension.getLatest();
         var entry = extVer.toSearchEntryJson();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
-        entry.files = new LinkedHashMap<>();
+        entry.files = Maps.newLinkedHashMapWithExpectedSize(2);
         storageUtil.addFileUrls(extVer, serverUrl, entry.files, FileResource.DOWNLOAD, FileResource.ICON);
-        var allVersions = Lists.newArrayList(repositories.findVersions(extension));
-        Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
-        entry.allVersions = CollectionUtil.map(allVersions, ev -> toVersionReference(ev, entry, serverUrl));
+        if (options.includeAllVersions) {
+            var allVersions = Lists.newArrayList(repositories.findVersions(extension));
+            Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
+            entry.allVersions = CollectionUtil.map(allVersions, ev -> toVersionReference(ev, entry, serverUrl));
+        }
         return entry;
     }
 
@@ -460,7 +465,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.version = extVersion.getVersion();
         json.engines = extVersion.getEnginesMap();
         json.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name, extVersion.getVersion());
-        json.files = new LinkedHashMap<>();
+        json.files = Maps.newLinkedHashMapWithExpectedSize(1);
         storageUtil.addFileUrls(extVersion, serverUrl, json.files, FileResource.DOWNLOAD);
         return json;
     }
@@ -481,19 +486,19 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
 
-        json.allVersions = new LinkedHashMap<>();
+        var allVersions = CollectionUtil.map(repositories.getVersionStrings(extension), v -> new SemanticVersion(v));
+        Collections.sort(allVersions, Collections.reverseOrder());
+        json.allVersions = Maps.newLinkedHashMapWithExpectedSize(allVersions.size() + 2);
         if (extension.getLatest() != null)
             json.allVersions.put("latest", createApiUrl(serverUrl, "api", json.namespace, json.name, "latest"));
         if (extension.getPreview() != null)
             json.allVersions.put("preview", createApiUrl(serverUrl, "api", json.namespace, json.name, "preview"));
-        var allVersions = Lists.newArrayList(repositories.findVersions(extension));
-        Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
-        for (var ev : allVersions) {
-            String url = createApiUrl(serverUrl, "api", json.namespace, json.name, ev.getVersion());
-            json.allVersions.put(ev.getVersion(), url);
+        for (var version : allVersions) {
+            String url = createApiUrl(serverUrl, "api", json.namespace, json.name, version.toString());
+            json.allVersions.put(version.toString(), url);
         }
     
-        json.files = new LinkedHashMap<>();
+        json.files = Maps.newLinkedHashMapWithExpectedSize(5);
         storageUtil.addFileUrls(extVersion, serverUrl, json.files,
                 FileResource.DOWNLOAD, FileResource.MANIFEST, FileResource.ICON, FileResource.README, FileResource.LICENSE);
     

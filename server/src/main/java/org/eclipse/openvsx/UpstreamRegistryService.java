@@ -12,17 +12,15 @@ package org.eclipse.openvsx;
 import static org.eclipse.openvsx.util.UrlUtil.addQuery;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
-import java.util.Arrays;
+import java.net.URI;
 
 import com.google.common.base.Strings;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -34,10 +32,15 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class UpstreamRegistryService implements IExtensionRegistry {
+
+    protected final Logger logger = LoggerFactory.getLogger(UpstreamRegistryService.class);
 
     @Autowired
     RestTemplate restTemplate;
@@ -88,13 +91,22 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     private ResponseEntity<byte[]> getFile(String url) {
-        var headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
-        var response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<String>(headers), byte[].class);
-        if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
-            throw new NotFoundException();
+        var upstreamLocation = URI.create(url);
+        var request = new RequestEntity<Void>(HttpMethod.HEAD, upstreamLocation);
+        var response = restTemplate.exchange(request, byte[].class);
+        var statusCode = response.getStatusCode();
+        if (statusCode.is2xxSuccessful()) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(upstreamLocation)
+                    .build();
         }
-        return response;
+        if (statusCode.is3xxRedirection()) {
+            return response;
+        }
+        if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
+            logger.error("HEAD " + url + ": " + response.toString());
+        }
+        throw new NotFoundException();
     }
 
     @Override
@@ -109,11 +121,18 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
 	@Override
-	public SearchResultJson search(String query, String category, int size, int offset, String sortOrder, String sortBy) {
+	public SearchResultJson search(SearchService.Options options) {
 		try {
             var searchUrl = createApiUrl(upstreamUrl, "api", "-", "search");
-            var requestUrl = addQuery(searchUrl, "query", query, "category", category,
-                    "size", Integer.toString(size), "offset", Integer.toString(offset));
+            var requestUrl = addQuery(searchUrl,
+                "query", options.queryString,
+                "category", options.category,
+                "size", Integer.toString(options.requestedSize),
+                "offset", Integer.toString(options.requestedOffset),
+                "sortOrder", options.sortOrder,
+                "sortBy", options.sortBy,
+                "includeAllVersions", Boolean.toString(options.includeAllVersions)
+            );
             return restTemplate.getForObject(requestUrl, SearchResultJson.class);
         } catch (RestClientException exc) {
             handleError(exc);

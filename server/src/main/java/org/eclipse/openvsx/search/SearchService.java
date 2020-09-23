@@ -11,6 +11,7 @@ package org.eclipse.openvsx.search;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -202,15 +203,15 @@ public class SearchService {
         return memberships == 0;
     }
 
-    public Page<ExtensionSearch> search(String queryString, String category, Pageable pageRequest, String sortOrder, String sortBy) {
+    public Page<ExtensionSearch> search(Options options, Pageable pageRequest) {
         var queryBuilder = new NativeSearchQueryBuilder()
                 .withIndices("extensions")
                 .withPageable(pageRequest);
-        if (!Strings.isNullOrEmpty(queryString)) {
+        if (!Strings.isNullOrEmpty(options.queryString)) {
             var boolQuery = QueryBuilders.boolQuery();
 
             // Fuzzy matching of search query in multiple fields
-            var multiMatchQuery = QueryBuilders.multiMatchQuery(queryString)
+            var multiMatchQuery = QueryBuilders.multiMatchQuery(options.queryString)
                     .field("name").boost(5)
                     .field("displayName").boost(5)
                     .field("tags").boost(3)
@@ -221,7 +222,7 @@ public class SearchService {
             boolQuery.should(multiMatchQuery).boost(5);
 
             // Prefix matching of search query in display name and namespace
-            var prefixString = queryString.trim().toLowerCase();
+            var prefixString = options.queryString.trim().toLowerCase();
             var namePrefixQuery = QueryBuilders.prefixQuery("displayName", prefixString);
             boolQuery.should(namePrefixQuery).boost(2);
             var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", prefixString);
@@ -230,11 +231,23 @@ public class SearchService {
             queryBuilder.withQuery(boolQuery);
         }
 
-        if (!Strings.isNullOrEmpty(category)) {
+        if (!Strings.isNullOrEmpty(options.category)) {
             // Filter by selected category
-            queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", category));
+            queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", options.category));
         }
 
+        // Sort search results according to 'sortOrder' and 'sortBy' options
+        sortResults(queryBuilder, options.sortOrder, options.sortBy);
+        
+        try {
+            rwLock.readLock().lock();
+            return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    private void sortResults(NativeSearchQueryBuilder queryBuilder, String sortOrder, String sortBy) {
         if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
             throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
         }
@@ -256,12 +269,56 @@ public class SearchService {
             throw new ErrorResultException(
                     "sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'");
         }
-        
-        try {
-            rwLock.readLock().lock();
-            return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
-        } finally {
-            rwLock.readLock().unlock();
+    }
+
+    public static class Options {
+        public final String queryString;
+        public final String category;
+        public final int requestedSize;
+        public final int requestedOffset;
+        public final String sortOrder;
+        public final String sortBy;
+        public final boolean includeAllVersions;
+
+        public Options(String queryString, String category, int size, int offset, String sortOrder,
+                String sortBy, boolean includeAllVersions) {
+            this.queryString = queryString;
+            this.category = category;
+            this.requestedSize = size;
+            this.requestedOffset = offset;
+            this.sortOrder = sortOrder;
+            this.sortBy = sortBy;
+            this.includeAllVersions = includeAllVersions;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this)
+                return true;
+            if (!(obj instanceof Options))
+                return false;
+            var other = (Options) obj;
+            if (!Objects.equals(this.queryString, other.queryString))
+                return false;
+            if (!Objects.equals(this.category, other.category))
+                return false;
+            if (this.requestedSize != other.requestedSize)
+                return false;
+            if (this.requestedOffset != other.requestedOffset)
+                return false;
+            if (!Objects.equals(this.sortOrder, other.sortOrder))
+                return false;
+            if (!Objects.equals(this.sortBy, other.sortBy))
+                return false;
+            if (this.includeAllVersions != other.includeAllVersions)
+                return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(queryString, category, requestedSize, requestedOffset, sortOrder, sortBy,
+                    includeAllVersions);
         }
     }
 
