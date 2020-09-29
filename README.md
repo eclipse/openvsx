@@ -40,6 +40,7 @@ The command line tool is available at `cli/lib/ovsx`.
  * `./gradlew build` &mdash; build and test the server
  * `./gradlew assemble -t` &mdash; build continuously (the server is restarted after every change)
  * `./gradlew runServer` &mdash; start the Spring server on port 8080
+ * `./scripts/test-report.sh` &mdash; display test results on port 8081
 
 The Spring server is started automatically in Gitpod. It includes `spring-boot-devtools` which detects changes in the compiled class files and restarts the server.
 

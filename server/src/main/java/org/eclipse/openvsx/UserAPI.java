@@ -57,6 +57,11 @@ public class UserAPI {
     @Autowired
     UserService users;
 
+    /**
+     * This endpoint is used to check whether there is a logged-in user. For this reason, it
+     * does not return a 403 status, but an OK status with JSON body when no user data is
+     * available. This is to avoid unnecessary network error logging in the browser console.
+     */
     @GetMapping(
         path = "/user",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -114,14 +119,15 @@ public class UserAPI {
         path = "/user/token/create",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional(rollbackOn = ResponseStatusException.class)
+    @Transactional
     public ResponseEntity<AccessTokenJson> createAccessToken(@RequestParam(required = false) String description) {
         if (description != null && description.length() > TOKEN_DESCRIPTION_SIZE) {
-            return ResponseEntity.ok(AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters."));
+            var json = AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         var principal = users.getOAuth2Principal();
         if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         var user = users.updateUser(principal);
         var token = new PersonalAccessToken();
@@ -143,8 +149,8 @@ public class UserAPI {
         path = "/user/token/delete/{id}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional(rollbackOn = ResponseStatusException.class)
-    public ResultJson deleteAccessToken(@PathVariable long id) {
+    @Transactional
+    public ResponseEntity<ResultJson> deleteAccessToken(@PathVariable long id) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -152,10 +158,12 @@ public class UserAPI {
         var user = users.updateUser(principal);
         var token = repositories.findAccessToken(id);
         if (token == null || !token.isActive() || !token.getUser().equals(user)) {
-            return ResultJson.error("Token does not exist.");
+            var json = ResultJson.error("Token does not exist.");
+            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
         }
         token.setActive(false);
-        return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
+        var json = ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
+        return ResponseEntity.ok(json);
     }
 
     @GetMapping(
@@ -213,17 +221,19 @@ public class UserAPI {
         path = "/user/namespace/{namespace}/role",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResultJson setNamespaceMember(@PathVariable String namespace, @RequestParam String user,
+    public ResponseEntity<ResultJson> setNamespaceMember(@PathVariable String namespace, @RequestParam String user,
             @RequestParam String role, @RequestParam(required = false) String provider) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         try {
             var requestingUser = users.updateUser(principal);
-            return users.setNamespaceMember(requestingUser, namespace, provider, user, role);
+            var json = users.setNamespaceMember(requestingUser, namespace, provider, user, role);
+            return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
-            return ResultJson.error(exc.getMessage());
+            var json = ResultJson.error(exc.getMessage());
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
     }
 

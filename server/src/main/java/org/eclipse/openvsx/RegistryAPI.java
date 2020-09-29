@@ -11,7 +11,6 @@ package org.eclipse.openvsx;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +18,8 @@ import com.google.common.collect.Iterables;
 
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.QueryParamJson;
+import org.eclipse.openvsx.json.QueryResultJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
@@ -30,7 +31,6 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -94,6 +94,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
+        // TODO return 404 status
         return NamespaceJson.error("Namespace not found: " + namespace);
     }
 
@@ -120,6 +121,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
+        // TODO return 404 status
         return ExtensionJson.error("Extension not found: " + namespace + "." + extension);
     }
 
@@ -148,6 +150,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
+        // TODO return 404 status
         return ExtensionJson.error("Extension not found: " + namespace + "." + extension + " version " + version);
     }
 
@@ -200,21 +203,27 @@ public class RegistryAPI {
     @ApiResponses({
         @ApiResponse(
             code = 200,
-            message = "The 'error' property indicates whether the request failed"
+            message = "The reviews are returned in JSON format"
+        ),
+        @ApiResponse(
+            code = 404,
+            message = "The specified extension could not be found"
         )
     })
-    public ReviewListJson getReviews(@PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
-                                     String namespace,
-                                     @PathVariable @ApiParam(value = "Extension name", example = "java")
-                                     String extension) {
+    public ResponseEntity<ReviewListJson> getReviews(@PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+                                                     String namespace,
+                                                     @PathVariable @ApiParam(value = "Extension name", example = "java")
+                                                     String extension) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getReviews(namespace, extension);
+                var json = registry.getReviews(namespace, extension);
+                return ResponseEntity.ok(json);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
-        return ReviewListJson.error("Extension not found: " + namespace + "." + extension);
+        var json = ReviewListJson.error("Extension not found: " + namespace + "." + extension);
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
     @GetMapping(
@@ -222,16 +231,20 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    @ApiOperation("Search extensions via a query string")
+    @ApiOperation("Search extensions via text entered by a user")
     @ApiResponses({
         @ApiResponse(
             code = 200,
-            message = "The 'error' property indicates whether the request failed"
+            message = "The search results are returned in JSON format"
+        ),
+        @ApiResponse(
+            code = 400,
+            message = "The request contains an invalid parameter value"
         )
     })
-    public SearchResultJson search(
+    public ResponseEntity<SearchResultJson> search(
             @RequestParam(required = false)
-            @ApiParam(value = "Query string for searching", example = "javascript")
+            @ApiParam(value = "Query text for searching", example = "javascript")
             String query,
             @RequestParam(required = false)
             @ApiParam(value = "Extension category as shown in the UI", example = "Programming Languages")
@@ -253,10 +266,12 @@ public class RegistryAPI {
             boolean includeAllVersions
         ) {
         if (size < 0) {
-            return SearchResultJson.error("The parameter 'size' must not be negative.");
+            var json = SearchResultJson.error("The parameter 'size' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            return SearchResultJson.error("The parameter 'offset' must not be negative.");
+            var json = SearchResultJson.error("The parameter 'offset' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
         var options = new SearchService.Options(query, category, size, offset, sortOrder, sortBy, includeAllVersions);
@@ -264,7 +279,7 @@ public class RegistryAPI {
         result.extensions = new ArrayList<>(size);
         for (var registry : getRegistries()) {
             if (result.extensions.size() >= size) {
-                return result;
+                return ResponseEntity.ok(result);
             }
             try {
                 var subResult = registry.search(options);
@@ -278,10 +293,12 @@ public class RegistryAPI {
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
-                return SearchResultJson.error(exc.getMessage());
+                var json = SearchResultJson.error(exc.getMessage());
+                var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
+                return new ResponseEntity<>(json, status);
             }
         }
-        return result;
+        return ResponseEntity.ok(result);
     }
 
     private int mergeSearchResults(SearchResultJson result, List<SearchEntryJson> entries, int limit) {
@@ -299,6 +316,46 @@ public class RegistryAPI {
     }
 
     @PostMapping(
+        path = "/api/-/query",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @ApiOperation("Provides metadata of extensions matching the given parameters")
+    @ApiResponses({
+        @ApiResponse(
+            code = 200,
+            message = "Returns the (possibly empty) query results"
+        ),
+        @ApiResponse(
+            code = 400,
+            message = "The request contains an invalid parameter value"
+        )
+    })
+    public ResponseEntity<QueryResultJson> query(@RequestBody @ApiParam("Parameters of the metadata query")
+                                                 QueryParamJson param) {
+        var result = new QueryResultJson();
+        for (var registry : getRegistries()) {
+            try {
+                var subResult = registry.query(param);
+                if (subResult.extensions != null) {
+                    if (result.extensions == null)
+                        result.extensions = subResult.extensions;
+                    else
+                        result.extensions.addAll(subResult.extensions);
+                }
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            } catch (ErrorResultException exc) {
+                var json = QueryResultJson.error(exc.getMessage());
+                var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
+                return new ResponseEntity<>(json, status);
+            }
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping(
         path = "/api/-/namespace/create",
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -308,18 +365,23 @@ public class RegistryAPI {
         @ApiResponse(
             code = 201,
             message = "Successfully created the namespace",
-            examples = @Example(@ExampleProperty(value="{ \"success\": \"Created namespace foobar\" }", mediaType = "application/json"))
+            examples = @Example(@ExampleProperty(value="{ \"success\": \"Created namespace foobar\" }", mediaType = "application/json")),
+            responseHeaders = @ResponseHeader(
+                name = "Location",
+                description = "The URL of the namespace metadata",
+                response = String.class
+            )
         ),
         @ApiResponse(
-            code = 200,
+            code = 400,
             message = "The namespace could not be created",
             examples = @Example(@ExampleProperty(value="{ \"error\": \"Invalid access token.\" }", mediaType = "application/json"))
         )
     })
-    public ResponseEntity<ResultJson> createNamespace(@RequestBody(required = false) @ApiParam("Describes the namespace to create")
-                                      NamespaceJson namespace,
-                                      @RequestParam @ApiParam("A personal access token")
-                                      String token) {
+    public ResponseEntity<ResultJson> createNamespace(@RequestBody @ApiParam("Describes the namespace to create")
+                                                      NamespaceJson namespace,
+                                                      @RequestParam @ApiParam("A personal access token")
+                                                      String token) {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error("No JSON input."));
         }
@@ -330,9 +392,13 @@ public class RegistryAPI {
             var json = local.createNamespace(namespace, token);
             var serverUrl = UrlUtil.getBaseUrl();
             var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.name);
-            return new ResponseEntity<>(json, location(url), HttpStatus.CREATED);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create(url))
+                    .body(json);
         } catch (ErrorResultException exc) {
-            return ResponseEntity.ok(ResultJson.error(exc.getMessage()));
+            var json = ResultJson.error(exc.getMessage());
+            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>(json, status);
         }
     }
 
@@ -353,23 +419,32 @@ public class RegistryAPI {
     @ApiResponses({
         @ApiResponse(
             code = 201,
-            message = "Successfully published the extension"
+            message = "Successfully published the extension",
+            responseHeaders = @ResponseHeader(
+                name = "Location",
+                description = "The URL of the extension metadata",
+                response = String.class
+            )
         ),
         @ApiResponse(
-            code = 200,
+            code = 400,
             message = "The extension could not be published",
             examples = @Example(@ExampleProperty(value="{ \"error\": \"Invalid access token.\" }", mediaType = "application/json"))
         )
     })
     public ResponseEntity<ExtensionJson> publish(InputStream content,
-                                 @RequestParam @ApiParam("A personal access token") String token) {
+                                                 @RequestParam @ApiParam("A personal access token") String token) {
         try {
             var json = local.publish(content, token);
             var serverUrl = UrlUtil.getBaseUrl();
             var url = UrlUtil.createApiUrl(serverUrl, "api", json.namespace, json.name, json.version);
-            return new ResponseEntity<>(json, location(url), HttpStatus.CREATED);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create(url))
+                    .body(json);
         } catch (ErrorResultException exc) {
-            return ResponseEntity.ok(ExtensionJson.error(exc.getMessage()));
+            var json = ExtensionJson.error(exc.getMessage());
+            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>(json, status);
         }
     }
 
@@ -383,22 +458,26 @@ public class RegistryAPI {
                                  @PathVariable String namespace,
                                  @PathVariable String extension) {
         if (review == null) {
-            return ResponseEntity.ok(ResultJson.error("No JSON input."));
+            var json = ResultJson.error("No JSON input.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (review.rating < 0 || review.rating > 5) {
-            return ResponseEntity.ok(ResultJson.error("The rating must be an integer number between 0 and 5."));
+            var json = ResultJson.error("The rating must be an integer number between 0 and 5.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (review.title != null && review.title.length() > REVIEW_TITLE_SIZE) {
-            return ResponseEntity.ok(ResultJson.error("The title must not be longer than " + REVIEW_TITLE_SIZE + " characters."));
+            var json = ResultJson.error("The title must not be longer than " + REVIEW_TITLE_SIZE + " characters.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (review.comment != null && review.comment.length() > REVIEW_COMMENT_SIZE) {
-            return ResponseEntity.ok(ResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters."));
+            var json = ResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         var json = local.postReview(review, namespace, extension);
         if (json.error == null) {
             return new ResponseEntity<>(json, HttpStatus.CREATED);
         } else {
-            return ResponseEntity.ok(json);
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -407,19 +486,14 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @ApiIgnore
-    public ResultJson deleteReview(@PathVariable String namespace,
-                                   @PathVariable String extension) {
-        return local.deleteReview(namespace, extension);
-    }
-
-    private HttpHeaders location(String value) {
-        try {
-            var headers = new HttpHeaders();
-			headers.setLocation(new URI(value));
-            return headers;
-		} catch (URISyntaxException exc) {
-			throw new RuntimeException(exc);
-		}
+    public ResponseEntity<ResultJson> deleteReview(@PathVariable String namespace,
+                                                   @PathVariable String extension) {
+        var json = local.deleteReview(namespace, extension);
+        if (json.error == null) {
+            return ResponseEntity.ok(json);
+        } else {
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
     }
 
 }

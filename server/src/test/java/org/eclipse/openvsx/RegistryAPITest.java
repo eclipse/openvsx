@@ -256,6 +256,102 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testQueryExtensionName() throws Exception {
+        mockExtension();
+        mockMvc.perform(post("/api/-/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ \"extensionName\": \"bar\" }"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.namespaceAccess = "public";
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testQueryNamespace() throws Exception {
+        mockExtension();
+        mockMvc.perform(post("/api/-/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ \"namespaceName\": \"foo\" }"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.namespaceAccess = "public";
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testQueryUnknownExtension() throws Exception {
+        mockExtension();
+        Mockito.when(repositories.findExtensions("baz")).thenReturn(Streamable.empty());
+        mockMvc.perform(post("/api/-/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ \"extensionName\": \"baz\" }"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{ \"extensions\": [] }"));
+    }
+
+    @Test
+    public void testQueryExtensionId() throws Exception {
+        mockExtension();
+        mockMvc.perform(post("/api/-/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ \"extensionId\": \"foo.bar\" }"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.namespaceAccess = "public";
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testQueryExtensionUuid() throws Exception {
+        mockExtension();
+        mockMvc.perform(post("/api/-/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ \"extensionUuid\": \"5678\" }"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.namespaceAccess = "public";
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testQueryNamespaceUuid() throws Exception {
+        mockExtension();
+        mockMvc.perform(post("/api/-/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ \"namespaceUuid\": \"1234\" }"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.namespaceAccess = "public";
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
     public void testCreateNamespace() throws Exception {
         mockAccessToken();
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
@@ -281,7 +377,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foo.bar"; })))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid namespace name: foo.bar")));
     }
     
@@ -292,7 +388,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foobar"; })))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
     
@@ -307,7 +403,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foobar"; })))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Namespace already exists: foobar")));
     }
     
@@ -336,7 +432,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
     
@@ -347,7 +443,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Unknown publisher: foo"
                         + "\nUse the 'create-namespace' command to create a namespace corresponding to your publisher name.")));
     }
@@ -414,7 +510,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Insufficient access rights for publisher: foo")));
     }
     
@@ -425,7 +521,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Extension foo.bar version 1 is already published.")));
     }
     
@@ -436,7 +532,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid extension name: b.a.r")));
     }
     
@@ -447,7 +543,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("The version string 'latest' is reserved.")));
     }
     
@@ -489,7 +585,7 @@ public class RegistryAPITest {
                 .content(reviewJson(r -> {
                     r.rating = 100;
                 })).with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("The rating must be an integer number between 0 and 5.")));
     }
     
@@ -501,7 +597,7 @@ public class RegistryAPITest {
                 .content(reviewJson(r -> {
                     r.rating = 3;
                 })).with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar")));
     }
     
@@ -524,7 +620,7 @@ public class RegistryAPITest {
                 .content(reviewJson(r -> {
                     r.rating = 3;
                 })).with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("You must not submit more than one review for an extension.")));
     }
     
@@ -550,7 +646,7 @@ public class RegistryAPITest {
     }
     
     @Test
-    public void testDeletReviewNotLoggedIn() throws Exception {
+    public void testDeleteReviewNotLoggedIn() throws Exception {
         mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar").with(csrf()))
                 .andExpect(status().isForbidden());
     }
@@ -559,7 +655,7 @@ public class RegistryAPITest {
     public void testDeleteReviewUnknownExtension() throws Exception {
         mockUserData();
         mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar").with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar")));
     }
     
@@ -574,7 +670,7 @@ public class RegistryAPITest {
                 .thenReturn(Streamable.empty());
 
         mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar").with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("You have not submitted any review yet.")));
     }
 
@@ -600,9 +696,11 @@ public class RegistryAPITest {
     private ExtensionVersion mockExtension() {
         var namespace = new Namespace();
         namespace.setName("foo");
+        namespace.setPublicId("1234");
         var extension = new Extension();
         extension.setName("bar");
         extension.setNamespace(namespace);
+        extension.setPublicId("5678");
         var extVersion = new ExtensionVersion();
         extension.setLatest(extVersion);
         extVersion.setExtension(extension);
@@ -615,6 +713,8 @@ public class RegistryAPITest {
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension));
         Mockito.when(repositories.getVersionStrings(extension))
                 .thenReturn(Streamable.of(extVersion.getVersion()));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
@@ -623,6 +723,14 @@ public class RegistryAPITest {
                 .thenReturn(0l);
         Mockito.when(repositories.findFilesByType(eq(extVersion), anyCollection()))
                 .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findNamespace("foo"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions("bar"))
+                .thenReturn(Streamable.of(extension));
+        Mockito.when(repositories.findNamespaceByPublicId("1234"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensionByPublicId("5678"))
+                .thenReturn(extension);
         return extVersion;
     }
 
@@ -630,6 +738,10 @@ public class RegistryAPITest {
         var json = new ExtensionJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
+    }
+
+    private String queryResultJson(Consumer<ExtensionJson> content) throws JsonProcessingException {
+        return "{\"extensions\":[" + extensionJson(content) + "]}";
     }
 
     private FileResource mockReadme() {
