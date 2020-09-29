@@ -92,4 +92,4 @@ test {
 }
 
 apply from: 'dependencies.gradle'
-apply from: 'test-extensions.gradle'
+// apply from: 'test-extensions.gradle'
