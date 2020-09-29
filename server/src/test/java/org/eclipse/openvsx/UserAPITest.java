@@ -142,7 +142,7 @@ public class UserAPITest {
                 .thenReturn(token);
 
         mockMvc.perform(post("/user/token/delete/{id}", 100).with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Token does not exist.")));
     }
 
@@ -159,7 +159,7 @@ public class UserAPITest {
                 .thenReturn(token);
 
         mockMvc.perform(post("/user/token/delete/{id}", 100).with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Token does not exist.")));
     }
 
@@ -310,7 +310,7 @@ public class UserAPITest {
 
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
                     "other_user", "contributor").with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("You must be an owner of this namespace.")));
     }
 
@@ -340,7 +340,7 @@ public class UserAPITest {
 
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
                     "other_user", "contributor").with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("User other_user already has the role contributor.")));
     }
 

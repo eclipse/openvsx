@@ -11,6 +11,8 @@ package org.eclipse.openvsx;
 
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.QueryParamJson;
+import org.eclipse.openvsx.json.QueryResultJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.search.SearchService;
@@ -32,5 +34,7 @@ public interface IExtensionRegistry {
     ReviewListJson getReviews(String namespace, String extension);
 
     SearchResultJson search(SearchService.Options options);
+
+    QueryResultJson query(QueryParamJson param);
 
 }

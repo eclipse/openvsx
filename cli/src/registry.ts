@@ -159,9 +159,10 @@ export class Registry {
                 if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
                     if (json.startsWith('{')) {
                         try {
-                            const error = JSON.parse(json) as ErrorResponse;
-                            if (error.message) {
-                                reject(new Error(error.message));
+                            const parsed = JSON.parse(json) as ErrorResponse;
+                            const message = parsed.message || parsed.error;
+                            if (message) {
+                                reject(new Error(message));
                                 return;
                             }
                         } catch (err) {

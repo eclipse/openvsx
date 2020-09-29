@@ -30,6 +30,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.QueryParamJson;
+import org.eclipse.openvsx.json.QueryResultJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.search.SearchService;
@@ -134,6 +136,17 @@ public class UpstreamRegistryService implements IExtensionRegistry {
                 "includeAllVersions", Boolean.toString(options.includeAllVersions)
             );
             return restTemplate.getForObject(requestUrl, SearchResultJson.class);
+        } catch (RestClientException exc) {
+            handleError(exc);
+            throw exc;
+        }
+    }
+
+    @Override
+    public QueryResultJson query(QueryParamJson param) {
+        try {
+            String requestUrl = createApiUrl(upstreamUrl, "api", "-", "query");
+            return restTemplate.postForObject(requestUrl, param, QueryResultJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;

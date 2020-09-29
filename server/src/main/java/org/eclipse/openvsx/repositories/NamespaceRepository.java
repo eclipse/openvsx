@@ -15,9 +15,9 @@ import org.eclipse.openvsx.entities.Namespace;
 
 public interface NamespaceRepository extends Repository<Namespace, Long> {
 
-    Namespace findByName(String name);
-
     Namespace findByNameIgnoreCase(String name);
+
+    Namespace findByPublicId(String publicId);
 
     long count();
 

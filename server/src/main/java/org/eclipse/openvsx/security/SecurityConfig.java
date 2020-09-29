@@ -17,6 +17,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -56,7 +57,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // Publishing is done only via explicit access tokens, so we don't need CSRF protection here.
         http.csrf()
-            .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/admin/**", "/vscode/**");
+            .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/admin/**", "/vscode/**");
+
+        // Respond with 403 status when the user is not logged in
+        http.exceptionHandling()
+            .authenticationEntryPoint(new Http403ForbiddenEntryPoint());
     }
 
     @Override

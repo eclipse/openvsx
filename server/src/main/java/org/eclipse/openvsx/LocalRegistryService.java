@@ -22,6 +22,7 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
@@ -36,6 +37,8 @@ import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.QueryParamJson;
+import org.eclipse.openvsx.json.QueryResultJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
@@ -210,6 +213,100 @@ public class LocalRegistryService implements IExtensionRegistry {
             return CollectionUtil.map(page.getContent(), es -> toSearchEntry(es, serverUrl, options));
     }
 
+    @Override
+    public QueryResultJson query(QueryParamJson param) {
+        if (!Strings.isNullOrEmpty(param.extensionId)) {
+            var split = param.extensionId.split("\\.");
+            if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty())
+                throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
+            if (!Strings.isNullOrEmpty(param.namespaceName) && !param.namespaceName.equals(split[0]))
+                throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
+            if (!Strings.isNullOrEmpty(param.extensionName) && !param.extensionName.equals(split[1]))
+                throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
+            param.namespaceName = split[0];
+            param.extensionName = split[1];
+        }
+        var result = new QueryResultJson();
+        result.extensions = new ArrayList<>();
+        // Add extension by UUID (public_id)
+        if (!Strings.isNullOrEmpty(param.extensionUuid)) {
+            var extension = repositories.findExtensionByPublicId(param.extensionUuid);
+            addToResult(extension, result, param);
+        }
+        // Add extensions by namespace UUID (public_id)
+        if (!Strings.isNullOrEmpty(param.namespaceUuid)) {
+            var namespace = repositories.findNamespaceByPublicId(param.namespaceUuid);
+            addToResult(namespace, result, param);
+        }
+        // Add a specific version of an extension
+        if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)
+                && !Strings.isNullOrEmpty(param.extensionVersion) && !param.includeAllVersions) {
+            var extVersion = repositories.findVersion(param.extensionVersion, param.extensionName, param.namespaceName);
+            addToResult(extVersion, result, param);
+        // Add extension by namespace and name
+        } else if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)) {
+            var extension = repositories.findExtension(param.extensionName, param.namespaceName);
+            addToResult(extension, result, param);
+        // Add extensions by namespace
+        } else if (!Strings.isNullOrEmpty(param.namespaceName)) {
+            var namespace = repositories.findNamespace(param.namespaceName);
+            addToResult(namespace, result, param);
+        // Add extensions by name
+        } else if (!Strings.isNullOrEmpty(param.extensionName)) {
+            var extensions = repositories.findExtensions(param.extensionName);
+            for (var extension : extensions) {
+                addToResult(extension, result, param);
+            }
+        }
+        return result;
+    }
+
+    private void addToResult(Namespace namespace, QueryResultJson result, QueryParamJson param) {
+        if (namespace == null)
+            return;
+        for (var extension : repositories.findExtensions(namespace)) {
+            addToResult(extension, result, param);
+        }
+    }
+
+    private void addToResult(Extension extension, QueryResultJson result, QueryParamJson param) {
+        if (extension == null)
+            return;
+        if (param.includeAllVersions) {
+            var allVersions = Lists.newArrayList(repositories.findVersions(extension));
+            Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
+            for (var extVersion : allVersions) {
+                addToResult(extVersion, result, param);
+            }
+        } else {
+            addToResult(extension.getLatest(), result, param);
+        }
+    }
+
+    private void addToResult(ExtensionVersion extVersion, QueryResultJson result, QueryParamJson param) {
+        if (extVersion == null)
+            return;
+        if (mismatch(extVersion.getVersion(), param.extensionVersion))
+            return;
+        var extension = extVersion.getExtension();
+        if (mismatch(extension.getName(), param.extensionName))
+            return;
+        var namespace = extension.getNamespace();
+        if (mismatch(namespace.getName(), param.namespaceName))
+            return;
+        if (mismatch(extension.getPublicId(), param.extensionUuid) || mismatch(namespace.getPublicId(), param.namespaceUuid))
+            return;
+        if (result.extensions == null)
+            result.extensions = new ArrayList<>();
+        result.extensions.add(toJson(extVersion));
+    }
+
+    private static boolean mismatch(String s1, String s2) {
+        return s1 != null && s2 != null
+                && !s1.isEmpty() && !s2.isEmpty()
+                && !s1.equalsIgnoreCase(s2);
+    }
+
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
         var namespaceIssue = validator.validateNamespace(json.name);
@@ -343,7 +440,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private void addDependency(String dependency, ExtensionVersion extVersion) {
         var split = dependency.split("\\.");
-        if (split.length != 2) {
+        if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
             throw new ErrorResultException("Invalid 'extensionDependencies' format. Expected: '${namespace}.${name}'");
         }
         var extension = repositories.findExtension(split[1], split[0]);
@@ -360,7 +457,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private void addBundledExtension(String bundled, ExtensionVersion extVersion) {
         var split = bundled.split("\\.");
-        if (split.length != 2) {
+        if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
             throw new ErrorResultException("Invalid 'extensionPack' format. Expected: '${namespace}.${name}'");
         }
         var extension = repositories.findExtension(split[1], split[0]);

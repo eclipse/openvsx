@@ -43,6 +43,10 @@ public class RepositoryService {
         return namespaceRepo.findByNameIgnoreCase(name);
     }
 
+    public Namespace findNamespaceByPublicId(String publicId) {
+        return namespaceRepo.findByPublicId(publicId);
+    }
+
     public long countNamespaces() {
         return namespaceRepo.count();
     }
@@ -61,6 +65,10 @@ public class RepositoryService {
 
     public Streamable<Extension> findExtensions(Namespace namespace) {
         return extensionRepo.findByNamespaceOrderByNameAsc(namespace);
+    }
+
+    public Streamable<Extension> findExtensions(String name) {
+        return extensionRepo.findByNameIgnoreCase(name);
     }
 
     public Streamable<Extension> findAllExtensions() {

@@ -34,6 +34,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LicenseDetection;
 import org.elasticsearch.common.Strings;
 import org.springframework.data.util.Pair;
+import org.springframework.http.HttpStatus;
 
 /**
  * Processes uploaded extension files and extracts their metadata.
@@ -82,7 +83,7 @@ public class ExtensionProcessor implements AutoCloseable {
         try {
             content = ByteStreams.toByteArray(inputStream);
             if (content.length > MAX_CONTENT_SIZE)
-                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.");
+                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
             var tempFile = File.createTempFile("extension_", ".vsix");
             Files.write(content, tempFile);
             zipFile = new ZipFile(tempFile);

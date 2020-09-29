@@ -18,6 +18,8 @@ import org.eclipse.openvsx.entities.Namespace;
 
 public interface ExtensionRepository extends Repository<Extension, Long> {
 
+    Streamable<Extension> findByNameIgnoreCase(String name);
+
     Streamable<Extension> findByNamespace(Namespace namespace);
 
     Streamable<Extension> findByNamespaceOrderByNameAsc(Namespace namespace);
