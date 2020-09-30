@@ -150,19 +150,28 @@ public class AdminAPI {
         path = "/admin/delete-extension",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResultJson deleteExtension(@RequestParam("token") String tokenValue,
-                                      @RequestParam("namespace") String namespaceName,
+    public ResultJson deleteExtension(@RequestParam("namespace") String namespaceName,
                                       @RequestParam("extension") String extensionName,
+                                      @RequestParam(required = false) String token,
                                       @RequestParam(required = false) String version) {
-        var token = users.useAccessToken(tokenValue);
-        if (token == null) {
-            return ResultJson.error("Invalid access token.");
+        UserData user = null;
+        if(token != null) {
+            var tokenVal = users.useAccessToken(token);
+            if (tokenVal == null) {
+                return ResultJson.error("Invalid access token.");
+            }
+            user = tokenVal.getUser();
+        } else {
+            var principal = users.getOAuth2Principal();
+            if (principal != null) {
+                user = users.updateUser(principal);
+            }
         }
-        if (!UserData.ROLE_ADMIN.equals(token.getUser().getRole())) {
+        if (user != null && !UserData.ROLE_ADMIN.equals(user.getRole())) {
             return ResultJson.error("Administration role is required.");
         }
         try {
-            return admins.deleteExtension(namespaceName, extensionName, version, token.getUser());
+            return admins.deleteExtension(namespaceName, extensionName, version, user);
         } catch (ErrorResultException exc) {
             return ResultJson.error(exc.getMessage());
         }

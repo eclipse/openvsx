@@ -154,7 +154,10 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                     {SearchHeader ? <SearchHeader /> : ''}
                     <Box className={classes.formContainer}>
                         <Box className={classes.form}>
-                            <ExtensionListSearchfield onSearchChanged={this.handleSearchChange} searchQuery={this.props.searchQuery} />
+                            <ExtensionListSearchfield
+                                onSearchChanged={this.handleSearchChange}
+                                searchQuery={this.props.searchQuery}
+                                placeholder='Search by Name, Tag, or Description' />
                             <Paper className={classes.category}>
                                 <Select
                                     value={this.state.category}

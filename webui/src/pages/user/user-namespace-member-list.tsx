@@ -50,9 +50,12 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
     };
 
     const fetchMembers = async () => {
-        setMembers([]);
-        const members = await service.getNamespaceMembers(props.namespace);
-        setMembers(members as NamespaceMembership[]);
+        try {
+            const members = await service.getNamespaceMembers(props.namespace);
+            setMembers(members as NamespaceMembership[]);
+        } catch (err) {
+            props.handleError(err);
+        }
     };
 
     const changeRole = async (membership: NamespaceMembership, role: MembershipRole | 'remove') => {

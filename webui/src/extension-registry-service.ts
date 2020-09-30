@@ -118,6 +118,21 @@ export class ExtensionRegistryService {
         });
     }
 
+    async deleteExtensionVersion(req: { version: string, extension: string, namespace: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'admin', 'delete-extension'],
+                [{ key: 'version', value: req.version }, { key: 'extension', value: req.extension }, { key: 'namespace', value: req.namespace }]),
+            headers
+        });
+    }
+
     getUser(): Promise<Readonly<UserData | ErrorResult>> {
         return sendRequest({
             endpoint: createAbsoluteURL([this.serverUrl, 'user']),
@@ -247,7 +262,6 @@ export class ExtensionRegistryService {
             }
         );
     }
-
 }
 
 export interface ExtensionFilter {

@@ -5,15 +5,14 @@ import { NamespaceDetail } from '../user/user-settings-namespace-detail';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Namespace, isError } from '../../extension-registry-types';
 import { PageSettingsContext, ServiceContext } from '../../default/default-app';
-import { UserContext } from '../../main';
+import { UserContext, ErrorHandlerContext } from '../../main';
 import { NamespaceInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
+import { handleError } from '../../utils';
 
-interface NamespaceAdminProps {
-    handleError: (err: {}) => void
-}
+export const NamespaceAdmin: FunctionComponent = props => {
+    const errorContext = useContext(ErrorHandlerContext);
 
-export const NamespaceAdmin: FunctionComponent<NamespaceAdminProps> = props => {
     const [loading, setLoading] = useState(false);
     const setLoadingState = (loadingState: boolean) => {
         setLoading(loadingState);
@@ -26,20 +25,24 @@ export const NamespaceAdmin: FunctionComponent<NamespaceAdminProps> = props => {
     const [currentNamespace, setCurrentNamespace] = useState<Namespace | undefined>();
     const [notFound, setNotFound] = useState('');
     const fetchNamespace = async (namespaceName: string) => {
-        if (namespaceName !== '') {
-            setLoading(true);
-            const namespace = await service.findNamespace(namespaceName);
-            if (isError(namespace)) {
-                setNotFound(namespaceName);
-                setCurrentNamespace(undefined);
+        try {
+            if (namespaceName !== '') {
+                setLoading(true);
+                const namespace = await service.findNamespace(namespaceName);
+                if (isError(namespace)) {
+                    setNotFound(namespaceName);
+                    setCurrentNamespace(undefined);
+                } else {
+                    setNotFound('');
+                    setCurrentNamespace(namespace);
+                }
+                setLoading(false);
             } else {
                 setNotFound('');
-                setCurrentNamespace(namespace);
+                setCurrentNamespace(undefined);
             }
-            setLoading(false);
-        } else {
-            setNotFound('');
-            setCurrentNamespace(undefined);
+        } catch (err) {
+            errorContext ? errorContext.handleError(err) : handleError(err);
         }
     };
 
@@ -59,13 +62,13 @@ export const NamespaceAdmin: FunctionComponent<NamespaceAdminProps> = props => {
         <DelayedLoadIndicator loading={loading} />
         <SearchListContainer
             searchContainer={
-                <NamespaceInput onSubmit={fetchNamespace} onChange={onChangeInput} />
+                [<NamespaceInput key='nsi' onSubmit={fetchNamespace} onChange={onChangeInput} />]
             }
             listContainer={
                 currentNamespace && pageSettings && user ?
                     <NamespaceDetail
                         setLoadingState={setLoadingState}
-                        handleError={props.handleError}
+                        handleError={errorContext ? errorContext.handleError : handleError}
                         namespace={currentNamespace}
                         pageSettings={pageSettings}
                         service={service}

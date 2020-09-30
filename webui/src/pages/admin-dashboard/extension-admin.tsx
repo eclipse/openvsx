@@ -1,19 +1,91 @@
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, useState, useContext } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
-import { Box } from '@material-ui/core';
+import { Button } from '@material-ui/core';
+import { NamespaceInput } from './namespace-input';
+import { ServiceContext } from '../../default/default-app';
+import { ErrorHandlerContext } from '../../main';
+import { handleError } from '../../utils';
+import { isError, Extension } from '../../extension-registry-types';
+import { ExtensionVersionContainer } from './extension-version-container';
 
 export const ExtensionAdmin: FunctionComponent = props => {
-    const handleSearchChange = (value: string) => {
-        console.log(value);
+    const errorContext = useContext(ErrorHandlerContext);
+
+    const [extensionValue, setExtensionValue] = useState('');
+    const handleExtensionChange = (value: string) => {
+        setExtensionValue(value);
     };
+    const handleExtensionSubmit = (value: string) => {
+        findExtension();
+    };
+
+    const [namespaceValue, setNamespaceValue] = useState('');
+    const handleNamespaceChange = (value: string) => {
+        setNamespaceValue(value);
+    };
+
+    const handleSubmit = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        findExtension();
+    };
+
+    const [extensionFieldError, setExtensionFieldError] = useState(false);
+    const [namespaceFieldError, setNamespaceFieldError] = useState(false);
+
+    const handleUpdate = () => findExtension();
+    const service = useContext(ServiceContext);
+    const [extension, setExtension] = useState<Extension | undefined>(undefined);
+    const findExtension = async () => {
+        const extensionUrl = service.getExtensionApiUrl({
+            namespace: namespaceValue,
+            name: extensionValue
+        });
+        try {
+            if (!namespaceValue) {
+                setNamespaceFieldError(true);
+                throw ({ message: 'Name of Namespace is mandatory' });
+            } else {
+                setNamespaceFieldError(false);
+            }
+            if (!extensionValue) {
+                setExtensionFieldError(true);
+                throw ({ message: 'Name of Extension is mandatory' });
+            } else {
+                setExtensionFieldError(false);
+            }
+            const extensionDetail = await service.getExtensionDetail(extensionUrl);
+            if (isError(extensionDetail)) {
+                setExtension(undefined);
+                throw (extensionDetail);
+            }
+            setExtension(extensionDetail);
+        } catch (err) {
+            errorContext ? errorContext.handleError(err) : handleError(err);
+        }
+    };
+
     return (<>
         <SearchListContainer
-            searchContainer={
-                <ExtensionListSearchfield onSearchChanged={handleSearchChange} />
-            }
+            searchContainer={[
+                <NamespaceInput
+                    error={namespaceFieldError}
+                    key='nsi'
+                    onChange={handleNamespaceChange}
+                    hideIconButton={true} />,
+                <ExtensionListSearchfield
+                    error={extensionFieldError}
+                    key='ei'
+                    onSearchChanged={handleExtensionChange}
+                    searchQuery={extensionValue}
+                    onSearchSubmit={handleExtensionSubmit}
+                    placeholder='Extension'
+                    hideIconButton={true} />,
+                <Button key='btn' variant='contained' onClick={handleSubmit}>Search Extension</Button>
+            ]}
             listContainer={
-                <Box>A List of Extensions</Box>
+                extension ?
+                    <ExtensionVersionContainer onUpdate={handleUpdate} extension={extension} />
+                    : ''
             }
         />
     </>);

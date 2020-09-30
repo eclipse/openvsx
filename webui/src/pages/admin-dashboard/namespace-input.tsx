@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useState } from 'react';
-import { Paper, InputBase, IconButton, makeStyles } from '@material-ui/core';
+import { Paper, IconButton, makeStyles, InputBase } from '@material-ui/core';
 import SearchIcon from '@material-ui/icons/Search';
 
 const useStyles = makeStyles(theme =>
@@ -25,13 +25,18 @@ const useStyles = makeStyles(theme =>
             '&:hover': {
                 filter: 'invert(100%)',
             }
+        },
+        error: {
+            border: `2px solid ${theme.palette.error.main}`
         }
     })
 );
 
 interface NamespaceInputProps {
-    onSubmit: (namespaceName: string) => void;
+    onSubmit?: (namespaceName: string) => void;
     onChange: (namespaceName: string) => void;
+    hideIconButton?: boolean;
+    error?: boolean;
 }
 
 export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
@@ -43,22 +48,27 @@ export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
         setNamespaceName(namespaceName);
     };
     const onSubmit = () => {
-        props.onSubmit(namespaceName);
+        if (props.onSubmit) {
+            props.onSubmit(namespaceName);
+        }
     };
-    return <Paper className={classes.root}>
+    return <Paper className={classes.root} classes={{ root: props.error ? classes.error : '' }}>
         <InputBase
             autoFocus
             className={classes.input}
             placeholder='Namespace'
             onChange={onChangeNamespaceInput}
             onKeyPress={(e: React.KeyboardEvent) => {
-                if (e.charCode === 13) {
+                if (e.charCode === 13 && props.onSubmit) {
                     props.onSubmit(namespaceName);
                 }
             }}
         />
-        <IconButton color='primary' type='submit' className={classes.iconButton} onClick={onSubmit}>
-            <SearchIcon />
-        </IconButton>
+        {
+            props.hideIconButton ? '' :
+                <IconButton color='primary' type='submit' className={classes.iconButton} onClick={onSubmit}>
+                    <SearchIcon />
+                </IconButton>
+        }
     </Paper>;
 };

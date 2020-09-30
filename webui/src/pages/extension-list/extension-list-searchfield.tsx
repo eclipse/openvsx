@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react';
 import SearchIcon from '@material-ui/icons/Search';
-import { Paper, InputBase, IconButton, makeStyles } from '@material-ui/core';
+import { Paper, IconButton, makeStyles, InputBase } from '@material-ui/core';
 
 const useStyles = makeStyles((theme) => ({
     search: {
@@ -12,7 +12,7 @@ const useStyles = makeStyles((theme) => ({
             marginBottom: theme.spacing(2),
         },
     },
-    inputBase: {
+    input: {
         flex: 1,
         paddingLeft: theme.spacing(1)
     },
@@ -24,12 +24,19 @@ const useStyles = makeStyles((theme) => ({
         '&:hover': {
             filter: 'invert(100%)',
         }
+    },
+    error: {
+        border: `2px solid ${theme.palette.error.main}`
     }
 }));
 
 interface ExtensionListSearchfieldProps {
     onSearchChanged: (s: string) => void;
+    onSearchSubmit?: (s: string) => void;
     searchQuery?: string;
+    placeholder: string;
+    hideIconButton?: boolean;
+    error?: boolean;
 }
 
 export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfieldProps> = props => {
@@ -39,23 +46,38 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
         props.onSearchChanged(event.target.value);
     };
 
+    const handleSearchButtonClick = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        if (props.onSearchSubmit) {
+            props.onSearchSubmit(props.searchQuery || '');
+        }
+    };
+
     return (<>
-        <Paper className={classes.search}>
+        <Paper className={classes.search} classes={{ root: props.error ? classes.error : '' }}>
             <InputBase
                 autoFocus
                 value={props.searchQuery || ''}
                 onChange={handleSearchChange}
-                className={classes.inputBase}
-                placeholder='Search by Name, Tag, or Description'
-                id='search-input' />
+                className={classes.input}
+                placeholder={props.placeholder}
+                id='search-input'
+                onKeyPress={(e: React.KeyboardEvent) => {
+                    if (e.charCode === 13 && props.onSearchSubmit) {
+                        props.onSearchSubmit(props.searchQuery || '');
+                    }
+                }}
+            />
             <label
                 htmlFor='search-input'
                 className='visually-hidden' >
                 Search for Name, Tags or Description
                                 </label>
-            <IconButton color='primary' aria-label='Search' classes={{ root: classes.iconButton }}>
-                <SearchIcon />
-            </IconButton>
+            {
+                props.hideIconButton ? '' :
+                    <IconButton color='primary' aria-label='Search' classes={{ root: classes.iconButton }} onClick={handleSearchButtonClick}>
+                        <SearchIcon />
+                    </IconButton>
+            }
         </Paper>
     </>);
 };
