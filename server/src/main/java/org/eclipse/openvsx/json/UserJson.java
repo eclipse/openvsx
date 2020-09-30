@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.util.List;
+
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -54,5 +56,14 @@ public class UserJson extends ResultJson {
 
     @ApiModelProperty("Authentication provider (e.g. github)")
     public String provider;
+
+    @ApiModelProperty(hidden = true)
+    public String publisherAgreement;
+
+    @ApiModelProperty(hidden = true)
+    public String publisherAgreementTimestamp;
+
+    @ApiModelProperty(hidden = true)
+    public List<UserJson> additionalLogins;
 
 }

@@ -9,6 +9,7 @@
  ********************************************************************************/
 
 export type UrlString = string;
+export type TimestampString = string;
 
 export interface SuccessResult {
     success: string;
@@ -37,7 +38,7 @@ export interface SearchEntry {
     name: string;
     namespace: string;
     version: string;
-    timestamp?: string;
+    timestamp?: TimestampString;
     allVersions: {
         url: UrlString;
         // key: file type, value: url
@@ -74,7 +75,7 @@ export interface Extension {
     reviewCount: number;
 
     versionAlias: string[];
-    timestamp: string;
+    timestamp: TimestampString;
     preview?: boolean;
     displayName?: string;
     description?: string;
@@ -117,7 +118,7 @@ export interface NewReview {
 
 export interface ExtensionReview extends NewReview {
     user: UserData;
-    timestamp: string;
+    timestamp: TimestampString;
 }
 
 export interface ExtensionReviewList {
@@ -135,6 +136,9 @@ export interface UserData {
     homepage?: string;
     provider?: string;
     role?: string;
+    publisherAgreement?: 'none' | 'signed' | 'outdated';
+    publisherAgreementTimestamp?: TimestampString;
+    additionalLogins?: UserData[];
 }
 
 export function isEqualUser(u1: UserData, u2: UserData): boolean {
@@ -144,8 +148,8 @@ export function isEqualUser(u1: UserData, u2: UserData): boolean {
 export interface PersonalAccessToken {
     id: number;
     value?: string;
-    createdTimestamp: string;
-    accessedTimestamp?: string;
+    createdTimestamp: TimestampString;
+    accessedTimestamp?: TimestampString;
     description: string;
     deleteTokenUrl: UrlString;
 }

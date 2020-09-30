@@ -38,25 +38,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-
+        var isAbsoluteWebUi = !Strings.isNullOrEmpty(webuiUrl) && URI.create(webuiUrl).isAbsolute();
+        
         // @formatter:off
+         // TODO add a single "/login" route to directly use GH auth
         http.authorizeRequests()
-                .antMatchers("/logout") // TODO add a single "/login" route to directly use GH auth
-                    .permitAll()
-                // .antMatchers("/user/**", "/login/**", "/logout", "/api/**", "/admin/**", "/vscode/**")
-                .anyRequest()
+                .antMatchers(getAuthenticatedPaths(isAbsoluteWebUi))
                     .authenticated()
+                .antMatchers(getPermittedPaths(isAbsoluteWebUi))
+                    .permitAll()
                 .and()
-            .cors()
-                .disable()
+            // .cors()
+            //     .disable()
             // .sessionManagement()
             //     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             //     .and()
-            // .exceptionHandling()
-            //     .authenticationEntryPoint(new RestAuthenticationEntryPoint()) 
-            //     .and()
+            .exceptionHandling()
+                // Respond with 403 status when the user is not logged in
+                .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+                .and()
             .csrf()
-                .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/admin/**", "/vscode/**")
+                .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/admin/**", "/vscode/**")
                 .and()
             .oauth2Login(configurer -> {
                 configurer.addObjectPostProcessor(new ObjectPostProcessor<OidcAuthorizationCodeAuthenticationProvider>() {
@@ -75,6 +77,32 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             });
         // @formatter:on
         
+    }
+
+    private String[] getAuthenticatedPaths(boolean isAbsoluteWebUi) {
+        if (isAbsoluteWebUi) {
+            return new String[0];
+        } else {
+            return new String[] {
+                "/user/tokens", "/user/token/**", "/user/namespaces", "/user/namespace/**", "/user/search/**",
+                "/api/*/*/review/**"
+            };
+        }
+    }
+
+    private String[] getPermittedPaths(boolean isAbsoluteWebUi) {
+        if (isAbsoluteWebUi) {
+            // All endpoints are marked as permitted for CORS to work correctly.
+            // User authentication is checked within the endpoints that require it.
+            // TODO check whether this can be solved in another way
+            return new String[] {
+                "/user/**", "/login/**", "/logout", "/api/**", "/admin/**", "/vscode/**"
+            };
+        } else {
+            return new String[] {
+                "/user", "/login/**", "/logout", "/api/**", "/admin/**", "/vscode/**"
+            };
+        }
     }
 
     @Override

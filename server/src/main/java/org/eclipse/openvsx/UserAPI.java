@@ -11,6 +11,7 @@ package org.eclipse.openvsx;
 
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -77,6 +78,12 @@ public class UserAPI {
         json.role = user.getRole();
         json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
         json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
+        // TODO fill new properties
+        json.publisherAgreement = "none";
+        // json.publisherAgreementTimestamp = TimeUtil.toUTCString(TimeUtil.getCurrentUTC());
+        // json.additionalLogins = new ArrayList<>();
+        // json.additionalLogins.add(new UserJson());
+        // json.additionalLogins.get(0).provider = "eclipse";
         return json;
     }
 
@@ -253,6 +260,15 @@ public class UserAPI {
         var users = repositories.findUsersByLoginNameStartingWith(name)
                 .map(user -> user.toUserJson());
         return CollectionUtil.limit(users, 5);
+    }
+
+    @PostMapping(
+        path = "/user/publisher-agreement",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResultJson signPublisherAgreement() {
+        // TODO
+        return ResultJson.success("Signed the publisher agreement");
     }
 
 }

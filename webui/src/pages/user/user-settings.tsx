@@ -81,13 +81,16 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                         <Grid item className={this.props.classes.info}>
                             <Box>
                                 <Route path={UserSettingsRoutes.PROFILE}>
-                                    <UserSettingsProfile service={this.props.service} user={user} />
+                                    <UserSettingsProfile
+                                        service={this.props.service}
+                                        user={user}
+                                        handleError={this.props.handleError} />
                                 </Route>
                                 <Route path={UserSettingsRoutes.TOKENS}>
                                     <UserSettingsTokens
                                         service={this.props.service}
                                         user={user}
-                                        setError={this.props.handleError}
+                                        handleError={this.props.handleError}
                                     />
                                 </Route>
                                 <Route path={UserSettingsRoutes.NAMESPACES}>
