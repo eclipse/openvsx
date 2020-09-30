@@ -209,7 +209,7 @@ public class UserAPI {
 
         var namespace = repositories.findNamespace(name);
         var userMembership = repositories.findMembership(user, namespace);
-        if (user.getRole().equals("admin") || (userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER))) {
+        if ((user.getRole() != null && user.getRole().equals("admin")) || (userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER))) {
             var memberships = repositories.findMemberships(namespace);
             return memberships.map(membership -> membership.toJson()).toList();
         } else {

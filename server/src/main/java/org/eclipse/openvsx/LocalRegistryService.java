@@ -103,13 +103,12 @@ public class LocalRegistryService implements IExtensionRegistry {
         var serverUrl = UrlUtil.getBaseUrl();
 
         var principal = users.getOAuth2Principal();
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        var user = users.updateUser(principal);
-        if (user.getRole().equals("admin")) {
-            json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
-            json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
+        if (principal != null) {
+            var user = users.updateUser(principal);
+            if (user.getRole().equals("admin")) {
+                json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
+                json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
+            }
         }
 
         for (var ext : repositories.findExtensions(namespace)) {
