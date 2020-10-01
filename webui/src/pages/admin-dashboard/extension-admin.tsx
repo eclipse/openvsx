@@ -71,7 +71,8 @@ export const ExtensionAdmin: FunctionComponent = props => {
                     error={namespaceFieldError}
                     key='nsi'
                     onChange={handleNamespaceChange}
-                    hideIconButton={true} />,
+                    hideIconButton={true}
+                    autoFocus={true} />,
                 <ExtensionListSearchfield
                     error={extensionFieldError}
                     key='ei'
@@ -79,7 +80,8 @@ export const ExtensionAdmin: FunctionComponent = props => {
                     searchQuery={extensionValue}
                     onSearchSubmit={handleExtensionSubmit}
                     placeholder='Extension'
-                    hideIconButton={true} />,
+                    hideIconButton={true}
+                    autoFocus={false} />,
                 <Button key='btn' variant='contained' onClick={handleSubmit}>Search Extension</Button>
             ]}
             listContainer={

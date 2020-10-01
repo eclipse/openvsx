@@ -1,9 +1,10 @@
-import React, { FunctionComponent, useState } from 'react';
+import React, { FunctionComponent, useState, useContext } from 'react';
 import { UserData } from '../..';
 import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Popper, Fade, Paper, Box, Avatar, makeStyles } from '@material-ui/core';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
+import { NamespaceDetailConfigContext } from './user-settings-namespace-detail';
 
 const useStyles = makeStyles((theme) => ({
     foundUserListPopper: {
@@ -20,7 +21,7 @@ const useStyles = makeStyles((theme) => ({
         alignItems: 'center',
         '&:hover': {
             cursor: 'pointer',
-            background: theme.palette.grey[100]
+            background: theme.palette.action.hover
         }
     }
 }));
@@ -37,8 +38,9 @@ export interface AddMemberDialoProps {
 }
 
 export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => {
-    const { onClose, open } = props;
+    const { open } = props;
     const classes = useStyles();
+    const config = useContext(NamespaceDetailConfigContext);
     const [foundUsers, setFoundUsers] = useState<UserData[]>([]);
     const [showUserPopper, setShowUserPopper] = useState(false);
     const [popperTarget, setPopperTarget] = useState<HTMLInputElement | undefined>(undefined);
@@ -55,18 +57,22 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
             }
             props.setLoadingState(true);
             const endpoint = props.namespace.roleUrl;
-            const result = await props.service.setNamespaceMember(endpoint, user, 'contributor');
+            const result = await props.service.setNamespaceMember(endpoint, user, config.defaultMemberRole || 'contributor');
             if (isError(result)) {
                 throw result;
             }
             props.setLoadingState(false);
-            setShowUserPopper(false);
-            props.onClose();
+            onClose();
         } catch (err) {
             setShowUserPopper(false);
             props.setLoadingState(false);
             props.handleError(err);
         }
+    };
+
+    const onClose = () => {
+        setShowUserPopper(false);
+        props.onClose();
     };
 
     const handleUserSearch = async (ev: React.ChangeEvent<HTMLInputElement>) => {

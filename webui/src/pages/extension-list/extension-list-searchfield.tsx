@@ -37,6 +37,7 @@ interface ExtensionListSearchfieldProps {
     placeholder: string;
     hideIconButton?: boolean;
     error?: boolean;
+    autoFocus?: boolean;
 }
 
 export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfieldProps> = props => {
@@ -55,7 +56,7 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
     return (<>
         <Paper className={classes.search} classes={{ root: props.error ? classes.error : '' }}>
             <InputBase
-                autoFocus
+                autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
                 value={props.searchQuery || ''}
                 onChange={handleSearchChange}
                 className={classes.input}

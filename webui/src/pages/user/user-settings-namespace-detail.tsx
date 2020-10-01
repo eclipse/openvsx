@@ -6,6 +6,11 @@ import { ExtensionRegistryService, PageSettings } from '../..';
 import { ErrorResponse } from '../../server-request';
 import { UserNamespaceMemberList } from './user-namespace-member-list';
 
+export interface NamespaceDetailConfig {
+    defaultMemberRole?: 'contributor' | 'owner';
+}
+export const NamespaceDetailConfigContext = React.createContext<NamespaceDetailConfig>({});
+
 const useStyles = makeStyles((theme) => ({
     namespaceDetailContainer: {
         flex: 5,

@@ -1,11 +1,11 @@
-import React, { FunctionComponent, useContext } from 'react';
+import React, { FunctionComponent, useContext, useState } from 'react';
 import { Box, Container, makeStyles, CssBaseline, Typography, IconButton } from '@material-ui/core';
 import { createRoute } from '../../utils';
 import { Sidepanel } from '../sidepanel/sidepanel';
 import { NavigationItem } from '../sidepanel/navigation-item';
 import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
 import ExtensionSharpIcon from '@material-ui/icons/ExtensionSharp';
-import { Route, Switch, useHistory } from 'react-router-dom';
+import { Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { NamespaceAdmin } from './namespace-admin';
 import { ExtensionAdmin } from './extension-admin';
 import { UserContext } from '../../main';
@@ -40,14 +40,17 @@ export const AdminDashboard: FunctionComponent = props => {
     const history = useHistory();
     const toMainPage = () => history.push('/');
 
+    const [currentPage, setCurrentPage] = useState<string | undefined>(useLocation().pathname);
+    const handleOpenRoute = (route: string) => setCurrentPage(route);
+
     return <>
         <CssBaseline />
         {
             user && user.role && user.role === 'admin' ?
                 <Box display='flex' height='100vh'>
                     <Sidepanel>
-                        <NavigationItem label='Namespaces' icon={<AssignmentIndIcon />} route={AdminDashboardRoutes.NAMESPACE_ADMIN}></NavigationItem>
-                        <NavigationItem label='Extensions' icon={<ExtensionSharpIcon />} route={AdminDashboardRoutes.EXTENSION_ADMIN}></NavigationItem>
+                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' icon={<AssignmentIndIcon />} route={AdminDashboardRoutes.NAMESPACE_ADMIN}></NavigationItem>
+                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' icon={<ExtensionSharpIcon />} route={AdminDashboardRoutes.EXTENSION_ADMIN}></NavigationItem>
                     </Sidepanel>
                     <Box overflow='auto' flex={1} >
                         <Container className={classes.container} maxWidth='lg'>

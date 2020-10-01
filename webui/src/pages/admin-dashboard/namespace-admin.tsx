@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { Typography, Box, Button } from '@material-ui/core';
 
-import { NamespaceDetail } from '../user/user-settings-namespace-detail';
+import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Namespace, isError } from '../../extension-registry-types';
 import { PageSettingsContext, ServiceContext } from '../../default/default-app';
@@ -66,14 +66,16 @@ export const NamespaceAdmin: FunctionComponent = props => {
             }
             listContainer={
                 currentNamespace && pageSettings && user ?
-                    <NamespaceDetail
-                        setLoadingState={setLoadingState}
-                        handleError={errorContext ? errorContext.handleError : handleError}
-                        namespace={currentNamespace}
-                        pageSettings={pageSettings}
-                        service={service}
-                        user={user}
-                    />
+                    <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
+                        <NamespaceDetail
+                            setLoadingState={setLoadingState}
+                            handleError={errorContext ? errorContext.handleError : handleError}
+                            namespace={currentNamespace}
+                            pageSettings={pageSettings}
+                            service={service}
+                            user={user}
+                        />
+                    </NamespaceDetailConfigContext.Provider>
                     : notFound ?
                         <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center'>
                             <Typography variant='body1'>

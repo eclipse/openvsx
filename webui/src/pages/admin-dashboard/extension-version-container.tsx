@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useState, useEffect } from 'react';
-import { Extension } from '../../extension-registry-types';
+import { Extension, VERSION_ALIASES } from '../../extension-registry-types';
 import { Grid, makeStyles, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@material-ui/core';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
 
@@ -104,7 +104,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                                 label='All Versions'
                             />
                             {
-                                Array.from(versions.entries()).map(([version, checked], key) => {
+                                Array.from(versions.entries()).filter(([version, checked]) => VERSION_ALIASES.indexOf(version) < 0).map(([version, checked], key) => {
                                     return <FormControlLabel
                                         key={key}
                                         control={<Checkbox checked={checked} onChange={handleChange} name={version} />}

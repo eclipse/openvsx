@@ -37,6 +37,7 @@ interface NamespaceInputProps {
     onChange: (namespaceName: string) => void;
     hideIconButton?: boolean;
     error?: boolean;
+    autoFocus?: boolean;
 }
 
 export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
@@ -54,7 +55,7 @@ export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
     };
     return <Paper className={classes.root} classes={{ root: props.error ? classes.error : '' }}>
         <InputBase
-            autoFocus
+            autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
             className={classes.input}
             placeholder='Namespace'
             onChange={onChangeNamespaceInput}

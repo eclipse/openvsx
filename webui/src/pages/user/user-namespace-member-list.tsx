@@ -84,18 +84,20 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
                             Add Namespace Member
                         </Button>
                     </Box>
-                    <Paper>
-                        {members.map(member =>
-                            <UserNamespaceMember
-                                key={'nspcmbr-' + member.user.loginName + member.user.provider}
-                                namespace={props.namespace}
-                                member={member}
-                                user={user}
-                                service={service}
-                                onChangeRole={role => changeRole(member, role)}
-                                onRemoveUser={() => changeRole(member, 'remove')}
-                                handleError={props.handleError} />)}
-                    </Paper>
+                    {members.length ?
+                        <Paper>
+                            {members.map(member =>
+                                <UserNamespaceMember
+                                    key={'nspcmbr-' + member.user.loginName + member.user.provider}
+                                    namespace={props.namespace}
+                                    member={member}
+                                    user={user}
+                                    service={service}
+                                    onChangeRole={role => changeRole(member, role)}
+                                    onRemoveUser={() => changeRole(member, 'remove')}
+                                    handleError={props.handleError} />)}
+                        </Paper> :
+                        <Typography variant='body1'>There are no members assigned yet.</Typography>}
                     <AddMemberDialog
                         handleError={props.handleError}
                         members={members}
