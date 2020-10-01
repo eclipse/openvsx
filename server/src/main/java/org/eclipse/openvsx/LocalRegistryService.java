@@ -469,15 +469,14 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ResponseStatusException.class)
     public ResultJson postReview(ReviewJson review, String namespace, String extensionName) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
             return ResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
-        var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);
         if (!activeReviews.isEmpty()) {
             return ResultJson.error("You must not submit more than one review for an extension.");
@@ -499,15 +498,14 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ResponseStatusException.class)
     public ResultJson deleteReview(String namespace, String extensionName) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
             return ResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
-        var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);
         if (activeReviews.isEmpty()) {
             return ResultJson.error("You have not submitted any review yet.");

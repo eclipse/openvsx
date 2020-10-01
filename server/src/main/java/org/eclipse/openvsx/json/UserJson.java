@@ -57,6 +57,7 @@ public class UserJson extends ResultJson {
     @ApiModelProperty("Authentication provider (e.g. github)")
     public String provider;
 
+    /* 'none' | 'signed' | 'outdated' */
     @ApiModelProperty(hidden = true)
     public String publisherAgreement;
 

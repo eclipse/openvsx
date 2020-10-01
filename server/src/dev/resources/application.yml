@@ -43,3 +43,6 @@ spring:
 ovsx:
   elasticsearch:
     clear-on-start: true
+  eclipse:
+    publisher-agreement:
+      version: "1.0"

@@ -1,7 +1,16 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.repositories.UserDataRepository;
+import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
@@ -18,7 +27,11 @@ import javax.transaction.Transactional;
 public class ExtendedOAuth2UserService extends DefaultOAuth2UserService {
 
     @Autowired
-    private UserDataRepository userRepository;
+    RepositoryService repositories;
+
+    @Autowired
+    UserService users;
+
     @Autowired
     EntityManager entityManager;
 
@@ -39,40 +52,14 @@ public class ExtendedOAuth2UserService extends DefaultOAuth2UserService {
 
     private OAuth2User processOAuth2User(OAuth2UserRequest oauth2UserRequest, OAuth2User oauth2User) {
         String registrationId = oauth2UserRequest.getClientRegistration().getRegistrationId();
-
-
-
         String loginName = "github".equals(registrationId) ? oauth2User.getAttribute("login") : oauth2User.getAttribute("github_handle");
-        var userData = userRepository.findByProviderAndLoginName("github", loginName);
-        if(userData != null) {
-            userData = updateExistingUser(userData, oauth2User);
+        var userData = repositories.findUserByLoginName("github", loginName);
+        if (userData != null) {
+            userData = users.updateExistingUser(userData, oauth2User);
         } else {
-            userData = registerNewUser(oauth2UserRequest, oauth2User);
+            userData = users.registerNewUser(oauth2User, oauth2UserRequest.getClientRegistration());
         }
-
         return oauth2User;
-    }
-
-
-    private UserData registerNewUser(OAuth2UserRequest oAuth2UserRequest, OAuth2User oauth2User) {
-        var user = new UserData();
-
-        user.setProvider("github");
-        user.setProviderId(oauth2User.getName());
-        user.setLoginName(oauth2User.getAttribute("login"));
-        user.setFullName(oauth2User.getAttribute("name"));
-        user.setEmail(oauth2User.getAttribute("email"));
-        user.setProviderUrl(oauth2User.getAttribute("html_url"));
-        user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
-
-        entityManager.persist(user);
-        return user;
-    }
-
-    private UserData updateExistingUser(UserData existingUser, OAuth2User oauth2User) {
-        // existingUser.setName(oauth2User.getName()); // TODO update user
-        entityManager.persist(existingUser);
-        return existingUser;
     }
 
 }

@@ -12,6 +12,7 @@ package org.eclipse.openvsx.entities;
 import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -43,7 +44,7 @@ public class UserData {
     @Column(length = 32)
     String provider;
 
-    String providerId;
+    String authId;
 
     String providerUrl;
 
@@ -52,6 +53,11 @@ public class UserData {
 
     @OneToMany(mappedBy = "user")
     List<NamespaceMembership> memberships;
+
+    @Column(length = 4096)
+    @Convert(converter = EclipseDataConverter.class)
+    EclipseData eclipseData;
+
 
     /**
      * Convert to a JSON object.
@@ -122,12 +128,12 @@ public class UserData {
         this.provider = provider;
     }
 
-    public String getProviderId() {
-        return providerId;
+    public String getAuthId() {
+        return authId;
     }
 
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
+    public void setAuthId(String authId) {
+        this.authId = authId;
     }
 
     public String getProviderUrl() {
@@ -136,6 +142,14 @@ public class UserData {
 
     public void setProviderUrl(String providerUrl) {
         this.providerUrl = providerUrl;
+    }
+
+    public EclipseData getEclipseData() {
+        return eclipseData;
+    }
+
+    public void setEclipseData(EclipseData eclipseData) {
+        this.eclipseData = eclipseData;
     }
 
 }

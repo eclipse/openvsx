@@ -24,6 +24,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
@@ -49,43 +50,65 @@ public class UserService {
         return null;
     }
 
-    @Transactional
-    public UserData updateUser(OAuth2User principal) {
+    public UserData findUser(OAuth2User principal) {
+        String provider = null;
         String url = principal.getAttribute("url");
         if (url != null && url.startsWith(GITHUB_API)) {
-            return updateGitHubUser(principal);
+            provider = "github";
         }
-        throw new IllegalArgumentException("Unsupported principal: " + principal.getName());
+        var user = repositories.findUserByAuthId(provider, principal.getName());
+        if (user == null)
+            throw new IllegalArgumentException("Unsupported principal: " + principal.getName());
+        return user;
     }
 
-    protected UserData updateGitHubUser(OAuth2User principal) {
-        var user = repositories.findUserByProviderId("github", principal.getName());
-        if (user == null) {
-            user = new UserData();
-            user.setProvider("github");
-            user.setProviderId(principal.getName());
-            user.setLoginName(principal.getAttribute("login"));
-            user.setFullName(principal.getAttribute("name"));
-            user.setEmail(principal.getAttribute("email"));
-            user.setProviderUrl(principal.getAttribute("html_url"));
-            user.setAvatarUrl(principal.getAttribute("avatar_url"));
-            entityManager.persist(user);
-        } else {
-            String loginName = principal.getAttribute("login");
-            if (loginName != null && !loginName.equals(user.getLoginName()))
-                user.setLoginName(loginName);
-            String fullName = principal.getAttribute("name");
-            if (fullName != null && !fullName.equals(user.getFullName()))
-                user.setFullName(fullName);
-            String email = principal.getAttribute("email");
-            if (email != null && !email.equals(user.getEmail()))
-                user.setEmail(email);
-            String providerUrl = principal.getAttribute("html_url");
-            if (providerUrl != null && !providerUrl.equals(user.getProviderUrl()))
-                user.setProviderUrl(providerUrl);
-            String avatarUrl = principal.getAttribute("avatar_url");
-            if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl()))
-                user.setAvatarUrl(avatarUrl);
+    public UserData findLoggedInUser() {
+        var principal = getOAuth2Principal();
+        if (principal == null)
+            return null;
+        return findUser(principal);
+    }
+
+    @Transactional
+    public UserData registerNewUser(OAuth2User oauth2User, ClientRegistration clientRegistration) {
+        var user = new UserData();
+        switch (clientRegistration.getRegistrationId()) {
+            case "github":
+                user.setProvider("github");
+                user.setAuthId(oauth2User.getName());
+                user.setLoginName(oauth2User.getAttribute("login"));
+                user.setFullName(oauth2User.getAttribute("name"));
+                user.setEmail(oauth2User.getAttribute("email"));
+                user.setProviderUrl(oauth2User.getAttribute("html_url"));
+                user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported registration id: " + clientRegistration.getRegistrationId());
+        }
+        entityManager.persist(user);
+        return user;
+    }
+
+    @Transactional
+    public UserData updateExistingUser(UserData user, OAuth2User oauth2User) {
+        switch (user.getProvider()) {
+            case "github":
+                String loginName = oauth2User.getAttribute("login");
+                if (loginName != null && !loginName.equals(user.getLoginName()))
+                    user.setLoginName(loginName);
+                String fullName = oauth2User.getAttribute("name");
+                if (fullName != null && !fullName.equals(user.getFullName()))
+                    user.setFullName(fullName);
+                String email = oauth2User.getAttribute("email");
+                if (email != null && !email.equals(user.getEmail()))
+                    user.setEmail(email);
+                String providerUrl = oauth2User.getAttribute("html_url");
+                if (providerUrl != null && !providerUrl.equals(user.getProviderUrl()))
+                    user.setProviderUrl(providerUrl);
+                String avatarUrl = oauth2User.getAttribute("avatar_url");
+                if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl()))
+                    user.setAvatarUrl(avatarUrl);
+                break;
         }
         return user;
     }

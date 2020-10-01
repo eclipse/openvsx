@@ -159,8 +159,8 @@ public class RepositoryService {
         return extensionReviewRepo.countByExtensionAndActiveTrue(extension);
     }
 
-    public UserData findUserByProviderId(String provider, String providerId) {
-        return userDataRepo.findByProviderAndProviderId(provider, providerId);
+    public UserData findUserByAuthId(String provider, String providerId) {
+        return userDataRepo.findByProviderAndAuthId(provider, providerId);
     }
 
     public UserData findUserByLoginName(String provider, String loginName) {

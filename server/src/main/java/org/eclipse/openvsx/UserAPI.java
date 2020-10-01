@@ -11,13 +11,15 @@ package org.eclipse.openvsx;
 
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -33,6 +35,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,6 +61,9 @@ public class UserAPI {
     @Autowired
     UserService users;
 
+    @Value("${ovsx.eclipse.publisher-agreement.version:}")
+    String publisherAgreementVersion;
+
     /**
      * This endpoint is used to check whether there is a logged-in user. For this reason, it
      * does not return a 403 status, but an OK status with JSON body when no user data is
@@ -68,22 +74,38 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public UserJson getUserData() {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             return UserJson.error("Not logged in.");
         }
-        var user = users.updateUser(principal);
         var json = user.toUserJson();
         var serverUrl = UrlUtil.getBaseUrl();
         json.role = user.getRole();
         json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
         json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
-        // TODO fill new properties
-        json.publisherAgreement = "none";
-        // json.publisherAgreementTimestamp = TimeUtil.toUTCString(TimeUtil.getCurrentUTC());
-        // json.additionalLogins = new ArrayList<>();
-        // json.additionalLogins.add(new UserJson());
-        // json.additionalLogins.get(0).provider = "eclipse";
+
+        // Add information on the Eclipse Publisher Agreement
+        if (!Strings.isNullOrEmpty(publisherAgreementVersion)) {
+            var eclipseData = user.getEclipseData();
+            if (eclipseData == null || eclipseData.publisherAgreement == null) {
+                json.publisherAgreement = "none";
+            } else {
+                if (eclipseData.publisherAgreement.signedVersion == null)
+                    json.publisherAgreement = "none";
+                else if (publisherAgreementVersion.equals(eclipseData.publisherAgreement.signedVersion))
+                    json.publisherAgreement = "signed";
+                else
+                    json.publisherAgreement = "outdated";
+                if (eclipseData.publisherAgreement.signedTimestamp != null)
+                    json.publisherAgreementTimestamp = TimeUtil.toUTCString(eclipseData.publisherAgreement.signedTimestamp);
+                if (eclipseData.email != null) {
+                    var eclipseLogin = new UserJson();
+                    eclipseLogin.provider = "eclipse";
+                    eclipseLogin.loginName = eclipseData.email;
+                    json.additionalLogins = Lists.newArrayList(eclipseLogin);
+                }
+            }
+        }
         return json;
     }
 
@@ -107,11 +129,10 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<AccessTokenJson> getAccessTokens() {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        var user = users.updateUser(principal);
         var serverUrl = UrlUtil.getBaseUrl();
         return repositories.findAccessTokens(user)
                 .filter(token -> token.isActive())
@@ -133,11 +154,10 @@ public class UserAPI {
             var json = AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
-        var user = users.updateUser(principal);
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setValue(users.generateTokenValue());
@@ -159,11 +179,10 @@ public class UserAPI {
     )
     @Transactional
     public ResponseEntity<ResultJson> deleteAccessToken(@PathVariable long id) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        var user = users.updateUser(principal);
         var token = repositories.findAccessToken(id);
         if (token == null || !token.isActive() || !token.getUser().equals(user)) {
             var json = ResultJson.error("Token does not exist.");
@@ -179,11 +198,10 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<NamespaceJson> getOwnNamespaces() {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        var user = users.updateUser(principal);
 
         var memberships = repositories.findMemberships(user, NamespaceMembership.ROLE_OWNER);
 
@@ -209,11 +227,10 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String name) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
-        var user = users.updateUser(principal);
 
         var namespace = repositories.findNamespace(name);
         var userMembership = repositories.findMembership(user, namespace);
@@ -233,12 +250,11 @@ public class UserAPI {
     )
     public ResponseEntity<ResultJson> setNamespaceMember(@PathVariable String namespace, @RequestParam String user,
             @RequestParam String role, @RequestParam(required = false) String provider) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var requestingUser = users.findLoggedInUser();
+        if (requestingUser == null) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         try {
-            var requestingUser = users.updateUser(principal);
             var json = users.setNamespaceMember(requestingUser, namespace, provider, user, role);
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
