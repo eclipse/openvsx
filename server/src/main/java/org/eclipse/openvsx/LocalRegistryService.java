@@ -13,7 +13,6 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,7 +55,6 @@ import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -87,9 +85,6 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     GoogleCloudStorageService googleStorage;
-
-    @Value("${ovsx.licenses.detect:}")
-    String[] detectedLicenseIds;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -330,7 +325,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        try (var processor = new ExtensionProcessor(content, Arrays.asList(detectedLicenseIds))) {
+        try (var processor = new ExtensionProcessor(content)) {
             var token = users.useAccessToken(tokenValue);
             if (token == null) {
                 throw new ErrorResultException("Invalid access token.");

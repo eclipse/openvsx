@@ -50,19 +50,13 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");
 
     private final InputStream inputStream;
-    private final List<String> detectedLicenseIds;
     private byte[] content;
     private ZipFile zipFile;
     private JsonNode packageJson;
     private JsonNode packageNlsJson;
 
     public ExtensionProcessor(InputStream stream) {
-        this(stream, Collections.emptyList());
-    }
-
-    public ExtensionProcessor(InputStream stream, List<String> detectedLicenseIds) {
         this.inputStream = stream;
-        this.detectedLicenseIds = detectedLicenseIds;
     }
 
     @Override
@@ -292,10 +286,7 @@ public class ExtensionProcessor implements AutoCloseable {
                     var lastSegment = fileName.substring(lastSegmentIndex + 1);
                     license.setName(lastSegment);
                     license.setContent(bytes);
-                    if (extension.getLicense() == null) {
-                        var detection = new LicenseDetection(detectedLicenseIds);
-                        extension.setLicense(detection.detectLicense(bytes));
-                    }
+                    detectLicense(bytes, extension);
                     return license;
                 }
             }
@@ -307,11 +298,15 @@ public class ExtensionProcessor implements AutoCloseable {
         }
         license.setName(result.getSecond());
         license.setContent(result.getFirst());
-        if (Strings.isNullOrEmpty(extension.getLicense())) {
-            var detection = new LicenseDetection(detectedLicenseIds);
-            extension.setLicense(detection.detectLicense(result.getFirst()));
-        }
+        detectLicense(result.getFirst(), extension);
         return license;
+    }
+
+    private void detectLicense(byte[] content, ExtensionVersion extension) {
+        if (Strings.isNullOrEmpty(extension.getLicense())) {
+            var detection = new LicenseDetection();
+            extension.setLicense(detection.detectLicense(content));
+        }
     }
 
     private Pair<byte[], String> readFromAlternateNames(String[] names) {

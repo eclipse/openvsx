@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.db;
 
-import java.util.Arrays;
-
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.entities.FileResource;
@@ -19,7 +17,6 @@ import org.eclipse.openvsx.util.LicenseDetection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -32,13 +29,10 @@ public class LicenseInitializer {
     @Autowired
     RepositoryService repositories;
 
-    @Value("${ovsx.licenses.detect:}")
-    String[] detectLicenseIds;
-
     @EventListener
     @Transactional
     public void initExtensionLicenses(ApplicationStartedEvent event) {
-        var detection = new LicenseDetection(Arrays.asList(detectLicenseIds));
+        var detection = new LicenseDetection();
         var undetected = new int[1];
         repositories.findVersionsByLicense(null).forEach(extVersion -> {
             var license = repositories.findFileByType(extVersion, FileResource.LICENSE);
