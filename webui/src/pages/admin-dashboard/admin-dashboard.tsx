@@ -20,6 +20,7 @@ import { NamespaceAdmin } from './namespace-admin';
 import { ExtensionAdmin } from './extension-admin';
 import { UserContext } from '../../main';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
+import { Welcome } from './welcome';
 
 export namespace AdminDashboardRoutes {
     export const ROOT = 'admin-dashboard';
@@ -67,6 +68,7 @@ export const AdminDashboard: FunctionComponent = props => {
                             <Switch>
                                 <Route path={AdminDashboardRoutes.NAMESPACE_ADMIN} component={NamespaceAdmin} />
                                 <Route path={AdminDashboardRoutes.EXTENSION_ADMIN} component={ExtensionAdmin} />
+                                <Route path='*' component={Welcome} />
                             </Switch>
                         </Container>
                     </Box>

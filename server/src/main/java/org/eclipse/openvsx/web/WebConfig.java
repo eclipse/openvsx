@@ -34,9 +34,7 @@ public class WebConfig implements WebMvcConfigurer {
             var authorizedEndpoints = new String[] {
                 "/user/**",
                 "/logout",
-                "/api/-/namespace/create",
                 "/api/*/*/review/**",
-                "/api/*",
                 "/admin/**"
             };
             for (var endpoint : authorizedEndpoints) {

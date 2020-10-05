@@ -11,16 +11,14 @@
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
-import { Button } from '@material-ui/core';
+import { Button, Typography } from '@material-ui/core';
 import { NamespaceInput } from './namespace-input';
 import { ServiceContext } from '../../default/default-app';
-import { ErrorHandlerContext } from '../../main';
 import { handleError } from '../../utils';
 import { isError, Extension } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';
 
 export const ExtensionAdmin: FunctionComponent = props => {
-    const errorContext = useContext(ErrorHandlerContext);
 
     const [extensionValue, setExtensionValue] = useState('');
     const handleExtensionChange = (value: string) => {
@@ -33,6 +31,11 @@ export const ExtensionAdmin: FunctionComponent = props => {
     const [namespaceValue, setNamespaceValue] = useState('');
     const handleNamespaceChange = (value: string) => {
         setNamespaceValue(value);
+    };
+
+    const [error, setError] = useState('');
+    const handleExtensionError = (err: Error) => {
+        setError(handleError(err));
     };
 
     const handleSubmit = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -69,8 +72,9 @@ export const ExtensionAdmin: FunctionComponent = props => {
                 throw (extensionDetail);
             }
             setExtension(extensionDetail);
+            setError('');
         } catch (err) {
-            errorContext ? errorContext.handleError(err) : handleError(err);
+            handleExtensionError(err);
         }
     };
 
@@ -92,7 +96,8 @@ export const ExtensionAdmin: FunctionComponent = props => {
                     placeholder='Extension'
                     hideIconButton={true}
                     autoFocus={false} />,
-                <Button key='btn' variant='contained' onClick={handleSubmit}>Search Extension</Button>
+                <Button key='btn' variant='contained' onClick={handleSubmit}>Search Extension</Button>,
+                error ? <Typography color='error'>{error}</Typography> : ''
             ]}
             listContainer={
                 extension ?
