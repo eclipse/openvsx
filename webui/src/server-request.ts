@@ -65,6 +65,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         let err: ErrorResponse;
         try {
             err = await response.json();
+            err.status = response.status;
         } catch (_) {
             err = {
                 error: `Request failed: ${req.method} ${response.url}`,

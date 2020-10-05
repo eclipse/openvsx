@@ -37,7 +37,7 @@ public class WebConfig implements WebMvcConfigurer {
                 "/api/-/namespace/create",
                 "/api/*/*/review/**",
                 "/api/*",
-                "/admin/delete-extension"
+                "/admin/**"
             };
             for (var endpoint : authorizedEndpoints) {
                 registry.addMapping(endpoint)

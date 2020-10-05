@@ -1,3 +1,13 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 import React, { FunctionComponent, useState, useEffect } from 'react';
 import { Extension, VERSION_ALIASES } from '../../extension-registry-types';
 import { Grid, makeStyles, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@material-ui/core';
@@ -119,7 +129,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                         extension={extension}
                         versions={
                             Array.from(versions.entries())
-                                .filter(([version, checked]) => checked)
+                                .filter(([version, checked]) => VERSION_ALIASES.indexOf(version) < 0 && checked)
                                 .map(([version]) => version)} />
                 </Grid>
             </Grid>

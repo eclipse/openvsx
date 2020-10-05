@@ -12,23 +12,33 @@ package org.eclipse.openvsx;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
+import java.net.URI;
+
+import javax.persistence.EntityManager;
 
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.StatsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -43,10 +53,13 @@ public class AdminAPI {
     AdminService admins;
 
     @Autowired
-    UserService users;
+    SearchService search;
 
     @Autowired
-    SearchService search;
+    EntityManager entityManager;
+
+    @Autowired
+    UserService users;
 
     @GetMapping(
         path = "/admin/stats",
@@ -124,57 +137,87 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/namespace-member",
+        path = "/admin/{namespaceName}/change-member",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResultJson editNamespaceMember(@RequestParam("token") String tokenValue,
-                                         @RequestParam("namespace") String namespaceName,
+    public ResponseEntity<ResultJson> editNamespaceMember(@PathVariable String namespaceName,
                                          @RequestParam("user") String userName,
                                          @RequestParam(required = false) String provider,
                                          @RequestParam String role) {
-        var token = users.useAccessToken(tokenValue);
-        if (token == null) {
-            return ResultJson.error("Invalid access token.");
-        }
-        if (!UserData.ROLE_ADMIN.equals(token.getUser().getRole())) {
-            return ResultJson.error("Administration role is required.");
-        }
         try {
-            return admins.editNamespaceMember(namespaceName, userName, provider, role, token.getUser());
+            var user = admins.checkAdminUser();
+            return new ResponseEntity<>(admins.editNamespaceMember(namespaceName, userName, provider, role, user), HttpStatus.OK);
         } catch (ErrorResultException exc) {
-            return ResultJson.error(exc.getMessage());
+            return getErrorResponse(exc);
         }
     }
 
     @PostMapping(
-        path = "/admin/delete-extension",
+        path = "/admin/{namespaceName}/delete-extension",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResultJson deleteExtension(@RequestParam("namespace") String namespaceName,
+    public ResponseEntity<ResultJson> deleteExtension(@PathVariable String namespaceName,
                                       @RequestParam("extension") String extensionName,
-                                      @RequestParam(required = false) String token,
                                       @RequestParam(required = false) String version) {
-        UserData user = null;
-        if(token != null) {
-            var tokenVal = users.useAccessToken(token);
-            if (tokenVal == null) {
-                return ResultJson.error("Invalid access token.");
-            }
-            user = tokenVal.getUser();
-        } else {
-            var principal = users.getOAuth2Principal();
-            if (principal != null) {
-                user = users.updateUser(principal);
-            }
-        }
-        if (user != null && !UserData.ROLE_ADMIN.equals(user.getRole())) {
-            return ResultJson.error("Administration role is required.");
-        }
         try {
-            return admins.deleteExtension(namespaceName, extensionName, version, user);
+            var user = admins.checkAdminUser();
+            return new ResponseEntity<ResultJson>(admins.deleteExtension(namespaceName, extensionName, version, user), HttpStatus.OK);
         } catch (ErrorResultException exc) {
-            return ResultJson.error(exc.getMessage());
+            return getErrorResponse(exc);
         }
     }
 
+    @GetMapping(path = "/admin/{namespaceName}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @CrossOrigin
+    public ResponseEntity<NamespaceJson> getNamespace(@PathVariable String namespaceName) {
+        try {
+            admins.checkAdminUser();
+            var namespace = admins.getNamespace(namespaceName);
+            return new ResponseEntity<>(namespace, HttpStatus.OK);
+        } catch (ErrorResultException exc) {
+            var err = getErrorResponse(exc);
+            return new ResponseEntity<>(NamespaceJson.error(err.getBody().error), err.getStatusCode());
+        }
+    }
+
+    @GetMapping(path = "/admin/{namespaceName}/members", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String namespaceName) {
+        try{
+            admins.checkAdminUser();
+            var namespace = repositories.findNamespace(namespaceName);
+            var memberships = repositories.findMemberships(namespace);
+            var membershipList = new NamespaceMembershipListJson();
+            membershipList.namespaceMemberships = memberships.map(membership -> membership.toJson()).toList();
+            return new ResponseEntity<>(membershipList, HttpStatus.OK);
+        } catch (ErrorResultException exc) {
+            var err = getErrorResponse(exc);
+            return new ResponseEntity<>(NamespaceMembershipListJson.error(err.getBody().error), err.getStatusCode());
+        }
+    }
+
+    @PostMapping(
+        path = "/admin/-/create-namespace",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> createNamespace(@RequestBody NamespaceJson namespace) {
+        try {
+            admins.checkAdminUser();
+            var json = admins.createNamespace(namespace);
+            var serverUrl = UrlUtil.getBaseUrl();
+            var url = UrlUtil.createApiUrl(serverUrl, "admin", namespace.name);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create(url))
+                    .body(json);
+        } catch (ErrorResultException exc) {
+            return getErrorResponse(exc);
+        }
+    }
+
+    private ResponseEntity<ResultJson> getErrorResponse(ErrorResultException exc) {
+            var json = ResultJson.error(exc.getMessage());
+            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>(json, status);
+    }
+    
 }

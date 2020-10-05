@@ -1,8 +1,18 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 import React, { FunctionComponent, useContext, useState } from 'react';
 import { Box, Container, makeStyles, CssBaseline, Typography, IconButton } from '@material-ui/core';
 import { createRoute } from '../../utils';
-import { Sidepanel } from '../sidepanel/sidepanel';
-import { NavigationItem } from '../sidepanel/navigation-item';
+import { Sidepanel } from '../../components/sidepanel/sidepanel';
+import { NavigationItem } from '../../components/sidepanel/navigation-item';
 import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
 import ExtensionSharpIcon from '@material-ui/icons/ExtensionSharp';
 import { Route, Switch, useHistory, useLocation } from 'react-router-dom';

@@ -1,9 +1,19 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { Typography, Box, Button } from '@material-ui/core';
 
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { Namespace, isError } from '../../extension-registry-types';
+import { Namespace } from '../../extension-registry-types';
 import { PageSettingsContext, ServiceContext } from '../../default/default-app';
 import { UserContext, ErrorHandlerContext } from '../../main';
 import { NamespaceInput } from './namespace-input';
@@ -29,20 +39,23 @@ export const NamespaceAdmin: FunctionComponent = props => {
             if (namespaceName !== '') {
                 setLoading(true);
                 const namespace = await service.findNamespace(namespaceName);
-                if (isError(namespace)) {
-                    setNotFound(namespaceName);
-                    setCurrentNamespace(undefined);
-                } else {
-                    setNotFound('');
-                    setCurrentNamespace(namespace);
-                }
+                setNotFound('');
+                setCurrentNamespace(namespace);
                 setLoading(false);
             } else {
                 setNotFound('');
                 setCurrentNamespace(undefined);
             }
         } catch (err) {
-            errorContext ? errorContext.handleError(err) : handleError(err);
+            if (err && err.status && err.status === 404) {
+                setNotFound(namespaceName);
+                setCurrentNamespace(undefined);
+            } else if (errorContext) {
+                errorContext.handleError(err);
+            } else {
+                handleError(err);
+            }
+            setLoading(false);
         }
     };
 

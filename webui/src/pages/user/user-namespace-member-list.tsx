@@ -1,3 +1,13 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 import React, { FunctionComponent, useEffect, useState, useContext } from 'react';
 import { Box, Typography, Button, Paper, makeStyles } from '@material-ui/core';
 import { UserNamespaceMember } from './user-namespace-member-component';
@@ -51,8 +61,9 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
 
     const fetchMembers = async () => {
         try {
-            const members = await service.getNamespaceMembers(props.namespace);
-            setMembers(members as NamespaceMembership[]);
+            const membershipList = await service.getNamespaceMembers(props.namespace);
+            const members = membershipList.namespaceMemberships;
+            setMembers(members);
         } catch (err) {
             props.handleError(err);
         }

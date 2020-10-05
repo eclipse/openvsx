@@ -174,6 +174,10 @@ export interface NamespaceMembership {
     user: UserData;
 }
 
+export interface NamespaceMembershipList {
+    namespaceMemberships: NamespaceMembership[];
+}
+
 export interface Namespace {
     name: string;
     extensions: { [key: string]: string };
