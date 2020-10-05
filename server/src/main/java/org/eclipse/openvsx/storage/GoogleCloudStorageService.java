@@ -44,14 +44,20 @@ public class GoogleCloudStorageService {
     private Storage storage;
 
     public boolean isEnabled() {
-        return !Strings.isNullOrEmpty(projectId) && !Strings.isNullOrEmpty(bucketId);
+        return !Strings.isNullOrEmpty(bucketId);
     }
 
     protected Storage getStorage() {
         if (storage == null) {
-            storage = StorageOptions.newBuilder()
-                    .setProjectId(projectId)
-                    .build().getService();
+            StorageOptions options;
+            if (Strings.isNullOrEmpty(projectId)) {
+                options = StorageOptions.getDefaultInstance();
+            } else {
+                options = StorageOptions.newBuilder()
+                        .setProjectId(projectId)
+                        .build();
+            }
+            storage = options.getService();
         }
         return storage;
     }
@@ -59,9 +65,14 @@ public class GoogleCloudStorageService {
     @Transactional(TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var objectId = getObjectId(resource.getName(), resource.getExtension());
-        uploadFile(resource.getContent(), objectId);
+        if (Strings.isNullOrEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot upload file "
+                    + objectId + ": missing Google bucket id");
+        }
+
+        uploadFile(resource.getContent(), resource.getName(), objectId);
         resource.setStorageType(FileResource.STORAGE_GOOGLE);
-        // Don't store the binary content in the DB - it's already stored externally
+        // Don't store the binary content in the DB - it's now stored externally
         resource.setContent(null);
     }
 
@@ -70,22 +81,34 @@ public class GoogleCloudStorageService {
         uploadFile(resource);
     }
 
-    protected void uploadFile(byte[] content, String objectId) {
+    protected void uploadFile(byte[] content, String fileName, String objectId) {
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
-                .setContentType(storageUtil.getFileType(objectId).toString());
-        if (objectId.endsWith(".vsix")) {
-            blobInfoBuilder.setContentDisposition("attachment; filename=\"" + objectId + "\"");
+                .setContentType(storageUtil.getFileType(fileName).toString());
+        if (fileName.endsWith(".vsix")) {
+            blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
+        } else {
+            var cacheControl = storageUtil.getCacheControl(fileName);
+            blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
         }
         getStorage().create(blobInfoBuilder.build(), content);
     }
 
     public void removeFile(String name, ExtensionVersion extVersion) {
         var objectId = getObjectId(name, extVersion);
+        if (Strings.isNullOrEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot remove file "
+                    + objectId + ": missing Google bucket id");
+        }
         getStorage().delete(BlobId.of(bucketId, objectId));
     }
 
     public URI getLocation(String name, ExtensionVersion extVersion) {
-        return URI.create(BASE_URL + bucketId + "/" + getObjectId(name, extVersion));
+        var objectId = getObjectId(name, extVersion);
+        if (Strings.isNullOrEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot determine location of file "
+                    + objectId + ": missing Google bucket id");
+        }
+        return URI.create(BASE_URL + bucketId + "/" + objectId);
     }
 
     protected String getObjectId(String name, ExtensionVersion extVersion) {

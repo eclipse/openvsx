@@ -41,11 +41,14 @@ public class StorageUtilService {
     @Autowired
     GoogleCloudStorageService googleStorage;
 
-    /** Determines which resource types are stored externally. Default: all except the manifest (package.json) */
-    @Value("${ovsx.storage.external-resource-types:download,icon,readme,license}")
+    /** Determines which resource types are stored externally. Default: all resources ({@code *}) */
+    @Value("${ovsx.storage.external-resource-types:*}")
     String[] externalResourceTypes;
 
     public boolean shouldStoreExternally(FileResource resource) {
+        if (externalResourceTypes.length == 1 && "*".equals(externalResourceTypes[0])) {
+            return true;
+        }
         return Arrays.asList(externalResourceTypes).contains(resource.getType());
     }
 
@@ -96,25 +99,29 @@ public class StorageUtilService {
 
     public HttpHeaders getFileResponseHeaders(String fileName) {
         var headers = new HttpHeaders();
-        MediaType fileType = getFileType(fileName);
-        headers.setContentType(fileType);
-        // Files are requested with a version string in the URL, so their content cannot change
-        headers.setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS));
+        headers.setContentType(getFileType(fileName));
         if (fileName.endsWith(".vsix")) {
             headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+        } else {
+            headers.setCacheControl(getCacheControl(fileName));
         }
         return headers;
     }
 
     public MediaType getFileType(String fileName) {
-        if (fileName.endsWith(".vsix")) {
+        if (fileName.endsWith(".vsix"))
             return MediaType.APPLICATION_OCTET_STREAM;
-        }
+        if (fileName.endsWith(".json"))
+            return MediaType.APPLICATION_JSON;
         var contentType = URLConnection.guessContentTypeFromName(fileName);
-        if (contentType != null) {
+        if (contentType != null)
             return MediaType.parseMediaType(contentType);
-        }
         return MediaType.TEXT_PLAIN;
+    }
+
+    public CacheControl getCacheControl(String fileName) {
+        // Files are requested with a version string in the URL, so their content cannot change
+        return CacheControl.maxAge(30, TimeUnit.DAYS);
     }
     
 }
