@@ -116,7 +116,7 @@ public class AdminAPI {
             return ResultJson.error("Administration role is required.");
         }
 
-        search.updateSearchIndex();
+        search.updateSearchIndex(true);
 
         var result = ResultJson.success("Updated search index");
         admins.logAdminAction(token.getUser(), result);

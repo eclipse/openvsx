@@ -18,3 +18,7 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: never
+
+ovsx:
+  elasticsearch:
+    clear-on-start: true

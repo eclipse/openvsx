@@ -15,8 +15,6 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import javax.transaction.Transactional;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
@@ -41,7 +39,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StopWatch;
 
 @Component
@@ -58,6 +58,8 @@ public class SearchService {
 
     @Value("${ovsx.elasticsearch.enabled:true}")
     boolean enableSearch;
+    @Value("${ovsx.elasticsearch.clear-on-start:false}")
+    boolean clearOnStart;
 
     @Value("${ovsx.elasticsearch.relevance.rating:1.0}")
     double ratingRelevance;
@@ -74,26 +76,71 @@ public class SearchService {
         return enableSearch;
     }
 
+    /**
+     * Application start listener that initializes the search index. If the application property
+     * {@code ovsx.elasticsearch.clear-on-start} is set to {@code true}, the index is cleared
+     * and rebuilt from scratch. If the property is {@code false} and the search index does
+     * not exist yet, it is created and initialized. Otherwise nothing happens.
+     */
     @EventListener
-    @Transactional
+    @Transactional(readOnly = true)
     public void initSearchIndex(ApplicationStartedEvent event) {
-        if (!isEnabled()) {
+        if (!isEnabled() || !clearOnStart && searchOperations.indexExists(ExtensionSearch.class)) {
             return;
         }
         var stopWatch = new StopWatch();
         stopWatch.start();
-        updateSearchIndex();
+        updateSearchIndex(clearOnStart);
         stopWatch.stop();
         logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
     }
 
+    /**
+     * Task scheduled once per day to soft-update the search index. This is necessary
+     * because the relevance of index entries might consider the extension publishing
+     * timestamps in relation to the current time.
+     */
+    @Scheduled(cron = "0 0 4 * * *", zone = "UTC")
+    @Transactional(readOnly = true)
     public void updateSearchIndex() {
+        if (!isEnabled() || Math.abs(timestampRelevance) < 0.01) {
+            return;
+        }
+        var stopWatch = new StopWatch();
+        stopWatch.start();
+        updateSearchIndex(false);
+        stopWatch.stop();
+        logger.info("Updated search index in " + stopWatch.getTotalTimeMillis() + " ms");
+    }
+
+    /**
+     * Updating the search index has two modes:
+     * <em>soft</em> ({@code clear} is set to {@code false}) means the index is created
+     * if it does not exist yet, and
+     * <em>hard</em> ({@code clear} is set to {@code true}) means the index is deleted
+     * and then recreated.
+     * In any case, this method scans all extensions in the database and indexes their
+     * relevant metadata.
+     */
+    public void updateSearchIndex(boolean clear) {
+        var locked = false;
         try {
-            rwLock.writeLock().lock();
-            if (searchOperations.indexExists(ExtensionSearch.class)) {
-                searchOperations.deleteIndex(ExtensionSearch.class);
+            if (clear) {
+                // Hard mode: delete the index if it exists, then recreate it
+                rwLock.writeLock().lock();
+                locked = true;
+                if (searchOperations.indexExists(ExtensionSearch.class)) {
+                    searchOperations.deleteIndex(ExtensionSearch.class);
+                }
+                searchOperations.createIndex(ExtensionSearch.class);
+            } else if (!searchOperations.indexExists(ExtensionSearch.class)) {
+                // Soft mode: the index is created only when it does not exist yet
+                rwLock.writeLock().lock();
+                locked = true;
+                searchOperations.createIndex(ExtensionSearch.class);
             }
-            searchOperations.createIndex(ExtensionSearch.class);
+            
+            // Scan all extensions and create index queries
             var allExtensions = repositories.findAllExtensions();
             if (allExtensions.isEmpty()) {
                 return;
@@ -104,9 +151,17 @@ public class SearchService {
                     .withObject(toSearchEntry(extension, stats))
                     .build()
             ).toList();
+
+            if (!locked) {
+                // The write lock has not been acquired upfront, so do it just before submitting the index queries
+                rwLock.writeLock().lock();
+                locked = true;
+            }
             searchOperations.bulkIndex(indexQueries);
         } finally {
-            rwLock.writeLock().unlock();
+            if (locked) {
+                rwLock.writeLock().unlock();
+            }
         }
     }
 
