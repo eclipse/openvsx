@@ -11,6 +11,8 @@ package org.eclipse.openvsx.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+
 import com.google.common.io.ByteStreams;
 
 import org.junit.jupiter.api.Test;
@@ -26,13 +28,29 @@ public class LicenseDetectionTest {
 
     @Test
     public void testMIT() throws Exception {
+        var license = detect("MIT.txt");
+        assertThat(license).isEqualTo("MIT");
+    }
+
+    @Test
+    public void testGPL() throws Exception {
+        var license = detect("GPL-3.0.txt");
+        assertThat(license).isEqualTo("GPL-3.0");
+    }
+
+    @Test
+    public void testAGPL() throws Exception {
+        var license = detect("AGPL-3.0.txt");
+        assertThat(license).isEqualTo("AGPL-3.0");
+    }
+
+    private String detect(String fileName) throws IOException {
         try (
-            var stream = getClass().getResourceAsStream("MIT.txt");
+            var stream = getClass().getResourceAsStream(fileName);
         ) {
             var bytes = ByteStreams.toByteArray(stream);
             var detection = new LicenseDetection();
-            var result = detection.detectLicense(bytes);
-            assertThat(result).isEqualTo("MIT");
+            return detection.detectLicense(bytes);
         }
     }
 

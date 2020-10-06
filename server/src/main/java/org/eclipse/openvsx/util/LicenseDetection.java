@@ -85,7 +85,7 @@ public class LicenseDetection {
     }
 
     private void loadTemplate(SpdxListedLicense license) {
-        var resource = getClass().getResource("/spdx-templates/" + license.getLicenseId().toLowerCase() + ".txt");
+        var resource = getClass().getResource("/spdx-templates/" + license.getLicenseId() + ".txt");
         if (resource != null) {
             try {
                 var data = CharStreams.toString(new InputStreamReader(resource.openStream()));
