@@ -134,6 +134,7 @@ export interface UserData {
     avatarUrl?: UrlString;
     homepage?: string;
     provider?: string;
+    role?: string;
 }
 
 export function isEqualUser(u1: UserData, u2: UserData): boolean {
@@ -171,6 +172,10 @@ export interface NamespaceMembership {
     namespace: string;
     role: MembershipRole;
     user: UserData;
+}
+
+export interface NamespaceMembershipList {
+    namespaceMemberships: NamespaceMembership[];
 }
 
 export interface Namespace {

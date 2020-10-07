@@ -64,7 +64,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
- 
+
     @Autowired
     EntityManager entityManager;
 

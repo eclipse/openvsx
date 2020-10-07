@@ -10,17 +10,18 @@
 
 import * as React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { Menu, IconButton } from '@material-ui/core';
+import { Menu, IconButton, useTheme } from '@material-ui/core';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import MenuIcon from '@material-ui/icons/Menu';
 import { PageSettings } from './page-settings';
 
 export const HeaderMenu: React.FunctionComponent<{ pageSettings: PageSettings; }> = ({ pageSettings }) => {
+    const theme = useTheme();
     const {
         defaultMenuContent: DefaultMenuContent,
         mobileMenuContent: MobileMenuContent
     } = pageSettings.elements;
-    const isMobile = useMediaQuery('(max-width: 700px)');
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     if (isMobile && MobileMenuContent) {
         return <MobileHeaderMenu menuContent={MobileMenuContent} />;
     } else if (DefaultMenuContent) {

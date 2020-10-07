@@ -35,6 +35,7 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipJson;
+import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -190,14 +191,14 @@ public class UserAPITest {
                     m1.user = u1;
                     m1.namespace = "foobar";
                     m1.role = NamespaceMembership.ROLE_OWNER;
-                    a.add(m1);
+                    a.namespaceMemberships.add(m1);
                     var u2 = new UserJson();
                     u2.loginName = "other_user";
                     var m2 = new NamespaceMembershipJson();
                     m2.user = u2;
                     m2.namespace = "foobar";
                     m2.role = NamespaceMembership.ROLE_CONTRIBUTOR;
-                    a.add(m2);
+                    a.namespaceMemberships.add(m2);
                 })));
     }
 
@@ -447,8 +448,9 @@ public class UserAPITest {
                 .thenReturn(Streamable.of(membership1, membership2));
     }
 
-    private String membershipsJson(Consumer<List<NamespaceMembershipJson>> content) throws JsonProcessingException {
-        var json = new ArrayList<NamespaceMembershipJson>();
+    private String membershipsJson(Consumer<NamespaceMembershipListJson> content) throws JsonProcessingException {
+        var json = new NamespaceMembershipListJson();
+        json.namespaceMemberships = new ArrayList<>();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }

@@ -23,7 +23,7 @@ import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.CsrfTokenJson;
 import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.NamespaceMembershipJson;
+import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -74,6 +74,7 @@ public class UserAPI {
         var user = users.updateUser(principal);
         var json = user.toUserJson();
         var serverUrl = UrlUtil.getBaseUrl();
+        json.role = user.getRole();
         json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
         json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
         return json;
@@ -200,7 +201,7 @@ public class UserAPI {
         path = "/user/namespace/{name}/members",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public List<NamespaceMembershipJson> getNamespaceMembers(@PathVariable String name) {
+    public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String name) {
         var principal = users.getOAuth2Principal();
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -211,9 +212,11 @@ public class UserAPI {
         var userMembership = repositories.findMembership(user, namespace);
         if (userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
             var memberships = repositories.findMemberships(namespace);
-            return memberships.map(membership -> membership.toJson()).toList();
+            var membershipList = new NamespaceMembershipListJson();
+            membershipList.namespaceMemberships = memberships.map(membership -> membership.toJson()).toList();
+            return new ResponseEntity<>(membershipList, HttpStatus.OK);
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN); 
+            return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN); 
         }
     }
 
