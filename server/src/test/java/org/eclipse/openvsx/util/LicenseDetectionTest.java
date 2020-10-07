@@ -27,21 +27,38 @@ public class LicenseDetectionTest {
     }
 
     @Test
-    public void testMIT() throws Exception {
-        var license = detect("MIT.txt");
-        assertThat(license).isEqualTo("MIT");
+    public void testMIT1() throws Exception {
+        assertThat(detect("MIT1.txt")).isEqualTo("MIT");
+    }
+
+    @Test
+    public void testMIT2() throws Exception {
+        assertThat(detect("MIT2.txt")).isEqualTo("MIT");
+    }
+
+    @Test
+    public void testMIT3() throws Exception {
+        assertThat(detect("MIT3.txt")).isEqualTo("MIT");
+    }
+
+    @Test
+    public void testMIT4() throws Exception {
+        assertThat(detect("MIT4.txt")).isEqualTo("MIT");
+    }
+
+    @Test
+    public void testMIT5() throws Exception {
+        assertThat(detect("MIT5.txt")).isEqualTo("MIT");
     }
 
     @Test
     public void testGPL() throws Exception {
-        var license = detect("GPL-3.0.txt");
-        assertThat(license).isEqualTo("GPL-3.0");
+        assertThat(detect("GPL-3.0.txt")).isEqualTo("GPL-3.0");
     }
 
     @Test
     public void testAGPL() throws Exception {
-        var license = detect("AGPL-3.0.txt");
-        assertThat(license).isEqualTo("AGPL-3.0");
+        assertThat(detect("AGPL-3.0.txt")).isEqualTo("AGPL-3.0");
     }
 
     private String detect(String fileName) throws IOException {
