@@ -11,18 +11,28 @@ package org.eclipse.openvsx;
 
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
+import org.eclipse.openvsx.entities.AuthToken;
+import org.eclipse.openvsx.entities.EclipseData;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.EclipseData.PublisherAgreement;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.CsrfTokenJson;
 import org.eclipse.openvsx.json.NamespaceJson;
@@ -34,23 +44,29 @@ import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.json.simple.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class UserAPI {
 
     private final static int TOKEN_DESCRIPTION_SIZE = 255;
+
+    public final static String PUBLISHER_AGREEMENT_URI = "https://api.eclipse.org/openvsx/publisher_agreement";
 
     @Autowired
     EntityManager entityManager;
@@ -98,10 +114,10 @@ public class UserAPI {
                     json.publisherAgreement = "outdated";
                 if (eclipseData.publisherAgreement.signedTimestamp != null)
                     json.publisherAgreementTimestamp = TimeUtil.toUTCString(eclipseData.publisherAgreement.signedTimestamp);
-                if (eclipseData.email != null) {
+                if (eclipseData.personId != null) {
                     var eclipseLogin = new UserJson();
                     eclipseLogin.provider = "eclipse";
-                    eclipseLogin.loginName = eclipseData.email;
+                    eclipseLogin.loginName = eclipseData.personId;
                     json.additionalLogins = Lists.newArrayList(eclipseLogin);
                 }
             }
@@ -268,8 +284,7 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<UserJson> getUsersStartWith(@PathVariable String name) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        if (users.findLoggedInUser() == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
@@ -283,8 +298,57 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResultJson signPublisherAgreement() {
-        // TODO
+        var currentUser = users.findLoggedInUser();
+        if (currentUser == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        AuthToken eclipseToken = currentUser.getEclipseToken();
+        if (eclipseToken == null) {
+            return ResultJson.error("Authorization required");
+        }
+
+        var restTemplate = new RestTemplate();
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(eclipseToken.accessToken);
+
+        var data = new JsonObject();
+        data.put("version", 1);
+
+        var objectMapper = new ObjectMapper();
+
+        var request = new HttpEntity<String>(data.toJson(), headers);
+        try {
+            var response = restTemplate.postForObject(PUBLISHER_AGREEMENT_URI, request, String.class);
+            var root = objectMapper.readTree(response);
+
+            var ed = new EclipseData();
+            var pub = ed.new PublisherAgreement();
+            ed.publisherAgreement = pub;
+            ed.personId = root.get("PersonID").asText();
+            pub.documentId = root.get("DocumentID").asText();
+            pub.signedVersion = root.get("Version").asText();
+            pub.signedTimestamp = LocalDateTime.parse(root.get("EffectiveDate").asText(), CUSTOM_DATE_TIME);
+            pub.isActive = "1".equals(root.get("SysDocument").get("IsActive").asText());
+
+            users.updateUser(currentUser.getId(), user -> {
+                user.setEclipseData(ed);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return ResultJson.success("Signed the publisher agreement");
+    }
+
+    public static final DateTimeFormatter CUSTOM_DATE_TIME;
+    static {
+        CUSTOM_DATE_TIME = new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .append(DateTimeFormatter.ISO_LOCAL_DATE)
+                .appendLiteral(' ')
+                .append(DateTimeFormatter.ISO_LOCAL_TIME)
+                .toFormatter();
     }
 
 }

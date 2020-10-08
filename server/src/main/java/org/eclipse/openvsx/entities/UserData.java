@@ -58,6 +58,14 @@ public class UserData {
     @Convert(converter = EclipseDataConverter.class)
     EclipseData eclipseData;
 
+    @Column(length = 4096, nullable = true)
+    @Convert(converter = AuthTokenConverter.class)
+    AuthToken githubToken;
+
+    @Column(length = 4096, nullable = true)
+    @Convert(converter = AuthTokenConverter.class)
+    AuthToken eclipseToken;
+
 
     /**
      * Convert to a JSON object.
@@ -152,4 +160,20 @@ public class UserData {
         this.eclipseData = eclipseData;
     }
 
+    public AuthToken getGithubToken() {
+        return githubToken;
+    }
+
+    public void setGithubToken(AuthToken githubToken) {
+        this.githubToken = githubToken;
+    }
+
+    public AuthToken getEclipseToken() {
+        return eclipseToken;
+    }
+
+    public void setEclipseToken(AuthToken eclipseToken) {
+        this.eclipseToken = eclipseToken;
+    }
+    
 }

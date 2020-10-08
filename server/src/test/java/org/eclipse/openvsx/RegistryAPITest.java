@@ -928,12 +928,12 @@ public class RegistryAPITest {
 
     private UserData mockUserData() {
         var principal = new MockPrincipal();
-        Mockito.doReturn(principal).when(users).getOAuth2Principal();
+        // Mockito.doReturn(principal).when(users).getOAuth2Principal();
         var userData = new UserData();
         userData.setLoginName("test_user");
         userData.setFullName("Test User");
         userData.setProviderUrl("http://example.com/test");
-        Mockito.doReturn(userData).when(users).updateUser(principal);
+        // Mockito.doReturn(userData).when(users).updateUser(principal);
         return userData;
     }
 

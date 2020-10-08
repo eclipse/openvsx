@@ -15,6 +15,8 @@ import org.eclipse.openvsx.entities.UserData;
 
 public interface UserDataRepository extends Repository<UserData, Long> {
 
+    UserData findById(long id);
+
     UserData findByProviderAndAuthId(String provider, String authId);
 
     UserData findByProviderAndLoginName(String provider, String loginName);

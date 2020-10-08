@@ -9,6 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Console;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
@@ -16,34 +22,33 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Converter
-public class EclipseDataConverter implements AttributeConverter<EclipseData, String> {
+public class AuthTokenConverter implements AttributeConverter<AuthToken, String> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public EclipseDataConverter() {
+    public AuthTokenConverter() {
         objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
     }
 
-
     @Override
-    public String convertToDatabaseColumn(EclipseData data) {
+    public String convertToDatabaseColumn(AuthToken data) {
         if (data == null)
             return null;
         try {
             return objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException exc) {
-            throw new RuntimeException("Failed to serialize EclipseData to DB column.", exc);
+            throw new RuntimeException("Failed to serialize AuthToken to DB column.", exc);
         }
     }
 
     @Override
-    public EclipseData convertToEntityAttribute(String raw) {
+    public AuthToken convertToEntityAttribute(String raw) {
         if (raw == null)
             return null;
         try {
-            return objectMapper.readValue(raw, EclipseData.class);
+            return objectMapper.readValue(raw, AuthToken.class);
         } catch (JsonProcessingException exc) {
-            throw new RuntimeException("Failed to parse EclipseData from DB column.", exc);
+            throw new RuntimeException("Failed to parse AuthToken from DB column.", exc);
         }
     }
 

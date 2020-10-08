@@ -80,7 +80,7 @@ public class UserAPITest {
 
     @Test
     public void testNotLoggedIn() throws Exception {
-        Mockito.doReturn(null).when(users).getOAuth2Principal();
+        // Mockito.doReturn(null).when(users).getOAuth2Principal();
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(userJson(u -> {
@@ -354,7 +354,7 @@ public class UserAPITest {
         userData.setLoginName("test_user");
         userData.setFullName("Test User");
         userData.setProviderUrl("http://example.com/test");
-        Mockito.doReturn(userData).when(users).updateUser(principal);
+        // Mockito.doReturn(userData).when(users).updateUser(principal);
         return userData;
     }
 
@@ -467,7 +467,7 @@ public class UserAPITest {
 
     private MockPrincipal mockPrincipal() {
         var principal = new MockPrincipal();
-        Mockito.doReturn(principal).when(users).getOAuth2Principal();
+        // Mockito.doReturn(principal).when(users).getOAuth2Principal();
         return principal;
     }
 

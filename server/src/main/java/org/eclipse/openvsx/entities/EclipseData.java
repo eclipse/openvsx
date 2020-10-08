@@ -20,8 +20,7 @@ import java.time.LocalDateTime;
  */
 public class EclipseData {
 
-    /** Email address identifying the Eclipse user. */
-    public String email;
+    public String personId;
 
     public PublisherAgreement publisherAgreement;
 
@@ -30,8 +29,12 @@ public class EclipseData {
         /** Version of the last signed publisher agreement. */
         public String signedVersion;
 
+        public String documentId;
+
         /** Timestamp of the last signed publisher agreement. */
         public LocalDateTime signedTimestamp;
+
+        public boolean isActive;
 
     }
     

@@ -10,28 +10,27 @@
 package org.eclipse.openvsx;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserService {
-
-    protected static final String GITHUB_API = "https://api.github.com/";
 
     @Autowired
     EntityManager entityManager;
@@ -39,52 +38,27 @@ public class UserService {
     @Autowired
     RepositoryService repositories;
 
-    public OAuth2User getOAuth2Principal() {
+    public UserData findLoggedInUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
-            var principal = authentication.getPrincipal();
-            if (principal instanceof OAuth2User) {
-                return (OAuth2User) principal;
+            if (authentication.getPrincipal() instanceof IdPrincipal) {
+                UserData userData = findById(((IdPrincipal)authentication.getPrincipal()).getId());
+                return userData;
             }
         }
         return null;
     }
 
-    public UserData findUser(OAuth2User principal) {
-        String provider = null;
-        String url = principal.getAttribute("url");
-        if (url != null && url.startsWith(GITHUB_API)) {
-            provider = "github";
-        }
-        var user = repositories.findUserByAuthId(provider, principal.getName());
-        if (user == null)
-            throw new IllegalArgumentException("Unsupported principal: " + principal.getName());
-        return user;
-    }
-
-    public UserData findLoggedInUser() {
-        var principal = getOAuth2Principal();
-        if (principal == null)
-            return null;
-        return findUser(principal);
-    }
-
     @Transactional
-    public UserData registerNewUser(OAuth2User oauth2User, ClientRegistration clientRegistration) {
+    public UserData registerNewUser(OAuth2User oauth2User) {
         var user = new UserData();
-        switch (clientRegistration.getRegistrationId()) {
-            case "github":
-                user.setProvider("github");
-                user.setAuthId(oauth2User.getName());
-                user.setLoginName(oauth2User.getAttribute("login"));
-                user.setFullName(oauth2User.getAttribute("name"));
-                user.setEmail(oauth2User.getAttribute("email"));
-                user.setProviderUrl(oauth2User.getAttribute("html_url"));
-                user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported registration id: " + clientRegistration.getRegistrationId());
-        }
+        user.setProvider("github");
+        user.setAuthId(oauth2User.getName());
+        user.setLoginName(oauth2User.getAttribute("login"));
+        user.setFullName(oauth2User.getAttribute("name"));
+        user.setEmail(oauth2User.getAttribute("email"));
+        user.setProviderUrl(oauth2User.getAttribute("html_url"));
+        user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
         entityManager.persist(user);
         return user;
     }
@@ -204,6 +178,25 @@ public class UserService {
         membership.setRole(role);
         entityManager.persist(membership);
         return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName() + ".");
+    }
+
+    @Transactional
+    public UserData findByGitHubLogin(String githubLogin) {
+        var userData = repositories.findUserByLoginName("github", githubLogin);
+        return userData;
+    }
+
+    @Transactional
+    public UserData findById(long id) {
+        var userData = repositories.findUserById(id);
+        return userData;
+    }
+
+    @Transactional
+    public void updateUser(long id, Consumer<UserData> update) {
+        var userData = repositories.findUserById(id);
+        update.accept(userData);
+        entityManager.persist(userData);
     }
 
 }
