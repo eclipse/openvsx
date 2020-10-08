@@ -53,20 +53,28 @@ const headerStyles = (theme: Theme) => createStyles({
         color: theme.palette.text.secondary,
         display: 'flex'
     },
-    resultSortItem: {
-        '&:hover': {
-            cursor: 'pointer'
-        }
-    },
     resultSortBySelectRoot: {
         fontSize: '0.75rem',
         height: '1.1rem'
     },
     resultSortBySelect: {
-        padding: '0px !important'
+        padding: '0px !important',
+        '&:hover': {
+            color: theme.palette.secondary.main
+        }
     },
     resultSortBySelectIcon: {
         display: 'none'
+    },
+    resultSortOrder: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: theme.spacing(0.75),
+        '&:hover': {
+            cursor: 'pointer',
+            color: theme.palette.secondary.main
+        }
     },
     category: {
         flex: 1,
@@ -88,7 +96,16 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
     constructor(props: ExtensionListHeaderComp.Props) {
         super(props);
 
-        this.categories = this.props.service.getCategories();
+        this.categories = Array.from(this.props.service.getCategories());
+        this.categories.sort((a, b) => {
+            if (a === b)
+                return 0;
+            if (a === 'Other')
+                return 1;
+            if (b === 'Other')
+                return -1;
+            return a.localeCompare(b);
+        });
 
         this.state = {
             category: '',
@@ -175,11 +192,12 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                         <Box className={classes.resultNumAndSortContainer}>
                             <Box className={classes.resultNum} >{`${this.props.resultNumber} Result${this.props.resultNumber !== 1 ? 's' : ''}`}</Box>
                             <Box className={classes.resultSort}>
-                                <Box className={classes.resultSortItem}>
+                                <Box>
                                     Sort by
                                     <Select
                                         style={{ marginLeft: '4px' }}
                                         classes={{ root: classes.resultSortBySelectRoot, select: classes.resultSortBySelect, icon: classes.resultSortBySelectIcon }}
+                                        disableUnderline
                                         IconComponent={() => <span />}
                                         value={this.state.sortBy}
                                         onChange={this.handleSortByChange}
@@ -190,9 +208,9 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                                         <MenuItem value={'averageRating'}>Rating</MenuItem>
                                     </Select>
                                 </Box>
-                                <Box title={this.state.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                                    className={classes.resultSortItem}
-                                    style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginLeft: '8px' }}
+                                <Box
+                                    className={classes.resultSortOrder}
+                                    title={this.state.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                                     onClick={this.handleSortOrderChange}>
                                     {
                                         this.state.sortOrder === 'asc' ?

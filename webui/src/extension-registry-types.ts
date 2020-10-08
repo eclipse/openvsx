@@ -161,7 +161,11 @@ export type ExtensionCategory =
     'SCM Providers' |
     'Other' |
     'Extension Packs' |
-    'Language Packs';
+    'Language Packs' |
+    'Data Science' |
+    'Machine Learning' |
+    'Visualization' |
+    'Notebooks';
 
 export interface CsrfTokenJson {
     value: string;

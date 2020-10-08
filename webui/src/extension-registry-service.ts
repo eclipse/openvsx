@@ -79,7 +79,11 @@ export class ExtensionRegistryService {
             'SCM Providers',
             'Other',
             'Extension Packs',
-            'Language Packs'
+            'Language Packs',
+            'Data Science',
+            'Machine Learning',
+            'Visualization',
+            'Notebooks'
         ];
     }
 
