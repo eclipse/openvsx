@@ -117,7 +117,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null)
             throw new NotFoundException();
-        return toJson(extension.getLatest());
+        return toExtensionVersionJson(extension.getLatest());
     }
 
     @Override
@@ -125,7 +125,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extVersion = findVersion(namespace, extensionName, version);
         if (extVersion == null)
             throw new NotFoundException();
-        return toJson(extVersion);
+        return toExtensionVersionJson(extVersion);
     }
 
     private ExtensionVersion findVersion(String namespace, String extensionName, String version) {
@@ -297,7 +297,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return;
         if (result.extensions == null)
             result.extensions = new ArrayList<>();
-        result.extensions.add(toJson(extVersion));
+        result.extensions.add(toExtensionVersionJson(extVersion));
     }
 
     private static boolean mismatch(String s1, String s2) {
@@ -342,7 +342,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
 
             search.updateSearchEntry(extVersion.getExtension());
-            return toJson(extVersion);
+            return toExtensionVersionJson(extVersion);
         }
     }
 
@@ -566,7 +566,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return json;
     }
 
-    private ExtensionJson toJson(ExtensionVersion extVersion) {
+    private ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
         json.versionAlias = new ArrayList<>(2);

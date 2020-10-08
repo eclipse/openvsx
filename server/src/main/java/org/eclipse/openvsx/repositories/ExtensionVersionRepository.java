@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
@@ -33,6 +34,8 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     Streamable<ExtensionVersion> findByDependencies(Extension extension);
 
     Streamable<ExtensionVersion> findByLicense(String license);
+
+    Streamable<ExtensionVersion> findByPublishedWith(PersonalAccessToken publishedWith);
 
     Streamable<ExtensionVersion> findAll();
 

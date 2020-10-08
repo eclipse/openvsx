@@ -10,7 +10,7 @@
 
 import React, { FunctionComponent } from 'react';
 import { makeStyles, Grid } from '@material-ui/core';
-import { UserNamespaceExtensionList } from './user-namespace-extension-list';
+import { UserNamespaceExtensionListContainer } from './user-namespace-extension-list';
 import { Namespace, UserData } from '../../extension-registry-types';
 import { ExtensionRegistryService, PageSettings } from '../..';
 import { ErrorResponse } from '../../server-request';
@@ -58,7 +58,7 @@ export const NamespaceDetail: FunctionComponent<NamespaceProps> = props => {
                     handleError={props.handleError} />
             </Grid>
             <Grid item>
-                <UserNamespaceExtensionList
+                <UserNamespaceExtensionListContainer
                     namespace={props.namespace}
                     service={props.service}
                     setError={props.handleError}

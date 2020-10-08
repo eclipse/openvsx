@@ -16,7 +16,7 @@ import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Namespace } from '../../extension-registry-types';
 import { PageSettingsContext, ServiceContext } from '../../default/default-app';
 import { UserContext, ErrorHandlerContext } from '../../main';
-import { NamespaceInput } from './namespace-input';
+import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 import { handleError } from '../../utils';
 
@@ -75,7 +75,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
         <DelayedLoadIndicator loading={loading} />
         <SearchListContainer
             searchContainer={
-                [<NamespaceInput key='nsi' onSubmit={fetchNamespace} onChange={onChangeInput} />]
+                [<StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />]
             }
             listContainer={
                 currentNamespace && pageSettings && user ?

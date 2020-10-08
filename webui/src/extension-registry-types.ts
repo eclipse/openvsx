@@ -194,6 +194,12 @@ export interface Namespace {
     roleUrl: UrlString;
 }
 
+export interface PublisherInfo {
+    user: UserData;
+    extensions: Extension[];
+    activeAccessTokenNum: number;
+}
+
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'averageRating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';

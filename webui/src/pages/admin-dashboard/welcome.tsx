@@ -17,6 +17,12 @@ const useStyles = makeStyles((theme) => ({
     containerRoot: {
         height: '100%'
     },
+    linkContainer: {
+        marginTop: theme.spacing(2)
+    },
+    linkItemContainer: {
+        marginBottom: theme.spacing(2)
+    },
     link: {
         color: theme.palette.info.main
     },
@@ -38,12 +44,33 @@ export const Welcome: FunctionComponent = props => {
                         <Typography className={classes.title} align='center' variant='h5'>Welcome to the Admin Dashboard!</Typography>
                         <Typography align='center'>You can switch pages on the sidepanel menu on the left side.</Typography>
                         <Typography align='center'>
-                            Choose between administration for <Link className={classes.link} to={AdminDashboardRoutes.NAMESPACE_ADMIN}>Namespaces</Link> and <Link className={classes.link} to={AdminDashboardRoutes.EXTENSION_ADMIN}>Extensions</Link>.
+                            Choose between administration for
                         </Typography>
+                        <Grid container justify='center' alignItems='center' className={classes.linkContainer}>
+                            <WelcomeLinkItem route={AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' description='Add users, manage user roles, create new namespaces' />
+                            <WelcomeLinkItem route={AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' description='Search for a extension and remove certain versions' />
+                            <WelcomeLinkItem route={AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publisher' description='Search for a publisher and revoke the agreement' />
+                        </Grid>
                     </Paper>
                 </Grid>
             </Grid>
             <Grid style={{ flex: 4 }} item></Grid>
+        </Grid>
+    </>;
+};
+
+const WelcomeLinkItem: FunctionComponent<{ route: string, label: string, description: string }> = props => {
+    const classes = useStyles();
+    return <>
+        <Grid container item xs={8} className={classes.linkItemContainer}>
+            <Grid container alignItems='center' item xs={12} md={4}>
+                <Typography>
+                    <Link className={classes.link} to={props.route}>{props.label}</Link>
+                </Typography>
+            </Grid>
+            <Grid item xs={12} md={8}>
+                <Typography variant='body1' style={{ lineHeight: 1.5 }}>{props.description}</Typography>
+            </Grid>
         </Grid>
     </>;
 };

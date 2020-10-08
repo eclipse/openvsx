@@ -119,6 +119,10 @@ public class RepositoryService {
         return extensionVersionRepo.findAll();
     }
 
+    public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith) {
+        return extensionVersionRepo.findByPublishedWith(publishedWith);
+    }
+
     public LocalDateTime getOldestExtensionTimestamp() {
         return extensionVersionRepo.getOldestTimestamp();
     }

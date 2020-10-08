@@ -8,28 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Theme, createStyles, WithStyles, withStyles, Typography } from '@material-ui/core';
+import React, { ReactNode } from 'react';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
-import { UserNamespaceExtensionListItem } from './user-namespace-extension-list-item';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ErrorResponse } from '../../server-request';
-import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { PageSettings } from '../../page-settings';
+import { UserExtensionList } from './user-extension-list';
 
-const extensionListStyles = (theme: Theme) => createStyles({
-    extensions: {
-        display: 'grid',
-        gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
-        gap: `.5rem`,
-        marginTop: '1rem',
-    }
-});
+export class UserNamespaceExtensionListContainer extends React.Component<UserNamespaceExtensionListContainerComponent.Props, UserNamespaceExtensionListContainerComponent.State> {
 
-
-class UserNamespaceExtensionListComponent extends React.Component<UserNamespaceExtensionListComponent.Props, UserNamespaceExtensionListComponent.State> {
-
-    constructor(props: UserNamespaceExtensionListComponent.Props) {
+    constructor(props: UserNamespaceExtensionListContainerComponent.Props) {
         super(props);
 
         this.state = {
@@ -38,18 +26,18 @@ class UserNamespaceExtensionListComponent extends React.Component<UserNamespaceE
         };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.updateExtensions();
     }
 
-    componentDidUpdate(prevProps: UserNamespaceExtensionListComponent.Props) {
+    componentDidUpdate(prevProps: UserNamespaceExtensionListContainerComponent.Props): void {
         if (prevProps.namespace.name !== this.props.namespace.name) {
             this.setState({ extensions: undefined, loading: true });
             this.updateExtensions();
         }
     }
 
-    async updateExtensions() {
+    async updateExtensions(): Promise<void> {
         const extensionsURLs: string[] = Object.keys(this.props.namespace.extensions).map((key: string) => this.props.namespace.extensions[key]);
 
         const getExtension = async (url: string) => {
@@ -66,34 +54,24 @@ class UserNamespaceExtensionListComponent extends React.Component<UserNamespaceE
             }
         };
 
-        const extensions = await Promise.all(
+        const extensionUnfiltered = await Promise.all(
             extensionsURLs.map((url: string) => getExtension(url))
         );
+        const extensions = extensionUnfiltered.filter(e => !!e) as Extension[];
 
         this.setState({ extensions, loading: false });
     }
 
-    render() {
-        const { classes } = this.props;
+    render(): ReactNode {
         return (<>
-            <Typography variant='h5'>Extensions</Typography>
-            <div className={classes.extensions}>
-                <DelayedLoadIndicator loading={this.state.loading} />
-                {
-                    this.state.extensions ? this.state.extensions.map((extension: Extension, i: number) => <UserNamespaceExtensionListItem
-                        pageSettings={this.props.pageSettings}
-                        key={`${i}${extension.displayName}`}
-                        extension={extension}
-                    />) : null
-                }
-            </div>
+            <UserExtensionList extensions={this.state.extensions} loading={this.state.loading} />
         </>
         );
     }
 }
 
-export namespace UserNamespaceExtensionListComponent {
-    export interface Props extends WithStyles<typeof extensionListStyles> {
+export namespace UserNamespaceExtensionListContainerComponent {
+    export interface Props {
         namespace: Namespace;
         service: ExtensionRegistryService;
         setError: (err: Error | Partial<ErrorResponse>) => void;
@@ -102,8 +80,6 @@ export namespace UserNamespaceExtensionListComponent {
 
     export interface State {
         loading: boolean;
-        extensions?: (Extension | undefined)[];
+        extensions?: Extension[];
     }
 }
-
-export const UserNamespaceExtensionList = withStyles(extensionListStyles)(UserNamespaceExtensionListComponent);

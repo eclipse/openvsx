@@ -11,6 +11,8 @@ package org.eclipse.openvsx;
 
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -18,14 +20,18 @@ import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
 
+import org.apache.jena.ext.com.google.common.collect.Maps;
+
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
@@ -74,13 +80,16 @@ public class AdminService {
         if (Strings.isNullOrEmpty(version)) {
             var extension = repositories.findExtension(extensionName, namespaceName);
             if (extension == null) {
-                throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName, HttpStatus.NOT_FOUND);
+                throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName,
+                        HttpStatus.NOT_FOUND);
             }
             return deleteExtension(extension, admin);
         } else {
             var extVersion = repositories.findVersion(version, extensionName, namespaceName);
             if (extVersion == null) {
-                throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName + " version " + version, HttpStatus.NOT_FOUND);
+                throw new ErrorResultException(
+                        "Extension not found: " + namespaceName + "." + extensionName + " version " + version,
+                        HttpStatus.NOT_FOUND);
             }
             return deleteExtension(extVersion, admin);
         }
@@ -92,16 +101,19 @@ public class AdminService {
         if (!bundledRefs.isEmpty()) {
             throw new ErrorResultException("Extension " + namespace.getName() + "." + extension.getName()
                     + " is bundled by the following extension packs: "
-                    + bundledRefs.stream()
-                        .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
-                        .collect(Collectors.joining(", ")));
+                    + bundledRefs
+                            .stream().map(ev -> ev.getExtension().getNamespace().getName() + "."
+                                    + ev.getExtension().getName() + "@" + ev.getVersion())
+                            .collect(Collectors.joining(", ")));
         }
         var dependRefs = repositories.findDependenciesReference(extension);
         if (!dependRefs.isEmpty()) {
-            throw new ErrorResultException("The following extensions have a dependency on " + namespace.getName() + "." + extension.getName() + ": "
-                    + dependRefs.stream()
-                        .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
-                        .collect(Collectors.joining(", ")));
+            throw new ErrorResultException("The following extensions have a dependency on " + namespace.getName() + "."
+                    + extension.getName() + ": "
+                    + dependRefs
+                            .stream().map(ev -> ev.getExtension().getNamespace().getName() + "."
+                                    + ev.getExtension().getName() + "@" + ev.getVersion())
+                            .collect(Collectors.joining(", ")));
         }
         extension.setLatest(null);
         extension.setPreview(null);
@@ -137,8 +149,9 @@ public class AdminService {
             versions.remove(extVersion);
             extension.setPreview(getLatestVersion(versions, true));
         }
-    
-        var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName() + " version " + extVersion.getVersion());
+
+        var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName()
+                + " version " + extVersion.getVersion());
         logAdminAction(admin, result);
         return result;
     }
@@ -169,8 +182,8 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role, UserData admin)
-            throws ErrorResultException {
+    public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role,
+            UserData admin) throws ErrorResultException {
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
             throw new ErrorResultException("Namespace not found: " + namespaceName);
@@ -233,6 +246,59 @@ public class AdminService {
             entityManager.persist(log);
         }
     }
+    
+    public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
+        }
+        var serverUrl = UrlUtil.getBaseUrl();
+        var accessTokens = repositories.findAccessTokens(user);
+        List<ExtensionJson> versionJsons = new ArrayList<>();
+        var activeAccessTokenNum = 0;
+        for (var accessToken : accessTokens) {
+            if(accessToken.isActive()) {
+                activeAccessTokenNum++;
+            }
+            var versions = repositories.findVersionsByAccessToken(accessToken);
+            for (var version : versions) {
+                var json = version.toExtensionJson();
+                json.files = Maps.newLinkedHashMapWithExpectedSize(5);
+                storageUtil.addFileUrls(version, serverUrl, json.files, FileResource.DOWNLOAD, FileResource.MANIFEST,
+                        FileResource.ICON, FileResource.README, FileResource.LICENSE);
+                versionJsons.add(json);
+            }
+        }
+        var userPublishInfo = new UserPublishInfoJson();
+        userPublishInfo.user = user.toUserJson();
+        userPublishInfo.extensions = versionJsons;
+        userPublishInfo.activeAccessTokenNum = activeAccessTokenNum;
+        return userPublishInfo;
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson revokePublisherAgreement(String provider, String loginName, UserData admin) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
+        }
+        int numberOfTokens = changePublishersAccessTokensActivity(user, false);
+        var userPublishInfo = getUserPublishInfo(provider, loginName);
+        for (var extension : userPublishInfo.extensions) {
+            deleteExtension(extension.namespace, extension.name, extension.version, admin);
+        }
+        var result = ResultJson.success("Inactivated " + numberOfTokens + " tokens and deleted " + userPublishInfo.extensions.size() + " extensions of user " + provider + "/" + loginName + "."); 
+        logAdminAction(admin, result);
+        return result;
+    }
+
+    private int changePublishersAccessTokensActivity(UserData user, boolean active) {
+        var accessTokens = repositories.findAccessTokens(user);
+        for (var accessToken : accessTokens) {
+            accessToken.setActive(active);
+        }
+        return accessTokens.toList().size();
+    }
 
     public UserData checkAdminUser() {
         var user = users.findLoggedInUser();
@@ -241,5 +307,4 @@ public class AdminService {
         }
         return user;
     }
-
 }
