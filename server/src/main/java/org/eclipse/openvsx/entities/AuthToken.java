@@ -40,9 +40,6 @@ public class AuthToken {
 		sb.append("expiresAt: [");
 		sb.append(expiresAt);
 		sb.append("], ");
-		sb.append("expiresAt: [");
-		sb.append(expiresAt);
-		sb.append("], ");
 		sb.append("scopes: [");
 		sb.append(scopes);
 		sb.append("]");

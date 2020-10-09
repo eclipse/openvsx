@@ -167,10 +167,6 @@ public class RepositoryService {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
 
-    public UserData findUserById(long id) {
-        return userDataRepo.findById(id);
-    }
-
     public Streamable<UserData> findUsersByLoginNameStartingWith(String loginNameStart) {
         return userDataRepo.findByLoginNameStartingWith(loginNameStart);
     }

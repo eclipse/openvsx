@@ -45,4 +45,5 @@ ovsx:
     clear-on-start: true
   eclipse:
     publisher-agreement:
-      version: "1.0"
+      version: 1
+      api: https://api.eclipse.org/openvsx/publisher_agreement

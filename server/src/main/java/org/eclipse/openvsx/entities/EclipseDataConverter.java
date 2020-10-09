@@ -24,7 +24,6 @@ public class EclipseDataConverter implements AttributeConverter<EclipseData, Str
         objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
     }
 
-
     @Override
     public String convertToDatabaseColumn(EclipseData data) {
         if (data == null)

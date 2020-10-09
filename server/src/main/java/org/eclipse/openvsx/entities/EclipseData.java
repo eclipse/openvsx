@@ -26,15 +26,15 @@ public class EclipseData {
 
     public class PublisherAgreement {
 
-        /** Version of the last signed publisher agreement. */
-        public String signedVersion;
+        public boolean isActive;
 
         public String documentId;
 
-        /** Timestamp of the last signed publisher agreement. */
-        public LocalDateTime signedTimestamp;
+        /** Version of the last signed publisher agreement. */
+        public String version;
 
-        public boolean isActive;
+        /** Timestamp of the last signed publisher agreement. */
+        public LocalDateTime timestamp;
 
     }
     

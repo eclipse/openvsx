@@ -58,11 +58,11 @@ public class UserData {
     @Convert(converter = EclipseDataConverter.class)
     EclipseData eclipseData;
 
-    @Column(length = 4096, nullable = true)
+    @Column(length = 4096)
     @Convert(converter = AuthTokenConverter.class)
     AuthToken githubToken;
 
-    @Column(length = 4096, nullable = true)
+    @Column(length = 4096)
     @Convert(converter = AuthTokenConverter.class)
     AuthToken eclipseToken;
 

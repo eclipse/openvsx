@@ -1,3 +1,12 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
 package org.eclipse.openvsx.security;
 
 import java.time.Instant;
@@ -10,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.repositories.RepositoryService;
 import org.json.simple.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
@@ -34,17 +42,11 @@ public class TokenService {
     EntityManager entityManager;
 
     @Autowired
-    RepositoryService repositories;
-
-    @Autowired
     ClientRegistrationRepository clientRegistrationRepository;
-
-    @Autowired
-    RestTemplate restTemplate;
 
     @Transactional
     public void updateTokens(long userId, String registrationId, OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
-        UserData userData = users.findById(userId);
+        UserData userData = entityManager.find(UserData.class, userId);
         if (userData == null) {
             return;
         }
@@ -92,7 +94,7 @@ public class TokenService {
 
     @Transactional
     public String getAccessToken(long userId, String registrationId) {
-        UserData userData = users.findById(userId);
+        UserData userData = entityManager.find(UserData.class, userId);
         if (userData == null) {
             return null;
         }

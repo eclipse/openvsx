@@ -12,6 +12,7 @@ package org.eclipse.openvsx.security;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.DisabledException;
@@ -35,6 +36,9 @@ public class ExtendedOAuth2UserServices {
 
     @Autowired
     TokenService tokens;
+
+    @Autowired
+    RepositoryService repositories;
 
     private DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
     private OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
@@ -105,7 +109,7 @@ public class ExtendedOAuth2UserServices {
 
         String githubLogin = isGitHub ? authUser.getAttribute("login") : authUser.getAttribute("github_handle");
 
-        var userData = users.findByGitHubLogin(githubLogin);
+        var userData = repositories.findUserByLoginName("github", githubLogin);
 
         if (userData == null) {
             if (isEclipse) {

@@ -28,7 +28,6 @@ import java.util.zip.ZipOutputStream;
 
 import javax.persistence.EntityManager;
 
-import org.eclipse.openvsx.UserAPITest.MockPrincipal;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -927,13 +926,11 @@ public class RegistryAPITest {
     }
 
     private UserData mockUserData() {
-        var principal = new MockPrincipal();
-        // Mockito.doReturn(principal).when(users).getOAuth2Principal();
         var userData = new UserData();
         userData.setLoginName("test_user");
         userData.setFullName("Test User");
         userData.setProviderUrl("http://example.com/test");
-        // Mockito.doReturn(userData).when(users).updateUser(principal);
+        Mockito.doReturn(userData).when(users).findLoggedInUser();
         return userData;
     }
 

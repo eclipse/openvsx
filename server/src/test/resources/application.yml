@@ -23,4 +23,8 @@ spring:
 
 ovsx:
   webui:
-    url: "https://test.openvsx.eclipse.org/"
+    url: https://test.openvsx.eclipse.org/
+  eclipse:
+    publisher-agreement:
+      version: 1
+      api: https://test.openvsx.eclipse.org/

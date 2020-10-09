@@ -24,5 +24,10 @@ public final class TimeUtil {
     public static String toUTCString(LocalDateTime dateTime) {
         return dateTime.toString() + 'Z';
     }
+
+    public static LocalDateTime convertToUTC(LocalDateTime dateTime, String zone) {
+        var offset = ZoneId.of(zone).getRules().getOffset(LocalDateTime.now());
+        return dateTime.minusSeconds(offset.getTotalSeconds());
+    }
     
 }

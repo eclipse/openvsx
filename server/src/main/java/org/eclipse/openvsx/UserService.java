@@ -10,7 +10,6 @@
 package org.eclipse.openvsx;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -42,8 +41,8 @@ public class UserService {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             if (authentication.getPrincipal() instanceof IdPrincipal) {
-                UserData userData = findById(((IdPrincipal)authentication.getPrincipal()).getId());
-                return userData;
+                var principal = (IdPrincipal) authentication.getPrincipal();
+                return entityManager.find(UserData.class, principal.getId());
             }
         }
         return null;
@@ -178,25 +177,6 @@ public class UserService {
         membership.setRole(role);
         entityManager.persist(membership);
         return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName() + ".");
-    }
-
-    @Transactional
-    public UserData findByGitHubLogin(String githubLogin) {
-        var userData = repositories.findUserByLoginName("github", githubLogin);
-        return userData;
-    }
-
-    @Transactional
-    public UserData findById(long id) {
-        var userData = repositories.findUserById(id);
-        return userData;
-    }
-
-    @Transactional
-    public void updateUser(long id, Consumer<UserData> update) {
-        var userData = repositories.findUserById(id);
-        update.accept(userData);
-        entityManager.persist(userData);
     }
 
 }

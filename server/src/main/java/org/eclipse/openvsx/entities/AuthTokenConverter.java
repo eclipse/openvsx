@@ -9,12 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import java.io.Console;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 

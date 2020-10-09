@@ -17,10 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
@@ -47,9 +44,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.data.util.Streamable;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(UserAPI.class)
@@ -349,12 +344,11 @@ public class UserAPITest {
     //---------- UTILITY ----------//
 
     private UserData mockUserData() {
-        var principal = mockPrincipal();
         var userData = new UserData();
         userData.setLoginName("test_user");
         userData.setFullName("Test User");
         userData.setProviderUrl("http://example.com/test");
-        // Mockito.doReturn(userData).when(users).updateUser(principal);
+        Mockito.doReturn(userData).when(users).findLoggedInUser();
         return userData;
     }
 
@@ -463,31 +457,6 @@ public class UserAPITest {
     private String errorJson(String message) throws JsonProcessingException {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
-    }
-
-    private MockPrincipal mockPrincipal() {
-        var principal = new MockPrincipal();
-        // Mockito.doReturn(principal).when(users).getOAuth2Principal();
-        return principal;
-    }
-
-    static class MockPrincipal implements OAuth2User {
-
-        @Override
-        public String getName() {
-            return "test_user";
-        }
-
-        @Override
-        public Map<String, Object> getAttributes() {
-            return Collections.emptyMap();
-        }
-
-        @Override
-        public Collection<? extends GrantedAuthority> getAuthorities() {
-            return Collections.emptyList();
-        }
-        
     }
     
 }
