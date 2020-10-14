@@ -40,7 +40,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     .permitAll()
                 .antMatchers("/api/*/*/review", "/api/*/*/review/delete")
                     .authenticated()
-                .antMatchers("/api/**", "/vscode/**")
+                .antMatchers("/api/**", "/vscode/**", "/documents/**")
                     .permitAll()
                 .antMatchers("/admin/**")
                     .hasAuthority("ROLE_ADMIN")

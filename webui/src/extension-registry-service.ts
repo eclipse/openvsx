@@ -227,17 +227,22 @@ export class ExtensionRegistryService {
     }
 
     async signPublisherAgreement(): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
-        const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
-            headers[csrfToken.header] = csrfToken.value;
-        }
-        return sendRequest<SuccessResult | ErrorResult>({
-            method: 'POST',
-            credentials: true,
-            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'publisher-agreement']),
-            headers
+        // const csrfToken = await this.getCsrfToken();
+        // const headers: Record<string, string> = {};
+        // if (!isError(csrfToken)) {
+        //     headers[csrfToken.header] = csrfToken.value;
+        // }
+        // return sendRequest<SuccessResult | ErrorResult>({
+        //     method: 'POST',
+        //     credentials: true,
+        //     endpoint: createAbsoluteURL([this.serverUrl, 'user', 'publisher-agreement']),
+        //     headers
+        // });
+        // **** This is mock stuff TODO: delete later **** //
+        return new Promise((res) => {
+            res({ success: 'signed' });
         });
+        // **** That was mock stuff TODO: delete later **** //
     }
 
     // Admin Requests
@@ -277,6 +282,14 @@ export class ExtensionRegistryService {
             endpoint: createAbsoluteURL([this.serverUrl, 'admin', req.namespace, 'delete-extension'],
                 [{ key: 'version', value: req.version }, { key: 'extension', value: req.extension }]),
             headers
+        });
+    }
+
+    getStaticContent(url: string): Promise<string> {
+        return sendRequest({
+            endpoint: url,
+            headers: { 'Accept': 'text/plain' },
+            followRedirect: true
         });
     }
 }
