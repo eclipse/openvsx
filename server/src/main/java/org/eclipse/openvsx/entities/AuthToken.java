@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.entities;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -27,6 +28,31 @@ public class AuthToken {
     public Set<String> scopes;
     
     public String refreshToken;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof AuthToken))
+            return false;
+        var other = (AuthToken) obj;
+        if (!Objects.equals(this.accessToken, other.accessToken))
+            return false;
+        if (!Objects.equals(this.issuedAt, other.issuedAt))
+            return false;
+        if (!Objects.equals(this.expiresAt, other.expiresAt))
+            return false;
+        if (!Objects.equals(this.scopes, other.scopes))
+            return false;
+        if (!Objects.equals(this.refreshToken, other.refreshToken))
+            return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(accessToken, issuedAt, expiresAt, scopes, refreshToken);
+    }
 
 	@Override
 	public String toString() {

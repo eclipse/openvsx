@@ -12,13 +12,13 @@ package org.eclipse.openvsx.security;
 import java.net.URL;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.PlainJWT;
 
+import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -33,18 +33,17 @@ import org.springframework.security.oauth2.jwt.JwtException;
 
 public class NoVerifyJwtDecoderFactory implements JwtDecoderFactory<ClientRegistration> {
 
-    private Converter<Map<String, Object>, Map<String, Object>> DEFAULT_CLAIM_TYPE_CONVERTER = new ClaimTypeConverter(
-            createDefaultClaimTypeConverters());
+    private static final Converter<Map<String, Object>, Map<String, Object>> DEFAULT_CLAIM_TYPE_CONVERTER
+            = new ClaimTypeConverter(createDefaultClaimTypeConverters());
 
-    public Map<String, Converter<Object, ?>> createDefaultClaimTypeConverters() {
-        Converter<Object, ?> booleanConverter = getConverter(TypeDescriptor.valueOf(Boolean.class));
-        Converter<Object, ?> instantConverter = getConverter(TypeDescriptor.valueOf(Instant.class));
-        Converter<Object, ?> urlConverter = getConverter(TypeDescriptor.valueOf(URL.class));
-        Converter<Object, ?> stringConverter = getConverter(TypeDescriptor.valueOf(String.class));
-        Converter<Object, ?> collectionStringConverter = getConverter(
-                TypeDescriptor.collection(Collection.class, TypeDescriptor.valueOf(String.class)));
+    public static Map<String, Converter<Object, ?>> createDefaultClaimTypeConverters() {
+        var booleanConverter = getConverter(TypeDescriptor.valueOf(Boolean.class));
+        var instantConverter = getConverter(TypeDescriptor.valueOf(Instant.class));
+        var urlConverter = getConverter(TypeDescriptor.valueOf(URL.class));
+        var stringConverter = getConverter(TypeDescriptor.valueOf(String.class));
+        var collectionStringConverter = getConverter(TypeDescriptor.collection(Collection.class, TypeDescriptor.valueOf(String.class)));
 
-        Map<String, Converter<Object, ?>> claimTypeConverters = new HashMap<>();
+        Map<String, Converter<Object, ?>> claimTypeConverters = Maps.newHashMapWithExpectedSize(10);
         claimTypeConverters.put(IdTokenClaimNames.ISS, urlConverter);
         claimTypeConverters.put(IdTokenClaimNames.AUD, collectionStringConverter);
         claimTypeConverters.put(IdTokenClaimNames.NONCE, stringConverter);
@@ -58,8 +57,8 @@ public class NoVerifyJwtDecoderFactory implements JwtDecoderFactory<ClientRegist
         return claimTypeConverters;
     }
 
-    private Converter<Object, ?> getConverter(TypeDescriptor targetDescriptor) {
-        final TypeDescriptor sourceDescriptor = TypeDescriptor.valueOf(Object.class);
+    private static Converter<Object, ?> getConverter(TypeDescriptor targetDescriptor) {
+        var sourceDescriptor = TypeDescriptor.valueOf(Object.class);
         return source -> ClaimConversionService.getSharedInstance().convert(source, sourceDescriptor, targetDescriptor);
     }
 
@@ -74,17 +73,16 @@ public class NoVerifyJwtDecoderFactory implements JwtDecoderFactory<ClientRegist
                         throw new JwtException("Unsupported algorithm of " + parsedJwt.getHeader().getAlgorithm());
                     }
                     Map<String, Object> headers = new LinkedHashMap<>(parsedJwt.getHeader().toJSONObject());
-                    Map<String, Object> claims = DEFAULT_CLAIM_TYPE_CONVERTER
-                            .convert(parsedJwt.getJWTClaimsSet().getClaims());
-                    return Jwt.withTokenValue(token).headers(h -> h.putAll(headers)).claims(c -> c.putAll(claims))
+                    var claims = DEFAULT_CLAIM_TYPE_CONVERTER.convert(parsedJwt.getJWTClaimsSet().getClaims());
+                    return Jwt.withTokenValue(token)
+                            .headers(h -> h.putAll(headers))
+                            .claims(c -> c.putAll(claims))
                             .build();
-                } catch (Exception ex) {
-                    throw new JwtException(
-                            String.format("An error occurred while attempting to decode the Jwt: %s", ex.getMessage()),
-                            ex);
+                } catch (Exception exc) {
+                    throw new JwtException("An error occurred while attempting to decode the Jwt: " + exc.getMessage(), exc);
                 }
             }
-
         };
     }
+
 }

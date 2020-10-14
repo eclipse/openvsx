@@ -9,12 +9,27 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
+import java.time.LocalDateTime;
+import java.util.function.Function;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.eclipse.openvsx.entities.EclipseData;
 
 /**
  * https://eclipsefdn.github.io/openvsx-publisher-agreement-specs/#/paths/~1publisher_agreement/post
  */
-public class SignAgreementResponse {
+public class PublisherAgreementResponse {
+
+    public EclipseData.PublisherAgreement createEntityData(Function<String, LocalDateTime> parseDate) {
+        var pub = new EclipseData.PublisherAgreement();
+        pub.isActive = sysDocument != null && ("true".equalsIgnoreCase(sysDocument.isActive)
+                || "1".equals(sysDocument.isActive));
+        pub.documentId = documentID;
+        pub.version = version;
+        pub.timestamp = parseDate.apply(effectiveDate);
+        return pub;
+    }
 
     /** Unique identifier for an addressable object in the API. */
     @JsonProperty("PersonID")

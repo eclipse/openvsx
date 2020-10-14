@@ -25,6 +25,7 @@ import javax.persistence.EntityManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -36,16 +37,21 @@ import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.ExtendedOAuth2UserServices;
+import org.eclipse.openvsx.security.TokenService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.util.Streamable;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
@@ -57,6 +63,9 @@ public class UserAPITest {
 
     @MockBean
     RepositoryService repositories;
+
+    @MockBean
+    EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
@@ -457,6 +466,24 @@ public class UserAPITest {
     private String errorJson(String message) throws JsonProcessingException {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
+    }
+    
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        TransactionTemplate transactionTemplate() {
+            return new MockTransactionTemplate();
+        }
+
+        @Bean
+        ExtendedOAuth2UserServices extendedOAuth2UserServices() {
+            return new ExtendedOAuth2UserServices();
+        }
+
+        @Bean
+        TokenService tokenService() {
+            return new TokenService();
+        }
     }
     
 }

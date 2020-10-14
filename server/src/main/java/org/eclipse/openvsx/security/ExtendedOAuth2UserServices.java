@@ -9,14 +9,18 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.oauth2.client.authentication.OAuth2LoginAuthenticationToken;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -29,7 +33,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ExtendedOAuth2UserServices {
-    private final Log logger = LogFactory.getLog(ExtendedOAuth2UserServices.class);
 
     @Autowired
     UserService users;
@@ -40,9 +43,9 @@ public class ExtendedOAuth2UserServices {
     @Autowired
     RepositoryService repositories;
 
-    private DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
-    private OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
-    private OAuth2UserService<OidcUserRequest, OidcUser> oidc;
+    private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
+    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
+    private final OAuth2UserService<OidcUserRequest, OidcUser> oidc;
 
     public ExtendedOAuth2UserServices() {
         this.oauth2 = new OAuth2UserService<OAuth2UserRequest, OAuth2User>() {
@@ -56,7 +59,6 @@ public class ExtendedOAuth2UserServices {
             public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
                 return ExtendedOAuth2UserServices.this.loadUser(userRequest);
             }
-
         };
     }
 
@@ -70,13 +72,11 @@ public class ExtendedOAuth2UserServices {
 
     @EventListener
     public void authenticationSucceeded(AuthenticationSuccessEvent event) {
-
         // We can assume that `UserData` already exists, because this event is fired after
         // `ExtendedOAuth2UserServices.loadUser` was processed.
-
         if (event.getSource() instanceof OAuth2LoginAuthenticationToken) {
-            var auth = (OAuth2LoginAuthenticationToken)event.getSource();
-            var idPrincipal = (IdPrincipal)auth.getPrincipal();
+            var auth = (OAuth2LoginAuthenticationToken) event.getSource();
+            var idPrincipal = (IdPrincipal) auth.getPrincipal();
             var accessToken = auth.getAccessToken();
             var refreshToken = auth.getRefreshToken();
             var registrationId = auth.getClientRegistration().getRegistrationId();
@@ -86,42 +86,44 @@ public class ExtendedOAuth2UserServices {
     }
 
     /**
-     * First of, it delegates to `DefaultOAuth2UserService` for fetching user info.
+     * First of, it delegates to {@link DefaultOAuth2UserService} for fetching user info.
      * 
-     * Uses `UserService` to check if `UserData` already exists, and creates new account if
+     * Uses {@link UserService} to check if {@link UserData} already exists, and creates new account if
      * it's a GitHub authentication.
      * 
-     * Throws if the Eclipse authentication is using an unknown GitHub login.
-     * 
-     * @param userRequest
-     * @return
-     * @throws OAuth2AuthenticationException
+     * @throws OAuth2AuthenticationException if the Eclipse authentication is using an unknown GitHub login.
      */
     public IdPrincipal loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         var authUser = delegate.loadUser(userRequest);
         var registrationId = userRequest.getClientRegistration().getRegistrationId();
         var isGitHub = "github".equals(registrationId);
         var isEclipse = "eclipse".equals(registrationId);
-
         if (!isGitHub && !isEclipse) {
             throw new DisabledException("Invalid registration");
         }
 
         String githubLogin = isGitHub ? authUser.getAttribute("login") : authUser.getAttribute("github_handle");
-
         var userData = repositories.findUserByLoginName("github", githubLogin);
-
         if (userData == null) {
             if (isEclipse) {
                 throw new DisabledException("Invalid login");
             }
-            if (isGitHub) {
-                userData = users.registerNewUser(authUser);
-            }
+            userData = users.registerNewUser(authUser);
         }
 
-        return new IdPrincipal(userData.getId(), authUser.getName());
+        return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
+    }
 
+    private Collection<GrantedAuthority> getAuthorities(UserData userData) {
+        var role = userData.getRole();
+        switch (role != null ? role : "") {
+            case UserData.ROLE_ADMIN:
+                return AuthorityUtils.createAuthorityList("ROLE_ADMIN");
+            case UserData.ROLE_PRIVILEGED:
+                return AuthorityUtils.createAuthorityList("ROLE_PRIVILEGED");
+            default:
+                return Collections.emptyList();
+        }
     }
 
 }

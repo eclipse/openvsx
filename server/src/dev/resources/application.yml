@@ -47,3 +47,4 @@ ovsx:
     publisher-agreement:
       version: 1
       api: https://api.eclipse.org/openvsx/publisher_agreement
+      timezone: US/Eastern

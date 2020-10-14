@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.entities;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Additional information about Eclipse OAuth2 login and publisher agreement
@@ -24,7 +25,7 @@ public class EclipseData {
 
     public PublisherAgreement publisherAgreement;
 
-    public class PublisherAgreement {
+    public static class PublisherAgreement {
 
         public boolean isActive;
 
@@ -36,6 +37,48 @@ public class EclipseData {
         /** Timestamp of the last signed publisher agreement. */
         public LocalDateTime timestamp;
 
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!(obj instanceof PublisherAgreement))
+                return false;
+            var other = (PublisherAgreement) obj;
+            if (this.isActive != other.isActive)
+                return false;
+            if (!Objects.equals(this.documentId, other.documentId))
+                return false;
+            if (!Objects.equals(this.version, other.version))
+                return false;
+            if (!Objects.equals(this.timestamp, other.timestamp))
+                return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(isActive, documentId, version, timestamp);
+        }
+
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof EclipseData))
+            return false;
+        var other = (EclipseData) obj;
+        if (!Objects.equals(this.personId, other.personId))
+            return false;
+        if (!Objects.equals(this.publisherAgreement, other.publisherAgreement))
+            return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(personId, publisherAgreement);
     }
     
 }

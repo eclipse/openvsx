@@ -35,15 +35,21 @@ public class Index {
         var user = users.findLoggedInUser();
 
         if (user == null) {
-            r.append("No user");
+            r.append("No user").append(NL);
         } else {
             r.append("User Id: ").append(user.getId()).append(NL);
             
-            var githubToken = tokens.getAccessToken(user.getId(), "github");
-            r.append("GitHub Token: ").append(githubToken).append(NL);
+            var githubToken = tokens.getActiveToken(user, "github");
+            if (githubToken == null)
+                r.append("No GitHub token").append(NL);
+            else
+                r.append("GitHub token: ").append(githubToken.accessToken).append(NL);
             
-            var eclipseToken = tokens.getAccessToken(user.getId(), "eclipse");
-            r.append("Eclipse Token: ").append(eclipseToken).append(NL);
+            var eclipseToken = tokens.getActiveToken(user, "eclipse");
+            if (eclipseToken == null)
+                r.append("No Eclipse token").append(NL);
+            else
+                r.append("Eclipse token: ").append(eclipseToken.accessToken).append(NL);
         }
 
 

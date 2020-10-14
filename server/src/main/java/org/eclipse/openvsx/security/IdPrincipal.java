@@ -11,8 +11,7 @@ package org.eclipse.openvsx.security;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -21,37 +20,43 @@ import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 public class IdPrincipal implements OidcUser, Serializable {
+
     private static final long serialVersionUID = 1L;
 
-    private long id;
-    private String name;
+    private final long id;
 
-    public IdPrincipal(long id, String name) {
+    private final String name;
+
+    private final Collection<GrantedAuthority> authorities;
+
+    public IdPrincipal(long id, String name, Collection<GrantedAuthority> authorities) {
         this.name = name;
         this.id = id;
+        this.authorities = authorities;
     }
 
     @Override
     public String getName() {
         return name;
     }
+
     public long getId() {
         return id;
     }
 
     @Override
     public Map<String, Object> getAttributes() {
-        return new LinkedHashMap<>();
+        return Collections.emptyMap();
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return new HashSet<>();
+        return authorities;
     }
 
     @Override
     public Map<String, Object> getClaims() {
-        return new LinkedHashMap<>();
+        return Collections.emptyMap();
     }
 
     @Override
@@ -74,5 +79,6 @@ public class IdPrincipal implements OidcUser, Serializable {
 		sb.append(this.getName());
 		sb.append("]");
 		return sb.toString();
-	}
+    }
+
 }

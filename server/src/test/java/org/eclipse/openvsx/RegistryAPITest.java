@@ -28,6 +28,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.persistence.EntityManager;
 
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -47,6 +48,8 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.security.ExtendedOAuth2UserServices;
+import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.junit.jupiter.api.Test;
@@ -64,6 +67,7 @@ import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,6 +89,9 @@ public class RegistryAPITest {
 
     @MockBean
     EntityManager entityManager;
+
+    @MockBean
+    EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
@@ -960,6 +967,21 @@ public class RegistryAPITest {
     
     @TestConfiguration
     static class TestConfig {
+        @Bean
+        TransactionTemplate transactionTemplate() {
+            return new MockTransactionTemplate();
+        }
+
+        @Bean
+        ExtendedOAuth2UserServices extendedOAuth2UserServices() {
+            return new ExtendedOAuth2UserServices();
+        }
+
+        @Bean
+        TokenService tokenService() {
+            return new TokenService();
+        }
+
         @Bean
         LocalRegistryService localRegistryService() {
             return new LocalRegistryService();

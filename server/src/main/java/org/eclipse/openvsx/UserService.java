@@ -65,7 +65,7 @@ public class UserService {
     @Transactional
     public UserData updateExistingUser(UserData user, OAuth2User oauth2User) {
         switch (user.getProvider()) {
-            case "github":
+            case "github": {
                 String loginName = oauth2User.getAttribute("login");
                 if (loginName != null && !loginName.equals(user.getLoginName()))
                     user.setLoginName(loginName);
@@ -82,6 +82,7 @@ public class UserService {
                 if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl()))
                     user.setAvatarUrl(avatarUrl);
                 break;
+            }
         }
         return user;
     }

@@ -9,8 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.google.common.base.Strings;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
@@ -19,49 +19,48 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcAuthorizationCodeAuthenticationProvider;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    private final Log logger = LogFactory.getLog(SecurityConfig.class);
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
-    // @Autowired
-    // private ClientRegistrationRepository clientRegistrationRepository;
-
     @Autowired
-    private ExtendedOAuth2UserServices userServices;
+    ExtendedOAuth2UserServices userServices;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        // var isAbsoluteWebUi = !Strings.isNullOrEmpty(webuiUrl) && URI.create(webuiUrl).isAbsolute();
+        var redirectUrl = Strings.isNullOrEmpty(webuiUrl) ? "/" : webuiUrl;
         
-        // @formatter:off
-        // TODO add a single "/login" route to directly use GH auth
-        // we'd need to add a simple /login route which redirects to authorize with github
+        // TODO consider configuring custom authentication for CLI endpoints
         http
             .authorizeRequests()
-                .antMatchers("/login/**", "/auth/**", "/oauth2/**")
+                .antMatchers("/login/**", "/oauth2/**", "/user", "/logout")
+                    .permitAll()
+                .antMatchers("/admin/**")
+                    .hasAuthority("ROLE_ADMIN")
+                .antMatchers("/api/*/*/review", "/api/*/*/review/delete")
+                    .authenticated()
+                .antMatchers("/api/**", "/vscode/**")
                     .permitAll()
                 .anyRequest()
                     .authenticated()
                 .and()
-            // .cors()
-            //     .disable()
-            // .sessionManagement()
-            //     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            //     .and()
-            // .exceptionHandling()
-            //     // Respond with 403 status when the user is not logged in
-            //     // .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
-            //     .and()
+            .cors()
+                .and()
+            .exceptionHandling()
+                // Respond with 403 status when the user is not logged in
+                .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+                .and()
             .csrf()
+                // TODO remove `/admin/**` from this list
                 .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/admin/**", "/vscode/**")
                 .and()
             
             .oauth2Login(configurer -> {
-                configurer.loginPage("/oauth2/authorization/github"); // to automatically login with github
+                configurer.defaultSuccessUrl(redirectUrl);
                 configurer.addObjectPostProcessor(new ObjectPostProcessor<OidcAuthorizationCodeAuthenticationProvider>() {
                     @Override
                     public <O extends OidcAuthorizationCodeAuthenticationProvider> O postProcess(O object) {
@@ -73,48 +72,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 configurer.userInfoEndpoint()
                     .oidcUserService(userServices.getOidc())
                     .userService(userServices.getOauth2());
-                
-
-                
-                // configurer.successHandler(new AuthenticationSuccessHandler(){
-                //     @Override
-                //     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-                //         logger.debug(authentication);
-                //     }
-                // }); 
-            });
-        // @formatter:on
-        
+            })
+            .logout()
+                .logoutSuccessUrl(redirectUrl);
     }
-
-    // private String[] getAuthenticatedPaths(boolean isAbsoluteWebUi) {
-    //     if (isAbsoluteWebUi) {
-    //         return new String[0];
-    //     } else {
-    //         return new String[] {
-    //             "/user/tokens", "/user/token/**", "/user/namespaces", "/user/namespace/**", "/user/search/**",
-    //             "/api/*/*/review/**"
-    //         };
-    //     }
-    // }
-
-    // private String[] getPermittedPaths(boolean isAbsoluteWebUi) {
-    //     if (isAbsoluteWebUi) {
-    //         // All endpoints are marked as permitted for CORS to work correctly.
-    //         // User authentication is checked within the endpoints that require it.
-    //         // TODO check whether this can be solved in another way
-    //         return new String[] {
-    //             "/user/**", "/login/**", "/logout", "/api/**", "/admin/**", "/vscode/**"
-    //         };
-    //     } else {
-    //         return new String[] {
-    //             "/user", "/login/**", "/logout", "/api/**", "/admin/**", "/vscode/**"
-    //         };
-    //     }
-    // }
 
     @Override
     public void configure(WebSecurity web) throws Exception {
+        // Ignore resources required by Swagger API documentation
         web.ignoring().antMatchers("/v2/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**");
     }
 
