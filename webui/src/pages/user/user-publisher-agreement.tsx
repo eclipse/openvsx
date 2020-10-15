@@ -9,10 +9,10 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useContext, useState, useEffect } from 'react';
-import { UserData } from '../../extension-registry-types';
+import { UserData, isError } from '../../extension-registry-types';
 import { Box, Typography, Paper, Button, makeStyles, Dialog, DialogContent, DialogContentText, Fade } from '@material-ui/core';
 import { Timestamp } from '../../components/timestamp';
-import { handleError } from '../../utils';
+import { handleError, createAbsoluteURL } from '../../utils';
 import { ServiceContext, PageSettingsContext } from '../../default/default-app';
 import { ErrorHandlerContext } from '../../main';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -42,26 +42,15 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
 
     const [user, setUser] = useState(userDefault);
     const callOAuth = () => {
-        // window.open(createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse']));
-        // **** This is mock stuff TODO: delete later **** //
-        const additionalUser: UserData = Object.assign({}, user);
-        additionalUser.provider = 'eclipse';
-        const newUser = Object.assign({}, user);
-        newUser.additionalLogins = [];
-        newUser.additionalLogins.push(additionalUser);
-        // **** That was mock stuff TODO: delete later **** //
-        setUser(newUser);
+        window.open(createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse']));
     };
 
     const signPublisherAgreement = async (): Promise<void> => {
         try {
-            await service.signPublisherAgreement();
-            // TODO fetch new user data
-            // **** This is mock stuff TODO: delete later **** //
-            const newUser = Object.assign({}, user);
-            newUser.publisherAgreement = "signed";
-            newUser.publisherAgreementTimestamp = new Date().toISOString();
-            // **** That was mock stuff TODO: delete later **** //
+            const newUser = await service.signPublisherAgreement();
+            if (isError(newUser)) {
+                throw (newUser.error);
+            }
             setUser(newUser);
             setDialogOpen(false);
         } catch (err) {

@@ -226,23 +226,18 @@ export class ExtensionRegistryService {
         });
     }
 
-    async signPublisherAgreement(): Promise<Readonly<SuccessResult | ErrorResult>> {
-        // const csrfToken = await this.getCsrfToken();
-        // const headers: Record<string, string> = {};
-        // if (!isError(csrfToken)) {
-        //     headers[csrfToken.header] = csrfToken.value;
-        // }
-        // return sendRequest<SuccessResult | ErrorResult>({
-        //     method: 'POST',
-        //     credentials: true,
-        //     endpoint: createAbsoluteURL([this.serverUrl, 'user', 'publisher-agreement']),
-        //     headers
-        // });
-        // **** This is mock stuff TODO: delete later **** //
-        return new Promise((res) => {
-            res({ success: 'signed' });
+    async signPublisherAgreement(): Promise<Readonly<UserData | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest<UserData | ErrorResult>({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'publisher-agreement']),
+            headers
         });
-        // **** That was mock stuff TODO: delete later **** //
     }
 
     // Admin Requests
