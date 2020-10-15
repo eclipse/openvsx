@@ -12,7 +12,10 @@ package org.eclipse.openvsx.security;
 import java.util.Collection;
 import java.util.Collections;
 
+import com.google.common.base.Strings;
+
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,9 +42,12 @@ public class ExtendedOAuth2UserServices {
 
     @Autowired
     TokenService tokens;
-
+    
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    EclipseService eclipse;
 
     private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
@@ -96,21 +102,36 @@ public class ExtendedOAuth2UserServices {
     public IdPrincipal loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         var authUser = delegate.loadUser(userRequest);
         var registrationId = userRequest.getClientRegistration().getRegistrationId();
-        var isGitHub = "github".equals(registrationId);
-        var isEclipse = "eclipse".equals(registrationId);
-        if (!isGitHub && !isEclipse) {
-            throw new DisabledException("Invalid registration");
-        }
 
-        String githubLogin = isGitHub ? authUser.getAttribute("login") : authUser.getAttribute("github_handle");
-        var userData = repositories.findUserByLoginName("github", githubLogin);
-        if (userData == null) {
-            if (isEclipse) {
-                throw new DisabledException("Invalid login");
+        UserData userData;
+        switch (registrationId) {
+            case "github": {
+                String loginName = authUser.getAttribute("login");
+                if (Strings.isNullOrEmpty(loginName))
+                    throw new DisabledException("Invalid login: missing 'login' field.");
+                userData = repositories.findUserByLoginName("github", loginName);
+                if (userData == null)
+                    userData = users.registerNewUser(authUser);
+                else
+                    users.updateExistingUser(userData, authUser);
+                break;
             }
-            userData = users.registerNewUser(authUser);
-        }
 
+            case "eclipse": {
+                String githubHandle = authUser.getAttribute("github_handle");
+                if (Strings.isNullOrEmpty(githubHandle))
+                    throw new DisabledException("Invalid login: missing 'github_handle' field.");
+                userData = repositories.findUserByLoginName("github", githubHandle);
+                if (userData == null)
+                    throw new DisabledException("Invalid login: GitHub user " + githubHandle + " not found.");
+                else
+                    eclipse.updateUserData(userData, authUser);
+                break;
+            }
+
+            default:
+                throw new DisabledException("Invalid registration: " + registrationId);
+        }
         return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
     }
 

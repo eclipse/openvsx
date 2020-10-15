@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.security;
 
 import java.time.Instant;
+import java.util.Arrays;
 
 import javax.persistence.EntityManager;
 
@@ -58,28 +59,19 @@ public class TokenService {
         switch (registrationId) {
             case "github": {
                 if (accessToken == null) {
-                    return transactions.execute(status -> {
-                        userData.setGithubToken(null);
-                        return null;
-                    });
+                    return updateGitHubToken(userData, null);
                 }
                 var token = new AuthToken();
                 token.accessToken = accessToken.getTokenValue();
                 token.scopes = accessToken.getScopes();
                 token.issuedAt = accessToken.getIssuedAt();
                 token.expiresAt = accessToken.getExpiresAt();
-                return transactions.execute(status -> {
-                    userData.setGithubToken(token);
-                    return token;
-                });
+                return updateGitHubToken(userData, token);
             }
 
             case "eclipse": {
                 if (accessToken == null) {
-                    return transactions.execute(status -> {
-                        userData.setEclipseToken(null);
-                        return null;
-                    });
+                    return updateEclipseToken(userData, null);
                 }
                 var token = new AuthToken();
                 token.accessToken = accessToken.getTokenValue();
@@ -90,6 +82,7 @@ public class TokenService {
                 if (refreshToken != null) {
                     token.refreshToken = refreshToken.getTokenValue();
                 } else {
+                    // Request a new token to get the refresh token
                     var tokens = refreshEclipseToken(token);
                     if (tokens != null) {
                         token.accessToken = tokens.getFirst().getTokenValue();
@@ -99,13 +92,26 @@ public class TokenService {
                         token.refreshToken = tokens.getSecond().getTokenValue();
                     }
                 }
-                return transactions.execute(status -> {
-                    userData.setEclipseToken(token);
-                    return token;
-                });
+                return updateEclipseToken(userData, token);
             }
         }
         return null;
+    }
+
+    private AuthToken updateGitHubToken(UserData userData, AuthToken token) {
+        return transactions.execute(status -> {
+            userData.setGithubToken(token);
+            entityManager.merge(userData);
+            return token;
+        });
+    }
+
+    private AuthToken updateEclipseToken(UserData userData, AuthToken token) {
+        return transactions.execute(status -> {
+            userData.setEclipseToken(token);
+            entityManager.merge(userData);
+            return token;
+        });
     }
 
     public AuthToken getActiveToken(UserData userData, String registrationId) {
@@ -138,12 +144,13 @@ public class TokenService {
 
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
 
         var data = new JsonObject();
         data.put("grant_type", "refresh_token");
         data.put("client_id", reg.getClientId());
         data.put("client_secret", reg.getClientSecret());
-        data.put("refresh_token", token.accessToken);
+        data.put("refresh_token", token.refreshToken != null ? token.refreshToken : token.accessToken);
 
         var request = new HttpEntity<String>(data.toJson(), headers);
         var restTemplate = new RestTemplate();

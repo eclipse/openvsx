@@ -33,32 +33,30 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         var redirectUrl = Strings.isNullOrEmpty(webuiUrl) ? "/" : webuiUrl;
-        
-        // TODO consider configuring custom authentication for CLI endpoints
+
         http
             .authorizeRequests()
                 .antMatchers("/login/**", "/oauth2/**", "/user", "/logout")
                     .permitAll()
-                .antMatchers("/admin/**")
-                    .hasAuthority("ROLE_ADMIN")
                 .antMatchers("/api/*/*/review", "/api/*/*/review/delete")
                     .authenticated()
                 .antMatchers("/api/**", "/vscode/**")
                     .permitAll()
+                .antMatchers("/admin/**")
+                    .hasAuthority("ROLE_ADMIN")
                 .anyRequest()
                     .authenticated()
                 .and()
             .cors()
                 .and()
+            .csrf()
+                .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**")
+                .and()
             .exceptionHandling()
                 // Respond with 403 status when the user is not logged in
                 .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
                 .and()
-            .csrf()
-                // TODO remove `/admin/**` from this list
-                .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/admin/**", "/vscode/**")
-                .and()
-            
+
             .oauth2Login(configurer -> {
                 configurer.defaultSuccessUrl(redirectUrl);
                 configurer.addObjectPostProcessor(new ObjectPostProcessor<OidcAuthorizationCodeAuthenticationProvider>() {
@@ -68,11 +66,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         return object;
                     }
                 });
-
+                configurer.successHandler(new ExtendedAuthenticationSuccessHandler(redirectUrl));
                 configurer.userInfoEndpoint()
                     .oidcUserService(userServices.getOidc())
                     .userService(userServices.getOauth2());
             })
+
             .logout()
                 .logoutSuccessUrl(redirectUrl);
     }

@@ -7,6 +7,11 @@ ports:
 # Server (API)
 - port: 8080
   onOpen: ignore
+# Test report
+- port: 8081
+# Java debugging
+- port: 5005
+  onOpen: ignore
 # PostgreSQL
 - port: 5432
   onOpen: ignore
@@ -22,7 +27,7 @@ tasks:
     yarn --cwd cli
     yarn --cwd webui
     yarn --cwd webui build:default
-    server/gradlew -p server assemble #downloadTestExtensions
+    server/gradlew -p server assemble downloadTestExtensions
   name: Server
   command: |
     if [[ $NPM_TOKEN ]]; then echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc; fi

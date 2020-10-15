@@ -9,15 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * https://eclipsefdn.github.io/openvsx-publisher-agreement-specs/#/paths/~1publisher_agreement/post
  */
 public class SignAgreementParam {
 
     /** The version number of the document/agreement. */
-    @JsonProperty("Version")
     public int version;
 
     public SignAgreementParam(String version) {

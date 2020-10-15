@@ -23,14 +23,9 @@ spring:
       oauth2:
         client:
           registration:
-            github:
-              client-id: ${GITHUB_CLIENT_ID}
-              client-secret: ${GITHUB_CLIENT_SECRET}
             eclipse:
-              client-id: ${ECLIPSE_CLIENT_ID}
-              client-secret: ${ECLIPSE_CLIENT_SECRET}
               authorization-grant-type: authorization_code
-              redirect-uri: ${ECLIPSE_REDIRECT_URI}
+              redirect-uri: http://localhost
               scope: openvsx_publisher_agreement, openid, profile
           provider:
             eclipse:

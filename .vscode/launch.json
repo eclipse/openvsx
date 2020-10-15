@@ -3,7 +3,7 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Debug (Attach)",
+            "name": "Debug Java (Attach)",
             "request": "attach",
             "hostName": "localhost",
             "port": 5005

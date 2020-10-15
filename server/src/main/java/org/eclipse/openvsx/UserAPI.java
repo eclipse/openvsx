@@ -64,13 +64,13 @@ public class UserAPI {
     EclipseService eclipse;
 
     /**
-     * Forward to GitHub Oauth2 login as default login provider.
+     * Redirect to GitHub Oauth2 login as default login provider.
      */
     @GetMapping(
         path = "/login"
     )
     public ModelAndView login(ModelMap model) {
-        return new ModelAndView("forward:/oauth2/authorization/github", model);
+        return new ModelAndView("redirect:/oauth2/authorization/github", model);
     }
 
     /**

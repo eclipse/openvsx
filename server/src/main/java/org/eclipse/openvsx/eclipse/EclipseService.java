@@ -15,6 +15,9 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.Arrays;
 import java.util.function.Function;
 
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
@@ -35,6 +38,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -58,6 +62,9 @@ public class EclipseService {
 
     @Autowired
     TransactionTemplate transactions;
+
+    @Autowired
+    EntityManager entityManager;
 
     @Autowired
     RestTemplate restTemplate;
@@ -101,29 +108,55 @@ public class EclipseService {
         }
     }
 
+    @Transactional
+    public void updateUserData(UserData user, OAuth2User oauth2User) {
+        var eclipseData = user.getEclipseData();
+        if (eclipseData == null) {
+            eclipseData = new EclipseData();
+            user.setEclipseData(eclipseData);
+        }
+        eclipseData.personId = oauth2User.getName();
+        try {
+            getPublisherAgreement(user);
+        } catch (ErrorResultException exc) {
+            // Ignore the failed request and assume the current DB state is valid
+        }
+        entityManager.merge(user);
+    }
+
+    /**
+     * Enrich the given JSON user data with Eclipse-specific information.
+     */
     public void addPublisherAgreementInfo(UserJson json, UserData user) {
         if (Strings.isNullOrEmpty(publisherAgreementVersion)) {
             return;
         }
         var eclipseData = user.getEclipseData();
-        if (eclipseData == null || eclipseData.publisherAgreement == null) {
+        if (eclipseData == null) {
             json.publisherAgreement = "none";
-        } else {
-            var agreement = eclipseData.publisherAgreement;
-            if (!agreement.isActive || agreement.version == null)
-                json.publisherAgreement = "none";
-            else if (publisherAgreementVersion.equals(agreement.version))
-                json.publisherAgreement = "signed";
-            else
-                json.publisherAgreement = "outdated";
-            if (agreement.timestamp != null)
-                json.publisherAgreementTimestamp = TimeUtil.toUTCString(agreement.timestamp);
-            if (eclipseData.personId != null) {
-                var eclipseLogin = new UserJson();
-                eclipseLogin.provider = "eclipse";
-                eclipseLogin.loginName = eclipseData.personId;
+            return;
+        }
+
+        var agreement = eclipseData.publisherAgreement;
+        if (agreement == null || !agreement.isActive || agreement.version == null)
+            json.publisherAgreement = "none";
+        else if (publisherAgreementVersion.equals(agreement.version))
+            json.publisherAgreement = "signed";
+        else
+            json.publisherAgreement = "outdated";
+        if (agreement != null && agreement.timestamp != null)
+            json.publisherAgreementTimestamp = TimeUtil.toUTCString(agreement.timestamp);
+
+        // Report user as logged in only if there is a usabe token:
+        // we need the token to access the Eclipse REST API
+        if (eclipseData.personId != null && user.getEclipseToken() != null && user.getEclipseToken().refreshToken != null) {
+            var eclipseLogin = new UserJson();
+            eclipseLogin.provider = "eclipse";
+            eclipseLogin.loginName = eclipseData.personId;
+            if (json.additionalLogins == null)
                 json.additionalLogins = Lists.newArrayList(eclipseLogin);
-            }
+            else
+                json.additionalLogins.add(eclipseLogin);
         }
     }
 
@@ -145,6 +178,7 @@ public class EclipseService {
             var agreement = response.getBody().createEntityData(parseDate);
             return transactions.execute(status -> {
                 eclipseData.publisherAgreement = agreement;
+                entityManager.merge(user);
                 return agreement;
             });
         } catch (RestClientException exc) {
@@ -173,12 +207,16 @@ public class EclipseService {
         try {
             var response = restTemplate.postForObject(publisherAgreementApiUrl, request, PublisherAgreementResponse.class);
 
-            var ed = new EclipseData();
-            ed.personId = response.personID;
-            ed.publisherAgreement = response.createEntityData(parseDate);
             return transactions.execute(status -> {
-                user.setEclipseData(ed);
-                return ed.publisherAgreement;
+                var eclipseData = user.getEclipseData();
+                if (eclipseData == null) {
+                    eclipseData = new EclipseData();
+                    eclipseData.personId = response.personID;
+                    user.setEclipseData(eclipseData);
+                }
+                eclipseData.publisherAgreement = response.createEntityData(parseDate);
+                entityManager.merge(user);
+                return eclipseData.publisherAgreement;
             });
         } catch (RestClientException exc) {
             logger.error("Post request failed with URL: " + publisherAgreementApiUrl, exc);
@@ -203,6 +241,7 @@ public class EclipseService {
             if (eclipseData.publisherAgreement != null) {
                 transactions.<Void>execute(status -> {
                     eclipseData.publisherAgreement.isActive = false;
+                    entityManager.merge(user);
                     return null;
                 });
             }
