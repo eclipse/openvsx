@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
 import org.eclipse.openvsx.MockTransactionTemplate;
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -246,6 +247,11 @@ public class VSCodeAdapterTest {
         @Bean
         TokenService tokenService() {
             return new TokenService();
+        }
+
+        @Bean
+        UserService userService() {
+            return new UserService();
         }
 
         @Bean

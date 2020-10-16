@@ -13,9 +13,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayOutputStream;
@@ -364,6 +366,7 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foobar"; })))
                 .andExpect(status().isCreated())
+                .andExpect(redirectedUrl("http://localhost/api/foobar"))
                 .andExpect(content().json(successJson("Created namespace foobar")));
     }
     
@@ -569,7 +572,9 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
                     r.rating = 3;
-                })).with(csrf()))
+                }))
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(successJson("Added review for foo.bar")));
     }
@@ -580,7 +585,7 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
                     r.rating = 3;
-                })).with(csrf()))
+                })).with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
     
@@ -590,7 +595,9 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
                     r.rating = 100;
-                })).with(csrf()))
+                }))
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("The rating must be an integer number between 0 and 5.")));
     }
@@ -602,7 +609,9 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
                     r.rating = 3;
-                })).with(csrf()))
+                }))
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar")));
     }
@@ -625,7 +634,9 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
                     r.rating = 3;
-                })).with(csrf()))
+                }))
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("You must not submit more than one review for an extension.")));
     }
@@ -646,7 +657,9 @@ public class RegistryAPITest {
         Mockito.when(repositories.findActiveReviews(extension))
                 .thenReturn(Streamable.empty());
 
-        mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar").with(csrf()))
+        mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deleted review for foo.bar")));
     }
@@ -660,7 +673,9 @@ public class RegistryAPITest {
     @Test
     public void testDeleteReviewUnknownExtension() throws Exception {
         mockUserData();
-        mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar").with(csrf()))
+        mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar")));
     }
@@ -675,7 +690,9 @@ public class RegistryAPITest {
         Mockito.when(repositories.findActiveReviews(extension, user))
                 .thenReturn(Streamable.empty());
 
-        mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar").with(csrf()))
+        mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("You have not submitted any review yet.")));
     }

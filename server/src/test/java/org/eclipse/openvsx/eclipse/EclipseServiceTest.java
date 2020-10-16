@@ -16,7 +16,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.persistence.EntityManager;
+
 import com.google.common.io.CharStreams;
 
 import org.eclipse.openvsx.MockTransactionTemplate;
@@ -41,6 +42,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(SpringExtension.class)
+@MockBean({ EntityManager.class })
 public class EclipseServiceTest {
 
     @MockBean
@@ -66,8 +68,8 @@ public class EclipseServiceTest {
         user.setEclipseData(eclipseData);
         eclipseData.personId = "test";
 
-        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), any(), eq(PublisherAgreementResponse.class)))
-            .thenReturn(new ResponseEntity<>(mockAgreementResponse(), HttpStatus.OK));
+        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), any(), eq(String.class)))
+            .thenReturn(mockAgreementResponse());
 
         var agreement = eclipse.getPublisherAgreement(user);
 
@@ -86,7 +88,7 @@ public class EclipseServiceTest {
         user.setEclipseData(eclipseData);
         eclipseData.personId = "test";
 
-        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), any(), eq(PublisherAgreementResponse.class)))
+        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), any(), eq(String.class)))
             .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         var agreement = eclipse.getPublisherAgreement(user);
@@ -106,7 +108,7 @@ public class EclipseServiceTest {
     @Test
     public void testSignPublisherAgreement() throws Exception {
         var user = mockUser();
-        Mockito.when(restTemplate.postForObject(any(String.class), any(), eq(PublisherAgreementResponse.class)))
+        Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
             .thenReturn(mockAgreementResponse());
 
         eclipse.signPublisherAgreement(user);
@@ -146,12 +148,12 @@ public class EclipseServiceTest {
         return user;
     }
 
-    private PublisherAgreementResponse mockAgreementResponse() throws IOException {
+    private ResponseEntity<String> mockAgreementResponse() throws IOException {
         try (
             var stream = getClass().getResourceAsStream("publisher-agreement-response.json");
         ) {
             var json = CharStreams.toString(new InputStreamReader(stream));
-            return new ObjectMapper().readValue(json, PublisherAgreementResponse.class);
+            return new ResponseEntity<>(json, HttpStatus.OK);
         }
     }
     

@@ -13,11 +13,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
@@ -38,6 +41,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -78,6 +82,8 @@ public class EclipseService {
     @Value("${ovsx.eclipse.publisher-agreement.timezone:}")
     String publisherAgreementTimeZone;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     private final Function<String, LocalDateTime> parseDate = dateString -> {
         var local = LocalDateTime.parse(dateString, CUSTOM_DATE_TIME);
         if (Strings.isNullOrEmpty(publisherAgreementTimeZone)) {
@@ -110,24 +116,27 @@ public class EclipseService {
 
     @Transactional
     public void updateUserData(UserData user, OAuth2User oauth2User) {
-        var eclipseData = user.getEclipseData();
-        if (eclipseData == null) {
+        EclipseData eclipseData;
+        if (user.getEclipseData() == null) {
             eclipseData = new EclipseData();
-            user.setEclipseData(eclipseData);
+        } else {
+            // We need to clone and reset the data to ensure that Hibernate will persist the updated state
+            eclipseData = user.getEclipseData().clone();
         }
         eclipseData.personId = oauth2User.getName();
+        user.setEclipseData(eclipseData);
+        entityManager.merge(user);
         try {
             getPublisherAgreement(user);
         } catch (ErrorResultException exc) {
             // Ignore the failed request and assume the current DB state is valid
         }
-        entityManager.merge(user);
     }
 
     /**
      * Enrich the given JSON user data with Eclipse-specific information.
      */
-    public void addPublisherAgreementInfo(UserJson json, UserData user) {
+    public void enrichUserJson(UserJson json, UserData user) {
         if (Strings.isNullOrEmpty(publisherAgreementVersion)) {
             return;
         }
@@ -169,17 +178,20 @@ public class EclipseService {
         var eclipseToken = checkEclipseToken(user);
         var headers = new HttpHeaders();
         headers.setBearerAuth(eclipseToken.accessToken);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         var request = new HttpEntity<>(headers);
         var requestUrl = UrlUtil.createApiUrl(publisherAgreementApiUrl, eclipseData.personId);
 
+        ResponseEntity<String> json = null;
         try {
-            var response = restTemplate.exchange(requestUrl, HttpMethod.GET, request, PublisherAgreementResponse.class);
+            json = restTemplate.exchange(requestUrl, HttpMethod.GET, request, String.class);
+            var response = objectMapper.readValue(json.getBody(), PublisherAgreementResponse.class);
 
-            var agreement = response.getBody().createEntityData(parseDate);
-            return transactions.execute(status -> {
-                eclipseData.publisherAgreement = agreement;
-                entityManager.merge(user);
-                return agreement;
+            return updateEclipseData(user, ed -> {
+                ed.publisherAgreement = response.createEntityData(parseDate);
+                return ed.publisherAgreement;
+            }, ed -> {
+                ed.personId = response.personID;
             });
         } catch (RestClientException exc) {
             if (exc instanceof HttpStatusCodeException) {
@@ -191,7 +203,11 @@ public class EclipseService {
             logger.error("Get request failed with URL: " + requestUrl, exc);
             throw new ErrorResultException("Request for retrieving publisher agreement failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        } catch (JsonProcessingException exc) {
+			logger.error("Failed to parse JSON response (" + json.getStatusCode() + "):\n" + json.getBody(), exc);
+            throw new ErrorResultException("Parsing response of retrieving publisher agreement failed: " + exc.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+		}
     }
 
     public EclipseData.PublisherAgreement signPublisherAgreement(UserData user) {
@@ -204,25 +220,26 @@ public class EclipseService {
         var data = new SignAgreementParam(publisherAgreementVersion);
         var request = new HttpEntity<>(data, headers);
 
+        ResponseEntity<String> json = null;
         try {
-            var response = restTemplate.postForObject(publisherAgreementApiUrl, request, PublisherAgreementResponse.class);
+            json = restTemplate.postForEntity(publisherAgreementApiUrl, request, String.class);
+            var response = objectMapper.readValue(json.getBody(), PublisherAgreementResponse.class);
 
-            return transactions.execute(status -> {
-                var eclipseData = user.getEclipseData();
-                if (eclipseData == null) {
-                    eclipseData = new EclipseData();
-                    eclipseData.personId = response.personID;
-                    user.setEclipseData(eclipseData);
-                }
-                eclipseData.publisherAgreement = response.createEntityData(parseDate);
-                entityManager.merge(user);
-                return eclipseData.publisherAgreement;
+            return updateEclipseData(user, ed -> {
+                ed.publisherAgreement = response.createEntityData(parseDate);
+                return ed.publisherAgreement;
+            }, ed -> {
+                ed.personId = response.personID;
             });
         } catch (RestClientException exc) {
             logger.error("Post request failed with URL: " + publisherAgreementApiUrl, exc);
             throw new ErrorResultException("Request for signing publisher agreement failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+		} catch (JsonProcessingException exc) {
+            logger.error("Failed to parse JSON response (" + json.getStatusCode() + "):\n" + json.getBody(), exc);
+            throw new ErrorResultException("Parsing response of signing publisher agreement failed: " + exc.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+		}
     }
 
     public void revokePublisherAgreement(UserData user) {
@@ -239,11 +256,10 @@ public class EclipseService {
             restTemplate.execute(requestUrl, HttpMethod.DELETE, requestCallback, null);
 
             if (eclipseData.publisherAgreement != null) {
-                transactions.<Void>execute(status -> {
-                    eclipseData.publisherAgreement.isActive = false;
-                    entityManager.merge(user);
+                updateEclipseData(user, ed -> {
+                    ed.publisherAgreement.isActive = false;
                     return null;
-                });
+                }, NOP_INIT);
             }
         } catch (RestClientException exc) {
             logger.error("Delete request failed with URL: " + requestUrl, exc);
@@ -273,6 +289,28 @@ public class EclipseService {
                     + user.getProvider() + "/" + user.getLoginName());
         }
         return eclipseData;
+    }
+
+    private static final Consumer<EclipseData> NOP_INIT = ed -> {};
+
+    /**
+     * Update the Eclipse data of the given user and commit the change to the database.
+     */
+    protected <T> T updateEclipseData(UserData user, Function<EclipseData, T> update, Consumer<EclipseData> initialize) {
+        return transactions.execute(status -> {
+            EclipseData eclipseData;
+            if (user.getEclipseData() == null) {
+                eclipseData = new EclipseData();
+                initialize.accept(eclipseData);
+            } else {
+                // We need to clone and reset the data to ensure that Hibernate will persist the updated state
+                eclipseData = user.getEclipseData().clone();
+            }
+            var result = update.apply(eclipseData);
+            user.setEclipseData(eclipseData);
+            entityManager.merge(user);
+            return result;
+        });
     }
 
 }

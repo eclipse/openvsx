@@ -19,7 +19,7 @@ import java.util.Objects;
  * <p>This class is not mapped to a database entity, but parsed / serialized to
  * JSON via a column converter.
  */
-public class EclipseData {
+public class EclipseData implements Cloneable {
 
     public String personId;
 
@@ -79,6 +79,15 @@ public class EclipseData {
     @Override
     public int hashCode() {
         return Objects.hash(personId, publisherAgreement);
+    }
+
+    @Override
+    public EclipseData clone() {
+        try {
+			return (EclipseData) super.clone();
+		} catch (CloneNotSupportedException exc) {
+			throw new RuntimeException(exc);
+		}
     }
     
 }

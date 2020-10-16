@@ -92,7 +92,7 @@ public class UserAPI {
         json.role = user.getRole();
         json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
         json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
-        eclipse.addPublisherAgreementInfo(json, user);
+        eclipse.enrichUserJson(json, user);
         return json;
     }
 
