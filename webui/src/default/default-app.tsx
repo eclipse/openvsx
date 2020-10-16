@@ -39,7 +39,7 @@ const App = () => {
         [prefersDarkMode],
     );
 
-    const pageSettings = createPageSettings(theme, prefersDarkMode);
+    const pageSettings = createPageSettings(theme, prefersDarkMode, service.serverUrl);
 
     return (
         <ThemeProvider theme={theme}>

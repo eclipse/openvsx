@@ -42,6 +42,8 @@ public class WebConfig implements WebMvcConfigurer {
                         .allowedOrigins(webuiUrl)
                         .allowCredentials(true);
             }
+            registry.addMapping("/documents/**")
+                    .allowedOrigins("*");
         }
     }
 

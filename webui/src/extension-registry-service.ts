@@ -226,13 +226,13 @@ export class ExtensionRegistryService {
         });
     }
 
-    async signPublisherAgreement(): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async signPublisherAgreement(): Promise<Readonly<UserData | ErrorResult>> {
         const csrfToken = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest<SuccessResult | ErrorResult>({
+        return sendRequest<UserData | ErrorResult>({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'publisher-agreement']),
@@ -277,6 +277,14 @@ export class ExtensionRegistryService {
             endpoint: createAbsoluteURL([this.serverUrl, 'admin', req.namespace, 'delete-extension'],
                 [{ key: 'version', value: req.version }, { key: 'extension', value: req.extension }]),
             headers
+        });
+    }
+
+    getStaticContent(url: string): Promise<string> {
+        return sendRequest({
+            endpoint: url,
+            headers: { 'Accept': 'text/plain' },
+            followRedirect: true
         });
     }
 }

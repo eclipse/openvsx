@@ -18,8 +18,9 @@ import { ExtensionListRoutes } from '../pages/extension-list/extension-list-cont
 import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
+import { createAbsoluteURL } from '../utils';
 
-export default function createPageSettings(theme: Theme, prefersDarkMode: boolean): PageSettings {
+export default function createPageSettings(theme: Theme, prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarStyle = makeStyles({
         logo: {
             width: 'auto',
@@ -102,7 +103,8 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
         },
         urls: {
             extensionDefaultIcon: '/default-icon.png',
-            namespaceAccessInfo: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access'
+            namespaceAccessInfo: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access',
+            publisherAgreement: createAbsoluteURL([serverUrl, 'documents', 'README.md'])
         }
     };
 }

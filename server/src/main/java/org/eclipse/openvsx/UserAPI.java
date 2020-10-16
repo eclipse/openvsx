@@ -269,16 +269,16 @@ public class UserAPI {
         path = "/user/publisher-agreement",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ResultJson> signPublisherAgreement() {
+    public ResponseEntity<UserJson> signPublisherAgreement() {
         var user = users.findLoggedInUser();
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         try {
-            var agreement = eclipse.signPublisherAgreement(user);
-            return ResponseEntity.ok(ResultJson.success("Signed the publisher agreement version " + agreement.version));
+            eclipse.signPublisherAgreement(user);
+            return ResponseEntity.ok(getUserData());
         } catch (ErrorResultException exc) {
-            return exc.toResponseEntity();
+            return exc.toResponseEntity(UserJson.class);
         }
     }
 

@@ -30,6 +30,7 @@ export interface PageSettings {
     urls: {
         extensionDefaultIcon: string;
         namespaceAccessInfo: string;
+        publisherAgreement?: string;
     }
 }
 

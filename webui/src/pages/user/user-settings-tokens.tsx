@@ -44,6 +44,9 @@ const tokensStyle = (theme: Theme) => createStyles({
         color: theme.palette.error.main,
         height: 36
     },
+    link: {
+        color: theme.palette.info.main
+    },
     empty: {
         [theme.breakpoints.down('sm')]: {
             textAlign: 'center'
@@ -108,7 +111,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                         ? 'Your publisher agreement is outdated.'
                         : 'You have not signed a publisher agreement yet.'
                     } Please sign the agreement on
-                    the <RouteLink to={UserSettingsRoutes.PROFILE}>Profile</RouteLink> page.
+                    the <RouteLink className={this.props.classes.link} to={UserSettingsRoutes.PROFILE}>Profile</RouteLink> page.
                 </Typography>
             </Box>;
         }
