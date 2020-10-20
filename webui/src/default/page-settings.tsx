@@ -46,8 +46,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             textDecoration: 'none',
             color: theme.palette.primary.main,
             '&:hover': {
-                color: theme.palette.secondary.main,
-                textDecoration: 'none'
+                textDecoration: 'underline'
             }
         },
         repositoryLink: {
