@@ -3,6 +3,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Debug Java (Attach)",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 5005
+        },
+        {
+            "type": "java",
             "name": "Launch RegistryApplication",
             "request": "launch",
             "mainClass": "org.eclipse.openvsx.RegistryApplication",

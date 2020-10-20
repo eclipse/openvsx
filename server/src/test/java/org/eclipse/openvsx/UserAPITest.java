@@ -10,6 +10,7 @@
 package org.eclipse.openvsx;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -17,10 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
@@ -28,6 +26,7 @@ import javax.persistence.EntityManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -39,18 +38,21 @@ import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.ExtendedOAuth2UserServices;
+import org.eclipse.openvsx.security.TokenService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.util.Streamable;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
@@ -62,6 +64,9 @@ public class UserAPITest {
 
     @MockBean
     RepositoryService repositories;
+
+    @MockBean
+    EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
@@ -80,7 +85,7 @@ public class UserAPITest {
 
     @Test
     public void testNotLoggedIn() throws Exception {
-        Mockito.doReturn(null).when(users).getOAuth2Principal();
+        // Mockito.doReturn(null).when(users).getOAuth2Principal();
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(userJson(u -> {
@@ -91,7 +96,8 @@ public class UserAPITest {
     @Test
     public void testAccessTokens() throws Exception {
         mockAccessTokens();
-        mockMvc.perform(get("/user/tokens"))
+        mockMvc.perform(get("/user/tokens")
+                .with(user("test_user")))
                 .andExpect(status().isOk())
                 .andExpect(content().json(accessTokensJson(a -> {
                     var t1 = new AccessTokenJson();
@@ -106,15 +112,32 @@ public class UserAPITest {
     }
 
     @Test
+    public void testAccessTokensNotLoggedIn() throws Exception {
+        mockAccessTokens();
+        mockMvc.perform(get("/user/tokens"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     public void testCreateAccessToken() throws Exception {
         mockUserData();
         Mockito.doReturn("foobar").when(users).generateTokenValue();
-        mockMvc.perform(post("/user/token/create?description={description}", "This is my token").with(csrf()))
+        mockMvc.perform(post("/user/token/create?description={description}", "This is my token")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(accessTokenJson(t -> {
                     t.value = "foobar";
                     t.description = "This is my token";
                 })));
+    }
+
+    @Test
+    public void testCreateAccessTokenNotLoggedIn() throws Exception {
+        mockUserData();
+        mockMvc.perform(post("/user/token/create?description={description}", "This is my token")
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -127,9 +150,19 @@ public class UserAPITest {
         Mockito.when(repositories.findAccessToken(100))
                 .thenReturn(token);
 
-        mockMvc.perform(post("/user/token/delete/{id}", 100).with(csrf()))
+        mockMvc.perform(post("/user/token/delete/{id}", 100)
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deleted access token for user test_user.")));
+    }
+
+    @Test
+    public void testDeleteAccessTokenNotLoggedIn() throws Exception {
+        mockUserData();
+        mockMvc.perform(post("/user/token/delete/{id}", 100)
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -142,7 +175,9 @@ public class UserAPITest {
         Mockito.when(repositories.findAccessToken(100))
                 .thenReturn(token);
 
-        mockMvc.perform(post("/user/token/delete/{id}", 100).with(csrf()))
+        mockMvc.perform(post("/user/token/delete/{id}", 100)
+                .with(user("test_user"))
+                .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Token does not exist.")));
     }
@@ -159,7 +194,9 @@ public class UserAPITest {
         Mockito.when(repositories.findAccessToken(100))
                 .thenReturn(token);
 
-        mockMvc.perform(post("/user/token/delete/{id}", 100).with(csrf()))
+        mockMvc.perform(post("/user/token/delete/{id}", 100)
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Token does not exist.")));
     }
@@ -167,7 +204,8 @@ public class UserAPITest {
     @Test
     public void testOwnNamespaces() throws Exception {
         mockOwnMemberships();
-        mockMvc.perform(get("/user/namespaces"))
+        mockMvc.perform(get("/user/namespaces")
+                .with(user("test_user")))
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespacesJson(a -> {
                     var ns1 = new NamespaceJson();
@@ -180,9 +218,17 @@ public class UserAPITest {
     }
 
     @Test
+    public void testOwnNamespacesNotLoggedIn() throws Exception {
+        mockOwnMemberships();
+        mockMvc.perform(get("/user/namespaces"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     public void testNamespaceMembers() throws Exception {
         mockNamespaceMemberships(NamespaceMembership.ROLE_OWNER);
-        mockMvc.perform(get("/user/namespace/{name}/members", "foobar"))
+        mockMvc.perform(get("/user/namespace/{name}/members", "foobar")
+                .with(user("test_user")))
                 .andExpect(status().isOk())
                 .andExpect(content().json(membershipsJson(a -> {
                     var u1 = new UserJson();
@@ -203,9 +249,17 @@ public class UserAPITest {
     }
 
     @Test
+    public void testNamespaceMembersNotLoggedIn() throws Exception {
+        mockNamespaceMemberships(NamespaceMembership.ROLE_OWNER);
+        mockMvc.perform(get("/user/namespace/{name}/members", "foobar"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     public void testNamespaceMembersNotOwner() throws Exception {
         mockNamespaceMemberships(NamespaceMembership.ROLE_CONTRIBUTOR);
-        mockMvc.perform(get("/user/namespace/{name}/members", "foobar"))
+        mockMvc.perform(get("/user/namespace/{name}/members", "foobar")
+                .with(user("test_user")))
                 .andExpect(status().isForbidden());
     }
 
@@ -230,9 +284,20 @@ public class UserAPITest {
                 .thenReturn(null);
 
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
-                    "other_user", "contributor").with(csrf()))
+                    "other_user", "contributor")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Added other_user as contributor of foobar.")));
+    }
+
+    @Test
+    public void testAddNamespaceMemberNotLoggedIn() throws Exception {
+        mockUserData();
+        mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
+                    "other_user", "contributor")
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -260,7 +325,9 @@ public class UserAPITest {
                 .thenReturn(membership2);
 
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
-                    "other_user", "contributor").with(csrf()))
+                    "other_user", "contributor")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Changed role of other_user in foobar to contributor.")));
     }
@@ -290,7 +357,9 @@ public class UserAPITest {
                 .thenReturn(membership2);
 
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
-                    "other_user", "remove").with(csrf()))
+                    "other_user", "remove")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Removed other_user from namespace foobar.")));
     }
@@ -310,7 +379,9 @@ public class UserAPITest {
                 .thenReturn(membership);
 
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
-                    "other_user", "contributor").with(csrf()))
+                    "other_user", "contributor")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("You must be an owner of this namespace.")));
     }
@@ -340,7 +411,9 @@ public class UserAPITest {
                 .thenReturn(membership2);
 
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
-                    "other_user", "contributor").with(csrf()))
+                    "other_user", "contributor")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("User other_user already has the role contributor.")));
     }
@@ -349,12 +422,11 @@ public class UserAPITest {
     //---------- UTILITY ----------//
 
     private UserData mockUserData() {
-        var principal = mockPrincipal();
         var userData = new UserData();
         userData.setLoginName("test_user");
         userData.setFullName("Test User");
         userData.setProviderUrl("http://example.com/test");
-        Mockito.doReturn(userData).when(users).updateUser(principal);
+        Mockito.doReturn(userData).when(users).findLoggedInUser();
         return userData;
     }
 
@@ -464,30 +536,23 @@ public class UserAPITest {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
     }
-
-    private MockPrincipal mockPrincipal() {
-        var principal = new MockPrincipal();
-        Mockito.doReturn(principal).when(users).getOAuth2Principal();
-        return principal;
-    }
-
-    static class MockPrincipal implements OAuth2User {
-
-        @Override
-        public String getName() {
-            return "test_user";
+    
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        TransactionTemplate transactionTemplate() {
+            return new MockTransactionTemplate();
         }
 
-        @Override
-        public Map<String, Object> getAttributes() {
-            return Collections.emptyMap();
+        @Bean
+        ExtendedOAuth2UserServices extendedOAuth2UserServices() {
+            return new ExtendedOAuth2UserServices();
         }
 
-        @Override
-        public Collection<? extends GrantedAuthority> getAuthorities() {
-            return Collections.emptyList();
+        @Bean
+        TokenService tokenService() {
+            return new TokenService();
         }
-        
     }
     
 }

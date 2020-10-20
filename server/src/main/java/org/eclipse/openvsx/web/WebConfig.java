@@ -24,7 +24,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
-    @Value("${ovsx.webui.frontendRoutes:/extension/**,/user-settings/**}")
+    @Value("${ovsx.webui.frontendRoutes:/extension/**,/user-settings/**,/admin-dashboard/**}")
     String[] frontendRoutes;
 
     @Override
@@ -42,6 +42,8 @@ public class WebConfig implements WebMvcConfigurer {
                         .allowedOrigins(webuiUrl)
                         .allowCredentials(true);
             }
+            registry.addMapping("/documents/**")
+                    .allowedOrigins("*");
         }
     }
 

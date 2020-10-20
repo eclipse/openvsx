@@ -4,5 +4,7 @@
     "eslint.options": {
         "configFile": "webui/configs/eslintrc.json"
     },
-    "eslint.packageManager": "yarn"
+    "eslint.packageManager": "yarn",
+    "java.dependency.syncWithFolderExplorer": true,
+    "java.format.enabled": false
 }

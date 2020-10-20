@@ -9,9 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import java.net.URI;
+import com.google.common.base.Strings;
 
-import org.elasticsearch.common.Strings;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -25,49 +25,52 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
+    @Autowired
+    ExtendedOAuth2UserServices userServices;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        if (Strings.isNullOrEmpty(webuiUrl) || !URI.create(webuiUrl).isAbsolute()) {
-            // Default configuration: mark endpoints that require a user principal as authenticated.
-            http.authorizeRequests()
-                .antMatchers("/user/tokens", "/user/token/**", "/user/namespaces", 
-                             "/user/namespace/**", "/user/search/**", "/api/*/*/review/**")
+        var redirectUrl = Strings.isNullOrEmpty(webuiUrl) ? "/" : webuiUrl;
+
+        http
+            .authorizeRequests()
+                .antMatchers("/login/**", "/oauth2/**", "/user", "/logout")
+                    .permitAll()
+                .antMatchers("/api/*/*/review", "/api/*/*/review/delete")
                     .authenticated()
-                .antMatchers("/user", "/login/**", "/logout", "/api/**", "/admin/**", "/vscode/**")
-                    .permitAll();
-        } else {
-            // All endpoints are marked as permitted for CORS to work correctly.
-            // User authentication is checked within the endpoints that require it.
-            http.authorizeRequests()
-                .antMatchers("/user/**", "/login/**", "/logout", "/api/**", "/admin/**", "/vscode/**")
-                    .permitAll();
-        }
+                .antMatchers("/api/**", "/vscode/**", "/documents/**")
+                    .permitAll()
+                .antMatchers("/admin/**")
+                    .hasAuthority("ROLE_ADMIN")
+                .anyRequest()
+                    .authenticated()
+                .and()
+            .cors()
+                .and()
+            .csrf()
+                .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**")
+                .and()
+            .exceptionHandling()
+                // Respond with 403 status when the user is not logged in
+                .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+                .and()
 
-        if (!Strings.isNullOrEmpty(webuiUrl)) {
-            // Redirect to the Web UI after login / logout
-            http.oauth2Login()
-                .defaultSuccessUrl(webuiUrl, true);
-            http.logout()
-                .logoutSuccessUrl(webuiUrl);
-        } else {
-            http.oauth2Login();
-            http.logout()
-                .logoutSuccessUrl("/");
-        }
+            .oauth2Login(configurer -> {
+                configurer.defaultSuccessUrl(redirectUrl);
+                configurer.successHandler(new ExtendedAuthenticationSuccessHandler(redirectUrl));
+                configurer.userInfoEndpoint()
+                    .oidcUserService(userServices.getOidc())
+                    .userService(userServices.getOauth2());
+            })
 
-        // Publishing is done only via explicit access tokens, so we don't need CSRF protection here.
-        http.csrf()
-            .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/admin/**", "/vscode/**");
-
-        // Respond with 403 status when the user is not logged in
-        http.exceptionHandling()
-            .authenticationEntryPoint(new Http403ForbiddenEntryPoint());
+            .logout()
+                .logoutSuccessUrl(redirectUrl);
     }
 
     @Override
     public void configure(WebSecurity web) throws Exception {
-        web.ignoring()
-            .antMatchers("/v2/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**");
+        // Ignore resources required by Swagger API documentation
+        web.ignoring().antMatchers("/v2/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**");
     }
 
 }

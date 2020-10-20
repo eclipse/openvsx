@@ -25,6 +25,9 @@ import javax.persistence.EntityManager;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
+import org.eclipse.openvsx.MockTransactionTemplate;
+import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -33,6 +36,8 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.security.ExtendedOAuth2UserServices;
+import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.junit.jupiter.api.Test;
@@ -49,6 +54,7 @@ import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(VSCodeAdapter.class)
 @AutoConfigureWebClient
@@ -66,6 +72,9 @@ public class VSCodeAdapterTest {
 
     @MockBean
     EntityManager entityManager;
+
+    @MockBean
+    EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
@@ -225,6 +234,26 @@ public class VSCodeAdapterTest {
     
     @TestConfiguration
     static class TestConfig {
+        @Bean
+        TransactionTemplate transactionTemplate() {
+            return new MockTransactionTemplate();
+        }
+
+        @Bean
+        ExtendedOAuth2UserServices extendedOAuth2UserServices() {
+            return new ExtendedOAuth2UserServices();
+        }
+
+        @Bean
+        TokenService tokenService() {
+            return new TokenService();
+        }
+
+        @Bean
+        UserService userService() {
+            return new UserService();
+        }
+
         @Bean
         StorageUtilService storageUtilService() {
             return new StorageUtilService();

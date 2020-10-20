@@ -9,13 +9,16 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import org.eclipse.openvsx.json.ResultJson;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 /**
  * Throw this exception to reply with a JSON object of the form
  * 
  * <pre>
- * { "error": "«message»" } </pre
+ * { "error": "«message»" }
+ * </pre>
  */
 public class ErrorResultException extends RuntimeException {
 
@@ -40,6 +43,23 @@ public class ErrorResultException extends RuntimeException {
 
     public HttpStatus getStatus() {
         return status;
+    }
+
+    public ResponseEntity<ResultJson> toResponseEntity() {
+        var json = ResultJson.error(getMessage());
+        var responseStatus = status != null ? status : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(json, responseStatus);
+    }
+
+    public <T extends ResultJson> ResponseEntity<T> toResponseEntity(Class<T> resultType) {
+        try {
+            var json = resultType.getDeclaredConstructor().newInstance();
+            json.error = getMessage();
+            var responseStatus = status != null ? status : HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>(json, responseStatus);
+        } catch (ReflectiveOperationException exc) {
+            throw new RuntimeException(exc);
+        }
     }
 
 }

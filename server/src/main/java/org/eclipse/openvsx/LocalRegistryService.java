@@ -26,6 +26,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -85,6 +86,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     GoogleCloudStorageService googleStorage;
+
+    @Autowired
+    EclipseService eclipse;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -312,6 +316,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (token == null) {
             throw new ErrorResultException("Invalid access token.");
         }
+        eclipse.checkPublisherAgreement(token.getUser());
         var namespace = repositories.findNamespace(json.name);
         if (namespace != null) {
             throw new ErrorResultException("Namespace already exists: " + namespace.getName());
@@ -327,9 +332,10 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
         try (var processor = new ExtensionProcessor(content)) {
             var token = users.useAccessToken(tokenValue);
-            if (token == null) {
+            if (token == null || token.getUser() == null) {
                 throw new ErrorResultException("Invalid access token.");
             }
+            eclipse.checkPublisherAgreement(token.getUser());
             var extVersion = createExtensionVersion(processor, token.getUser(), token);
             storeResources(processor.getResources(extVersion), extVersion);
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
@@ -469,15 +475,14 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ResponseStatusException.class)
     public ResultJson postReview(ReviewJson review, String namespace, String extensionName) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
             return ResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
-        var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);
         if (!activeReviews.isEmpty()) {
             return ResultJson.error("You must not submit more than one review for an extension.");
@@ -499,15 +504,14 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ResponseStatusException.class)
     public ResultJson deleteReview(String namespace, String extensionName) {
-        var principal = users.getOAuth2Principal();
-        if (principal == null) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
             return ResultJson.error("Extension not found: " + namespace + "." + extensionName);
         }
-        var user = users.updateUser(principal);
         var activeReviews = repositories.findActiveReviews(extension, user);
         if (activeReviews.isEmpty()) {
             return ResultJson.error("You have not submitted any review yet.");

@@ -17,7 +17,7 @@ import { sendRequest } from './server-request';
 
 export class ExtensionRegistryService {
 
-    constructor(protected readonly serverUrl: string = '') { }
+    constructor(readonly serverUrl: string = '') { }
 
     getLoginUrl(): string {
         return createAbsoluteURL([this.serverUrl, 'oauth2', 'authorization', 'github']);
@@ -218,14 +218,26 @@ export class ExtensionRegistryService {
             { key: 'provider', value: user.provider },
             { key: 'role', value: role }
         ];
-        return sendRequest(
-            {
-                headers,
-                method: 'POST',
-                credentials: true,
-                endpoint: addQuery(endpoint, query)
-            }
-        );
+        return sendRequest({
+            headers,
+            method: 'POST',
+            credentials: true,
+            endpoint: addQuery(endpoint, query)
+        });
+    }
+
+    async signPublisherAgreement(): Promise<Readonly<UserData | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest<UserData | ErrorResult>({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'publisher-agreement']),
+            headers
+        });
     }
 
     // Admin Requests
@@ -265,6 +277,14 @@ export class ExtensionRegistryService {
             endpoint: createAbsoluteURL([this.serverUrl, 'admin', req.namespace, 'delete-extension'],
                 [{ key: 'version', value: req.version }, { key: 'extension', value: req.extension }]),
             headers
+        });
+    }
+
+    getStaticContent(url: string): Promise<string> {
+        return sendRequest({
+            endpoint: url,
+            headers: { 'Accept': 'text/plain' },
+            followRedirect: true
         });
     }
 }

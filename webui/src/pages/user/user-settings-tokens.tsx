@@ -10,12 +10,14 @@
 
 import * as React from 'react';
 import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from '@material-ui/core';
+import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
 import { UserData, PersonalAccessToken } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { GenerateTokenDialog } from './generate-token-dialog';
 import { ErrorResponse } from '../../server-request';
+import { UserSettingsRoutes } from './user-settings';
 
 const tokensStyle = (theme: Theme) => createStyles({
     header: {
@@ -42,6 +44,9 @@ const tokensStyle = (theme: Theme) => createStyles({
         color: theme.palette.error.main,
         height: 36
     },
+    link: {
+        color: theme.palette.info.main
+    },
     empty: {
         [theme.breakpoints.down('sm')]: {
             textAlign: 'center'
@@ -66,7 +71,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             const tokens = await this.props.service.getAccessTokens(this.props.user);
             this.setState({ tokens, loading: false });
         } catch (err) {
-            this.props.setError(err);
+            this.props.handleError(err);
             this.setState({ loading: false });
         }
     }
@@ -77,7 +82,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             await this.props.service.deleteAccessToken(token);
             this.updateTokens();
         } catch (err) {
-            this.props.setError(err);
+            this.props.handleError(err);
         }
     };
 
@@ -87,7 +92,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
             await this.props.service.deleteAllAccessTokens(this.state.tokens);
             this.updateTokens();
         } catch (err) {
-            this.props.setError(err);
+            this.props.handleError(err);
         }
     };
 
@@ -97,6 +102,19 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     };
 
     render() {
+        const agreement = this.props.user.publisherAgreement;
+        if (agreement === 'none' || agreement === 'outdated') {
+            return <Box>
+                <Typography variant='body1' className={this.props.classes.empty}>
+                    {
+                        agreement === 'outdated'
+                        ? 'Your publisher agreement is outdated.'
+                        : 'You have not signed a publisher agreement yet.'
+                    } Please sign the agreement on
+                    the <RouteLink className={this.props.classes.link} to={UserSettingsRoutes.PROFILE}>Profile</RouteLink> page.
+                </Typography>
+            </Box>;
+        }
         return <React.Fragment>
             <Box className={this.props.classes.header}>
                 <Box>
@@ -108,7 +126,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                             handleTokenGenerated={this.handleTokenGenerated}
                             service={this.props.service}
                             user={this.props.user}
-                            setError={this.props.setError}
+                            setError={this.props.handleError}
                         />
                     </Box>
                     <Box>
@@ -162,7 +180,7 @@ export namespace UserSettingsTokensComponent {
     export interface Props extends WithStyles<typeof tokensStyle> {
         user: UserData;
         service: ExtensionRegistryService;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

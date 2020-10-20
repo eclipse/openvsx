@@ -235,11 +235,7 @@ public class AdminService {
     }
 
     public UserData checkAdminUser() {
-        var principal = users.getOAuth2Principal();
-        UserData user = null;
-        if (principal != null) {
-            user = users.updateUser(principal);
-        }
+        var user = users.findLoggedInUser();
         if (user == null || !UserData.ROLE_ADMIN.equals(user.getRole())) {
             throw new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN);
         }

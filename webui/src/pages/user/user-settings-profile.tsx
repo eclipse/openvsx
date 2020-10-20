@@ -12,6 +12,8 @@ import * as React from 'react';
 import { Theme, createStyles, WithStyles, withStyles, Grid, Typography, Avatar } from '@material-ui/core';
 import { UserData } from '../../extension-registry-types';
 import { ExtensionRegistryService } from '../../extension-registry-service';
+import { ErrorResponse } from '../../server-request';
+import { UserPublisherAgreement } from './user-publisher-agreement';
 
 const profileStyle = (theme: Theme) => createStyles({
     profile: {
@@ -32,7 +34,8 @@ const profileStyle = (theme: Theme) => createStyles({
                 marginLeft: '0',
                 marginTop: '2rem'
             }
-        }
+        },
+        marginBottom: theme.spacing(2)
     },
     avatar: {
         width: '150px',
@@ -51,16 +54,22 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
         this.state = {};
     }
 
-    render() {
+    render(): React.ReactNode {
+        const user = this.props.user;
         return <React.Fragment>
             <Grid container className={this.props.classes.profile}>
                 <Grid item>
                     <Typography variant='h5' gutterBottom>Profile</Typography>
-                    <Typography variant='body1'>Login name: {this.props.user.loginName}</Typography>
-                    <Typography variant='body1'>Full name: {this.props.user.fullName}</Typography>
+                    <Typography variant='body1'>Login name: {user.loginName}</Typography>
+                    <Typography variant='body1'>Full name: {user.fullName}</Typography>
                 </Grid>
                 <Grid item>
-                    <Avatar classes={{ root: this.props.classes.avatar }} variant='rounded' src={this.props.user.avatarUrl} />
+                    <Avatar classes={{ root: this.props.classes.avatar }} variant='rounded' src={user.avatarUrl} />
+                </Grid>
+            </Grid>
+            <Grid container>
+                <Grid item xs={12}>
+                    <UserPublisherAgreement user={user} />
                 </Grid>
             </Grid>
         </React.Fragment>;
@@ -69,8 +78,9 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
 
 export namespace UserSettingsProfileComponent {
     export interface Props extends WithStyles<typeof profileStyle> {
-        user: UserData
-        service: ExtensionRegistryService
+        user: UserData;
+        service: ExtensionRegistryService;
+        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

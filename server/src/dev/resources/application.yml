@@ -19,6 +19,26 @@ spring:
     jdbc:
       initialize-schema: never
 
+  security:
+      oauth2:
+        client:
+          registration:
+            eclipse:
+              authorization-grant-type: authorization_code
+              redirect-uri: http://localhost
+              scope: openvsx_publisher_agreement, profile
+          provider:
+            eclipse:
+              authorization-uri: https://accounts.eclipse.org/oauth2/authorize
+              token-uri: https://accounts.eclipse.org/oauth2/token
+              user-info-uri: https://accounts.eclipse.org/oauth2/UserInfo
+              user-name-attribute: name
+              user-info-authentication-method: header
+
 ovsx:
   elasticsearch:
     clear-on-start: true
+  eclipse:
+    base-url: https://api.eclipse.org/openvsx
+    publisher-agreement:
+      timezone: US/Eastern

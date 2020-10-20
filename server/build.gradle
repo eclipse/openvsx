@@ -91,5 +91,14 @@ test {
     useJUnitPlatform()
 }
 
+task unitTests(type: Test) {
+    description = 'Runs unit tests (excluding integration tests).'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    exclude 'org/eclipse/openvsx/IntegrationTest.class'
+}
+
 apply from: 'dependencies.gradle'
 apply from: 'test-extensions.gradle'

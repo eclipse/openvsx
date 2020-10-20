@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography } from '@material-ui/core';
+import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography, Link } from '@material-ui/core';
 import { RouteComponentProps, Route } from 'react-router-dom';
 import { createRoute } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -67,7 +67,13 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
         if (!user) {
             return <Container>
                 <Box mt={6}>
-                    <Typography variant='h6'>You are not logged in!</Typography>
+                    <Typography variant='h4'>Not Logged In</Typography>
+                    <Box mt={2}>
+                        <Typography variant='body1'>
+                            Please <Link color='secondary' href={this.props.service.getLoginUrl()}>log in with GitHub</Link> to
+                            access your account settings.
+                        </Typography>
+                    </Box>
                 </Box>
             </Container>;
         }
@@ -81,13 +87,16 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                         <Grid item className={this.props.classes.info}>
                             <Box>
                                 <Route path={UserSettingsRoutes.PROFILE}>
-                                    <UserSettingsProfile service={this.props.service} user={user} />
+                                    <UserSettingsProfile
+                                        service={this.props.service}
+                                        user={user}
+                                        handleError={this.props.handleError} />
                                 </Route>
                                 <Route path={UserSettingsRoutes.TOKENS}>
                                     <UserSettingsTokens
                                         service={this.props.service}
                                         user={user}
-                                        setError={this.props.handleError}
+                                        handleError={this.props.handleError}
                                     />
                                 </Route>
                                 <Route path={UserSettingsRoutes.NAMESPACES}>
