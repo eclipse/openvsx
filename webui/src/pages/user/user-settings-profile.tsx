@@ -11,8 +11,6 @@
 import * as React from 'react';
 import { Theme, createStyles, WithStyles, withStyles, Grid, Typography, Avatar } from '@material-ui/core';
 import { UserData } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
-import { ErrorResponse } from '../../server-request';
 import { UserPublisherAgreement } from './user-publisher-agreement';
 
 const profileStyle = (theme: Theme) => createStyles({
@@ -78,9 +76,7 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
 
 export namespace UserSettingsProfileComponent {
     export interface Props extends WithStyles<typeof profileStyle> {
-        user: UserData;
-        service: ExtensionRegistryService;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
+        user: UserData
     }
 
     export interface State {

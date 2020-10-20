@@ -12,7 +12,7 @@ import React, { FunctionComponent, useState, useContext } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@material-ui/core';
-import { NamespaceInput } from './namespace-input';
+import { StyledInput } from './namespace-input';
 import { ServiceContext } from '../../default/default-app';
 import { handleError } from '../../utils';
 import { isError, Extension } from '../../extension-registry-types';
@@ -81,7 +81,8 @@ export const ExtensionAdmin: FunctionComponent = props => {
     return (<>
         <SearchListContainer
             searchContainer={[
-                <NamespaceInput
+                <StyledInput
+                    placeholder='Namespace'
                     error={namespaceFieldError}
                     key='nsi'
                     onChange={handleNamespaceChange}

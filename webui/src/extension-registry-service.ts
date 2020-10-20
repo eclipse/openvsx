@@ -10,7 +10,7 @@
 
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
-    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, MembershipRole, SortBy, SortOrder, UrlString, NamespaceMembershipList
+    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, MembershipRole, SortBy, SortOrder, UrlString, NamespaceMembershipList, PublisherInfo
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest } from './server-request';
@@ -285,6 +285,27 @@ export class ExtensionRegistryService {
             endpoint: url,
             headers: { 'Accept': 'text/plain' },
             followRedirect: true
+        });
+    }
+
+    async getPublishersInfo(provider: string, login: string): Promise<Readonly<PublisherInfo>> {
+        return sendRequest({
+            endpoint: createAbsoluteURL([this.serverUrl, 'admin', '-', provider, login]),
+            credentials: true
+        });
+    }
+
+    async revokePublishersAgreement(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'admin', '-', provider, login, 'revoke']),
+            headers
         });
     }
 }

@@ -24,6 +24,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.StatsJson;
+import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -207,6 +208,33 @@ public class AdminAPI {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);
+        } catch (ErrorResultException exc) {
+            return getErrorResponse(exc);
+        }
+    }
+
+    @GetMapping(path = "/admin/-/{provider}/{loginName}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserPublishInfoJson> getUserPublishInfo(@PathVariable String provider, @PathVariable String loginName) {
+        try {
+            admins.checkAdminUser();
+            var userPublishInfo = admins.getUserPublishInfo(provider, loginName);
+
+            return new ResponseEntity<>(userPublishInfo, HttpStatus.OK);
+            
+        } catch (ErrorResultException exc) {
+            var err = getErrorResponse(exc);
+            return new ResponseEntity<>(UserPublishInfoJson.error(err.getBody().error), err.getStatusCode());
+        }
+    }
+
+    @PostMapping(
+        path = "/admin/-/{provider}/{loginName}/revoke",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> revokePublisherAgreement(@PathVariable String loginName, @PathVariable String provider) {
+        try {
+            var user = admins.checkAdminUser();
+            return new ResponseEntity<>(admins.revokePublisherAgreement(provider, loginName, user), HttpStatus.OK);
         } catch (ErrorResultException exc) {
             return getErrorResponse(exc);
         }

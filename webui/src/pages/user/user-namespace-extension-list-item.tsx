@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import React, { useContext, FunctionComponent } from 'react';
 import { Extension } from '../../extension-registry-types';
-import { Paper, Typography, Theme, createStyles, WithStyles, withStyles, Box } from '@material-ui/core';
+import { Paper, Typography, Box, makeStyles } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
 import { createRoute } from '../../utils';
-import { PageSettings } from '../../page-settings';
 import { Timestamp } from '../../components/timestamp';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
+import { PageSettingsContext } from '../../default/default-app';
 
-const itemStyles = (theme: Theme) => createStyles({
+const itemStyles = makeStyles(theme => ({
     link: {
         textDecoration: 'none',
     },
@@ -41,16 +41,19 @@ const itemStyles = (theme: Theme) => createStyles({
         display: 'flex',
         justifyContent: 'space-between',
     }
-});
+}));
 
-const UserNamespaceExtensionListItemComponent = ({ extension, classes, pageSettings }: UserNamespaceExtensionListItemComponent.Props) => {
+export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
+    const pageSettings = useContext(PageSettingsContext);
+    const { extension } = props;
+    const classes = itemStyles();
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
     return (
         extension ? (
             <RouteLink to={route} className={classes.link}>
                 <Paper className={classes.paper}>
                     <img
-                        src={extension.files.icon || pageSettings.urls.extensionDefaultIcon}
+                        src={extension.files.icon || (pageSettings && pageSettings.urls.extensionDefaultIcon) || ''}
                         alt={extension.displayName || extension.name}
                         className={classes.extensionLogo}
                     />
@@ -64,11 +67,11 @@ const UserNamespaceExtensionListItemComponent = ({ extension, classes, pageSetti
                         </Box>
                         {
                             extension.timestamp ?
-                            <Box className={classes.paragraph} mt={0.25}>
-                                <span>Released:</span>
-                                <Timestamp value={extension.timestamp}/>
-                            </Box>
-                            : null
+                                <Box className={classes.paragraph} mt={0.25}>
+                                    <span>Released:</span>
+                                    <Timestamp value={extension.timestamp} />
+                                </Box>
+                                : null
                         }
                     </div>
                 </Paper>
@@ -78,11 +81,6 @@ const UserNamespaceExtensionListItemComponent = ({ extension, classes, pageSetti
     );
 };
 
-export namespace UserNamespaceExtensionListItemComponent {
-    export interface Props extends WithStyles<typeof itemStyles> {
-        extension: Extension;
-        pageSettings: PageSettings;
-    }
+export interface UserNamespaceExtensionListItemProps {
+    extension: Extension;
 }
-
-export const UserNamespaceExtensionListItem = withStyles(itemStyles)(UserNamespaceExtensionListItemComponent);

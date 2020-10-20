@@ -42,36 +42,37 @@ const useStyles = makeStyles(theme =>
     })
 );
 
-interface NamespaceInputProps {
-    onSubmit?: (namespaceName: string) => void;
-    onChange: (namespaceName: string) => void;
+interface InputProps {
+    onSubmit?: (inputValue: string) => void;
+    onChange: (inputValue: string) => void;
     hideIconButton?: boolean;
     error?: boolean;
     autoFocus?: boolean;
+    placeholder?: string;
 }
 
-export const NamespaceInput: FunctionComponent<NamespaceInputProps> = props => {
+export const StyledInput: FunctionComponent<InputProps> = props => {
     const classes = useStyles();
-    const [namespaceName, setNamespaceName] = useState('');
-    const onChangeNamespaceInput = (ev: React.ChangeEvent<HTMLInputElement>) => {
-        const namespaceName = ev.target.value;
-        props.onChange(namespaceName);
-        setNamespaceName(namespaceName);
+    const [inputValue, setInputValue] = useState('');
+    const onChangeInputValue = (ev: React.ChangeEvent<HTMLInputElement>) => {
+        const inputValue = ev.target.value;
+        props.onChange(inputValue);
+        setInputValue(inputValue);
     };
     const onSubmit = () => {
         if (props.onSubmit) {
-            props.onSubmit(namespaceName);
+            props.onSubmit(inputValue);
         }
     };
     return <Paper className={classes.root} classes={{ root: props.error ? classes.error : '' }}>
         <InputBase
             autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
             className={classes.input}
-            placeholder='Namespace'
-            onChange={onChangeNamespaceInput}
+            placeholder={props.placeholder}
+            onChange={onChangeInputValue}
             onKeyPress={(e: React.KeyboardEvent) => {
                 if (e.charCode === 13 && props.onSubmit) {
-                    props.onSubmit(namespaceName);
+                    props.onSubmit(inputValue);
                 }
             }}
         />
