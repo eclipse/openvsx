@@ -72,7 +72,7 @@ const detailStyles = (theme: Theme) => createStyles({
         }
     },
     head: {
-        backgroundColor: theme.palette.secondary.dark,
+        backgroundColor: theme.palette.neutral.dark,
     },
     extensionLogo: {
         height: '7.5rem',
