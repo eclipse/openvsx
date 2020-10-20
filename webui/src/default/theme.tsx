@@ -10,6 +10,20 @@
 
 import { createMuiTheme, Theme } from "@material-ui/core";
 
+declare module '@material-ui/core/styles/createPalette' {
+    interface Palette {
+        neutral: {
+            light: React.CSSProperties['color'],
+            dark: React.CSSProperties['color']
+        }
+      }
+    interface PaletteOptions {
+        neutral: {
+            light: React.CSSProperties['color'],
+            dark: React.CSSProperties['color']
+        }
+    }
+}
 export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
     return createMuiTheme({
         palette: {
@@ -19,7 +33,9 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             },
             secondary: {
                 main: themeType === 'dark' ? '#c160ef' : '#a60ee5',
-                contrastText: '#edf5ea',
+                contrastText: '#edf5ea'
+            },
+            neutral: {
                 light: themeType === 'dark' ? '#000' : '#e6e6e6',
                 dark: themeType === 'dark' ? '#333' : '#fff',
             },

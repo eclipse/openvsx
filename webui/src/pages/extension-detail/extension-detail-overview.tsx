@@ -94,14 +94,14 @@ const overviewStyles = (theme: Theme) => createStyles({
         },
         '& code': {
             whiteSpace: 'pre',
-            backgroundColor: theme.palette.secondary.light,
+            backgroundColor: theme.palette.neutral.light,
             padding: 2
         },
         '& h2': {
             borderBottom: '1px solid #eee'
         },
         '& pre': {
-            background: theme.palette.secondary.light,
+            background: theme.palette.neutral.light,
             padding: '10px 5px',
             '& code': {
                 padding: 0,
@@ -119,7 +119,7 @@ const overviewStyles = (theme: Theme) => createStyles({
             },
             '& th': {
                 textAlign: 'start',
-                background: theme.palette.secondary.dark
+                background: theme.palette.neutral.dark
             }
         }
     },
