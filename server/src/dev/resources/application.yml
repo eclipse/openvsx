@@ -26,7 +26,7 @@ spring:
             eclipse:
               authorization-grant-type: authorization_code
               redirect-uri: http://localhost
-              scope: openvsx_publisher_agreement, openid, profile
+              scope: openvsx_publisher_agreement, profile
           provider:
             eclipse:
               authorization-uri: https://accounts.eclipse.org/oauth2/authorize
@@ -39,7 +39,6 @@ ovsx:
   elasticsearch:
     clear-on-start: true
   eclipse:
+    base-url: https://api.eclipse.org/openvsx
     publisher-agreement:
-      version: 1
-      api: https://api.eclipse.org/openvsx/publisher_agreement
       timezone: US/Eastern

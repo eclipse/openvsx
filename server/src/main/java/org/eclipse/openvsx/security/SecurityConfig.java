@@ -13,12 +13,10 @@ import com.google.common.base.Strings;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.oauth2.client.oidc.authentication.OidcAuthorizationCodeAuthenticationProvider;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 
 @EnableWebSecurity
@@ -59,13 +57,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
             .oauth2Login(configurer -> {
                 configurer.defaultSuccessUrl(redirectUrl);
-                configurer.addObjectPostProcessor(new ObjectPostProcessor<OidcAuthorizationCodeAuthenticationProvider>() {
-                    @Override
-                    public <O extends OidcAuthorizationCodeAuthenticationProvider> O postProcess(O object) {
-                        object.setJwtDecoderFactory(new NoVerifyJwtDecoderFactory());
-                        return object;
-                    }
-                });
                 configurer.successHandler(new ExtendedAuthenticationSuccessHandler(redirectUrl));
                 configurer.userInfoEndpoint()
                     .oidcUserService(userServices.getOidc())

@@ -33,8 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -57,8 +57,20 @@ public class EclipseServiceTest {
     @BeforeEach
     public void setup() {
         eclipse.publisherAgreementVersion = "1";
-        eclipse.publisherAgreementApiUrl = "https://test.openvsx.eclipse.org/";
+        eclipse.eclipseApiUrl = "https://test.openvsx.eclipse.org/";
         eclipse.publisherAgreementTimeZone = "US/Eastern";
+    }
+
+    @Test
+    public void testGetUserProfile() throws Exception {
+        Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
+            .thenReturn(mockProfileResponse());
+
+        var profile = eclipse.getUserProfile("12345");
+
+        assertThat(profile).isNotNull();
+        assertThat(profile.name).isEqualTo("test");
+        assertThat(profile.githubHandle).isEqualTo("test");
     }
 
     @Test
@@ -68,7 +80,7 @@ public class EclipseServiceTest {
         user.setEclipseData(eclipseData);
         eclipseData.personId = "test";
 
-        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), any(), eq(String.class)))
+        Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
             .thenReturn(mockAgreementResponse());
 
         var agreement = eclipse.getPublisherAgreement(user);
@@ -88,7 +100,7 @@ public class EclipseServiceTest {
         user.setEclipseData(eclipseData);
         eclipseData.personId = "test";
 
-        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), any(), eq(String.class)))
+        Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
             .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         var agreement = eclipse.getPublisherAgreement(user);
@@ -146,6 +158,15 @@ public class EclipseServiceTest {
         Mockito.when(tokens.getActiveToken(user, "eclipse"))
             .thenReturn(user.getEclipseToken());
         return user;
+    }
+
+    private ResponseEntity<String> mockProfileResponse() throws IOException {
+        try (
+            var stream = getClass().getResourceAsStream("profile-response.json");
+        ) {
+            var json = CharStreams.toString(new InputStreamReader(stream));
+            return new ResponseEntity<>(json, HttpStatus.OK);
+        }
     }
 
     private ResponseEntity<String> mockAgreementResponse() throws IOException {

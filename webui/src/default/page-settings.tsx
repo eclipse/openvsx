@@ -104,6 +104,8 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
         urls: {
             extensionDefaultIcon: '/default-icon.png',
             namespaceAccessInfo: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access',
+            // Copy README.md to server/src/dev/resources/static/documents to see some content in the
+            // dialog for signing the publisher agreement.
             publisherAgreement: createAbsoluteURL([serverUrl, 'documents', 'README.md'])
         }
     };

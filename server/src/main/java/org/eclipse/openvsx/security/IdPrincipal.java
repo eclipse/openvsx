@@ -30,8 +30,8 @@ public class IdPrincipal implements OidcUser, Serializable {
     private final Collection<GrantedAuthority> authorities;
 
     public IdPrincipal(long id, String name, Collection<GrantedAuthority> authorities) {
-        this.name = name;
         this.id = id;
+        this.name = name;
         this.authorities = authorities;
     }
 

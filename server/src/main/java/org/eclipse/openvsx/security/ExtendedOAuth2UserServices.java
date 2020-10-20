@@ -18,6 +18,7 @@ import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.DisabledException;
@@ -91,48 +92,43 @@ public class ExtendedOAuth2UserServices {
         }
     }
 
-    /**
-     * First of, it delegates to {@link DefaultOAuth2UserService} for fetching user info.
-     * 
-     * Uses {@link UserService} to check if {@link UserData} already exists, and creates new account if
-     * it's a GitHub authentication.
-     * 
-     * @throws OAuth2AuthenticationException if the Eclipse authentication is using an unknown GitHub login.
-     */
-    public IdPrincipal loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        var authUser = delegate.loadUser(userRequest);
+    public IdPrincipal loadUser(OAuth2UserRequest userRequest) {
         var registrationId = userRequest.getClientRegistration().getRegistrationId();
 
-        UserData userData;
         switch (registrationId) {
             case "github": {
+                var authUser = delegate.loadUser(userRequest);
                 String loginName = authUser.getAttribute("login");
                 if (Strings.isNullOrEmpty(loginName))
                     throw new DisabledException("Invalid login: missing 'login' field.");
-                userData = repositories.findUserByLoginName("github", loginName);
+                var userData = repositories.findUserByLoginName("github", loginName);
                 if (userData == null)
                     userData = users.registerNewUser(authUser);
                 else
                     users.updateExistingUser(userData, authUser);
-                break;
+                return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
             }
 
             case "eclipse": {
-                String githubHandle = authUser.getAttribute("github_handle");
-                if (Strings.isNullOrEmpty(githubHandle))
-                    throw new DisabledException("Invalid login: missing 'github_handle' field.");
-                userData = repositories.findUserByLoginName("github", githubHandle);
-                if (userData == null)
-                    throw new DisabledException("Invalid login: GitHub user " + githubHandle + " not found.");
-                else
-                    eclipse.updateUserData(userData, authUser);
-                break;
+                try {
+                    var accessToken = userRequest.getAccessToken().getTokenValue();
+                    var profile = eclipse.getUserProfile(accessToken);
+                    if (Strings.isNullOrEmpty(profile.githubHandle))
+                        throw new DisabledException("Please set the \"GitHub Username\" in your Eclipse profile.");
+                    var userData = repositories.findUserByLoginName("github", profile.githubHandle);
+                    if (userData == null)
+                        throw new DisabledException("The \"GitHub Username\" setting in your Eclipse profile must match the GitHub account you used to log in to this website.");
+                    eclipse.updateUserData(userData, profile);
+                    eclipse.getPublisherAgreement(userData, accessToken);
+                    return new IdPrincipal(userData.getId(), profile.name, getAuthorities(userData));
+                } catch (ErrorResultException exc) {
+                    throw new DisabledException(exc.getMessage(), exc);
+                }
             }
 
             default:
                 throw new DisabledException("Invalid registration: " + registrationId);
         }
-        return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
     }
 
     private Collection<GrantedAuthority> getAuthorities(UserData userData) {
