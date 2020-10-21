@@ -42,7 +42,7 @@ export const PublisherAdmin: FunctionComponent = props => {
         try {
             setLoading(true);
             if (publisherName !== '') {
-                const publisher = await service.getPublishersInfo('github', publisherName);
+                const publisher = await service.admin.getPublisherInfo('github', publisherName);
                 setNotFound('');
                 setPublisher(publisher);
             } else {

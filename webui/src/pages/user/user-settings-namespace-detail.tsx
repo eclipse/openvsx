@@ -41,6 +41,7 @@ export interface NamespaceProps {
     namespace: Namespace;
     user: UserData;
     service: ExtensionRegistryService;
+    filterUsers: (user: UserData) => boolean;
     handleError: (err: Error | Partial<ErrorResponse>) => void;
     pageSettings: PageSettings;
     setLoadingState: (loading: boolean) => void;
@@ -55,6 +56,7 @@ export const NamespaceDetail: FunctionComponent<NamespaceProps> = props => {
                 <UserNamespaceMemberList
                     setLoadingState={props.setLoadingState}
                     namespace={props.namespace}
+                    filterUsers={props.filterUsers}
                     handleError={props.handleError} />
             </Grid>
             <Grid item>

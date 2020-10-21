@@ -127,6 +127,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                     <ExtensionRemoveDialog
                         onUpdate={handleUpdate}
                         extension={extension}
+                        removeAll={allChecked}
                         versions={
                             Array.from(versions.entries())
                                 .filter(([version, checked]) => VERSION_ALIASES.indexOf(version) < 0 && checked)

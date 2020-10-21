@@ -14,12 +14,9 @@ import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 import java.net.URI;
 
-import javax.persistence.EntityManager;
-
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.PersistedLog;
-import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -53,62 +50,56 @@ public class AdminAPI {
     AdminService admins;
 
     @Autowired
+    LocalRegistryService local;
+
+    @Autowired
     SearchService search;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    UserService users;
 
     @GetMapping(
         path = "/admin/stats",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public StatsJson getStats(@RequestParam("token") String tokenValue) {
-        var token = users.useAccessToken(tokenValue);
-        if (token == null) {
-            return StatsJson.error("Invalid access token.");
+    public ResponseEntity<StatsJson> getStats(@RequestParam("token") String tokenValue) {
+        try {
+            admins.checkAdminUser();
+
+            var json = new StatsJson();
+            json.userCount = repositories.countUsers();
+            json.extensionCount = repositories.countExtensions();
+            json.namespaceCount = repositories.countNamespaces();
+            return ResponseEntity.ok(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(StatsJson.class);
         }
-        if (!UserData.ROLE_ADMIN.equals(token.getUser().getRole())) {
-            return StatsJson.error("Administration role is required.");
-        }
-        var json = new StatsJson();
-        json.userCount = repositories.countUsers();
-        json.extensionCount = repositories.countExtensions();
-        json.namespaceCount = repositories.countNamespaces();
-        return json;
     }
 
     @GetMapping(
         path = "/admin/log",
         produces = MediaType.TEXT_PLAIN_VALUE
     )
-    public String getLog(@RequestParam("token") String tokenValue,
-                         @RequestParam(name = "period", required = false) String periodString) {
-        var token = users.useAccessToken(tokenValue);
-        if (token == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid access token.");
-        }
-        if (!UserData.ROLE_ADMIN.equals(token.getUser().getRole())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administration role is required.");
-        }
+    public String getLog(@RequestParam(name = "period", required = false) String periodString) {
+        try {
+            admins.checkAdminUser();
 
-        Streamable<PersistedLog> logs;
-        if (Strings.isNullOrEmpty(periodString)) {
-            logs = repositories.findAllPersistedLogs();
-        } else {
-            try {
-                var period = Period.parse(periodString);
-                var now = TimeUtil.getCurrentUTC();
-                logs = repositories.findPersistedLogsAfter(now.minus(period));
-            } catch (DateTimeParseException exc) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid period");
+            Streamable<PersistedLog> logs;
+            if (Strings.isNullOrEmpty(periodString)) {
+                logs = repositories.findAllPersistedLogs();
+            } else {
+                try {
+                    var period = Period.parse(periodString);
+                    var now = TimeUtil.getCurrentUTC();
+                    logs = repositories.findPersistedLogsAfter(now.minus(period));
+                } catch (DateTimeParseException exc) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid period");
+                }
             }
+            return logs.stream()
+                    .map(this::toString)
+                    .collect(Collectors.joining("\n")) + "\n";
+        } catch (ErrorResultException exc) {
+            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
+            throw new ResponseStatusException(status);
         }
-        return logs.stream()
-                .map(this::toString)
-                .collect(Collectors.joining("\n")) + "\n";
     }
 
     private String toString(PersistedLog log) {
@@ -120,20 +111,18 @@ public class AdminAPI {
         path = "/admin/update-search-index",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResultJson updateSearchIndex(@RequestParam("token") String tokenValue) {
-        var token = users.useAccessToken(tokenValue);
-        if (token == null) {
-            return ResultJson.error("Invalid access token.");
-        }
-        if (!UserData.ROLE_ADMIN.equals(token.getUser().getRole())) {
-            return ResultJson.error("Administration role is required.");
-        }
+    public ResponseEntity<ResultJson> updateSearchIndex() {
+        try {
+            var adminUser = admins.checkAdminUser();
 
-        search.updateSearchIndex(true);
+            search.updateSearchIndex(true);
 
-        var result = ResultJson.success("Updated search index");
-        admins.logAdminAction(token.getUser(), result);
-        return result;
+            var result = ResultJson.success("Updated search index");
+            admins.logAdminAction(adminUser, result);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
     }
 
     @PostMapping(
@@ -141,14 +130,15 @@ public class AdminAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> editNamespaceMember(@PathVariable String namespaceName,
-                                         @RequestParam("user") String userName,
-                                         @RequestParam(required = false) String provider,
-                                         @RequestParam String role) {
+                                                          @RequestParam("user") String userName,
+                                                          @RequestParam(required = false) String provider,
+                                                          @RequestParam String role) {
         try {
-            var user = admins.checkAdminUser();
-            return new ResponseEntity<>(admins.editNamespaceMember(namespaceName, userName, provider, role, user), HttpStatus.OK);
+            var adminUser = admins.checkAdminUser();
+            var result = admins.editNamespaceMember(namespaceName, userName, provider, role, adminUser);
+            return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
-            return getErrorResponse(exc);
+            return exc.toResponseEntity();
         }
     }
 
@@ -157,26 +147,26 @@ public class AdminAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> deleteExtension(@PathVariable String namespaceName,
-                                      @RequestParam("extension") String extensionName,
-                                      @RequestParam(required = false) String version) {
+                                                      @RequestParam("extension") String extensionName,
+                                                      @RequestParam(required = false) String version) {
         try {
-            var user = admins.checkAdminUser();
-            return new ResponseEntity<ResultJson>(admins.deleteExtension(namespaceName, extensionName, version, user), HttpStatus.OK);
+            var adminUser = admins.checkAdminUser();
+            var result = admins.deleteExtension(namespaceName, extensionName, version, adminUser);
+            return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
-            return getErrorResponse(exc);
+            return exc.toResponseEntity();
         }
     }
 
     @GetMapping(path = "/admin/{namespaceName}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<NamespaceJson> getNamespace(@PathVariable String namespaceName) {
-        try {
-            admins.checkAdminUser();
-            var namespace = admins.getNamespace(namespaceName);
-            return new ResponseEntity<>(namespace, HttpStatus.OK);
-        } catch (ErrorResultException exc) {
-            var err = getErrorResponse(exc);
-            return new ResponseEntity<>(NamespaceJson.error(err.getBody().error), err.getStatusCode());
-        }
+        admins.checkAdminUser();
+
+        var namespace = local.getNamespace(namespaceName);
+        var serverUrl = UrlUtil.getBaseUrl();
+        namespace.membersUrl = UrlUtil.createApiUrl(serverUrl, "admin", namespace.name, "members");
+        namespace.roleUrl = UrlUtil.createApiUrl(serverUrl, "admin", namespace.name, "change-member");
+        return ResponseEntity.ok(namespace);
     }
 
     @GetMapping(path = "/admin/{namespaceName}/members", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -187,10 +177,9 @@ public class AdminAPI {
             var memberships = repositories.findMemberships(namespace);
             var membershipList = new NamespaceMembershipListJson();
             membershipList.namespaceMemberships = memberships.map(membership -> membership.toJson()).toList();
-            return new ResponseEntity<>(membershipList, HttpStatus.OK);
+            return ResponseEntity.ok(membershipList);
         } catch (ErrorResultException exc) {
-            var err = getErrorResponse(exc);
-            return new ResponseEntity<>(NamespaceMembershipListJson.error(err.getBody().error), err.getStatusCode());
+            return exc.toResponseEntity(NamespaceMembershipListJson.class);
         }
     }
 
@@ -209,7 +198,7 @@ public class AdminAPI {
                     .location(URI.create(url))
                     .body(json);
         } catch (ErrorResultException exc) {
-            return getErrorResponse(exc);
+            return exc.toResponseEntity();
         }
     }
 
@@ -218,12 +207,9 @@ public class AdminAPI {
         try {
             admins.checkAdminUser();
             var userPublishInfo = admins.getUserPublishInfo(provider, loginName);
-
-            return new ResponseEntity<>(userPublishInfo, HttpStatus.OK);
-            
+            return ResponseEntity.ok(userPublishInfo);
         } catch (ErrorResultException exc) {
-            var err = getErrorResponse(exc);
-            return new ResponseEntity<>(UserPublishInfoJson.error(err.getBody().error), err.getStatusCode());
+            return exc.toResponseEntity(UserPublishInfoJson.class);
         }
     }
 
@@ -233,17 +219,12 @@ public class AdminAPI {
     )
     public ResponseEntity<ResultJson> revokePublisherAgreement(@PathVariable String loginName, @PathVariable String provider) {
         try {
-            var user = admins.checkAdminUser();
-            return new ResponseEntity<>(admins.revokePublisherAgreement(provider, loginName, user), HttpStatus.OK);
+            var adminUser = admins.checkAdminUser();
+            var result = admins.revokePublisherAgreement(provider, loginName, adminUser);
+            return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
-            return getErrorResponse(exc);
+            return exc.toResponseEntity();
         }
-    }
-
-    private ResponseEntity<ResultJson> getErrorResponse(ErrorResultException exc) {
-            var json = ResultJson.error(exc.getMessage());
-            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
-            return new ResponseEntity<>(json, status);
     }
     
 }

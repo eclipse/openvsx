@@ -65,11 +65,15 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
                     <Avatar classes={{ root: this.props.classes.avatar }} variant='rounded' src={user.avatarUrl} />
                 </Grid>
             </Grid>
-            <Grid container>
-                <Grid item xs={12}>
-                    <UserPublisherAgreement user={user} />
+            {
+                user.publisherAgreement ?
+                <Grid container>
+                    <Grid item xs={12}>
+                        <UserPublisherAgreement user={user} />
+                    </Grid>
                 </Grid>
-            </Grid>
+                : null
+            }
         </React.Fragment>;
     }
 }

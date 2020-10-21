@@ -20,10 +20,10 @@ fi
 # Set the OAuth2 client ids and client secrets
 echo "spring.security.oauth2.client.registration.github.client-id=${GITHUB_CLIENT_ID:-none}" >> $OVSX_APP_PROFILE
 echo "spring.security.oauth2.client.registration.github.client-secret=${GITHUB_CLIENT_SECRET:-none}" >> $OVSX_APP_PROFILE
+echo "spring.security.oauth2.client.registration.eclipse.client-id=${ECLIPSE_CLIENT_ID:-none}" >> $OVSX_APP_PROFILE
+echo "spring.security.oauth2.client.registration.eclipse.client-secret=${ECLIPSE_CLIENT_SECRET:-none}" >> $OVSX_APP_PROFILE
 if [ -n "$ECLIPSE_CLIENT_ID" ] && [ -n "$ECLIPSE_CLIENT_SECRET" ]
 then
-    echo "spring.security.oauth2.client.registration.eclipse.client-id=$ECLIPSE_CLIENT_ID" >> $OVSX_APP_PROFILE
-    echo "spring.security.oauth2.client.registration.eclipse.client-secret=$ECLIPSE_CLIENT_SECRET" >> $OVSX_APP_PROFILE
     echo "ovsx.eclipse.publisher-agreement.version=1" >> $OVSX_APP_PROFILE
 fi
 

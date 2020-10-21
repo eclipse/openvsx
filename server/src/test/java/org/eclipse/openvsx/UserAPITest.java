@@ -85,7 +85,6 @@ public class UserAPITest {
 
     @Test
     public void testNotLoggedIn() throws Exception {
-        // Mockito.doReturn(null).when(users).getOAuth2Principal();
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(userJson(u -> {
@@ -134,7 +133,6 @@ public class UserAPITest {
 
     @Test
     public void testCreateAccessTokenNotLoggedIn() throws Exception {
-        mockUserData();
         mockMvc.perform(post("/user/token/create?description={description}", "This is my token")
                 .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
@@ -159,7 +157,6 @@ public class UserAPITest {
 
     @Test
     public void testDeleteAccessTokenNotLoggedIn() throws Exception {
-        mockUserData();
         mockMvc.perform(post("/user/token/delete/{id}", 100)
                 .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
@@ -293,7 +290,6 @@ public class UserAPITest {
 
     @Test
     public void testAddNamespaceMemberNotLoggedIn() throws Exception {
-        mockUserData();
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
                     "other_user", "contributor")
                 .with(csrf().asHeader()))

@@ -38,7 +38,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
         try {
             if (namespaceName !== '') {
                 setLoading(true);
-                const namespace = await service.findNamespace(namespaceName);
+                const namespace = await service.admin.findNamespace(namespaceName);
                 setNotFound('');
                 setCurrentNamespace(namespace);
                 setLoading(false);
@@ -65,7 +65,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
     };
 
     const onCreate = async () => {
-        await service.createNamespace({
+        await service.admin.createNamespace({
             name: inputValue
         });
         await fetchNamespace(inputValue);
@@ -87,6 +87,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
                             pageSettings={pageSettings}
                             service={service}
                             user={user}
+                            filterUsers={() => true}
                         />
                     </NamespaceDetailConfigContext.Provider>
                     : notFound ?

@@ -11,7 +11,7 @@
 import React, { FunctionComponent, useEffect, useState, useContext } from 'react';
 import { Box, Typography, Button, Paper, makeStyles } from '@material-ui/core';
 import { UserNamespaceMember } from './user-namespace-member-component';
-import { Namespace, NamespaceMembership, MembershipRole, isError } from '../../extension-registry-types';
+import { Namespace, NamespaceMembership, MembershipRole, isError, UserData } from '../../extension-registry-types';
 import { AddMemberDialog } from './add-namespace-member-dialog';
 import { ServiceContext } from '../../default/default-app';
 import { UserContext } from '../../main';
@@ -38,6 +38,7 @@ const useStyles = makeStyles((theme) => ({
 interface UserNamespaceMemberListProps {
     namespace: Namespace;
     setLoadingState: (loadingState: boolean) => void;
+    filterUsers: (user: UserData) => boolean;
     handleError: (err: Error | Partial<ErrorResponse>) => void;
 }
 
@@ -117,7 +118,8 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
                         user={user}
                         onClose={handleCloseAddDialog}
                         open={addDialogIsOpen}
-                        setLoadingState={props.setLoadingState}>
+                        setLoadingState={props.setLoadingState}
+                        filterUsers={props.filterUsers}>
                     </AddMemberDialog>
                 </>
                 : ''

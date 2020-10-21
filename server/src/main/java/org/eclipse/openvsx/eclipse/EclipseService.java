@@ -103,8 +103,12 @@ public class EclipseService {
         return TimeUtil.convertToUTC(local, publisherAgreementTimeZone);
     };
 
+    public boolean isActive() {
+        return !Strings.isNullOrEmpty(publisherAgreementVersion);
+    }
+
     public void checkPublisherAgreement(UserData user) {
-        if (Strings.isNullOrEmpty(publisherAgreementVersion)) {
+        if (!isActive()) {
             return;
         }
         // Users without authentication provider have been created directly in the DB,
@@ -143,7 +147,7 @@ public class EclipseService {
      * Enrich the given JSON user data with Eclipse-specific information.
      */
     public void enrichUserJson(UserJson json, UserData user) {
-        if (Strings.isNullOrEmpty(publisherAgreementVersion)) {
+        if (!isActive()) {
             return;
         }
         var eclipseData = user.getEclipseData();

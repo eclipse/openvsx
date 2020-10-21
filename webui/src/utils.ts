@@ -18,7 +18,7 @@ export function addQuery(url: string, queries: { key: string, value: string | nu
     return url + '?' + nonEmpty.map<string>(q => q.key + '=' + encodeURIComponent(q.value!)).join('&');
 }
 
-export function createAbsoluteURL(arr: string[], queries?: { key: string, value: string | number }[]): string {
+export function createAbsoluteURL(arr: string[], queries?: { key: string, value: string | number | undefined }[]): string {
     const url = arr.length === 0 ? '' : arr.reduce((prev, curr) => prev + '/' + curr);
     if (queries && queries.length > 0) {
         return addQuery(url, queries);

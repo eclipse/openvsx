@@ -245,9 +245,7 @@ public class UserAPI {
             var json = users.setNamespaceMember(requestingUser, namespace, provider, user, role);
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
-            var json = ResultJson.error(exc.getMessage());
-            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
-            return new ResponseEntity<>(json, status);
+            return exc.toResponseEntity();
         }
     }
 

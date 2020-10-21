@@ -32,11 +32,15 @@ export const PublisherDetails: FunctionComponent<PublisherDetailsProps> = props 
 
     return <>
         <UserSettingsProfile user={props.publisherInfo.user} />
-        <Typography>
-            {props.publisherInfo.activeAccessTokenNum} active access token{props.publisherInfo.activeAccessTokenNum !== 1 ? 's' : ''}.
-        </Typography>
-        {props.publisherInfo.extensions.length ? <UserExtensionList extensions={props.publisherInfo.extensions} loading={false} /> : ''}
-        <Box className={classes.buttonContainer}>
+        <Box mt={2}>
+            <Typography>
+                {props.publisherInfo.activeAccessTokenNum} active access token{props.publisherInfo.activeAccessTokenNum !== 1 ? 's' : ''}.
+            </Typography>
+        </Box>
+        <Box mt={2}>
+            <UserExtensionList extensions={props.publisherInfo.extensions} loading={false} />
+        </Box>
+        <Box mt={2} className={classes.buttonContainer}>
             <PublisherRevokeDialog publisherInfo={props.publisherInfo} />
         </Box>
     </>;

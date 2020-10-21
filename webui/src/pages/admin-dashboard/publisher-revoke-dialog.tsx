@@ -35,7 +35,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
     const handleRemoveVersions = async () => {
         try {
             updateContext.setLoading(true);
-            const result = await service.revokePublishersAgreement(props.publisherInfo.user.provider!, props.publisherInfo.user.loginName);
+            const result = await service.admin.revokePublisherAgreement(props.publisherInfo.user.provider!, props.publisherInfo.user.loginName);
             if (isError(result)) {
                 throw (result.error);
             }
@@ -54,12 +54,13 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
         <Dialog
             open={dialogOpen}
             onClose={handleCancelRevokeDialog}>
-            <DialogTitle >Revoke Publishers Agreement?</DialogTitle>
+            <DialogTitle >Revoke Publisher Agreement?</DialogTitle>
             <DialogContent>
                 <DialogContentText component='div'>
                     <Typography>
-                        This will inactivate {props.publisherInfo.user.loginName}s access
-                        tokens and delete the extensions published by {props.publisherInfo.user.loginName}.
+                        This will deactivate {props.publisherInfo.user.loginName}s access
+                        tokens and delete all {props.publisherInfo.extensions.length} extension versions
+                        published by {props.publisherInfo.user.loginName}.
                     </Typography>
                 </DialogContentText>
             </DialogContent>

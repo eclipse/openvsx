@@ -293,9 +293,7 @@ public class RegistryAPI {
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
-                var json = SearchResultJson.error(exc.getMessage());
-                var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
-                return new ResponseEntity<>(json, status);
+                return exc.toResponseEntity(SearchResultJson.class);
             }
         }
         return ResponseEntity.ok(result);
@@ -347,9 +345,7 @@ public class RegistryAPI {
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
-                var json = QueryResultJson.error(exc.getMessage());
-                var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
-                return new ResponseEntity<>(json, status);
+                return exc.toResponseEntity(QueryResultJson.class);
             }
         }
         return ResponseEntity.ok(result);
@@ -396,9 +392,7 @@ public class RegistryAPI {
                     .location(URI.create(url))
                     .body(json);
         } catch (ErrorResultException exc) {
-            var json = ResultJson.error(exc.getMessage());
-            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
-            return new ResponseEntity<>(json, status);
+            return exc.toResponseEntity();
         }
     }
 
@@ -442,9 +436,7 @@ public class RegistryAPI {
                     .location(URI.create(url))
                     .body(json);
         } catch (ErrorResultException exc) {
-            var json = ExtensionJson.error(exc.getMessage());
-            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
-            return new ResponseEntity<>(json, status);
+            return exc.toResponseEntity(ExtensionJson.class);
         }
     }
 

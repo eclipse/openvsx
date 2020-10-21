@@ -16,6 +16,7 @@ import { ErrorHandlerContext } from '../../main';
 
 interface ExtensionRemoveDialogProps {
     versions: string[];
+    removeAll: boolean;
     extension: Extension;
     onUpdate: () => void;
 }
@@ -33,8 +34,12 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
     };
     const handleRemoveVersions = async () => {
         try {
-            const prms = props.versions.map(version => service.deleteExtensionVersion({ version, extension: props.extension.name, namespace: props.extension.namespace }));
-            await Promise.all(prms);
+            if (props.removeAll) {
+                await service.admin.deleteExtension({ namespace: props.extension.namespace, extension: props.extension.name });
+            } else {
+                const prms = props.versions.map(version => service.admin.deleteExtension({ namespace: props.extension.namespace, extension: props.extension.name, version }));
+                await Promise.all(prms);
+            }
             props.onUpdate();
             setDialogOpen(false);
         } catch (err) {

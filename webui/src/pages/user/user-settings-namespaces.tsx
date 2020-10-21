@@ -103,6 +103,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     render() {
         const namespace = this.state.chosenNamespace;
         const namespaceAccessUrl = this.props.pageSettings.urls.namespaceAccessInfo;
+        const user = this.props.user;
         return <React.Fragment>
             <DelayedLoadIndicator loading={this.state.loading} />
             {
@@ -116,11 +117,12 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                             />
                             <NamespaceDetail
                                 namespace={namespace}
-                                user={this.props.user}
+                                user={user}
                                 service={this.props.service}
                                 handleError={this.props.handleError}
                                 pageSettings={this.props.pageSettings}
-                                setLoadingState={loading => this.setState({ loading })}></NamespaceDetail>
+                                setLoadingState={loading => this.setState({ loading })}
+                                filterUsers={foundUser => foundUser.provider !== user.provider || foundUser.loginName !== user.loginName} />
                         </Box>
                     </React.Fragment>
                     : !this.state.loading ? <Typography variant='body1'>No namespaces available. {

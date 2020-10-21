@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme) => ({
 export interface AddMemberDialoProps {
     open: boolean;
     onClose: () => void;
+    filterUsers: (user: UserData) => boolean;
     handleError: (err: Error | Partial<ErrorResponse>) => void;
     user: UserData;
     service: ExtensionRegistryService;
@@ -142,27 +143,23 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
                 <Fade {...TransitionProps} timeout={350}>
                     <Paper className={classes.foundUserListContainer}>
                         {
-                            foundUsers.map(foundUser => {
-                                if (props.user.loginName !== foundUser.loginName || props.user.provider !== foundUser.provider) {
-                                    return <Box
-                                        onClick={() => addUser(foundUser)}
-                                        className={classes.foundUserContainer}
-                                        key={'found' + foundUser.loginName}>
-                                        <Box flex='1' marginLeft='10px'>
-                                            <Box fontWeight='bold'>
-                                                {foundUser.loginName}
-                                            </Box>
-                                            <Box fontSize='0.75rem'>
-                                                {foundUser.fullName}
-                                            </Box>
+                            foundUsers.filter(props.filterUsers).map(foundUser => {
+                                return <Box
+                                    onClick={() => addUser(foundUser)}
+                                    className={classes.foundUserContainer}
+                                    key={'found' + foundUser.loginName}>
+                                    <Box flex='1' marginLeft='10px'>
+                                        <Box fontWeight='bold'>
+                                            {foundUser.loginName}
                                         </Box>
-                                        <Box flex='1'>
-                                            <Avatar variant='rounded' src={foundUser.avatarUrl} />
+                                        <Box fontSize='0.75rem'>
+                                            {foundUser.fullName}
                                         </Box>
-                                    </Box>;
-                                } else {
-                                    return '';
-                                }
+                                    </Box>
+                                    <Box flex='1'>
+                                        <Avatar variant='rounded' src={foundUser.avatarUrl} />
+                                    </Box>
+                                </Box>;
                             })
                         }
                     </Paper>

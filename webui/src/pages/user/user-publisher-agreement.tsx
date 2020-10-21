@@ -83,45 +83,46 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         setDialogOpen(false);
     };
 
+    if (!user.publisherAgreement) {
+        return null;
+    }
     return <>
         <Paper classes={{ root: classes.paper }} elevation={3}>
             {
-                !user.publisherAgreement ?
-                    null :
-                    user.publisherAgreement === 'signed' ?
-                        <Typography variant='body1'>
-                            {
-                                user.publisherAgreementTimestamp
-                                    ? <>You signed the Eclipse publisher agreement <Timestamp value={user.publisherAgreementTimestamp} />.</>
-                                    : 'You signed the Eclipse publisher agreement.'
-                            }
-                        </Typography>
-                        :
-                        !user.additionalLogins || !user.additionalLogins.find(login => login.provider === 'eclipse') ?
-                            <>
-                                <Typography variant='body1'>
-                                    You need to sign a publisher agreement before you can publish any extension to this registry.
-                                    To start the signing process, please log in with an Eclipse Foundation account.
-                                </Typography>
-                                <Box mt={2} display='flex' justifyContent='flex-end'>
-                                    <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
-                                        <Button variant='outlined' color='secondary'>
-                                            Log in with Eclipse
-                                        </Button>
-                                    </Link>
-                                </Box>
-                            </>
-                            :
-                            <>
-                                <Typography variant='body1'>
-                                    You need to sign a publisher agreement before you can publish any extension to this registry.
-                                </Typography>
-                                <Box mt={2} display='flex' justifyContent='flex-end'>
-                                    <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
-                                        Show Publisher Agreement
+                user.publisherAgreement === 'signed' ?
+                    <Typography variant='body1'>
+                        {
+                            user.publisherAgreementTimestamp
+                                ? <>You signed the Eclipse publisher agreement <Timestamp value={user.publisherAgreementTimestamp} />.</>
+                                : 'You signed the Eclipse publisher agreement.'
+                        }
+                    </Typography>
+                    :
+                    !user.additionalLogins || !user.additionalLogins.find(login => login.provider === 'eclipse') ?
+                        <>
+                            <Typography variant='body1'>
+                                You need to sign a publisher agreement before you can publish any extension to this registry.
+                                To start the signing process, please log in with an Eclipse Foundation account.
+                            </Typography>
+                            <Box mt={2} display='flex' justifyContent='flex-end'>
+                                <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+                                    <Button variant='outlined' color='secondary'>
+                                        Log in with Eclipse
                                     </Button>
-                                </Box>
-                            </>}
+                                </Link>
+                            </Box>
+                        </>
+                        :
+                        <>
+                            <Typography variant='body1'>
+                                You need to sign a publisher agreement before you can publish any extension to this registry.
+                            </Typography>
+                            <Box mt={2} display='flex' justifyContent='flex-end'>
+                                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
+                                    Show Publisher Agreement
+                                </Button>
+                            </Box>
+                        </>}
         </Paper>
         <Dialog
             open={dialogOpen}

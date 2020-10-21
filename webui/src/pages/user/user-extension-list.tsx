@@ -36,10 +36,12 @@ export const UserExtensionList: FunctionComponent<UserExtensionListProps> = prop
         <div className={classes.extensions}>
             <DelayedLoadIndicator loading={props.loading} />
             {
-                props.extensions ? props.extensions.map((extension: Extension, i: number) => <UserNamespaceExtensionListItem
-                    key={`${i}${extension.displayName}`}
+                props.extensions && props.extensions.length > 0 ?
+                props.extensions.map((extension: Extension, i: number) => <UserNamespaceExtensionListItem
+                    key={`${i}${extension.name}${extension.version}`}
                     extension={extension}
-                />) : null
+                />)
+                : 'This user has not published any extensions.'
             }
         </div>
     </>;
