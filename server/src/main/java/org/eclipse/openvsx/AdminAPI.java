@@ -160,13 +160,17 @@ public class AdminAPI {
 
     @GetMapping(path = "/admin/{namespaceName}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<NamespaceJson> getNamespace(@PathVariable String namespaceName) {
-        admins.checkAdminUser();
+        try {
+            admins.checkAdminUser();
 
-        var namespace = local.getNamespace(namespaceName);
-        var serverUrl = UrlUtil.getBaseUrl();
-        namespace.membersUrl = UrlUtil.createApiUrl(serverUrl, "admin", namespace.name, "members");
-        namespace.roleUrl = UrlUtil.createApiUrl(serverUrl, "admin", namespace.name, "change-member");
-        return ResponseEntity.ok(namespace);
+            var namespace = local.getNamespace(namespaceName);
+            var serverUrl = UrlUtil.getBaseUrl();
+            namespace.membersUrl = UrlUtil.createApiUrl(serverUrl, "admin", namespace.name, "members");
+            namespace.roleUrl = UrlUtil.createApiUrl(serverUrl, "admin", namespace.name, "change-member");
+            return ResponseEntity.ok(namespace);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(NamespaceJson.class);
+        }
     }
 
     @GetMapping(path = "/admin/{namespaceName}/members", produces = MediaType.APPLICATION_JSON_VALUE)
