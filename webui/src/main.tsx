@@ -49,11 +49,12 @@ const mainStyles = (theme: Theme) => createStyles({
         alignItems: 'center'
     },
     footer: {
-        position: 'absolute',
+        position: 'fixed',
         bottom: 0,
         width: '100%',
-        padding: `${theme.spacing(1.5)}px ${theme.spacing(3)}px`,
-        backgroundColor: theme.palette.primary.dark
+        padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: '0px -2px 6px 0px rgba(0, 0, 0, 0.5)'
     },
     fixed: {
         position: 'fixed',
@@ -76,7 +77,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         this.state = {
             userLoading: true,
             error: '',
-            isErrorDialogOpen: false
+            isErrorDialogOpen: false,
+            isFooterExpanded: false
         };
     }
 
@@ -193,8 +195,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 </Box>
                                 {
                                     FooterContent ?
-                                        <footer className={classes.footer}>
-                                            <FooterContent />
+                                        <footer
+                                            className={classes.footer}
+                                            onMouseEnter={() => this.setState({ isFooterExpanded: true })}
+                                            onMouseLeave={() => this.setState({ isFooterExpanded: false })} >
+                                            <FooterContent expanded={this.state.isFooterExpanded} />
                                         </footer>
                                         : null
                                 }
@@ -216,12 +221,13 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
 
     protected getContentPadding(): number {
         const metrics = this.props.pageSettings.metrics;
-        if (metrics && metrics.maxFooterHeight) {
-            return metrics.maxFooterHeight + 24;
+        if (metrics && metrics.footerHeight) {
+            return metrics.footerHeight + 24;
         } else {
             return 0;
         }
     }
+
 }
 
 export namespace MainComponent {
@@ -234,7 +240,8 @@ export namespace MainComponent {
         user?: UserData;
         userLoading: boolean;
         error: string;
-        isErrorDialogOpen: boolean
+        isErrorDialogOpen: boolean;
+        isFooterExpanded: boolean;
     }
 }
 export const Main = withStyles(mainStyles)(MainComponent);

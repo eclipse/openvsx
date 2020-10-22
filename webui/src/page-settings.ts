@@ -18,14 +18,14 @@ export interface PageSettings {
         toolbarContent?: React.ComponentType;
         defaultMenuContent?: React.ComponentType;
         mobileMenuContent?: React.ComponentType;
-        footerContent?: React.ComponentType;
+        footerContent?: React.ComponentType<{ expanded: boolean }>;
         searchHeader?: React.ComponentType;
         reportAbuse?: React.ComponentType<{ extension: Extension } & Styleable>;
         claimNamespace?: React.ComponentType<{ extension: Extension } & Styleable>;
         additionalRoutes?: React.ComponentType;
     };
     metrics?: {
-        maxFooterHeight?: number;
+        footerHeight?: number;
     };
     urls: {
         extensionDefaultIcon: string;
