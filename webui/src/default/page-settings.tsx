@@ -28,7 +28,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             marginTop: '8px'
         }
     });
-    const toolbarContent = () =>
+    const toolbarContent: React.FunctionComponent = () =>
         <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
             <OpenVSXLogo prefersDarkMode={prefersDarkMode} className={toolbarStyle().logo}/>
         </RouteLink>;
@@ -43,10 +43,11 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             }
         },
         link: {
+            color: theme.palette.text.primary,
             textDecoration: 'none',
-            color: theme.palette.primary.main,
             '&:hover': {
-                textDecoration: 'underline'
+                color: theme.palette.secondary.main,
+                textDecoration: 'none'
             }
         },
         repositoryLink: {
@@ -58,7 +59,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             }
         }
     });
-    const footerContent = () =>
+    const footerContent: React.FunctionComponent<{ expanded: boolean }> = () =>
         <Box className={footerStyle().wrapper}>
             <Link
                 target='_blank'
@@ -79,12 +80,13 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             textAlign: 'center'
         }
     });
-    const searchHeader = () =>
+    const searchHeader: React.FunctionComponent = () =>
         <Typography variant='h4' classes={{ root: searchStyle().typography }}>
             Extensions for VS Code Compatible Editors
         </Typography>;
 
-    const additionalRoutes = () => <Route path='/about' render={() => <About />} />;
+    const additionalRoutes: React.FunctionComponent = () =>
+        <Route path='/about' render={() => <About />} />;
 
     return {
         pageTitle: 'Open VSX Registry',
@@ -98,7 +100,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             additionalRoutes
         },
         metrics: {
-            maxFooterHeight: 50
+            footerHeight: 69 // Maximal height reached for small screens
         },
         urls: {
             extensionDefaultIcon: '/default-icon.png',
