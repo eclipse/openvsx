@@ -11,8 +11,7 @@
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@material-ui/core';
 import { PublisherInfo, isError } from '../../extension-registry-types';
-import { ServiceContext } from '../../default/default-app';
-import { ErrorHandlerContext } from '../../main';
+import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 
 interface PublisherRevokeDialogProps {
@@ -20,8 +19,7 @@ interface PublisherRevokeDialogProps {
 }
 
 export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps> = props => {
-    const service = useContext(ServiceContext);
-    const errorContext = useContext(ErrorHandlerContext);
+    const { service, handleError } = useContext(MainContext);
 
     const updateContext = useContext(UpdateContext);
 
@@ -43,7 +41,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
             updateContext.setLoading(false);
             setDialogOpen(false);
         } catch (err) {
-            errorContext && errorContext.handleError(err);
+            handleError(err);
         }
     };
 

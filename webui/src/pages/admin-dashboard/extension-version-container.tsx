@@ -39,7 +39,6 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
     const { extension } = props;
     const classes = useStyles();
 
-
     const getVersions = () => {
         const versionMap = new Map<string, boolean>();
         Object.keys(extension.allVersions).forEach(version => {

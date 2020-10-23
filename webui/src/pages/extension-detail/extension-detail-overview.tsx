@@ -18,15 +18,13 @@ import HomeIcon from '@material-ui/icons/Home';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
+import { MainContext } from '../../context';
 import { addQuery, createRoute } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
-import { ExtensionRegistryService } from '../../extension-registry-service';
 import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-registry-types';
 import { ExtensionListRoutes } from '../extension-list/extension-list-container';
-import { PageSettings } from '../../page-settings';
 import { ExtensionDetailRoutes } from './extension-detail';
-import { ErrorResponse } from '../../server-request';
 import linkIcon from '../../components/link-icon';
 
 const overviewStyles = (theme: Theme) => createStyles({
@@ -152,6 +150,9 @@ const overviewStyles = (theme: Theme) => createStyles({
 
 class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOverview.Props, ExtensionDetailOverview.State> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     protected markdownIt: MarkdownIt;
 
     constructor(props: ExtensionDetailOverview.Props) {
@@ -184,10 +185,10 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     protected async updateReadme(): Promise<void> {
         if (this.props.extension.files.readme) {
             try {
-                const readme = await this.props.service.getExtensionReadme(this.props.extension);
+                const readme = await this.context.service.getExtensionReadme(this.props.extension);
                 this.setState({ readme, loading: false }, () => this.scrollToHeading());
             } catch (err) {
-                this.props.handleError(err);
+                this.context.handleError(err);
                 this.setState({ loading: false });
             }
         } else {
@@ -210,8 +211,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
         const { classes, extension } = this.props;
-        const ClaimNamespace = this.props.pageSettings.elements.claimNamespace;
-        const ReportAbuse = this.props.pageSettings.elements.reportAbuse;
+        const ClaimNamespace = this.context.pageSettings.elements.claimNamespace;
+        const ReportAbuse = this.context.pageSettings.elements.reportAbuse;
         return <React.Fragment>
             <Box className={this.props.classes.overview}>
                 <Box className={classes.markdown} flex={5} overflow='auto'>
@@ -276,7 +277,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                 </RouteLink>)}
                             {this.renderInfo('Access Type',
                                 <Link
-                                    href={this.props.pageSettings.urls.namespaceAccessInfo}
+                                    href={this.context.pageSettings.urls.namespaceAccessInfo}
                                     target='_blank'
                                     className={this.props.classes.link}>
                                     {extension.namespaceAccess || 'unknown'}
@@ -424,10 +425,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 export namespace ExtensionDetailOverview {
     export interface Props extends WithStyles<typeof overviewStyles>, RouteComponentProps {
         extension: Extension;
-        service: ExtensionRegistryService;
-        pageSettings: PageSettings;
         selectVersion: (version: string) => void;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         readme?: string;

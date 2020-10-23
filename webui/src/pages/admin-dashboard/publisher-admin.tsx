@@ -13,22 +13,16 @@ import { Typography, Box } from '@material-ui/core';
 
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { PublisherInfo } from '../../extension-registry-types';
-import { PageSettingsContext, ServiceContext } from '../../default/default-app';
-import { UserContext, ErrorHandlerContext } from '../../main';
+import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
-import { handleError } from '../../utils';
 import { PublisherDetails } from './publisher-details';
 
 export const UpdateContext = createContext({ handleUpdate: () => { }, setLoading: (value: React.SetStateAction<boolean>) => { } });
 export const PublisherAdmin: FunctionComponent = props => {
-    const errorContext = useContext(ErrorHandlerContext);
-
     const [loading, setLoading] = useState(false);
 
-    const pageSettings = useContext(PageSettingsContext);
-    const service = useContext(ServiceContext);
-    const user = useContext(UserContext);
+    const { pageSettings, service, user, handleError } = useContext(MainContext);
 
     const [inputValue, setInputValue] = useState('');
     const onChangeInput = (name: string) => {
@@ -54,8 +48,6 @@ export const PublisherAdmin: FunctionComponent = props => {
             if (err && err.status && err.status === 404) {
                 setNotFound(publisherName);
                 setPublisher(undefined);
-            } else if (errorContext) {
-                errorContext.handleError(err);
             } else {
                 handleError(err);
             }

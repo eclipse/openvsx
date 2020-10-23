@@ -13,7 +13,7 @@ import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@material-ui/core';
 import { StyledInput } from './namespace-input';
-import { ServiceContext } from '../../default/default-app';
+import { MainContext } from '../../context';
 import { handleError } from '../../utils';
 import { isError, Extension } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';
@@ -46,7 +46,7 @@ export const ExtensionAdmin: FunctionComponent = props => {
     const [namespaceFieldError, setNamespaceFieldError] = useState(false);
 
     const handleUpdate = () => findExtension();
-    const service = useContext(ServiceContext);
+    const { service } = useContext(MainContext);
     const [extension, setExtension] = useState<Extension | undefined>(undefined);
     const findExtension = async () => {
         const extensionUrl = service.getExtensionApiUrl({

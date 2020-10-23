@@ -14,12 +14,10 @@ import {
     withStyles, Box, Typography,
     Tabs, Tab, useTheme, useMediaQuery, Link
 } from '@material-ui/core';
-import { UserData, Namespace } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
+import { Namespace } from '../../extension-registry-types';
 import { makeStyles } from '@material-ui/styles';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { ErrorResponse } from '../../server-request';
-import { PageSettings } from '../../page-settings';
+import { MainContext } from '../../context';
 import { NamespaceDetail } from './user-settings-namespace-detail';
 
 
@@ -85,6 +83,9 @@ const NamespacesTabs = (props: NamespaceTabProps) => {
 
 class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamespacesComponent.Props, UserSettingsNamespacesComponent.State> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     constructor(props: UserSettingsNamespacesComponent.Props) {
         super(props);
 
@@ -102,8 +103,8 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
     render() {
         const namespace = this.state.chosenNamespace;
-        const namespaceAccessUrl = this.props.pageSettings.urls.namespaceAccessInfo;
-        const user = this.props.user;
+        const namespaceAccessUrl = this.context.pageSettings.urls.namespaceAccessInfo;
+        const user = this.context.user;
         return <React.Fragment>
             <DelayedLoadIndicator loading={this.state.loading} />
             {
@@ -117,12 +118,8 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                             />
                             <NamespaceDetail
                                 namespace={namespace}
-                                user={user}
-                                service={this.props.service}
-                                handleError={this.props.handleError}
-                                pageSettings={this.props.pageSettings}
                                 setLoadingState={loading => this.setState({ loading })}
-                                filterUsers={foundUser => foundUser.provider !== user.provider || foundUser.loginName !== user.loginName} />
+                                filterUsers={foundUser => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName} />
                         </Box>
                     </React.Fragment>
                     : !this.state.loading ? <Typography variant='body1'>No namespaces available. {
@@ -146,7 +143,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     }
 
     protected async initNamespaces(): Promise<void> {
-        const namespaces = await this.props.service.getNamespaces();
+        const namespaces = await this.context.service.getNamespaces();
         const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
         this.setState({ namespaces, chosenNamespace, loading: false });
     }
@@ -154,10 +151,6 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
 export namespace UserSettingsNamespacesComponent {
     export interface Props extends WithStyles<typeof namespacesStyle> {
-        user: UserData;
-        service: ExtensionRegistryService;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
-        pageSettings: PageSettings;
     }
 
     export interface State {

@@ -13,10 +13,9 @@ import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Bu
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
-import { UserData, PersonalAccessToken } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
+import { PersonalAccessToken } from '../../extension-registry-types';
+import { MainContext } from '../../context';
 import { GenerateTokenDialog } from './generate-token-dialog';
-import { ErrorResponse } from '../../server-request';
 import { UserSettingsRoutes } from './user-settings';
 
 const tokensStyle = (theme: Theme) => createStyles({
@@ -56,6 +55,9 @@ const tokensStyle = (theme: Theme) => createStyles({
 
 class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComponent.Props, UserSettingsTokensComponent.State> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     constructor(props: UserSettingsTokensComponent.Props) {
         super(props);
 
@@ -67,11 +69,14 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     }
 
     protected async updateTokens() {
+        if (!this.context.user) {
+            return;
+        }
         try {
-            const tokens = await this.props.service.getAccessTokens(this.props.user);
+            const tokens = await this.context.service.getAccessTokens(this.context.user);
             this.setState({ tokens, loading: false });
         } catch (err) {
-            this.props.handleError(err);
+            this.context.handleError(err);
             this.setState({ loading: false });
         }
     }
@@ -79,20 +84,20 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     protected handleDelete = async (token: PersonalAccessToken) => {
         this.setState({ loading: true });
         try {
-            await this.props.service.deleteAccessToken(token);
+            await this.context.service.deleteAccessToken(token);
             this.updateTokens();
         } catch (err) {
-            this.props.handleError(err);
+            this.context.handleError(err);
         }
     };
 
     protected handleDeleteAll = async () => {
         this.setState({ loading: true });
         try {
-            await this.props.service.deleteAllAccessTokens(this.state.tokens);
+            await this.context.service.deleteAllAccessTokens(this.state.tokens);
             this.updateTokens();
         } catch (err) {
-            this.props.handleError(err);
+            this.context.handleError(err);
         }
     };
 
@@ -102,7 +107,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     };
 
     render() {
-        const agreement = this.props.user.publisherAgreement;
+        const agreement = this.context.user?.publisherAgreement;
         if (agreement === 'none' || agreement === 'outdated') {
             return <Box>
                 <Typography variant='body1' className={this.props.classes.empty}>
@@ -124,9 +129,6 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                     <Box mr={1} mb={1}>
                         <GenerateTokenDialog
                             handleTokenGenerated={this.handleTokenGenerated}
-                            service={this.props.service}
-                            user={this.props.user}
-                            setError={this.props.handleError}
                         />
                     </Box>
                     <Box>
@@ -178,9 +180,6 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
 export namespace UserSettingsTokensComponent {
     export interface Props extends WithStyles<typeof tokensStyle> {
-        user: UserData;
-        service: ExtensionRegistryService;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

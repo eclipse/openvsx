@@ -12,10 +12,9 @@ import * as React from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme } from '@material-ui/core';
 import { withStyles, createStyles, WithStyles } from '@material-ui/styles';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { ExtensionRegistryService } from '../../extension-registry-service';
-import { UserData, Extension, isError } from '../../extension-registry-types';
+import { Extension, isError } from '../../extension-registry-types';
 import { ExtensionRatingStarSetter } from './extension-rating-star-setter';
-import { ErrorResponse } from '../../server-request';
+import { MainContext } from '../../context';
 
 const REVIEW_COMMENT_SIZE = 2048;
 
@@ -39,6 +38,9 @@ const reviewDialogStyles = (theme: Theme) => createStyles({
 
 class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDialogComponent.Props, ExtensionReviewDialogComponent.State> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     protected starSetter: ExtensionRatingStarSetter | null;
 
     constructor(props: ExtensionReviewDialogComponent.Props) {
@@ -52,7 +54,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     }
 
     protected handleOpenButton = () => {
-        if (this.props.user) {
+        if (this.context.user) {
             this.setState({ open: true, posted: false });
         }
     };
@@ -63,7 +65,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
         this.setState({ posted: true });
         try {
             const rating = this.starSetter ? this.starSetter.state.number : 1;
-            const result = await this.props.service.postReview({
+            const result = await this.context.service.postReview({
                 rating,
                 comment: this.state.comment
             }, this.props.reviewPostUrl);
@@ -73,7 +75,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             this.setState({ open: false, comment: '' });
             this.props.saveCompleted();
         } catch (err) {
-            this.props.setError(err);
+            this.context.handleError(err);
         }
     };
 
@@ -101,6 +103,9 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     }
 
     render() {
+        if (!this.context.user) {
+            return null;
+        }
         return <React.Fragment>
             <Button variant='contained' color='secondary' onClick={this.handleOpenButton}>
                 Write a Review
@@ -109,7 +114,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                 <DialogTitle>{this.props.extension.displayName || this.props.extension.name} Review</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Your review will be posted publicly as {this.props.user.loginName}
+                        Your review will be posted publicly as {this.context.user.loginName}
                     </DialogContentText>
                     <div className={this.props.classes.stars}>
                         <ExtensionRatingStarSetter ref={(ref: any) => this.starSetter = ref} />
@@ -147,11 +152,7 @@ export namespace ExtensionReviewDialogComponent {
     export interface Props extends WithStyles<typeof reviewDialogStyles> {
         extension: Extension;
         reviewPostUrl: string;
-        user: UserData;
-        service: ExtensionRegistryService;
         saveCompleted: () => void;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
-
     }
     export interface State {
         open: boolean;

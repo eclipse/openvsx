@@ -15,18 +15,16 @@ import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import PublicIcon from '@material-ui/icons/Public';
 import WarningIcon from '@material-ui/icons/Warning';
+import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { HoverPopover } from '../../components/hover-popover';
-import { ExtensionRegistryService } from '../../extension-registry-service';
 import { Extension, UserData, isError } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
-import { PageSettings } from '../../page-settings';
 import { ExtensionDetailOverview } from './extension-detail-overview';
 import { ExtensionDetailReviews } from './extension-detail-reviews';
 import { ExtensionDetailTabs } from './extension-detail-tabs';
 import { ExportRatingStars } from './extension-rating-stars';
-import { ErrorResponse } from '../../server-request';
 
 export namespace ExtensionDetailRoutes {
     export namespace Parameters {
@@ -145,6 +143,9 @@ const detailStyles = (theme: Theme) => createStyles({
 
 export class ExtensionDetailComponent extends React.Component<ExtensionDetailComponent.Props, ExtensionDetailComponent.State> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     constructor(props: ExtensionDetailComponent.Props) {
         super(props);
         this.state = { loading: true };
@@ -152,7 +153,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     componentDidMount(): void {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
-        document.title = `${params.name} – ${this.props.pageSettings.pageTitle}`;
+        document.title = `${params.name} – ${this.context.pageSettings.pageTitle}`;
         this.updateExtension(this.getExtensionApiUrl(params));
     }
 
@@ -172,21 +173,21 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     protected getExtensionApiUrl(params: ExtensionDetailComponent.Params): string {
         if (params.version === 'reviews') {
-            return this.props.service.getExtensionApiUrl({ namespace: params.namespace, name: params.name });
+            return this.context.service.getExtensionApiUrl({ namespace: params.namespace, name: params.name });
         }
-        return this.props.service.getExtensionApiUrl(params);
+        return this.context.service.getExtensionApiUrl(params);
     }
 
     protected async updateExtension(extensionUrl: string): Promise<void> {
         try {
-            const extension = await this.props.service.getExtensionDetail(extensionUrl);
+            const extension = await this.context.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
                 throw extension;
             }
-            document.title = `${extension.displayName || extension.name} – ${this.props.pageSettings.pageTitle}`;
+            document.title = `${extension.displayName || extension.name} – ${this.context.pageSettings.pageTitle}`;
             this.setState({ extension, loading: false });
         } catch (err) {
-            this.props.handleError(err);
+            this.context.handleError(err);
             this.setState({ loading: false });
         }
     }
@@ -213,7 +214,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
         const classes = this.props.classes;
-        const headerTheme = extension.galleryTheme || this.props.pageSettings.themeType || 'light';
+        const headerTheme = extension.galleryTheme || this.context.pageSettings.themeType || 'light';
 
         return <React.Fragment>
             <DelayedLoadIndicator loading={this.state.loading} />
@@ -227,7 +228,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     <Box className={classes.header}>
                         {this.renderBanner(extension, headerTheme)}
                         <Box className={classes.iconAndInfo}>
-                            <img src={extension.files.icon || this.props.pageSettings.urls.extensionDefaultIcon}
+                            <img src={extension.files.icon || this.context.pageSettings.urls.extensionDefaultIcon}
                                 className={classes.extensionLogo}
                                 alt={extension.displayName || extension.name} />
                             {this.renderHeaderInfo(extension, headerTheme)}
@@ -246,18 +247,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                                 <ExtensionDetailReviews
                                     extension={extension}
                                     reviewsDidUpdate={this.onReviewUpdate}
-                                    service={this.props.service}
-                                    user={this.props.user}
-                                    handleError={this.props.handleError}
                                 />
                             </Route>
                             <Route path={ExtensionDetailRoutes.LATEST}>
                                 <ExtensionDetailOverview
                                     extension={extension}
-                                    service={this.props.service}
-                                    pageSettings={this.props.pageSettings}
                                     selectVersion={this.onVersionSelect}
-                                    handleError={this.props.handleError}
                                 />
                             </Route>
                         </Switch>
@@ -280,7 +275,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     the &ldquo;{extension.displayName || extension.name}&rdquo; extension.
                     If you would like to become the owner of <span className={classes.code}>{extension.namespace}</span>,
                     please <Link
-                        href={this.props.pageSettings.urls.namespaceAccessInfo}
+                        href={this.context.pageSettings.urls.namespaceAccessInfo}
                         target='_blank'
                         className={`${classes.link}`} >
                         read this guide
@@ -298,7 +293,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     </Link>. This user account is not related to
                     the namespace <span className={classes.code}>{extension.namespace}</span> of
                     this extension. <Link
-                        href={this.props.pageSettings.urls.namespaceAccessInfo}
+                        href={this.context.pageSettings.urls.namespaceAccessInfo}
                         target='_blank'
                         className={`${classes.link}`} >
                         See the documentation
@@ -387,7 +382,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 return null;
         }
         return <Link
-            href={this.props.pageSettings.urls.namespaceAccessInfo}
+            href={this.context.pageSettings.urls.namespaceAccessInfo}
             target='_blank'
             title={title}
             className={`${this.props.classes.link} ${themeClass}`} >
@@ -460,10 +455,6 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
 export namespace ExtensionDetailComponent {
     export interface Props extends WithStyles<typeof detailStyles>, RouteComponentProps {
-        user?: UserData;
-        service: ExtensionRegistryService;
-        pageSettings: PageSettings;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

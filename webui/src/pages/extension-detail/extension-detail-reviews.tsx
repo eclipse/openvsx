@@ -10,16 +10,15 @@
 
 import * as React from 'react';
 import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Link } from '@material-ui/core';
+import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';
-import { ExtensionReview, UserData, Extension, ExtensionReviewList, isEqualUser, isError } from '../../extension-registry-types';
+import { ExtensionReview, Extension, ExtensionReviewList, isEqualUser, isError } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Timestamp } from '../../components/timestamp';
-import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ExportRatingStars } from './extension-rating-stars';
 import { ExtensionReviewDialog } from './extension-review-dialog';
-import { ErrorResponse } from '../../server-request';
 
 const reviewStyles = (theme: Theme) => createStyles({
     header: {
@@ -50,6 +49,9 @@ const reviewStyles = (theme: Theme) => createStyles({
 
 class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailReviewsComponent.Props, ExtensionDetailReviewsComponent.State> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     constructor(props: ExtensionDetailReviewsComponent.Props) {
         super(props);
 
@@ -62,10 +64,10 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
 
     protected async updateReviews() {
         try {
-            const reviewList = await this.props.service.getExtensionReviews(this.props.extension);
+            const reviewList = await this.context.service.getExtensionReviews(this.props.extension);
             this.setState({ reviewList, loading: false, revoked: false });
         } catch (err) {
-            this.props.handleError(err);
+            this.context.handleError(err);
             this.setState({ loading: false, revoked: false });
         }
     }
@@ -79,13 +81,13 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     protected handleRevokeButton = async () => {
         this.setState({ revoked: true });
         try {
-            const result = await this.props.service.deleteReview(this.state.reviewList!.deleteUrl);
+            const result = await this.context.service.deleteReview(this.state.reviewList!.deleteUrl);
             if (isError(result)) {
                 throw result;
             }
             this.saveCompleted();
         } catch (err) {
-            this.props.handleError(err);
+            this.context.handleError(err);
         }
     };
 
@@ -108,16 +110,16 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     }
 
     protected renderButton(): React.ReactNode {
-        if (!this.props.user || !this.state.reviewList) {
+        if (!this.context.user || !this.state.reviewList) {
             return  '';
         }
-        const existingReview = this.state.reviewList.reviews.find(r => isEqualUser(r.user, this.props.user!));
+        const existingReview = this.state.reviewList.reviews.find(r => isEqualUser(r.user, this.context.user!));
         if (existingReview) {
             const localTime = toLocalTime(existingReview.timestamp);
             return <ButtonWithProgress
                     working={this.state.revoked}
                     onClick={this.handleRevokeButton}
-                    title={`Revoke review written by ${this.props.user.loginName} on ${localTime}`} >
+                    title={`Revoke review written by ${this.context.user.loginName} on ${localTime}`} >
                 Revoke my Review
             </ButtonWithProgress>;
         } else {
@@ -126,9 +128,6 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                     saveCompleted={this.saveCompleted}
                     extension={this.props.extension}
                     reviewPostUrl={this.state.reviewList.postUrl}
-                    user={this.props.user}
-                    service={this.props.service}
-                    setError={this.props.handleError}
                 />
             </Box>;
         }
@@ -184,10 +183,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
 export namespace ExtensionDetailReviewsComponent {
     export interface Props extends WithStyles<typeof reviewStyles> {
         extension: Extension;
-        user?: UserData;
-        service: ExtensionRegistryService;
         reviewsDidUpdate: () => void;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         reviewList?: ExtensionReviewList;

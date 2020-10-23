@@ -17,7 +17,6 @@ import { ExtensionRegistryService } from '../extension-registry-service';
 import { Main } from '../main';
 import createPageSettings from './page-settings';
 import createDefaultTheme from './theme';
-import { PageSettings } from '../page-settings';
 
 // This is the default entry point for the webui Docker image and for development.
 // The production code for open-vsx.org is at https://github.com/eclipse/open-vsx.org
@@ -29,8 +28,6 @@ if (serverHost.startsWith('3000-')) {
     serverHost = '8080-' + serverHost.substring(5);
 }
 const service = new ExtensionRegistryService(`${location.protocol}//${serverHost}`);
-export const ServiceContext = React.createContext(service);
-export const PageSettingsContext = React.createContext<PageSettings | undefined>(undefined);
 
 const App = () => {
     const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
@@ -43,12 +40,10 @@ const App = () => {
 
     return (
         <ThemeProvider theme={theme}>
-            <PageSettingsContext.Provider value={pageSettings}>
-                <Main
-                    service={service}
-                    pageSettings={pageSettings}
-                />
-            </PageSettingsContext.Provider>
+            <Main
+                service={service}
+                pageSettings={pageSettings}
+            />
         </ThemeProvider>
     );
 };

@@ -20,15 +20,13 @@ import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail
 import { UserAvatar } from './pages/user/avatar';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
+import { MainContext } from './context';
 import { PageSettings } from './page-settings';
 import { handleError } from './utils';
 import { ErrorDialog } from './components/error-dialog';
 import '../src/main.css';
 import { HeaderMenu } from './header-menu';
 import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
-
-export const UserContext = React.createContext<UserData | undefined>(undefined);
-export const ErrorHandlerContext = React.createContext<{ handleError: (err: any) => void } | undefined>(undefined);
 
 const mainStyles = (theme: Theme) => createStyles({
     main: {
@@ -55,17 +53,6 @@ const mainStyles = (theme: Theme) => createStyles({
         padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
         backgroundColor: theme.palette.background.paper,
         boxShadow: '0px -2px 6px 0px rgba(0, 0, 0, 0.5)'
-    },
-    fixed: {
-        position: 'fixed',
-    },
-    fadeIn: {
-        animation: 'fadein 2s',
-        opacity: 1
-    },
-    fadeOut: {
-        animation: 'fadeout 2s',
-        opacity: 0
     }
 });
 
@@ -109,6 +96,21 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     };
 
     render(): React.ReactNode {
+        const mainContext: MainContext = {
+            service: this.props.service,
+            pageSettings: this.props.pageSettings,
+            user: this.state.user,
+            handleError: this.handleError.bind(this)
+        };
+        return <React.Fragment>
+            <CssBaseline />
+            <MainContext.Provider value={mainContext}>
+                {this.renderPageContent()}
+            </MainContext.Provider>
+        </React.Fragment>;
+    }
+
+    protected renderPageContent(): React.ReactNode {
         const {
             toolbarContent: ToolbarContent,
             footerContent: FooterContent,
@@ -116,106 +118,86 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         } = this.props.pageSettings.elements;
         const classes = this.props.classes;
         return <React.Fragment>
-            <CssBaseline />
-            <UserContext.Provider value={this.state.user}>
-                <ErrorHandlerContext.Provider value={{ handleError: this.handleError }}>
-                    <Switch>
-                        <Route path={AdminDashboardRoutes.MAIN}>
-                            <AdminDashboard></AdminDashboard>
-                        </Route>
-                        <Route path='*'>
-                            <Box className={classes.main}>
-                                <AppBar position='relative'>
-                                    <Toolbar classes={{ root: classes.spreadHorizontally }}>
-                                        <Box className={classes.alignVertically}>
-                                            {ToolbarContent ? <ToolbarContent /> : null}
-                                        </Box>
-                                        <Box className={classes.alignVertically}>
-                                            <HeaderMenu pageSettings={this.props.pageSettings} />
-                                            {
-                                                this.state.user ?
-                                                    <UserAvatar
-                                                        user={this.state.user}
-                                                        service={this.props.service}
-                                                        setError={this.handleError}
-                                                    />
-                                                    :
-                                                    <IconButton
-                                                        href={this.props.service.getLoginUrl()}
-                                                        title='Log In'
-                                                        aria-label='Log In' >
-                                                        <AccountBoxIcon />
-                                                    </IconButton>
-                                            }
-                                        </Box>
-                                    </Toolbar>
-                                </AppBar>
-                                <Box pb={`${this.getContentPadding()}px`}>
-                                    <Switch>
-                                        <Route exact path={[ExtensionListRoutes.MAIN]}
-                                            render={routeProps =>
-                                                <ExtensionListContainer
-                                                    {...routeProps}
-                                                    service={this.props.service}
-                                                    pageSettings={this.props.pageSettings}
-                                                    handleError={this.handleError}
-                                                />
-                                            } />
-                                        <Route path={UserSettingsRoutes.MAIN}
-                                            render={routeProps =>
-                                                <UserSettings
-                                                    {...routeProps}
-                                                    user={this.state.user}
-                                                    userLoading={this.state.userLoading}
-                                                    service={this.props.service}
-                                                    pageSettings={this.props.pageSettings}
-                                                    handleError={this.handleError}
-                                                />
-                                            } />
-                                        <Route path={ExtensionDetailRoutes.MAIN}
-                                            render={routeProps =>
-                                                <ExtensionDetail
-                                                    {...routeProps}
-                                                    user={this.state.user}
-                                                    service={this.props.service}
-                                                    pageSettings={this.props.pageSettings}
-                                                    handleError={this.handleError}
-                                                />
-                                            } />
-                                        {AdditionalRoutes ? <AdditionalRoutes /> : null}
-                                        <Route path='*'>
-                                            <Container>
-                                                <Box height='30vh' display='flex' flexWrap='wrap' justifyContent='center' alignItems='center'>
-                                                    <Typography variant='h3'>Oooups...this is a 404 page.</Typography>
-                                                    <BrokenImageIcon style={{ fontSize: '4rem', flexBasis: '100%' }} />
-                                                </Box>
-                                            </Container>
-                                        </Route>
-                                    </Switch>
+            <Switch>
+                <Route path={AdminDashboardRoutes.MAIN}>
+                    <AdminDashboard></AdminDashboard>
+                </Route>
+                <Route path='*'>
+                    <Box className={classes.main}>
+                        <AppBar position='relative'>
+                            <Toolbar classes={{ root: classes.spreadHorizontally }}>
+                                <Box className={classes.alignVertically}>
+                                    {ToolbarContent ? <ToolbarContent /> : null}
                                 </Box>
-                                {
-                                    FooterContent ?
-                                        <footer
-                                            className={classes.footer}
-                                            onMouseEnter={() => this.setState({ isFooterExpanded: true })}
-                                            onMouseLeave={() => this.setState({ isFooterExpanded: false })} >
-                                            <FooterContent expanded={this.state.isFooterExpanded} />
-                                        </footer>
-                                        : null
-                                }
-                            </Box>
-                        </Route>
-                    </Switch>
-                    {
-                        this.state.error ?
-                            <ErrorDialog
-                                errorMessage={this.state.error}
-                                isErrorDialogOpen={this.state.isErrorDialogOpen}
-                                handleCloseDialog={this.handleDialogClose} />
-                            : null
-                    }
-                </ErrorHandlerContext.Provider>
-            </UserContext.Provider>
+                                <Box className={classes.alignVertically}>
+                                    <HeaderMenu />
+                                    {
+                                        this.state.user ?
+                                            <UserAvatar/>
+                                            :
+                                            <IconButton
+                                                href={this.props.service.getLoginUrl()}
+                                                title='Log In'
+                                                aria-label='Log In' >
+                                                <AccountBoxIcon />
+                                            </IconButton>
+                                    }
+                                </Box>
+                            </Toolbar>
+                        </AppBar>
+                        <Box pb={`${this.getContentPadding()}px`}>
+                            <Switch>
+                                <Route exact path={[ExtensionListRoutes.MAIN]}
+                                    render={routeProps =>
+                                        <ExtensionListContainer
+                                            {...routeProps}
+                                        />
+                                    } />
+                                <Route path={UserSettingsRoutes.MAIN}
+                                    render={routeProps =>
+                                        <UserSettings
+                                            {...routeProps}
+                                            userLoading={this.state.userLoading}
+                                        />
+                                    } />
+                                <Route path={ExtensionDetailRoutes.MAIN}
+                                    render={routeProps =>
+                                        <ExtensionDetail
+                                            {...routeProps}
+                                        />
+                                    } />
+                                {AdditionalRoutes ? <AdditionalRoutes /> : null}
+                                <Route path='*'>
+                                    <Container>
+                                        <Box height='30vh' display='flex' flexWrap='wrap' justifyContent='center' alignItems='center'>
+                                            <Typography variant='h3'>Oooups...this is a 404 page.</Typography>
+                                            <BrokenImageIcon style={{ fontSize: '4rem', flexBasis: '100%' }} />
+                                        </Box>
+                                    </Container>
+                                </Route>
+                            </Switch>
+                        </Box>
+                        {
+                            FooterContent ?
+                                <footer
+                                    className={classes.footer}
+                                    onMouseEnter={() => this.setState({ isFooterExpanded: true })}
+                                    onMouseLeave={() => this.setState({ isFooterExpanded: false })} >
+                                    <FooterContent expanded={this.state.isFooterExpanded} />
+                                </footer>
+                                : null
+                        }
+                    </Box>
+                </Route>
+            </Switch>
+            {
+                this.state.error ?
+                    <ErrorDialog
+                        errorMessage={this.state.error}
+                        isErrorDialogOpen={this.state.isErrorDialogOpen}
+                        handleCloseDialog={this.handleDialogClose} />
+                    : null
+            }
         </React.Fragment>;
     }
 

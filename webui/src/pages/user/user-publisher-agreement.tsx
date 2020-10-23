@@ -13,8 +13,7 @@ import { UserData, isError } from '../../extension-registry-types';
 import { Box, Typography, Paper, Button, makeStyles, Dialog, DialogContent, DialogContentText, Fade, Link } from '@material-ui/core';
 import { Timestamp } from '../../components/timestamp';
 import { createAbsoluteURL } from '../../utils';
-import { ServiceContext, PageSettingsContext } from '../../default/default-app';
-import { ErrorHandlerContext } from '../../main';
+import { MainContext } from '../../context';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import * as MarkdownIt from 'markdown-it';
 
@@ -35,9 +34,7 @@ interface UserPublisherAgreementProps {
 export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = props => {
     const classes = useStyles();
     const userDefault = props.user;
-    const service = useContext(ServiceContext);
-    const pageSettings = useContext(PageSettingsContext)!;
-    const errorHandler = useContext(ErrorHandlerContext)!;
+    const { service, pageSettings, handleError } = useContext(MainContext);
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const [user, setUser] = useState(userDefault);
@@ -51,13 +48,13 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
             setUser(newUser);
             setDialogOpen(false);
         } catch (err) {
-            errorHandler.handleError(err);
+            handleError(err);
         }
     };
 
     const openPublisherAgreement = () => {
         if (!pageSettings || !pageSettings.urls.publisherAgreement) {
-            errorHandler.handleError({ error: 'Publisher agreement text is not available.' });
+            handleError({ error: 'Publisher agreement text is not available.' });
         } else {
             setDialogOpen(true);
         }
@@ -72,7 +69,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                 const agreementMd = await service.getStaticContent(agreementURL);
                 setAgreementText(markdownIt.render(agreementMd));
             } catch (err) {
-                errorHandler.handleError(err);
+                handleError(err);
             }
         } else {
             setAgreementText('Publisher agreement text is not available.');

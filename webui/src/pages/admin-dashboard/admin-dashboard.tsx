@@ -18,7 +18,7 @@ import ExtensionSharpIcon from '@material-ui/icons/ExtensionSharp';
 import { Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { NamespaceAdmin } from './namespace-admin';
 import { ExtensionAdmin } from './extension-admin';
-import { UserContext } from '../../main';
+import { MainContext } from '../../context';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import { Welcome } from './welcome';
 import { PublisherAdmin } from './publisher-admin';
@@ -49,7 +49,7 @@ const useStyles = makeStyles((theme) => ({
 export const AdminDashboard: FunctionComponent = props => {
     const classes = useStyles();
 
-    const user = useContext(UserContext);
+    const { user } = useContext(MainContext);
 
     const history = useHistory();
     const toMainPage = () => history.push('/');

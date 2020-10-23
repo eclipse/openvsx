@@ -12,10 +12,10 @@ import React, { useContext, FunctionComponent } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, makeStyles } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
+import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
 import { Timestamp } from '../../components/timestamp';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
-import { PageSettingsContext } from '../../default/default-app';
 
 const itemStyles = makeStyles(theme => ({
     link: {
@@ -44,7 +44,7 @@ const itemStyles = makeStyles(theme => ({
 }));
 
 export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
-    const pageSettings = useContext(PageSettingsContext);
+    const { pageSettings } = useContext(MainContext);
     const { extension } = props;
     const classes = itemStyles();
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';

@@ -13,9 +13,7 @@ import { Box, Typography, Button, Paper, makeStyles } from '@material-ui/core';
 import { UserNamespaceMember } from './user-namespace-member-component';
 import { Namespace, NamespaceMembership, MembershipRole, isError, UserData } from '../../extension-registry-types';
 import { AddMemberDialog } from './add-namespace-member-dialog';
-import { ServiceContext } from '../../default/default-app';
-import { UserContext } from '../../main';
-import { ErrorResponse } from '../../server-request';
+import { MainContext } from '../../context';
 
 const useStyles = makeStyles((theme) => ({
     addButton: {
@@ -39,13 +37,11 @@ interface UserNamespaceMemberListProps {
     namespace: Namespace;
     setLoadingState: (loadingState: boolean) => void;
     filterUsers: (user: UserData) => boolean;
-    handleError: (err: Error | Partial<ErrorResponse>) => void;
 }
 
 export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListProps> = props => {
     const classes = useStyles();
-    const service = useContext(ServiceContext);
-    const user = useContext(UserContext);
+    const { service, user, handleError } = useContext(MainContext);
     const [members, setMembers] = useState<NamespaceMembership[]>([]);
     useEffect(() => {
         fetchMembers();
@@ -66,7 +62,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
             const members = membershipList.namespaceMemberships;
             setMembers(members);
         } catch (err) {
-            props.handleError(err);
+            handleError(err);
         }
     };
 
@@ -81,7 +77,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
             await fetchMembers();
             props.setLoadingState(false);
         } catch (err) {
-            props.handleError(err);
+            handleError(err);
             props.setLoadingState(false);
         }
     };
@@ -103,24 +99,17 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
                                     key={'nspcmbr-' + member.user.loginName + member.user.provider}
                                     namespace={props.namespace}
                                     member={member}
-                                    user={user}
-                                    service={service}
                                     onChangeRole={role => changeRole(member, role)}
-                                    onRemoveUser={() => changeRole(member, 'remove')}
-                                    handleError={props.handleError} />)}
+                                    onRemoveUser={() => changeRole(member, 'remove')} />)}
                         </Paper> :
                         <Typography variant='body1'>There are no members assigned yet.</Typography>}
                     <AddMemberDialog
-                        handleError={props.handleError}
                         members={members}
                         namespace={props.namespace}
-                        service={service}
-                        user={user}
                         onClose={handleCloseAddDialog}
                         open={addDialogIsOpen}
                         setLoadingState={props.setLoadingState}
-                        filterUsers={props.filterUsers}>
-                    </AddMemberDialog>
+                        filterUsers={props.filterUsers} />
                 </>
                 : ''
         }

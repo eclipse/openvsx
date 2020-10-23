@@ -13,12 +13,11 @@ import {
     Box, WithStyles, createStyles, Theme, withStyles, Paper, InputBase,
     Select, MenuItem, Container
 } from '@material-ui/core';
-import { ExtensionRegistryService } from '../../extension-registry-service';
 import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
-import { PageSettings } from '../../page-settings';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
 import { ExtensionListSearchfield } from './extension-list-searchfield';
+import { MainContext } from '../../context';
 
 const headerStyles = (theme: Theme) => createStyles({
     formContainer: {
@@ -91,12 +90,22 @@ const headerStyles = (theme: Theme) => createStyles({
 
 class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Props, ExtensionListHeaderComp.State> {
 
-    protected categories: ExtensionCategory[];
+    static contextType = MainContext;
+    declare context: MainContext;
+
+    protected categories: ExtensionCategory[] = [];
 
     constructor(props: ExtensionListHeaderComp.Props) {
         super(props);
+        this.state = {
+            category: '',
+            sortBy: 'relevance',
+            sortOrder: 'desc'
+        };
+    }
 
-        this.categories = Array.from(this.props.service.getCategories());
+    componentDidMount() {
+        this.categories = Array.from(this.context.service.getCategories());
         this.categories.sort((a, b) => {
             if (a === b)
                 return 0;
@@ -107,14 +116,6 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
             return a.localeCompare(b);
         });
 
-        this.state = {
-            category: '',
-            sortBy: 'relevance',
-            sortOrder: 'desc'
-        };
-    }
-
-    componentDidMount() {
         this.setState({
             category: this.props.category || '',
             sortBy: this.props.sortBy,
@@ -164,7 +165,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
 
     render() {
         const classes = this.props.classes;
-        const SearchHeader = this.props.pageSettings.elements.searchHeader;
+        const SearchHeader = this.context.pageSettings.elements.searchHeader;
         return <React.Fragment>
             <Container>
                 <Box display='flex' flexDirection='column' alignItems='center' py={6}>
@@ -234,12 +235,10 @@ namespace ExtensionListHeaderComp {
         onCategoryChanged: (c: ExtensionCategory) => void;
         onSortByChanged: (sb: SortBy) => void;
         onSortOrderChanged: (so: SortOrder) => void;
-        pageSettings: PageSettings;
         searchQuery?: string;
         category?: ExtensionCategory | '';
         sortBy: SortBy,
         sortOrder: SortOrder,
-        service: ExtensionRegistryService;
         resultNumber: number;
     }
     export interface State {

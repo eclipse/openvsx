@@ -13,17 +13,18 @@ import { Box } from '@material-ui/core';
 import { RouteComponentProps } from 'react-router-dom';
 import { createRoute, addQuery } from '../../utils';
 import { ExtensionCategory, SortOrder, SortBy } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
-import { PageSettings } from '../../page-settings';
 import { ExtensionList } from './extension-list';
 import { ExtensionListHeader } from './extension-list-header';
-import { ErrorResponse } from '../../server-request';
+import { MainContext } from '../../context';
 
 export namespace ExtensionListRoutes {
     export const MAIN = createRoute([]);
 }
 
 export class ExtensionListContainer extends React.Component<ExtensionListContainer.Props, ExtensionListContainer.State> {
+
+    static contextType = MainContext;
+    declare context: MainContext;
 
     constructor(props: ExtensionListContainer.Props) {
         super(props);
@@ -37,7 +38,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     componentDidMount(): void {
-        document.title = this.props.pageSettings.pageTitle;
+        document.title = this.context.pageSettings.pageTitle;
         const searchParams = new URLSearchParams(this.props.location.search);
         const search = searchParams.get('search');
         const category = searchParams.get('category') as ExtensionCategory;
@@ -99,17 +100,12 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                 onSearchChanged={this.onSearchChanged}
                 onCategoryChanged={this.onCategoryChanged}
                 onSortByChanged={this.onSortByChanged}
-                onSortOrderChanged={this.onSortOrderChanged}
-                pageSettings={this.props.pageSettings}
-                service={this.props.service} />
+                onSortOrderChanged={this.onSortOrderChanged} />
             <ExtensionList
-                service={this.props.service}
-                pageSettings={this.props.pageSettings}
                 filter={{
                     query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10,
                     sortBy: this.state.sortBy, sortOrder: this.state.sortOrder
                 }}
-                handleError={this.props.handleError}
                 onUpdate={this.handleUpdate}
             />
         </Box>;
@@ -118,9 +114,6 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
 
 export namespace ExtensionListContainer {
     export interface Props extends RouteComponentProps {
-        service: ExtensionRegistryService;
-        pageSettings: PageSettings;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
     export interface State {
         searchQuery: string,

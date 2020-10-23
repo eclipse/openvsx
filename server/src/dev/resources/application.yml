@@ -25,7 +25,7 @@ spring:
           registration:
             eclipse:
               authorization-grant-type: authorization_code
-              redirect-uri: http://localhost
+              redirect-uri: http://localhost/login/oauth2/code/eclipse
               scope: openvsx_publisher_agreement, profile
           provider:
             eclipse:

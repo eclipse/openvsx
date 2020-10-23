@@ -12,8 +12,6 @@ import React, { FunctionComponent } from 'react';
 import { makeStyles, Grid } from '@material-ui/core';
 import { UserNamespaceExtensionListContainer } from './user-namespace-extension-list';
 import { Namespace, UserData } from '../../extension-registry-types';
-import { ExtensionRegistryService, PageSettings } from '../..';
-import { ErrorResponse } from '../../server-request';
 import { UserNamespaceMemberList } from './user-namespace-member-list';
 
 export interface NamespaceDetailConfig {
@@ -39,11 +37,7 @@ const useStyles = makeStyles((theme) => ({
 
 export interface NamespaceProps {
     namespace: Namespace;
-    user: UserData;
-    service: ExtensionRegistryService;
     filterUsers: (user: UserData) => boolean;
-    handleError: (err: Error | Partial<ErrorResponse>) => void;
-    pageSettings: PageSettings;
     setLoadingState: (loading: boolean) => void;
 }
 
@@ -56,15 +50,11 @@ export const NamespaceDetail: FunctionComponent<NamespaceProps> = props => {
                 <UserNamespaceMemberList
                     setLoadingState={props.setLoadingState}
                     namespace={props.namespace}
-                    filterUsers={props.filterUsers}
-                    handleError={props.handleError} />
+                    filterUsers={props.filterUsers} />
             </Grid>
             <Grid item>
                 <UserNamespaceExtensionListContainer
                     namespace={props.namespace}
-                    service={props.service}
-                    setError={props.handleError}
-                    pageSettings={props.pageSettings}
                 />
             </Grid>
         </Grid>

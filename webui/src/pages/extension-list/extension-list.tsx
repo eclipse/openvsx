@@ -13,11 +13,10 @@ import * as InfiniteScroll from 'react-infinite-scroller';
 import { Grid, Theme, createStyles, withStyles, WithStyles, CircularProgress, Container } from '@material-ui/core';
 import { ExtensionListItem } from './extension-list-item';
 import { isError, SearchEntry } from '../../extension-registry-types';
-import { ExtensionRegistryService, ExtensionFilter } from '../../extension-registry-service';
+import { ExtensionFilter } from '../../extension-registry-service';
 import { debounce } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { PageSettings } from '../../page-settings';
-import { ErrorResponse } from '../../server-request';
+import { MainContext } from '../../context';
 
 const itemStyles = (theme: Theme) => createStyles({
     container: {
@@ -31,6 +30,9 @@ const itemStyles = (theme: Theme) => createStyles({
 });
 
 export class ExtensionListComponent extends React.Component<ExtensionListComponent.Props, ExtensionListComponent.State> {
+
+    static contextType = MainContext;
+    declare context: MainContext;
 
     protected cancellationToken: { timeout?: number } = {};
     protected filterSize: number;
@@ -69,7 +71,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         debounce(
             async () => {
                 try {
-                    const result = await this.props.service.search(newFilter);
+                    const result = await this.context.service.search(newFilter);
                     if (isError(result)) {
                         throw result;
                     }
@@ -88,7 +90,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                         loading: false
                     });
                 } catch (err) {
-                    this.props.handleError(err);
+                    this.context.handleError(err);
                     this.setState({ loading: false });
                 }
             },
@@ -104,7 +106,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         }
         try {
             filter.offset = (p - this.pageOffset) * this.filterSize;
-            const result = await this.props.service.search(filter);
+            const result = await this.context.service.search(filter);
             if (isError(result)) {
                 throw result;
             }
@@ -126,7 +128,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 });
             }
         } catch (err) {
-            this.props.handleError(err);
+            this.context.handleError(err);
         }
     };
 
@@ -136,7 +138,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                 idx={idx}
                 extension={ext}
                 filterSize={this.filterSize}
-                pageSettings={this.props.pageSettings}
+                pageSettings={this.context.pageSettings}
                 key={`${ext.namespace}.${ext.name}`} />
         ));
         const loader = <div key='extension-list-loader' className={this.props.classes.loader}>
@@ -162,9 +164,6 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
 export namespace ExtensionListComponent {
     export interface Props extends WithStyles<typeof itemStyles> {
         filter: ExtensionFilter;
-        service: ExtensionRegistryService;
-        pageSettings: PageSettings;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
         onUpdate: (resultNumber: number) => void;
     }
     export interface State {

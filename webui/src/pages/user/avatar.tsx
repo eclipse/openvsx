@@ -12,11 +12,10 @@ import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
 import { Theme, WithStyles, Avatar, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
-import { UserData, isError } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
+import { isError } from '../../extension-registry-types';
 import { UserSettingsRoutes } from './user-settings';
-import { ErrorResponse } from '../../server-request';
 import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
+import { MainContext } from '../../context';
 
 const avatarStyle = (theme: Theme) => createStyles({
     avatar: {
@@ -42,6 +41,9 @@ const avatarStyle = (theme: Theme) => createStyles({
 
 class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, UserAvatarComponent.State> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     protected avatarButton: HTMLElement | null;
 
     constructor(props: UserAvatarComponent.Props) {
@@ -58,12 +60,12 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
 
     protected async updateCsrf() {
         try {
-            const csrfToken = await this.props.service.getCsrfToken();
+            const csrfToken = await this.context.service.getCsrfToken();
             if (!isError(csrfToken)) {
                 this.setState({ csrf: csrfToken.value });
             }
         } catch (err) {
-            this.props.setError(err);
+            this.context.handleError(err);
         }
     }
 
@@ -74,8 +76,11 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
         this.setState({ open: false });
     };
 
-    render(): React.ReactElement {
-        const user = this.props.user;
+    render(): React.ReactNode {
+        const user = this.context.user;
+        if (!user) {
+            return null;
+        }
         return <React.Fragment>
             <IconButton
                 title={`Logged in as ${user.loginName}`}
@@ -124,7 +129,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
                         ''
                 }
                 <MenuItem className={this.props.classes.menuItem}>
-                    <form method='post' action={this.props.service.getLogoutUrl()}>
+                    <form method='post' action={this.context.service.getLogoutUrl()}>
                         {this.state.csrf ? <input name='_csrf' type='hidden' value={this.state.csrf} /> : null}
                         <button type='submit' className={`${this.props.classes.link} ${this.props.classes.menuButton}`}>
                             <Typography variant='button' className={this.props.classes.logoutButton}>
@@ -140,9 +145,6 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
 
 export namespace UserAvatarComponent {
     export interface Props extends WithStyles<typeof avatarStyle> {
-        user: UserData;
-        service: ExtensionRegistryService;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

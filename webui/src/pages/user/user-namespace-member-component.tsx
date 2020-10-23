@@ -11,9 +11,8 @@
 import * as React from 'react';
 import { Box, Typography, Avatar, Select, MenuItem, Button, Theme, createStyles } from '@material-ui/core';
 import { withStyles, WithStyles } from '@material-ui/styles';
-import { NamespaceMembership, MembershipRole, UserData, Namespace } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
-import { ErrorResponse } from '../../server-request';
+import { NamespaceMembership, MembershipRole, Namespace } from '../../extension-registry-types';
+import { MainContext } from '../../context';
 
 const memberStyle = (theme: Theme) => createStyles({
     memberName: {
@@ -51,6 +50,10 @@ const memberStyle = (theme: Theme) => createStyles({
 });
 
 class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.Props> {
+
+    static contextType = MainContext;
+    declare context: MainContext;
+
     render(): React.ReactNode {
         const memberUser = this.props.member.user;
         return <Box key={'member:' + memberUser.loginName} p={2} display='flex' alignItems='center'>
@@ -67,7 +70,7 @@ class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.P
             }
             <Box className={this.props.classes.buttonContainer}>
                 {
-                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider && memberUser.role && memberUser.role !== 'admin' ?
+                    memberUser.loginName === this.context.user?.loginName && memberUser.provider === this.context.user?.provider && memberUser.role && memberUser.role !== 'admin' ?
                         '' :
                         <Box m={1}>
                             <Select
@@ -81,7 +84,7 @@ class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.P
                         </Box>
                 }
                 {
-                    memberUser.loginName === this.props.user.loginName && memberUser.provider === this.props.user.provider && memberUser.role !== 'admin' ?
+                    memberUser.loginName === this.context.user?.loginName && memberUser.provider === this.context.user?.provider && memberUser.role !== 'admin' ?
                         <Box className={this.props.classes.owner}>
                             Owner
                         </Box>
@@ -102,11 +105,8 @@ export namespace UserNamespaceMember {
     export interface Props extends WithStyles<typeof memberStyle> {
         namespace: Namespace;
         member: NamespaceMembership;
-        user: UserData;
-        service: ExtensionRegistryService;
         onChangeRole: (role: MembershipRole) => void;
         onRemoveUser: () => void;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 }
 

@@ -11,8 +11,7 @@
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@material-ui/core';
 import { Extension } from '../../extension-registry-types';
-import { ServiceContext } from '../../default/default-app';
-import { ErrorHandlerContext } from '../../main';
+import { MainContext } from '../../context';
 
 interface ExtensionRemoveDialogProps {
     versions: string[];
@@ -22,8 +21,7 @@ interface ExtensionRemoveDialogProps {
 }
 
 export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps> = props => {
-    const service = useContext(ServiceContext);
-    const errorContext = useContext(ErrorHandlerContext);
+    const { service, handleError } = useContext(MainContext);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const handleOpenRemoveDialog = () => {
@@ -43,7 +41,7 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
             props.onUpdate();
             setDialogOpen(false);
         } catch (err) {
-            errorContext && errorContext.handleError(err);
+            handleError(err);
         }
     };
 

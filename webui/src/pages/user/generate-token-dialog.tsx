@@ -15,9 +15,8 @@ import {
 } from '@material-ui/core';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { CopyToClipboard } from '../../components/copy-to-clipboard';
-import { UserData, PersonalAccessToken, isError } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
-import { ErrorResponse } from '../../server-request';
+import { PersonalAccessToken, isError } from '../../extension-registry-types';
+import { MainContext } from '../../context';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
@@ -29,6 +28,9 @@ const tokensDialogStyle = (theme: Theme) => createStyles({
 });
 
 class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogComponent.Props, GenerateTokenDialogComponent.State> {
+
+    static contextType = MainContext;
+    declare context: MainContext;
 
     constructor(props: GenerateTokenDialogComponent.Props) {
         super(props);
@@ -62,16 +64,19 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     };
 
     protected handleGenerate = async () => {
+        if (!this.context.user) {
+            return;
+        }
         this.setState({ posted: true });
         try {
-            const token = await this.props.service.createAccessToken(this.props.user, this.state.description);
+            const token = await this.context.service.createAccessToken(this.context.user, this.state.description);
             if (isError(token)) {
                 throw token;
             }
             this.setState({ token });
             this.props.handleTokenGenerated();
         } catch (err) {
-            this.props.setError(err);
+            this.context.handleError(err);
         }
     };
 
@@ -163,10 +168,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
 
 export namespace GenerateTokenDialogComponent {
     export interface Props extends WithStyles<typeof tokensDialogStyle> {
-        user: UserData;
-        service: ExtensionRegistryService;
         handleTokenGenerated: () => void;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
     }
 
     export interface State {

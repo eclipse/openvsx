@@ -13,14 +13,11 @@ import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typo
 import { RouteComponentProps, Route } from 'react-router-dom';
 import { createRoute } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { ExtensionRegistryService } from '../../extension-registry-service';
-import { UserData } from '../../extension-registry-types';
-import { PageSettings } from '../../page-settings';
 import { UserSettingTabs } from './user-setting-tabs';
 import { UserSettingsTokens } from './user-settings-tokens';
 import { UserSettingsProfile } from './user-settings-profile';
 import { UserSettingsNamespaces } from './user-settings-namespaces';
-import { ErrorResponse } from '../../server-request';
+import { MainContext } from '../../context';
 
 export namespace UserSettingsRoutes {
     export const ROOT = createRoute(['user-settings']);
@@ -55,22 +52,25 @@ const profileStyles = (theme: Theme) => createStyles({
 
 class UserSettingsComponent extends React.Component<UserSettingsComponent.Props> {
 
+    static contextType = MainContext;
+    declare context: MainContext;
+
     componentDidMount() {
-        document.title = `Settings – ${this.props.pageSettings.pageTitle}`;
+        document.title = `Settings – ${this.context.pageSettings.pageTitle}`;
     }
 
     render() {
         if (this.props.userLoading) {
             return <DelayedLoadIndicator loading={true} />;
         }
-        const user = this.props.user;
+        const user = this.context.user;
         if (!user) {
             return <Container>
                 <Box mt={6}>
                     <Typography variant='h4'>Not Logged In</Typography>
                     <Box mt={2}>
                         <Typography variant='body1'>
-                            Please <Link color='secondary' href={this.props.service.getLoginUrl()}>log in with GitHub</Link> to
+                            Please <Link color='secondary' href={this.context.service.getLoginUrl()}>log in with GitHub</Link> to
                             access your account settings.
                         </Typography>
                     </Box>
@@ -90,19 +90,10 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                                     <UserSettingsProfile user={user} />
                                 </Route>
                                 <Route path={UserSettingsRoutes.TOKENS}>
-                                    <UserSettingsTokens
-                                        service={this.props.service}
-                                        user={user}
-                                        handleError={this.props.handleError}
-                                    />
+                                    <UserSettingsTokens />
                                 </Route>
                                 <Route path={UserSettingsRoutes.NAMESPACES}>
-                                    <UserSettingsNamespaces
-                                        service={this.props.service}
-                                        user={user}
-                                        handleError={this.props.handleError}
-                                        pageSettings={this.props.pageSettings}
-                                    />
+                                    <UserSettingsNamespaces />
                                 </Route>
                             </Box>
                         </Grid>
@@ -115,11 +106,7 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
 
 export namespace UserSettingsComponent {
     export interface Props extends WithStyles<typeof profileStyles>, RouteComponentProps {
-        user?: UserData;
         userLoading: boolean;
-        service: ExtensionRegistryService;
-        pageSettings: PageSettings;
-        handleError: (err: Error | Partial<ErrorResponse>) => void;
     }
 }
 

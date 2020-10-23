@@ -13,10 +13,11 @@ import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { Menu, IconButton, useTheme } from '@material-ui/core';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import MenuIcon from '@material-ui/icons/Menu';
-import { PageSettings } from './page-settings';
+import { MainContext } from './context';
 
-export const HeaderMenu: React.FunctionComponent<{ pageSettings: PageSettings; }> = ({ pageSettings }) => {
+export const HeaderMenu: React.FunctionComponent = () => {
     const theme = useTheme();
+    const { pageSettings } = React.useContext(MainContext);
     const {
         defaultMenuContent: DefaultMenuContent,
         mobileMenuContent: MobileMenuContent

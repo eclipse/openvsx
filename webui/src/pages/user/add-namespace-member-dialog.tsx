@@ -10,11 +10,13 @@
 
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { UserData } from '../..';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Popper, Fade, Paper, Box, Avatar, makeStyles } from '@material-ui/core';
-import { ExtensionRegistryService } from '../../extension-registry-service';
+import {
+    Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Popper, Fade, Paper,
+    Box, Avatar, makeStyles
+} from '@material-ui/core';
 import { Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
-import { ErrorResponse } from '../../server-request';
 import { NamespaceDetailConfigContext } from './user-settings-namespace-detail';
+import { MainContext } from '../../context';
 
 const useStyles = makeStyles((theme) => ({
     foundUserListPopper: {
@@ -40,9 +42,6 @@ export interface AddMemberDialoProps {
     open: boolean;
     onClose: () => void;
     filterUsers: (user: UserData) => boolean;
-    handleError: (err: Error | Partial<ErrorResponse>) => void;
-    user: UserData;
-    service: ExtensionRegistryService;
     namespace: Namespace;
     members: NamespaceMembership[];
     setLoadingState: (loading: boolean) => void;
@@ -52,6 +51,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
     const { open } = props;
     const classes = useStyles();
     const config = useContext(NamespaceDetailConfigContext);
+    const { service, handleError } = useContext(MainContext);
     const [foundUsers, setFoundUsers] = useState<UserData[]>([]);
     const [showUserPopper, setShowUserPopper] = useState(false);
     const [popperTarget, setPopperTarget] = useState<HTMLInputElement | undefined>(undefined);
@@ -63,12 +63,12 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
             }
             if (props.members.find(m => m.user.loginName === user.loginName && m.user.provider === user.provider)) {
                 setShowUserPopper(false);
-                props.handleError({ message: `User ${user.loginName} is already a member of ${props.namespace.name}.` });
+                handleError({ message: `User ${user.loginName} is already a member of ${props.namespace.name}.` });
                 return;
             }
             props.setLoadingState(true);
             const endpoint = props.namespace.roleUrl;
-            const result = await props.service.setNamespaceMember(endpoint, user, config.defaultMemberRole || 'contributor');
+            const result = await service.setNamespaceMember(endpoint, user, config.defaultMemberRole || 'contributor');
             if (isError(result)) {
                 throw result;
             }
@@ -77,7 +77,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
         } catch (err) {
             setShowUserPopper(false);
             props.setLoadingState(false);
-            props.handleError(err);
+            handleError(err);
         }
     };
 
@@ -93,7 +93,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
         let showUserPopper = false;
         let foundUsers: UserData[] = [];
         if (val) {
-            const users = await props.service.getUserByName(val);
+            const users = await service.getUserByName(val);
             if (users) {
                 showUserPopper = true;
                 foundUsers = users;

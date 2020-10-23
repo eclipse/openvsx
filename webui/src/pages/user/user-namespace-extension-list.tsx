@@ -10,12 +10,13 @@
 
 import React, { ReactNode } from 'react';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
-import { ExtensionRegistryService } from '../../extension-registry-service';
-import { ErrorResponse } from '../../server-request';
-import { PageSettings } from '../../page-settings';
+import { MainContext } from '../../context';
 import { UserExtensionList } from './user-extension-list';
 
 export class UserNamespaceExtensionListContainer extends React.Component<UserNamespaceExtensionListContainerComponent.Props, UserNamespaceExtensionListContainerComponent.State> {
+
+    static contextType = MainContext;
+    declare context: MainContext;
 
     constructor(props: UserNamespaceExtensionListContainerComponent.Props) {
         super(props);
@@ -43,13 +44,13 @@ export class UserNamespaceExtensionListContainer extends React.Component<UserNam
         const getExtension = async (url: string) => {
             let result: Extension | ErrorResult;
             try {
-                result = await this.props.service.getExtensionDetail(url);
+                result = await this.context.service.getExtensionDetail(url);
                 if (isError(result)) {
                     throw result;
                 }
                 return result;
             } catch (error) {
-                this.props.setError(error);
+                this.context.handleError(error);
                 return undefined;
             }
         };
@@ -73,9 +74,6 @@ export class UserNamespaceExtensionListContainer extends React.Component<UserNam
 export namespace UserNamespaceExtensionListContainerComponent {
     export interface Props {
         namespace: Namespace;
-        service: ExtensionRegistryService;
-        setError: (err: Error | Partial<ErrorResponse>) => void;
-        pageSettings: PageSettings;
     }
 
     export interface State {

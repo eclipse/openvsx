@@ -14,23 +14,17 @@ import { Typography, Box, Button } from '@material-ui/core';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Namespace } from '../../extension-registry-types';
-import { PageSettingsContext, ServiceContext } from '../../default/default-app';
-import { UserContext, ErrorHandlerContext } from '../../main';
+import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
-import { handleError } from '../../utils';
 
 export const NamespaceAdmin: FunctionComponent = props => {
-    const errorContext = useContext(ErrorHandlerContext);
-
     const [loading, setLoading] = useState(false);
     const setLoadingState = (loadingState: boolean) => {
         setLoading(loadingState);
     };
 
-    const pageSettings = useContext(PageSettingsContext);
-    const service = useContext(ServiceContext);
-    const user = useContext(UserContext);
+    const { pageSettings, service, user, handleError } = useContext(MainContext);
 
     const [currentNamespace, setCurrentNamespace] = useState<Namespace | undefined>();
     const [notFound, setNotFound] = useState('');
@@ -50,8 +44,6 @@ export const NamespaceAdmin: FunctionComponent = props => {
             if (err && err.status && err.status === 404) {
                 setNotFound(namespaceName);
                 setCurrentNamespace(undefined);
-            } else if (errorContext) {
-                errorContext.handleError(err);
             } else {
                 handleError(err);
             }
@@ -82,11 +74,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
                     <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
                         <NamespaceDetail
                             setLoadingState={setLoadingState}
-                            handleError={errorContext ? errorContext.handleError : handleError}
                             namespace={currentNamespace}
-                            pageSettings={pageSettings}
-                            service={service}
-                            user={user}
                             filterUsers={() => true}
                         />
                     </NamespaceDetailConfigContext.Provider>
