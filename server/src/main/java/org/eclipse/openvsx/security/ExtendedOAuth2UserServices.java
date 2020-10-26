@@ -12,6 +12,8 @@ package org.eclipse.openvsx.security;
 import java.util.Collection;
 import java.util.Collections;
 
+import javax.persistence.EntityManager;
+
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.UserService;
@@ -25,6 +27,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2LoginAuthenticationToken;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -46,6 +49,9 @@ public class ExtendedOAuth2UserServices {
     
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    EntityManager entityManager;
 
     @Autowired
     EclipseService eclipse;
@@ -110,17 +116,23 @@ public class ExtendedOAuth2UserServices {
             }
 
             case "eclipse": {
+                var authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication == null)
+                    throw new DisabledException("Please log in with GitHub before connecting your Eclipse account.");
+                if (!(authentication.getPrincipal() instanceof IdPrincipal))
+                    throw new DisabledException("The current authentication is invalid.");
+                var principal = (IdPrincipal) authentication.getPrincipal();
+                var userData = entityManager.find(UserData.class, principal.getId());
+                if (userData == null)
+                    throw new DisabledException("The current authentication has no backing data.");
                 try {
                     var accessToken = userRequest.getAccessToken().getTokenValue();
                     var profile = eclipse.getUserProfile(accessToken);
-                    if (Strings.isNullOrEmpty(profile.githubHandle))
-                        throw new DisabledException("Please set the \"GitHub Username\" in your Eclipse profile.");
-                    var userData = repositories.findUserByLoginName("github", profile.githubHandle);
-                    if (userData == null)
-                        throw new DisabledException("The \"GitHub Username\" setting in your Eclipse profile must match the GitHub account you used to log in to this website.");
+                    if (!Strings.isNullOrEmpty(profile.githubHandle) && !profile.githubHandle.equals(userData.getLoginName()))
+                        throw new DisabledException("The \"GitHub Username\" setting in your Eclipse profile does not match your GitHub authentication.");
                     eclipse.updateUserData(userData, profile);
                     eclipse.getPublisherAgreement(userData, accessToken);
-                    return new IdPrincipal(userData.getId(), profile.name, getAuthorities(userData));
+                    return principal;
                 } catch (ErrorResultException exc) {
                     throw new DisabledException(exc.getMessage(), exc);
                 }
