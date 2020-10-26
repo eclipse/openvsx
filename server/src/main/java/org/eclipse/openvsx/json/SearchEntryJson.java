@@ -32,7 +32,7 @@ public class SearchEntryJson {
     @NotNull
     public String url;
 
-    @ApiModelProperty("Map of file types (download, manifest, icon, readme, license) to their respective URLs")
+    @ApiModelProperty("Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
     @NotNull
     public Map<String, String> files;
 
@@ -76,7 +76,7 @@ public class SearchEntryJson {
         @ApiModelProperty("URL to get the full metadata of this version")
         public String url;
 
-        @ApiModelProperty("Map of file types (download, manifest, icon, readme, license) to their respective URLs")
+        @ApiModelProperty("Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
         public Map<String, String> files;
 
         public String version;

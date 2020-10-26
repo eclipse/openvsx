@@ -18,12 +18,15 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
 
     protected handleChange = (event: React.ChangeEvent, newTab: string): void => {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
-        const previousTab = params.version === 'reviews' ? 'reviews' : 'overview';
+        const reviewOrChanges = (params.version || '').match(/reviews|changes/);
+        const previousTab = reviewOrChanges ? params.version : 'overview';
         if (newTab !== previousTab) {
             let route: string;
             if (newTab === 'reviews') {
                 route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, 'reviews']);
-            } else if (params.version && params.version !== 'reviews') {
+            } else if (newTab === 'changes') {
+                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, 'changes']);
+            } else if (params.version && !reviewOrChanges) {
                 route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, params.version]);
             } else {
                 route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name]);
@@ -34,10 +37,12 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
 
     render(): React.ReactNode {
         const params = this.props.match.params as ExtensionDetailTabs.Params;
-        const tab = params.version === 'reviews' ? 'reviews' : 'overview';
+        const reviewOrChanges = (params.version || '').match(/reviews|changes/);
+        const tab = reviewOrChanges ? params.version : 'overview';
         return <React.Fragment>
             <Tabs value={tab} onChange={this.handleChange}>
                 <Tab value='overview' label='Overview' />
+                <Tab value='changes' label='Changes' />
                 <Tab value='reviews' label='Ratings &amp; Reviews' />
             </Tabs>
         </React.Fragment>;

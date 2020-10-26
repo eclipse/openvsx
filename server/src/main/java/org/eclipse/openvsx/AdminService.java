@@ -240,9 +240,9 @@ public class AdminService {
             var versions = repositories.findVersionsByAccessToken(accessToken);
             for (var version : versions) {
                 var json = version.toExtensionJson();
-                json.files = Maps.newLinkedHashMapWithExpectedSize(5);
+                json.files = Maps.newLinkedHashMapWithExpectedSize(6);
                 storageUtil.addFileUrls(version, serverUrl, json.files, FileResource.DOWNLOAD, FileResource.MANIFEST,
-                        FileResource.ICON, FileResource.README, FileResource.LICENSE);
+                        FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);
                 versionJsons.add(json);
             }
         }

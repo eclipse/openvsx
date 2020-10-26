@@ -45,6 +45,7 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String PACKAGE_NLS_JSON = "extension/package.nls.json";
     private static final String[] README = { "extension/README.md", "extension/README", "extension/README.txt" };
     private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
+    private static final String[] CHANGELOG = { "extension/CHANGELOG.md", "extension/CHANGELOG", "extension/CHANGELOG.txt" };
 
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
     private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");
@@ -224,6 +225,9 @@ public class ExtensionProcessor implements AutoCloseable {
         var readme = getReadme(extension);
         if (readme != null)
             resources.add(readme);
+        var changelog = getChangelog(extension);
+        if (changelog != null)
+            resources.add(changelog);
         var license = getLicense(extension);
         if (license != null)
             resources.add(license);
@@ -267,6 +271,20 @@ public class ExtensionProcessor implements AutoCloseable {
         readme.setType(FileResource.README);
         readme.setContent(result.getFirst());
         return readme;
+    }
+
+    protected FileResource getChangelog(ExtensionVersion extension) {
+        readInputStream();
+        var result = readFromAlternateNames(CHANGELOG);
+        if (result == null) {
+            return null;
+        }
+        var changelog = new FileResource();
+        changelog.setExtension(extension);
+        changelog.setName(result.getSecond());
+        changelog.setType(FileResource.CHANGELOG);
+        changelog.setContent(result.getFirst());
+        return changelog;
     }
 
     protected FileResource getLicense(ExtensionVersion extension) {
