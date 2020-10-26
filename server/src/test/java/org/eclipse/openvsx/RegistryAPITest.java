@@ -206,6 +206,14 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testChangelog() throws Exception {
+        mockChangelog();
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "CHANGELOG"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("All notable changes is documented here"));
+    }
+
+    @Test
     public void testLicense() throws Exception {
         mockLicense();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "LICENSE"))
@@ -776,6 +784,19 @@ public class RegistryAPITest {
         resource.setContent("Please read me".getBytes());
         resource.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(repositories.findFileByName(extVersion, "README"))
+                .thenReturn(resource);
+        return resource;
+    }
+
+    private FileResource mockChangelog() {
+        var extVersion = mockExtension();
+        var resource = new FileResource();
+        resource.setExtension(extVersion);
+        resource.setName("CHANGELOG");
+        resource.setType(FileResource.CHANGELOG);
+        resource.setContent("All notable changes is documented here".getBytes());
+        resource.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByName(extVersion, "CHANGELOG"))
                 .thenReturn(resource);
         return resource;
     }

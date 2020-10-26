@@ -37,6 +37,10 @@
                                 {
                                     "assetType": "Microsoft.VisualStudio.Services.VSIXPackage",
                                     "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/redhat.vscode-yaml-0.5.2.vsix"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/CHANGELOG.md"
                                 }
                             ],
                             "properties": [

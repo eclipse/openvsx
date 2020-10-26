@@ -56,4 +56,19 @@ public class ExtensionProcessorTest {
         }
     }
 
+    @Test
+    public void testChangelog() throws Exception {
+        try (
+            var stream = getClass().getResourceAsStream("util/changelog.zip");
+            var processor = new ExtensionProcessor(stream);
+        ) {            
+            var metadata = processor.getMetadata();
+            var resources = processor.getResources(metadata);
+            var changelogFile = resources.stream()
+                    .filter(res -> res.getType().equals(FileResource.CHANGELOG))
+                    .findFirst();
+            assertThat(changelogFile).isPresent();
+            assertThat(changelogFile.get().getName()).isEqualTo("CHANGELOG.md");
+        }
+    }
 }
