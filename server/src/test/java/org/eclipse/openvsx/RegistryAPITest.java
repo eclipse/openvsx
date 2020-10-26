@@ -50,7 +50,7 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
-import org.eclipse.openvsx.security.ExtendedOAuth2UserServices;
+import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -990,8 +990,8 @@ public class RegistryAPITest {
         }
 
         @Bean
-        ExtendedOAuth2UserServices extendedOAuth2UserServices() {
-            return new ExtendedOAuth2UserServices();
+        OAuth2UserServices oauth2UserServices() {
+            return new OAuth2UserServices();
         }
 
         @Bean

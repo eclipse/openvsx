@@ -45,11 +45,10 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
-import org.eclipse.openvsx.security.ExtendedOAuth2UserServices;
+import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.hibernate.mapping.Collection;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -605,8 +604,8 @@ public class AdminAPITest {
         }
 
         @Bean
-        ExtendedOAuth2UserServices extendedOAuth2UserServices() {
-            return new ExtendedOAuth2UserServices();
+        OAuth2UserServices oauth2UserServices() {
+            return new OAuth2UserServices();
         }
 
         @Bean

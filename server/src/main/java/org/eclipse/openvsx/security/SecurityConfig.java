@@ -26,7 +26,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     String webuiUrl;
 
     @Autowired
-    ExtendedOAuth2UserServices userServices;
+    OAuth2UserServices userServices;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -34,7 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
             .authorizeRequests()
-                .antMatchers("/login/**", "/oauth2/**", "/user", "/logout")
+                .antMatchers("/login/**", "/oauth2/**", "/user", "/user/auth-error", "/logout")
                     .permitAll()
                 .antMatchers("/api/*/*/review", "/api/*/*/review/delete")
                     .authenticated()
@@ -57,7 +57,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
             .oauth2Login(configurer -> {
                 configurer.defaultSuccessUrl(redirectUrl);
-                configurer.successHandler(new ExtendedAuthenticationSuccessHandler(redirectUrl));
+                configurer.successHandler(new CustomAuthenticationSuccessHandler(redirectUrl));
+                configurer.failureUrl(redirectUrl + "?auth-error");
                 configurer.userInfoEndpoint()
                     .oidcUserService(userServices.getOidc())
                     .userService(userServices.getOauth2());

@@ -87,7 +87,8 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
     if (err) {
         console.error(err);
         if (err instanceof Error) {
-            if (err.message === 'Failed to fetch') {
+            if (err.message === 'Failed to fetch'
+                || err.message === 'Unexpected token < in JSON at position 0') {
                 return 'Something went wrong while fetching data. Please contact the site administrators.';
             }
             return `An unexpected error occurred: ${err.message}`;

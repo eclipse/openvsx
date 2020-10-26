@@ -13,7 +13,7 @@ import {
     SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, MembershipRole, SortBy, SortOrder, UrlString, NamespaceMembershipList, PublisherInfo
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
-import { sendRequest } from './server-request';
+import { sendRequest, ErrorResponse } from './server-request';
 
 export class ExtensionRegistryService {
 
@@ -129,6 +129,13 @@ export class ExtensionRegistryService {
     getUser(): Promise<Readonly<UserData | ErrorResult>> {
         return sendRequest({
             endpoint: createAbsoluteURL([this.serverUrl, 'user']),
+            credentials: true
+        });
+    }
+
+    getUserAuthError(): Promise<Readonly<ErrorResponse>> {
+        return sendRequest({
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'auth-error']),
             credentials: true
         });
     }
@@ -257,14 +264,14 @@ export class AdminService {
 
     constructor(readonly registry: ExtensionRegistryService) { }
 
-    findNamespace(name: string): Promise<Namespace> {
+    findNamespace(name: string): Promise<Readonly<Namespace>> {
         return sendRequest({
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', name])
         });
     }
 
-    async createNamespace(namespace: { name: string }): Promise<SuccessResult> {
+    async createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'

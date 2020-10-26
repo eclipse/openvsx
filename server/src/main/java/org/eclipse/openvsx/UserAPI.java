@@ -23,6 +23,7 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.CsrfTokenJson;
+import org.eclipse.openvsx.json.ErrorJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -36,6 +37,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -71,6 +74,22 @@ public class UserAPI {
     )
     public ModelAndView login(ModelMap model) {
         return new ModelAndView("redirect:/oauth2/authorization/github", model);
+    }
+
+    /**
+     * Retrieve the last authentication error and return its details.
+     */
+    @GetMapping(
+        path = "/user/auth-error",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ErrorJson getAuthError(HttpServletRequest request) {
+        var authException = request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+        if (!(authException instanceof AuthenticationException))
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        var json = new ErrorJson();
+        json.message = ((AuthenticationException) authException).getMessage();
+        return json;
     }
 
     /**

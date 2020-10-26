@@ -39,7 +39,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ExtendedOAuth2UserServices {
+public class OAuth2UserServices {
 
     @Autowired
     UserService users;
@@ -60,17 +60,17 @@ public class ExtendedOAuth2UserServices {
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
     private final OAuth2UserService<OidcUserRequest, OidcUser> oidc;
 
-    public ExtendedOAuth2UserServices() {
+    public OAuth2UserServices() {
         this.oauth2 = new OAuth2UserService<OAuth2UserRequest, OAuth2User>() {
             @Override
             public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-                return ExtendedOAuth2UserServices.this.loadUser(userRequest);
+                return OAuth2UserServices.this.loadUser(userRequest);
             }
         };
         this.oidc = new OAuth2UserService<OidcUserRequest, OidcUser>() {
             @Override
             public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
-                return ExtendedOAuth2UserServices.this.loadUser(userRequest);
+                return OAuth2UserServices.this.loadUser(userRequest);
             }
         };
     }

@@ -27,6 +27,7 @@ import { ErrorDialog } from './components/error-dialog';
 import '../src/main.css';
 import { HeaderMenu } from './header-menu';
 import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
+import { ErrorResponse } from './server-request';
 
 const mainStyles = (theme: Theme) => createStyles({
     main: {
@@ -70,6 +71,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     }
 
     componentDidMount(): void {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.has('auth-error')) {
+            this.props.service.getUserAuthError()
+                .then(err => this.handleError(err));
+        }
         this.updateUser();
     }
 
@@ -86,7 +92,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         }
     }
 
-    handleError = (err: {}) => {
+    handleError = (err: Error | Partial<ErrorResponse>) => {
         const error = handleError(err);
         this.setState({ error, isErrorDialogOpen: true });
     };
