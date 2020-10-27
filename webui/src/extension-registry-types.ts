@@ -139,10 +139,11 @@ export interface UserData {
     publisherAgreement?: 'none' | 'signed' | 'outdated';
     publisherAgreementTimestamp?: TimestampString;
     additionalLogins?: UserData[];
+    namespaces: Namespace[]
 }
 
-export function isEqualUser(u1: UserData, u2: UserData): boolean {
-    return u1.loginName === u2.loginName;
+export function isEqualUser(u1?: UserData, u2?: UserData): boolean {
+    return u1?.loginName === u2?.loginName;
 }
 
 export interface PersonalAccessToken {

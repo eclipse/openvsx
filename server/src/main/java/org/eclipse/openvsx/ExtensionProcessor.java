@@ -44,8 +44,8 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String PACKAGE_JSON = "extension/package.json";
     private static final String PACKAGE_NLS_JSON = "extension/package.nls.json";
     private static final String[] README = { "extension/README.md", "extension/README", "extension/README.txt" };
-    private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
-    private static final String[] CHANGELOG = { "extension/CHANGELOG.md", "extension/CHANGELOG", "extension/CHANGELOG.txt" };
+    private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };    
+    public static final String[] CHANGELOG = { "extension/CHANGELOG.md", "extension/CHANGELOG", "extension/CHANGELOG.txt" };
 
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
     private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");

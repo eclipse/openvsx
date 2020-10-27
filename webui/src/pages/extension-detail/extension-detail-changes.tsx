@@ -15,8 +15,9 @@ import * as DOMPurify from 'dompurify';
 import { Box, Divider, Typography, withStyles, Theme, createStyles, WithStyles } from '@material-ui/core';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { MainContext } from '../../context';
+import { ButtonWithProgress } from '../../components/button-with-progress';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { Extension } from '../../extension-registry-types';
+import { Extension, isEqualUser, isError, UserData } from '../../extension-registry-types';
 import linkIcon from '../../components/link-icon';
 
 const changesStyles = (theme: Theme) => createStyles({
@@ -116,8 +117,21 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
             permalink: true,
             permalinkSymbol: linkIcon({ x: 0, y: 0, width: 24, height: 10 })
         });
-        this.state = { loading: true };
+        this.state = { loading: true, canSync: false, syncing: false };
     }
+
+    protected handleSync = async () => {
+        this.setState({ syncing: true });
+        try {
+            const result = await this.context.service.syncExtensionChangelog(this.props.extension);
+            if (isError(result)) {
+                throw result;
+            }
+            this.props.changelogDidUpdate();
+        } catch (err) {
+            this.context.handleError(err);
+        }
+    };
 
     componentDidMount(): void {
         this.updateChanges();
@@ -126,23 +140,32 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
     componentDidUpdate(prevProps: ExtensionDetailChanges.Props) {
         const prevExt = prevProps.extension;
         const newExt = this.props.extension;
-        if (prevExt.namespace !== newExt.namespace || prevExt.name !== newExt.name || prevExt.version !== newExt.version) {
+        const prevUser = prevProps.user;
+        const newUser = this.props.user;
+
+        if (!isEqualUser(prevUser, newUser) ||
+            prevExt.namespace !== newExt.namespace ||
+            prevExt.name !== newExt.name ||
+            prevExt.files.changelog !== newExt.files.changelog) {
             this.setState({ loading: true });
             this.updateChanges();
         }
     }
 
     protected async updateChanges(): Promise<void> {
+        const ns = this.context.user?.namespaces;
+        const isOwner = !!ns?.find(o => o.name === this.props.extension.namespace);
+
         if (this.props.extension.files.changelog) {
             try {
                 const changelog = await this.context.service.getExtensionChangelog(this.props.extension);
-                this.setState({ changelog, loading: false }, () => this.scrollToHeading());
+                this.setState({ canSync: isOwner && !changelog, changelog, loading: false,  syncing: false }, () => this.scrollToHeading());
             } catch (err) {
                 this.context.handleError(err);
-                this.setState({ loading: false });
+                this.setState({ canSync: isOwner, loading: false, syncing: false });
             }
         } else {
-            this.setState({ changelog: "", loading: false });
+            this.setState({ canSync: isOwner, changelog: "", loading: false, syncing: false });
         }
     }
 
@@ -161,9 +184,8 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
             return <DelayedLoadIndicator loading={this.state.loading} />;
         }
         const { classes } = this.props;
-        const noChangelog = this.state.changelog.length === 0;
 
-        return noChangelog ?
+        return !this.state.changelog ?
             <React.Fragment>
                 <Box className={this.props.classes.header} my={2}>
                     <Box>
@@ -171,6 +193,7 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
                             Changelog
                         </Typography>
                     </Box>
+                    { this.renderButton() }
                 </Box>
                 <Divider />
                 <Box mt={3}>
@@ -186,6 +209,16 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
             </React.Fragment>;
     }
 
+    protected renderButton(): React.ReactNode {
+        return this.state.canSync
+            ? <ButtonWithProgress
+                working={this.state.syncing}
+                onClick={this.handleSync} >
+                Refresh
+              </ButtonWithProgress>
+            : null;
+    }
+
     protected renderMarkdown(md: string): React.ReactNode {
         const renderedMd = this.markdownIt.render(md);
         const sanitized = DOMPurify.sanitize(renderedMd);
@@ -196,10 +229,14 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
 export namespace ExtensionDetailChanges {
     export interface Props extends WithStyles<typeof changesStyles>, RouteComponentProps {
         extension: Extension;
+        user?: UserData;
+        changelogDidUpdate: () => void;
     }
     export interface State {
         changelog?: string;
         loading: boolean;
+        syncing: boolean;
+        canSync: boolean;
     }
 }
 

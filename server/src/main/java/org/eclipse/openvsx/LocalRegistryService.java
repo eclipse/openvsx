@@ -49,6 +49,7 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -58,6 +59,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -620,4 +622,76 @@ public class LocalRegistryService implements IExtensionRegistry {
         return memberships == 0;
     }
 
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson syncChangelog(String namespaceName, String extensionName, String version) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        var extension = repositories.findExtension(extensionName, namespaceName);
+        if (extension == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        var namespace = extension.getNamespace();
+        if (!users.hasPublishPermission(user, namespace)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        var extVersion = Strings.isNullOrEmpty(version)
+            ? extension.getLatest()
+            : repositories.findVersion(version, extensionName, namespaceName);
+        
+        if (extVersion == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        
+        var file = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
+        if (file == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        var archive = file.getContent();
+        var entry = readFromAlternateNames(archive, ExtensionProcessor.CHANGELOG);
+        if (entry == null) {
+            return ResultJson.error("Changelog not available: " + namespaceName + "." + extensionName + " version " + extVersion.getVersion());
+        }
+
+        var resource = new FileResource();
+        resource.setExtension(extVersion);
+        resource.setName(entry.getSecond());
+        resource.setType(FileResource.CHANGELOG);
+        resource.setContent(entry.getFirst());
+
+        return syncResource(extVersion, resource);
+    }
+    
+    private ResultJson syncResource(ExtensionVersion extVersion, FileResource resource) {
+        if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
+            googleStorage.uploadFile(resource);
+        } else {
+            resource.setStorageType(FileResource.STORAGE_DB);
+        }
+        
+        entityManager.persist(resource);
+        
+        var extension = extVersion.getExtension();
+        return ResultJson.success("Resource synced ("+ resource.getType() + ") for "
+            + extension.getNamespace().getName() 
+            + "." + extension.getName()
+            + " version " + extVersion.getVersion());
+    }
+    
+    private Pair<byte[], String> readFromAlternateNames(byte[] archive, String[] names) {
+        for (var name : names) {
+            var bytes = ArchiveUtil.readEntry(archive, name);
+            if (bytes != null) {
+                var lastSegmentIndex = name.lastIndexOf('/');
+                var lastSegment = name.substring(lastSegmentIndex + 1);
+                return Pair.of(bytes, lastSegment);
+            }
+        }
+        return null;
+    }
 }

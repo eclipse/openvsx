@@ -79,6 +79,21 @@ export class ExtensionRegistryService {
         });
     }
 
+    async syncExtensionChangelog(extension: Extension): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', extension.namespace, extension.name, 'sync-changelog'],
+                [{ key: 'version', value: extension.version }]),
+            headers
+        });
+    }
+
     getCategories(): ExtensionCategory[] {
         return [
             'Programming Languages',
