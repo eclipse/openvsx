@@ -71,6 +71,14 @@ export class ExtensionRegistryService {
         });
     }
 
+    getExtensionChangelog(extension: Extension): Promise<string> {
+        return sendRequest({
+            endpoint: extension.files.changelog!,
+            headers: { 'Accept': 'text/plain' },
+            followRedirect: true
+        });
+    }
+
     getCategories(): ExtensionCategory[] {
         return [
             'Programming Languages',

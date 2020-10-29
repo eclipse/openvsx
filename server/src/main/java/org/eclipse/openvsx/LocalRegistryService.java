@@ -594,9 +594,9 @@ public class LocalRegistryService implements IExtensionRegistry {
             json.allVersions.put(version.toString(), url);
         }
     
-        json.files = Maps.newLinkedHashMapWithExpectedSize(5);
+        json.files = Maps.newLinkedHashMapWithExpectedSize(6);
         storageUtil.addFileUrls(extVersion, serverUrl, json.files,
-                FileResource.DOWNLOAD, FileResource.MANIFEST, FileResource.ICON, FileResource.README, FileResource.LICENSE);
+                FileResource.DOWNLOAD, FileResource.MANIFEST, FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);
     
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {

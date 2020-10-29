@@ -263,6 +263,8 @@ public class VSCodeAdapter {
                 return repositories.findFileByType(extVersion, FileResource.MANIFEST);
             case FILE_DETAILS:
                 return repositories.findFileByType(extVersion, FileResource.README);
+            case FILE_CHANGELOG:
+                return repositories.findFileByType(extVersion, FileResource.CHANGELOG);
             case FILE_LICENSE:
                 return repositories.findFileByType(extVersion, FileResource.LICENSE);
             case FILE_ICON:
@@ -360,15 +362,16 @@ public class VSCodeAdapter {
         }
 
         if (test(flags, FLAG_INCLUDE_FILES)) {
-            Map<String, String> type2Url = Maps.newHashMapWithExpectedSize(5);
+            Map<String, String> type2Url = Maps.newHashMapWithExpectedSize(6);
             storageUtil.addFileUrls(extVer, serverUrl, type2Url,
-                    FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD);
+                    FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD, FileResource.CHANGELOG);
             queryVer.files = Lists.newArrayList();
             queryVer.addFile(FILE_MANIFEST, type2Url.get(FileResource.MANIFEST));
             queryVer.addFile(FILE_DETAILS, type2Url.get(FileResource.README));
             queryVer.addFile(FILE_LICENSE, type2Url.get(FileResource.LICENSE));
             queryVer.addFile(FILE_ICON, type2Url.get(FileResource.ICON));
             queryVer.addFile(FILE_VSIX, type2Url.get(FileResource.DOWNLOAD));
+            queryVer.addFile(FILE_CHANGELOG, type2Url.get(FileResource.CHANGELOG));
         }
 
         if (test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {

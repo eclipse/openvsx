@@ -42,7 +42,7 @@ public class ExtensionJson extends ResultJson {
     @NotNull
     public String reviewsUrl;
 
-    @ApiModelProperty("Map of file types (download, manifest, icon, readme, license) to their respective URLs")
+    @ApiModelProperty("Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
     public Map<String, String> files;
 
     @ApiModelProperty("Name of the extension")

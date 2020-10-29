@@ -205,6 +205,13 @@ public class VSCodeAdapterTest {
         readmeFile.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.README))
                 .thenReturn(readmeFile);
+        var changelogFile = new FileResource();
+        changelogFile.setExtension(extVersion);
+        changelogFile.setName("CHANGELOG.md");
+        changelogFile.setType(FileResource.CHANGELOG);
+        changelogFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.CHANGELOG))
+                .thenReturn(changelogFile);
         var licenseFile = new FileResource();
         licenseFile.setExtension(extVersion);
         licenseFile.setName("LICENSE.txt");
@@ -219,8 +226,8 @@ public class VSCodeAdapterTest {
         iconFile.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.ICON))
                 .thenReturn(iconFile);
-        Mockito.when(repositories.findFilesByType(extVersion, Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD)))
-                .thenReturn(Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile));
+        Mockito.when(repositories.findFilesByType(extVersion, Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD, FileResource.CHANGELOG)))
+                .thenReturn(Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile));
         return extVersion;
     }
 
