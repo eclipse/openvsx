@@ -56,6 +56,11 @@ public class ExtensionProcessor implements AutoCloseable {
     private JsonNode packageJson;
     private JsonNode packageNlsJson;
 
+    public ExtensionProcessor(byte[] content) {
+        this.content = content;
+        this.inputStream = null;
+    }
+
     public ExtensionProcessor(InputStream stream) {
         this.inputStream = stream;
     }
@@ -76,7 +81,8 @@ public class ExtensionProcessor implements AutoCloseable {
             return;
         }
         try {
-            content = ByteStreams.toByteArray(inputStream);
+            if (inputStream != null)
+                content = ByteStreams.toByteArray(inputStream);
             if (content.length > MAX_CONTENT_SIZE)
                 throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
             var tempFile = File.createTempFile("extension_", ".vsix");
@@ -273,7 +279,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return readme;
     }
 
-    protected FileResource getChangelog(ExtensionVersion extension) {
+    public FileResource getChangelog(ExtensionVersion extension) {
         readInputStream();
         var result = readFromAlternateNames(CHANGELOG);
         if (result == null) {
