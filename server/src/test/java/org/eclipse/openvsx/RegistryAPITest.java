@@ -207,96 +207,10 @@ public class RegistryAPITest {
 
     @Test
     public void testChangelog() throws Exception {
-        mockChangelog(mockExtension());
+        mockChangelog();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "CHANGELOG"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("All notable changes is documented here"));
-    }
-
-    @Test
-    public void testSyncChangelogNotLoggedIn() throws Exception {
-        mockMvc.perform(post("/api/{namespace}/{extension}/sync-changelog", "foo", "bar")                
-                .with(csrf().asHeader()))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    public void testSyncChangelogUnknownExtension() throws Exception {
-        mockUserData();
-        mockMvc.perform(post("/api/{namespace}/{extension}/sync-changelog", "foo", "bar")
-                .with(user("test_user"))
-                .with(csrf().asHeader()))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    public void testSyncChangelogWithoutPublishPermission() throws Exception {
-        mockUserData();
-        var extVersion = mockExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-
-        var otherUser = new UserData();
-        otherUser.setLoginName("other_user");
-
-        var ownerMem = new NamespaceMembership();
-        ownerMem.setUser(otherUser);
-        ownerMem.setNamespace(namespace);
-        ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
-
-        Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                    .thenReturn(Streamable.of(ownerMem));
-        mockMvc.perform(post("/api/{namespace}/{extension}/sync-changelog", "foo", "bar")
-                .with(user("test_user"))
-                .with(csrf().asHeader()))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    public void testSyncChangelogNoChangelogFile() throws Exception {
-        var user  = mockUserData();        
-        var extVersion = mockExtension();        
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-
-        var ownerMem = new NamespaceMembership();
-        ownerMem.setUser(user);
-        ownerMem.setNamespace(namespace);
-        ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
-
-        mockDownload(extVersion);
-
-        Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-            .thenReturn(Streamable.of(ownerMem));
-
-        mockMvc.perform(post("/api/{namespace}/{extension}/sync-changelog", "foo", "bar")
-                .with(user("test_user"))
-                .with(csrf().asHeader()))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().json(errorJson("Changelog not available: foo.bar version " + extVersion.getVersion())));;
-    }
-
-    @Test
-    public void testSyncChangelog() throws Exception {
-        var user  = mockUserData();        
-        var extVersion = mockExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-
-        var ownerMem = new NamespaceMembership();
-        ownerMem.setUser(user);
-        ownerMem.setNamespace(namespace);
-        ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
-
-        mockDownload(extVersion, mockChangelog(extVersion));
-        
-        Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-            .thenReturn(Streamable.of(ownerMem));
-
-        mockMvc.perform(post("/api/{namespace}/{extension}/sync-changelog", "foo", "bar")
-                .with(user("test_user"))
-                .with(csrf().asHeader()))
-                .andExpect(status().isOk());
     }
 
     @Test
@@ -874,7 +788,8 @@ public class RegistryAPITest {
         return resource;
     }
 
-    private FileResource mockChangelog(ExtensionVersion extVersion) {
+    private FileResource mockChangelog() {
+        var extVersion = mockExtension();
         var resource = new FileResource();
         resource.setExtension(extVersion);
         resource.setName("CHANGELOG");
@@ -883,30 +798,6 @@ public class RegistryAPITest {
         resource.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(repositories.findFileByName(extVersion, "CHANGELOG"))
                 .thenReturn(resource);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.CHANGELOG))
-                .thenReturn(resource);
-        return resource;
-    }
-
-    private FileResource mockDownload(ExtensionVersion extVersion, FileResource... resources) throws IOException{        
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        
-        var bytes = createExtensionPackage(
-            extension.getName(), 
-            extVersion.getVersion(),
-            resources);
-
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName(namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + ".vsix");
-        resource.setType(FileResource.DOWNLOAD);
-        resource.setContent(bytes);
-        resource.setStorageType(FileResource.STORAGE_DB);
-        
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD))
-                .thenReturn(resource);
-        
         return resource;
     }
 
@@ -1098,7 +989,7 @@ public class RegistryAPITest {
         return new ObjectMapper().writeValueAsString(json);
     }
     
-    private byte[] createExtensionPackage(String name, String version, FileResource... resources) throws IOException {
+    private byte[] createExtensionPackage(String name, String version) throws IOException {
         var bytes = new ByteArrayOutputStream();
         var archive = new ZipOutputStream(bytes);
         archive.putNextEntry(new ZipEntry("extension/package.json"));
@@ -1108,16 +999,10 @@ public class RegistryAPITest {
                 "\"version\": \"" + version + "\"" +
             "}";
         archive.write(packageJson.getBytes());
-
-        for(FileResource resource: resources) {
-            archive.putNextEntry(new ZipEntry("extension/" + resource.getName()));
-            archive.write(resource.getContent());
-        }
-
         archive.finish();
         return bytes.toByteArray();
     }
-
+    
     @TestConfiguration
     static class TestConfig {
         @Bean

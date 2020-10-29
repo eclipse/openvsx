@@ -194,7 +194,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         }
     }
 
-    protected onExtensionUpdate = (): void => {
+    protected onReviewUpdate = (): void => {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         const extensionUrl = this.getExtensionApiUrl(params);
         this.updateExtension(extensionUrl);
@@ -248,14 +248,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                             <Route path={ExtensionDetailRoutes.CHANGES}>
                                 <ExtensionDetailChanges
                                     extension={extension}
-                                    user={this.context.user}
-                                    changelogDidUpdate={this.onExtensionUpdate}
                                 />
                             </Route>
                             <Route path={ExtensionDetailRoutes.REVIEWS}>
                                 <ExtensionDetailReviews
                                     extension={extension}
-                                    reviewsDidUpdate={this.onExtensionUpdate}
+                                    reviewsDidUpdate={this.onReviewUpdate}
                                 />
                             </Route>
                             <Route path={ExtensionDetailRoutes.LATEST}>

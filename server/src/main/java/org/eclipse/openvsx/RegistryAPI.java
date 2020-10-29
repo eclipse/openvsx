@@ -488,20 +488,4 @@ public class RegistryAPI {
         }
     }
 
-    @PostMapping(
-        path = "/api/{namespace}/{extension}/sync-changelog",
-        produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    @ApiIgnore
-    public ResponseEntity<ResultJson> syncChangelog(@PathVariable String namespace,
-        @PathVariable("extension") String extension,
-        @RequestParam(required = false) String version) {
-
-        var json = local.syncChangelog(namespace, extension, version);
-        if (json.error == null) {
-            return ResponseEntity.ok(json);
-        } else {
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-    }
 }

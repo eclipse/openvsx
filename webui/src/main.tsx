@@ -85,8 +85,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             if (isError(user)) {
                 this.setState({ user: undefined, userLoading: false });
             } else {
-                const namespaces = await this.props.service.getNamespaces();
-                this.setState({ user: { ...user, namespaces }, userLoading: false });
+                this.setState({ user, userLoading: false });
             }
         } catch (err) {
             this.setState({ error: handleError(err), isErrorDialogOpen: true, userLoading: false });
