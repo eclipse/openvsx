@@ -23,6 +23,7 @@ export interface PageSettings {
         reportAbuse?: React.ComponentType<{ extension: Extension } & Styleable>;
         claimNamespace?: React.ComponentType<{ extension: Extension } & Styleable>;
         additionalRoutes?: React.ComponentType;
+        bannerContent?: React.ComponentType;
     };
     metrics?: {
         footerHeight?: number;

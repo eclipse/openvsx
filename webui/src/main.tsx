@@ -120,7 +120,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         const {
             toolbarContent: ToolbarContent,
             footerContent: FooterContent,
-            additionalRoutes: AdditionalRoutes
+            additionalRoutes: AdditionalRoutes,
+            bannerContent: BannerContent
         } = this.props.pageSettings.elements;
         const classes = this.props.classes;
         return <React.Fragment>
@@ -139,7 +140,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     <HeaderMenu />
                                     {
                                         this.state.user ?
-                                            <UserAvatar/>
+                                            <UserAvatar />
                                             :
                                             <IconButton
                                                 href={this.props.service.getLoginUrl()}
@@ -151,6 +152,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 </Box>
                             </Toolbar>
                         </AppBar>
+                        {
+                            BannerContent ?
+                                <BannerContent></BannerContent>
+                                : null
+                        }
                         <Box pb={`${this.getContentPadding()}px`}>
                             <Switch>
                                 <Route exact path={[ExtensionListRoutes.MAIN]}

@@ -19,6 +19,7 @@ import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
 import { createAbsoluteURL } from '../utils';
+import { Banner } from 'material-ui-banner';
 
 export default function createPageSettings(theme: Theme, prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarStyle = makeStyles({
@@ -30,7 +31,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
     });
     const toolbarContent: React.FunctionComponent = () =>
         <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
-            <OpenVSXLogo prefersDarkMode={prefersDarkMode} className={toolbarStyle().logo}/>
+            <OpenVSXLogo prefersDarkMode={prefersDarkMode} className={toolbarStyle().logo} />
         </RouteLink>;
 
     const footerStyle = makeStyles({
@@ -59,6 +60,30 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             }
         }
     });
+
+    const bannerStyles = makeStyles({
+        banner: {
+            background: theme.palette.secondary.dark
+        }
+    });
+
+    const bannerContent: React.FunctionComponent = () => {
+        const [open, setOpen] = React.useState(true);
+        const classes = bannerStyles();
+        const onDismissButtonClick = () => {
+            setOpen(false);
+        };
+        return <Banner
+            cardProps={{
+                className: classes.banner
+            }}
+            open={open}
+            label='HELLO FOLKS'
+            dismissButtonLabel='Close'
+            onClose={onDismissButtonClick}
+        ></Banner>;
+    };
+
     const footerContent: React.FunctionComponent<{ expanded: boolean }> = () =>
         <Box className={footerStyle().wrapper}>
             <Link
@@ -97,7 +122,8 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             mobileMenuContent: MobileMenuContent,
             footerContent,
             searchHeader,
-            additionalRoutes
+            additionalRoutes,
+            bannerContent
         },
         metrics: {
             footerHeight: 69 // Maximal height reached for small screens
