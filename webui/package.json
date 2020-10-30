@@ -48,8 +48,7 @@
         "react-dom": "^16.13.1",
         "react-infinite-scroller": "^1.2.4",
         "react-router-dom": "^5.2.0",
-        "ts-mocha": "^7.0.0",
-        "material-ui-banner": "^1.4.3"
+        "ts-mocha": "^7.0.0"
     },
     "peerDependencies": {
         "express": "^4.17.1"

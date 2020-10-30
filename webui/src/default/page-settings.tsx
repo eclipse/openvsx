@@ -19,7 +19,6 @@ import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
 import { createAbsoluteURL } from '../utils';
-import { Banner } from 'material-ui-banner';
 
 export default function createPageSettings(theme: Theme, prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarStyle = makeStyles({
@@ -61,29 +60,6 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
         }
     });
 
-    const bannerStyles = makeStyles({
-        banner: {
-            background: theme.palette.secondary.dark
-        }
-    });
-
-    const bannerContent: React.FunctionComponent = () => {
-        const [open, setOpen] = React.useState(true);
-        const classes = bannerStyles();
-        const onDismissButtonClick = () => {
-            setOpen(false);
-        };
-        return <Banner
-            cardProps={{
-                className: classes.banner
-            }}
-            open={open}
-            label='HELLO FOLKS'
-            dismissButtonLabel='Close'
-            onClose={onDismissButtonClick}
-        ></Banner>;
-    };
-
     const footerContent: React.FunctionComponent<{ expanded: boolean }> = () =>
         <Box className={footerStyle().wrapper}>
             <Link
@@ -120,13 +96,29 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
             toolbarContent,
             defaultMenuContent: DefaultMenuContent,
             mobileMenuContent: MobileMenuContent,
-            footerContent,
+            footer: {
+                content: footerContent,
+                props: {
+                    footerHeight: 69 // Maximal height reached for small screens
+                }
+            },
             searchHeader,
             additionalRoutes,
-            bannerContent
-        },
-        metrics: {
-            footerHeight: 69 // Maximal height reached for small screens
+            // banner: {
+            //     content: <Box>
+            //         <Typography variant='h6'>This is banner text</Typography>
+            //         <Typography variant='body1'>Foo bar baz</Typography>
+            //     </Box>,
+            //     props: {
+            //         dismissButton: {
+            //             show: true,
+            //             label: 'Got it!'
+            //         },
+            //         onClose: () => {
+            //             console.log('Announcement is closed');
+            //         }
+            //     }
+            // }
         },
         urls: {
             extensionDefaultIcon: '/default-icon.png',
