@@ -24,7 +24,7 @@ import { TextDivider } from '../../components/text-divider';
 import { ExtensionDetailOverview } from './extension-detail-overview';
 import { ExtensionDetailChanges } from './extension-detail-changes';
 import { ExtensionDetailReviews } from './extension-detail-reviews';
-import { ExtensionDetailTabs } from './extension-detail-tabs';
+import { ExtensionDetailTabs, versionPointsToTab } from './extension-detail-tabs';
 import { ExportRatingStars } from './extension-rating-stars';
 
 export namespace ExtensionDetailRoutes {
@@ -163,7 +163,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         const prevParams = prevProps.match.params as ExtensionDetailComponent.Params;
         const newParams = this.props.match.params as ExtensionDetailComponent.Params;
         if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name
-                || newParams.version !== prevParams.version) {
+                || newParams.version !== prevParams.version && !versionPointsToTab(newParams)
+                && !(newParams.version === undefined && versionPointsToTab(prevParams))) {
             if (newParams.namespace === prevParams.namespace && newParams.name === prevParams.name) {
                 this.setState({ loading: true });
             } else {
@@ -174,7 +175,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     }
 
     protected getExtensionApiUrl(params: ExtensionDetailComponent.Params): string {
-        if (params.version === 'reviews' || params.version === 'changes') {
+        if (versionPointsToTab(params)) {
             return this.context.service.getExtensionApiUrl({ namespace: params.namespace, name: params.name });
         }
         return this.context.service.getExtensionApiUrl(params);
@@ -241,7 +242,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             <Container maxWidth='xl'>
                 <Box>
                     <Box>
-                        <ExtensionDetailTabs />
+                        <ExtensionDetailTabs
+                            extension={extension} />
                     </Box>
                     <Box>
                         <Switch>

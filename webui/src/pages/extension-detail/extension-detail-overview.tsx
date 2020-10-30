@@ -9,9 +9,6 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import * as MarkdownIt from 'markdown-it';
-import * as MarkdownItAnchor from 'markdown-it-anchor';
-import * as DOMPurify from 'dompurify';
 import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link, NativeSelect } from '@material-ui/core';
 import { RouteComponentProps, Link as RouteLink, withRouter } from 'react-router-dom';
 import HomeIcon from '@material-ui/icons/Home';
@@ -21,11 +18,11 @@ import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 import { MainContext } from '../../context';
 import { addQuery, createRoute } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
+import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
 import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-registry-types';
 import { ExtensionListRoutes } from '../extension-list/extension-list-container';
 import { ExtensionDetailRoutes } from './extension-detail';
-import linkIcon from '../../components/link-icon';
 
 const overviewStyles = (theme: Theme) => createStyles({
     overview: {
@@ -71,56 +68,6 @@ const overviewStyles = (theme: Theme) => createStyles({
             textDecoration: 'underline'
         }
     },
-    markdown: {
-        '& a': {
-            textDecoration: 'none',
-            color: theme.palette.secondary.main,
-            '&:hover': {
-                textDecoration: 'underline'
-            }
-        },
-        '& a.header-anchor': {
-            fill: theme.palette.text.hint,
-            opacity: 0.4,
-            marginLeft: theme.spacing(0.5),
-            '&:hover': {
-                opacity: 1
-            }
-        },
-        '& img': {
-            maxWidth: '100%'
-        },
-        '& code': {
-            whiteSpace: 'pre',
-            backgroundColor: theme.palette.neutral.light,
-            padding: 2
-        },
-        '& h2': {
-            borderBottom: '1px solid #eee'
-        },
-        '& pre': {
-            background: theme.palette.neutral.light,
-            padding: '10px 5px',
-            '& code': {
-                padding: 0,
-                background: 'inherit'
-            }
-        },
-        '& table': {
-            borderCollapse: 'collapse',
-            borderSpacing: 0,
-            '& tr, & td, & th': {
-                border: '1px solid #ddd'
-            },
-            '& td, & th': {
-                padding: '6px 8px'
-            },
-            '& th': {
-                textAlign: 'start',
-                background: theme.palette.neutral.dark
-            }
-        }
-    },
     resourceLink: {
         display: 'flex',
         alignItems: 'center',
@@ -153,19 +100,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     static contextType = MainContext;
     declare context: MainContext;
 
-    protected markdownIt: MarkdownIt;
-
     constructor(props: ExtensionDetailOverview.Props) {
         super(props);
-        const anchorPlugin: MarkdownIt.PluginWithOptions<MarkdownItAnchor.AnchorOptions> = (MarkdownItAnchor as any).default;
-        this.markdownIt = new MarkdownIt({
-            html: true,
-            linkify: true,
-            typographer: true
-        }).use(anchorPlugin, {
-            permalink: true,
-            permalinkSymbol: linkIcon({ x: 0, y: 0, width: 24, height: 10 })
-        });
         this.state = { loading: true };
     }
 
@@ -214,12 +150,12 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const ClaimNamespace = this.context.pageSettings.elements.claimNamespace;
         const ReportAbuse = this.context.pageSettings.elements.reportAbuse;
         return <React.Fragment>
-            <Box className={this.props.classes.overview}>
-                <Box className={classes.markdown} flex={5} overflow='auto'>
-                    {this.renderMarkdown(this.state.readme)}
+            <Box className={classes.overview}>
+                <Box flex={5} overflow='auto'>
+                    <SanitizedMarkdown content={this.state.readme} />
                 </Box>
-                <Box className={this.props.classes.resourcesWrapper}>
-                    <Box className={this.props.classes.resourcesGroup}>
+                <Box className={classes.resourcesWrapper}>
+                    <Box className={classes.resourcesGroup}>
                         <Box>
                             {this.renderVersionSection()}
                         </Box>
@@ -238,7 +174,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             : null
                         }
                     </Box>
-                    <Box className={this.props.classes.resourcesGroup}>
+                    <Box className={classes.resourcesGroup}>
                         <Box>
                             <Typography variant='h6'>Resources</Typography>
                             {this.renderResourceLink('Homepage', extension.homepage)}
@@ -247,7 +183,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             {this.renderResourceLink('Q\'n\'A', extension.qna)}
                             <Button variant='contained' color='secondary'
                                 href={extension.files.download}
-                                className={this.props.classes.downloadButton} >
+                                className={classes.downloadButton} >
                                 Download
                             </Button>
                         </Box>
@@ -267,25 +203,25 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             </Box>
                             : null
                         }
-                        <Box mt={2} className={this.props.classes.moreInfo}>
+                        <Box mt={2} className={classes.moreInfo}>
                             <Typography variant='h6'>More Information</Typography>
                             {this.renderInfo('Namespace',
                                 <RouteLink
                                     to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
-                                    className={this.props.classes.link}>
+                                    className={classes.link}>
                                     {extension.namespace}
                                 </RouteLink>)}
                             {this.renderInfo('Access Type',
                                 <Link
                                     href={this.context.pageSettings.urls.namespaceAccessInfo}
                                     target='_blank'
-                                    className={this.props.classes.link}>
+                                    className={classes.link}>
                                     {extension.namespaceAccess || 'unknown'}
                                 </Link>)}
                         </Box>
                         <Box mt={2}>
-                            {ClaimNamespace ? <ClaimNamespace extension={extension} className={this.props.classes.resourceLink} /> : ''}
-                            {ReportAbuse ? <ReportAbuse extension={extension} className={this.props.classes.resourceLink} /> : ''}
+                            {ClaimNamespace ? <ClaimNamespace extension={extension} className={classes.resourceLink} /> : ''}
+                            {ReportAbuse ? <ReportAbuse extension={extension} className={classes.resourceLink} /> : ''}
                         </Box>
                     </Box>
                 </Box>
@@ -334,7 +270,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, alias]);
                     }
                     return <Button
-                        className={this.props.classes.tagButton}
+                        className={classes.tagButton}
                         size='small'
                         variant='outlined'
                         key={alias}
@@ -415,11 +351,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         </Box>;
     }
 
-    protected renderMarkdown(md: string): React.ReactNode {
-        const renderedMd = this.markdownIt.render(md);
-        const sanitized = DOMPurify.sanitize(renderedMd);
-        return <span dangerouslySetInnerHTML={{ __html: sanitized }} />;
-    }
 }
 
 export namespace ExtensionDetailOverview {
