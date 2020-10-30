@@ -28,6 +28,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     OAuth2UserServices userServices;
 
+    @Value("${ovsx.webui.frontendRoutes:/extension/**,/user-settings/**,/admin-dashboard/**}")
+    String[] frontendRoutes;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         var redirectUrl = Strings.isNullOrEmpty(webuiUrl) ? "/" : webuiUrl;
@@ -42,6 +45,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     .permitAll()
                 .antMatchers("/admin/**")
                     .hasAuthority("ROLE_ADMIN")
+                .antMatchers(frontendRoutes)
+                    .permitAll()
                 .anyRequest()
                     .authenticated()
                 .and()
