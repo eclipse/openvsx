@@ -9,9 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.db;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import javax.persistence.EntityManager;
 
 import org.eclipse.openvsx.ExtensionProcessor;
+import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -20,10 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
 public class ChangelogInitializer {
@@ -36,44 +38,45 @@ public class ChangelogInitializer {
     @Autowired
     RepositoryService repositories;
 
-    @Autowired
-    TransactionTemplate transactions;
+    private final ConcurrentLinkedQueue<Long> extensionVersionQueue = new ConcurrentLinkedQueue<>();
 
     @EventListener
-    @Transactional(readOnly = true)
-    public void initExtensionChangelogs(ApplicationStartedEvent event) {
-        var count = new int[1];
+    public void findMissingChangelogs(ApplicationStartedEvent event) {
         repositories.findAllExtensionVersions().forEach(extVersion -> {
             var needsChangelog = repositories.findFileByType(extVersion, FileResource.CHANGELOG) == null;
-            if (!needsChangelog)
-                return;
-            var binary = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-            if (binary == null)
-                return;
-            try {
-                var processor = new ExtensionProcessor(binary.getContent());
-                var changelog = processor.getChangelog(extVersion);
-                if (changelog != null) {
-                    // TODO support external storage types
-                    changelog.setStorageType(FileResource.STORAGE_DB);
-                    transactions.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-                    transactions.<Void>execute(status -> {
-                        entityManager.persist(changelog);
-                        return null;
-                    });
-                    count[0]++;
-                }
-            } catch (ErrorResultException exc) {
-                var extension = extVersion.getExtension();
-                logger.error("Failed to create changelog resource for "
-                        + extension.getNamespace().getName() + "." + extension.getName()
-                        + " v" + extVersion.getVersion(), exc);
+            if (needsChangelog) {
+                extensionVersionQueue.add(extVersion.getId());
             }
-            System.gc();
         });
+        if (!extensionVersionQueue.isEmpty())
+            logger.info("Attempting to extract changelog files for " + extensionVersionQueue.size() + " extension versions.");
+    }
 
-        if (count[0] > 0)
-            logger.info("Initialized changelog resource for " + count[0] + " extensions.");
+    @Scheduled(fixedDelay = 500, initialDelay = 10000)
+    @Transactional
+    public void extractChangelogs() {
+        var extVersionId = extensionVersionQueue.poll();
+        if (extVersionId == null)
+            return;
+        var extVersion = entityManager.find(ExtensionVersion.class, extVersionId);
+        var binary = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
+        if (binary == null)
+            return;
+
+        try {
+            var processor = new ExtensionProcessor(binary.getContent());
+            var changelog = processor.getChangelog(extVersion);
+            if (changelog != null) {
+                // TODO support external storage types
+                changelog.setStorageType(FileResource.STORAGE_DB);
+                entityManager.persist(changelog);
+            }
+        } catch (ErrorResultException exc) {
+            var extension = extVersion.getExtension();
+            logger.error("Failed to create changelog resource for "
+                    + extension.getNamespace().getName() + "." + extension.getName()
+                    + " v" + extVersion.getVersion(), exc);
+        }
     }
 
 }
