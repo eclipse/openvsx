@@ -8,8 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import * as fs from 'fs';
+import * as path from 'path';
 import { createVSIX } from 'vsce';
-import { createTempFile } from './util';
+import { createTempFile, readManifest, writeManifest, booleanQuestion } from './util';
 import { Registry, DEFAULT_URL } from './registry';
 
 /**
@@ -25,19 +27,12 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
             throw new Error("A personal access token must be given with the option '--pat'.");
         }
     }
+    const registry = new Registry({ url: options.registryUrl });
     if (!options.extensionFile) {
-        options.extensionFile = await createTempFile({ postfix: '.vsix' });
-        await createVSIX({
-            cwd: options.packagePath,
-            packagePath: options.extensionFile,
-            baseContentUrl: options.baseContentUrl,
-            baseImagesUrl: options.baseImagesUrl,
-            useYarn: options.yarn
-        });
+        await packageExtension(options, registry);
         console.log(); // new line
     }
-    const registry = new Registry({ url: options.registryUrl });
-    const extension = await registry.publish(options.extensionFile, options.pat);
+    const extension = await registry.publish(options.extensionFile!, options.pat);
     if (extension.error) {
         throw new Error(extension.error);
     }
@@ -80,4 +75,52 @@ export interface PublishOptions {
 	 * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
 	 */
     yarn?: boolean;
+}
+
+async function packageExtension(options: PublishOptions, registry: Registry): Promise<void> {
+    if (registry.url === DEFAULT_URL) {
+        // The default registry requires extensions to have a license
+        if (!await hasLicenseFile(options.packagePath)) {
+            const manifest = await readManifest(options.packagePath);
+            if (!manifest.publisher) {
+                throw new Error("Missing required field 'publisher'.");
+            }
+            if (!manifest.name) {
+                throw new Error("Missing required field 'name'.");
+            }
+            if (!manifest.license) {
+                const answer = await booleanQuestion(`Extension ${manifest.publisher}.${manifest.name} has no license. Would you like to publish it under the MIT license?`);
+                if (answer) {
+                    manifest.license = 'MIT';
+                    writeManifest(manifest, options.packagePath);
+                } else {
+                    throw new Error('This extension cannot be accepted because it has no license.');
+                }
+            }
+        }
+    }
+
+    options.extensionFile = await createTempFile({ postfix: '.vsix' });
+    await createVSIX({
+        cwd: options.packagePath,
+        packagePath: options.extensionFile,
+        baseContentUrl: options.baseContentUrl,
+        baseImagesUrl: options.baseImagesUrl,
+        useYarn: options.yarn
+    });
+}
+
+const LICENSE_FILE_NAMES = ['LICENSE.md', 'LICENSE', 'LICENSE.txt'];
+
+async function hasLicenseFile(packagePath?: string): Promise<boolean> {
+    for (const fileName of LICENSE_FILE_NAMES) {
+        const promise = new Promise(resolve => fs.access(
+            path.join(packagePath || '.', fileName),
+            err => resolve(!err)
+        ));
+        if (await promise) {
+            return true;
+        }
+    }
+    return false;
 }

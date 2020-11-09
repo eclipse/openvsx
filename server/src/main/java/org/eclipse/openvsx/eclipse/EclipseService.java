@@ -13,6 +13,7 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -96,11 +97,16 @@ public class EclipseService {
     }
 
     private final Function<String, LocalDateTime> parseDate = dateString -> {
-        var local = LocalDateTime.parse(dateString, CUSTOM_DATE_TIME);
-        if (Strings.isNullOrEmpty(publisherAgreementTimeZone)) {
-            return local;
+        try {
+            var local = LocalDateTime.parse(dateString, CUSTOM_DATE_TIME);
+            if (Strings.isNullOrEmpty(publisherAgreementTimeZone)) {
+                return local;
+            }
+            return TimeUtil.convertToUTC(local, publisherAgreementTimeZone);
+        } catch (DateTimeParseException exc) {
+            logger.error("Failed to parse timestamp.", exc);
+            return null;
         }
-        return TimeUtil.convertToUTC(local, publisherAgreementTimeZone);
     };
 
     public boolean isActive() {

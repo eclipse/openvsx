@@ -9,8 +9,10 @@
  ********************************************************************************/
 
 import * as fs from 'fs';
+import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
+import * as readline from 'readline';
 
 export { promisify } from 'util';
 
@@ -70,4 +72,59 @@ export function statusError(response: http.IncomingMessage): Error {
         return new Error(`The server responded with status ${response.statusCode}: ${response.statusMessage}`);
     else
         return new Error(`The server responded with status ${response.statusCode}.`);
+}
+
+export function readManifest(packagePath?: string): Promise<Manifest> {
+    return new Promise((resolve, reject) => {
+        fs.readFile(
+            path.join(packagePath || '.', 'package.json'),
+            { encoding: 'utf-8' },
+            (readErr, data) => {
+                if (readErr) {
+                    reject(readErr);
+                } else {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (jsonErr) {
+                        reject(jsonErr);
+                    }
+                }
+            }
+        );
+    });
+}
+
+export function writeManifest(manifest: Manifest, packagePath?: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const content = JSON.stringify(manifest, null, 4);
+        fs.writeFile(
+            path.join(packagePath || '.', 'package.json'),
+            content,
+            { encoding: 'utf-8' },
+            err => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            }
+        );
+    });
+}
+
+interface Manifest {
+    publisher: string;
+    name: string;
+    version: string;
+    license?: string;
+}
+
+export function booleanQuestion(text: string, defaultValue = false): Promise<boolean> {
+    return new Promise(resolve => {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        rl.question(`${text}\n${defaultValue ? '[yes]/no' : 'yes/[no]'}: `, answer => {
+            resolve(!answer && defaultValue || !!answer && 'yes'.startsWith(answer.toLowerCase()));
+            rl.close();
+        });
+    });
 }

@@ -56,6 +56,7 @@ import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -89,6 +90,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     EclipseService eclipse;
+
+    @Value("${ovsx.publishing.require-license:false}")
+    boolean requireLicense;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -335,11 +339,21 @@ public class LocalRegistryService implements IExtensionRegistry {
             if (token == null || token.getUser() == null) {
                 throw new ErrorResultException("Invalid access token.");
             }
+
+            // Check whether the user has a valid publisher agreement
             eclipse.checkPublisherAgreement(token.getUser());
+
+            // Extract extension metadata from its manifest
             var extVersion = createExtensionVersion(processor, token.getUser(), token);
-            storeResources(processor.getResources(extVersion), extVersion);
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
             processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
+
+            // Check the extension's license
+            var resources = processor.getResources(extVersion);
+            checkLicense(extVersion, resources);
+
+            // Store file resources in the DB or external storage
+            storeResources(extVersion, resources);
 
             search.updateSearchEntry(extVersion.getExtension());
             return toExtensionVersionJson(extVersion);
@@ -423,22 +437,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         return sv1.compareTo(sv2) > 0;
     }
 
-    private void storeResources(List<FileResource> resources, ExtensionVersion extVersion) {
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        resources.forEach(resource -> {
-            if (resource.getType().equals(FileResource.DOWNLOAD)) {
-                resource.setName(namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + ".vsix");
-            }
-            if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
-                googleStorage.uploadFile(resource);
-            } else {
-                resource.setStorageType(FileResource.STORAGE_DB);
-            }
-            entityManager.persist(resource);
-        });
-    }
-
     private void addDependency(String dependency, ExtensionVersion extVersion) {
         var split = dependency.split("\\.");
         if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
@@ -471,6 +469,30 @@ public class LocalRegistryService implements IExtensionRegistry {
             extVersion.setBundledExtensions(depList);
         }
         depList.add(extension);
+    }
+
+    protected void checkLicense(ExtensionVersion extVersion, List<FileResource> resources) {
+        if (requireLicense
+                && Strings.isNullOrEmpty(extVersion.getLicense())
+                && resources.stream().noneMatch(r -> r.getType().equals(FileResource.LICENSE))) {
+            throw new ErrorResultException("This extension cannot be accepted because it has no license.");
+        }
+    }
+
+    protected void storeResources(ExtensionVersion extVersion, List<FileResource> resources) {
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        resources.forEach(resource -> {
+            if (resource.getType().equals(FileResource.DOWNLOAD)) {
+                resource.setName(namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + ".vsix");
+            }
+            if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
+                googleStorage.uploadFile(resource);
+            } else {
+                resource.setStorageType(FileResource.STORAGE_DB);
+            }
+            entityManager.persist(resource);
+        });
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)

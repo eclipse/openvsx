@@ -17,18 +17,9 @@
         },
         {
             "type": "node",
-            "request": "launch",
-            "name": "CLI create-namespace",
-            "program": "${workspaceFolder}/cli/lib/ovsx",
-            "args": [
-                "-r",
-                "http://localhost:8080",
-                "-p",
-                "super_token",
-                "create-namespace",
-                "foo"
-            ],
-            "sourceMaps": true
+            "name": "Debug NodeJS (Attach)",
+            "request": "attach",
+            "processId": "${command:PickProcess}"
         }
     ]
 }

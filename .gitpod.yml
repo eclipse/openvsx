@@ -20,6 +20,9 @@ ports:
   onOpen: ignore
 - port: 9300
   onOpen: ignore
+# NodeJS debugging
+- port: 9229
+  onOpen: ignore
 
 tasks:
 - init: |
