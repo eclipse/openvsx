@@ -108,3 +108,15 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
     }
     return 'An unexpected error occurred.';
 }
+
+export function getCookieValueByKey(key: string): string | undefined {
+    const cookieString = document.cookie;
+    const cookiesArray = cookieString.split(';');
+    const cookies = cookiesArray.map(c => c.trim());
+    const cookie = cookies.find(c => c.startsWith(key));
+    if (cookie) {
+        const decodedCookieString = decodeURIComponent(cookie);
+        return decodedCookieString.split('=')[1].trim();
+    }
+    return undefined;
+}

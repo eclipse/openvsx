@@ -35,7 +35,11 @@ export interface PageSettings {
                     show?: boolean,
                     label?: string
                 },
-                onClose?: () => void
+                onClose?: () => void,
+                cookieOnClose?: {
+                    key: string,
+                    value: string
+                }
             }
         }
     };

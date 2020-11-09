@@ -22,7 +22,7 @@ import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
-import { handleError } from './utils';
+import { handleError, getCookieValueByKey } from './utils';
 import { ErrorDialog } from './components/error-dialog';
 import '../src/main.css';
 import { HeaderMenu } from './header-menu';
@@ -80,6 +80,10 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         if (onClose) {
             onClose();
         }
+        const cookie = this.props.pageSettings.elements.banner?.props.cookieOnClose;
+        if (cookie) {
+            document.cookie = `${cookie.key}=${cookie.value}`;
+        }
         this.setState({ isBannerOpen: false });
     };
 
@@ -90,8 +94,15 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 .then(err => this.handleError(err));
         }
         this.updateUser();
-        //TODO ask for cookie
-        this.setState({ isBannerOpen: true });
+        const cookie = this.props.pageSettings.elements.banner?.props.cookieOnClose;
+        let open = true;
+        if (cookie) {
+            const bannerClosedCookie = getCookieValueByKey(cookie.key);
+            if (bannerClosedCookie && bannerClosedCookie === cookie.value) {
+                open = false;
+            }
+        }
+        this.setState({ isBannerOpen: open });
     }
 
     protected async updateUser() {
@@ -171,6 +182,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                             BannerComponent ?
                                 <Banner
                                     open={this.state.isBannerOpen}
+                                    showDismissButton={this.props.pageSettings.elements.banner?.props.dismissButton?.show}
                                     dismissButtonLabel={this.props.pageSettings.elements.banner?.props.dismissButton?.label}
                                     dismissButtonOnClick={this.onDismissBannerButtonClick}
                                 >

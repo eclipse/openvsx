@@ -1,3 +1,13 @@
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 import React, { FunctionComponent } from 'react';
 import clsx from 'clsx';
 import {
@@ -35,7 +45,7 @@ interface BannerProps {
     open: boolean,
     showDismissButton?: boolean,
     dismissButtonLabel?: string,
-    dismissButtonOnClick?: () => void
+    dismissButtonOnClick?: () => void,
 }
 
 export const Banner: FunctionComponent<BannerProps> = props => {
@@ -74,22 +84,28 @@ export const Banner: FunctionComponent<BannerProps> = props => {
                             <Grid item className={classes.label}>
                                 {props.children}
                             </Grid>
-
-                            <Hidden smDown>
-                                {renderButtons}
-                            </Hidden>
+                            {
+                                props.showDismissButton ?
+                                    <Hidden smDown>
+                                        {renderButtons}
+                                    </Hidden> : null
+                            }
                         </Grid>
                     </CardContent>
+                    {
+                        props.showDismissButton ?
+                            <>
+                                <Hidden mdUp>
+                                    <CardActions>
+                                        {renderButtons}
+                                    </CardActions>
+                                </Hidden>
 
-                    <Hidden mdUp>
-                        <CardActions>
-                            {renderButtons}
-                        </CardActions>
-                    </Hidden>
-
-                    <Hidden smDown>
-                        <div />
-                    </Hidden>
+                                <Hidden smDown>
+                                    <div />
+                                </Hidden>
+                            </> : null
+                    }
                 </Card>
 
                 <Divider />

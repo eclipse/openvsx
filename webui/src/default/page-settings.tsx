@@ -103,22 +103,7 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
                 }
             },
             searchHeader,
-            additionalRoutes,
-            // banner: {
-            //     content: <Box>
-            //         <Typography variant='h6'>This is banner text</Typography>
-            //         <Typography variant='body1'>Foo bar baz</Typography>
-            //     </Box>,
-            //     props: {
-            //         dismissButton: {
-            //             show: true,
-            //             label: 'Got it!'
-            //         },
-            //         onClose: () => {
-            //             console.log('Announcement is closed');
-            //         }
-            //     }
-            // }
+            additionalRoutes
         },
         urls: {
             extensionDefaultIcon: '/default-icon.png',
