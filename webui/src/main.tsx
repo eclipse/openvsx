@@ -18,17 +18,18 @@ import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-l
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
 import { UserAvatar } from './pages/user/avatar';
+import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
+import { Banner } from './components/banner';
+import { ErrorDialog } from './components/error-dialog';
+import { handleError, getCookieValueByKey, setCookie } from './utils';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
-import { handleError, getCookieValueByKey } from './utils';
-import { ErrorDialog } from './components/error-dialog';
-import '../src/main.css';
 import { HeaderMenu } from './header-menu';
-import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
 import { ErrorResponse } from './server-request';
-import { Banner } from './components/banner';
+
+import '../src/main.css';
 
 const mainStyles = (theme: Theme) => createStyles({
     main: {
@@ -75,34 +76,29 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         };
     }
 
-    protected onDismissBannerButtonClick = () => {
-        const onClose = this.props.pageSettings.elements.banner?.props.onClose;
-        if (onClose) {
-            onClose();
-        }
-        const cookie = this.props.pageSettings.elements.banner?.props.cookieOnClose;
-        if (cookie) {
-            document.cookie = `${cookie.key}=${cookie.value}`;
-        }
-        this.setState({ isBannerOpen: false });
-    };
-
     componentDidMount(): void {
+        // If there was an authentication error, get the message from the server and show it
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.has('auth-error')) {
             this.props.service.getUserAuthError()
                 .then(err => this.handleError(err));
         }
+
+        // Get data of the currently logged in user
         this.updateUser();
-        const cookie = this.props.pageSettings.elements.banner?.props.cookieOnClose;
-        let open = true;
-        if (cookie) {
-            const bannerClosedCookie = getCookieValueByKey(cookie.key);
-            if (bannerClosedCookie && bannerClosedCookie === cookie.value) {
-                open = false;
+
+        // Check a cookie to determine whether a banner should be shown
+        const banner = this.props.pageSettings.elements.banner;
+        if (banner) {
+            let open = true;
+            if (banner.cookie) {
+                const bannerClosedCookie = getCookieValueByKey(banner.cookie.key);
+                if (bannerClosedCookie === banner.cookie.value) {
+                    open = false;
+                }
             }
+            this.setState({ isBannerOpen: open });
         }
-        this.setState({ isBannerOpen: open });
     }
 
     protected async updateUser() {
@@ -123,8 +119,20 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         this.setState({ error, isErrorDialogOpen: true });
     };
 
-    handleDialogClose = () => {
+    protected onErrorDialogClose = () => {
         this.setState({ isErrorDialogOpen: false });
+    };
+
+    protected onDismissBannerButtonClick = () => {
+        const onClose = this.props.pageSettings.elements.banner?.props?.onClose;
+        if (onClose) {
+            onClose();
+        }
+        const cookie = this.props.pageSettings.elements.banner?.cookie;
+        if (cookie) {
+            setCookie(cookie);
+        }
+        this.setState({ isBannerOpen: false });
     };
 
     render(): React.ReactNode {
@@ -182,11 +190,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                             BannerComponent ?
                                 <Banner
                                     open={this.state.isBannerOpen}
-                                    showDismissButton={this.props.pageSettings.elements.banner?.props.dismissButton?.show}
-                                    dismissButtonLabel={this.props.pageSettings.elements.banner?.props.dismissButton?.label}
+                                    showDismissButton={BannerComponent.props?.dismissButton?.show}
+                                    dismissButtonLabel={BannerComponent.props?.dismissButton?.label}
                                     dismissButtonOnClick={this.onDismissBannerButtonClick}
                                 >
-                                    {<BannerComponent.content />}
+                                    <BannerComponent.content />
                                 </Banner>
                                 : null
                         }
@@ -240,7 +248,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                     <ErrorDialog
                         errorMessage={this.state.error}
                         isErrorDialogOpen={this.state.isErrorDialogOpen}
-                        handleCloseDialog={this.handleDialogClose} />
+                        handleCloseDialog={this.onErrorDialogClose} />
                     : null
             }
         </React.Fragment>;

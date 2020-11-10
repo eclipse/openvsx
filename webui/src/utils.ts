@@ -109,14 +109,48 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
     return 'An unexpected error occurred.';
 }
 
+export interface Cookie {
+    key: string;
+    value: string;
+    path?: string;
+    domain?: string;
+    maxAge?: number;
+    expires?: string;
+    secure?: boolean;
+    samesite?: 'lax' | 'strict' | 'none';
+}
+
+export function setCookie(cookie: Cookie): void {
+    let cookieString = `${cookie.key}=${encodeURIComponent(cookie.value)}`;
+    if (cookie.path) {
+        cookieString += `; path=${cookie.path}`;
+    }
+    if (cookie.domain) {
+        cookieString += `; domain=${cookie.domain}`;
+    }
+    if (cookie.maxAge) {
+        cookieString += `; max-age=${cookie.maxAge}`;
+    }
+    if (cookie.expires) {
+        cookieString += `; expires=${cookie.expires}`;
+    }
+    if (cookie.secure) {
+        cookieString += '; secure';
+    }
+    if (cookie.samesite) {
+        cookieString += `; samesite=${cookie.samesite}`;
+    }
+    document.cookie = cookieString;
+}
+
+const cookieRegexp = /(?<key>[^ \t=]+)\s*=\s*(?<value>[^;]+)(?:;|$)/g;
+
 export function getCookieValueByKey(key: string): string | undefined {
-    const cookieString = document.cookie;
-    const cookiesArray = cookieString.split(';');
-    const cookies = cookiesArray.map(c => c.trim());
-    const cookie = cookies.find(c => c.startsWith(key));
-    if (cookie) {
-        const decodedCookieString = decodeURIComponent(cookie);
-        return decodedCookieString.split('=')[1].trim();
+    const matches = document.cookie.matchAll(cookieRegexp);
+    for (const match of matches) {
+        if (match[1] === key) {
+            return decodeURIComponent(match[2]);
+        }
     }
     return undefined;
 }

@@ -9,7 +9,8 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Extension } from "./extension-registry-types";
+import { Extension } from './extension-registry-types';
+import { Cookie } from './utils';
 
 export interface PageSettings {
     pageTitle: string;
@@ -30,17 +31,14 @@ export interface PageSettings {
         additionalRoutes?: React.ComponentType;
         banner?: {
             content: React.ComponentType;
-            props: {
+            props?: {
                 dismissButton?: {
                     show?: boolean,
                     label?: string
                 },
-                onClose?: () => void,
-                cookieOnClose?: {
-                    key: string,
-                    value: string
-                }
-            }
+                onClose?: () => void
+            },
+            cookie?: Cookie
         }
     };
     urls: {

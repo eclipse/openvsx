@@ -5,7 +5,7 @@
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
         "lib": [
-            "es6", "dom"
+            "es6", "es2020.string", "dom"
         ],
         "typeRoots": [
             "node_modules/@types", "typings"
