@@ -22,12 +22,13 @@ import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, isError } from './extension-registry-types';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
-import { handleError } from './utils';
+import { handleError, getCookieValueByKey } from './utils';
 import { ErrorDialog } from './components/error-dialog';
 import '../src/main.css';
 import { HeaderMenu } from './header-menu';
 import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
 import { ErrorResponse } from './server-request';
+import { Banner } from './components/banner';
 
 const mainStyles = (theme: Theme) => createStyles({
     main: {
@@ -54,6 +55,9 @@ const mainStyles = (theme: Theme) => createStyles({
         padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
         backgroundColor: theme.palette.background.paper,
         boxShadow: '0px -2px 6px 0px rgba(0, 0, 0, 0.5)'
+    },
+    banner: {
+        background: theme.palette.secondary.dark
     }
 });
 
@@ -66,9 +70,22 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             userLoading: true,
             error: '',
             isErrorDialogOpen: false,
-            isFooterExpanded: false
+            isFooterExpanded: false,
+            isBannerOpen: false
         };
     }
+
+    protected onDismissBannerButtonClick = () => {
+        const onClose = this.props.pageSettings.elements.banner?.props.onClose;
+        if (onClose) {
+            onClose();
+        }
+        const cookie = this.props.pageSettings.elements.banner?.props.cookieOnClose;
+        if (cookie) {
+            document.cookie = `${cookie.key}=${cookie.value}`;
+        }
+        this.setState({ isBannerOpen: false });
+    };
 
     componentDidMount(): void {
         const searchParams = new URLSearchParams(window.location.search);
@@ -77,6 +94,15 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 .then(err => this.handleError(err));
         }
         this.updateUser();
+        const cookie = this.props.pageSettings.elements.banner?.props.cookieOnClose;
+        let open = true;
+        if (cookie) {
+            const bannerClosedCookie = getCookieValueByKey(cookie.key);
+            if (bannerClosedCookie && bannerClosedCookie === cookie.value) {
+                open = false;
+            }
+        }
+        this.setState({ isBannerOpen: open });
     }
 
     protected async updateUser() {
@@ -119,8 +145,9 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     protected renderPageContent(): React.ReactNode {
         const {
             toolbarContent: ToolbarContent,
-            footerContent: FooterContent,
-            additionalRoutes: AdditionalRoutes
+            footer: FooterComponent,
+            additionalRoutes: AdditionalRoutes,
+            banner: BannerComponent
         } = this.props.pageSettings.elements;
         const classes = this.props.classes;
         return <React.Fragment>
@@ -139,7 +166,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     <HeaderMenu />
                                     {
                                         this.state.user ?
-                                            <UserAvatar/>
+                                            <UserAvatar />
                                             :
                                             <IconButton
                                                 href={this.props.service.getLoginUrl()}
@@ -151,6 +178,18 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                 </Box>
                             </Toolbar>
                         </AppBar>
+                        {
+                            BannerComponent ?
+                                <Banner
+                                    open={this.state.isBannerOpen}
+                                    showDismissButton={this.props.pageSettings.elements.banner?.props.dismissButton?.show}
+                                    dismissButtonLabel={this.props.pageSettings.elements.banner?.props.dismissButton?.label}
+                                    dismissButtonOnClick={this.onDismissBannerButtonClick}
+                                >
+                                    {<BannerComponent.content />}
+                                </Banner>
+                                : null
+                        }
                         <Box pb={`${this.getContentPadding()}px`}>
                             <Switch>
                                 <Route exact path={[ExtensionListRoutes.MAIN]}
@@ -184,12 +223,12 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                             </Switch>
                         </Box>
                         {
-                            FooterContent ?
+                            FooterComponent ?
                                 <footer
                                     className={classes.footer}
                                     onMouseEnter={() => this.setState({ isFooterExpanded: true })}
                                     onMouseLeave={() => this.setState({ isFooterExpanded: false })} >
-                                    <FooterContent expanded={this.state.isFooterExpanded} />
+                                    <FooterComponent.content expanded={this.state.isFooterExpanded} />
                                 </footer>
                                 : null
                         }
@@ -208,12 +247,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     }
 
     protected getContentPadding(): number {
-        const metrics = this.props.pageSettings.metrics;
-        if (metrics && metrics.footerHeight) {
-            return metrics.footerHeight + 24;
-        } else {
-            return 0;
-        }
+        const footerHeight = this.props.pageSettings.elements.footer?.props.footerHeight;
+        return footerHeight ? footerHeight + 24 : 0;
     }
 
 }
@@ -230,6 +265,7 @@ export namespace MainComponent {
         error: string;
         isErrorDialogOpen: boolean;
         isFooterExpanded: boolean;
+        isBannerOpen: boolean;
     }
 }
 export const Main = withStyles(mainStyles)(MainComponent);

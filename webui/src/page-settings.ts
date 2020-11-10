@@ -18,14 +18,30 @@ export interface PageSettings {
         toolbarContent?: React.ComponentType;
         defaultMenuContent?: React.ComponentType;
         mobileMenuContent?: React.ComponentType;
-        footerContent?: React.ComponentType<{ expanded: boolean }>;
+        footer?: {
+            content: React.ComponentType<{ expanded: boolean }>;
+            props: {
+                footerHeight?: number
+            }
+        };
         searchHeader?: React.ComponentType;
         reportAbuse?: React.ComponentType<{ extension: Extension } & Styleable>;
         claimNamespace?: React.ComponentType<{ extension: Extension } & Styleable>;
         additionalRoutes?: React.ComponentType;
-    };
-    metrics?: {
-        footerHeight?: number;
+        banner?: {
+            content: React.ComponentType;
+            props: {
+                dismissButton?: {
+                    show?: boolean,
+                    label?: string
+                },
+                onClose?: () => void,
+                cookieOnClose?: {
+                    key: string,
+                    value: string
+                }
+            }
+        }
     };
     urls: {
         extensionDefaultIcon: string;
