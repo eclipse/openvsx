@@ -193,6 +193,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                     showDismissButton={BannerComponent.props?.dismissButton?.show}
                                     dismissButtonLabel={BannerComponent.props?.dismissButton?.label}
                                     dismissButtonOnClick={this.onDismissBannerButtonClick}
+                                    color={BannerComponent.props?.color}
+                                    theme={this.props.pageSettings.themeType}
                                 >
                                     <BannerComponent.content />
                                 </Banner>

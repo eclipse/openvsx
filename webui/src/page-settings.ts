@@ -36,7 +36,8 @@ export interface PageSettings {
                     show?: boolean,
                     label?: string
                 },
-                onClose?: () => void
+                onClose?: () => void,
+                color?: 'info' | 'warning'
             },
             cookie?: Cookie
         }

@@ -38,15 +38,34 @@ const useStyles = makeStyles((theme) => ({
     },
     label: {
         alignSelf: 'center',
+    },
+    lightTheme: {
+        color: '#000',
+        '& a': {
+            color: '#000',
+            fontWeight: 'bold'
+        }
+    },
+    darkTheme: {
+        color: '#fff',
+        '& a': {
+            color: '#fff',
+            fontWeight: 'bold'
+        }
+    },
+    infoLight: {
+        backgroundColor: theme.palette.info.light
+    },
+    infoDark: {
+        backgroundColor: theme.palette.info.dark,
+    },
+    warningLight: {
+        backgroundColor: theme.palette.warning.light
+    },
+    warningDark: {
+        backgroundColor: theme.palette.warning.dark,
     }
 }));
-
-interface BannerProps {
-    open: boolean,
-    showDismissButton?: boolean,
-    dismissButtonLabel?: string,
-    dismissButtonOnClick?: () => void,
-}
 
 export const Banner: FunctionComponent<BannerProps> = props => {
     const classes = useStyles();
@@ -64,10 +83,20 @@ export const Banner: FunctionComponent<BannerProps> = props => {
         </Grid>
     </>;
 
+    let cardClasses = '';
+    if (props.color === 'info') {
+        cardClasses = props.theme === 'dark'
+            ? ` ${classes.darkTheme} ${classes.infoDark}`
+            : ` ${classes.lightTheme} ${classes.infoLight}`;
+    } else if (props.color === 'warning') {
+        cardClasses = props.theme === 'dark'
+            ? ` ${classes.darkTheme} ${classes.warningDark}`
+            : ` ${classes.lightTheme} ${classes.warningLight}`;
+    }
     return <>
         <Collapse in={props.open}>
             <Paper elevation={0} className={classes.root}>
-                <Card elevation={0}>
+                <Card elevation={0} className={cardClasses}>
                     <CardContent
                         className={clsx(
                             classes.cardContent
@@ -113,3 +142,12 @@ export const Banner: FunctionComponent<BannerProps> = props => {
         </Collapse>
     </>;
 };
+
+interface BannerProps {
+    open: boolean;
+    showDismissButton?: boolean;
+    dismissButtonLabel?: string;
+    dismissButtonOnClick?: () => void;
+    color?: 'info' | 'warning';
+    theme?: 'light' | 'dark';
+}
