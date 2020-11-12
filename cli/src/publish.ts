@@ -10,7 +10,7 @@
 
 import { createVSIX } from 'vsce';
 import { createTempFile } from './util';
-import { Registry } from './registry';
+import { Registry, DEFAULT_URL } from './registry';
 
 /**
  * Publishes an extension.
@@ -42,6 +42,12 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
         throw new Error(extension.error);
     }
     console.log(`\ud83d\ude80  Published ${extension.namespace}.${extension.name} v${extension.version}`);
+    if (registry.url === DEFAULT_URL) {
+        console.log('The open-vsx.org website will be transferred to the Eclipse Foundation on December 9. '
+            + 'Please read the blog post referenced below to find out more. '
+            + 'Some action will be required so you can continue publishing.\n'
+            + 'https://blogs.eclipse.org/post/brian-king/open-vsx-registry-under-new-management');
+    }
 }
 
 export interface PublishOptions {
