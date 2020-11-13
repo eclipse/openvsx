@@ -98,6 +98,9 @@ public class RegistryAPITest {
     @Autowired
     MockMvc mockMvc;
 
+    @Autowired
+    LocalRegistryService localRegistry;
+
     @Test
     public void testPublicNamespace() throws Exception {
         var namespace = mockNamespace();
@@ -427,7 +430,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishPublic() throws Exception {
         mockForPublish("public");
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -443,9 +446,50 @@ public class RegistryAPITest {
     }
     
     @Test
+    public void testPublishRequireLicenseNone() throws Exception {
+        var previousRequireLicense = localRegistry.requireLicense;
+        try {
+            localRegistry.requireLicense = true;
+            mockForPublish("public");
+            var bytes = createExtensionPackage("bar", "1", null);
+            mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .content(bytes))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().json(errorJson("This extension cannot be accepted because it has no license.")));
+        } finally {
+            localRegistry.requireLicense = previousRequireLicense;
+        }
+    }
+    
+    @Test
+    public void testPublishRequireLicenseOk() throws Exception {
+        var previousRequireLicense = localRegistry.requireLicense;
+        try {
+            localRegistry.requireLicense = true;
+            mockForPublish("public");
+            var bytes = createExtensionPackage("bar", "1", "MIT");
+            mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .content(bytes))
+                    .andExpect(status().isCreated())
+                    .andExpect(content().json(extensionJson(e -> {
+                        e.namespace = "foo";
+                        e.name = "bar";
+                        e.version = "1";
+                        var u = new UserJson();
+                        u.loginName = "test_user";
+                        e.publishedBy = u;
+                    })));
+        } finally {
+            localRegistry.requireLicense = previousRequireLicense;
+        }
+    }
+    
+    @Test
     public void testPublishInactiveToken() throws Exception {
         mockForPublish("invalid");
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -456,7 +500,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishUnknownNamespace() throws Exception {
         mockAccessToken();
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -468,7 +512,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishRestrictedOwner() throws Exception {
         mockForPublish("owner");
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -486,7 +530,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishRestrictedContributor() throws Exception {
         mockForPublish("contributor");
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -504,7 +548,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishRestrictedPrivileged() throws Exception {
         mockForPublish("privileged");
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -523,7 +567,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishRestrictedUnrelated() throws Exception {
         mockForPublish("unrelated");
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -534,7 +578,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishExistingExtension() throws Exception {
         mockForPublish("existing");
-        var bytes = createExtensionPackage("bar", "1");
+        var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -545,7 +589,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishInvalidName() throws Exception {
         mockForPublish("public");
-        var bytes = createExtensionPackage("b.a.r", "1");
+        var bytes = createExtensionPackage("b.a.r", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -556,7 +600,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishInvalidVersion() throws Exception {
         mockForPublish("public");
-        var bytes = createExtensionPackage("bar", "latest");
+        var bytes = createExtensionPackage("bar", "latest", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -989,7 +1033,7 @@ public class RegistryAPITest {
         return new ObjectMapper().writeValueAsString(json);
     }
     
-    private byte[] createExtensionPackage(String name, String version) throws IOException {
+    private byte[] createExtensionPackage(String name, String version, String license) throws IOException {
         var bytes = new ByteArrayOutputStream();
         var archive = new ZipOutputStream(bytes);
         archive.putNextEntry(new ZipEntry("extension/package.json"));
@@ -997,6 +1041,7 @@ public class RegistryAPITest {
                 "\"publisher\": \"foo\"," +
                 "\"name\": \"" + name + "\"," +
                 "\"version\": \"" + version + "\"" +
+                (license == null ? "" : ",\"license\": \"" + license + "\"" ) +
             "}";
         archive.write(packageJson.getBytes());
         archive.finish();

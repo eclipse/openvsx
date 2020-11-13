@@ -58,7 +58,6 @@ public class EclipseServiceTest {
     public void setup() {
         eclipse.publisherAgreementVersion = "1";
         eclipse.eclipseApiUrl = "https://test.openvsx.eclipse.org/";
-        eclipse.publisherAgreementTimeZone = "US/Eastern";
     }
 
     @Test
@@ -90,7 +89,7 @@ public class EclipseServiceTest {
         assertThat(agreement.documentId).isEqualTo("abcd");
         assertThat(agreement.version).isEqualTo("1");
         assertThat(agreement.timestamp).isNotNull();
-        assertThat(agreement.timestamp.toString()).isEqualTo("2020-10-09T09:10:32");
+        assertThat(agreement.timestamp.toString()).isEqualTo("2020-10-09T05:10:32");
     }
 
     @Test
@@ -133,7 +132,7 @@ public class EclipseServiceTest {
         assertThat(ed.publisherAgreement.documentId).isEqualTo("abcd");
         assertThat(ed.publisherAgreement.version).isEqualTo("1");
         assertThat(ed.publisherAgreement.timestamp).isNotNull();
-        assertThat(ed.publisherAgreement.timestamp.toString()).isEqualTo("2020-10-09T09:10:32");
+        assertThat(ed.publisherAgreement.timestamp.toString()).isEqualTo("2020-10-09T05:10:32");
     }
 
     @Test

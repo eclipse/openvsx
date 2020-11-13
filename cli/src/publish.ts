@@ -11,6 +11,7 @@
 import { createVSIX } from 'vsce';
 import { createTempFile } from './util';
 import { Registry, DEFAULT_URL } from './registry';
+import { checkLicense } from './check-license';
 
 /**
  * Publishes an extension.
@@ -25,19 +26,12 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
             throw new Error("A personal access token must be given with the option '--pat'.");
         }
     }
+    const registry = new Registry({ url: options.registryUrl });
     if (!options.extensionFile) {
-        options.extensionFile = await createTempFile({ postfix: '.vsix' });
-        await createVSIX({
-            cwd: options.packagePath,
-            packagePath: options.extensionFile,
-            baseContentUrl: options.baseContentUrl,
-            baseImagesUrl: options.baseImagesUrl,
-            useYarn: options.yarn
-        });
+        await packageExtension(options, registry);
         console.log(); // new line
     }
-    const registry = new Registry({ url: options.registryUrl });
-    const extension = await registry.publish(options.extensionFile, options.pat);
+    const extension = await registry.publish(options.extensionFile!, options.pat);
     if (extension.error) {
         throw new Error(extension.error);
     }
@@ -80,4 +74,19 @@ export interface PublishOptions {
 	 * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
 	 */
     yarn?: boolean;
+}
+
+async function packageExtension(options: PublishOptions, registry: Registry): Promise<void> {
+    if (registry.requiresLicense) {
+        await checkLicense(options.packagePath);
+    }
+
+    options.extensionFile = await createTempFile({ postfix: '.vsix' });
+    await createVSIX({
+        cwd: options.packagePath,
+        packagePath: options.extensionFile,
+        baseContentUrl: options.baseContentUrl,
+        baseImagesUrl: options.baseImagesUrl,
+        useYarn: options.yarn
+    });
 }

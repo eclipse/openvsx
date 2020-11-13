@@ -9,8 +9,10 @@
  ********************************************************************************/
 
 import * as fs from 'fs';
+import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
+import * as readline from 'readline';
 
 export { promisify } from 'util';
 
@@ -70,4 +72,80 @@ export function statusError(response: http.IncomingMessage): Error {
         return new Error(`The server responded with status ${response.statusCode}: ${response.statusMessage}`);
     else
         return new Error(`The server responded with status ${response.statusCode}.`);
+}
+
+export function readFile(name: string, packagePath?: string, encoding = 'utf-8'): Promise<string> {
+    return new Promise((resolve, reject) => {
+        fs.readFile(
+            path.join(packagePath || process.cwd(), name),
+            { encoding },
+            (err, content) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(content);
+                }
+            }
+        );
+    });
+}
+
+export async function readManifest(packagePath?: string): Promise<Manifest> {
+    const content = await readFile('package.json', packagePath);
+    return JSON.parse(content);
+}
+
+export function writeFile(name: string, content: string, packagePath?: string, encoding = 'utf-8'): Promise<void> {
+    return new Promise((resolve, reject) => {
+        fs.writeFile(
+            path.join(packagePath || process.cwd(), name),
+            content,
+            { encoding },
+            err => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            }
+        );
+    });
+}
+
+export function writeManifest(manifest: Manifest, packagePath?: string): Promise<void> {
+    const content = JSON.stringify(manifest, null, 4);
+    return writeFile('package.json', content, packagePath);
+}
+
+export interface Manifest {
+    publisher: string;
+    name: string;
+    version: string;
+    license?: string;
+}
+
+export function getUserInput(text: string): Promise<string> {
+    return new Promise(resolve => {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        rl.question(text, answer => {
+            resolve(answer);
+            rl.close();
+        });
+    });
+}
+
+export async function getUserChoice<R extends string>(text: string, values: R[],
+        defaultValue: R, lowerCase = true): Promise<R> {
+    const prompt = text + '\n' + values.map(v => v === defaultValue ? `[${v}]` : v).join('/') + ': ';
+    const answer = await getUserInput(prompt);
+    if (!answer) {
+        return defaultValue;
+    }
+    const lcAnswer = lowerCase ? answer.toLowerCase() : answer;
+    for (const value of values) {
+        if (value.startsWith(lcAnswer)) {
+            return value;
+        }
+    }
+    return defaultValue;
 }

@@ -33,6 +33,7 @@ echo "spring.security.oauth2.client.registration.eclipse.client-secret=${ECLIPSE
 if [ -n "$ECLIPSE_CLIENT_ID" ] && [ -n "$ECLIPSE_CLIENT_SECRET" ]
 then
     echo "ovsx.eclipse.publisher-agreement.version=1" >> $OVSX_APP_PROFILE
+    echo "ovsx.publishing.require-license=true" >> $OVSX_APP_PROFILE
     echo "Eclipse OAuth is enabled."
 fi
 
