@@ -8,11 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as fs from 'fs';
-import * as path from 'path';
 import { createVSIX } from 'vsce';
-import { createTempFile, readManifest, writeManifest, booleanQuestion } from './util';
+import { createTempFile } from './util';
 import { Registry, DEFAULT_URL } from './registry';
+import { checkLicense } from './check-license';
 
 /**
  * Publishes an extension.
@@ -78,26 +77,8 @@ export interface PublishOptions {
 }
 
 async function packageExtension(options: PublishOptions, registry: Registry): Promise<void> {
-    if (registry.url === DEFAULT_URL) {
-        // The default registry requires extensions to have a license
-        if (!await hasLicenseFile(options.packagePath)) {
-            const manifest = await readManifest(options.packagePath);
-            if (!manifest.publisher) {
-                throw new Error("Missing required field 'publisher'.");
-            }
-            if (!manifest.name) {
-                throw new Error("Missing required field 'name'.");
-            }
-            if (!manifest.license) {
-                const answer = await booleanQuestion(`Extension ${manifest.publisher}.${manifest.name} has no license. Would you like to publish it under the MIT license?`);
-                if (answer) {
-                    manifest.license = 'MIT';
-                    writeManifest(manifest, options.packagePath);
-                } else {
-                    throw new Error('This extension cannot be accepted because it has no license.');
-                }
-            }
-        }
+    if (registry.requiresLicense) {
+        await checkLicense(options.packagePath);
     }
 
     options.extensionFile = await createTempFile({ postfix: '.vsix' });
@@ -108,19 +89,4 @@ async function packageExtension(options: PublishOptions, registry: Registry): Pr
         baseImagesUrl: options.baseImagesUrl,
         useYarn: options.yarn
     });
-}
-
-const LICENSE_FILE_NAMES = ['LICENSE.md', 'LICENSE', 'LICENSE.txt'];
-
-async function hasLicenseFile(packagePath?: string): Promise<boolean> {
-    for (const fileName of LICENSE_FILE_NAMES) {
-        const promise = new Promise(resolve => fs.access(
-            path.join(packagePath || '.', fileName),
-            err => resolve(!err)
-        ));
-        if (await promise) {
-            return true;
-        }
-    }
-    return false;
 }

@@ -74,33 +74,33 @@ export function statusError(response: http.IncomingMessage): Error {
         return new Error(`The server responded with status ${response.statusCode}.`);
 }
 
-export function readManifest(packagePath?: string): Promise<Manifest> {
+export function readFile(name: string, packagePath?: string, encoding = 'utf-8'): Promise<string> {
     return new Promise((resolve, reject) => {
         fs.readFile(
-            path.join(packagePath || '.', 'package.json'),
-            { encoding: 'utf-8' },
-            (readErr, data) => {
-                if (readErr) {
-                    reject(readErr);
+            path.join(packagePath || process.cwd(), name),
+            { encoding },
+            (err, content) => {
+                if (err) {
+                    reject(err);
                 } else {
-                    try {
-                        resolve(JSON.parse(data));
-                    } catch (jsonErr) {
-                        reject(jsonErr);
-                    }
+                    resolve(content);
                 }
             }
         );
     });
 }
 
-export function writeManifest(manifest: Manifest, packagePath?: string): Promise<void> {
+export async function readManifest(packagePath?: string): Promise<Manifest> {
+    const content = await readFile('package.json', packagePath);
+    return JSON.parse(content);
+}
+
+export function writeFile(name: string, content: string, packagePath?: string, encoding = 'utf-8'): Promise<void> {
     return new Promise((resolve, reject) => {
-        const content = JSON.stringify(manifest, null, 4);
         fs.writeFile(
-            path.join(packagePath || '.', 'package.json'),
+            path.join(packagePath || process.cwd(), name),
             content,
-            { encoding: 'utf-8' },
+            { encoding },
             err => {
                 if (err) {
                     reject(err);
@@ -112,19 +112,40 @@ export function writeManifest(manifest: Manifest, packagePath?: string): Promise
     });
 }
 
-interface Manifest {
+export function writeManifest(manifest: Manifest, packagePath?: string): Promise<void> {
+    const content = JSON.stringify(manifest, null, 4);
+    return writeFile('package.json', content, packagePath);
+}
+
+export interface Manifest {
     publisher: string;
     name: string;
     version: string;
     license?: string;
 }
 
-export function booleanQuestion(text: string, defaultValue = false): Promise<boolean> {
+export function getUserInput(text: string): Promise<string> {
     return new Promise(resolve => {
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        rl.question(`${text}\n${defaultValue ? '[yes]/no' : 'yes/[no]'}: `, answer => {
-            resolve(!answer && defaultValue || !!answer && 'yes'.startsWith(answer.toLowerCase()));
+        rl.question(text, answer => {
+            resolve(answer);
             rl.close();
         });
     });
+}
+
+export async function getUserChoice<R extends string>(text: string, values: R[],
+        defaultValue: R, lowerCase = true): Promise<R> {
+    const prompt = text + '\n' + values.map(v => v === defaultValue ? `[${v}]` : v).join('/') + ': ';
+    const answer = await getUserInput(prompt);
+    if (!answer) {
+        return defaultValue;
+    }
+    const lcAnswer = lowerCase ? answer.toLowerCase() : answer;
+    for (const value of values) {
+        if (value.startsWith(lcAnswer)) {
+            return value;
+        }
+    }
+    return defaultValue;
 }

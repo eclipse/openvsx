@@ -36,6 +36,10 @@ export class Registry {
         this.maxPublishSize = options.maxPublishSize || DEFAULT_PUBLISH_SIZE;
     }
 
+    get requiresLicense(): boolean {
+        return this.url === DEFAULT_URL;
+    }
+
     createNamespace(name: string, pat: string): Promise<Response> {
         try {
             const query: { [key: string]: string } = { token: pat };
