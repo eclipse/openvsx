@@ -27,6 +27,13 @@ const useStyles = makeStyles((theme) => ({
     },
     titleRow: {
         fontWeight: 'bold'
+    },
+    extensionContainer: {
+        height: '100%'
+    },
+    versionsContainer: {
+        overflow: 'auto',
+        flex: '1'
     }
 }));
 
@@ -76,7 +83,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
     };
 
     return <>
-        <Grid container direction='column'>
+        <Grid container direction='column' className={classes.extensionContainer}>
             <Grid item container>
                 {
                     extension.files.icon ?
@@ -103,7 +110,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                     </Grid>
                 </Grid>
             </Grid>
-            <Grid item container>
+            <Grid item container className={classes.versionsContainer}>
                 <Grid item xs={12} md={4}></Grid>
                 <Grid item container xs={12} md={8} direction='column'>
                     <FormControl component='fieldset'>
@@ -123,6 +130,12 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                             }
                         </FormGroup>
                     </FormControl>
+                </Grid>
+            </Grid>
+            <Grid item container>
+                <Grid item xs={12} md={4}>
+                </Grid>
+                <Grid item container xs={12} md={8}>
                     <ExtensionRemoveDialog
                         onUpdate={handleUpdate}
                         extension={extension}
