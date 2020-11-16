@@ -25,13 +25,24 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
     @Value("${ovsx.elasticsearch.host:}")
     String searchHost;
 
+    @Value("${ovsx.elasticsearch.username:}")
+    String username;
+
+    @Value("${ovsx.elasticsearch.password:}")
+    String password;
+
     @Override
     public RestHighLevelClient elasticsearchClient() {
         ClientConfiguration config;
         if (Strings.isNullOrEmpty(searchHost)) {
             config = ClientConfiguration.localhost();
-        } else {
+        } else if (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)) {
             config = ClientConfiguration.create(searchHost);
+        } else {
+            config = ClientConfiguration.builder()
+                    .connectedTo(searchHost)
+                    .withBasicAuth(username, password)
+                    .build();
         }
         return RestClients.create(config).rest();
     }
