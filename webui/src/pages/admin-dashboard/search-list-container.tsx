@@ -13,7 +13,8 @@ import { Grid, makeStyles } from '@material-ui/core';
 
 const useStyles = makeStyles((theme) => ({
     containerRoot: {
-        height: '100%'
+        height: '100%',
+        flexWrap: 'nowrap'
     },
 }));
 
@@ -35,8 +36,8 @@ export const SearchListContainer: FunctionComponent<SearchListContainerProps> = 
                     </Grid>;
                 })}
             </Grid>
-            <Grid style={{ flex: 4 }} item container justify='center'>
-                <Grid item xs={8}>
+            <Grid style={{ flex: 4, overflow: 'hidden' }} item container justify='center'>
+                <Grid style={{ height: '100%' }} item xs={8}>
                     {props.listContainer}
                 </Grid>
             </Grid>
