@@ -248,6 +248,7 @@ public class AdminService {
         }
         var userPublishInfo = new UserPublishInfoJson();
         userPublishInfo.user = user.toUserJson();
+        eclipse.enrichUserJson(userPublishInfo.user, user);
         userPublishInfo.extensions = versionJsons;
         userPublishInfo.activeAccessTokenNum = activeAccessTokenNum;
         return userPublishInfo;

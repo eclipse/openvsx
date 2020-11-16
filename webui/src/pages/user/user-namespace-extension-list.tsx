@@ -12,6 +12,7 @@ import React, { ReactNode } from 'react';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UserExtensionList } from './user-extension-list';
+import { Typography } from '@material-ui/core';
 
 export class UserNamespaceExtensionListContainer extends React.Component<UserNamespaceExtensionListContainerComponent.Props, UserNamespaceExtensionListContainerComponent.State> {
 
@@ -64,10 +65,15 @@ export class UserNamespaceExtensionListContainer extends React.Component<UserNam
     }
 
     render(): ReactNode {
-        return (<>
-            <UserExtensionList extensions={this.state.extensions} loading={this.state.loading} />
-        </>
-        );
+        return <>
+            <Typography variant='h5'>Extensions</Typography>
+            {
+                this.state.extensions && this.state.extensions.length > 0 ?
+                <UserExtensionList extensions={this.state.extensions} loading={this.state.loading} />
+                :
+                <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
+            }
+        </>;
     }
 }
 

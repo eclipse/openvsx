@@ -86,11 +86,11 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     return <>
         <Paper classes={{ root: classes.paper }} elevation={3}>
             {
-                user.publisherAgreement === 'signed' ?
+                user.publisherAgreement.status === 'signed' ?
                     <Typography variant='body1'>
                         {
-                            user.publisherAgreementTimestamp
-                                ? <>You signed the Eclipse publisher agreement <Timestamp value={user.publisherAgreementTimestamp} />.</>
+                            user.publisherAgreement.timestamp
+                                ? <>You signed the Eclipse publisher agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
                                 : 'You signed the Eclipse publisher agreement.'
                         }
                     </Typography>

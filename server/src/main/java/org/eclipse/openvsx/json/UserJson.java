@@ -57,14 +57,20 @@ public class UserJson extends ResultJson {
     @ApiModelProperty("Authentication provider (e.g. github)")
     public String provider;
 
-    /* 'none' | 'signed' | 'outdated' */
     @ApiModelProperty(hidden = true)
-    public String publisherAgreement;
-
-    @ApiModelProperty(hidden = true)
-    public String publisherAgreementTimestamp;
+    public PublisherAgreement publisherAgreement;
 
     @ApiModelProperty(hidden = true)
     public List<UserJson> additionalLogins;
+
+    @JsonInclude(Include.NON_NULL)
+    public static class PublisherAgreement {
+
+        /* 'none' | 'signed' | 'outdated' */
+        public String status;
+
+        public String timestamp;
+
+    }
 
 }

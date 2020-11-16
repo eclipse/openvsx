@@ -9,11 +9,10 @@
  ********************************************************************************/
 
 import React, { FunctionComponent } from 'react';
-import { Typography, makeStyles } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserNamespaceExtensionListItem } from './user-namespace-extension-list-item';
 import { Extension } from '../../extension-registry-types';
-
 
 const extensionListStyles = makeStyles(theme => ({
     extensions: {
@@ -32,7 +31,6 @@ interface UserExtensionListProps {
 export const UserExtensionList: FunctionComponent<UserExtensionListProps> = props => {
     const classes = extensionListStyles();
     return <>
-        <Typography variant='h5'>Extensions</Typography>
         <div className={classes.extensions}>
             <DelayedLoadIndicator loading={props.loading} />
             {
@@ -41,7 +39,7 @@ export const UserExtensionList: FunctionComponent<UserExtensionListProps> = prop
                     key={`${i}${extension.name}${extension.version}`}
                     extension={extension}
                 />)
-                : 'This user has not published any extensions.'
+                : null
             }
         </div>
     </>;

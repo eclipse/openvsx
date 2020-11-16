@@ -161,7 +161,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         return <React.Fragment>
             <Switch>
                 <Route path={AdminDashboardRoutes.MAIN}>
-                    <AdminDashboard></AdminDashboard>
+                    <AdminDashboard userLoading={this.state.userLoading} />
                 </Route>
                 <Route path='*'>
                     <Box className={classes.main}>

@@ -156,21 +156,22 @@ public class EclipseService {
         if (!isActive()) {
             return;
         }
+        json.publisherAgreement = new UserJson.PublisherAgreement();
         var eclipseData = user.getEclipseData();
         if (eclipseData == null) {
-            json.publisherAgreement = "none";
+            json.publisherAgreement.status = "none";
             return;
         }
 
         var agreement = eclipseData.publisherAgreement;
         if (agreement == null || !agreement.isActive || agreement.version == null)
-            json.publisherAgreement = "none";
+            json.publisherAgreement.status = "none";
         else if (publisherAgreementVersion.equals(agreement.version))
-            json.publisherAgreement = "signed";
+            json.publisherAgreement.status = "signed";
         else
-            json.publisherAgreement = "outdated";
+            json.publisherAgreement.status = "outdated";
         if (agreement != null && agreement.timestamp != null)
-            json.publisherAgreementTimestamp = TimeUtil.toUTCString(agreement.timestamp);
+            json.publisherAgreement.timestamp = TimeUtil.toUTCString(agreement.timestamp);
 
         // Report user as logged in only if there is a usabe token:
         // we need the token to access the Eclipse REST API

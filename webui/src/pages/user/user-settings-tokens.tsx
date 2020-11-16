@@ -44,7 +44,11 @@ const tokensStyle = (theme: Theme) => createStyles({
         height: 36
     },
     link: {
-        color: theme.palette.info.main
+        color: theme.palette.secondary.main,
+        textDecoration: 'none',
+        '&:hover': {
+            textDecoration: 'underline'
+        }
     },
     empty: {
         [theme.breakpoints.down('sm')]: {
@@ -108,11 +112,11 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
 
     render() {
         const agreement = this.context.user?.publisherAgreement;
-        if (agreement === 'none' || agreement === 'outdated') {
+        if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
             return <Box>
                 <Typography variant='body1' className={this.props.classes.empty}>
                     {
-                        agreement === 'outdated'
+                        agreement.status === 'outdated'
                         ? 'Your publisher agreement is outdated.'
                         : 'You have not signed a publisher agreement yet.'
                     } Please sign the agreement on

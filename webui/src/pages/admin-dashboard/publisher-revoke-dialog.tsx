@@ -56,8 +56,8 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
             <DialogContent>
                 <DialogContentText component='div'>
                     <Typography>
-                        This will deactivate {props.publisherInfo.user.loginName}s access
-                        tokens and delete all {props.publisherInfo.extensions.length} extension versions
+                        This will deactivate the access tokens of {props.publisherInfo.user.loginName} and
+                        delete all {props.publisherInfo.extensions.length} extension versions
                         published by {props.publisherInfo.user.loginName}.
                     </Typography>
                 </DialogContentText>

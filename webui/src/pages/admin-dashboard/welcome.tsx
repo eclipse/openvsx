@@ -24,7 +24,11 @@ const useStyles = makeStyles((theme) => ({
         marginBottom: theme.spacing(2)
     },
     link: {
-        color: theme.palette.info.main
+        color: theme.palette.secondary.main,
+        textDecoration: 'none',
+        '&:hover': {
+            textDecoration: 'underline'
+        }
     },
     paper: {
         padding: theme.spacing(4)
@@ -38,23 +42,20 @@ export const Welcome: FunctionComponent = props => {
     const classes = useStyles();
     return <>
         <Grid container direction='column' spacing={2} classes={{ root: classes.containerRoot }}>
-            <Grid style={{ flex: 1 }} item container>
-                <Grid item container direction='column' alignItems='center' justify='flex-end'>
-                    <Paper className={classes.paper} variant='outlined' >
-                        <Typography className={classes.title} align='center' variant='h5'>Welcome to the Admin Dashboard!</Typography>
-                        <Typography align='center'>You can switch pages on the sidepanel menu on the left side.</Typography>
-                        <Typography align='center'>
-                            Choose between administration for
-                        </Typography>
-                        <Grid container justify='center' alignItems='center' className={classes.linkContainer}>
-                            <WelcomeLinkItem route={AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' description='Add users, manage user roles, create new namespaces' />
-                            <WelcomeLinkItem route={AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' description='Search for a extension and remove certain versions' />
-                            <WelcomeLinkItem route={AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publisher' description='Search for a publisher and revoke the agreement' />
-                        </Grid>
-                    </Paper>
-                </Grid>
+            <Grid item container direction='column' alignItems='center' justify='flex-end'>
+                <Paper className={classes.paper} variant='outlined' >
+                    <Typography className={classes.title} align='center' variant='h5'>Welcome to the Admin Dashboard!</Typography>
+                    <Typography align='center'>You can switch pages in the sidepanel menu on the left side.</Typography>
+                    <Typography align='center'>
+                        Choose between administration for
+                    </Typography>
+                    <Grid container justify='center' alignItems='center' className={classes.linkContainer}>
+                        <WelcomeLinkItem route={AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' description='Manage user roles, create new namespaces' />
+                        <WelcomeLinkItem route={AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' description='Search for extensions and remove certain versions' />
+                        <WelcomeLinkItem route={AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' description='Search for publishers and revoke their contributions' />
+                    </Grid>
+                </Paper>
             </Grid>
-            <Grid style={{ flex: 4 }} item></Grid>
         </Grid>
     </>;
 };

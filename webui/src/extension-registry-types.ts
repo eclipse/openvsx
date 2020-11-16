@@ -136,8 +136,10 @@ export interface UserData {
     homepage?: string;
     provider?: string;
     role?: string;
-    publisherAgreement?: 'none' | 'signed' | 'outdated';
-    publisherAgreementTimestamp?: TimestampString;
+    publisherAgreement?: {
+        status: 'none' | 'signed' | 'outdated';
+        timestamp?: TimestampString;
+    },
     additionalLogins?: UserData[];
 }
 

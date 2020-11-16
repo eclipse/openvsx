@@ -62,7 +62,7 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                             {extension.displayName || extension.name}
                         </Typography>
                         <Box className={classes.paragraph} mt={1}>
-                            <span>Latest Version:</span>
+                            <span>Version:</span>
                             <span>{extension.version}</span>
                         </Box>
                         {

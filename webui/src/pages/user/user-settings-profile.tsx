@@ -10,6 +10,7 @@
 
 import * as React from 'react';
 import { Theme, createStyles, WithStyles, withStyles, Grid, Typography, Avatar } from '@material-ui/core';
+import { toLocalTime } from '../../utils';
 import { UserData } from '../../extension-registry-types';
 import { UserPublisherAgreement } from './user-publisher-agreement';
 
@@ -66,13 +67,25 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
                 </Grid>
             </Grid>
             {
-                user.publisherAgreement ?
-                <Grid container>
-                    <Grid item xs={12}>
-                        <UserPublisherAgreement user={user} />
+                user.publisherAgreement ? (
+                    this.props.isAdmin ?
+                    <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
+                        {user.loginName} {
+                            user.publisherAgreement.status === 'signed' ?
+                            <>has signed</>
+                            : user.publisherAgreement.status === 'outdated' ?
+                            <>has signed an outdated version of</>
+                            :
+                            <>has not signed</>
+                        } the Eclipse publisher agreement.
+                    </Typography>
+                    :
+                    <Grid container>
+                        <Grid item xs={12}>
+                            <UserPublisherAgreement user={user} />
+                        </Grid>
                     </Grid>
-                </Grid>
-                : null
+                ) : null
             }
         </React.Fragment>;
     }
@@ -80,7 +93,8 @@ class UserSettingsProfileComponent extends React.Component<UserSettingsProfileCo
 
 export namespace UserSettingsProfileComponent {
     export interface Props extends WithStyles<typeof profileStyle> {
-        user: UserData
+        user: UserData;
+        isAdmin?: boolean;
     }
 
     export interface State {
