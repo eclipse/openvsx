@@ -18,7 +18,7 @@ import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 import { PublisherDetails } from './publisher-details';
 
-export const UpdateContext = createContext({ handleUpdate: () => { }, setLoading: (value: React.SetStateAction<boolean>) => { } });
+export const UpdateContext = createContext({ handleUpdate: () => { } });
 export const PublisherAdmin: FunctionComponent = props => {
     const [loading, setLoading] = useState(false);
 
@@ -67,7 +67,7 @@ export const PublisherAdmin: FunctionComponent = props => {
             }
             listContainer={
                 publisher && pageSettings && user ?
-                    <UpdateContext.Provider value={{ handleUpdate, setLoading }}>
+                    <UpdateContext.Provider value={{ handleUpdate }}>
                         <PublisherDetails publisherInfo={publisher} />
                     </UpdateContext.Provider>
                     : notFound ?

@@ -10,62 +10,87 @@
 
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@material-ui/core';
+import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Extension } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 
-interface ExtensionRemoveDialogProps {
-    versions: string[];
-    removeAll: boolean;
-    extension: Extension;
-    onUpdate: () => void;
-}
-
-export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps> = props => {
+export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialog.Props> = props => {
     const { service, handleError } = useContext(MainContext);
 
     const [dialogOpen, setDialogOpen] = useState(false);
-    const handleOpenRemoveDialog = () => {
-        setDialogOpen(true);
-    };
-    const handleCancelRemoveDialog = () => {
-        setDialogOpen(false);
-    };
+    const [working, setWorking] = useState(false);
+
     const handleRemoveVersions = async () => {
         try {
+            setWorking(true);
             if (props.removeAll) {
                 await service.admin.deleteExtension({ namespace: props.extension.namespace, extension: props.extension.name });
             } else {
-                const prms = props.versions.map(version => service.admin.deleteExtension({ namespace: props.extension.namespace, extension: props.extension.name, version }));
+                const prms = props.versions.map(version =>
+                    service.admin.deleteExtension({ namespace: props.extension.namespace, extension: props.extension.name, version })
+                );
                 await Promise.all(prms);
             }
             props.onUpdate();
             setDialogOpen(false);
         } catch (err) {
             handleError(err);
+        } finally {
+            setWorking(false);
         }
     };
 
     return <>
-        <Button variant='contained' color='secondary' onClick={handleOpenRemoveDialog} disabled={!props.versions.length}>
-            Remove version{props.versions.length > 1 ? 's' : ''}
+        <Button
+            variant='contained'
+            color='secondary'
+            onClick={() => setDialogOpen(true)}
+            disabled={props.versions.length === 0} >
+            {
+                props.removeAll || props.versions.length === 0 ? 'Remove Extension'
+                : props.versions.length > 1 ? 'Remove Versions' : 'Remove Version'
+            }
         </Button>
         <Dialog
             open={dialogOpen}
-            onClose={handleCancelRemoveDialog}>
-            <DialogTitle >Remove {props.versions.length} version{props.versions.length > 1 ? 's' : ''} of {props.extension.name}?</DialogTitle>
+            onClose={() => setDialogOpen(false)} >
+            <DialogTitle >
+                Remove {
+                    props.removeAll ? 'all ' : ''
+                }{
+                    !(props.removeAll && props.versions.length <= 1) ? props.versions.length : ''
+                } version{
+                    props.removeAll || props.versions.length > 1 ? 's' : ''
+                } of {props.extension.name}?
+            </DialogTitle>
             <DialogContent>
                 <DialogContentText component='div'>
                     {props.versions.map((version, key) => <Typography key={key} variant='body2'>{version}</Typography>)}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button autoFocus onClick={handleCancelRemoveDialog} variant='contained' color='primary'>
+                <Button
+                    variant='contained'
+                    color='primary'
+                    onClick={() => setDialogOpen(false)} >
                     Cancel
                 </Button>
-                <Button onClick={handleRemoveVersions} variant='contained' color='secondary' autoFocus>
+                <ButtonWithProgress
+                    autoFocus
+                    working={working}
+                    onClick={handleRemoveVersions} >
                     Remove
-                </Button>
+                </ButtonWithProgress>
             </DialogActions>
         </Dialog>
     </>;
 };
+
+export namespace ExtensionRemoveDialog {
+    export interface Props {
+        versions: string[];
+        removeAll: boolean;
+        extension: Extension;
+        onUpdate: () => void;
+    }
+}

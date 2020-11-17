@@ -33,6 +33,7 @@ export class ButtonComponent extends React.Component<ButtonComponent.Props> {
                 variant='contained'
                 color='secondary'
                 disabled={this.props.working || this.props.error}
+                autoFocus={this.props.autoFocus}
                 onClick={this.props.onClick}
                 title={this.props.title} >
                 {this.props.children}
@@ -50,6 +51,7 @@ export namespace ButtonComponent {
     export interface Props extends WithStyles<typeof buttonStyles> {
         working: boolean;
         error?: boolean;
+        autoFocus?: boolean;
         onClick: React.MouseEventHandler<HTMLButtonElement>;
         title?: string;
     }

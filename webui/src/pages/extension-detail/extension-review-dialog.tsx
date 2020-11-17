@@ -137,6 +137,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
                         Cancel
                     </Button>
                     <ButtonWithProgress
+                            autoFocus
                             error={Boolean(this.state.commentError)}
                             working={this.state.posted}
                             onClick={this.handlePost} >

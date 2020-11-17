@@ -318,7 +318,7 @@ export class AdminService {
         });
     }
 
-    async revokePublisherAgreement(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {

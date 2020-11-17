@@ -221,10 +221,10 @@ public class AdminAPI {
         path = "/admin/-/{provider}/{loginName}/revoke",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ResultJson> revokePublisherAgreement(@PathVariable String loginName, @PathVariable String provider) {
+    public ResponseEntity<ResultJson> revokePublisherContributions(@PathVariable String loginName, @PathVariable String provider) {
         try {
             var adminUser = admins.checkAdminUser();
-            var result = admins.revokePublisherAgreement(provider, loginName, adminUser);
+            var result = admins.revokePublisherContributions(provider, loginName, adminUser);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();

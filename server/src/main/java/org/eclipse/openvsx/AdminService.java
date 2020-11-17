@@ -255,14 +255,16 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson revokePublisherAgreement(String provider, String loginName, UserData admin) {
+    public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
             throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
         }
 
-        // Send a DELETE request to the Eclipse API
-        if (eclipse.isActive()) {
+        // Send a DELETE request to the Eclipse publisher agreement API
+        if (eclipse.isActive() && user.getEclipseData() != null
+                && user.getEclipseData().publisherAgreement != null
+                && user.getEclipseData().publisherAgreement.isActive) {
             eclipse.revokePublisherAgreement(user);
         }
 

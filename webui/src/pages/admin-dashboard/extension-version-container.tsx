@@ -37,18 +37,15 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-interface ExtensionVersionContainerProps {
-    extension: Extension;
-    onUpdate: () => void;
-}
-
-export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainerProps> = props => {
+export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainer.Props> = props => {
     const { extension } = props;
     const classes = useStyles();
 
     const getVersions = () => {
         const versionMap = new Map<string, boolean>();
-        Object.keys(extension.allVersions).forEach(version => {
+        Object.keys(extension.allVersions)
+            .filter(version => VERSION_ALIASES.indexOf(version) < 0)
+            .forEach(version => {
             versionMap.set(version, false);
         });
         return versionMap;
@@ -63,23 +60,28 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newVersionMap = new Map<string, boolean>();
+        let newAllChecked = true;
         versions.forEach((checked, version) => {
             if (version === event.target.name) {
                 checked = event.target.checked;
-                if (allChecked && !checked) {
-                    setAllChecked(false);
-                }
-            } else if (event.target.name === 'checkAll') {
-                checked = event.target.checked;
-                setAllChecked(event.target.checked);
             }
             newVersionMap.set(version, checked);
+            if (!checked) {
+                newAllChecked = false;
+            }
         });
         setVersions(newVersionMap);
+        setAllChecked(newAllChecked);
     };
 
-    const handleUpdate = () => {
-        props.onUpdate();
+    const handleChangeAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newVersionMap = new Map<string, boolean>();
+        const newAllChecked = event.target.checked;
+        versions.forEach((_, version) => {
+            newVersionMap.set(version, newAllChecked);
+        });
+        setAllChecked(newAllChecked);
+        setVersions(newVersionMap);
     };
 
     return <>
@@ -116,17 +118,17 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                     <FormControl component='fieldset'>
                         <FormGroup>
                             <FormControlLabel
-                                control={<Checkbox checked={allChecked} onChange={handleChange} name='checkAll' />}
+                                control={<Checkbox checked={allChecked} onChange={handleChangeAll} name='checkAll' />}
                                 label='All Versions'
                             />
                             {
-                                Array.from(versions.entries()).filter(([version, checked]) => VERSION_ALIASES.indexOf(version) < 0).map(([version, checked], key) => {
-                                    return <FormControlLabel
-                                        key={key}
+                                Array.from(versions.entries())
+                                    .map(([version, checked], index) =>
+                                    <FormControlLabel
+                                        key={`${version}_${index}`}
                                         control={<Checkbox checked={checked} onChange={handleChange} name={version} />}
-                                        label={version}
-                                    />;
-                                })
+                                        label={version} />
+                                )
                             }
                         </FormGroup>
                     </FormControl>
@@ -137,15 +139,22 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                 </Grid>
                 <Grid item container xs={12} md={8}>
                     <ExtensionRemoveDialog
-                        onUpdate={handleUpdate}
+                        onUpdate={props.onUpdate}
                         extension={extension}
                         removeAll={allChecked}
                         versions={
                             Array.from(versions.entries())
-                                .filter(([version, checked]) => VERSION_ALIASES.indexOf(version) < 0 && checked)
+                                .filter(([_, checked]) => checked)
                                 .map(([version]) => version)} />
                 </Grid>
             </Grid>
         </Grid>
     </>;
 };
+
+export namespace ExtensionVersionContainer {
+    export interface Props {
+        extension: Extension;
+        onUpdate: () => void;
+    }
+}

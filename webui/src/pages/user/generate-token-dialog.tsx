@@ -154,6 +154,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                     {
                         !this.state.token ?
                         <ButtonWithProgress
+                                autoFocus
                                 error={Boolean(this.state.descriptionError)}
                                 working={this.state.posted}
                                 onClick={this.handleGenerate} >

@@ -10,49 +10,46 @@
 
 import React, { FunctionComponent, useState, useContext } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@material-ui/core';
+import { ButtonWithProgress } from '../../components/button-with-progress';
 import { PublisherInfo, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 
-interface PublisherRevokeDialogProps {
-    publisherInfo: PublisherInfo;
-}
-
-export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps> = props => {
+export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Props> = props => {
     const { service, handleError } = useContext(MainContext);
-
     const updateContext = useContext(UpdateContext);
 
     const [dialogOpen, setDialogOpen] = useState(false);
-    const handleOpenRevokeDialog = () => {
-        setDialogOpen(true);
-    };
-    const handleCancelRevokeDialog = () => {
-        setDialogOpen(false);
-    };
-    const handleRemoveVersions = async () => {
+    const [working, setWorking] = useState(false);
+
+    const doRevoke = async () => {
         try {
-            updateContext.setLoading(true);
-            const result = await service.admin.revokePublisherAgreement(props.publisherInfo.user.provider!, props.publisherInfo.user.loginName);
+            setWorking(true);
+            const user = props.publisherInfo.user;
+            const result = await service.admin.revokePublisherContributions(user.provider!, user.loginName);
             if (isError(result)) {
-                throw (result.error);
+                throw result;
             }
             updateContext.handleUpdate();
-            updateContext.setLoading(false);
             setDialogOpen(false);
         } catch (err) {
             handleError(err);
+        } finally {
+            setWorking(false);
         }
     };
 
     return <>
-        <Button variant='contained' color='secondary' onClick={handleOpenRevokeDialog}>
-            Revoke Publisher Agreement
+        <Button
+            variant='contained'
+            color='secondary'
+            onClick={() => setDialogOpen(true)} >
+            Revoke Publisher Contributions
         </Button>
         <Dialog
             open={dialogOpen}
-            onClose={handleCancelRevokeDialog}>
-            <DialogTitle >Revoke Publisher Agreement?</DialogTitle>
+            onClose={() => setDialogOpen(false)}>
+            <DialogTitle >Revoke Publisher Contributions?</DialogTitle>
             <DialogContent>
                 <DialogContentText component='div'>
                     <Typography>
@@ -63,13 +60,25 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button autoFocus onClick={handleCancelRevokeDialog} variant='contained' color='primary'>
+                <Button
+                    variant='contained'
+                    color='primary'
+                    onClick={() => setDialogOpen(false)} >
                     Cancel
                 </Button>
-                <Button onClick={handleRemoveVersions} variant='contained' color='secondary' autoFocus>
-                    Revoke Agreement
-                </Button>
+                <ButtonWithProgress
+                    autoFocus
+                    working={working}
+                    onClick={doRevoke} >
+                    Revoke Contributions
+                </ButtonWithProgress>
             </DialogActions>
         </Dialog>
     </>;
 };
+
+export namespace PublisherRevokeDialog {
+    export interface Props {
+        publisherInfo: PublisherInfo;
+    }
+}
