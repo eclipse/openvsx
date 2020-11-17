@@ -25,6 +25,9 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
     @Value("${ovsx.elasticsearch.host:}")
     String searchHost;
 
+    @Value("${ovsx.elasticsearch.ssl:false}")
+    boolean useSsl;
+
     @Value("${ovsx.elasticsearch.username:}")
     String username;
 
@@ -33,18 +36,15 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
 
     @Override
     public RestHighLevelClient elasticsearchClient() {
-        ClientConfiguration config;
-        if (Strings.isNullOrEmpty(searchHost)) {
-            config = ClientConfiguration.localhost();
-        } else if (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)) {
-            config = ClientConfiguration.create(searchHost);
-        } else {
-            config = ClientConfiguration.builder()
-                    .connectedTo(searchHost)
-                    .withBasicAuth(username, password)
-                    .build();
-        }
-        return RestClients.create(config).rest();
+        var builder = ClientConfiguration.builder();
+        var connected = Strings.isNullOrEmpty(searchHost)
+                ? builder.connectedToLocalhost()
+                : builder.connectedTo(searchHost);
+        var secure = useSsl ? connected.usingSsl() : connected;
+        var authenticated = Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)
+                ? secure
+                : secure.withBasicAuth(username, password);
+        return RestClients.create(authenticated.build()).rest();
     }
 
 }
