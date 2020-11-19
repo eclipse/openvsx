@@ -9,8 +9,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+
+import javax.net.ssl.SSLContext;
+
+import org.apache.http.ssl.SSLContextBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -21,6 +33,8 @@ import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfig
 @Configuration
 @Profile("!test")
 public class SearchConfig extends AbstractElasticsearchConfiguration {
+
+    protected final Logger logger = LoggerFactory.getLogger(SearchConfig.class);
 
     @Value("${ovsx.elasticsearch.host:}")
     String searchHost;
@@ -34,17 +48,56 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
     @Value("${ovsx.elasticsearch.password:}")
     String password;
 
+    @Value("${ovsx.elasticsearch.truststore:}")
+    String trustStore;
+
+    @Value("${ovsx.elasticsearch.truststorePassword:}")
+    String trustStorePassword;
+
     @Override
     public RestHighLevelClient elasticsearchClient() {
         var builder = ClientConfiguration.builder();
         var connected = Strings.isNullOrEmpty(searchHost)
                 ? builder.connectedToLocalhost()
                 : builder.connectedTo(searchHost);
-        var secure = useSsl ? connected.usingSsl() : connected;
+        var secure = useSsl ? connected.usingSsl(sslContext()) : connected;
         var authenticated = Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)
                 ? secure
                 : secure.withBasicAuth(username, password);
         return RestClients.create(authenticated.build()).rest();
+    }
+
+    /**
+     * Returns a new trust store if {@link #trustStore} (and {@link #trustStorePassword}) properties 
+     * are non empty. Returns {@link SSLContext#getDefault() default} SSLContext otherwise.
+     */
+    private SSLContext sslContext() {
+        if (!Strings.isNullOrEmpty(trustStore)) {
+            var sslContextBuilder = SSLContextBuilder.create();
+            if (!Strings.isNullOrEmpty(trustStorePassword)) {
+                try {
+                    sslContextBuilder.loadTrustMaterial(new File(trustStore), trustStorePassword.toCharArray());
+                } catch(NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
+                    logger.error("Unable to load password protected trust material " + trustStore, e);
+                }
+            } else {
+                try {
+                    sslContextBuilder.loadTrustMaterial(new File(trustStore));
+                } catch(NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
+                    logger.error("Unable to load trust material " + trustStore, e);
+                }
+            }
+            try {
+                return sslContextBuilder.build();
+            } catch (KeyManagementException | NoSuchAlgorithmException e) {
+                logger.error("Error while creating SSLContext", e);
+            }
+        }
+        try {
+            return SSLContext.getDefault();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Error while getting default SSLContext", e);
+        }
     }
 
 }
