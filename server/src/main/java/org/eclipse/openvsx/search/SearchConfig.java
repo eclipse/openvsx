@@ -51,6 +51,12 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
     @Value("${ovsx.elasticsearch.truststore:}")
     String trustStore;
 
+    /**
+     * Name from https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#sslcontext-algorithms
+     */
+    @Value("${ovsx.elasticsearch.truststoreProtocol:TLSv1.2}")
+    String trustStoreProtocol;
+
     @Value("${ovsx.elasticsearch.truststorePassword:}")
     String trustStorePassword;
 
@@ -73,7 +79,7 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
      */
     private SSLContext sslContext() {
         if (!Strings.isNullOrEmpty(trustStore)) {
-            var sslContextBuilder = SSLContextBuilder.create();
+            var sslContextBuilder = SSLContextBuilder.create().setProtocol(trustStoreProtocol);
             if (!Strings.isNullOrEmpty(trustStorePassword)) {
                 try {
                     sslContextBuilder.loadTrustMaterial(new File(trustStore), trustStorePassword.toCharArray());
