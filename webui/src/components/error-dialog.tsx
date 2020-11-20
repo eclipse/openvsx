@@ -9,12 +9,35 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions } from '@material-ui/core';
+import {
+    Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions, Box, Link,
+    Theme, createStyles, withStyles, WithStyles
+} from '@material-ui/core';
+import { MainContext } from '../context';
 
-export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
+const dialogStyles = (theme: Theme) => createStyles({
+    lightTheme: {
+        color: '#c54a64'
+    },
+    darkTheme: {
+        color: '#ff849e'
+    },
+    link: {
+        textDecoration: 'none',
+        color: theme.palette.primary.contrastText,
+        '&:hover': {
+            textDecoration: 'underline'
+        }
+    }
+});
 
-    handleEnter = (e: KeyboardEvent): void => {
-        if (e.code ===  'Enter') {
+export class ErrorDialogComponent extends React.Component<ErrorDialogComponent.Props> {
+
+    static contextType = MainContext;
+    declare context: MainContext;
+
+    handleEnter = (event: KeyboardEvent): void => {
+        if (event.code ===  'Enter') {
             this.props.handleCloseDialog();
         }
     };
@@ -28,31 +51,67 @@ export class ErrorDialog extends React.Component<ErrorDialog.Props, {}> {
     }
 
     render(): React.ReactNode {
-        return (
-            <Dialog
+        const codeContent = this.getContentForCode();
+        const themeClass = this.context.pageSettings.themeType === 'dark'
+            ? this.props.classes.darkTheme : this.props.classes.lightTheme;
+        return <Dialog
                 open={this.props.isErrorDialogOpen}
-                onClose={this.props.handleCloseDialog}
-            >
-                <DialogTitle>Error</DialogTitle>
-                <DialogContent>
-                    <DialogContentText style={{ color: '#f15374' }}>
-                        {this.props.errorMessage}
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={this.props.handleCloseDialog}>
-                        Close
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        );
+                onClose={this.props.handleCloseDialog} >
+            <DialogTitle>Error</DialogTitle>
+            <DialogContent>
+                <DialogContentText
+                    className={themeClass} >
+                    {this.props.errorMessage}
+                    {
+                        codeContent ?
+                        <Box mt={2}>
+                            {codeContent}
+                        </Box>
+                        : null
+                    }
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={this.props.handleCloseDialog}>
+                    Close
+                </Button>
+            </DialogActions>
+        </Dialog>;
+    }
+
+    protected getContentForCode(): React.ReactNode {
+        if (!this.props.errorCode) {
+            return null;
+        }
+        const classes = this.props.classes;
+        switch (this.props.errorCode) {
+            case 'eclipse-missing-github-id':
+                return <>
+                    Please fill in the &ldquo;GitHub Username&rdquo; field
+                    in <Link href='https://accounts.eclipse.org/user/edit' target='_blank' className={classes.link}>
+                        your Eclipse account
+                    </Link>.
+                </>;
+            case 'eclipse-mismatch-github-id':
+                return <>
+                    Please edit the &ldquo;GitHub Username&rdquo; field
+                    in <Link href='https://accounts.eclipse.org/user/edit' target='_blank' className={classes.link}>
+                        your Eclipse account
+                    </Link> or log in with a different GitHub account.
+                </>;
+            default:
+                return null;
+        }
     }
 }
 
-export namespace ErrorDialog {
-    export interface Props {
+export namespace ErrorDialogComponent {
+    export interface Props extends WithStyles<typeof dialogStyles> {
         errorMessage: string;
+        errorCode?: number | string;
         isErrorDialogOpen: boolean;
         handleCloseDialog: () => void;
     }
 }
+
+export const ErrorDialog = withStyles(dialogStyles)(ErrorDialogComponent);

@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
+import static org.eclipse.openvsx.security.CodedAuthException.*;
+
 import java.util.Collection;
 import java.util.Collections;
 
@@ -23,7 +25,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
-import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -106,7 +108,7 @@ public class OAuth2UserServices {
                 var authUser = delegate.loadUser(userRequest);
                 String loginName = authUser.getAttribute("login");
                 if (Strings.isNullOrEmpty(loginName))
-                    throw new DisabledException("Invalid login: missing 'login' field.");
+                    throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
                 var userData = repositories.findUserByLoginName("github", loginName);
                 if (userData == null)
                     userData = users.registerNewUser(authUser);
@@ -118,28 +120,36 @@ public class OAuth2UserServices {
             case "eclipse": {
                 var authentication = SecurityContextHolder.getContext().getAuthentication();
                 if (authentication == null)
-                    throw new DisabledException("Please log in with GitHub before connecting your Eclipse account.");
+                    throw new CodedAuthException("Please log in with GitHub before connecting your Eclipse account.",
+                            NEED_MAIN_LOGIN);
                 if (!(authentication.getPrincipal() instanceof IdPrincipal))
-                    throw new DisabledException("The current authentication is invalid.");
+                    throw new CodedAuthException("The current authentication is invalid.", NEED_MAIN_LOGIN);
                 var principal = (IdPrincipal) authentication.getPrincipal();
                 var userData = entityManager.find(UserData.class, principal.getId());
                 if (userData == null)
-                    throw new DisabledException("The current authentication has no backing data.");
+                    throw new CodedAuthException("The current authentication has no backing data.", NEED_MAIN_LOGIN);
                 try {
                     var accessToken = userRequest.getAccessToken().getTokenValue();
                     var profile = eclipse.getUserProfile(accessToken);
-                    if (!Strings.isNullOrEmpty(profile.githubHandle) && !profile.githubHandle.equals(userData.getLoginName()))
-                        throw new DisabledException("The \"GitHub Username\" setting in your Eclipse profile does not match your GitHub authentication.");
+                    if (Strings.isNullOrEmpty(profile.githubHandle))
+                        throw new CodedAuthException("Your Eclipse profile is missing a GitHub username.",
+                                ECLIPSE_MISSING_GITHUB_ID);
+                    if (!profile.githubHandle.equals(userData.getLoginName()))
+                        throw new CodedAuthException("The GitHub username setting in your Eclipse profile ("
+                                + profile.githubHandle
+                                + ") does not match your GitHub authentication ("
+                                + userData.getLoginName() + ").",
+                                ECLIPSE_MISMATCH_GITHUB_ID);
                     eclipse.updateUserData(userData, profile);
                     eclipse.getPublisherAgreement(userData, accessToken);
                     return principal;
                 } catch (ErrorResultException exc) {
-                    throw new DisabledException(exc.getMessage(), exc);
+                    throw new AuthenticationServiceException(exc.getMessage(), exc);
                 }
             }
 
             default:
-                throw new DisabledException("Invalid registration: " + registrationId);
+                throw new CodedAuthException("Unsupported registration: " + registrationId, UNSUPPORTED_REGISTRATION);
         }
     }
 

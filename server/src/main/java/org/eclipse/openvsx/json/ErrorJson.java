@@ -20,4 +20,7 @@ public class ErrorJson {
 
     public String message;
 
+    /** See constants in {@link org.eclipse.openvsx.security.CodedAuthException}. */
+    public String code;
+
 }

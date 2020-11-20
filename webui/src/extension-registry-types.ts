@@ -25,6 +25,11 @@ export function isError(obj: unknown): obj is ErrorResult {
     return obj && typeof (obj as any).error === 'string';
 }
 
+export interface ReportedError {
+    message: string;
+    code?: number | string;
+}
+
 export interface SearchResult {
     offset: number;
     totalSize: number;

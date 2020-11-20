@@ -29,6 +29,7 @@ import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -89,6 +90,8 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         var json = new ErrorJson();
         json.message = ((AuthenticationException) authException).getMessage();
+        if (authException instanceof CodedAuthException)
+            json.code = ((CodedAuthException) authException).getCode();
         return json;
     }
 

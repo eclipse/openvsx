@@ -23,7 +23,7 @@ import { Banner } from './components/banner';
 import { ErrorDialog } from './components/error-dialog';
 import { handleError, getCookieValueByKey, setCookie } from './utils';
 import { ExtensionRegistryService } from './extension-registry-service';
-import { UserData, isError } from './extension-registry-types';
+import { UserData, isError, ReportedError } from './extension-registry-types';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
 import { HeaderMenu } from './header-menu';
@@ -69,7 +69,6 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
 
         this.state = {
             userLoading: true,
-            error: '',
             isErrorDialogOpen: false,
             isFooterExpanded: false,
             isBannerOpen: false
@@ -81,7 +80,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.has('auth-error')) {
             this.props.service.getUserAuthError()
-                .then(err => this.handleError(err));
+                .then(this.handleError);
         }
 
         // Get data of the currently logged in user
@@ -110,13 +109,15 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 this.setState({ user, userLoading: false });
             }
         } catch (err) {
-            this.setState({ error: handleError(err), isErrorDialogOpen: true, userLoading: false });
+            this.handleError(err);
+            this.setState({ userLoading: false });
         }
     }
 
-    handleError = (err: Error | Partial<ErrorResponse>) => {
-        const error = handleError(err);
-        this.setState({ error, isErrorDialogOpen: true });
+    handleError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
+        const message = handleError(err);
+        const code = (err as ReportedError).code;
+        this.setState({ error: { message, code }, isErrorDialogOpen: true });
     };
 
     protected onErrorDialogClose = () => {
@@ -140,7 +141,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             service: this.props.service,
             pageSettings: this.props.pageSettings,
             user: this.state.user,
-            handleError: this.handleError.bind(this)
+            handleError: this.handleError
         };
         return <React.Fragment>
             <CssBaseline />
@@ -248,7 +249,8 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             {
                 this.state.error ?
                     <ErrorDialog
-                        errorMessage={this.state.error}
+                        errorMessage={this.state.error.message}
+                        errorCode={this.state.error.code}
                         isErrorDialogOpen={this.state.isErrorDialogOpen}
                         handleCloseDialog={this.onErrorDialogClose} />
                     : null
@@ -272,7 +274,10 @@ export namespace MainComponent {
     export interface State {
         user?: UserData;
         userLoading: boolean;
-        error: string;
+        error?: {
+            message: string;
+            code?: number | string;
+        };
         isErrorDialogOpen: boolean;
         isFooterExpanded: boolean;
         isBannerOpen: boolean;
