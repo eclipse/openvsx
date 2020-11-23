@@ -11,11 +11,11 @@
 import React, { FunctionComponent, useContext, useState } from 'react';
 import { UserData, isError } from '../../extension-registry-types';
 import { Box, Typography, Paper, Button, makeStyles, Dialog, DialogContent, DialogContentText, Fade, Link } from '@material-ui/core';
+import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
 import { createAbsoluteURL } from '../../utils';
 import { MainContext } from '../../context';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import * as MarkdownIt from 'markdown-it';
 
 const useStyles = makeStyles(theme => ({
     paper: {
@@ -23,7 +23,7 @@ const useStyles = makeStyles(theme => ({
     },
     dialogScrollPaper: {
         height: '75%',
-        width: '550px'
+        width: '100%'
     }
 }));
 
@@ -62,12 +62,11 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
 
     const [agreementText, setAgreementText] = useState('');
     const onDialogOpened = async () => {
-        const markdownIt = new MarkdownIt({ html: true, breaks: true, linkify: true, typographer: true });
         const agreementURL = pageSettings.urls.publisherAgreement;
         if (agreementURL) {
             try {
                 const agreementMd = await service.getStaticContent(agreementURL);
-                setAgreementText(markdownIt.render(agreementMd));
+                setAgreementText(agreementMd);
             } catch (err) {
                 handleError(err);
             }
@@ -126,16 +125,20 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
             onEntered={onDialogOpened}
             onEscapeKeyDown={onClose}
             onBackdropClick={onClose}
+            maxWidth='md'
             classes={{ paperScrollPaper: classes.dialogScrollPaper }}>
             <DialogContent>
                 {
                     agreementText ?
                         <DialogContentText component='div'>
-                            <span dangerouslySetInnerHTML={{ __html: agreementText }} />
+                            <SanitizedMarkdown
+                                content={agreementText}
+                                sanitize={false}
+                                linkify={false} />
                             <Box display='flex' justifyContent='flex-end' >
                                 <Button onClick={signPublisherAgreement} variant='contained' color='secondary'>
                                     Agree
-                                    </Button>
+                                </Button>
                             </Box>
                         </DialogContentText>
                         :

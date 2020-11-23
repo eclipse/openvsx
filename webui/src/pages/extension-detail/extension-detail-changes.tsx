@@ -73,23 +73,13 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
         if (this.props.extension.files.changelog) {
             try {
                 const changelog = await this.context.service.getExtensionChangelog(this.props.extension);
-                this.setState({ changelog, loading: false }, () => this.scrollToHeading());
+                this.setState({ changelog, loading: false });
             } catch (err) {
                 this.context.handleError(err);
                 this.setState({ loading: false });
             }
         } else {
             this.setState({ changelog: "", loading: false });
-        }
-    }
-
-    protected scrollToHeading() {
-        const anchor = location.hash;
-        if (anchor && anchor.length > 1) {
-            const heading = document.getElementById(anchor.substring(1));
-            if (heading) {
-                heading.scrollIntoView();
-            }
         }
     }
 

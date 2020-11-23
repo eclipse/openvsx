@@ -122,23 +122,13 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         if (this.props.extension.files.readme) {
             try {
                 const readme = await this.context.service.getExtensionReadme(this.props.extension);
-                this.setState({ readme, loading: false }, () => this.scrollToHeading());
+                this.setState({ readme, loading: false });
             } catch (err) {
                 this.context.handleError(err);
                 this.setState({ loading: false });
             }
         } else {
             this.setState({ readme: '## No README available', loading: false });
-        }
-    }
-
-    protected scrollToHeading() {
-        const anchor = location.hash;
-        if (anchor && anchor.length > 1) {
-            const heading = document.getElementById(anchor.substring(1));
-            if (heading) {
-                heading.scrollIntoView();
-            }
         }
     }
 

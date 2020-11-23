@@ -70,7 +70,7 @@ const markdownStyles = (theme: Theme) => createStyles({
 
 export class SanitizedMarkdownComponent extends React.Component<SanitizedMarkdown.Props> {
 
-    protected markdownIt: MarkdownIt;
+    protected readonly markdownIt: MarkdownIt;
 
     constructor(props: SanitizedMarkdown.Props) {
         super(props);
@@ -79,15 +79,33 @@ export class SanitizedMarkdownComponent extends React.Component<SanitizedMarkdow
             html: true,
             linkify: true,
             typographer: true
-        }).use(anchorPlugin, {
-            permalink: true,
-            permalinkSymbol: linkIcon({ x: 0, y: 0, width: 24, height: 10 })
         });
+        if (props.linkify === undefined || props.linkify) {
+            this.markdownIt.use(anchorPlugin, {
+                permalink: true,
+                permalinkSymbol: linkIcon({ x: 0, y: 0, width: 24, height: 10 })
+            });
+        }
+    }
+
+    componentDidMount(): void {
+        this.scrollToHeading();
+    }
+
+    protected scrollToHeading(): void {
+        const anchor = location.hash;
+        if (anchor && anchor.length > 1) {
+            const heading = document.getElementById(anchor.substring(1));
+            if (heading) {
+                heading.scrollIntoView();
+            }
+        }
     }
 
     render(): React.ReactNode {
         const renderedMd = this.markdownIt.render(this.props.content);
-        const sanitized = DOMPurify.sanitize(renderedMd);
+        const sanitized = this.props.sanitize === undefined || this.props.sanitize
+            ? DOMPurify.sanitize(renderedMd) : renderedMd;
         return <span
             className={this.props.classes.markdown}
             dangerouslySetInnerHTML={{ __html: sanitized }} />;
@@ -98,6 +116,8 @@ export class SanitizedMarkdownComponent extends React.Component<SanitizedMarkdow
 export namespace SanitizedMarkdown {
     export interface Props extends WithStyles<typeof markdownStyles> {
         content: string;
+        sanitize?: boolean;
+        linkify?: boolean;
     }
 }
 
