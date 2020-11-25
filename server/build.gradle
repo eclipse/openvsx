@@ -19,7 +19,8 @@ def versions = [
     flyway: '6.3.3',
     springfox: '3.0.0',
     spdx: '2.2.1',
-    gcloud: '1.113.0',
+    gcloud: '1.113.4',
+    azure: '12.9.0',
     guava: '28.2-jre',
     junit: '5.6.2',
     testcontainers: '1.14.3'
@@ -54,6 +55,7 @@ dependencies {
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
+    implementation "com.azure:azure-storage-blob:${versions.azure}"
     implementation "io.springfox:springfox-boot-starter:${versions.springfox}"
     implementation "com.google.guava:guava:${versions.guava}"
     implementation("org.spdx:spdx-tools:${versions.spdx}") {

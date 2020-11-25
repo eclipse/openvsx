@@ -47,7 +47,6 @@ import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -84,9 +83,6 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     StorageUtilService storageUtil;
-
-    @Autowired
-    GoogleCloudStorageService googleStorage;
 
     @Autowired
     EclipseService eclipse;
@@ -486,8 +482,10 @@ public class LocalRegistryService implements IExtensionRegistry {
             if (resource.getType().equals(FileResource.DOWNLOAD)) {
                 resource.setName(namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + ".vsix");
             }
-            if (storageUtil.shouldStoreExternally(resource) && googleStorage.isEnabled()) {
-                googleStorage.uploadFile(resource);
+            if (storageUtil.shouldStoreExternally(resource)) {
+                storageUtil.uploadFile(resource);
+                // Don't store the binary content in the DB - it's now stored externally
+                resource.setContent(null);
             } else {
                 resource.setStorageType(FileResource.STORAGE_DB);
             }

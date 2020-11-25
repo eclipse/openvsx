@@ -9,7 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 
 import javax.transaction.Transactional;
 import javax.transaction.Transactional.TxType;
@@ -28,7 +30,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class GoogleCloudStorageService {
+public class GoogleCloudStorageService implements IStorageService {
 
     private static final String BASE_URL = "https://storage.googleapis.com/";
 
@@ -43,6 +45,7 @@ public class GoogleCloudStorageService {
 
     private Storage storage;
 
+    @Override
     public boolean isEnabled() {
         return !Strings.isNullOrEmpty(bucketId);
     }
@@ -62,6 +65,7 @@ public class GoogleCloudStorageService {
         return storage;
     }
 
+    @Override
     @Transactional(TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var objectId = getObjectId(resource.getName(), resource.getExtension());
@@ -72,13 +76,6 @@ public class GoogleCloudStorageService {
 
         uploadFile(resource.getContent(), resource.getName(), objectId);
         resource.setStorageType(FileResource.STORAGE_GOOGLE);
-        // Don't store the binary content in the DB - it's now stored externally
-        resource.setContent(null);
-    }
-
-    @Transactional(TxType.REQUIRES_NEW)
-    public void uploadFileNewTx(FileResource resource) {
-        uploadFile(resource);
     }
 
     protected void uploadFile(byte[] content, String fileName, String objectId) {
@@ -93,8 +90,9 @@ public class GoogleCloudStorageService {
         getStorage().create(blobInfoBuilder.build(), content);
     }
 
-    public void removeFile(String name, ExtensionVersion extVersion) {
-        var objectId = getObjectId(name, extVersion);
+    @Override
+    public void removeFile(FileResource resource) {
+        var objectId = getObjectId(resource.getName(), resource.getExtension());
         if (Strings.isNullOrEmpty(bucketId)) {
             throw new IllegalStateException("Cannot remove file "
                     + objectId + ": missing Google bucket id");
@@ -102,8 +100,9 @@ public class GoogleCloudStorageService {
         getStorage().delete(BlobId.of(bucketId, objectId));
     }
 
-    public URI getLocation(String name, ExtensionVersion extVersion) {
-        var objectId = getObjectId(name, extVersion);
+    @Override
+    public URI getLocation(FileResource resource) {
+        var objectId = getObjectId(resource.getName(), resource.getExtension());
         if (Strings.isNullOrEmpty(bucketId)) {
             throw new IllegalStateException("Cannot determine location of file "
                     + objectId + ": missing Google bucket id");
@@ -113,12 +112,16 @@ public class GoogleCloudStorageService {
 
     protected String getObjectId(String name, ExtensionVersion extVersion) {
         Preconditions.checkNotNull(name);
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        return namespace.getName()
-                + "/" + extension.getName()
-                + "/" + extVersion.getVersion()
-                + "/" + name;
+        try {
+            var extension = extVersion.getExtension();
+            var namespace = extension.getNamespace();
+			return namespace.getName()
+			        + "/" + extension.getName()
+			        + "/" + URLEncoder.encode(extVersion.getVersion(), "UTF-8")
+			        + "/" + name;
+		} catch (UnsupportedEncodingException exc) {
+			throw new RuntimeException(exc);
+		}
     }
 
 }

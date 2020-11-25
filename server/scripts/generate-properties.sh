@@ -44,3 +44,11 @@ then
     echo "ovsx.storage.gcp.bucket-id=$GCS_BUCKET_ID" >> $OVSX_APP_PROFILE
     echo "Using Google Cloud Storage: https://storage.googleapis.com/$GCS_BUCKET_ID/"
 fi
+
+# Set the Azure Blob Storage service endpoint and sas token
+if [ -n "$AZURE_SERVICE_ENDPOINT" ] && [ -n "$AZURE_SAS_TOKEN" ]
+then
+    echo "ovsx.storage.azure.service-endpoint=$AZURE_SERVICE_ENDPOINT" >> $OVSX_APP_PROFILE
+    echo "ovsx.storage.azure.sas-token=$AZURE_SAS_TOKEN" >> $OVSX_APP_PROFILE
+    echo "Using Azure Blob Storage: $AZURE_SERVICE_ENDPOINT"
+fi
