@@ -38,6 +38,7 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
+import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(VSCodeAdapter.class)
 @AutoConfigureWebClient
-@MockBean({ ClientRegistrationRepository.class, GoogleCloudStorageService.class })
+@MockBean({
+    ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class
+})
 public class VSCodeAdapterTest {
 
     @MockBean

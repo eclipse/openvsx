@@ -11,6 +11,7 @@ package org.eclipse.openvsx.util;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -30,22 +31,19 @@ public final class UrlUtil {
         for (var segment : segments) {
             initialCapacity += segment.length() + 1;
         }
-        try {
-            var result = new StringBuilder(initialCapacity);
-            result.append(baseUrl);
-            for (var segment : segments) {
-                if (segment == null)
-                    return null;
-                if (segment.isEmpty())
-                    continue;
-                if (result.length() == 0 || result.charAt(result.length() - 1) != '/')
-                    result.append('/');
-                result.append(URLEncoder.encode(segment, "UTF-8"));
-            }
-            return result.toString();
-        } catch (UnsupportedEncodingException exc) {
-            throw new RuntimeException(exc);
+        var charset = Charset.forName("UTF-8");
+        var result = new StringBuilder(initialCapacity);
+        result.append(baseUrl);
+        for (var segment : segments) {
+            if (segment == null)
+                return null;
+            if (segment.isEmpty())
+                continue;
+            if (result.length() == 0 || result.charAt(result.length() - 1) != '/')
+                result.append('/');
+            result.append(URLEncoder.encode(segment, charset));
         }
+        return result.toString();
     }
 
     /**

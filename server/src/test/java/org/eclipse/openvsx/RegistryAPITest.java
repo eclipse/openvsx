@@ -52,6 +52,7 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
+import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.junit.jupiter.api.Test;
@@ -77,7 +78,10 @@ import com.google.common.collect.Lists;
 
 @WebMvcTest(RegistryAPI.class)
 @AutoConfigureWebClient
-@MockBean({ ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class })
+@MockBean({
+    ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
+    AzureBlobStorageService.class
+})
 public class RegistryAPITest {
 
     @SpyBean

@@ -62,12 +62,22 @@ With these settings in place, you should be able to log in by authorizing your O
 
 If you would like to test file storage via Google Cloud, follow these steps:
 
- * Create a [GCP](https://cloud.google.com/) project and a bucket. If you use an existing bucket, make sure it is empty before starting the server.
+ * Create a [GCP](https://cloud.google.com/) project and a bucket.
  * Make the bucket public by granting the role "Storage Object Viewer" to `allUsers`.
  * [Configure CORS](https://cloud.google.com/storage/docs/configuring-cors#configure-cors-bucket) on the bucket with origin `"*"` and method `"GET"`.
  * Create environment variables named `GCP_PROJECT_ID` and `GCS_BUCKET_ID` containing your GCP project and bucket identifiers. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
  * Create a GCP service account with role "Storage Object Admin" and copy its credentials file into your workspace.
  * Create an environment variable `GOOGLE_APPLICATION_CREDENTIALS` containing the path to the credentials file.
+
+### Azure Setup
+
+If you would like to test file storage via Azure Blob, follow these steps:
+
+ * Create a [storage account](https://portal.azure.com/) and a container named `openvsx-resources` (a different name is possible if you change the `ovsx.storage.azure.blob-container` property).
+ * Allow Blob public access in the storage account and set the container's public access level to "Blob".
+ * Configure CORS in your storage account with origin `"*"` and method `"GET"`.
+ * Create an environment variable `AZURE_SERVICE_ENDPOINT` with the "Blob service" URL of your storage account. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
+ * Generate a "Shared access signature" and put its token into an environment variable `AZURE_SAS_TOKEN`.
 
 ## License
 
