@@ -18,7 +18,7 @@ def versions = [
     java: '11',
     flyway: '6.3.3',
     springfox: '3.0.0',
-    spdx: '2.2.1',
+    spdx: '2.2.4',
     gcloud: '1.113.4',
     azure: '12.9.0',
     guava: '28.2-jre',
