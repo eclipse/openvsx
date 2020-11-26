@@ -9,7 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
+import java.io.IOException;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public class EclipseProfile {
 
@@ -37,6 +47,7 @@ public class EclipseProfile {
     public String twitterHandle;
 
     @JsonProperty("publisher_agreements")
+    @JsonDeserialize(using = PublisherAgreements.Deserializer.class)
     public PublisherAgreements publisherAgreements;
 
     public static class PublisherAgreements {
@@ -44,6 +55,24 @@ public class EclipseProfile {
         @JsonProperty("open-vsx")
         public PublisherAgreement openVsx;
 
+        public static class Deserializer extends JsonDeserializer<PublisherAgreements> {
+
+            private static final TypeReference<List<PublisherAgreement>> TYPE_LIST_AGREEMENT = new TypeReference<List<PublisherAgreement>>() {};
+
+			@Override
+			public PublisherAgreements deserialize(JsonParser p, DeserializationContext ctxt)
+					throws IOException, JsonProcessingException {
+				if (p.currentToken() == JsonToken.START_ARRAY) {
+                    var list = p.getCodec().readValue(p, TYPE_LIST_AGREEMENT);
+                    var result = new PublisherAgreements();
+                    if (!list.isEmpty())
+                        result.openVsx = list.get(0);
+                    return result;
+                }
+                return p.getCodec().readValue(p, PublisherAgreements.class);
+            }
+
+        }
     }
 
     public static class PublisherAgreement {
