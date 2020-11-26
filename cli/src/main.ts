@@ -55,7 +55,10 @@ module.exports = function (argv: string[]): void {
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
             publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn })
-                .catch(handleError(program.debug));
+                .catch(handleError(program.debug,
+                    'See the documentation for more information:\n'
+                    + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions'
+                ));
         });
 
     const getCmd = program.command('get <namespace.extension>');

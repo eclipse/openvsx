@@ -52,13 +52,12 @@ export function createTempFile(options: tmp.TmpNameOptions): Promise<string> {
     });
 }
 
-export function handleError(debug?: boolean): (reason: any) => void {
+export function handleError(debug?: boolean, additionalMessage?: string): (reason: any) => void {
     return reason => {
         if (reason instanceof Error && !debug) {
             console.error(`\u274c  ${reason.message}`);
-            if (reason.message.indexOf('Publisher Agreement') > 0) {
-                console.error('See the documentation for more information:\n'
-                    + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions');
+            if (additionalMessage) {
+                console.error(additionalMessage);
             }
         } else if (typeof reason === 'string') {
             console.error(`\u274c  ${reason}`);

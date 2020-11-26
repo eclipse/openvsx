@@ -198,7 +198,7 @@ public class EclipseService {
         if (eclipseData.personId != null) {
             try {
                 var profile = getPublicProfile(eclipseData.personId);
-                transactions.execute(status -> updateUserData(user, profile));
+                eclipseData = transactions.execute(status -> updateUserData(user, profile));
             } catch (ErrorResultException | TransactionException exc) {
                 // Continue with the information that is currently in the DB
             }
@@ -295,7 +295,7 @@ public class EclipseService {
             logger.error("Failed to parse JSON response (" + response.getStatusCode() + "):\n" + json, exc);
             throw new ErrorResultException("Parsing Eclipse user profile failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+        }
     }
 
     /**
@@ -381,14 +381,14 @@ public class EclipseService {
 
             String payload;
             try {
-				payload = objectMapper.writeValueAsString(data);
-			} catch (JsonProcessingException exc2) {
-				payload = "<" + exc2.getMessage() + ">";
-			}
+                payload = objectMapper.writeValueAsString(data);
+            } catch (JsonProcessingException exc2) {
+                payload = "<" + exc2.getMessage() + ">";
+            }
             logger.error("Post request failed with URL: " + requestUrl + " Payload: " + payload, exc);
             throw new ErrorResultException("Request for signing publisher agreement failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+        }
     }
 
     private PublisherAgreementResponse parseAgreementResponse(ResponseEntity<String> response) {
@@ -412,7 +412,7 @@ public class EclipseService {
             logger.error("Failed to parse JSON response (" + response.getStatusCode() + "):\n" + json, exc);
             throw new ErrorResultException("Parsing publisher agreement response failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+        }
     }
 
     /**
