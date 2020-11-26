@@ -9,16 +9,31 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * https://eclipsefdn.github.io/openvsx-publisher-agreement-specs/#/paths/~1publisher_agreement/post
  */
 public class SignAgreementParam {
 
-    /** The version number of the document/agreement. */
-    public int version;
+    /**
+     * The version number of the document/agreement.
+     */
+    public String version;
 
-    public SignAgreementParam(String version) {
-        this.version = Integer.parseInt(version);
+    /**
+     * The GitHub username of the user. This must match what the Eclipse Foundation has on file
+     * for the user to successfully sign the publisher agreement.
+     */
+    @JsonProperty("github_handle")
+    public String githubHandle;
+
+    public SignAgreementParam() {
+    }
+
+    public SignAgreementParam(String version, String githubHandle) {
+        this.version = version;
+        this.githubHandle = githubHandle;
     }
 
 }

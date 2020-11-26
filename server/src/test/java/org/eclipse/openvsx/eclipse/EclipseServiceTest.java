@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.eclipse;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -25,6 +26,7 @@ import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.EclipseData;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.security.TokenService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,6 +63,21 @@ public class EclipseServiceTest {
     }
 
     @Test
+    public void testGetPublicProfile() throws Exception {
+        Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
+            .thenReturn(mockProfileResponse());
+
+        var profile = eclipse.getPublicProfile("test");
+
+        assertThat(profile).isNotNull();
+        assertThat(profile.name).isEqualTo("test");
+        assertThat(profile.githubHandle).isEqualTo("test");
+        assertThat(profile.publisherAgreements).isNotNull();
+        assertThat(profile.publisherAgreements.openVsx).isNotNull();
+        assertThat(profile.publisherAgreements.openVsx.version).isEqualTo("1");
+    }
+
+    @Test
     public void testGetUserProfile() throws Exception {
         Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
             .thenReturn(mockProfileResponse());
@@ -70,6 +87,9 @@ public class EclipseServiceTest {
         assertThat(profile).isNotNull();
         assertThat(profile.name).isEqualTo("test");
         assertThat(profile.githubHandle).isEqualTo("test");
+        assertThat(profile.publisherAgreements).isNotNull();
+        assertThat(profile.publisherAgreements.openVsx).isNotNull();
+        assertThat(profile.publisherAgreements.openVsx.version).isEqualTo("1");
     }
 
     @Test
@@ -136,6 +156,20 @@ public class EclipseServiceTest {
     }
 
     @Test
+    public void testPublisherAgreementAlreadySigned() throws Exception {
+        var user = mockUser();
+        Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
+            .thenThrow(new HttpClientErrorException(HttpStatus.CONFLICT));
+
+        try {
+            eclipse.signPublisherAgreement(user);
+            fail("Expected an ErrorResultException");
+        } catch (ErrorResultException exc) {
+            assertThat(exc.getMessage()).isEqualTo("A publisher agreement is already present for user test.");
+        }
+    }
+
+    @Test
     public void testRevokePublisherAgreement() throws Exception {
         var user = mockUser();
         var eclipseData = new EclipseData();
@@ -144,7 +178,27 @@ public class EclipseServiceTest {
         eclipseData.publisherAgreement = new EclipseData.PublisherAgreement();
         eclipseData.publisherAgreement.isActive = true;
 
-        eclipse.revokePublisherAgreement(user);
+        eclipse.revokePublisherAgreement(user, null);
+
+        assertThat(user.getEclipseData().publisherAgreement.isActive).isFalse();
+    }
+
+    @Test
+    public void testRevokePublisherAgreementByAdmin() throws Exception {
+        var user = mockUser();
+        var eclipseData = new EclipseData();
+        user.setEclipseData(eclipseData);
+        eclipseData.personId = "test";
+        eclipseData.publisherAgreement = new EclipseData.PublisherAgreement();
+        eclipseData.publisherAgreement.isActive = true;
+        var admin = new UserData();
+        admin.setLoginName("admin");
+        admin.setEclipseToken(new AuthToken());
+        admin.getEclipseToken().accessToken = "67890";
+        Mockito.when(tokens.getActiveToken(admin, "eclipse"))
+            .thenReturn(admin.getEclipseToken());
+
+        eclipse.revokePublisherAgreement(user, admin);
 
         assertThat(user.getEclipseData().publisherAgreement.isActive).isFalse();
     }

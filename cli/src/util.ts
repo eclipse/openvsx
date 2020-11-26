@@ -56,6 +56,10 @@ export function handleError(debug?: boolean): (reason: any) => void {
     return reason => {
         if (reason instanceof Error && !debug) {
             console.error(`\u274c  ${reason.message}`);
+            if (reason.message.indexOf('Publisher Agreement') > 0) {
+                console.error('See the documentation for more information:\n'
+                    + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions');
+            }
         } else if (typeof reason === 'string') {
             console.error(`\u274c  ${reason}`);
         } else if (reason !== undefined) {

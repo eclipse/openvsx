@@ -35,5 +35,21 @@ public class EclipseProfile {
 
     @JsonProperty("twitter_handle")
     public String twitterHandle;
+
+    @JsonProperty("publisher_agreements")
+    public PublisherAgreements publisherAgreements;
+
+    public static class PublisherAgreements {
+
+        @JsonProperty("open-vsx")
+        public PublisherAgreement openVsx;
+
+    }
+
+    public static class PublisherAgreement {
+
+        public String version;
+
+    }
     
 }

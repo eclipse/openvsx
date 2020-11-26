@@ -141,7 +141,9 @@ public class OAuth2UserServices {
                                 + userData.getLoginName() + ").",
                                 ECLIPSE_MISMATCH_GITHUB_ID);
                     eclipse.updateUserData(userData, profile);
-                    eclipse.getPublisherAgreement(userData, accessToken);
+                    if (profile.publisherAgreements == null) {
+                        eclipse.getPublisherAgreement(userData, accessToken);
+                    }
                     return principal;
                 } catch (ErrorResultException exc) {
                     throw new AuthenticationServiceException(exc.getMessage(), exc);

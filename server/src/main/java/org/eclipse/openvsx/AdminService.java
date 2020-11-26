@@ -259,7 +259,7 @@ public class AdminService {
         if (eclipse.isActive() && user.getEclipseData() != null
                 && user.getEclipseData().publisherAgreement != null
                 && user.getEclipseData().publisherAgreement.isActive) {
-            eclipse.revokePublisherAgreement(user);
+            eclipse.revokePublisherAgreement(user, admin);
         }
 
         var accessTokens = repositories.findAccessTokens(user);

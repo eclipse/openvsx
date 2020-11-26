@@ -9,18 +9,31 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useState, useContext } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@material-ui/core';
+import {
+    Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Link
+} from '@material-ui/core';
+import { createAbsoluteURL } from '../../utils';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { PublisherInfo, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 
 export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Props> = props => {
-    const { service, handleError } = useContext(MainContext);
+    const { user, service, handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
+
+    if (props.publisherInfo.user.publisherAgreement
+            && !(user && user.additionalLogins && user.additionalLogins.find(login => login.provider === 'eclipse'))) {
+        // If a publisher agreement is required, the admin must be logged in with Eclipse to revoke it
+        return <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+            <Button variant='contained' color='secondary'>
+                Log in with Eclipse
+            </Button>
+        </Link>;
+    }
 
     const doRevoke = async () => {
         try {

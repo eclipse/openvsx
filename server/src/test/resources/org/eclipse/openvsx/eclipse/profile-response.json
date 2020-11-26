@@ -8,6 +8,11 @@
             "signed": true,
             "can_contribute_spec_project": true
         },
+        "publisher_agreements": {
+            "open-vsx": {
+                "version": "1"
+            }
+        },
         "is_committer": true,
         "friends": {
             "friend_id": null

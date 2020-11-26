@@ -50,7 +50,8 @@ public class TokenService {
     @Autowired
     ClientRegistrationRepository clientRegistrationRepository;
 
-    public AuthToken updateTokens(long userId, String registrationId, OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
+    public AuthToken updateTokens(long userId, String registrationId, OAuth2AccessToken accessToken,
+            OAuth2RefreshToken refreshToken) {
         var userData = entityManager.find(UserData.class, userId);
         if (userData == null) {
             return null;
@@ -81,6 +82,7 @@ public class TokenService {
                 
                 if (refreshToken != null) {
                     token.refreshToken = refreshToken.getTokenValue();
+                    token.refreshExpiresAt = refreshToken.getExpiresAt();
                 } else {
                     // Request a new token to get the refresh token
                     var tokens = refreshEclipseToken(token);
@@ -90,6 +92,7 @@ public class TokenService {
                         token.issuedAt = tokens.getFirst().getIssuedAt();
                         token.expiresAt = tokens.getFirst().getExpiresAt();
                         token.refreshToken = tokens.getSecond().getTokenValue();
+                        token.refreshExpiresAt = tokens.getSecond().getExpiresAt();
                     }
                 }
                 return updateEclipseToken(userData, token);
@@ -122,20 +125,37 @@ public class TokenService {
 
             case "eclipse": {
                 var token = userData.getEclipseToken();
-                if (token == null)
-                    return null;
-                if (token.expiresAt != null && Instant.now().isAfter(token.expiresAt)) {
-                    var newTokens = refreshEclipseToken(token);
-                    if (newTokens == null) {
-                        return updateTokens(userData.getId(), "eclipse", null, null);
+                if (token != null && isExpired(token.expiresAt)) {
+                    OAuth2AccessToken newAccessToken = null;
+                    OAuth2RefreshToken newRefreshToken = null;
+                    if (!isExpired(token.refreshExpiresAt)) {
+                        var newTokens = refreshEclipseToken(token);
+                        if (newTokens != null) {
+                            newAccessToken = newTokens.getFirst();
+                            newRefreshToken = newTokens.getSecond();
+                        }
                     }
-                    return updateTokens(userData.getId(), "eclipse", newTokens.getFirst(), newTokens.getSecond());
+                    return updateTokens(userData.getId(), "eclipse", newAccessToken, newRefreshToken);
                 }
                 return token;
             }
         }
 
         return null;
+    }
+
+    public boolean isUsable(AuthToken token) {
+        if (token == null)
+            return false;
+        if (token.accessToken != null && !isExpired(token.expiresAt))
+            return true;
+        if (token.refreshToken != null && !isExpired(token.refreshExpiresAt))
+            return true;
+        return false;
+    }
+
+    private boolean isExpired(Instant instant) {
+        return instant != null && Instant.now().isAfter(instant);
     }
 
     protected Pair<OAuth2AccessToken, OAuth2RefreshToken> refreshEclipseToken(AuthToken token) {

@@ -29,6 +29,8 @@ public class AuthToken {
     
     public String refreshToken;
 
+    public Instant refreshExpiresAt;
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -46,12 +48,14 @@ public class AuthToken {
             return false;
         if (!Objects.equals(this.refreshToken, other.refreshToken))
             return false;
+        if (!Objects.equals(this.refreshExpiresAt, other.refreshExpiresAt))
+            return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(accessToken, issuedAt, expiresAt, scopes, refreshToken);
+        return Objects.hash(accessToken, issuedAt, expiresAt, scopes, refreshToken, refreshExpiresAt);
     }
 
 	@Override
@@ -68,7 +72,10 @@ public class AuthToken {
 		sb.append("], ");
 		sb.append("scopes: [");
 		sb.append(scopes);
-		sb.append("]");
+        sb.append("], ");
+        sb.append("refreshExpiresAt: [");
+        sb.append(refreshExpiresAt);
+        sb.append("]");
 		return sb.toString();
     }
 

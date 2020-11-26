@@ -39,6 +39,6 @@ ovsx:
   elasticsearch:
     clear-on-start: true
   eclipse:
-    base-url: https://api.eclipse.org/openvsx
+    base-url: https://api.eclipse.org
     publisher-agreement:
       timezone: US/Eastern
