@@ -761,7 +761,7 @@ public class RegistryAPITest {
         namespace.setName("foobar");
         Mockito.when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
-        Mockito.when(repositories.findExtensions(namespace))
+        Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.empty());
         return namespace;
     }
@@ -792,7 +792,7 @@ public class RegistryAPITest {
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
-        Mockito.when(repositories.findExtensions(namespace))
+        Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
         Mockito.when(repositories.getVersionStrings(extension))
                 .thenReturn(Streamable.of(extVersion.getVersion()));

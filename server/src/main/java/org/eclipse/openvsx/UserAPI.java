@@ -220,7 +220,7 @@ public class UserAPI {
             json.name = namespace.getName();
             json.extensions = new LinkedHashMap<>();
             var serverUrl = UrlUtil.getBaseUrl();
-            for (var ext : repositories.findExtensions(namespace)) {
+            for (var ext : repositories.findActiveExtensions(namespace)) {
                 String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
                 json.extensions.put(ext.getName(), url);
             }

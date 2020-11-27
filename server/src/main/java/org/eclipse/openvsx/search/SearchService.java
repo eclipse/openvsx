@@ -141,7 +141,7 @@ public class SearchService {
             }
             
             // Scan all extensions and create index queries
-            var allExtensions = repositories.findAllExtensions();
+            var allExtensions = repositories.findAllActiveExtensions();
             if (allExtensions.isEmpty()) {
                 return;
             }

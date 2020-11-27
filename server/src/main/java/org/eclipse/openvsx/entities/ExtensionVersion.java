@@ -63,6 +63,8 @@ public class ExtensionVersion {
     @ManyToOne
     PersonalAccessToken publishedWith;
 
+    boolean active;
+
     String displayName;
 
     @Column(length = 2048)
@@ -115,6 +117,7 @@ public class ExtensionVersion {
         json.downloadCount = extension.getDownloadCount();
         json.version = this.getVersion();
         json.preview = this.isPreview();
+        json.active = this.isActive();
         if (this.getTimestamp() != null) {
             json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         }
@@ -239,6 +242,14 @@ public class ExtensionVersion {
 
     public void setPublishedWith(PersonalAccessToken publishedWith) {
         this.publishedWith = publishedWith;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
 	public String getDisplayName() {

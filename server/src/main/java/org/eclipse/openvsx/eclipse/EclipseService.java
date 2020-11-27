@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -31,8 +32,11 @@ import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.EclipseData;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.UserJson;
+import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -78,10 +82,19 @@ public class EclipseService {
     TransactionTemplate transactions;
 
     @Autowired
+    RepositoryService repositories;
+
+    @Autowired
+    ExtensionService extensions;
+
+    @Autowired
     EntityManager entityManager;
 
     @Autowired
     RestTemplate restTemplate;
+
+    @Autowired
+    SearchService search;
 
     @Value("${ovsx.eclipse.base-url:}")
     String eclipseApiUrl;
@@ -362,12 +375,14 @@ public class EclipseService {
             var json = restTemplate.postForEntity(requestUrl, request, String.class);
             var response = parseAgreementResponse(json);
 
-            return updateEclipseData(user, ed -> {
+            var result = updateEclipseData(user, ed -> {
                 ed.publisherAgreement = response.createEntityData(parseDate);
                 return ed.publisherAgreement;
             }, ed -> {
                 ed.personId = response.personID;
             });
+            extensions.reactivateExtensions(user);
+            return result;
 
         } catch (RestClientException exc) {
             if (exc instanceof HttpStatusCodeException) {

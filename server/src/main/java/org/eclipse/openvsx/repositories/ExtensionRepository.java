@@ -22,7 +22,7 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Streamable<Extension> findByNamespace(Namespace namespace);
 
-    Streamable<Extension> findByNamespaceOrderByNameAsc(Namespace namespace);
+    Streamable<Extension> findByNamespaceAndActiveTrueOrderByNameAsc(Namespace namespace);
 
     Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
 
@@ -30,7 +30,7 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Extension findByPublicId(String publicId);
 
-    Streamable<Extension> findAll();
+    Streamable<Extension> findByActiveTrue();
 
     long count();
 

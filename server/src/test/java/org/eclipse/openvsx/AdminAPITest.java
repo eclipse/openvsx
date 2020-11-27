@@ -509,7 +509,7 @@ public class AdminAPITest {
         namespace.setName("foobar");
         Mockito.when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
-        Mockito.when(repositories.findExtensions(namespace))
+        Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0l);

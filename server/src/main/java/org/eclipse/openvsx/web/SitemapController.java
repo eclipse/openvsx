@@ -53,7 +53,7 @@ public class SitemapController {
         
         var baseUrl = getBaseUrl();
         var timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        repositories.findAllExtensions().forEach(extension -> {
+        repositories.findAllActiveExtensions().forEach(extension -> {
             var entry = document.createElement("url");
             var loc = document.createElement("loc");
             loc.setTextContent(UrlUtil.createApiUrl(baseUrl, "extension", extension.getNamespace().getName(), extension.getName()));

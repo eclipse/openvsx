@@ -49,6 +49,8 @@ public class Extension {
     @OneToOne
     ExtensionVersion preview;
 
+    boolean active;
+
     Double averageRating;
 
     int downloadCount;
@@ -124,6 +126,14 @@ public class Extension {
 	public void setPreview(ExtensionVersion preview) {
 		this.preview = preview;
 	}
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
 	public Double getAverageRating() {
 		return averageRating;
