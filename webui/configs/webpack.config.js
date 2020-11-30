@@ -7,28 +7,23 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 /** @type {webpack.Configuration} */
 const config = {
-    devtool: 'source-map',
-
     entry: [
-        './src/default/default-app.tsx'
+        './lib/default/default-app.js'
     ],
     output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, '../static'),
         publicPath: '/'
     },
+    devtool: 'source-map',
 
     resolve: {
-        extensions: ['.ts', '.tsx', '.js']
+        extensions: ['.js', '.jsx']
     },
     module: {
         rules: [
             {
-                test: /\.tsx?$/,
-                use: ['ts-loader']
-            },
-            {
-                test: /\.js$/,
+                test: /\.jsx?$/,
                 use: ['source-map-loader'],
                 enforce: 'pre'
             },
@@ -39,14 +34,10 @@ const config = {
             }
         ]
     },
-    node: { fs: 'empty', net: 'empty' },
+    node: false,
 
     plugins: [
-        new webpack.WatchIgnorePlugin([
-            /\.js$/,
-            /\.d\.ts$/
-        ]),
-        new webpack.ProgressPlugin(),
+        new webpack.ProgressPlugin({}),
         new BundleAnalyzerPlugin({
             analyzerMode: 'static',
             reportFilename: 'webpack-report.html'

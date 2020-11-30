@@ -32,7 +32,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
         try {
             if (namespaceName !== '') {
                 setLoading(true);
-                const namespace = await service.admin.findNamespace(namespaceName);
+                const namespace = await service.admin.getNamespace(namespaceName);
                 setNotFound('');
                 setCurrentNamespace(namespace);
                 setLoading(false);

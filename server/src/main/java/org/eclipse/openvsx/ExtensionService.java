@@ -197,7 +197,7 @@ public class ExtensionService {
     }
 
     /**
-     * Update the given extension after a version has been published or removed
+     * Update the given extension after a version has been published
      * or the {@code active} statuses of its versions have changed.
      */
     @Transactional(TxType.REQUIRED)
@@ -228,6 +228,45 @@ public class ExtensionService {
             if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
                 latest = extVer;
                 latestSemver = semver;
+            }
+        }
+        return latest;
+    }
+
+    /**
+     * Update the given extension after one or more version have been deleted. The given list
+     * of versions should reflect the applied deletion.
+     */
+    @Transactional(TxType.REQUIRED)
+    public void updateExtension(Extension extension, Iterable<ExtensionVersion> versions) {
+        extension.setLatest(getLatestVersion(versions, false));
+        extension.setPreview(getLatestVersion(versions, true));
+        if (extension.getLatest() == null) {
+            // Use a preview version as latest if it's the only available version
+            extension.setLatest(extension.getPreview());
+        }
+
+        if (extension.getLatest() != null) {
+            // There is at least one active version => activate the extension
+            extension.setActive(true);
+            search.updateSearchEntry(extension);
+        } else if (extension.isActive()) {
+            // All versions are deactivated => deactivate the extensions
+            extension.setActive(false);
+            search.removeSearchEntry(extension);
+        }
+    }
+
+    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean preview) {
+        ExtensionVersion latest = null;
+        SemanticVersion latestSemver = null;
+        for (var extVer : versions) {
+            if (extVer.isActive() && extVer.isPreview() == preview) {
+                var semver = extVer.getSemanticVersion();
+                if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
+                    latest = extVer;
+                    latestSemver = semver;
+                }
             }
         }
         return latest;

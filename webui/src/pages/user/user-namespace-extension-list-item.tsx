@@ -26,7 +26,10 @@ const itemStyles = makeStyles(theme => ({
         alignItems: 'center',
         padding: theme.spacing(1),
     },
-    text: {
+    inactive: {
+        opacity: 0.75
+    },
+    textContent: {
         flex: '1',
         overflow: 'hidden'
     },
@@ -36,6 +39,9 @@ const itemStyles = makeStyles(theme => ({
         marginRight: theme.spacing(2),
         height: '3rem',
         maxWidth: '4rem',
+    },
+    extensionTitle: {
+        fontSize: '1.15rem'
     },
     paragraph: {
         display: 'flex',
@@ -48,17 +54,18 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
     const { extension } = props;
     const classes = itemStyles();
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
+    const inactive = extension.active === false;
     return (
         extension ? (
             <RouteLink to={route} className={classes.link}>
-                <Paper className={classes.paper}>
+                <Paper className={inactive ? `${classes.paper} ${classes.inactive}` : classes.paper}>
                     <img
                         src={extension.files.icon || (pageSettings && pageSettings.urls.extensionDefaultIcon) || ''}
                         alt={extension.displayName || extension.name}
                         className={classes.extensionLogo}
                     />
-                    <div className={classes.text}>
-                        <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
+                    <div className={classes.textContent}>
+                        <Typography variant='h6' noWrap className={classes.extensionTitle}>
                             {extension.displayName || extension.name}
                         </Typography>
                         <Box className={classes.paragraph} mt={1}>
@@ -66,12 +73,16 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                             <span>{extension.version}</span>
                         </Box>
                         {
-                            extension.timestamp ?
-                                <Box className={classes.paragraph} mt={0.25}>
-                                    <span>Released:</span>
-                                    <Timestamp value={extension.timestamp} />
-                                </Box>
-                                : null
+                            inactive ?
+                            <Box mt={0.25}>
+                                Deactivated
+                            </Box>
+                            : extension.timestamp ?
+                            <Box className={classes.paragraph} mt={0.25}>
+                                <span>Published:</span>
+                                <Timestamp value={extension.timestamp} />
+                            </Box>
+                            : null
                         }
                     </div>
                 </Paper>

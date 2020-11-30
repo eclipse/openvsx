@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -103,7 +105,7 @@ public class RegistryAPITest {
     MockMvc mockMvc;
 
     @Autowired
-    LocalRegistryService localRegistry;
+    ExtensionService extensionService;
 
     @Test
     public void testPublicNamespace() throws Exception {
@@ -159,6 +161,17 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testInactiveExtension() throws Exception {
+        var extVersion = mockExtension();
+        extVersion.setActive(false);
+        extVersion.getExtension().setActive(false);
+
+        mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(errorJson("Extension not found: foo.bar")));
+    }
+
+    @Test
     public void testUnknownExtension() throws Exception {
         mockExtension();
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "baz"))
@@ -197,6 +210,16 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testInactiveExtensionVersion() throws Exception {
+        var extVersion = mockExtension();
+        extVersion.setActive(false);
+
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(errorJson("Extension not found: foo.bar version 1")));
+    }
+
+    @Test
     public void testUnknownExtensionVersion() throws Exception {
         mockExtension();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "2"))
@@ -226,6 +249,15 @@ public class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "LICENSE"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("I never broke the Law! I am the law!"));
+    }
+
+    @Test
+    public void testInactiveFile() throws Exception {
+        var extVersion = mockExtension();
+        extVersion.setActive(false);
+
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "README"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -279,6 +311,19 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testSearchInactive() throws Exception {
+        var extensions = mockSearch();
+        extensions.forEach(extension -> {
+            extension.setActive(false);
+            extension.getLatest().setActive(false);
+        });
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "10", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("{\"offset\":0,\"totalSize\":1,\"extensions\":[]}"));
+    }
+
+    @Test
     public void testQueryExtensionName() throws Exception {
         mockExtension();
         mockMvc.perform(post("/api/-/query")
@@ -319,6 +364,19 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{ \"extensionName\": \"baz\" }"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{ \"extensions\": [] }"));
+    }
+
+    @Test
+    public void testQueryInactiveExtension() throws Exception {
+        var extVersion = mockExtension();
+        extVersion.setActive(false);
+        extVersion.getExtension().setActive(false);
+
+        mockMvc.perform(post("/api/-/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ \"extensionId\": \"foo.bar\" }"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{ \"extensions\": [] }"));
     }
@@ -451,9 +509,9 @@ public class RegistryAPITest {
     
     @Test
     public void testPublishRequireLicenseNone() throws Exception {
-        var previousRequireLicense = localRegistry.requireLicense;
+        var previousRequireLicense = extensionService.requireLicense;
         try {
-            localRegistry.requireLicense = true;
+            extensionService.requireLicense = true;
             mockForPublish("public");
             var bytes = createExtensionPackage("bar", "1", null);
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
@@ -462,15 +520,15 @@ public class RegistryAPITest {
                     .andExpect(status().isBadRequest())
                     .andExpect(content().json(errorJson("This extension cannot be accepted because it has no license.")));
         } finally {
-            localRegistry.requireLicense = previousRequireLicense;
+            extensionService.requireLicense = previousRequireLicense;
         }
     }
     
     @Test
     public void testPublishRequireLicenseOk() throws Exception {
-        var previousRequireLicense = localRegistry.requireLicense;
+        var previousRequireLicense = extensionService.requireLicense;
         try {
-            localRegistry.requireLicense = true;
+            extensionService.requireLicense = true;
             mockForPublish("public");
             var bytes = createExtensionPackage("bar", "1", "MIT");
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
@@ -486,7 +544,7 @@ public class RegistryAPITest {
                         e.publishedBy = u;
                     })));
         } finally {
-            localRegistry.requireLicense = previousRequireLicense;
+            extensionService.requireLicense = previousRequireLicense;
         }
     }
     
@@ -780,11 +838,13 @@ public class RegistryAPITest {
         extension.setName("bar");
         extension.setNamespace(namespace);
         extension.setPublicId("5678");
+        extension.setActive(true);
         var extVersion = new ExtensionVersion();
         extension.setLatest(extVersion);
         extVersion.setExtension(extension);
         extVersion.setVersion("1");
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
+        extVersion.setActive(true);
         extVersion.setDisplayName("Foo Bar");
         Mockito.when(repositories.findExtension("bar", "foo"))
                 .thenReturn(extension);
@@ -795,6 +855,8 @@ public class RegistryAPITest {
         Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
         Mockito.when(repositories.getVersionStrings(extension))
+                .thenReturn(Streamable.of(extVersion.getVersion()));
+        Mockito.when(repositories.getActiveVersionStrings(extension))
                 .thenReturn(Streamable.of(extVersion.getVersion()));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0l);
@@ -894,7 +956,7 @@ public class RegistryAPITest {
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private void mockSearch() {
+    private List<Extension> mockSearch() {
         var extVersion = mockExtension();
         var extension = extVersion.getExtension();
         extension.setId(1l);
@@ -908,6 +970,7 @@ public class RegistryAPITest {
                 .thenReturn(page);
         Mockito.when(entityManager.find(Extension.class, 1l))
                 .thenReturn(extension);
+        return Arrays.asList(extension);
     }
 
     private String searchJson(Consumer<SearchResultJson> content) throws JsonProcessingException {
@@ -945,6 +1008,7 @@ public class RegistryAPITest {
             var extVersion = new ExtensionVersion();
             extVersion.setExtension(extension);
             extVersion.setVersion("1");
+            extVersion.setActive(true);
             Mockito.when(repositories.findExtension("bar", namespace))
                     .thenReturn(extension);
             Mockito.when(repositories.findVersion("1", extension))
@@ -954,7 +1018,11 @@ public class RegistryAPITest {
                 .thenReturn(0l);
         Mockito.when(repositories.findVersions(any(Extension.class)))
                 .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findActiveVersions(any(Extension.class), any(boolean.class)))
+                .thenReturn(Streamable.empty());
         Mockito.when(repositories.getVersionStrings(any(Extension.class)))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.getActiveVersionStrings(any(Extension.class)))
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.findFilesByType(any(ExtensionVersion.class), anyCollection()))
                 .thenReturn(Streamable.empty());
@@ -1072,6 +1140,11 @@ public class RegistryAPITest {
         @Bean
         LocalRegistryService localRegistryService() {
             return new LocalRegistryService();
+        }
+
+        @Bean
+        ExtensionService extensionService() {
+            return new ExtensionService();
         }
 
         @Bean

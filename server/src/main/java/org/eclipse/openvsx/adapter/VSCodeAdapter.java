@@ -180,7 +180,7 @@ public class VSCodeAdapter {
         var resultItem = new ExtensionQueryResult.ResultItem();
         resultItem.extensions = CollectionUtil.map(searchResult.getContent(), es -> {
             var extension = entityManager.find(Extension.class, es.id);
-            if (extension == null)
+            if (extension == null || !extension.isActive())
                 return null;
             return toQueryExtension(extension, flags);
         });

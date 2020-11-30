@@ -99,12 +99,12 @@ public class RepositoryService {
          return extensionVersionRepo.findByExtensionAndActiveTrue(extension);
     }
 
-    public long countVersions(Extension extension) {
-        return extensionVersionRepo.countByExtension(extension);
-    }
-
     public Streamable<String> getVersionStrings(Extension extension) {
         return extensionVersionRepo.getVersionStrings(extension);
+    }
+
+    public Streamable<String> getActiveVersionStrings(Extension extension) {
+        return extensionVersionRepo.getActiveVersionStrings(extension);
     }
 
     public Streamable<ExtensionVersion> findActiveVersions(Extension extension, boolean preview) {

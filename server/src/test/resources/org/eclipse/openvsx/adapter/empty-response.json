@@ -1,0 +1,18 @@
+{
+    "results": [
+        {
+            "extensions": [],
+            "resultMetadata": [
+                {
+                    "metadataType": "ResultCount",
+                    "metadataItems": [
+                        {
+                            "name": "TotalCount",
+                            "count": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

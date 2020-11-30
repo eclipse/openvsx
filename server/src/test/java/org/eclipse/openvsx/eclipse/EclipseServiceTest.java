@@ -21,11 +21,23 @@ import javax.persistence.EntityManager;
 
 import com.google.common.io.CharStreams;
 
+import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.EclipseData;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.security.TokenService;
+import org.eclipse.openvsx.storage.AzureBlobStorageService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -44,8 +57,16 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(SpringExtension.class)
-@MockBean({ EntityManager.class })
+@MockBean({
+    EntityManager.class, SearchService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class
+})
 public class EclipseServiceTest {
+
+    @MockBean
+    RepositoryService repositories;
+
+    @MockBean
+    UserService users;
 
     @MockBean
     TokenService tokens;
@@ -141,6 +162,8 @@ public class EclipseServiceTest {
         var user = mockUser();
         Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
             .thenReturn(mockAgreementResponse());
+        Mockito.when(repositories.findAccessTokens(user))
+            .thenReturn(Streamable.empty());
 
         eclipse.signPublisherAgreement(user);
 
@@ -153,6 +176,38 @@ public class EclipseServiceTest {
         assertThat(ed.publisherAgreement.version).isEqualTo("1");
         assertThat(ed.publisherAgreement.timestamp).isNotNull();
         assertThat(ed.publisherAgreement.timestamp.toString()).isEqualTo("2020-10-09T05:10:32");
+    }
+
+    @Test
+    public void testSignPublisherAgreementReactivateExtension() throws Exception {
+        var user = mockUser();
+        Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
+            .thenReturn(mockAgreementResponse());
+        var accessToken = new PersonalAccessToken();
+        accessToken.setUser(user);
+        accessToken.setActive(true);
+        Mockito.when(repositories.findAccessTokens(user))
+            .thenReturn(Streamable.of(accessToken));
+        var namespace = new Namespace();
+        namespace.setName("foo");
+        var extension = new Extension();
+        extension.setName("bar");
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setVersion("1");
+        extVersion.setExtension(extension);
+        Mockito.when(repositories.findVersionsByAccessToken(accessToken, false))
+            .thenReturn(Streamable.of(extVersion));
+        Mockito.when(repositories.findActiveVersions(extension, false))
+            .thenReturn(Streamable.of(extVersion));
+        Mockito.when(repositories.findActiveVersions(extension, true))
+            .thenReturn(Streamable.empty());
+
+        eclipse.signPublisherAgreement(user);
+
+        assertThat(user.getEclipseData()).isNotNull();
+        assertThat(extVersion.isActive()).isTrue();
+        assertThat(extension.isActive()).isTrue();
     }
 
     @Test
@@ -241,6 +296,21 @@ public class EclipseServiceTest {
         @Bean
         EclipseService eclipseService() {
             return new EclipseService();
+        }
+
+        @Bean
+        ExtensionService extensionService() {
+            return new ExtensionService();
+        }
+
+        @Bean
+        ExtensionValidator extensionValidator() {
+            return new ExtensionValidator();
+        }
+
+        @Bean
+        StorageUtilService storageUtilService() {
+            return new StorageUtilService();
         }
     }
     

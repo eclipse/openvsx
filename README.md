@@ -27,6 +27,8 @@ The command line tool is available at `cli/lib/ovsx`.
 
 ### webui
 
+The default frontend is the one bundled in the Docker image, and is also used for testing in the development environment. It depends on the compiled library, so make sure to build or watch the library before you build or watch the default frontend.
+
  * `yarn build` &mdash; build the library
  * `yarn watch` &mdash; watch (build continuously)
  * `yarn build:default` &mdash; build the default frontend (run webpack)

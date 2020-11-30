@@ -25,8 +25,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
 
-    long countByExtension(Extension extension);
-
     Streamable<ExtensionVersion> findByExtensionAndPreviewAndActiveTrue(Extension extension, boolean preview);
 
     ExtensionVersion findByVersionAndExtension(String version, Extension extension);
@@ -43,8 +41,11 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findAll();
 
-    @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 and ev.active order by ev.timestamp desc")
+    @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 order by ev.timestamp desc")
     Streamable<String> getVersionStrings(Extension extension);
+
+    @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 and ev.active is true order by ev.timestamp desc")
+    Streamable<String> getActiveVersionStrings(Extension extension);
 
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();

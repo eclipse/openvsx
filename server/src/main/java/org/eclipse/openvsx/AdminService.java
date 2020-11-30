@@ -18,6 +18,7 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -124,11 +125,13 @@ public class AdminService {
 
     protected ResultJson deleteExtension(ExtensionVersion extVersion, UserData admin) {
         var extension = extVersion.getExtension();
-        if (repositories.countVersions(extension) == 1) {
+        var versions = Lists.newArrayList(repositories.findVersions(extension));
+        if (versions.size() == 1) {
             return deleteExtension(extension, admin);
         }
         removeExtensionVersion(extVersion);
-        extensions.updateExtension(extension);
+        versions.remove(extVersion);
+        extensions.updateExtension(extension, versions);
 
         var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName()
                 + " version " + extVersion.getVersion());
@@ -201,6 +204,7 @@ public class AdminService {
             var versions = repositories.findVersionsByAccessToken(accessToken);
             for (var version : versions) {
                 var json = version.toExtensionJson();
+                json.active = version.isActive();
                 json.files = Maps.newLinkedHashMapWithExpectedSize(6);
                 storageUtil.addFileUrls(version, serverUrl, json.files, FileResource.DOWNLOAD, FileResource.MANIFEST,
                         FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);

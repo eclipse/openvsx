@@ -117,7 +117,6 @@ public class ExtensionVersion {
         json.downloadCount = extension.getDownloadCount();
         json.version = this.getVersion();
         json.preview = this.isPreview();
-        json.active = this.isActive();
         if (this.getTimestamp() != null) {
             json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         }

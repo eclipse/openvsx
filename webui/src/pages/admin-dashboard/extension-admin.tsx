@@ -24,9 +24,6 @@ export const ExtensionAdmin: FunctionComponent = props => {
     const handleExtensionChange = (value: string) => {
         setExtensionValue(value);
     };
-    const handleExtensionSubmit = (value: string) => {
-        findExtension();
-    };
 
     const [namespaceValue, setNamespaceValue] = useState('');
     const handleNamespaceChange = (value: string) => {
@@ -38,21 +35,12 @@ export const ExtensionAdmin: FunctionComponent = props => {
         setError(handleError(err));
     };
 
-    const handleSubmit = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        findExtension();
-    };
-
     const [extensionFieldError, setExtensionFieldError] = useState(false);
     const [namespaceFieldError, setNamespaceFieldError] = useState(false);
 
-    const handleUpdate = () => findExtension();
     const { service } = useContext(MainContext);
     const [extension, setExtension] = useState<Extension | undefined>(undefined);
     const findExtension = async () => {
-        const extensionUrl = service.getExtensionApiUrl({
-            namespace: namespaceValue,
-            name: extensionValue
-        });
         try {
             if (!namespaceValue) {
                 setNamespaceFieldError(true);
@@ -66,7 +54,7 @@ export const ExtensionAdmin: FunctionComponent = props => {
             } else {
                 setExtensionFieldError(false);
             }
-            const extensionDetail = await service.getExtensionDetail(extensionUrl);
+            const extensionDetail = await service.admin.getExtension(namespaceValue, extensionValue);
             if (isError(extensionDetail)) {
                 setExtension(undefined);
                 throw (extensionDetail);
@@ -93,16 +81,16 @@ export const ExtensionAdmin: FunctionComponent = props => {
                     key='ei'
                     onSearchChanged={handleExtensionChange}
                     searchQuery={extensionValue}
-                    onSearchSubmit={handleExtensionSubmit}
+                    onSearchSubmit={findExtension}
                     placeholder='Extension'
                     hideIconButton={true}
                     autoFocus={false} />,
-                <Button key='btn' variant='contained' onClick={handleSubmit}>Search Extension</Button>,
+                <Button key='btn' variant='contained' onClick={findExtension}>Search Extension</Button>,
                 error ? <Typography color='error'>{error}</Typography> : ''
             ]}
             listContainer={
                 extension ?
-                    <ExtensionVersionContainer onUpdate={handleUpdate} extension={extension} />
+                    <ExtensionVersionContainer onUpdate={findExtension} extension={extension} />
                     : ''
             }
         />

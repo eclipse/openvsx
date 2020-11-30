@@ -113,7 +113,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null || !extension.isActive())
             throw new NotFoundException();
-        return toExtensionVersionJson(extension.getLatest());
+        return toExtensionVersionJson(extension.getLatest(), true);
     }
 
     @Override
@@ -121,7 +121,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extVersion = findVersion(namespace, extensionName, version);
         if (extVersion == null || !extVersion.isActive())
             throw new NotFoundException();
-        return toExtensionVersionJson(extVersion);
+        return toExtensionVersionJson(extVersion, true);
     }
 
     private ExtensionVersion findVersion(String namespace, String extensionName, String version) {
@@ -293,7 +293,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return;
         if (result.extensions == null)
             result.extensions = new ArrayList<>();
-        result.extensions.add(toExtensionVersionJson(extVersion));
+        result.extensions.add(toExtensionVersionJson(extVersion, true));
     }
 
     private static boolean mismatch(String s1, String s2) {
@@ -335,7 +335,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         eclipse.checkPublisherAgreement(token.getUser());
 
         var extVersion = extensions.publishVersion(content, token);
-        return toExtensionVersionJson(extVersion);
+        return toExtensionVersionJson(extVersion, true);
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)
@@ -406,7 +406,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private SearchEntryJson toSearchEntry(ExtensionSearch searchItem, String serverUrl, SearchService.Options options) {
         var extension = entityManager.find(Extension.class, searchItem.id);
-        if (extension == null)
+        if (extension == null || !extension.isActive())
             return null;
         var extVer = extension.getLatest();
         var entry = extVer.toSearchEntryJson();
@@ -431,7 +431,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return json;
     }
 
-    private ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion) {
+    public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, boolean onlyActive) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
         json.versionAlias = new ArrayList<>(2);
@@ -447,7 +447,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
 
-        var allVersions = CollectionUtil.map(repositories.getVersionStrings(extension), v -> new SemanticVersion(v));
+        var versionStrings = onlyActive ? repositories.getActiveVersionStrings(extension) : repositories.getVersionStrings(extension);
+        var allVersions = CollectionUtil.map(versionStrings, v -> new SemanticVersion(v));
         Collections.sort(allVersions, Collections.reverseOrder());
         json.allVersions = Maps.newLinkedHashMapWithExpectedSize(allVersions.size() + 2);
         if (extension.getLatest() != null)
@@ -461,7 +462,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     
         json.files = Maps.newLinkedHashMapWithExpectedSize(6);
         storageUtil.addFileUrls(extVersion, serverUrl, json.files,
-                FileResource.DOWNLOAD, FileResource.MANIFEST, FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);
+                FileResource.DOWNLOAD, FileResource.MANIFEST, FileResource.ICON, FileResource.README,
+                FileResource.LICENSE, FileResource.CHANGELOG);
     
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {
