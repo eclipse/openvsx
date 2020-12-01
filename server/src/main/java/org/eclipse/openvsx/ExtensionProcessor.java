@@ -200,11 +200,14 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     private String getUrl(JsonNode node) {
+        String result = null;
         if (node.isTextual())
-            return node.textValue();
+            result = node.textValue();
         if (node.isObject())
-            return node.path("url").textValue();
-        return null;
+            result = node.path("url").textValue();
+        if (result != null && (result.isEmpty() || result.equals(".")))
+            result = null;
+        return result;
     }
 
     private List<String> getEngines(JsonNode node) {
