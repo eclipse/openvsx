@@ -112,6 +112,11 @@ public class StorageMigration {
             resource.setContent(null);
             return null;
         });
+
+        var remainingCount = resourceQueue.size();
+        if (remainingCount % 1000 == 0) {
+            logger.info("Remaining resources to migrate: " + remainingCount);
+        }
     }
 
     private byte[] downloadFile(FileResource resource) {
