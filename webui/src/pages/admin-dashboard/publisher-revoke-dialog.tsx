@@ -52,6 +52,9 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Prop
         }
     };
 
+    const tokenCount = props.publisherInfo.activeAccessTokenNum;
+    const extensionCount = props.publisherInfo.extensions.filter(e => e.active).length;
+    const hasAgreement = props.publisherInfo.user.publisherAgreement?.status !== 'none';
     return <>
         <Button
             variant='contained'
@@ -62,13 +65,38 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Prop
         <Dialog
             open={dialogOpen}
             onClose={() => setDialogOpen(false)}>
-            <DialogTitle >Revoke Publisher Contributions?</DialogTitle>
+            <DialogTitle >Revoke Publisher Contributions</DialogTitle>
             <DialogContent>
                 <DialogContentText component='div'>
                     <Typography>
-                        This will deactivate the access tokens of {props.publisherInfo.user.loginName} and
-                        delete all {props.publisherInfo.extensions.length} extension versions
-                        published by {props.publisherInfo.user.loginName}.
+                        {
+                            !tokenCount && !extensionCount && !hasAgreement ?
+                            <>
+                                Publisher {props.publisherInfo.user.loginName} currently has no contributions to revoke.
+                                Send the request anyway?
+                            </>
+                            :
+                            <>
+                                The following actions will be executed:
+                                <ul>
+                                    {
+                                        tokenCount > 0 ?
+                                        <li>Deactivate {tokenCount} access token{tokenCount > 1 ? 's' : ''} of {props.publisherInfo.user.loginName}</li>
+                                        : null
+                                    }
+                                    {
+                                        extensionCount > 0 ?
+                                        <li>Deactivate {extensionCount} published extension version{extensionCount > 1 ? 's' : ''}</li>
+                                        : null
+                                    }
+                                    {
+                                        hasAgreement ?
+                                        <li>Revoke the Publisher Agreement of {props.publisherInfo.user.loginName}</li>
+                                        : null
+                                    }
+                                </ul>
+                            </>
+                        }
                     </Typography>
                 </DialogContentText>
             </DialogContent>

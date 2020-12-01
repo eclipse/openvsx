@@ -10,20 +10,16 @@
 
 import React, { FunctionComponent, ReactNode } from 'react';
 import { Grid, makeStyles } from '@material-ui/core';
+import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 
 const useStyles = makeStyles((theme) => ({
     containerRoot: {
-        height: '100%',
-        flexWrap: 'nowrap'
+        flexWrap: 'nowrap',
+        marginBottom: theme.spacing(4),
     },
 }));
 
-interface SearchListContainerProps {
-    searchContainer: ReactNode[];
-    listContainer: ReactNode;
-}
-
-export const SearchListContainer: FunctionComponent<SearchListContainerProps> = props => {
+export const SearchListContainer: FunctionComponent<SearchListContainer.Props> = props => {
     const classes = useStyles();
     return (<>
         <Grid container direction='column' spacing={2} classes={{ root: classes.containerRoot }}>
@@ -38,9 +34,18 @@ export const SearchListContainer: FunctionComponent<SearchListContainerProps> = 
             </Grid>
             <Grid style={{ flex: 4, overflow: 'hidden' }} item container justify='center'>
                 <Grid style={{ height: '100%' }} item xs={8}>
+                    <DelayedLoadIndicator loading={props.loading} />
                     {props.listContainer}
                 </Grid>
             </Grid>
         </Grid>
     </>);
 };
+
+export namespace SearchListContainer {
+    export interface Props {
+        searchContainer: ReactNode[];
+        listContainer: ReactNode;
+        loading: boolean;
+    }
+}

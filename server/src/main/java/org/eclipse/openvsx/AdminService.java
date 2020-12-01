@@ -10,7 +10,8 @@
 package org.eclipse.openvsx;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -35,7 +36,6 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +47,9 @@ public class AdminService {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    ExtensionService extensions;
 
     @Autowired
     EntityManager entityManager;
@@ -128,14 +131,7 @@ public class AdminService {
         }
         removeExtensionVersion(extVersion);
         versions.remove(extVersion);
-        if (extVersion.equals(extension.getLatest())) {
-            extension.setLatest(getLatestVersion(versions, false));
-            if (extension.getLatest() == null)
-                extension.setLatest(getLatestVersion(versions, true));
-        }
-        if (extVersion.equals(extension.getPreview())) {
-            extension.setPreview(getLatestVersion(versions, true));
-        }
+        extensions.updateExtension(extension, versions);
 
         var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName()
                 + " version " + extVersion.getVersion());
@@ -149,21 +145,6 @@ public class AdminService {
             entityManager.remove(file);
         });
         entityManager.remove(extVersion);
-    }
-
-    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean preview) {
-        ExtensionVersion latest = null;
-        SemanticVersion latestSemver = null;
-        for (var extVer : versions) {
-            if (extVer.isPreview() == preview) {
-                var semver = extVer.getSemanticVersion();
-                if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
-                    latest = extVer;
-                    latestSemver = semver;
-                }
-            }
-        }
-        return latest;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -184,7 +165,7 @@ public class AdminService {
         } else {
             result = users.addNamespaceMember(namespace, user, role);
         }
-        for (var extension : repositories.findExtensions(namespace)) {
+        for (var extension : repositories.findActiveExtensions(namespace)) {
             search.updateSearchEntry(extension);
         }
         logAdminAction(admin, result);
@@ -206,27 +187,17 @@ public class AdminService {
         entityManager.persist(namespace);
         return ResultJson.success("Created namespace " + namespace.getName());
     }
-
-    @Transactional
-    public void logAdminAction(UserData admin, ResultJson result) {
-        if (result.success != null) {
-            var log = new PersistedLog();
-            log.setUser(admin);
-            log.setTimestamp(TimeUtil.getCurrentUTC());
-            log.setMessage(result.success);
-            entityManager.persist(log);
-        }
-    }
     
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
             throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
         }
+
         var serverUrl = UrlUtil.getBaseUrl();
-        var accessTokens = repositories.findAccessTokens(user);
-        List<ExtensionJson> versionJsons = new ArrayList<>();
+        var versionJsons = new ArrayList<ExtensionJson>();
         var activeAccessTokenNum = 0;
+        var accessTokens = repositories.findAccessTokens(user);
         for (var accessToken : accessTokens) {
             if (accessToken.isActive()) {
                 activeAccessTokenNum++;
@@ -234,12 +205,19 @@ public class AdminService {
             var versions = repositories.findVersionsByAccessToken(accessToken);
             for (var version : versions) {
                 var json = version.toExtensionJson();
+                json.active = version.isActive();
                 json.files = Maps.newLinkedHashMapWithExpectedSize(6);
                 storageUtil.addFileUrls(version, serverUrl, json.files, FileResource.DOWNLOAD, FileResource.MANIFEST,
                         FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);
                 versionJsons.add(json);
             }
         }
+        versionJsons.sort(
+            Comparator.comparing((ExtensionJson j) -> j.namespace)
+                      .thenComparing(j -> j.name)
+                      .thenComparing(j -> j.version)
+        );
+
         var userPublishInfo = new UserPublishInfoJson();
         userPublishInfo.user = user.toUserJson();
         eclipse.enrichUserJson(userPublishInfo.user, user);
@@ -263,8 +241,9 @@ public class AdminService {
         }
 
         var accessTokens = repositories.findAccessTokens(user);
+        var affectedExtensions = new LinkedHashSet<Extension>();
         var deactivatedTokenCount = 0;
-        var deletedExtensionCount = 0;
+        var deactivatedExtensionCount = 0;
         for (var accessToken : accessTokens) {
             // Deactivate the user's access tokens
             if (accessToken.isActive()) {
@@ -272,16 +251,22 @@ public class AdminService {
                 deactivatedTokenCount++;
             }
 
-            // Delete all published extensions
-            var versions = repositories.findVersionsByAccessToken(accessToken);
+            // Deactivate all published extension versions
+            var versions = repositories.findVersionsByAccessToken(accessToken, true);
             for (var version : versions) {
-                deleteExtension(version, admin);
-                deletedExtensionCount++;
+                version.setActive(false);
+                affectedExtensions.add(version.getExtension());
+                deactivatedExtensionCount++;
             }
+        }
+        
+        // Update affected extensions
+        for (var extension : affectedExtensions) {
+            extensions.updateExtension(extension);
         }
 
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount
-                + " tokens and deleted " + deletedExtensionCount + " extensions of user "
+                + " tokens and deactivated " + deactivatedExtensionCount + " extensions of user "
                 + provider + "/" + loginName + "."); 
         logAdminAction(admin, result);
         return result;
@@ -294,4 +279,16 @@ public class AdminService {
         }
         return user;
     }
+
+    @Transactional
+    public void logAdminAction(UserData admin, ResultJson result) {
+        if (result.success != null) {
+            var log = new PersistedLog();
+            log.setUser(admin);
+            log.setTimestamp(TimeUtil.getCurrentUTC());
+            log.setMessage(result.success);
+            entityManager.persist(log);
+        }
+    }
+
 }

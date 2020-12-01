@@ -10,8 +10,6 @@
 
 import React, { FunctionComponent, useState, useContext, createContext } from 'react';
 import { Typography, Box } from '@material-ui/core';
-
-import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
@@ -59,25 +57,23 @@ export const PublisherAdmin: FunctionComponent = props => {
         fetchPublisher();
     };
 
-    return (<>
-        <DelayedLoadIndicator loading={loading} />
-        <SearchListContainer
-            searchContainer={
-                [<StyledInput placeholder='Publisher Name' key='pi' onSubmit={fetchPublisher} onChange={onChangeInput} />]
-            }
-            listContainer={
-                publisher && pageSettings && user ?
-                    <UpdateContext.Provider value={{ handleUpdate }}>
-                        <PublisherDetails publisherInfo={publisher} />
-                    </UpdateContext.Provider>
-                    : notFound ?
-                        <Box display='flex' flexDirection='column'>
-                            <Typography variant='body1' color='error'>
-                                Publisher {notFound} not found.
-                            </Typography>
-                        </Box>
-                        : ''
-            }
-        />
-    </>);
+    return <SearchListContainer
+        searchContainer={
+            [<StyledInput placeholder='Publisher Name' key='pi' onSubmit={fetchPublisher} onChange={onChangeInput} />]
+        }
+        listContainer={
+            publisher && pageSettings && user ?
+                <UpdateContext.Provider value={{ handleUpdate }}>
+                    <PublisherDetails publisherInfo={publisher} />
+                </UpdateContext.Provider>
+                : notFound ?
+                    <Box display='flex' flexDirection='column'>
+                        <Typography variant='body1' color='error'>
+                            Publisher {notFound} not found.
+                        </Typography>
+                    </Box>
+                    : ''
+        }
+        loading={loading}
+    />;
 };

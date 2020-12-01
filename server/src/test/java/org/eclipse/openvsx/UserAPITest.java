@@ -472,14 +472,14 @@ public class UserAPITest {
         var userData = mockUserData();
         var namespace1 = new Namespace();
         namespace1.setName("foo");
-        Mockito.when(repositories.findExtensions(namespace1)).thenReturn(Streamable.empty());
+        Mockito.when(repositories.findActiveExtensions(namespace1)).thenReturn(Streamable.empty());
         var membership1 = new NamespaceMembership();
         membership1.setUser(userData);
         membership1.setNamespace(namespace1);
         membership1.setRole(NamespaceMembership.ROLE_OWNER);
         var namespace2 = new Namespace();
         namespace2.setName("bar");
-        Mockito.when(repositories.findExtensions(namespace2)).thenReturn(Streamable.empty());
+        Mockito.when(repositories.findActiveExtensions(namespace2)).thenReturn(Streamable.empty());
         var membership2 = new NamespaceMembership();
         membership2.setUser(userData);
         membership2.setNamespace(namespace2);

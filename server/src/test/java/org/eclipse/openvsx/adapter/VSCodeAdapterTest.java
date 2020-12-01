@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 
@@ -103,6 +104,21 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testFindByIdInactive() throws Exception {
+        var extensions = mockSearch();
+        extensions.forEach(extension -> {
+            extension.setActive(false);
+            extension.getLatest().setActive(false);
+        });
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("findid-yaml-query.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("empty-response.json")));
+    }
+
+    @Test
     public void testFindByName() throws Exception {
         mockSearch();
         mockMvc.perform(post("/vscode/gallery/extensionquery")
@@ -134,7 +150,7 @@ public class VSCodeAdapterTest {
 
     // ---------- UTILITY ----------//
 
-    private void mockSearch() {
+    private List<Extension> mockSearch() {
         var extVersion = mockExtension();
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
@@ -146,6 +162,7 @@ public class VSCodeAdapterTest {
                 .thenReturn(page);
         Mockito.when(entityManager.find(Extension.class, 1l))
                 .thenReturn(extVersion.getExtension());
+        return Arrays.asList(extVersion.getExtension());
     }
     
     private ExtensionVersion mockExtension() {
@@ -153,6 +170,7 @@ public class VSCodeAdapterTest {
         extension.setId(1);
         extension.setPublicId("test-1");
         extension.setName("vscode-yaml");
+        extension.setActive(true);
         extension.setDownloadCount(100);
         extension.setAverageRating(3.0);
         var namespace = new Namespace();
@@ -166,6 +184,7 @@ public class VSCodeAdapterTest {
         extVersion.setVersion("0.5.2");
         extVersion.setPreview(true);
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
+        extVersion.setActive(true);
         extVersion.setDisplayName("YAML");
         extVersion.setDescription("YAML Language Support");
         extVersion.setRepository("https://github.com/redhat-developer/vscode-yaml");
@@ -181,6 +200,8 @@ public class VSCodeAdapterTest {
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
         Mockito.when(repositories.getVersionStrings(extension))
+                .thenReturn(Streamable.of(extVersion.getVersion()));
+        Mockito.when(repositories.getActiveVersionStrings(extension))
                 .thenReturn(Streamable.of(extVersion.getVersion()));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0l);

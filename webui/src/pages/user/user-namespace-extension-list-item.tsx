@@ -26,7 +26,10 @@ const itemStyles = makeStyles(theme => ({
         alignItems: 'center',
         padding: theme.spacing(1),
     },
-    text: {
+    inactive: {
+        opacity: 0.75
+    },
+    textContent: {
         flex: '1',
         overflow: 'hidden'
     },
@@ -34,12 +37,21 @@ const itemStyles = makeStyles(theme => ({
         flex: '0 0 15%',
         display: 'block',
         marginRight: theme.spacing(2),
-        height: '3rem',
-        maxWidth: '4rem',
+        width: '3rem',
+        maxHeight: '4rem',
+    },
+    extensionTitle: {
+        fontSize: '1.15rem'
     },
     paragraph: {
         display: 'flex',
         justifyContent: 'space-between',
+    },
+    noOverflow: {
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        marginLeft: theme.spacing(0.5)
     }
 }));
 
@@ -48,30 +60,39 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
     const { extension } = props;
     const classes = itemStyles();
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
+    const inactive = extension.active === false;
     return (
         extension ? (
             <RouteLink to={route} className={classes.link}>
-                <Paper className={classes.paper}>
+                <Paper
+                    title={`${extension.namespace}.${extension.name} ${extension.version} ${inactive ? '(deactivated)' : ''}`}
+                    className={inactive ? `${classes.paper} ${classes.inactive}` : classes.paper} >
                     <img
                         src={extension.files.icon || (pageSettings && pageSettings.urls.extensionDefaultIcon) || ''}
                         alt={extension.displayName || extension.name}
                         className={classes.extensionLogo}
                     />
-                    <div className={classes.text}>
-                        <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
+                    <div className={classes.textContent}>
+                        <Typography variant='h6' noWrap className={classes.extensionTitle}>
                             {extension.displayName || extension.name}
                         </Typography>
                         <Box className={classes.paragraph} mt={1}>
                             <span>Version:</span>
-                            <span>{extension.version}</span>
+                            <span className={classes.noOverflow}>{extension.version}</span>
                         </Box>
                         {
-                            extension.timestamp ?
-                                <Box className={classes.paragraph} mt={0.25}>
-                                    <span>Released:</span>
-                                    <Timestamp value={extension.timestamp} />
-                                </Box>
-                                : null
+                            inactive ?
+                            <Box mt={0.25}>
+                                Deactivated
+                            </Box>
+                            : extension.timestamp ?
+                            <Box className={classes.paragraph} mt={0.25}>
+                                <span>Published:</span>
+                                <Timestamp
+                                    value={extension.timestamp}
+                                    className={classes.noOverflow} />
+                            </Box>
+                            : null
                         }
                     </div>
                 </Paper>

@@ -247,7 +247,7 @@ public class SearchServiceTest {
         var ext1 = mockExtension("foo", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext2 = mockExtension("bar", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext3 = mockExtension("baz", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
-        Mockito.when(repositories.findAllExtensions())
+        Mockito.when(repositories.findAllActiveExtensions())
                 .thenReturn(Streamable.of(ext1, ext2, ext3));
     }
 

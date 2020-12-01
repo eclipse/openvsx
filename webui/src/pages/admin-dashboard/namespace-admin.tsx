@@ -12,36 +12,35 @@ import React, { FunctionComponent, useState, useContext } from 'react';
 import { Typography, Box, Button } from '@material-ui/core';
 
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
-import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { Namespace } from '../../extension-registry-types';
+import { Namespace, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 
 export const NamespaceAdmin: FunctionComponent = props => {
     const [loading, setLoading] = useState(false);
-    const setLoadingState = (loadingState: boolean) => {
-        setLoading(loadingState);
-    };
 
     const { pageSettings, service, user, handleError } = useContext(MainContext);
 
     const [currentNamespace, setCurrentNamespace] = useState<Namespace | undefined>();
     const [notFound, setNotFound] = useState('');
     const fetchNamespace = async (namespaceName: string) => {
+        if (!namespaceName) {
+            setCurrentNamespace(undefined);
+            setNotFound('');
+            return;
+        }
         try {
-            if (namespaceName !== '') {
-                setLoading(true);
-                const namespace = await service.admin.findNamespace(namespaceName);
-                setNotFound('');
-                setCurrentNamespace(namespace);
-                setLoading(false);
-            } else {
-                setNotFound('');
-                setCurrentNamespace(undefined);
+            setLoading(true);
+            const namespace = await service.admin.getNamespace(namespaceName);
+            if (isError(namespace)) {
+                throw namespace;
             }
+            setCurrentNamespace(namespace);
+            setNotFound('');
+            setLoading(false);
         } catch (err) {
-            if (err && err.status && err.status === 404) {
+            if (err && err.status === 404) {
                 setNotFound(namespaceName);
                 setCurrentNamespace(undefined);
             } else {
@@ -63,17 +62,16 @@ export const NamespaceAdmin: FunctionComponent = props => {
         await fetchNamespace(inputValue);
     };
 
-    return (<>
-        <DelayedLoadIndicator loading={loading} />
-        <SearchListContainer
-            searchContainer={
-                [<StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />]
-            }
-            listContainer={
+    return <SearchListContainer
+        searchContainer={
+            [<StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />]
+        }
+        listContainer={<>
+            {
                 currentNamespace && pageSettings && user ?
                     <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
                         <NamespaceDetail
-                            setLoadingState={setLoadingState}
+                            setLoadingState={setLoading}
                             namespace={currentNamespace}
                             filterUsers={() => true}
                         />
@@ -83,10 +81,18 @@ export const NamespaceAdmin: FunctionComponent = props => {
                             <Typography variant='body1'>
                                 Namespace {notFound} not found. Do you want to create it?
                             </Typography>
-                            <Button variant='contained' color='primary' onClick={onCreate}>Create Namespace {notFound}</Button>
+                            <Box mt={3}>
+                                <Button
+                                    variant='contained'
+                                    color='secondary'
+                                    onClick={onCreate}>
+                                    Create Namespace {notFound}
+                                </Button>
+                            </Box>
                         </Box>
                         : ''
             }
-        />
-    </>);
+        </>}
+        loading={loading}
+    />;
 };

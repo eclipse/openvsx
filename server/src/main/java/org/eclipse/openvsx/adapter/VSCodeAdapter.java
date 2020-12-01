@@ -138,19 +138,8 @@ public class VSCodeAdapter {
         var extensions = new ArrayList<ExtensionQueryResult.Extension>(ids.size());
         for (var uuid : ids) {
             var extension = repositories.findExtensionByPublicId(uuid);
-            if (extension != null) {
+            if (extension != null && extension.isActive()) {
                 extensions.add(toQueryExtension(extension, flags));
-            } else {
-                // Deprecated access to internal id
-                // TODO remove this code after some time
-                try {
-                    var primaryKey = Long.parseLong(uuid);
-                    extension = entityManager.find(Extension.class, primaryKey);
-                    if (extension != null) {
-                        extensions.add(toQueryExtension(extension, flags));
-                    }
-                } catch (NumberFormatException exc) {
-                }
             }
         }
         return toQueryResult(extensions);
@@ -162,7 +151,7 @@ public class VSCodeAdapter {
             var split = qualifiedName.split("\\.");
             if (split.length == 2) {
                 var extension = repositories.findExtension(split[1], split[0]);
-                if (extension != null) {
+                if (extension != null && extension.isActive()) {
                     extensions.add(toQueryExtension(extension, flags));
                 }
             }
@@ -191,7 +180,7 @@ public class VSCodeAdapter {
         var resultItem = new ExtensionQueryResult.ResultItem();
         resultItem.extensions = CollectionUtil.map(searchResult.getContent(), es -> {
             var extension = entityManager.find(Extension.class, es.id);
-            if (extension == null)
+            if (extension == null || !extension.isActive())
                 return null;
             return toQueryExtension(extension, flags);
         });
@@ -238,7 +227,7 @@ public class VSCodeAdapter {
                                           @PathVariable String version,
                                           @PathVariable String assetType) {
         var extVersion = repositories.findVersion(version, extensionName, namespace);
-        if (extVersion == null)
+        if (extVersion == null || !extVersion.isActive())
             throw new NotFoundException();
         var resource = getFileFromDB(extVersion, assetType);
         if (resource == null)
@@ -290,7 +279,7 @@ public class VSCodeAdapter {
                                  @PathVariable String version, ModelMap model) {
         if (googleStorage.isEnabled()) {
             var extVersion = repositories.findVersion(version, extension, namespace);
-            if (extVersion == null)
+            if (extVersion == null || !extVersion.isActive())
                 throw new NotFoundException();
             var resource = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
             if (resource == null)
@@ -323,7 +312,7 @@ public class VSCodeAdapter {
         if (test(flags, FLAG_INCLUDE_LATEST_VERSION_ONLY)) {
             queryExt.versions = Lists.newArrayList(toQueryVersion(latest, flags));
         } else if (test(flags, FLAG_INCLUDE_VERSIONS) || test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {
-            var allVersions = Lists.newArrayList(repositories.findVersions(extension));
+            var allVersions = Lists.newArrayList(repositories.findActiveVersions(extension));
             Collections.sort(allVersions, ExtensionVersion.SORT_COMPARATOR);
             queryExt.versions = CollectionUtil.map(allVersions, ev -> toQueryVersion(ev, flags));
         }

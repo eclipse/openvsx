@@ -32,7 +32,6 @@ const useStyles = makeStyles((theme) => ({
         height: '100%'
     },
     versionsContainer: {
-        overflow: 'auto',
         flex: '1'
     }
 }));

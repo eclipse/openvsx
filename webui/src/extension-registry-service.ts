@@ -272,10 +272,32 @@ export class AdminService {
 
     constructor(readonly registry: ExtensionRegistryService) { }
 
-    findNamespace(name: string): Promise<Readonly<Namespace>> {
+    getExtension(namespace: string, extension: string): Promise<Readonly<Extension>> {
         return sendRequest({
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', name])
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', namespace, extension])
+        });
+    }
+
+    async deleteExtension(req: { namespace: string, extension: string, version?: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', req.namespace, req.extension, 'delete'],
+                [{ key: 'version', value: req.version }]),
+            headers
+        });
+    }
+
+    getNamespace(name: string): Promise<Readonly<Namespace>> {
+        return sendRequest({
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'namespace', name])
         });
     }
 
@@ -289,31 +311,16 @@ export class AdminService {
         }
         return sendRequest({
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', '-', 'create-namespace']),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'create-namespace']),
             method: 'POST',
             payload: namespace,
             headers
         });
     }
 
-    async deleteExtension(req: { namespace: string, extension: string, version?: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken();
-        const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
-            headers[csrfToken.header] = csrfToken.value;
-        }
-        return sendRequest({
-            method: 'POST',
-            credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', req.namespace, 'delete-extension'],
-                [{ key: 'extension', value: req.extension }, { key: 'version', value: req.version }]),
-            headers
-        });
-    }
-
     async getPublisherInfo(provider: string, login: string): Promise<Readonly<PublisherInfo>> {
         return sendRequest({
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', '-', provider, login]),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login]),
             credentials: true
         });
     }
@@ -327,7 +334,7 @@ export class AdminService {
         return sendRequest({
             method: 'POST',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', '-', provider, login, 'revoke']),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'revoke']),
             headers
         });
     }

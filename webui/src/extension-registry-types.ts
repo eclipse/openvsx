@@ -15,14 +15,14 @@ export interface SuccessResult {
     success: string;
 }
 export function isSuccess(obj: unknown): obj is SuccessResult {
-    return obj && typeof (obj as any).success === 'string';
+    return typeof obj === 'object' && typeof (obj as any).success === 'string';
 }
 
 export interface ErrorResult {
     error: string;
 }
 export function isError(obj: unknown): obj is ErrorResult {
-    return obj && typeof (obj as any).error === 'string';
+    return typeof obj === 'object' && typeof (obj as any).error === 'string';
 }
 
 export interface ReportedError {
@@ -74,6 +74,7 @@ export interface Extension {
     namespaceAccess: 'public' | 'restricted';
     // key: version, value: url
     allVersions: { [version: string]: UrlString };
+    active?: boolean;
 
     averageRating?: number;
     downloadCount: number;

@@ -61,6 +61,9 @@ public class ExtensionJson extends ResultJson {
     @NotNull
     public UserJson publishedBy;
 
+    @ApiModelProperty(hidden = true)
+    public Boolean active;
+
     @ApiModelProperty("The value 'true' means the extension's namespace is restricted, but the publishing user is not a member of that namespace")
     @NotNull
     public boolean unrelatedPublisher;
@@ -77,11 +80,11 @@ public class ExtensionJson extends ResultJson {
 
     @ApiModelProperty("Number of downloads of the extension package")
     @Min(0)
-    public int downloadCount;
+    public Integer downloadCount;
 
     @ApiModelProperty("Number of reviews")
     @Min(0)
-    public long reviewCount;
+    public Long reviewCount;
 
     @ApiModelProperty("Available version aliases ('latest' or 'preview')")
     public List<String> versionAlias;

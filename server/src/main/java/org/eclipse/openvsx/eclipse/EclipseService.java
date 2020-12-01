@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
+import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.EclipseData;
 import org.eclipse.openvsx.entities.UserData;
@@ -76,6 +77,9 @@ public class EclipseService {
 
     @Autowired
     TransactionTemplate transactions;
+
+    @Autowired
+    ExtensionService extensions;
 
     @Autowired
     EntityManager entityManager;
@@ -360,14 +364,19 @@ public class EclipseService {
 
         try {
             var json = restTemplate.postForEntity(requestUrl, request, String.class);
-            var response = parseAgreementResponse(json);
 
-            return updateEclipseData(user, ed -> {
+            // The request was successful: reactivate all previously published extensions
+            extensions.reactivateExtensions(user);
+            
+            // Parse the response and store the publisher agreement metadata
+            var response = parseAgreementResponse(json);
+            var result = updateEclipseData(user, ed -> {
                 ed.publisherAgreement = response.createEntityData(parseDate);
                 return ed.publisherAgreement;
             }, ed -> {
                 ed.personId = response.personID;
             });
+            return result;
 
         } catch (RestClientException exc) {
             if (exc instanceof HttpStatusCodeException) {

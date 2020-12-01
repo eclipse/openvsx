@@ -63,16 +63,16 @@ public class RepositoryService {
         return extensionRepo.findByPublicId(publicId);
     }
 
-    public Streamable<Extension> findExtensions(Namespace namespace) {
-        return extensionRepo.findByNamespaceOrderByNameAsc(namespace);
+    public Streamable<Extension> findActiveExtensions(Namespace namespace) {
+        return extensionRepo.findByNamespaceAndActiveTrueOrderByNameAsc(namespace);
     }
 
     public Streamable<Extension> findExtensions(String name) {
         return extensionRepo.findByNameIgnoreCase(name);
     }
 
-    public Streamable<Extension> findAllExtensions() {
-        return extensionRepo.findAll();
+    public Streamable<Extension> findAllActiveExtensions() {
+        return extensionRepo.findByActiveTrue();
     }
 
     public long countExtensions() {
@@ -95,12 +95,20 @@ public class RepositoryService {
          return extensionVersionRepo.findByExtension(extension);
     }
 
+    public Streamable<ExtensionVersion> findActiveVersions(Extension extension) {
+         return extensionVersionRepo.findByExtensionAndActiveTrue(extension);
+    }
+
     public Streamable<String> getVersionStrings(Extension extension) {
         return extensionVersionRepo.getVersionStrings(extension);
     }
 
-    public Streamable<ExtensionVersion> findVersions(Extension extension, boolean preview) {
-         return extensionVersionRepo.findByExtensionAndPreview(extension, preview);
+    public Streamable<String> getActiveVersionStrings(Extension extension) {
+        return extensionVersionRepo.getActiveVersionStrings(extension);
+    }
+
+    public Streamable<ExtensionVersion> findActiveVersions(Extension extension, boolean preview) {
+         return extensionVersionRepo.findByExtensionAndPreviewAndActiveTrue(extension, preview);
     }
 
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
@@ -111,16 +119,12 @@ public class RepositoryService {
         return extensionVersionRepo.findByDependencies(extension);
     }
 
-    public Streamable<ExtensionVersion> findVersionsByLicense(String license) {
-        return extensionVersionRepo.findByLicense(license);
-    }
-
-    public Streamable<ExtensionVersion> findAllExtensionVersions() {
-        return extensionVersionRepo.findAll();
-    }
-
     public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith) {
         return extensionVersionRepo.findByPublishedWith(publishedWith);
+    }
+
+    public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith, boolean active) {
+        return extensionVersionRepo.findByPublishedWithAndActive(publishedWith, active);
     }
 
     public LocalDateTime getOldestExtensionTimestamp() {
