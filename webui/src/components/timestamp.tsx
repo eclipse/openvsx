@@ -14,7 +14,7 @@ import { toRelativeTime, toLocalTime } from '../utils';
 export class Timestamp extends React.Component<Timestamp.Props> {
     render(): React.ReactNode {
         const timestamp = this.props.value;
-        return <span title={toLocalTime(timestamp)}>
+        return <span title={toLocalTime(timestamp)} className={this.props.className}>
             {toRelativeTime(timestamp)}
         </span>;
     }
@@ -23,5 +23,6 @@ export class Timestamp extends React.Component<Timestamp.Props> {
 export namespace Timestamp {
     export interface Props {
         value: string;
+        className?: string;
     }
 }

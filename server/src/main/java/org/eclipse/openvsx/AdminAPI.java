@@ -141,8 +141,11 @@ public class AdminAPI {
             admins.checkAdminUser();
 
             var extension = repositories.findExtension(extensionName, namespaceName);
-            if (extension == null)
-                throw new NotFoundException();
+            if (extension == null) {
+                var json = ExtensionJson.error("Extension not found: " + namespaceName + "." + extensionName);
+                return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+            }
+
             ExtensionJson json;
             // Don't rely on the 'latest' relationship here because the extension might be inactive
             var extVersion = getLatestVersion(extension);
@@ -203,6 +206,9 @@ public class AdminAPI {
             namespace.membersUrl = UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.name, "members");
             namespace.roleUrl = UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.name, "change-member");
             return ResponseEntity.ok(namespace);
+        } catch (NotFoundException exc) {
+            var json = NamespaceJson.error("Namespace not found: " + namespaceName);
+            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(NamespaceJson.class);
         }

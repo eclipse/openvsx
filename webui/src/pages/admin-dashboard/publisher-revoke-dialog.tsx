@@ -81,12 +81,12 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Prop
                                 <ul>
                                     {
                                         tokenCount > 0 ?
-                                        <li>Deactivate {tokenCount} access tokens of {props.publisherInfo.user.loginName}</li>
+                                        <li>Deactivate {tokenCount} access token{tokenCount > 1 ? 's' : ''} of {props.publisherInfo.user.loginName}</li>
                                         : null
                                     }
                                     {
                                         extensionCount > 0 ?
-                                        <li>Deactivate {extensionCount} published extension versions</li>
+                                        <li>Deactivate {extensionCount} published extension version{extensionCount > 1 ? 's' : ''}</li>
                                         : null
                                     }
                                     {

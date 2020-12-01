@@ -364,15 +364,18 @@ public class EclipseService {
 
         try {
             var json = restTemplate.postForEntity(requestUrl, request, String.class);
-            var response = parseAgreementResponse(json);
 
+            // The request was successful: reactivate all previously published extensions
+            extensions.reactivateExtensions(user);
+            
+            // Parse the response and store the publisher agreement metadata
+            var response = parseAgreementResponse(json);
             var result = updateEclipseData(user, ed -> {
                 ed.publisherAgreement = response.createEntityData(parseDate);
                 return ed.publisherAgreement;
             }, ed -> {
                 ed.personId = response.personID;
             });
-            extensions.reactivateExtensions(user);
             return result;
 
         } catch (RestClientException exc) {

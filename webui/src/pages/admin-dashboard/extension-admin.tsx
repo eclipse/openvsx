@@ -12,13 +12,13 @@ import React, { FunctionComponent, useState, useContext } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@material-ui/core';
-import { StyledInput } from './namespace-input';
 import { MainContext } from '../../context';
-import { handleError } from '../../utils';
 import { isError, Extension } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';
+import { StyledInput } from './namespace-input';
 
 export const ExtensionAdmin: FunctionComponent = props => {
+    const [loading, setLoading] = useState(false);
 
     const [extensionValue, setExtensionValue] = useState('');
     const handleExtensionChange = (value: string) => {
@@ -31,68 +31,71 @@ export const ExtensionAdmin: FunctionComponent = props => {
     };
 
     const [error, setError] = useState('');
-    const handleExtensionError = (err: Error) => {
-        setError(handleError(err));
-    };
 
     const [extensionFieldError, setExtensionFieldError] = useState(false);
     const [namespaceFieldError, setNamespaceFieldError] = useState(false);
 
-    const { service } = useContext(MainContext);
+    const { service, handleError } = useContext(MainContext);
     const [extension, setExtension] = useState<Extension | undefined>(undefined);
     const findExtension = async () => {
+        if (!namespaceValue) {
+            setNamespaceFieldError(true);
+            setError('Name of Namespace is mandatory');
+            return;
+        }
+        setNamespaceFieldError(false);
+        if (!extensionValue) {
+            setExtensionFieldError(true);
+            setError('Name of Extension is mandatory');
+            return;
+        }
+        setExtensionFieldError(false);
         try {
-            if (!namespaceValue) {
-                setNamespaceFieldError(true);
-                throw ({ message: 'Name of Namespace is mandatory' });
-            } else {
-                setNamespaceFieldError(false);
-            }
-            if (!extensionValue) {
-                setExtensionFieldError(true);
-                throw ({ message: 'Name of Extension is mandatory' });
-            } else {
-                setExtensionFieldError(false);
-            }
+            setLoading(true);
             const extensionDetail = await service.admin.getExtension(namespaceValue, extensionValue);
             if (isError(extensionDetail)) {
-                setExtension(undefined);
-                throw (extensionDetail);
+                throw extensionDetail;
             }
             setExtension(extensionDetail);
             setError('');
+            setLoading(false);
         } catch (err) {
-            handleExtensionError(err);
+            if (err && err.status === 404) {
+                setError(`Extension not found: ${namespaceValue}.${extensionValue}`);
+                setExtension(undefined);
+            } else {
+                handleError(err);
+            }
+            setLoading(false);
         }
     };
 
-    return (<>
-        <SearchListContainer
-            searchContainer={[
-                <StyledInput
-                    placeholder='Namespace'
-                    error={namespaceFieldError}
-                    key='nsi'
-                    onChange={handleNamespaceChange}
-                    hideIconButton={true}
-                    autoFocus={true} />,
-                <ExtensionListSearchfield
-                    error={extensionFieldError}
-                    key='ei'
-                    onSearchChanged={handleExtensionChange}
-                    searchQuery={extensionValue}
-                    onSearchSubmit={findExtension}
-                    placeholder='Extension'
-                    hideIconButton={true}
-                    autoFocus={false} />,
-                <Button key='btn' variant='contained' onClick={findExtension}>Search Extension</Button>,
-                error ? <Typography color='error'>{error}</Typography> : ''
-            ]}
-            listContainer={
-                extension ?
-                    <ExtensionVersionContainer onUpdate={findExtension} extension={extension} />
-                    : ''
-            }
-        />
-    </>);
+    return <SearchListContainer
+        searchContainer={[
+            <StyledInput
+                placeholder='Namespace'
+                error={namespaceFieldError}
+                key='nsi'
+                onChange={handleNamespaceChange}
+                hideIconButton={true}
+                autoFocus={true} />,
+            <ExtensionListSearchfield
+                error={extensionFieldError}
+                key='ei'
+                onSearchChanged={handleExtensionChange}
+                searchQuery={extensionValue}
+                onSearchSubmit={findExtension}
+                placeholder='Extension'
+                hideIconButton={true}
+                autoFocus={false} />,
+            <Button key='btn' variant='contained' onClick={findExtension}>Search Extension</Button>,
+            error ? <Typography color='error'>{error}</Typography> : ''
+        ]}
+        listContainer={
+            extension ?
+                <ExtensionVersionContainer onUpdate={findExtension} extension={extension} />
+                : ''
+        }
+        loading={loading}
+    />;
 };

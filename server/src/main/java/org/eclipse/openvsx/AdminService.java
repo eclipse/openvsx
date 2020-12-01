@@ -10,8 +10,8 @@
 package org.eclipse.openvsx;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -193,10 +193,11 @@ public class AdminService {
         if (user == null) {
             throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
         }
+
         var serverUrl = UrlUtil.getBaseUrl();
-        var accessTokens = repositories.findAccessTokens(user);
-        List<ExtensionJson> versionJsons = new ArrayList<>();
+        var versionJsons = new ArrayList<ExtensionJson>();
         var activeAccessTokenNum = 0;
+        var accessTokens = repositories.findAccessTokens(user);
         for (var accessToken : accessTokens) {
             if (accessToken.isActive()) {
                 activeAccessTokenNum++;
@@ -211,6 +212,12 @@ public class AdminService {
                 versionJsons.add(json);
             }
         }
+        versionJsons.sort(
+            Comparator.comparing((ExtensionJson j) -> j.namespace)
+                      .thenComparing(j -> j.name)
+                      .thenComparing(j -> j.version)
+        );
+
         var userPublishInfo = new UserPublishInfoJson();
         userPublishInfo.user = user.toUserJson();
         eclipse.enrichUserJson(userPublishInfo.user, user);
