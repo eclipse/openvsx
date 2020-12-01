@@ -141,7 +141,7 @@ public class RegistryAPITest {
     public void testUnknownNamespace() throws Exception {
         mockNamespace();
         mockMvc.perform(get("/api/{namespace}", "unknown"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Namespace not found: unknown")));
     }
 
@@ -167,7 +167,7 @@ public class RegistryAPITest {
         extVersion.getExtension().setActive(false);
 
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar")));
     }
 
@@ -175,7 +175,7 @@ public class RegistryAPITest {
     public void testUnknownExtension() throws Exception {
         mockExtension();
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "baz"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Extension not found: foo.baz")));
     }
 
@@ -215,7 +215,7 @@ public class RegistryAPITest {
         extVersion.setActive(false);
 
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar version 1")));
     }
 
@@ -223,7 +223,7 @@ public class RegistryAPITest {
     public void testUnknownExtensionVersion() throws Exception {
         mockExtension();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "2"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar version 2")));
     }
 
