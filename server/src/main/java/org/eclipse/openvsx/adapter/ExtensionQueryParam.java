@@ -51,7 +51,7 @@ public class ExtensionQueryParam {
             if (criteria == null || criteria.isEmpty())
                 return Collections.emptyList();
             return criteria.stream()
-                    .filter(c -> c.filterType == type)
+                    .filter(c -> c.filterType == type && c.value != null)
                     .map(c -> c.value)
                     .collect(Collectors.toList());
         }
