@@ -82,20 +82,26 @@ public class RegistryAPI {
     @ApiResponses({
         @ApiResponse(
             code = 200,
-            message = "The 'error' property indicates whether the request failed"
+            message = "The namespace metadata are returned in JSON format"
+        ),
+        @ApiResponse(
+            code = 404,
+            message = "The specified namespace could not be found"
         )
     })
-    public NamespaceJson getNamespace(@PathVariable @ApiParam(value = "Namespace name", example = "redhat")
-                                      String namespace) {
+    public ResponseEntity<NamespaceJson> getNamespace(
+            @PathVariable @ApiParam(value = "Namespace name", example = "redhat")
+            String namespace
+        ) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getNamespace(namespace);
+                return ResponseEntity.ok(registry.getNamespace(namespace));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
-        // TODO return 404 status
-        return NamespaceJson.error("Namespace not found: " + namespace);
+        var json = NamespaceJson.error("Namespace not found: " + namespace);
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
     @GetMapping(
@@ -107,22 +113,28 @@ public class RegistryAPI {
     @ApiResponses({
         @ApiResponse(
             code = 200,
-            message = "The 'error' property indicates whether the request failed"
+            message = "The extension metadata are returned in JSON format"
+        ),
+        @ApiResponse(
+            code = 404,
+            message = "The specified extension could not be found"
         )
     })
-    public ExtensionJson getExtension(@PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
-                                      String namespace,
-                                      @PathVariable @ApiParam(value = "Extension name", example = "java")
-                                      String extension) {
+    public ResponseEntity<ExtensionJson> getExtension(
+            @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @ApiParam(value = "Extension name", example = "java")
+            String extension
+        ) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getExtension(namespace, extension);
+                return ResponseEntity.ok(registry.getExtension(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
-        // TODO return 404 status
-        return ExtensionJson.error("Extension not found: " + namespace + "." + extension);
+        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension);
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
     @GetMapping(
@@ -134,24 +146,30 @@ public class RegistryAPI {
     @ApiResponses({
         @ApiResponse(
             code = 200,
-            message = "The 'error' property indicates whether the request failed"
+            message = "The extension metadata are returned in JSON format"
+        ),
+        @ApiResponse(
+            code = 404,
+            message = "The specified extension could not be found"
         )
     })
-    public ExtensionJson getExtension(@PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
-                                      String namespace,
-                                      @PathVariable @ApiParam(value = "Extension name", example = "java")
-                                      String extension,
-                                      @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
-                                      String version) {
+    public ResponseEntity<ExtensionJson> getExtension(
+            @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @ApiParam(value = "Extension name", example = "java")
+            String extension,
+            @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
+            String version
+        ) {
         for (var registry : getRegistries()) {
             try {
-                return registry.getExtension(namespace, extension, version);
+                return ResponseEntity.ok(registry.getExtension(namespace, extension, version));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
-        // TODO return 404 status
-        return ExtensionJson.error("Extension not found: " + namespace + "." + extension + " version " + version);
+        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " version " + version);
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("/api/{namespace}/{extension}/{version}/file/{fileName:.+}")
@@ -176,14 +194,16 @@ public class RegistryAPI {
             message = "The specified file could not be found"
         )
     })
-    public ResponseEntity<byte[]> getFile(@PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
-                                          String namespace,
-                                          @PathVariable @ApiParam(value = "Extension name", example = "java")
-                                          String extension,
-                                          @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
-                                          String version,
-                                          @PathVariable @ApiParam(value = "Name of the file to access", example = "LICENSE.txt")
-                                          String fileName) {
+    public ResponseEntity<byte[]> getFile(
+            @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @ApiParam(value = "Extension name", example = "java")
+            String extension,
+            @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
+            String version,
+            @PathVariable @ApiParam(value = "Name of the file to access", example = "LICENSE.txt")
+            String fileName
+        ) {
         for (var registry : getRegistries()) {
             try {
                 return registry.getFile(namespace, extension, version, fileName);
@@ -210,10 +230,12 @@ public class RegistryAPI {
             message = "The specified extension could not be found"
         )
     })
-    public ResponseEntity<ReviewListJson> getReviews(@PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
-                                                     String namespace,
-                                                     @PathVariable @ApiParam(value = "Extension name", example = "java")
-                                                     String extension) {
+    public ResponseEntity<ReviewListJson> getReviews(
+            @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @ApiParam(value = "Extension name", example = "java")
+            String extension
+        ) {
         for (var registry : getRegistries()) {
             try {
                 var json = registry.getReviews(namespace, extension);
@@ -330,8 +352,10 @@ public class RegistryAPI {
             message = "The request contains an invalid parameter value"
         )
     })
-    public ResponseEntity<QueryResultJson> query(@RequestBody @ApiParam("Parameters of the metadata query")
-                                                 QueryParamJson param) {
+    public ResponseEntity<QueryResultJson> query(
+            @RequestBody @ApiParam("Parameters of the metadata query")
+            QueryParamJson param
+        ) {
         var result = new QueryResultJson();
         for (var registry : getRegistries()) {
             try {
@@ -374,10 +398,12 @@ public class RegistryAPI {
             examples = @Example(@ExampleProperty(value="{ \"error\": \"Invalid access token.\" }", mediaType = "application/json"))
         )
     })
-    public ResponseEntity<ResultJson> createNamespace(@RequestBody @ApiParam("Describes the namespace to create")
-                                                      NamespaceJson namespace,
-                                                      @RequestParam @ApiParam("A personal access token")
-                                                      String token) {
+    public ResponseEntity<ResultJson> createNamespace(
+            @RequestBody @ApiParam("Describes the namespace to create")
+            NamespaceJson namespace,
+            @RequestParam @ApiParam("A personal access token")
+            String token
+        ) {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error("No JSON input."));
         }
@@ -426,8 +452,10 @@ public class RegistryAPI {
             examples = @Example(@ExampleProperty(value="{ \"error\": \"Invalid access token.\" }", mediaType = "application/json"))
         )
     })
-    public ResponseEntity<ExtensionJson> publish(InputStream content,
-                                                 @RequestParam @ApiParam("A personal access token") String token) {
+    public ResponseEntity<ExtensionJson> publish(
+            InputStream content,
+            @RequestParam @ApiParam("A personal access token") String token
+        ) {
         try {
             var json = local.publish(content, token);
             var serverUrl = UrlUtil.getBaseUrl();
@@ -447,8 +475,8 @@ public class RegistryAPI {
     )
     @ApiIgnore
     public ResponseEntity<ResultJson> postReview(@RequestBody(required = false) ReviewJson review,
-                                 @PathVariable String namespace,
-                                 @PathVariable String extension) {
+                                                 @PathVariable String namespace,
+                                                 @PathVariable String extension) {
         if (review == null) {
             var json = ResultJson.error("No JSON input.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);

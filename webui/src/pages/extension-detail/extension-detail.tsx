@@ -156,7 +156,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     componentDidMount(): void {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         document.title = `${params.name} – ${this.context.pageSettings.pageTitle}`;
-        this.updateExtension(this.getExtensionApiUrl(params));
+        this.updateExtension(params);
     }
 
     componentDidUpdate(prevProps: ExtensionDetailComponent.Props): void {
@@ -170,7 +170,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             } else {
                 this.setState({ extension: undefined, loading: true });
             }
-            this.updateExtension(this.getExtensionApiUrl(newParams));
+            this.updateExtension(newParams);
         }
     }
 
@@ -181,7 +181,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         return this.context.service.getExtensionApiUrl(params);
     }
 
-    protected async updateExtension(extensionUrl: string): Promise<void> {
+    protected async updateExtension(params: ExtensionDetailComponent.Params): Promise<void> {
+        const extensionUrl = this.getExtensionApiUrl(params);
         try {
             const extension = await this.context.service.getExtensionDetail(extensionUrl);
             if (isError(extension)) {
@@ -190,16 +191,23 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             document.title = `${extension.displayName || extension.name} – ${this.context.pageSettings.pageTitle}`;
             this.setState({ extension, loading: false });
         } catch (err) {
-            this.context.handleError(err);
+            if (err && err.status === 404) {
+                this.setState({
+                    notFoundError: `Extension Not Found: ${params.namespace}.${params.name}`,
+                    loading: false
+                });
+            } else {
+                this.context.handleError(err);
+            }
             this.setState({ loading: false });
         }
     }
 
     protected onReviewUpdate = (): void => {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
-        const extensionUrl = this.getExtensionApiUrl(params);
-        this.updateExtension(extensionUrl);
+        this.updateExtension(params);
     };
+
     protected onVersionSelect = (version: string): void => {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         let newRoute: string;
@@ -214,12 +222,23 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     render(): React.ReactNode {
         const { extension } = this.state;
         if (!extension) {
-            return <DelayedLoadIndicator loading={this.state.loading} />;
+            return <>
+                <DelayedLoadIndicator loading={this.state.loading} />
+                {
+                    this.state.notFoundError ?
+                    <Box p={4}>
+                        <Typography variant='h5'>
+                            {this.state.notFoundError}
+                        </Typography>
+                    </Box>
+                    : null
+                }
+            </>;
         }
         const classes = this.props.classes;
         const headerTheme = extension.galleryTheme || this.context.pageSettings.themeType || 'light';
 
-        return <React.Fragment>
+        return <>
             <DelayedLoadIndicator loading={this.state.loading} />
             <Box className={classes.head}
                 style={{
@@ -268,7 +287,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     </Box>
                 </Box>
             </Container>
-        </React.Fragment>;
+        </>;
     }
 
     protected renderBanner(extension: Extension, themeType: 'light' | 'dark'): React.ReactNode {
@@ -469,6 +488,7 @@ export namespace ExtensionDetailComponent {
     export interface State {
         extension?: Extension;
         loading: boolean;
+        notFoundError?: string;
     }
 
     export interface Params {
