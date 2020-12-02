@@ -102,56 +102,59 @@ public class OAuth2UserServices {
 
     public IdPrincipal loadUser(OAuth2UserRequest userRequest) {
         var registrationId = userRequest.getClientRegistration().getRegistrationId();
-
         switch (registrationId) {
-            case "github": {
-                var authUser = delegate.loadUser(userRequest);
-                String loginName = authUser.getAttribute("login");
-                if (Strings.isNullOrEmpty(loginName))
-                    throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
-                var userData = repositories.findUserByLoginName("github", loginName);
-                if (userData == null)
-                    userData = users.registerNewUser(authUser);
-                else
-                    users.updateExistingUser(userData, authUser);
-                return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
-            }
-
-            case "eclipse": {
-                var authentication = SecurityContextHolder.getContext().getAuthentication();
-                if (authentication == null)
-                    throw new CodedAuthException("Please log in with GitHub before connecting your Eclipse account.",
-                            NEED_MAIN_LOGIN);
-                if (!(authentication.getPrincipal() instanceof IdPrincipal))
-                    throw new CodedAuthException("The current authentication is invalid.", NEED_MAIN_LOGIN);
-                var principal = (IdPrincipal) authentication.getPrincipal();
-                var userData = entityManager.find(UserData.class, principal.getId());
-                if (userData == null)
-                    throw new CodedAuthException("The current authentication has no backing data.", NEED_MAIN_LOGIN);
-                try {
-                    var accessToken = userRequest.getAccessToken().getTokenValue();
-                    var profile = eclipse.getUserProfile(accessToken);
-                    if (Strings.isNullOrEmpty(profile.githubHandle))
-                        throw new CodedAuthException("Your Eclipse profile is missing a GitHub username.",
-                                ECLIPSE_MISSING_GITHUB_ID);
-                    if (!profile.githubHandle.equals(userData.getLoginName()))
-                        throw new CodedAuthException("The GitHub username setting in your Eclipse profile ("
-                                + profile.githubHandle
-                                + ") does not match your GitHub authentication ("
-                                + userData.getLoginName() + ").",
-                                ECLIPSE_MISMATCH_GITHUB_ID);
-                    eclipse.updateUserData(userData, profile);
-                    if (profile.publisherAgreements == null) {
-                        eclipse.getPublisherAgreement(userData, accessToken);
-                    }
-                    return principal;
-                } catch (ErrorResultException exc) {
-                    throw new AuthenticationServiceException(exc.getMessage(), exc);
-                }
-            }
-
+            case "github":
+                return loadGitHubUser(userRequest);
+            case "eclipse":
+                return loadEclipseUser(userRequest);
             default:
                 throw new CodedAuthException("Unsupported registration: " + registrationId, UNSUPPORTED_REGISTRATION);
+        }
+    }
+
+    private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
+        var authUser = delegate.loadUser(userRequest);
+        String loginName = authUser.getAttribute("login");
+        if (Strings.isNullOrEmpty(loginName))
+            throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
+        var userData = repositories.findUserByLoginName("github", loginName);
+        if (userData == null)
+            userData = users.registerNewUser(authUser);
+        else
+            users.updateExistingUser(userData, authUser);
+        return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
+    }
+
+    private IdPrincipal loadEclipseUser(OAuth2UserRequest userRequest) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null)
+            throw new CodedAuthException("Please log in with GitHub before connecting your Eclipse account.",
+                    NEED_MAIN_LOGIN);
+        if (!(authentication.getPrincipal() instanceof IdPrincipal))
+            throw new CodedAuthException("The current authentication is invalid.", NEED_MAIN_LOGIN);
+        var principal = (IdPrincipal) authentication.getPrincipal();
+        var userData = entityManager.find(UserData.class, principal.getId());
+        if (userData == null)
+            throw new CodedAuthException("The current authentication has no backing data.", NEED_MAIN_LOGIN);
+        try {
+            var accessToken = userRequest.getAccessToken().getTokenValue();
+            var profile = eclipse.getUserProfile(accessToken);
+            if (Strings.isNullOrEmpty(profile.githubHandle))
+                throw new CodedAuthException("Your Eclipse profile is missing a GitHub username.",
+                        ECLIPSE_MISSING_GITHUB_ID);
+            if (!profile.githubHandle.equalsIgnoreCase(userData.getLoginName()))
+                throw new CodedAuthException("The GitHub username setting in your Eclipse profile ("
+                        + profile.githubHandle
+                        + ") does not match your GitHub authentication ("
+                        + userData.getLoginName() + ").",
+                        ECLIPSE_MISMATCH_GITHUB_ID);
+            eclipse.updateUserData(userData, profile);
+            if (profile.publisherAgreements == null) {
+                eclipse.getPublisherAgreement(userData, accessToken);
+            }
+            return principal;
+        } catch (ErrorResultException exc) {
+            throw new AuthenticationServiceException(exc.getMessage(), exc);
         }
     }
 

@@ -19,6 +19,8 @@ import org.springframework.http.ResponseEntity;
  * <pre>
  * { "error": "«message»" }
  * </pre>
+ * 
+ * The message will likely be shown to the user, so it should be chosen with care.
  */
 public class ErrorResultException extends RuntimeException {
 
