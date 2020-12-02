@@ -9,10 +9,13 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useContext, useState } from 'react';
-import { UserData, isError } from '../../extension-registry-types';
-import { Box, Typography, Paper, Button, makeStyles, Dialog, DialogContent, DialogContentText, Fade, Link } from '@material-ui/core';
+import {
+    Box, Typography, Paper, Button, makeStyles, Dialog, DialogContent, DialogContentText, Link
+} from '@material-ui/core';
+import { UserData, isError, ReportedError } from '../../extension-registry-types';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
+import { ButtonWithProgress } from '../../components/button-with-progress';
 import { createAbsoluteURL } from '../../utils';
 import { MainContext } from '../../context';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -27,28 +30,28 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-interface UserPublisherAgreementProps {
-    user: UserData;
-}
-
-export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = props => {
+export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Props> = props => {
     const classes = useStyles();
-    const userDefault = props.user;
-    const { service, pageSettings, handleError } = useContext(MainContext);
+    const { service, pageSettings, updateUser, handleError } = useContext(MainContext);
     const [dialogOpen, setDialogOpen] = useState(false);
-
-    const [user, setUser] = useState(userDefault);
+    const [working, setWorking] = useState(false);
 
     const signPublisherAgreement = async (): Promise<void> => {
         try {
-            const newUser = await service.signPublisherAgreement();
-            if (isError(newUser)) {
-                throw (newUser.error);
+            setWorking(true);
+            const result = await service.signPublisherAgreement();
+            if (isError(result)) {
+                throw result;
             }
-            setUser(newUser);
+            updateUser();
             setDialogOpen(false);
         } catch (err) {
+            if (!(err as ReportedError).code) {
+                Object.assign(err, { code: 'publisher-agreement-problem' });
+            }
             handleError(err);
+        } finally {
+            setWorking(false);
         }
     };
 
@@ -79,6 +82,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         setDialogOpen(false);
     };
 
+    const user = props.user;
     if (!user.publisherAgreement) {
         return null;
     }
@@ -136,21 +140,14 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                                 sanitize={false}
                                 linkify={false} />
                             <Box display='flex' justifyContent='flex-end' >
-                                <Button onClick={signPublisherAgreement} variant='contained' color='secondary'>
+                                <ButtonWithProgress working={working} onClick={signPublisherAgreement}>
                                     Agree
-                                </Button>
+                                </ButtonWithProgress>
                             </Box>
                         </DialogContentText>
                         :
                         <Box height={1} display='flex' justifyContent='center' alignItems='center'>
-                            <Fade
-                                in={!agreementText}
-                                style={{
-                                    transitionDelay: !agreementText ? '800ms' : '0ms',
-                                }}
-                            >
-                                <CircularProgress color='secondary' />
-                            </Fade>
+                            <CircularProgress color='secondary' />
                         </Box>
                 }
             </DialogContent>
@@ -158,3 +155,9 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     </>;
 
 };
+
+export namespace UserPublisherAgreement {
+    export interface Props {
+        user: UserData;
+    }
+}

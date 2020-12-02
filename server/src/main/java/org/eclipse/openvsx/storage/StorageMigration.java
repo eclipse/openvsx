@@ -114,7 +114,7 @@ public class StorageMigration {
         });
 
         var remainingCount = resourceQueue.size();
-        if (remainingCount % 1000 == 0) {
+        if (remainingCount > 0 && remainingCount % 1000 == 0) {
             logger.info("Remaining resources to migrate: " + remainingCount);
         }
     }

@@ -23,8 +23,7 @@ public class PublisherAgreementResponse {
 
     public EclipseData.PublisherAgreement createEntityData(Function<String, LocalDateTime> parseDate) {
         var pub = new EclipseData.PublisherAgreement();
-        pub.isActive = sysDocument != null && ("true".equalsIgnoreCase(sysDocument.isActive)
-                || "1".equals(sysDocument.isActive));
+        pub.isActive = true;
         pub.documentId = documentID;
         pub.version = version;
         pub.timestamp = parseDate.apply(effectiveDate);
@@ -70,38 +69,8 @@ public class PublisherAgreementResponse {
     @JsonProperty("ScannedDocumentFileName")
     String scannedDocumentFileName;
 
-    @JsonProperty("SysDocument")
-    SysDocument sysDocument;
+    /** Comment about the document being posted. */
+    @JsonProperty("Comments")
+    String comments;
 
-    public static class SysDocument {
-
-        /** Unique identifier for an addressable object in the API. */
-        @JsonProperty("DocumentID")
-        String documentID;
-
-        /** The version string for the current system document. */
-        @JsonProperty("Version")
-        String version;
-
-        /** Literal document content blob entity. */
-        @JsonProperty("DocumentBLOB")
-        String documentBLOB;
-
-        /** Description of the system document. */
-        @JsonProperty("Description")
-        String description;
-
-        @JsonProperty("Comments")
-        String comments;
-
-        @JsonProperty("IsActive")
-        String isActive;
-
-        @JsonProperty("Type")
-        String type;
-
-        @JsonProperty("ContentType")
-        String contentType;
-        
-    }
 }

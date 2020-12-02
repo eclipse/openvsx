@@ -9,9 +9,9 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useState, useContext } from 'react';
-import { Typography, Box, Button } from '@material-ui/core';
-
+import { Typography, Box } from '@material-ui/core';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
+import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Namespace, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
@@ -55,11 +55,19 @@ export const NamespaceAdmin: FunctionComponent = props => {
         setInputValue(name);
     };
 
+    const [creating, setCreating] = useState(false);
     const onCreate = async () => {
-        await service.admin.createNamespace({
-            name: inputValue
-        });
-        await fetchNamespace(inputValue);
+        try {
+            setCreating(true);
+            await service.admin.createNamespace({
+                name: inputValue
+            });
+            await fetchNamespace(inputValue);
+        } catch (err) {
+            handleError(err);
+        } finally {
+            setCreating(false);
+        }
     };
 
     return <SearchListContainer
@@ -82,12 +90,11 @@ export const NamespaceAdmin: FunctionComponent = props => {
                                 Namespace {notFound} not found. Do you want to create it?
                             </Typography>
                             <Box mt={3}>
-                                <Button
-                                    variant='contained'
-                                    color='secondary'
+                                <ButtonWithProgress
+                                    working={creating}
                                     onClick={onCreate}>
                                     Create Namespace {notFound}
-                                </Button>
+                                </ButtonWithProgress>
                             </Box>
                         </Box>
                         : ''

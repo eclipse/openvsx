@@ -100,10 +100,12 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         }
     }
 
-    protected async updateUser() {
+    protected readonly updateUser = async () => {
         try {
+            this.setState({ userLoading: true });
             const user = await this.props.service.getUser();
             if (isError(user)) {
+                // An error result with HTTP OK status indicates that the user is not logged in.
                 this.setState({ user: undefined, userLoading: false });
             } else {
                 this.setState({ user, userLoading: false });
@@ -112,19 +114,19 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             this.handleError(err);
             this.setState({ userLoading: false });
         }
-    }
+    };
 
-    handleError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
+    readonly handleError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
         const message = handleError(err);
         const code = (err as ReportedError).code;
         this.setState({ error: { message, code }, isErrorDialogOpen: true });
     };
 
-    protected onErrorDialogClose = () => {
+    protected readonly onErrorDialogClose = () => {
         this.setState({ isErrorDialogOpen: false });
     };
 
-    protected onDismissBannerButtonClick = () => {
+    protected readonly onDismissBannerButtonClick = () => {
         const onClose = this.props.pageSettings.elements.banner?.props?.onClose;
         if (onClose) {
             onClose();
@@ -141,6 +143,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             service: this.props.service,
             pageSettings: this.props.pageSettings,
             user: this.state.user,
+            updateUser: this.updateUser,
             handleError: this.handleError
         };
         return <React.Fragment>

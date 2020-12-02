@@ -23,11 +23,8 @@ const dialogStyles = (theme: Theme) => createStyles({
         color: '#ff849e'
     },
     link: {
-        textDecoration: 'none',
-        color: theme.palette.primary.contrastText,
-        '&:hover': {
-            textDecoration: 'underline'
-        }
+        textDecoration: 'underline',
+        color: theme.palette.primary.contrastText
     }
 });
 
@@ -90,7 +87,7 @@ export class ErrorDialogComponent extends React.Component<ErrorDialogComponent.P
                     Please fill in the &ldquo;GitHub Username&rdquo; field
                     in <Link href='https://accounts.eclipse.org/user/edit' target='_blank' className={classes.link}>
                         your Eclipse account
-                    </Link>.
+                    </Link> and try again.
                 </>;
             case 'eclipse-mismatch-github-id':
                 return <>
@@ -98,6 +95,14 @@ export class ErrorDialogComponent extends React.Component<ErrorDialogComponent.P
                     in <Link href='https://accounts.eclipse.org/user/edit' target='_blank' className={classes.link}>
                         your Eclipse account
                     </Link> or log in with a different GitHub account.
+                </>;
+            case 'publisher-agreement-problem':
+                return <>
+                    Please contact <Link
+                        href='mailto:webmaster@eclipse.org?subject=Problem%20With%20open-vsx.org%20Publisher%20Agreement'
+                        className={classes.link} >
+                        webmaster@eclipse.org
+                    </Link> if this problem persists.
                 </>;
             default:
                 return null;

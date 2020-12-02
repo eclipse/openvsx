@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -348,6 +349,8 @@ public class EclipseService {
         }
     }
 
+    private static final Pattern STATUS_400_MESSAGE = Pattern.compile("400 Bad Request: \\[\\[\"(?<message>[^\"]+)\"\\]\\]");
+
     /**
      * Sign the publisher agreement on behalf of the given user.
      */
@@ -379,13 +382,23 @@ public class EclipseService {
             return result;
 
         } catch (RestClientException exc) {
+            String message = exc.getMessage();
+            var statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
             if (exc instanceof HttpStatusCodeException) {
-                var status = ((HttpStatusCodeException) exc).getStatusCode();
+                var excStatus = ((HttpStatusCodeException) exc).getStatusCode();
                 // The endpoint yields 409 if the specified user has already signed a publisher agreement
-                if (status == HttpStatus.CONFLICT) {
-                    throw new ErrorResultException("A publisher agreement is already present for user "
-                            + user.getLoginName() + ".");
+                if (excStatus == HttpStatus.CONFLICT) {
+                    message = "A publisher agreement is already present for user " + user.getLoginName() + ".";
+                    statusCode = HttpStatus.BAD_REQUEST;
+                } else if (excStatus == HttpStatus.BAD_REQUEST) {
+                    var matcher = STATUS_400_MESSAGE.matcher(exc.getMessage());
+                    if (matcher.matches()) {
+                        message = matcher.group("message");
+                    }
                 }
+            }
+            if (statusCode == HttpStatus.INTERNAL_SERVER_ERROR) {
+                message = "Request for signing publisher agreement failed: " + message;
             }
 
             String payload;
@@ -395,8 +408,7 @@ public class EclipseService {
                 payload = "<" + exc2.getMessage() + ">";
             }
             logger.error("Post request failed with URL: " + requestUrl + " Payload: " + payload, exc);
-            throw new ErrorResultException("Request for signing publisher agreement failed: " + exc.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ErrorResultException(message, statusCode);
         }
     }
 
