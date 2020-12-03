@@ -1,12 +1,16 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 env:
-  SERVER_TAG: docker.pkg.github.com/eclipse/openvsx/openvsx-server
-  SERVER_VERSION: snapshot
-  WEB_UI_TAG: docker.pkg.github.com/eclipse/openvsx/openvsx-webui
-  WEB_UI_VERSION: snapshot
+  SERVER_TAG: ghcr.io/eclipse/openvsx-server
+  WEBUI_TAG: ghcr.io/eclipse/openvsx-webui
 
 jobs:
   build:
@@ -15,25 +19,27 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: 10.x
-    - name: Set up Yarn
-      run: npm install --global yarn
+        node-version: 12.x
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:
         java-version: 11
+    - name: Install Yarn
+      run: npm install --global yarn
     - uses: actions/checkout@v2
+    - name: Set Image Version
+      run: echo "IMAGE_VERSION=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
     - name: Build CLI
       run: yarn --cwd cli
     - name: Build Web UI Image
-      run: docker build -t $WEB_UI_TAG:$WEB_UI_VERSION webui
+      run: docker build -t $WEBUI_TAG:$IMAGE_VERSION webui
     - name: Run Server Tests
       run: server/gradlew --no-daemon -p server check
     - name: Build Server Image
-      run: docker build -t $SERVER_TAG:$SERVER_VERSION server
+      run: docker build -t $SERVER_TAG:$IMAGE_VERSION server
     - name: Push Docker Images
       run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-        docker push $SERVER_TAG:$SERVER_VERSION
-        docker push $WEB_UI_TAG:$WEB_UI_VERSION
+        echo ${{ secrets.BOT_ACCESS_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        docker push $SERVER_TAG:$IMAGE_VERSION
+        docker push $WEBUI_TAG:$IMAGE_VERSION
       if: github.repository == 'eclipse/openvsx' && github.ref == 'refs/heads/master'
