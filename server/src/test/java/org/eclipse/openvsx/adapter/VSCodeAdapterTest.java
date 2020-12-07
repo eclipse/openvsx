@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -42,6 +43,7 @@ import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +52,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHitsImpl;
+import org.springframework.data.elasticsearch.core.TotalHitsRelation;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -154,12 +158,14 @@ public class VSCodeAdapterTest {
         var extVersion = mockExtension();
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
-        var page = new PageImpl<>(Lists.newArrayList(entry1));
+        var searchHit = new SearchHit<ExtensionSearch>("0", "1", 1.0f, null, null, entry1);
+        var searchHits = new SearchHitsImpl<ExtensionSearch>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1",
+                Arrays.asList(searchHit), new Aggregations(Collections.emptyList()));
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new SearchService.Options("yaml", null, 50, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions, PageRequest.of(0, 50)))
-                .thenReturn(page);
+                .thenReturn(searchHits);
         Mockito.when(entityManager.find(Extension.class, 1l))
                 .thenReturn(extVersion.getExtension());
         return Arrays.asList(extVersion.getExtension());

@@ -3,27 +3,27 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.hibernate:hibernate-gradle-plugin:5.4.12.Final"
+        classpath "org.hibernate:hibernate-gradle-plugin:5.4.22.Final"
     }
 }
 plugins {
-    id 'de.undercouch.download' version '4.0.4'
-    id 'org.springframework.boot' version '2.2.6.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'de.undercouch.download' version '4.1.1'
+    id 'org.springframework.boot' version '2.4.0'
+    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
     id 'java'
 }
 apply plugin: 'org.hibernate.orm'
 
 def versions = [
     java: '11',
-    flyway: '6.3.3',
+    flyway: '7.3.1',
     springfox: '3.0.0',
     spdx: '2.2.4',
     gcloud: '1.113.4',
     azure: '12.9.0',
     guava: '28.2-jre',
-    junit: '5.6.2',
-    testcontainers: '1.14.3'
+    junit: '5.7.0',
+    testcontainers: '1.15.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -47,6 +47,7 @@ configurations {
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
     implementation "org.springframework.boot:spring-boot-starter-security"

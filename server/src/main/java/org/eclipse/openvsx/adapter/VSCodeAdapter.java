@@ -42,8 +42,8 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -127,8 +127,8 @@ public class VSCodeAdapter {
         try {
             var searchOptions = new SearchService.Options(queryString, category, pageRequest.getPageSize(),
                     pageRequest.getPageNumber() * pageRequest.getPageSize(), sortOrder, sortBy, false);
-            var searchResult = search.search(searchOptions, pageRequest);
-            return findExtensions(searchResult, param.flags);
+            var searchHits = search.search(searchOptions, pageRequest);
+            return findExtensions(searchHits, param.flags);
         } catch (ErrorResultException exc) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exc.getMessage(), exc);
         }
@@ -176,10 +176,10 @@ public class VSCodeAdapter {
         return result;
     }
 
-    private ExtensionQueryResult findExtensions(Page<ExtensionSearch> searchResult, int flags) {
+    private ExtensionQueryResult findExtensions(SearchHits<ExtensionSearch> searchResult, int flags) {
         var resultItem = new ExtensionQueryResult.ResultItem();
-        resultItem.extensions = CollectionUtil.map(searchResult.getContent(), es -> {
-            var extension = entityManager.find(Extension.class, es.id);
+        resultItem.extensions = CollectionUtil.map(searchResult.getSearchHits(), hit -> {
+            var extension = entityManager.find(Extension.class, hit.getContent().id);
             if (extension == null || !extension.isActive())
                 return null;
             return toQueryExtension(extension, flags);
@@ -187,7 +187,7 @@ public class VSCodeAdapter {
 
         var countMetadataItem = new ExtensionQueryResult.ResultMetadataItem();
         countMetadataItem.name = "TotalCount";
-        countMetadataItem.count = searchResult.getTotalElements();
+        countMetadataItem.count = searchResult.getTotalHits();
         var countMetadata = new ExtensionQueryResult.ResultMetadata();
         countMetadata.metadataType = "ResultCount";
         countMetadata.metadataItems = Lists.newArrayList(countMetadataItem);

@@ -52,8 +52,9 @@ import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -186,11 +187,11 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var offset = options.requestedOffset;
         var pageRequest = PageRequest.of(offset / size, size);
-        var searchResult = search.search(options, pageRequest);
-        json.extensions = toSearchEntries(searchResult, size, offset % size, options);
+        var searchHits = search.search(options, pageRequest);
+        json.extensions = toSearchEntries(searchHits, size, offset % size, options);
         json.offset = offset;
-        json.totalSize = (int) searchResult.getTotalElements();
-        if (json.extensions.size() < size && searchResult.hasNext()) {
+        json.totalSize = (int) searchHits.getTotalHits();
+        if (json.extensions.size() < size && searchHits.getTotalHits() > offset + size) {
             // This is necessary when offset % size > 0
             var remainder = search.search(options, pageRequest.next());
             json.extensions.addAll(toSearchEntries(remainder, size - json.extensions.size(), 0, options));
@@ -198,14 +199,15 @@ public class LocalRegistryService implements IExtensionRegistry {
         return json;
     }
 
-    private List<SearchEntryJson> toSearchEntries(Page<ExtensionSearch> page, int size, int offset, SearchService.Options options) {
+    private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> hits, int size, int offset, SearchService.Options options) {
         var serverUrl = UrlUtil.getBaseUrl();
-        if (offset > 0 || size < page.getNumberOfElements())
+        var content = hits.getSearchHits();
+        if (offset > 0 || size < content.size())
             return CollectionUtil.map(
-                    Iterables.limit(Iterables.skip(page.getContent(), offset), size),
-                    es -> toSearchEntry(es, serverUrl, options));
+                    Iterables.limit(Iterables.skip(content, offset), size),
+                    hit -> toSearchEntry(hit, serverUrl, options));
         else
-            return CollectionUtil.map(page.getContent(), es -> toSearchEntry(es, serverUrl, options));
+            return CollectionUtil.map(content, hit -> toSearchEntry(hit, serverUrl, options));
     }
 
     @Override
@@ -404,7 +406,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         return (double) sum / count;
     }
 
-    private SearchEntryJson toSearchEntry(ExtensionSearch searchItem, String serverUrl, SearchService.Options options) {
+    private SearchEntryJson toSearchEntry(SearchHit<ExtensionSearch> searchHit, String serverUrl, SearchService.Options options) {
+        var searchItem = searchHit.getContent();
         var extension = entityManager.find(Extension.class, searchItem.id);
         if (extension == null || !extension.isActive())
             return null;
