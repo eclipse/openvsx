@@ -31,6 +31,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.IndexOperations;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -188,32 +190,40 @@ public class SearchServiceTest {
     @SuppressWarnings("unchecked")
     private MockIndex mockIndex(boolean exists) {
         mockStats();
+
         var index = new MockIndex();
-        Mockito.when(searchOperations.index(any(IndexQuery.class)))
-                .then(invocation -> {
-                    var query = invocation.getArgument(0, IndexQuery.class);
-                    index.entries.add((ExtensionSearch) query.getObject());
-                    return "test";
-                });
+        Mockito.when(searchOperations.index(any(IndexQuery.class), any(IndexCoordinates.class)))
+            .then(invocation -> {
+                var query = invocation.getArgument(0, IndexQuery.class);
+                index.entries.add((ExtensionSearch) query.getObject());
+                return "test";
+            });
         Mockito.doAnswer(invocation -> {
-                    var queries = (List<IndexQuery>) invocation.getArgument(0);
-                    queries.forEach(query -> index.entries.add((ExtensionSearch) query.getObject()));
-                    return null;
-                }).when(searchOperations).bulkIndex(any(List.class));
-        Mockito.when(searchOperations.indexExists(ExtensionSearch.class))
-                .thenReturn(exists);
-        Mockito.when(searchOperations.deleteIndex(ExtensionSearch.class))
-                .then(invocation -> {
-                    if (!exists && !index.created)
-                        throw new IllegalStateException("Index does not exist.");
-                    return index.deleted = true;
-                });
-        Mockito.when(searchOperations.createIndex(ExtensionSearch.class))
-                .then(invocation -> {
-                    if (exists && !index.deleted)
-                        throw new IllegalStateException("Index already exists.");
-                    return index.created = true;
-                });
+                var queries = (List<IndexQuery>) invocation.getArgument(0);
+                queries.forEach(query -> index.entries.add((ExtensionSearch) query.getObject()));
+                return null;
+            }).when(searchOperations).bulkIndex(any(List.class), any(IndexCoordinates.class));
+
+        var indexOps = Mockito.mock(IndexOperations.class);
+        Mockito.when(searchOperations.indexOps(ExtensionSearch.class))
+            .thenReturn(indexOps);
+        Mockito.when(indexOps.getIndexCoordinates())
+            .thenReturn(IndexCoordinates.of("extensions"));
+
+        Mockito.when(indexOps.exists())
+            .thenReturn(exists);
+        Mockito.when(indexOps.delete())
+            .then(invocation -> {
+                if (!exists && !index.created)
+                    throw new IllegalStateException("Index does not exist.");
+                return index.deleted = true;
+            });
+        Mockito.when(indexOps.create())
+            .then(invocation -> {
+                if (exists && !index.deleted)
+                    throw new IllegalStateException("Index already exists.");
+                return index.created = true;
+            });
         return index;
     }
 

@@ -34,9 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -85,7 +85,7 @@ public class SearchService {
     @EventListener
     @Transactional(readOnly = true)
     public void initSearchIndex(ApplicationStartedEvent event) {
-        if (!isEnabled() || !clearOnStart && searchOperations.indexExists(ExtensionSearch.class)) {
+        if (!isEnabled() || !clearOnStart && searchOperations.indexOps(ExtensionSearch.class).exists()) {
             return;
         }
         var stopWatch = new StopWatch();
@@ -125,19 +125,20 @@ public class SearchService {
     public void updateSearchIndex(boolean clear) {
         var locked = false;
         try {
+            var indexOps = searchOperations.indexOps(ExtensionSearch.class);
             if (clear) {
                 // Hard mode: delete the index if it exists, then recreate it
                 rwLock.writeLock().lock();
                 locked = true;
-                if (searchOperations.indexExists(ExtensionSearch.class)) {
-                    searchOperations.deleteIndex(ExtensionSearch.class);
+                if (indexOps.exists()) {
+                    indexOps.delete();
                 }
-                searchOperations.createIndex(ExtensionSearch.class);
-            } else if (!searchOperations.indexExists(ExtensionSearch.class)) {
+                indexOps.create();
+            } else if (!indexOps.exists()) {
                 // Soft mode: the index is created only when it does not exist yet
                 rwLock.writeLock().lock();
                 locked = true;
-                searchOperations.createIndex(ExtensionSearch.class);
+                indexOps.create();
             }
             
             // Scan all extensions and create index queries
@@ -157,7 +158,7 @@ public class SearchService {
                 rwLock.writeLock().lock();
                 locked = true;
             }
-            searchOperations.bulkIndex(indexQueries);
+            searchOperations.bulkIndex(indexQueries, indexOps.getIndexCoordinates());
         } finally {
             if (locked) {
                 rwLock.writeLock().unlock();
@@ -175,7 +176,8 @@ public class SearchService {
             var indexQuery = new IndexQueryBuilder()
                     .withObject(toSearchEntry(extension, stats))
                     .build();
-            searchOperations.index(indexQuery);
+            var indexOps = searchOperations.indexOps(ExtensionSearch.class);
+            searchOperations.index(indexQuery, indexOps.getIndexCoordinates());
         } finally {
             rwLock.writeLock().unlock();
         }
@@ -187,7 +189,8 @@ public class SearchService {
         }
         try {
             rwLock.writeLock().lock();
-            searchOperations.delete(ExtensionSearch.class, Long.toString(extension.getId()));
+            var indexOps = searchOperations.indexOps(ExtensionSearch.class);
+            searchOperations.delete(Long.toString(extension.getId()), indexOps.getIndexCoordinates());
         } finally {
             rwLock.writeLock().unlock();
         }
@@ -258,9 +261,8 @@ public class SearchService {
         return memberships == 0;
     }
 
-    public Page<ExtensionSearch> search(Options options, Pageable pageRequest) {
+    public SearchHits<ExtensionSearch> search(Options options, Pageable pageRequest) {
         var queryBuilder = new NativeSearchQueryBuilder()
-                .withIndices("extensions")
                 .withPageable(pageRequest);
         if (!Strings.isNullOrEmpty(options.queryString)) {
             var boolQuery = QueryBuilders.boolQuery();
@@ -296,7 +298,8 @@ public class SearchService {
         
         try {
             rwLock.readLock().lock();
-            return searchOperations.queryForPage(queryBuilder.build(), ExtensionSearch.class);
+            var indexOps = searchOperations.indexOps(ExtensionSearch.class);
+            return searchOperations.search(queryBuilder.build(), ExtensionSearch.class, indexOps.getIndexCoordinates());
         } finally {
             rwLock.readLock().unlock();
         }

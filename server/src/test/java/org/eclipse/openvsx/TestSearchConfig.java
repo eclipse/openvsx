@@ -24,7 +24,7 @@ public class TestSearchConfig extends AbstractElasticsearchConfiguration {
     @Override
     @SuppressWarnings("resource")
     public RestHighLevelClient elasticsearchClient() {
-        var container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.8.6");
+        var container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.9.3");
         container.start();
         var config = ClientConfiguration.create(container.getHttpHostAddress());
         return RestClients.create(config).rest();
