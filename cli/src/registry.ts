@@ -37,7 +37,8 @@ export class Registry {
     }
 
     get requiresLicense(): boolean {
-        return this.url === DEFAULT_URL;
+        const url = new URL(this.url);
+        return url.hostname === 'open-vsx.org' || url.hostname.endsWith('.open-vsx.org');
     }
 
     createNamespace(name: string, pat: string): Promise<Response> {
