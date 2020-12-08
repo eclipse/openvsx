@@ -93,16 +93,17 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
                     <Typography variant='body1'>
                         {
                             user.publisherAgreement.timestamp
-                                ? <>You signed the Eclipse publisher agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
-                                : 'You signed the Eclipse publisher agreement.'
+                                ? <>You signed the Eclipse Foundation Open VSX Publisher Agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
+                                : 'You signed the Eclipse Foundation Open VSX Publisher Agreement.'
                         }
                     </Typography>
                     :
                     !user.additionalLogins || !user.additionalLogins.find(login => login.provider === 'eclipse') ?
                         <>
                             <Typography variant='body1'>
-                                You need to sign a publisher agreement before you can publish any extension to this registry.
-                                To start the signing process, please log in with an Eclipse Foundation account.
+                                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                                any extension to this registry. To start the signing process, please log in with
+                                an Eclipse Foundation account.
                             </Typography>
                             <Box mt={2} display='flex' justifyContent='flex-end'>
                                 <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
@@ -115,7 +116,8 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
                         :
                         <>
                             <Typography variant='body1'>
-                                You need to sign a publisher agreement before you can publish any extension to this registry.
+                                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                                any extension to this registry.
                             </Typography>
                             <Box mt={2} display='flex' justifyContent='flex-end'>
                                 <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>

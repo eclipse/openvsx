@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button } from '@material-ui/core';
+import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button, Link } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
@@ -115,12 +115,11 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
         if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
             return <Box>
                 <Typography variant='body1' className={this.props.classes.empty}>
-                    {
-                        agreement.status === 'outdated'
-                        ? 'Your publisher agreement is outdated.'
-                        : 'You have not signed a publisher agreement yet.'
-                    } Please sign the agreement on
-                    the <RouteLink className={this.props.classes.link} to={UserSettingsRoutes.PROFILE}>Profile</RouteLink> page.
+                    Access tokens cannot be created as you currently do not have an Eclipse Foundation Open VSX
+                    Publisher Agreement signed. Please return to
+                    your <RouteLink className={this.props.classes.link} to={UserSettingsRoutes.PROFILE}>Profile</RouteLink> page
+                    to sign the Publisher Agreement. Should you believe this is in error, please
+                    contact <Link className={this.props.classes.link} href='mailto:license@eclipse.org'>license@eclipse.org</Link>.
                 </Typography>
             </Box>;
         }
