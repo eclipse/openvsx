@@ -70,8 +70,7 @@ export interface Extension {
     namespace: string;
     version: string;
     publishedBy: UserData;
-    unrelatedPublisher: boolean;
-    namespaceAccess: 'public' | 'restricted';
+    verified: boolean;
     // key: version, value: url
     allVersions: { [version: string]: UrlString };
     active?: boolean;
@@ -197,7 +196,7 @@ export interface NamespaceMembershipList {
 export interface Namespace {
     name: string;
     extensions: { [key: string]: string };
-    access: 'public' | 'restricted';
+    verified: boolean;
     membersUrl: UrlString;
     roleUrl: UrlString;
 }

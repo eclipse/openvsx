@@ -9,8 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
-
+import org.springframework.data.util.Streamable;
 import org.eclipse.openvsx.entities.Namespace;
 
 public interface NamespaceRepository extends Repository<Namespace, Long> {
@@ -18,6 +19,9 @@ public interface NamespaceRepository extends Repository<Namespace, Long> {
     Namespace findByNameIgnoreCase(String name);
 
     Namespace findByPublicId(String publicId);
+
+    @Query("from Namespace n where not exists (from NamespaceMembership nm where nm.namespace = n)")
+    Streamable<Namespace> findOrphans();
 
     long count();
 

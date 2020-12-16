@@ -111,22 +111,14 @@ public class UserService {
             return true;
         }
 
-        var ownerships = repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER);
-        if (ownerships.isEmpty()) {
-            // If the namespace has no owner, everyone has publish permission to it.
-            return true;
-        }
-        if (ownerships.stream().anyMatch(m -> m.getUser().equals(user))) {
-            // The requesting user is an owner of the namespace.
-            return true;
-        }
-
         var membership = repositories.findMembership(user, namespace);
         if (membership == null) {
-            // The namespace is owned by someone else and the requesting user is not a member.
+            // The requesting user is not a member of the namespace.
             return false;
         }
-        return membership.getRole().equalsIgnoreCase(NamespaceMembership.ROLE_CONTRIBUTOR);
+        var role = membership.getRole();
+        return NamespaceMembership.ROLE_CONTRIBUTOR.equalsIgnoreCase(role)
+                || NamespaceMembership.ROLE_OWNER.equalsIgnoreCase(role);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)

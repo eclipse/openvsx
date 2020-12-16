@@ -193,22 +193,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             </Box>
                             : null
                         }
-                        <Box mt={2} className={classes.moreInfo}>
-                            <Typography variant='h6'>More Information</Typography>
-                            {this.renderInfo('Namespace',
-                                <RouteLink
-                                    to={addQuery(ExtensionListRoutes.MAIN, [{ key: 'search', value: extension.namespace }])}
-                                    className={classes.link}>
-                                    {extension.namespace}
-                                </RouteLink>)}
-                            {this.renderInfo('Access Type',
-                                <Link
-                                    href={this.context.pageSettings.urls.namespaceAccessInfo}
-                                    target='_blank'
-                                    className={classes.link}>
-                                    {extension.namespaceAccess || 'unknown'}
-                                </Link>)}
-                        </Box>
                         <Box mt={2}>
                             {ClaimNamespace ? <ClaimNamespace extension={extension} className={classes.resourceLink} /> : ''}
                             {ReportAbuse ? <ReportAbuse extension={extension} className={classes.resourceLink} /> : ''}

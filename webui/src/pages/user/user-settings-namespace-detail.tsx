@@ -35,13 +35,7 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-export interface NamespaceProps {
-    namespace: Namespace;
-    filterUsers: (user: UserData) => boolean;
-    setLoadingState: (loading: boolean) => void;
-}
-
-export const NamespaceDetail: FunctionComponent<NamespaceProps> = props => {
+export const NamespaceDetail: FunctionComponent<NamespaceDetail.Props> = props => {
     const classes = useStyles();
 
     return <>
@@ -50,7 +44,8 @@ export const NamespaceDetail: FunctionComponent<NamespaceProps> = props => {
                 <UserNamespaceMemberList
                     setLoadingState={props.setLoadingState}
                     namespace={props.namespace}
-                    filterUsers={props.filterUsers} />
+                    filterUsers={props.filterUsers}
+                    fixSelf={props.fixSelf} />
             </Grid>
             <Grid item>
                 <UserNamespaceExtensionListContainer
@@ -60,3 +55,12 @@ export const NamespaceDetail: FunctionComponent<NamespaceProps> = props => {
         </Grid>
     </>;
 };
+
+export namespace NamespaceDetail {
+    export interface Props {
+        namespace: Namespace;
+        filterUsers: (user: UserData) => boolean;
+        fixSelf: boolean;
+        setLoadingState: (loading: boolean) => void;
+    }
+}

@@ -100,13 +100,9 @@ public class LocalRegistryService implements IExtensionRegistry {
             String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
             json.extensions.put(ext.getName(), url);
         }
-        json.access = getAccessString(namespace);
+        json.verified = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0;
+        json.access = "restricted";
         return json;
-    }
-
-    private String getAccessString(Namespace namespace) {
-        var ownerships = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER);
-        return ownerships == 0 ? NamespaceJson.PUBLIC_ACCESS : NamespaceJson.RESTRICTED_ACCESS;
     }
 
     @Override
@@ -320,9 +316,18 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ErrorResultException("Namespace already exists: " + namespace.getName());
         }
 
+        // Create the requested namespace
         namespace = new Namespace();
         namespace.setName(json.name);
         entityManager.persist(namespace);
+
+        // Assign the requesting user as contributor
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        membership.setUser(token.getUser());
+        membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+        entityManager.persist(membership);
+
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
@@ -442,9 +447,9 @@ public class LocalRegistryService implements IExtensionRegistry {
             json.versionAlias.add("latest");
         if (extVersion == extension.getPreview())
             json.versionAlias.add("preview");
-        json.namespaceAccess = getAccessString(extension.getNamespace());
-        if (NamespaceJson.RESTRICTED_ACCESS.equals(json.namespaceAccess))
-            json.unrelatedPublisher = isUnrelatedPublisher(extVersion);
+        json.verified = isVerified(extVersion);
+        json.namespaceAccess = "restricted";
+        json.unrelatedPublisher = !json.verified;
         json.reviewCount = repositories.countActiveReviews(extension);
         var serverUrl = UrlUtil.getBaseUrl();
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
@@ -481,13 +486,13 @@ public class LocalRegistryService implements IExtensionRegistry {
         return json;
     }
 
-    private boolean isUnrelatedPublisher(ExtensionVersion extVersion) {
+    private boolean isVerified(ExtensionVersion extVersion) {
         if (extVersion.getPublishedWith() == null)
             return false;
         var user = extVersion.getPublishedWith().getUser();
         var namespace = extVersion.getExtension().getNamespace();
-        var memberships = repositories.countMemberships(user, namespace);
-        return memberships == 0;
+        return repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0
+                && repositories.countMemberships(user, namespace) > 0;
     }
 
 }

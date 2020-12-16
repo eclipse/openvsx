@@ -33,13 +33,7 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-interface UserNamespaceMemberListProps {
-    namespace: Namespace;
-    setLoadingState: (loadingState: boolean) => void;
-    filterUsers: (user: UserData) => boolean;
-}
-
-export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListProps> = props => {
+export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberList.Props> = props => {
     const classes = useStyles();
     const { service, user, handleError } = useContext(MainContext);
     const [members, setMembers] = useState<NamespaceMembership[]>([]);
@@ -82,36 +76,43 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
         }
     };
 
-    return (<>
-        {
-            user ?
-                <>
-                    <Box className={classes.memberListHeader}>
-                        <Typography variant='h5'>Members in {props.namespace.name}</Typography>
-                        <Button className={classes.addButton} variant='outlined' onClick={handleOpenAddDialog}>
-                            Add Namespace Member
-                        </Button>
-                    </Box>
-                    {members.length ?
-                        <Paper>
-                            {members.map(member =>
-                                <UserNamespaceMember
-                                    key={'nspcmbr-' + member.user.loginName + member.user.provider}
-                                    namespace={props.namespace}
-                                    member={member}
-                                    onChangeRole={role => changeRole(member, role)}
-                                    onRemoveUser={() => changeRole(member, 'remove')} />)}
-                        </Paper> :
-                        <Typography variant='body1'>There are no members assigned yet.</Typography>}
-                    <AddMemberDialog
-                        members={members}
+    if (!user) {
+        return null;
+    }
+    return <>
+        <Box className={classes.memberListHeader}>
+            <Typography variant='h5'>Members in {props.namespace.name}</Typography>
+            <Button className={classes.addButton} variant='outlined' onClick={handleOpenAddDialog}>
+                Add Namespace Member
+            </Button>
+        </Box>
+        {members.length ?
+            <Paper>
+                {members.map(member =>
+                    <UserNamespaceMember
+                        key={'nspcmbr-' + member.user.loginName + member.user.provider}
                         namespace={props.namespace}
-                        onClose={handleCloseAddDialog}
-                        open={addDialogIsOpen}
-                        setLoadingState={props.setLoadingState}
-                        filterUsers={props.filterUsers} />
-                </>
-                : ''
-        }
-    </>);
+                        member={member}
+                        fixSelf={props.fixSelf}
+                        onChangeRole={role => changeRole(member, role)}
+                        onRemoveUser={() => changeRole(member, 'remove')} />)}
+            </Paper> :
+            <Typography variant='body1'>There are no members assigned yet.</Typography>}
+        <AddMemberDialog
+            members={members}
+            namespace={props.namespace}
+            onClose={handleCloseAddDialog}
+            open={addDialogIsOpen}
+            setLoadingState={props.setLoadingState}
+            filterUsers={props.filterUsers} />
+    </>;
 };
+
+export namespace UserNamespaceMemberList {
+    export interface Props {
+        namespace: Namespace;
+        setLoadingState: (loadingState: boolean) => void;
+        filterUsers: (user: UserData) => boolean;
+        fixSelf: boolean;
+    }
+}

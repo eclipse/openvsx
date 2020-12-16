@@ -13,7 +13,6 @@ import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container
 import { RouteComponentProps, Switch, Route, Link as RouteLink } from 'react-router-dom';
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
-import PublicIcon from '@material-ui/icons/Public';
 import WarningIcon from '@material-ui/icons/Warning';
 import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
@@ -130,7 +129,7 @@ const detailStyles = (theme: Theme) => createStyles({
         color: '#000',
         '& a': {
             color: '#000',
-            fontWeight: 'bold'
+            textDecoration: 'underline'
         }
     },
     warningDark: {
@@ -138,7 +137,7 @@ const detailStyles = (theme: Theme) => createStyles({
         color: '#fff',
         '& a': {
             color: '#fff',
-            fontWeight: 'bold'
+            textDecoration: 'underline'
         }
     }
 });
@@ -294,38 +293,20 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         const classes = this.props.classes;
         const warningClass = themeType === 'dark' ? classes.warningDark : classes.warningLight;
         const themeClass = themeType === 'dark' ? classes.darkTheme : classes.lightTheme;
-        if (extension.namespaceAccess === 'public') {
-            return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
-                <PublicIcon fontSize='large' />
-                <Box ml={1}>
-                    The namespace <span className={classes.code}>{extension.namespace}</span> is public,
-                    which means that everyone can publish new versions of
-                    the &ldquo;{extension.displayName || extension.name}&rdquo; extension.
-                    If you would like to become the owner of <span className={classes.code}>{extension.namespace}</span>,
-                    please <Link
-                        href={this.context.pageSettings.urls.namespaceAccessInfo}
-                        target='_blank'
-                        className={`${classes.link}`} >
-                        read this guide
-                    </Link>.
-                </Box>
-            </Paper>;
-        } else if (extension.unrelatedPublisher) {
+        if (!extension.verified) {
             return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
                 <WarningIcon fontSize='large' />
                 <Box ml={1}>
-                    The &ldquo;{extension.displayName || extension.name}&rdquo; extension was published
-                    by <Link href={extension.publishedBy.homepage}
-                        className={`${classes.link}`}>
+                    This version of the &ldquo;{extension.displayName || extension.name}&rdquo; extension was published
+                    by <Link href={extension.publishedBy.homepage}>
                         {extension.publishedBy.loginName}
-                    </Link>. This user account is not related to
-                    the namespace <span className={classes.code}>{extension.namespace}</span> of
+                    </Link>. That user account is not a verified publisher of
+                    the namespace &ldquo;{extension.namespace}&rdquo; of
                     this extension. <Link
                         href={this.context.pageSettings.urls.namespaceAccessInfo}
-                        target='_blank'
-                        className={`${classes.link}`} >
+                        target='_blank' >
                         See the documentation
-                    </Link> to learn how we handle namespaces.
+                    </Link> to learn how we handle namespaces and what you can do to eliminate this warning.
                 </Box>
             </Paper>;
         }
@@ -392,22 +373,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     protected renderAccessInfo(extension: Extension, themeClass: string): React.ReactNode {
         let icon: React.ReactElement;
         let title: string;
-        switch (extension.namespaceAccess) {
-            case 'public':
-                icon = <PublicIcon fontSize='small' />;
-                title = 'Public namespace access';
-                break;
-            case 'restricted':
-                if (extension.unrelatedPublisher) {
-                    icon = <WarningIcon fontSize='small' />;
-                    title = 'Published to a restricted namespace by an unrelated user';
-                } else {
-                    icon = <VerifiedUserIcon fontSize='small' />;
-                    title = 'Restricted namespace access';
-                }
-                break;
-            default:
-                return null;
+        if (extension.verified) {
+            icon = <VerifiedUserIcon fontSize='small' />;
+            title = 'Verified publisher';
+        } else {
+            icon = <WarningIcon fontSize='small' />;
+            title = 'Unverified publisher';
         }
         return <Link
             href={this.context.pageSettings.urls.namespaceAccessInfo}
