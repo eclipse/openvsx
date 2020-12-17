@@ -24,16 +24,20 @@ export class Registry {
     readonly url: string;
     readonly maxNamespaceSize: number;
     readonly maxPublishSize: number;
+    readonly username?: string;
+    readonly password?: string;
 
     constructor(options: RegistryOptions = {}) {
-        if (options.url && options.url.endsWith('/'))
-            this.url = options.url.substring(0, options.url.length - 1);
-        else if (options.url)
-            this.url = options.url;
+        if (options.registryUrl && options.registryUrl.endsWith('/'))
+            this.url = options.registryUrl.substring(0, options.registryUrl.length - 1);
+        else if (options.registryUrl)
+            this.url = options.registryUrl;
         else
             this.url = DEFAULT_URL;
         this.maxNamespaceSize = options.maxNamespaceSize || DEFAULT_NAMESPACE_SIZE;
         this.maxPublishSize = options.maxPublishSize || DEFAULT_PUBLISH_SIZE;
+        this.username = options.username;
+        this.password = options.password;
     }
 
     get requiresLicense(): boolean {
@@ -78,8 +82,9 @@ export class Registry {
     download(file: string, url: URL): Promise<void> {
         return new Promise((resolve, reject) => {
             const stream = fs.createWriteStream(file);
+            const requestOptions = this.getRequestOptions();
             const request = this.getProtocol(url)
-                                .request(url, response => {
+                                .request(url, requestOptions, response => {
                 response.on('end', () => {
                     if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
                         reject(statusError(response));
@@ -103,8 +108,9 @@ export class Registry {
 
     getJson<T extends Response>(url: URL): Promise<T> {
         return new Promise((resolve, reject) => {
+            const requestOptions = this.getRequestOptions();
             const request = this.getProtocol(url)
-                                .request(url, this.getJsonResponse<T>(resolve, reject));
+                                .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             request.on('error', reject);
             request.end();
         });
@@ -112,7 +118,7 @@ export class Registry {
 
     post<T extends Response>(content: string | Buffer | Uint8Array, url: URL, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): Promise<T> {
         return new Promise((resolve, reject) => {
-            const requestOptions = { method: 'POST', headers, maxBodyLength } as http.RequestOptions;
+            const requestOptions = this.getRequestOptions('POST', headers, maxBodyLength);
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             request.on('error', reject);
@@ -124,7 +130,7 @@ export class Registry {
     postFile<T extends Response>(file: string, url: URL, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): Promise<T> {
         return new Promise((resolve, reject) => {
             const stream = fs.createReadStream(file);
-            const requestOptions = { method: 'POST', headers, maxBodyLength } as http.RequestOptions;
+            const requestOptions = this.getRequestOptions('POST', headers, maxBodyLength);
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             stream.on('error', err => {
@@ -153,6 +159,21 @@ export class Registry {
             return followRedirects.https as typeof https;
         else
             return followRedirects.http as typeof http;
+    }
+
+    private getRequestOptions(method?: string, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): http.RequestOptions {
+        if (this.username && this.password) {
+            if (!headers) {
+                headers = {};
+            }
+            const credentials = Buffer.from(this.username + ':' + this.password).toString('base64');
+            headers['Authorization'] = 'Basic ' + credentials;
+        }
+        return {
+            method,
+            headers,
+            maxBodyLength
+        } as http.RequestOptions;
     }
 
     private getJsonResponse<T extends Response>(resolve: (value: T) => void, reject: (reason: any) => void): (res: http.IncomingMessage) => void {
@@ -191,8 +212,29 @@ export class Registry {
 }
 
 export interface RegistryOptions {
-    url?: string;
+    /**
+     * The base URL of the registry API.
+     */
+    registryUrl?: string;
+    /**
+     * Personal access token.
+     */
+    pat?: string;
+    /**
+     * User name for basic authentication.
+     */
+    username?: string;
+    /**
+     * Password for basic authentication.
+     */
+    password?: string;
+    /**
+     * Maximal request body size for creating namespaces.
+     */
     maxNamespaceSize?: number;
+    /**
+     * Maximal request body size for publishing.
+     */
     maxPublishSize?: number;
 }
 

@@ -9,28 +9,25 @@
  ********************************************************************************/
 
 import { createVSIX } from 'vsce';
-import { createTempFile } from './util';
-import { Registry, DEFAULT_URL } from './registry';
+import { createTempFile, addEnvOptions } from './util';
+import { Registry, DEFAULT_URL, RegistryOptions } from './registry';
 import { checkLicense } from './check-license';
 
 /**
  * Publishes an extension.
  */
 export async function publish(options: PublishOptions = {}): Promise<void> {
-    if (!options.registryUrl) {
-        options.registryUrl = process.env.OVSX_REGISTRY_URL;
-    }
+    addEnvOptions(options);
     if (!options.pat) {
-        options.pat = process.env.OVSX_PAT;
-        if (!options.pat) {
-            throw new Error("A personal access token must be given with the option '--pat'.");
-        }
+        throw new Error("A personal access token must be given with the option '--pat'.");
     }
-    const registry = new Registry({ url: options.registryUrl });
+
+    const registry = new Registry(options);
     if (!options.extensionFile) {
         await packageExtension(options, registry);
         console.log(); // new line
     }
+
     const extension = await registry.publish(options.extensionFile!, options.pat);
     if (extension.error) {
         throw new Error(extension.error);
@@ -44,15 +41,7 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
     }
 }
 
-export interface PublishOptions {
-    /**
-     * The base URL of the registry API.
-     */
-    registryUrl?: string;
-    /**
-     * Personal access token.
-     */
-    pat?: string;
+export interface PublishOptions extends RegistryOptions {
     /**
      * Path to the vsix file to be published. Cannot be used together with `packagePath`.
      */

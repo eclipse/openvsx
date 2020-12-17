@@ -20,11 +20,8 @@ const pkg = require('../package.json');
 module.exports = function (argv: string[]): void {
     const program = new commander.Command();
     program.usage('<command> [options]');
-    program.option('--debug', 'include debug information on error');
-
-    const versionCmd = program.command('version');
-    versionCmd.description('Output the version number.')
-        .action(() => console.log(`Eclipse Open VSX CLI version ${pkg.version}`));
+    program.option('--debug', 'Include debug information on error');
+    program.version(pkg.version, '-V, --version', 'Print the Eclipse Open VSX CLI version');
 
     const createNamespaceCmd = program.command('create-namespace <name>');
     createNamespaceCmd.description('Create a new namespace')
@@ -63,7 +60,7 @@ module.exports = function (argv: string[]): void {
 
     const getCmd = program.command('get <namespace.extension>');
     getCmd.description('Download an extension or its metadata.')
-        .option('-v, --version <version>', 'Specify an exact version or a version range.')
+        .option('-v, --versionRange <version>', 'Specify an exact version or a version range.')
         .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
         .option('-o, --output <path>', 'Save the output in the specified file or directory.')
         .option('--metadata', 'Print the extension\'s metadata instead of downloading it.')

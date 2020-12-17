@@ -13,8 +13,24 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
 import * as readline from 'readline';
+import { RegistryOptions } from './registry';
 
 export { promisify } from 'util';
+
+export function addEnvOptions(options: RegistryOptions): void {
+    if (!options.registryUrl) {
+        options.registryUrl = process.env.OVSX_REGISTRY_URL;
+    }
+    if (!options.pat) {
+        options.pat = process.env.OVSX_PAT;
+    }
+    if (!options.username) {
+        options.username = process.env.OVSX_USERNAME;
+    }
+    if (!options.password) {
+        options.password = process.env.OVSX_PASSWORD;
+    }
+}
 
 export function matchExtensionId(id: string): RegExpExecArray | null {
     return /^([\w-]+)(?:\.|\/)([\w-]+)$/.exec(id);

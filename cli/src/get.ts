@@ -11,29 +11,31 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
-import { Registry, Extension } from "./registry";
-import { promisify, matchExtensionId, optionalStat, makeDirs } from './util';
+import { Registry, Extension, RegistryOptions } from "./registry";
+import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions } from './util';
 
 /**
  * Downloads an extension or its metadata.
  */
 export async function getExtension(options: GetOptions): Promise<void> {
-    if (!options.registryUrl) {
-        options.registryUrl = process.env.OVSX_REGISTRY_URL;
-    }
-    const registry = new Registry({ url: options.registryUrl });
+    addEnvOptions(options);
+    const registry = new Registry(options);
+
     const match = matchExtensionId(options.extensionId);
     if (!match) {
         throw new Error('The extension identifier must have the form `namespace.extension`.');
     }
+
     const extension = await registry.getMetadata(match[1], match[2]);
     if (extension.error) {
         throw new Error(extension.error);
     }
+
     const matchingVersion = await findMatchingVersion(registry, extension, options.version);
     if (matchingVersion.error) {
         throw new Error(matchingVersion.error);
     }
+
     if (options.metadata) {
         await printMetadata(registry, matchingVersion, options.output);
     } else {
@@ -98,7 +100,7 @@ async function download(registry: Registry, extension: Extension, output?: strin
     await registry.download(filePath, new URL(downloadUrl));
 }
 
-export interface GetOptions {
+export interface GetOptions extends RegistryOptions {
     /**
      * Identifier in the form `namespace.extension` or `namespace/extension`.
      */
@@ -107,10 +109,6 @@ export interface GetOptions {
      * An exact version or version range.
      */
     version?: string;
-    /**
-     * The base URL of the registry API.
-     */
-    registryUrl?: string;
     /**
      * Save the output in the specified file or directory.
      */

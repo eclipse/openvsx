@@ -36,8 +36,9 @@
         "node": ">= 10"
     },
     "dependencies": {
+        "commander": "^6.1.0",
         "follow-redirects": "^1.13.0",
-        "vsce": "~1.79.5"
+        "vsce": "~1.81.1"
     },
     "devDependencies": {
         "@types/follow-redirects": "^1.13.0",

@@ -35,7 +35,7 @@ Creating a namespace does _not_ automatically give you the exclusive publishing 
 
 ### Download Extensions
 
-You can use `ovsx` for downloading extensions from an Open VSX instance. Extensions are identified with the format `namespace.extension`, and an exact version or version range can be specified with the `--version` (or `-v`) argument. The namespace corresponds to the `publisher` entry of the package.json file.
+You can use `ovsx` for downloading extensions from an Open VSX instance. Extensions are identified with the format `namespace.extension`, and an exact version or version range can be specified with the `--versionRange` (or `-v`) argument. The namespace corresponds to the `publisher` entry of the package.json file.
 
 Variants:
  * `ovsx get <extension>`
