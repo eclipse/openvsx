@@ -98,19 +98,7 @@ public class SearchServiceTest {
     }
 
     @Test
-    public void testRelevancePublic() throws Exception {
-        var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), true, true);
-        var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
-        search.updateSearchEntry(ext1);
-        search.updateSearchEntry(ext2);
-        
-        assertThat(index.entries).hasSize(2);
-        assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
-    }
-
-    @Test
-    public void testRelevanceUnrelated1() throws Exception {
+    public void testRelevanceUnverified1() throws Exception {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, true);
         var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
@@ -122,10 +110,10 @@ public class SearchServiceTest {
     }
 
     @Test
-    public void testRelevanceUnrelated2() throws Exception {
+    public void testRelevanceUnverified2() throws Exception {
         var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, true);
-        var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), true, true);
+        var ext1 = mockExtension("foo", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), true, false);
+        var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
         
@@ -228,7 +216,7 @@ public class SearchServiceTest {
     }
 
     private Extension mockExtension(String name, double averageRating, int ratingCount, int downloadCount,
-            LocalDateTime timestamp, boolean isPublic, boolean isUnrelated) {
+            LocalDateTime timestamp, boolean isUnverified, boolean isUnrelated) {
         var extension = new Extension();
         extension.setName(name);
         extension.setAverageRating(averageRating);
@@ -239,7 +227,7 @@ public class SearchServiceTest {
         namespace.setName("test");
         extension.setNamespace(namespace);
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(isPublic ? 0l : 1l);
+                .thenReturn(isUnverified ? 0l : 1l);
         var extVer = new ExtensionVersion();
         extVer.setExtension(extension);
         extVer.setTimestamp(timestamp);
