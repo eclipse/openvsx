@@ -35,7 +35,8 @@ export class ButtonComponent extends React.Component<ButtonComponent.Props> {
                 disabled={this.props.working || this.props.error}
                 autoFocus={this.props.autoFocus}
                 onClick={this.props.onClick}
-                title={this.props.title} >
+                title={this.props.title}
+                disableTouchRipple={true} >
                 {this.props.children}
             </Button>
             {
