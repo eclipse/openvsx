@@ -9,9 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 
 import javax.transaction.Transactional;
 import javax.transaction.Transactional.TxType;
@@ -25,6 +23,7 @@ import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -102,26 +101,25 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public URI getLocation(FileResource resource) {
-        var objectId = getObjectId(resource.getName(), resource.getExtension());
         if (Strings.isNullOrEmpty(bucketId)) {
             throw new IllegalStateException("Cannot determine location of file "
-                    + objectId + ": missing Google bucket id");
+                    + resource.getName() + ": missing Google bucket id");
         }
-        return URI.create(BASE_URL + bucketId + "/" + objectId);
+        var extVersion = resource.getExtension();
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        return URI.create(UrlUtil.createApiUrl(BASE_URL, bucketId, namespace.getName(),
+                extension.getName(), extVersion.getVersion(), resource.getName()));
     }
 
     protected String getObjectId(String name, ExtensionVersion extVersion) {
         Preconditions.checkNotNull(name);
-        try {
-            var extension = extVersion.getExtension();
-            var namespace = extension.getNamespace();
-			return namespace.getName()
-			        + "/" + extension.getName()
-			        + "/" + URLEncoder.encode(extVersion.getVersion(), "UTF-8")
-			        + "/" + name;
-		} catch (UnsupportedEncodingException exc) {
-			throw new RuntimeException(exc);
-		}
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        return namespace.getName()
+                + "/" + extension.getName()
+                + "/" + extVersion.getVersion()
+                + "/" + name;
     }
 
 }
