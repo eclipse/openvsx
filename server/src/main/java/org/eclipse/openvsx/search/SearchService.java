@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -67,10 +68,8 @@ public class SearchService {
     double downloadsRelevance;
     @Value("${ovsx.elasticsearch.relevance.timestamp:1.0}")
     double timestampRelevance;
-    @Value("${ovsx.elasticsearch.relevance.public:0.8}")
-    double publicRelevance;
-    @Value("${ovsx.elasticsearch.relevance.unrelated:0.5}")
-    double unrelatedRelevance;
+    @Value("${ovsx.elasticsearch.relevance.unverified:0.5}")
+    double unverifiedRelevance;
 
     public boolean isEnabled() {
         return enableSearch;
@@ -212,11 +211,9 @@ public class SearchService {
                 + downloadsRelevance * limit(downloadsValue)
                 + timestampRelevance * limit(timestampValue);
 
-        // Reduce the relevance value of extensions with unrelated publisher or public namespace
-        if (isPublicNamespace(extension)) {
-            entry.relevance *= publicRelevance;
-        } else if (isUnrelatedPublisher(extension)) {
-            entry.relevance *= unrelatedRelevance;
+        // Reduce the relevance value of unverified extensions
+        if (!isVerified(extension.getLatest())) {
+            entry.relevance *= unverifiedRelevance;
         }
     
         if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
@@ -245,20 +242,13 @@ public class SearchService {
         return 1 - 1.0 / (value * factor + 1);
     }
 
-    private boolean isPublicNamespace(Extension extension) {
-        var namespace = extension.getNamespace();
-        var ownerships = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER);
-        return ownerships == 0;
-    }
-
-    private boolean isUnrelatedPublisher(Extension extension) {
-        var extVersion = extension.getLatest();
+    private boolean isVerified(ExtensionVersion extVersion) {
         if (extVersion.getPublishedWith() == null)
             return false;
         var user = extVersion.getPublishedWith().getUser();
-        var namespace = extension.getNamespace();
-        var memberships = repositories.countMemberships(user, namespace);
-        return memberships == 0;
+        var namespace = extVersion.getExtension().getNamespace();
+        return repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0
+                && repositories.countMemberships(user, namespace) > 0;
     }
 
     public SearchHits<ExtensionSearch> search(Options options, Pageable pageRequest) {
