@@ -19,28 +19,27 @@ const pkg = require('../package.json');
 
 module.exports = function (argv: string[]): void {
     const program = new commander.Command();
-    program.usage('<command> [options]');
-    program.option('--debug', 'Include debug information on error');
-    program.version(pkg.version, '-V, --version', 'Print the Eclipse Open VSX CLI version');
+    program.usage('<command> [options]')
+        .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
+        .option('-p, --pat <token>', 'Personal access token.')
+        .option('--debug', 'Include debug information on error')
+        .version(pkg.version, '-V, --version', 'Print the Eclipse Open VSX CLI version');
 
     const createNamespaceCmd = program.command('create-namespace <name>');
     createNamespaceCmd.description('Create a new namespace')
-        .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
-        .option('-p, --pat <token>', 'Personal access token (required).')
-        .action((name: string, { registryUrl, pat }) => {
+        .action((name: string) => {
+            const { registryUrl, pat } = program.opts();
             createNamespace({ name, registryUrl, pat })
                 .catch(handleError(program.debug));
         });
 
     const publishCmd = program.command('publish [extension.vsix]');
     publishCmd.description('Publish an extension, packaging it first if necessary.')
-        .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
-        .option('-p, --pat <token>', 'Personal access token (required).')
         .option('--packagePath <path>', 'Package and publish the extension at the specified path.')
         .option('--baseContentUrl <url>', 'Prepend all relative links in README.md with this URL.')
         .option('--baseImagesUrl <url>', 'Prepend all relative image links in README.md with this URL.')
         .option('--yarn', 'Use yarn instead of npm while packing extension files.')
-        .action((extensionFile: string, { registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
+        .action((extensionFile: string, { packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -51,6 +50,7 @@ module.exports = function (argv: string[]): void {
                 console.warn("Ignoring option '--baseImagesUrl' for prepackaged extension.");
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
+            const { registryUrl, pat } = program.opts();
             publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn })
                 .catch(handleError(program.debug,
                     'See the documentation for more information:\n'
@@ -61,13 +61,11 @@ module.exports = function (argv: string[]): void {
     const getCmd = program.command('get <namespace.extension>');
     getCmd.description('Download an extension or its metadata.')
         .option('-v, --versionRange <version>', 'Specify an exact version or a version range.')
-        .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
         .option('-o, --output <path>', 'Save the output in the specified file or directory.')
         .option('--metadata', 'Print the extension\'s metadata instead of downloading it.')
-        .action((extensionId: string, { version, registryUrl, output, metadata }) => {
-            if (typeof version === 'function') // If not specified, `version` yields a function
-                version = undefined;
-            getExtension({ extensionId, version, registryUrl, output, metadata })
+        .action((extensionId: string, { versionRange, output, metadata }) => {
+            const { registryUrl } = program.opts();
+            getExtension({ extensionId, version: versionRange, registryUrl, output, metadata })
                 .catch(handleError(program.debug));
         });
 
