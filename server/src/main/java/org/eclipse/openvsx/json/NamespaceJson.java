@@ -26,9 +26,6 @@ import io.swagger.annotations.ApiModelProperty;;
 @JsonInclude(Include.NON_NULL)
 public class NamespaceJson extends ResultJson {
 
-    public static final String PUBLIC_ACCESS = "public";
-    public static final String RESTRICTED_ACCESS = "restricted";
-
     public static NamespaceJson error(String message) {
         var result = new NamespaceJson();
         result.error = message;
@@ -42,7 +39,12 @@ public class NamespaceJson extends ResultJson {
     @ApiModelProperty("Map of extension names to their metadata URLs (not required for creating)")
     public Map<String, String> extensions;
 
-    @ApiModelProperty(value = "Access level of the namespace (not required for creating)", allowableValues = "public,restricted")
+    @ApiModelProperty("Indicates whether the namespace has an owner (not required for creating)")
+    @NotNull
+    public Boolean verified;
+
+    @ApiModelProperty(value = "Access level of the namespace. Deprecated: namespaces are now always restricted", allowableValues = "public,restricted")
+    @Deprecated
     public String access;
 
     @ApiModelProperty(hidden = true)

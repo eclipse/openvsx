@@ -211,8 +211,7 @@ export interface Extension extends Response {
     namespace: string;
     version: string;
     publishedBy: UserData;
-    unrelatedPublisher: boolean;
-    namespaceAccess: 'public' | 'restricted';
+    verified: boolean;
     // key: version, value: url
     allVersions: { [version: string]: string };
 

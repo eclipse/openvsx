@@ -224,7 +224,7 @@ public class UserAPI {
                 String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
                 json.extensions.put(ext.getName(), url);
             }
-            json.access = NamespaceJson.RESTRICTED_ACCESS;
+            json.verified = true;
             json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
             json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
             return json;

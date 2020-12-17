@@ -120,12 +120,12 @@ public class RegistryAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespaceJson(n -> {
                     n.name = "foobar";
-                    n.access = "public";
+                    n.verified = false;
                 })));
     }
 
     @Test
-    public void testRestrictedNamespace() throws Exception {
+    public void testVerifiedNamespace() throws Exception {
         var namespace = mockNamespace();
         var user = new UserData();
         user.setLoginName("test_user");
@@ -136,7 +136,7 @@ public class RegistryAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespaceJson(n -> {
                     n.name = "foobar";
-                    n.access = "restricted";
+                    n.verified = true;
                 })));
     }
 
@@ -157,7 +157,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -191,7 +191,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -206,7 +206,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -337,7 +337,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -354,7 +354,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -395,7 +395,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -412,7 +412,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -429,7 +429,7 @@ public class RegistryAPITest {
                     e.namespace = "foo";
                     e.name = "bar";
                     e.version = "1";
-                    e.namespaceAccess = "public";
+                    e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
                 })));
@@ -493,21 +493,14 @@ public class RegistryAPITest {
     }
     
     @Test
-    public void testPublishPublic() throws Exception {
-        mockForPublish("public");
+    public void testPublishOrphan() throws Exception {
+        mockForPublish("orphan");
         var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isCreated())
-                .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1";
-                    var u = new UserJson();
-                    u.loginName = "test_user";
-                    e.publishedBy = u;
-                })));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Insufficient access rights for publisher: foo")));
     }
     
     @Test
@@ -515,7 +508,7 @@ public class RegistryAPITest {
         var previousRequireLicense = extensionService.requireLicense;
         try {
             extensionService.requireLicense = true;
-            mockForPublish("public");
+            mockForPublish("contributor");
             var bytes = createExtensionPackage("bar", "1", null);
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -532,7 +525,7 @@ public class RegistryAPITest {
         var previousRequireLicense = extensionService.requireLicense;
         try {
             extensionService.requireLicense = true;
-            mockForPublish("public");
+            mockForPublish("contributor");
             var bytes = createExtensionPackage("bar", "1", "MIT");
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -545,6 +538,7 @@ public class RegistryAPITest {
                         var u = new UserJson();
                         u.loginName = "test_user";
                         e.publishedBy = u;
+                        e.verified = true;
                     })));
         } finally {
             extensionService.requireLicense = previousRequireLicense;
@@ -575,7 +569,7 @@ public class RegistryAPITest {
     }
     
     @Test
-    public void testPublishRestrictedOwner() throws Exception {
+    public void testPublishVerifiedOwner() throws Exception {
         mockForPublish("owner");
         var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
@@ -589,11 +583,12 @@ public class RegistryAPITest {
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
+                    e.verified = true;
                 })));
     }
     
     @Test
-    public void testPublishRestrictedContributor() throws Exception {
+    public void testPublishVerifiedContributor() throws Exception {
         mockForPublish("contributor");
         var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
@@ -607,6 +602,26 @@ public class RegistryAPITest {
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
+                    e.verified = true;
+                })));
+    }
+    
+    @Test
+    public void testPublishSoleContributor() throws Exception {
+        mockForPublish("sole-contributor");
+        var bytes = createExtensionPackage("bar", "1", null);
+        mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .content(bytes))
+                .andExpect(status().isCreated())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    var u = new UserJson();
+                    u.loginName = "test_user";
+                    e.publishedBy = u;
+                    e.verified = false;
                 })));
     }
     
@@ -625,7 +640,7 @@ public class RegistryAPITest {
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
-                    e.unrelatedPublisher = true;
+                    e.verified = false;
                 })));
     }
     
@@ -653,7 +668,7 @@ public class RegistryAPITest {
     
     @Test
     public void testPublishInvalidName() throws Exception {
-        mockForPublish("public");
+        mockForPublish("contributor");
         var bytes = createExtensionPackage("b.a.r", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -664,7 +679,7 @@ public class RegistryAPITest {
     
     @Test
     public void testPublishInvalidVersion() throws Exception {
-        mockForPublish("public");
+        mockForPublish("contributor");
         var bytes = createExtensionPackage("bar", "latest", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -1044,25 +1059,32 @@ public class RegistryAPITest {
                     .thenReturn(ownerMem);
             Mockito.when(repositories.countMemberships(token.getUser(), namespace))
                     .thenReturn(1l);
-        } else if (mode.equals("contributor")) {
-            var otherUser = new UserData();
-            otherUser.setLoginName("other_user");
-            var ownerMem = new NamespaceMembership();
-            ownerMem.setUser(otherUser);
-            ownerMem.setNamespace(namespace);
-            ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
+        } else if (mode.equals("contributor") || mode.equals("sole-contributor") || mode.equals("existing")) {
             var contribMem = new NamespaceMembership();
             contribMem.setUser(token.getUser());
             contribMem.setNamespace(namespace);
             contribMem.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
-            Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                    .thenReturn(Streamable.of(ownerMem));
-            Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                    .thenReturn(1l);
             Mockito.when(repositories.findMembership(token.getUser(), namespace))
                     .thenReturn(contribMem);
             Mockito.when(repositories.countMemberships(token.getUser(), namespace))
                     .thenReturn(1l);
+            if (mode.equals("contributor")) {
+                var otherUser = new UserData();
+                otherUser.setLoginName("other_user");
+                var ownerMem = new NamespaceMembership();
+                ownerMem.setUser(otherUser);
+                ownerMem.setNamespace(namespace);
+                ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
+                Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                        .thenReturn(Streamable.of(ownerMem));
+                Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                        .thenReturn(1l);
+            } else {
+                Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                    .thenReturn(Streamable.empty());
+                Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                        .thenReturn(0l);
+            }
         } else if (mode.equals("privileged") || mode.equals("unrelated")) {
             var otherUser = new UserData();
             otherUser.setLoginName("other_user");

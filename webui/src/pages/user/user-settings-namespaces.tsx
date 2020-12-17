@@ -119,7 +119,8 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
                             <NamespaceDetail
                                 namespace={namespace}
                                 setLoadingState={loading => this.setState({ loading })}
-                                filterUsers={foundUser => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName} />
+                                filterUsers={foundUser => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName}
+                                fixSelf={true} />
                         </Box>
                     </React.Fragment>
                     : !this.state.loading ? <Typography variant='body1'>No namespaces available. {

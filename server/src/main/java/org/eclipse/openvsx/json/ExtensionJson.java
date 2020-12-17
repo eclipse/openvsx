@@ -64,12 +64,18 @@ public class ExtensionJson extends ResultJson {
     @ApiModelProperty(hidden = true)
     public Boolean active;
 
-    @ApiModelProperty("The value 'true' means the extension's namespace is restricted, but the publishing user is not a member of that namespace")
+    @ApiModelProperty("The value 'true' means the publishing user is a member of the extension's namespace and the namespace has at least one owner.")
     @NotNull
-    public boolean unrelatedPublisher;
+    public Boolean verified;
 
-    @ApiModelProperty(value = "Access level of the extension's namespace", allowableValues = "public,restricted")
+    @ApiModelProperty("Deprecated: use 'verified' instead (this property is just the negation of 'verified')")
     @NotNull
+    @Deprecated
+    public Boolean unrelatedPublisher;
+
+    @ApiModelProperty(value = "Access level of the extension's namespace. Deprecated: namespaces are now always restricted", allowableValues = "public,restricted")
+    @NotNull
+    @Deprecated
     public String namespaceAccess;
 
     @ApiModelProperty("Map of available versions to their metadata URLs")

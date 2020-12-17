@@ -11,7 +11,7 @@
 import * as React from 'react';
 import { Box, Typography, Avatar, Select, MenuItem, Button, Theme, createStyles } from '@material-ui/core';
 import { withStyles, WithStyles } from '@material-ui/styles';
-import { NamespaceMembership, MembershipRole, Namespace } from '../../extension-registry-types';
+import { NamespaceMembership, MembershipRole, Namespace, UserData } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 
 const memberStyle = (theme: Theme) => createStyles({
@@ -56,6 +56,7 @@ class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.P
 
     render(): React.ReactNode {
         const memberUser = this.props.member.user;
+        const contextUser = this.context.user;
         return <Box key={'member:' + memberUser.loginName} p={2} display='flex' alignItems='center'>
             <Box alignItems='center' overflow='auto' width='33%'>
                 <Typography classes={{ root: this.props.classes.memberName }}>{memberUser.loginName}</Typography>
@@ -70,41 +71,44 @@ class UserNamespaceMemberComponent extends React.Component<UserNamespaceMember.P
             }
             <Box className={this.props.classes.buttonContainer}>
                 {
-                    memberUser.loginName === this.context.user?.loginName && memberUser.provider === this.context.user?.provider && memberUser.role && memberUser.role !== 'admin' ?
-                        '' :
-                        <Box m={1}>
-                            <Select
-                                variant='outlined'
-                                classes={{ outlined: this.props.classes.selectOutlined }}
-                                value={this.props.member.role}
-                                onChange={(event: React.ChangeEvent<{ value: MembershipRole }>) => this.props.onChangeRole(event.target.value)}>
-                                <MenuItem value='contributor'>Contributor</MenuItem>
-                                <MenuItem value='owner'>Owner</MenuItem>
-                            </Select>
-                        </Box>
-                }
-                {
-                    memberUser.loginName === this.context.user?.loginName && memberUser.provider === this.context.user?.provider && memberUser.role !== 'admin' ?
+                    this.props.fixSelf && equalUser(memberUser, contextUser) ?
                         <Box className={this.props.classes.owner}>
                             Owner
                         </Box>
                         :
-                        <Button
-                            variant='outlined'
-                            classes={{ root: this.props.classes.deleteBtn }}
-                            onClick={() => this.props.onRemoveUser()}>
-                            Delete
-                        </Button>
+                        <>
+                            <Box m={1}>
+                                <Select
+                                    variant='outlined'
+                                    classes={{ outlined: this.props.classes.selectOutlined }}
+                                    value={this.props.member.role}
+                                    onChange={(event: React.ChangeEvent<{ value: MembershipRole }>) => this.props.onChangeRole(event.target.value)}>
+                                    <MenuItem value='contributor'>Contributor</MenuItem>
+                                    <MenuItem value='owner'>Owner</MenuItem>
+                                </Select>
+                            </Box>
+                            <Button
+                                variant='outlined'
+                                classes={{ root: this.props.classes.deleteBtn }}
+                                onClick={() => this.props.onRemoveUser()}>
+                                Delete
+                            </Button>
+                        </>
                 }
             </Box>
         </Box>;
     }
 }
 
+function equalUser(user1: UserData | undefined, user2: UserData | undefined) {
+    return user1?.loginName === user2?.loginName && user1?.provider === user2?.provider;
+}
+
 export namespace UserNamespaceMember {
     export interface Props extends WithStyles<typeof memberStyle> {
         namespace: Namespace;
         member: NamespaceMembership;
+        fixSelf: boolean;
         onChangeRole: (role: MembershipRole) => void;
         onRemoveUser: () => void;
     }

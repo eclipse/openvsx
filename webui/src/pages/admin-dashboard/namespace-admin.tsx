@@ -82,6 +82,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
                             setLoadingState={setLoading}
                             namespace={currentNamespace}
                             filterUsers={() => true}
+                            fixSelf={false}
                         />
                     </NamespaceDetailConfigContext.Provider>
                     : notFound ?
