@@ -39,6 +39,10 @@ public class ExtensionValidator {
         "marketplace", "false"
     });
 
+    private final static List<Character> VERSION_CHARS = Arrays.asList(new Character[] {
+        '$', '+', '-', ',', '.', ':', ';', '_'
+    });
+
     private final static int DEFAULT_STRING_SIZE = 255;
     private final static int DESCRIPTION_SIZE = 2048;
     private final static int GALLERY_COLOR_SIZE = 16;
@@ -109,6 +113,13 @@ public class ExtensionValidator {
         }
         if (version.equals("latest") || version.equals("preview") || version.equals("reviews")) {
             issues.add(new Issue("The version string '" + version + "' is reserved."));
+        }
+        for (var i = 0; i < version.length(); i++) {
+            var c = version.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || VERSION_CHARS.contains(c))) {
+                issues.add(new Issue("Invalid character '" + c + "' found in version (index " + i + ")."));
+                return;
+            }
         }
     }
 

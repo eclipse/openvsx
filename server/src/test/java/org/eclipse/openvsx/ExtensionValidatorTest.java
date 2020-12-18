@@ -17,6 +17,28 @@ import org.junit.jupiter.api.Test;
 public class ExtensionValidatorTest {
 
     @Test
+    public void testInvalidVersion1() {
+        var validator = new ExtensionValidator();
+        var extension = new ExtensionVersion();
+        extension.setVersion("latest");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).hasSize(1);
+        assertThat(issues.get(0))
+                .isEqualTo(new ExtensionValidator.Issue("The version string 'latest' is reserved."));
+    }
+
+    @Test
+    public void testInvalidVersion2() {
+        var validator = new ExtensionValidator();
+        var extension = new ExtensionVersion();
+        extension.setVersion("1/2");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).hasSize(1);
+        assertThat(issues.get(0))
+                .isEqualTo(new ExtensionValidator.Issue("Invalid character '/' found in version (index 1)."));
+    }
+
+    @Test
     public void testInvalidURL() {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
