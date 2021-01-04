@@ -35,6 +35,11 @@ spring:
               user-name-attribute: name
               user-info-authentication-method: header
 
+management:
+  health:
+    probes:
+      enabled: true
+
 ovsx:
   elasticsearch:
     clear-on-start: true
