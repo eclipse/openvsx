@@ -19,11 +19,13 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.ssl.SSLContextBuilder;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
@@ -71,6 +73,11 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
                 ? secure
                 : secure.withBasicAuth(username, password);
         return RestClients.create(authenticated.build()).rest();
+    }
+
+    @Bean(destroyMethod = "close")
+    public RestClient restClient() {
+        return elasticsearchClient().getLowLevelClient();
     }
 
     /**
