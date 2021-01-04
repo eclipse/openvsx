@@ -187,6 +187,10 @@ public class RepositoryService {
         return userDataRepo.findByLoginNameStartingWith(loginNameStart);
     }
 
+    public Streamable<UserData> findAllUsers() {
+        return userDataRepo.findAll();
+    }
+
     public long countUsers() {
         return userDataRepo.count();
     }

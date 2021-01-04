@@ -21,6 +21,8 @@ public interface UserDataRepository extends Repository<UserData, Long> {
 
     Streamable<UserData> findByLoginNameStartingWith(String loginNameStart);
 
+    Streamable<UserData> findAll();
+
     long count();
 
 }
