@@ -10,7 +10,8 @@ This project is governed by the [Eclipse Community Code of Conduct](https://gith
 
 The following communication channels are available:
 
- * [GitHub issues](https://github.com/eclipse/openvsx/issues) - for bug reports, feature requests, etc.
+ * [openvsx issues](https://github.com/eclipse/openvsx/issues) - for general issues (bug reports, feature requests, etc.)
+ * [open-vsx.org issues](https://github.com/EclipseFdn/open-vsx.org/issues) - for issues related to [open-vsx.org](https://open-vsx.org/) (outage reports, requests about extensions and namespaces, etc.)
  * [Gitter chat](https://gitter.im/eclipse/openvsx) - for questions and project-related discussion
  * [Developer mailing list](https://accounts.eclipse.org/mailing-list/openvsx-dev) - for organizational issues (e.g. elections of new committers)
 
