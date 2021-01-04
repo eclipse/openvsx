@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Iterables;
 
@@ -31,6 +32,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -95,7 +97,9 @@ public class RegistryAPI {
         ) {
         for (var registry : getRegistries()) {
             try {
-                return ResponseEntity.ok(registry.getNamespace(namespace));
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(registry.getNamespace(namespace));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -128,7 +132,9 @@ public class RegistryAPI {
         ) {
         for (var registry : getRegistries()) {
             try {
-                return ResponseEntity.ok(registry.getExtension(namespace, extension));
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(registry.getExtension(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -163,7 +169,9 @@ public class RegistryAPI {
         ) {
         for (var registry : getRegistries()) {
             try {
-                return ResponseEntity.ok(registry.getExtension(namespace, extension, version));
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(registry.getExtension(namespace, extension, version));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
