@@ -16,10 +16,10 @@ import java.util.Arrays;
 import org.eclipse.openvsx.entities.FileResource;
 import org.junit.jupiter.api.Test;
 
-public class ExtensionProcessorTest {
+class ExtensionProcessorTest {
 
     @Test
-    public void testTodoTree() throws Exception {
+    void testTodoTree() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/todo-tree.zip");
             var processor = new ExtensionProcessor(stream);
@@ -37,38 +37,53 @@ public class ExtensionProcessorTest {
             assertThat(metadata.getLicense()).isEqualTo("MIT");
             assertThat(metadata.getRepository()).isEqualTo("https://github.com/Gruntfuggly/todo-tree");
 
-            var resources = processor.getResources(metadata);
-            var readmeFile = resources.stream()
-                    .filter(res -> res.getType().equals(FileResource.README))
-                    .findFirst();
-            assertThat(readmeFile).isPresent();
-            assertThat(readmeFile.get().getName()).isEqualTo("README.md");
-            var iconFile = resources.stream()
-                    .filter(res -> res.getType().equals(FileResource.ICON))
-                    .findFirst();
-            assertThat(iconFile).isPresent();
-            assertThat(iconFile.get().getName()).isEqualTo("todo-tree.png");
-            var licenseFile = resources.stream()
-                    .filter(res -> res.getType().equals(FileResource.LICENSE))
-                    .findFirst();
-            assertThat(licenseFile).isPresent();
-            assertThat(licenseFile.get().getName()).isEqualTo("LICENSE.txt");
+            checkResource(processor, FileResource.README, "README.md");
+            checkResource(processor, FileResource.ICON, "todo-tree.png");
+            checkResource(processor, FileResource.LICENSE, "LICENSE.txt");
         }
     }
 
     @Test
-    public void testChangelog() throws Exception {
+    void testChangelog() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/changelog.zip");
             var processor = new ExtensionProcessor(stream);
-        ) {            
-            var metadata = processor.getMetadata();
-            var resources = processor.getResources(metadata);
-            var changelogFile = resources.stream()
-                    .filter(res -> res.getType().equals(FileResource.CHANGELOG))
-                    .findFirst();
-            assertThat(changelogFile).isPresent();
-            assertThat(changelogFile.get().getName()).isEqualTo("CHANGELOG.md");
+        ) {
+            checkResource(processor, FileResource.CHANGELOG, "CHANGELOG.md");
         }
+    }
+
+    @Test
+    void testCapitalizedCaseForResources() throws Exception {
+        try (
+            var stream = getClass().getResourceAsStream("util/with-capitalized-case.zip");
+            var processor = new ExtensionProcessor(stream);
+        ) {
+            checkResource(processor, FileResource.CHANGELOG, "Changelog.md");
+            checkResource(processor, FileResource.README, "Readme.md");
+            checkResource(processor, FileResource.LICENSE, "License.txt");
+        }
+    }
+
+    @Test
+    void testMinorCaseForResources() throws Exception {
+        try (
+            var stream = getClass().getResourceAsStream("util/with-minor-case.zip");
+            var processor = new ExtensionProcessor(stream);
+        ) {
+            checkResource(processor, FileResource.CHANGELOG, "changelog.md");
+            checkResource(processor, FileResource.README, "readme.md");
+            checkResource(processor, FileResource.LICENSE, "license.txt");
+        }
+    }
+
+    private void checkResource(ExtensionProcessor processor, String type, String expectedName) {
+        var metadata = processor.getMetadata();
+        var resources = processor.getResources(metadata);
+        var fileOfType = resources.stream()
+                .filter(res -> type.equals(res.getType()))
+                .findAny();
+        assertThat(fileOfType).isPresent();
+        assertThat(fileOfType.get().getName()).isEqualTo(expectedName);
     }
 }
