@@ -11,7 +11,7 @@ package org.eclipse.openvsx.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.io.ByteStreams;
+import java.util.zip.ZipFile;
 
 import org.junit.jupiter.api.Test;
 
@@ -19,13 +19,14 @@ public class ArchiveUtilTest {
 
     @Test
     public void testTodoTree() throws Exception {
+        var packageUrl = getClass().getResource("todo-tree.zip");
+        assertThat(packageUrl.getProtocol()).isEqualTo("file");
         try (
-            var stream = getClass().getResourceAsStream("todo-tree.zip");
+            var archive = new ZipFile(packageUrl.getPath());
         ) {
-            var bytes = ByteStreams.toByteArray(stream);
-            var packageJson = ArchiveUtil.readEntry(bytes, "extension/package.json");
+            var packageJson = ArchiveUtil.readEntry(archive, "extension/package.json");
             assertThat(packageJson.length).isEqualTo(24052);
-            var icon = ArchiveUtil.readEntry(bytes, "extension/resources/todo-tree.png");
+            var icon = ArchiveUtil.readEntry(archive, "extension/resources/todo-tree.png");
             assertThat(icon.length).isEqualTo(8854);
         }
     }
