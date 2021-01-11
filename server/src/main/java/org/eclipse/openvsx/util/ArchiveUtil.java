@@ -9,12 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import com.google.common.io.ByteStreams;
 
@@ -25,33 +23,25 @@ public final class ArchiveUtil {
 
     private ArchiveUtil() {}
 
-    public static byte[] readEntry(ZipFile archive, String entryName) {
-        try {
-            var entry = archive.getEntry(entryName);
-            if (entry == null)
-                return null;
-            if (entry.getSize() > MAX_ENTRY_SIZE)
-                throw new ErrorResultException("The file " + entryName + " exceeds the size limit of 32 MB.");
-            return ByteStreams.toByteArray(archive.getInputStream(entry));
-        } catch (ZipException exc) {
-            throw new ErrorResultException("Could not read zip file: " + exc.getMessage(), exc);
-        } catch (IOException exc) {
-            throw new RuntimeException(exc);
-        }
+    public static ZipEntry getEntryIgnoreCase(ZipFile archive, String entryName) {
+        return archive.stream()
+                .filter(entry -> entry.getName().equalsIgnoreCase(entryName))
+                .findAny()
+                .orElse(null);
     }
 
-    public static byte[] readEntry(byte[] archive, String entryName) {
-        try (var zipStream = new ZipInputStream(new ByteArrayInputStream(archive))) {
-            ZipEntry entry;
-            while ((entry = zipStream.getNextEntry()) != null) {
-                String name = entry.getName().replace('\\', '/');
-                if (name.equalsIgnoreCase(entryName)) {
-                    if (entry.getSize() > MAX_ENTRY_SIZE)
-                        throw new ErrorResultException("The file " + entryName + " exceeds the size limit of 32 MB.");
-                    return ByteStreams.toByteArray(zipStream);
-                }
-            }
+    public static byte[] readEntry(ZipFile archive, String entryName) {
+        var entry = archive.getEntry(entryName);
+        if (entry == null)
             return null;
+        return readEntry(archive, entry);
+    }
+
+    public static byte[] readEntry(ZipFile archive, ZipEntry entry) {
+        try {
+            if (entry.getSize() > MAX_ENTRY_SIZE)
+                throw new ErrorResultException("The file " + entry.getName() + " exceeds the size limit of 32 MB.");
+            return ByteStreams.toByteArray(archive.getInputStream(entry));
         } catch (ZipException exc) {
             throw new ErrorResultException("Could not read zip file: " + exc.getMessage(), exc);
         } catch (IOException exc) {
