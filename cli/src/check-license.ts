@@ -10,24 +10,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { readManifest, writeManifest, Manifest, getUserInput, getUserChoice, writeFile } from './util';
+import { readManifest, writeManifest, Manifest, getUserInput, getUserChoice, writeFile, validateManifest } from './util';
 
-export async function checkLicense(packagePath?: string): Promise<void> {
-    if (await hasLicenseFile(packagePath)) {
-        // The extension has a LICENSE file that can be packaged
-        return;
-    }
-    const manifest = await readManifest(packagePath);
-    if (!manifest.publisher) {
-        throw new Error("Missing required field 'publisher'.");
-    }
-    if (!manifest.name) {
-        throw new Error("Missing required field 'name'.");
-    }
-    if (manifest.license) {
-        // The extension has a license identifier or a pointer to an alternative LICENSE file
-        return;
-    }
+async function addLicense(packagePath: string, manifest: Manifest): Promise<void> {
     console.log('Extension ' + manifest.publisher + '.' + manifest.name + ' has no license. All Open VSX '
         + 'Registry Content Offerings must be licensed. You may choose to publish this extension under '
         + 'the MIT License (https://opensource.org/licenses/MIT). Please note you are responsible to '
@@ -55,6 +40,32 @@ export async function checkLicense(packagePath?: string): Promise<void> {
                 throw new Error('This extension cannot be accepted because it has no license.');
         }
     } while (answer === 'help');
+}
+
+export async function isLicenseOk(packagePath: string, manifest?: Manifest): Promise<boolean> {
+    // manifest is optional in order to use isLicenseOk function
+    // without need to read and parse manifest by the another step
+    manifest = manifest ?? await readManifest(packagePath);
+    validateManifest(manifest);
+
+    if (manifest.license) {
+        // The extension has a license identifier or a pointer to an alternative LICENSE file
+        return true;
+    }
+
+    if (await hasLicenseFile(packagePath)) {
+        // The extension has a LICENSE file that can be packaged
+        return true;
+    }
+
+    return false;
+}
+
+export async function checkLicense(packagePath: string): Promise<void> {
+    const manifest = await readManifest(packagePath);
+    if (!await isLicenseOk(packagePath, manifest)) {
+        await addLicense(packagePath, manifest);
+    }
 }
 
 async function useMITLicense(manifest: Manifest, packagePath?: string) {

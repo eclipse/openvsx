@@ -114,6 +114,18 @@ export async function readManifest(packagePath?: string): Promise<Manifest> {
     return JSON.parse(content);
 }
 
+export function validateManifest(manifest: Manifest): void {
+    if (!manifest.publisher) {
+        throw new Error("Missing required field 'publisher'.");
+    }
+    if (!manifest.name) {
+        throw new Error("Missing required field 'name'.");
+    }
+    if (!manifest.version) {
+        throw new Error("Missing required field 'version'.");
+    }
+}
+
 export function writeFile(name: string, content: string, packagePath?: string, encoding = 'utf-8'): Promise<void> {
     return new Promise((resolve, reject) => {
         fs.writeFile(

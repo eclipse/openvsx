@@ -12,3 +12,5 @@ export * from './create-namespace';
 export * from './get';
 export * from './publish';
 export * from './registry';
+export { isLicenseOk } from './check-license';
+export { validateManifest, readManifest } from './util';

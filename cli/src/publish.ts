@@ -61,7 +61,7 @@ export interface PublishOptions extends RegistryOptions {
 
 async function packageExtension(options: PublishOptions, registry: Registry): Promise<void> {
     if (registry.requiresLicense) {
-        await checkLicense(options.packagePath);
+        await checkLicense(options.packagePath!);
     }
 
     options.extensionFile = await createTempFile({ postfix: '.vsix' });
