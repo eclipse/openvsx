@@ -32,6 +32,16 @@ const markdownStyles = (theme: Theme) => createStyles({
                 opacity: 1
             }
         },
+        '& kbd': {
+            borderRadius: 3,
+            backgroundColor: theme.palette.neutral.light,
+            margin: 2,
+            fontFamily: theme.typography.fontFamily,
+            fontSize: theme.typography.fontSize - 1,
+            padding: '2px 7px 2px 7px',
+            fontWeight: 500,
+            display: 'inline-block'
+        },
         '& img': {
             maxWidth: '100%'
         },
