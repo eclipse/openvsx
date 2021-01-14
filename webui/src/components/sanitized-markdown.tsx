@@ -36,12 +36,11 @@ const markdownStyles = (theme: Theme) => createStyles({
             borderRadius: 3,
             backgroundColor: theme.palette.neutral.light,
             margin: 2,
-            color: theme.palette.neutral.dark,
+            fontFamily: theme.typography.fontFamily,
+            fontSize: theme.typography.fontSize - 1,
             padding: '2px 7px 2px 7px',
             fontWeight: 500,
-            display: 'inline-block',
-            cursor: 'pointer',
-            boxShadow: '1px 1px 1px rgba(6, 6, 6, 0.5)'
+            display: 'inline-block'
         },
         '& img': {
             maxWidth: '100%'
