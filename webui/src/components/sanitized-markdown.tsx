@@ -34,14 +34,14 @@ const markdownStyles = (theme: Theme) => createStyles({
         },
         '& kbd': {
             borderRadius: 3,
-            backgroundColor: '#f7f3f3',
+            backgroundColor: theme.palette.neutral.light,
             margin: 2,
-            color: '#555',
+            color: theme.palette.neutral.dark,
             padding: '2px 7px 2px 7px',
             fontWeight: 500,
             display: 'inline-block',
             cursor: 'pointer',
-            boxShadow: '1px 1px 1px rgba(119, 119, 119, 1)'
+            boxShadow: '1px 1px 1px rgba(6, 6, 6, 0.5)'
         },
         '& img': {
             maxWidth: '100%'
