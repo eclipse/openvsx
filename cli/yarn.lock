@@ -23,6 +23,11 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
+"@types/ci-info@*":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@types/ci-info/-/ci-info-2.0.0.tgz#51848cc0f5c30c064f4b25f7f688bf35825b3971"
+  integrity sha512-5R2/MHILQLDCzTuhs1j4Qqq8AaKUf7Ma4KSSkCtc12+fMs47zfa34qhto9goxpyX00tQK1zxB885VCiawZ5Qhg==
+
 "@types/color-name@^1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@types/color-name/-/color-name-1.1.1.tgz#1c1261bbeaa10a8055bbc5d8ab84b7b2afc846a0"
@@ -39,6 +44,13 @@
   integrity sha512-VPGDD77WMB+da4l1vdfGYM1k9ZjtPyY8EHisvc33QUcwCf/stt/5M1P/ZOPhpnjPgBwJX/xuo3X3wFVp0rutTA==
   dependencies:
     "@types/node" "*"
+
+"@types/is-ci@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@types/is-ci/-/is-ci-2.0.0.tgz#e2b81d0f9275861649d501dbc39a480fbf311459"
+  integrity sha512-J8ytIdkALbTrqcJ6OZiEv0B9skfyok/zCDj1q06GGCDa1rlHnPobUBT0BYR1vku2oZVwVEgCurtXqCASAfjCiQ==
+  dependencies:
+    "@types/ci-info" "*"
 
 "@types/json-schema@^7.0.3":
   version "7.0.5"
@@ -255,6 +267,11 @@ cheerio@^1.0.0-rc.1:
     htmlparser2 "^3.9.1"
     lodash "^4.15.0"
     parse5 "^3.0.1"
+
+ci-info@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-2.0.0.tgz#67a9e964be31a51e15e5010d58e6f12834002f46"
+  integrity sha512-5tK7EtrZ0N+OLFMthtqOj4fI2Jeb88C4CAZPu25LDVUgXJ0A3Js4PMGqrn0JU1W0Mh1/Z8wZzYPxqUrXeBboCQ==
 
 color-convert@^1.9.0:
   version "1.9.3"
@@ -655,6 +672,13 @@ inherits@2, inherits@^2.0.1, inherits@^2.0.3:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
+
+is-ci@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/is-ci/-/is-ci-2.0.0.tgz#6bc6334181810e04b5c22b3d589fdca55026404c"
+  integrity sha512-YfJT7rkpQB0updsdHLGWrvhBJfcfzNNawYDNIyQXJz0IViGf75O8EBPKSdvw2rF+LGCsX4FZ8tcr3b19LcZq4w==
+  dependencies:
+    ci-info "^2.0.0"
 
 is-extglob@^2.1.1:
   version "2.1.1"
