@@ -10,6 +10,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as isCI from 'is-ci';
 import { readManifest, writeManifest, Manifest, getUserInput, getUserChoice, writeFile, validateManifest } from './util';
 
 async function addLicense(packagePath: string, manifest: Manifest): Promise<void> {
@@ -63,7 +64,7 @@ export async function isLicenseOk(packagePath: string, manifest?: Manifest): Pro
 
 export async function checkLicense(packagePath: string): Promise<void> {
     const manifest = await readManifest(packagePath);
-    if (!await isLicenseOk(packagePath, manifest)) {
+    if (!await isLicenseOk(packagePath, manifest) && !isCI) {
         await addLicense(packagePath, manifest);
     }
 }
