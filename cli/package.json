@@ -37,9 +37,10 @@
     },
     "dependencies": {
         "commander": "^6.1.0",
-        "follow-redirects": "^1.13.0",
+        "follow-redirects": "^1.13.2",
         "is-ci": "^2.0.0",
-        "vsce": "~1.81.1"
+        "leven": "^3.1.0",
+        "vsce": "~1.84.0"
     },
     "devDependencies": {
         "@types/follow-redirects": "^1.13.0",
