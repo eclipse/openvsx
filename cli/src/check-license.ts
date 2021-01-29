@@ -9,9 +9,10 @@
  ********************************************************************************/
 
 import * as fs from 'fs';
-import * as path from 'path';
 import * as isCI from 'is-ci';
-import { readManifest, writeManifest, Manifest, getUserInput, getUserChoice, writeFile, validateManifest } from './util';
+import {
+    readManifest, writeManifest, Manifest, getUserInput, getUserChoice, writeFile, validateManifest, promisify
+} from './util';
 
 async function addLicense(packagePath: string, manifest: Manifest): Promise<void> {
     console.log('Extension ' + manifest.publisher + '.' + manifest.name + ' has no license. All Open VSX '
@@ -83,16 +84,15 @@ async function useMITLicense(manifest: Manifest, packagePath?: string) {
     console.log('LICENSE file has been written. Please commit it to the source repository.');
 }
 
-const LICENSE_FILE_NAMES = ['LICENSE.md', 'LICENSE', 'LICENSE.txt'];
+const LICENSE_FILE_NAMES = ['license.md', 'license', 'license.txt'];
 
 async function hasLicenseFile(packagePath?: string): Promise<boolean> {
-    for (const fileName of LICENSE_FILE_NAMES) {
-        const promise = new Promise(resolve => fs.access(
-            path.join(packagePath || '.', fileName),
-            err => resolve(!err)
-        ));
-        if (await promise) {
-            return true;
+    const fileNames = await promisify(fs.readdir)(packagePath ?? '.');
+    for (const fileName of fileNames) {
+        for (const licFileName of LICENSE_FILE_NAMES) {
+            if (fileName.toLowerCase() === licFileName) {
+                return true;
+            }
         }
     }
     return false;
