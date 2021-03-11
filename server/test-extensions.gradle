@@ -1,20 +1,20 @@
 task downloadTestExtensions {
     doLast {
         download {
-            src "https://open-vsx.org/api/vscode/sql/1.39.1/file/vscode.sql-1.39.1.vsix"
-            dest "${buildDir}/test-extensions-builtin/vscode.sql-1.39.1.vsix"
+            src "https://open-vsx.org/api/vscode/sql/1.54.1/file/vscode.sql-1.54.1.vsix"
+            dest "${buildDir}/test-extensions-builtin/vscode.sql-1.54.1.vsix"
         }
         download {
-            src "https://open-vsx.org/api/vscode/powershell/1.39.1/file/vscode.powershell-1.39.1.vsix"
-            dest "${buildDir}/test-extensions-builtin/vscode.powershell-1.39.1.vsix"
+            src "https://open-vsx.org/api/vscode/powershell/1.54.1/file/vscode.powershell-1.54.1.vsix"
+            dest "${buildDir}/test-extensions-builtin/vscode.powershell-1.54.1.vsix"
         }
         download {
-            src "https://open-vsx.org/api/vscode/docker/1.39.1/file/vscode.docker-1.39.1.vsix"
-            dest "${buildDir}/test-extensions-builtin/vscode.docker-1.39.1.vsix"
+            src "https://open-vsx.org/api/vscode/docker/1.54.1/file/vscode.docker-1.54.1.vsix"
+            dest "${buildDir}/test-extensions-builtin/vscode.docker-1.54.1.vsix"
         }
         download {
-            src "https://open-vsx.org/api/vscode/yaml/1.39.1/file/vscode.yaml-1.39.1.vsix"
-            dest "${buildDir}/test-extensions-builtin/vscode.yaml-1.39.1.vsix"
+            src "https://open-vsx.org/api/vscode/yaml/1.54.1/file/vscode.yaml-1.54.1.vsix"
+            dest "${buildDir}/test-extensions-builtin/vscode.yaml-1.54.1.vsix"
         }
         download {
             src "https://github.com/microsoft/vscode-python/releases/download/2019.9.34911/ms-python-release.vsix"
