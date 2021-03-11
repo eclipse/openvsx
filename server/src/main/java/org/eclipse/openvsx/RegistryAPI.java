@@ -326,7 +326,7 @@ public class RegistryAPI {
                 return exc.toResponseEntity(SearchResultJson.class);
             }
         }
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES)).body(result);
     }
 
     private int mergeSearchResults(SearchResultJson result, List<SearchEntryJson> entries, int limit) {

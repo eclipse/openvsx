@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -55,6 +56,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -153,6 +155,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(storageUtil.getLocation(resource))
+                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                     .build();
         }
     }
