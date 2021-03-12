@@ -156,5 +156,9 @@ task downloadTestExtensions {
             src "https://github.com/formulahendry/vscode-auto-close-tag/releases/download/0.5.5/auto-close-tag-0.5.5.vsix"
             dest "${buildDir}/test-extensions/formulahendry.auto-close-tag-0.5.5.vsix"
         }
+        download {
+            src "https://github.com/VSCodeVim/Vim/releases/download/v1.19.3/vim-1.19.3.vsix"
+            dest "${buildDir}/test-extensions-web/vim-1.19.3.vsix"
+        }
     }
 }

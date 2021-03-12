@@ -13,11 +13,9 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
@@ -50,19 +48,16 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
     private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");
 
+    private final PublishOptions publishOptions;
     private final InputStream inputStream;
     private byte[] content;
     private ZipFile zipFile;
     private JsonNode packageJson;
     private JsonNode packageNlsJson;
 
-    public ExtensionProcessor(byte[] content) {
-        this.content = content;
-        this.inputStream = null;
-    }
-
-    public ExtensionProcessor(InputStream stream) {
+    public ExtensionProcessor(InputStream stream, PublishOptions publishOptions) {
         this.inputStream = stream;
+        this.publishOptions = publishOptions;
     }
 
     @Override
@@ -163,6 +158,7 @@ public class ExtensionProcessor implements AutoCloseable {
         extension.setDescription(getNlsValue(packageJson.path("description")));
         extension.setEngines(getEngines(packageJson.path("engines")));
         extension.setCategories(getStringList(packageJson.path("categories")));
+        extension.setExtensionKind(getStringList(packageJson.path("extensionKind")));
         extension.setTags(getStringList(packageJson.path("keywords")));
         extension.setLicense(packageJson.path("license").textValue());
         extension.setHomepage(getUrl(packageJson.path("homepage")));
@@ -243,7 +239,30 @@ public class ExtensionProcessor implements AutoCloseable {
         var icon = getIcon(extension);
         if (icon != null)
             resources.add(icon);
+        if (extension.getExtensionKind() != null && extension.getExtensionKind().contains("web") && publishOptions.web)
+            resources.addAll(getWebResources(extension));
         return resources;
+    }
+
+    protected List<FileResource> getWebResources(ExtensionVersion extension) {
+        readInputStream();
+        var namePrefix = "extension/";
+        return zipFile.stream()
+                .filter(zipEntry -> zipEntry.getName().startsWith(namePrefix))
+                .map(zipEntry -> {
+                    var bytes = ArchiveUtil.readEntry(zipFile, zipEntry);
+                    if (bytes == null) {
+                        return null;
+                    }
+                    var webResource = new FileResource();
+                    webResource.setExtension(extension);
+                    webResource.setName(zipEntry.getName());
+                    webResource.setType(FileResource.WEB_RESOURCE);
+                    webResource.setContent(bytes);
+                    return webResource;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     protected FileResource getBinary(ExtensionVersion extension) {

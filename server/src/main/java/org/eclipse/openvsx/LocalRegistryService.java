@@ -335,7 +335,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
+    public ExtensionJson publish(InputStream content, String tokenValue, PublishOptions publishOptions) throws ErrorResultException {
         var token = users.useAccessToken(tokenValue);
         if (token == null || token.getUser() == null) {
             throw new ErrorResultException("Invalid access token.");
@@ -344,7 +344,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         // Check whether the user has a valid publisher agreement
         eclipse.checkPublisherAgreement(token.getUser());
 
-        var extVersion = extensions.publishVersion(content, token);
+        var extVersion = extensions.publishVersion(content, token, publishOptions);
         return toExtensionVersionJson(extVersion, true);
     }
 

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(
     value = "Extension",
@@ -111,6 +111,9 @@ public class ExtensionJson extends ResultJson {
     public Map<String, String> engines;
 
     public List<String> categories;
+
+    @ApiModelProperty("A list that indicates where the extension should run in remote configurations. Values are \"ui\" (run locally), \"workspace\" (run on remote machine) and \"web\"")
+    public List<String> extensionKind;
 
     public List<String> tags;
 

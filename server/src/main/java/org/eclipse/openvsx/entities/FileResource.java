@@ -27,6 +27,7 @@ public class FileResource {
     public static final String README = "readme";
     public static final String LICENSE = "license";
     public static final String CHANGELOG = "changelog";
+    public static final String WEB_RESOURCE = "web-resource";
 
     // Storage types
     public static final String STORAGE_DB = "database";

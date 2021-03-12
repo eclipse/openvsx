@@ -15,6 +15,7 @@ import java.net.URI;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -153,6 +154,21 @@ public class StorageUtilService implements IStorageService {
             var fileUrl = UrlUtil.createApiUrl(versionUrl, "file", resource.getName());
             type2Url.put(resource.getType(), fileUrl);
         }
+    }
+
+    public Map<String, String> getWebResourceUrls(ExtensionVersion extVersion, String serverUrl) {
+        var name2Url = new HashMap<String, String>();
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        var versionUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion());
+        var resources = repositories.findFilesByType(extVersion, Arrays.asList(WEB_RESOURCE));
+        if (resources != null) {
+            for (var resource : resources) {
+                var fileUrl = UrlUtil.createApiUrl(versionUrl, "file", resource.getName());
+                name2Url.put(resource.getName(), fileUrl);
+            }
+        }
+        return name2Url;
     }
 
     /**

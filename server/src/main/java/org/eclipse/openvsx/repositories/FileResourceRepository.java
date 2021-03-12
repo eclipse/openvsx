@@ -27,6 +27,8 @@ public interface FileResourceRepository extends Repository<FileResource, Long> {
 
     FileResource findByExtensionAndType(ExtensionVersion extVersion, String type);
 
+    FileResource findByExtensionAndTypeAndNameIgnoreCase(ExtensionVersion extVersion, String type, String name);
+
     Streamable<FileResource> findByExtensionAndTypeIn(ExtensionVersion extVersion, Collection<String> types);
 
 }

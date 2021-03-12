@@ -155,6 +155,10 @@ public class RepositoryService {
         return fileResourceRepo.findByExtensionAndNameIgnoreCase(extVersion, name);
     }
 
+    public FileResource findFileByTypeAndName(ExtensionVersion extVersion, String type, String name) {
+        return fileResourceRepo.findByExtensionAndTypeAndNameIgnoreCase(extVersion, type, name);
+    }
+
     public FileResource findFileByType(ExtensionVersion extVersion, String type) {
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }

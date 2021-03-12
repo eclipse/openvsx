@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { createVSIX } from 'vsce';
+import { createVSIX, ICreateVSIXOptions } from 'vsce';
 import { createTempFile, addEnvOptions } from './util';
 import { Registry, RegistryOptions } from './registry';
 import { checkLicense } from './check-license';
@@ -28,7 +28,7 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
         console.log(); // new line
     }
 
-    const extension = await registry.publish(options.extensionFile!, options.pat);
+    const extension = await registry.publish(options.extensionFile!, options.pat, options.web);
     if (extension.error) {
         throw new Error(extension.error);
     }
@@ -57,6 +57,10 @@ export interface PublishOptions extends RegistryOptions {
 	 * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
 	 */
     yarn?: boolean;
+    /**
+     * Enables publishing of web extensions.
+     */
+    web?: boolean;
 }
 
 async function packageExtension(options: PublishOptions, registry: Registry): Promise<void> {
@@ -65,11 +69,17 @@ async function packageExtension(options: PublishOptions, registry: Registry): Pr
     }
 
     options.extensionFile = await createTempFile({ postfix: '.vsix' });
-    await createVSIX({
+    const createVSIXOptions: IPackageOptions = {
         cwd: options.packagePath,
         packagePath: options.extensionFile,
         baseContentUrl: options.baseContentUrl,
         baseImagesUrl: options.baseImagesUrl,
-        useYarn: options.yarn
-    });
+        useYarn: options.yarn,
+        web: options.web
+    };
+    await createVSIX(createVSIXOptions);
+}
+
+interface IPackageOptions extends ICreateVSIXOptions {
+    web?: boolean // experimental flag, not part of the public ICreateVSIXOptions api, yet
 }

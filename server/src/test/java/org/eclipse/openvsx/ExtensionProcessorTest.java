@@ -22,7 +22,7 @@ class ExtensionProcessorTest {
     void testTodoTree() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/todo-tree.zip");
-            var processor = new ExtensionProcessor(stream);
+            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
         ) {
             assertThat(processor.getNamespace()).isEqualTo("Gruntfuggly");
             assertThat(processor.getExtensionName()).isEqualTo("todo-tree");
@@ -47,7 +47,7 @@ class ExtensionProcessorTest {
     void testChangelog() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/changelog.zip");
-            var processor = new ExtensionProcessor(stream);
+            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
         ) {
             checkResource(processor, FileResource.CHANGELOG, "CHANGELOG.md");
         }
@@ -57,7 +57,7 @@ class ExtensionProcessorTest {
     void testCapitalizedCaseForResources() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/with-capitalized-case.zip");
-            var processor = new ExtensionProcessor(stream);
+            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
         ) {
             checkResource(processor, FileResource.CHANGELOG, "Changelog.md");
             checkResource(processor, FileResource.README, "Readme.md");
@@ -69,7 +69,7 @@ class ExtensionProcessorTest {
     void testMinorCaseForResources() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/with-minor-case.zip");
-            var processor = new ExtensionProcessor(stream);
+            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
         ) {
             checkResource(processor, FileResource.CHANGELOG, "changelog.md");
             checkResource(processor, FileResource.README, "readme.md");

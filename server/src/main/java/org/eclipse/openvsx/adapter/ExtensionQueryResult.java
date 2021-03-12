@@ -73,6 +73,7 @@ public class ExtensionQueryResult {
         public static final String FILE_MANIFEST = "Microsoft.VisualStudio.Code.Manifest";
         public static final String FILE_VSIX = "Microsoft.VisualStudio.Services.VSIXPackage";
         public static final String FILE_LICENSE = "Microsoft.VisualStudio.Services.Content.License";
+        public static final String FILE_WEB_RESOURCES = "Microsoft.VisualStudio.Code.WebResources/";
 
         public String assetType;
         public String source;

@@ -74,6 +74,10 @@ public class ExtensionVersion {
     @Convert(converter = ListOfStringConverter.class)
     List<String> tags;
 
+    @Column
+    @Convert(converter = ListOfStringConverter.class)
+    List<String> extensionKind;
+
     String license;
 
     String homepage;
@@ -121,6 +125,7 @@ public class ExtensionVersion {
         json.description = this.getDescription();
         json.engines = this.getEnginesMap();
         json.categories = this.getCategories();
+        json.extensionKind = this.getExtensionKind();
         json.tags = this.getTags();
         json.license = this.getLicense();
         json.homepage = this.getHomepage();
@@ -290,6 +295,14 @@ public class ExtensionVersion {
 
 	public void setCategories(List<String> categories) {
 		this.categories = categories;
+	}
+
+	public List<String> getExtensionKind() {
+		return extensionKind;
+	}
+
+	public void setExtensionKind(List<String> extensionKind) {
+		this.extensionKind = extensionKind;
 	}
 
 	public List<String> getTags() {
