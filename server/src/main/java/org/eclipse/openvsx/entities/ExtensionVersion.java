@@ -13,23 +13,15 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
-import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 
@@ -70,13 +62,16 @@ public class ExtensionVersion {
     @Column(length = 2048)
     String description;
 
-    @ElementCollection
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
     List<String> engines;
 
-    @ElementCollection
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
     List<String> categories;
 
-    @ElementCollection
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
     List<String> tags;
 
     String license;
@@ -98,11 +93,13 @@ public class ExtensionVersion {
 
     String qna;
 
-    @ManyToMany
-    List<Extension> dependencies;
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
+    List<String> dependencies;
 
-    @ManyToMany
-    List<Extension> bundledExtensions;
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
+    List<String> bundledExtensions;
 
 
     /**
@@ -137,22 +134,26 @@ public class ExtensionVersion {
             json.publishedBy = this.getPublishedWith().getUser().toUserJson();
         }
         if (this.getDependencies() != null) {
-            json.dependencies = CollectionUtil.map(this.getDependencies(), depExtension -> {
-                var ref = new ExtensionReferenceJson();
-                ref.namespace = depExtension.getNamespace().getName();
-                ref.extension = depExtension.getName();
-                return ref;
-            });
+            json.dependencies = toExtensionReferenceJson(this.getDependencies());
         }
         if (this.getBundledExtensions() != null) {
-            json.bundledExtensions = CollectionUtil.map(this.getBundledExtensions(), bndExtension -> {
-                var ref = new ExtensionReferenceJson();
-                ref.namespace = bndExtension.getNamespace().getName();
-                ref.extension = bndExtension.getName();
-                return ref;
-            });
+            json.bundledExtensions = toExtensionReferenceJson(this.getBundledExtensions());
         }
         return json;
+    }
+
+    private List<ExtensionReferenceJson> toExtensionReferenceJson(List<String> extensionReferences) {
+        return extensionReferences.stream().map(fqn -> {
+            var startIndex = fqn.indexOf('.');
+            var lastIndex = fqn.lastIndexOf('.');
+            if (startIndex <= 0 || lastIndex >= fqn.length() - 1 || startIndex != lastIndex) {
+                return null;
+            }
+            var ref = new ExtensionReferenceJson();
+            ref.namespace = fqn.substring(0, startIndex);
+            ref.extension = fqn.substring(startIndex + 1);
+            return ref;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     /**
@@ -355,19 +356,19 @@ public class ExtensionVersion {
 		this.qna = qna;
 	}
 
-	public List<Extension> getDependencies() {
+	public List<String> getDependencies() {
 		return dependencies;
 	}
 
-	public void setDependencies(List<Extension> dependencies) {
+	public void setDependencies(List<String> dependencies) {
 		this.dependencies = dependencies;
 	}
 
-	public List<Extension> getBundledExtensions() {
+	public List<String> getBundledExtensions() {
 		return bundledExtensions;
 	}
 
-	public void setBundledExtensions(List<Extension> bundledExtensions) {
+	public void setBundledExtensions(List<String> bundledExtensions) {
 		this.bundledExtensions = bundledExtensions;
 	}
 
