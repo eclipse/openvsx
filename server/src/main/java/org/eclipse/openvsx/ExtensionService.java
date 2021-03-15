@@ -141,16 +141,16 @@ public class ExtensionService {
         if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
             throw new ErrorResultException("Invalid 'extensionDependencies' format. Expected: '${namespace}.${name}'");
         }
-        var extension = repositories.findExtension(split[1], split[0]);
-        if (extension == null) {
+        var extensionCount = repositories.countExtensions(split[1], split[0]);
+        if (extensionCount == 0) {
             throw new ErrorResultException("Cannot resolve dependency: " + dependency);
         }
         var depList = extVersion.getDependencies();
         if (depList == null) {
-            depList = new ArrayList<Extension>();
+            depList = new ArrayList<>();
             extVersion.setDependencies(depList);
         }
-        depList.add(extension);
+        depList.add(dependency);
     }
 
     private void addBundledExtension(String bundled, ExtensionVersion extVersion) {
@@ -158,16 +158,16 @@ public class ExtensionService {
         if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
             throw new ErrorResultException("Invalid 'extensionPack' format. Expected: '${namespace}.${name}'");
         }
-        var extension = repositories.findExtension(split[1], split[0]);
-        if (extension == null) {
+        var extensionCount = repositories.countExtensions(split[1], split[0]);
+        if (extensionCount == 0) {
             throw new ErrorResultException("Cannot resolve bundled extension: " + bundled);
         }
         var depList = extVersion.getBundledExtensions();
         if (depList == null) {
-            depList = new ArrayList<Extension>();
+            depList = new ArrayList<>();
             extVersion.setBundledExtensions(depList);
         }
-        depList.add(extension);
+        depList.add(bundled);
     }
 
     private void checkLicense(ExtensionVersion extVersion, List<FileResource> resources) {

@@ -370,11 +370,9 @@ public class VSCodeAdapter {
             queryVer.addProperty(PROP_REPOSITORY, extVer.getRepository());
             queryVer.addProperty(PROP_ENGINE, getVscodeEngine(extVer));
             var dependencies = extVer.getDependencies().stream()
-                    .map(e -> e.getNamespace().getName() + "." + e.getName())
                     .collect(Collectors.joining(","));
             queryVer.addProperty(PROP_DEPENDENCY, dependencies);
             var bundledExtensions = extVer.getBundledExtensions().stream()
-                    .map(e -> e.getNamespace().getName() + "." + e.getName())
                     .collect(Collectors.joining(","));
             queryVer.addProperty(PROP_EXTENSION_PACK, bundledExtensions);
             queryVer.addProperty(PROP_LOCALIZED_LANGUAGES, "");

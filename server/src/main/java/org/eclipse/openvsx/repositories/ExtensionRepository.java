@@ -34,6 +34,8 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     long count();
 
+    long countByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
+
     @Query("select max(e.downloadCount) from Extension e")
     int getMaxDownloadCount();
 

@@ -87,6 +87,10 @@ public class RepositoryService {
         return extensionRepo.count();
     }
 
+    public long countExtensions(String name, String namespace) {
+        return extensionRepo.countByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespace);
+    }
+
     public int getMaxExtensionDownloadCount() {
         return extensionRepo.getMaxDownloadCount();
     }
