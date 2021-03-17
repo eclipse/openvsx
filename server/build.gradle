@@ -22,8 +22,8 @@ def versions = [
     gcloud: '1.113.4',
     azure: '12.9.0',
     guava: '28.2-jre',
-    junit: '5.7.0',
-    testcontainers: '1.15.0'
+    junit: '5.7.1',
+    testcontainers: '1.15.2'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
