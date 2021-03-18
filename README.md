@@ -79,7 +79,7 @@ If you would like to test file storage via Azure Blob, follow these steps:
 
  * Create a [storage account](https://portal.azure.com/) and a container named `openvsx-resources` (a different name is possible if you change the `ovsx.storage.azure.blob-container` property).
  * Allow Blob public access in the storage account and set the container's public access level to "Blob".
- * Configure CORS in your storage account with origin `"*"` and method `"GET"`.
+ * Configure CORS in your storage account with origin `"*"`, method `"GET"` and allowed headers `"x-market-client-id, x-market-user-id"`
  * Create an environment variable `AZURE_SERVICE_ENDPOINT` with the "Blob service" URL of your storage account. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
  * Generate a "Shared access signature" and put its token into an environment variable `AZURE_SAS_TOKEN`.
 
