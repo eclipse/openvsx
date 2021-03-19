@@ -74,11 +74,12 @@ const overviewStyles = (theme: Theme) => createStyles({
         marginTop: theme.spacing(0.5)
     },
     versionAlias: {
-        backgroundColor: theme.palette.primary.dark,
-        color: theme.palette.primary.light,
-        fontStyle: 'italic',
-        marginLeft: theme.spacing(2),
-        padding: '4px'
+        color: theme.palette.primary.dark,
+        fontWeight: theme.typography.fontWeightBold
+    },
+    previewFlag: {
+        color: theme.palette.primary.dark,
+        fontStyle: 'italic'
     },
     tagButton: {
         fontWeight: 'normal',
@@ -139,6 +140,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const { classes, extension } = this.props;
         const ClaimNamespace = this.context.pageSettings.elements.claimNamespace;
         const ReportAbuse = this.context.pageSettings.elements.reportAbuse;
+        const otherAliases = Object.keys(extension.allVersions)
+            .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
         return <React.Fragment>
             <Box className={classes.overview}>
                 <Box flex={5} overflow='auto'>
@@ -150,8 +153,13 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             {this.renderVersionSection()}
                         </Box>
                         {
+                            (otherAliases.length || extension.versionAlias.length) ? <Box>{this.renderAliasesSection(otherAliases)}</Box> : ''
+                        }
+                    </Box>
+                    <Box className={classes.resourcesGroup}>
+                        {
                             extension.categories && extension.categories.length > 0 ?
-                            <Box mt={2}>
+                            <Box>
                                 {this.renderButtonList('category', 'Categories', extension.categories)}
                             </Box>
                             : null
@@ -207,8 +215,6 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const { classes, extension } = this.props;
         const allVersions = Object.keys(extension.allVersions)
             .filter(version => VERSION_ALIASES.indexOf(version) < 0);
-        const otherAliases = Object.keys(extension.allVersions)
-            .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
         return <React.Fragment>
             <Typography variant='h6'>Version</Typography>
             {
@@ -226,33 +232,51 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 </NativeSelect>
             }
             {
-                extension.versionAlias.map(alias =>
-                    <span key={alias} className={classes.versionAlias}>{alias}</span>
+                extension.timestamp ?
+                <Box mt={1} mb={1}>
+                    Published <Timestamp value={extension.timestamp} />
+                    {
+                        extension.preview ?
+                            <span className={classes.previewFlag}> (as a preview version)</span>
+                            : ''
+                    }
+                </Box>
+                : null
+            }
+        </React.Fragment>;
+    }
+
+    protected renderAliasesSection(otherAliases: string[]): React.ReactNode {
+        const { classes, extension } = this.props;
+        const aliasButtons = otherAliases.length ?
+            otherAliases.map(alias => {
+                let route: string;
+                if (alias === 'latest') {
+                    route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
+                } else {
+                    route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, alias]);
+                }
+                return <Button
+                    className={classes.tagButton}
+                    size='small'
+                    variant='outlined'
+                    key={alias}
+                    title={`Switch to version with "${alias}" alias`}
+                    onClick={() => this.props.history.push(route)} >
+                    {alias}
+                </Button>;
+            }) : '';
+        return <React.Fragment>
+            <Typography variant='h6'>Alias{extension.versionAlias.length > 1 ? 'es' : ''}</Typography>
+            {
+                extension.versionAlias.map((alias, idx) =>
+                    <span key={alias} className={classes.versionAlias}>{idx > 0 ? ', ' : ''}{alias}</span>
                 )
             }
             {
-                extension.timestamp ?
-                <Box mt={1} mb={1}>Published <Timestamp value={extension.timestamp}/></Box>
-                : null
-            }
-            {
-                otherAliases.map(alias => {
-                    let route: string;
-                    if (alias === 'latest') {
-                        route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
-                    } else {
-                        route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, alias]);
-                    }
-                    return <Button
-                        className={classes.tagButton}
-                        size='small'
-                        variant='outlined'
-                        key={alias}
-                        title={`Switch to version with "${alias}" alias`}
-                        onClick={() => this.props.history.push(route)} >
-                        {alias}
-                    </Button>;
-                })
+                aliasButtons ? <>
+                    Change selection to {aliasButtons}
+                </> : ''
             }
         </React.Fragment>;
     }
