@@ -98,7 +98,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                         .body(registry.getNamespace(namespace));
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -133,7 +133,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                         .body(registry.getExtension(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -170,7 +170,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                         .body(registry.getExtension(namespace, extension, version));
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -380,7 +380,9 @@ public class RegistryAPI {
                 return exc.toResponseEntity(QueryResultJson.class);
             }
         }
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(result);
     }
 
     @PostMapping(

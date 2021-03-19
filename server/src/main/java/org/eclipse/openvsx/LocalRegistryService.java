@@ -155,7 +155,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(storageUtil.getLocation(resource))
-                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                     .build();
         }
     }
