@@ -79,7 +79,9 @@ const overviewStyles = (theme: Theme) => createStyles({
     },
     previewFlag: {
         color: theme.palette.primary.dark,
-        fontStyle: 'italic'
+        fontStyle: 'italic',
+        marginLeft: theme.spacing(2),
+        padding: '4px'
     },
     tagButton: {
         fontWeight: 'normal',
@@ -232,14 +234,14 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 </NativeSelect>
             }
             {
+                extension.preview ?
+                    <span className={classes.previewFlag}>(preview version)</span>
+                    : ''
+            }
+            {
                 extension.timestamp ?
                 <Box mt={1} mb={1}>
                     Published <Timestamp value={extension.timestamp} />
-                    {
-                        extension.preview ?
-                            <span className={classes.previewFlag}> (as a preview version)</span>
-                            : ''
-                    }
                 </Box>
                 : null
             }
@@ -267,7 +269,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 </Button>;
             }) : '';
         return <React.Fragment>
-            <Typography variant='h6'>Alias{extension.versionAlias.length > 1 ? 'es' : ''}</Typography>
+            <Typography variant='h6'>Version Alias{extension.versionAlias.length > 1 ? 'es' : ''}</Typography>
             {
                 extension.versionAlias.map((alias, idx) =>
                     <span key={alias} className={classes.versionAlias}>{idx > 0 ? ', ' : ''}{alias}</span>
@@ -275,7 +277,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             }
             {
                 aliasButtons ? <>
-                    Change selection to {aliasButtons}
+                    Switch to {aliasButtons}
                 </> : ''
             }
         </React.Fragment>;
