@@ -98,7 +98,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                         .body(registry.getNamespace(namespace));
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -133,7 +133,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                         .body(registry.getExtension(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
