@@ -143,6 +143,10 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
         this.props.onSearchChanged(value);
     };
 
+    protected handleSearchSubmit = (value: string) => {
+        this.props.onSearchSubmit(value);
+    };
+
     protected renderValue = (value: string) => {
         if (value === '') {
             return <Box component='span' className={this.props.classes.placeholder}>All Categories</Box>;
@@ -174,6 +178,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                         <Box className={classes.form}>
                             <ExtensionListSearchfield
                                 onSearchChanged={this.handleSearchChange}
+                                onSearchSubmit={this.handleSearchSubmit}
                                 searchQuery={this.props.searchQuery}
                                 placeholder='Search by Name, Tag, or Description' />
                             <Paper className={classes.category}>
@@ -232,6 +237,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
 namespace ExtensionListHeaderComp {
     export interface Props extends WithStyles<typeof headerStyles> {
         onSearchChanged: (s: string) => void;
+        onSearchSubmit: (s: string) => void;
         onCategoryChanged: (c: ExtensionCategory) => void;
         onSortByChanged: (sb: SortBy) => void;
         onSortOrderChanged: (so: SortOrder) => void;
