@@ -33,7 +33,8 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
             category: '',
             resultNumber: 0,
             sortBy: 'relevance',
-            sortOrder: 'desc'
+            sortOrder: 'desc',
+            searchDebounceTime: 0
         };
     }
 
@@ -53,8 +54,11 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     protected onSearchChanged = (searchQuery: string): void => {
-        this.setState({ searchQuery });
+        this.setState({ searchQuery, searchDebounceTime: 1000 });
         this.updateURL(searchQuery, this.state.category, this.state.sortBy, this.state.sortOrder);
+    };
+    protected onSearchSubmit =  (searchQuery: string): void => {
+        this.setState({ searchQuery, searchDebounceTime: 0 });
     };
     protected onCategoryChanged = (category: ExtensionCategory): void => {
         this.setState({ category });
@@ -98,6 +102,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                 sortBy={this.state.sortBy}
                 sortOrder={this.state.sortOrder}
                 onSearchChanged={this.onSearchChanged}
+                onSearchSubmit={this.onSearchSubmit}
                 onCategoryChanged={this.onCategoryChanged}
                 onSortByChanged={this.onSortByChanged}
                 onSortOrderChanged={this.onSortOrderChanged} />
@@ -106,6 +111,7 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
                     query: this.state.searchQuery, category: this.state.category, offset: 0, size: 10,
                     sortBy: this.state.sortBy, sortOrder: this.state.sortOrder
                 }}
+                debounceTime={this.state.searchDebounceTime}
                 onUpdate={this.handleUpdate}
             />
         </Box>;
@@ -120,6 +126,7 @@ export namespace ExtensionListContainer {
         category: ExtensionCategory | '',
         resultNumber: number,
         sortBy: SortBy,
-        sortOrder: SortOrder
+        sortOrder: SortOrder,
+        searchDebounceTime: number
     }
 }

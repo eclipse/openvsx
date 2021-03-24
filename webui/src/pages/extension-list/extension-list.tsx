@@ -64,7 +64,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
 
     componentDidUpdate(prevProps: ExtensionListComponent.Props): void {
         const newFilter = copyFilter(this.props.filter);
-        if (isSameFilter(prevProps.filter, newFilter)) {
+        if (isSameFilter(prevProps.filter, newFilter) && prevProps.debounceTime === this.props.debounceTime) {
             return;
         }
         this.filterSize = newFilter.size || this.filterSize;
@@ -94,7 +94,8 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
                     this.setState({ loading: false });
                 }
             },
-            this.cancellationToken
+            this.cancellationToken,
+            this.props.debounceTime
         );
     }
 
@@ -164,6 +165,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
 export namespace ExtensionListComponent {
     export interface Props extends WithStyles<typeof itemStyles> {
         filter: ExtensionFilter;
+        debounceTime: number;
         onUpdate: (resultNumber: number) => void;
     }
     export interface State {
