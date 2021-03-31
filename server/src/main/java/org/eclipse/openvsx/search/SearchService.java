@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 
+import org.eclipse.openvsx.CacheService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -56,6 +57,9 @@ public class SearchService {
 
     @Autowired
     ElasticsearchOperations searchOperations;
+
+    @Autowired
+    CacheService cacheService;
 
     @Value("${ovsx.elasticsearch.enabled:true}")
     boolean enableSearch;
@@ -124,6 +128,7 @@ public class SearchService {
     public void updateSearchIndex(boolean clear) {
         var locked = false;
         try {
+            cacheService.clearCaches();
             var indexOps = searchOperations.indexOps(ExtensionSearch.class);
             if (clear) {
                 // Hard mode: delete the index if it exists, then recreate it
@@ -170,6 +175,7 @@ public class SearchService {
             return;
         }
         try {
+            cacheService.clearCaches();
             rwLock.writeLock().lock();
             var stats = new SearchStats();
             var indexQuery = new IndexQueryBuilder()
@@ -187,6 +193,7 @@ public class SearchService {
             return;
         }
         try {
+            cacheService.clearCaches();
             rwLock.writeLock().lock();
             var indexOps = searchOperations.indexOps(ExtensionSearch.class);
             searchOperations.delete(Long.toString(extension.getId()), indexOps.getIndexCoordinates());

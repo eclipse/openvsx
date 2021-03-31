@@ -55,6 +55,10 @@ public class RepositoryService {
         return namespaceRepo.count();
     }
 
+    public Extension findExtension(long id) {
+        return extensionRepo.findById(id);
+    }
+
     public Extension findExtension(String name, Namespace namespace) {
         return extensionRepo.findByNameIgnoreCaseAndNamespace(name, namespace);
     }

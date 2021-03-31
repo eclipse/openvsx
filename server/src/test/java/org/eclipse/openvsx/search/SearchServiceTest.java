@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.openvsx.CacheService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
@@ -45,6 +46,9 @@ public class SearchServiceTest {
 
     @MockBean
     ElasticsearchOperations searchOperations;
+
+    @MockBean
+    CacheService cacheService;
 
     @Autowired
     SearchService search;

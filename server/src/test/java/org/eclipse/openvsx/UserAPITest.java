@@ -68,6 +68,9 @@ public class UserAPITest {
     @MockBean
     EclipseService eclipse;
 
+    @MockBean
+    CacheService cacheService;
+
     @Autowired
     MockMvc mockMvc;
 

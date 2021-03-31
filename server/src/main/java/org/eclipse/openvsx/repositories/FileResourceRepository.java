@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
@@ -27,6 +28,7 @@ public interface FileResourceRepository extends Repository<FileResource, Long> {
 
     FileResource findByExtensionAndType(ExtensionVersion extVersion, String type);
 
+    @Cacheable("FileResource.findByExtensionAndTypeIn")
     Streamable<FileResource> findByExtensionAndTypeIn(ExtensionVersion extVersion, Collection<String> types);
 
 }

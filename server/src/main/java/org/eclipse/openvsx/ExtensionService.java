@@ -76,8 +76,8 @@ public class ExtensionService {
             updateExtension(extVersion.getExtension());
 
             // Store file resources in the DB or external storage
-            storeResources(extVersion, resources);
-
+            storeResources(extVersion, resources);            
+            
             return extVersion;
         }
     }
@@ -194,6 +194,10 @@ public class ExtensionService {
             }
             entityManager.persist(resource);
         });
+    }
+
+    public Extension getExtensionById(long id) {
+        return this.repositories.findExtension(id);
     }
 
     /**

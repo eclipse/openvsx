@@ -37,6 +37,9 @@ public class UserService {
     @Autowired
     RepositoryService repositories;
 
+    @Autowired
+    CacheService cacheService;
+
     public UserData findLoggedInUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
@@ -58,6 +61,7 @@ public class UserService {
         user.setEmail(oauth2User.getAttribute("email"));
         user.setProviderUrl(oauth2User.getAttribute("html_url"));
         user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
+        cacheService.clearCaches();
         entityManager.persist(user);
         return user;
     }
@@ -146,6 +150,7 @@ public class UserService {
         if (membership == null) {
             throw new ErrorResultException("User " + user.getLoginName() + " is not a member of " + namespace.getName() + ".");
         }
+        cacheService.clearCaches();
         entityManager.remove(membership);
         return ResultJson.success("Removed " + user.getLoginName() + " from namespace " + namespace.getName() + ".");
     }
@@ -168,6 +173,7 @@ public class UserService {
         membership.setNamespace(namespace);
         membership.setUser(user);
         membership.setRole(role);
+        cacheService.clearCaches();
         entityManager.persist(membership);
         return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName() + ".");
     }

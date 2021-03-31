@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
@@ -60,9 +58,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 @RestController
 public class VSCodeAdapter {
-
-    @Autowired
-    EntityManager entityManager;
 
     @Autowired
     RepositoryService repositories;
@@ -179,7 +174,7 @@ public class VSCodeAdapter {
     private ExtensionQueryResult findExtensions(SearchHits<ExtensionSearch> searchResult, int flags) {
         var resultItem = new ExtensionQueryResult.ResultItem();
         resultItem.extensions = CollectionUtil.map(searchResult.getSearchHits(), hit -> {
-            var extension = entityManager.find(Extension.class, hit.getContent().id);
+            var extension = this.repositories.findExtension(hit.getContent().id);
             if (extension == null || !extension.isActive())
                 return null;
             return toQueryExtension(extension, flags);

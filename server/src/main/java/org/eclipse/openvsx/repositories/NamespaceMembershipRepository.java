@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 import org.eclipse.openvsx.entities.Namespace;
@@ -19,10 +20,12 @@ public interface NamespaceMembershipRepository extends Repository<NamespaceMembe
 
     NamespaceMembership findByUserAndNamespace(UserData user, Namespace namespace);
 
+    @Cacheable("countByUserAndNamespace")
     long countByUserAndNamespace(UserData user, Namespace namespace);
 
     Streamable<NamespaceMembership> findByNamespaceAndRoleIgnoreCase(Namespace namespace, String role);
 
+    @Cacheable("countByNamespaceAndRoleIgnoreCase")
     long countByNamespaceAndRoleIgnoreCase(Namespace namespace, String role);
 
     Streamable<NamespaceMembership> findByNamespace(Namespace namespace);

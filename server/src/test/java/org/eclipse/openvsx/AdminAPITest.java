@@ -90,6 +90,9 @@ public class AdminAPITest {
     @MockBean
     EclipseService eclipse;
 
+    @MockBean
+    CacheService cacheService;
+
     @Autowired
     MockMvc mockMvc;
 

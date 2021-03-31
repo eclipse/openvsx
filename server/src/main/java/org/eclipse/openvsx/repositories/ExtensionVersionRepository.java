@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
@@ -44,6 +45,7 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 order by ev.timestamp desc")
     Streamable<String> getVersionStrings(Extension extension);
 
+    @Cacheable("ExtensionVersion.getActiveVersionStrings")
     @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 and ev.active is true order by ev.timestamp desc")
     Streamable<String> getActiveVersionStrings(Extension extension);
 

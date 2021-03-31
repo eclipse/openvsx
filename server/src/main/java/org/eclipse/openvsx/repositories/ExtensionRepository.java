@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
@@ -24,8 +25,13 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Streamable<Extension> findByNamespaceAndActiveTrueOrderByNameAsc(Namespace namespace);
 
+    @Cacheable("findById")
+    Extension findById(long id);
+
+    @Cacheable("findByNameIgnoreCaseAndNamespace")
     Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
 
+    @Cacheable("findByNameIgnoreCaseAndNamespaceNameIgnoreCase")
     Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
 
     Extension findByPublicId(String publicId);

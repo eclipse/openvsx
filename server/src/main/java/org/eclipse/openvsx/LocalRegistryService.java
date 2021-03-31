@@ -87,6 +87,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     StorageUtilService storageUtil;
 
     @Autowired
+    CacheService cacheService;
+
+    @Autowired
     EclipseService eclipse;
 
     @Override
@@ -323,13 +326,14 @@ public class LocalRegistryService implements IExtensionRegistry {
         namespace = new Namespace();
         namespace.setName(json.name);
         entityManager.persist(namespace);
-
+        
         // Assign the requesting user as contributor
         var membership = new NamespaceMembership();
         membership.setNamespace(namespace);
         membership.setUser(token.getUser());
         membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
         entityManager.persist(membership);
+        cacheService.clearCaches();
 
         return ResultJson.success("Created namespace " + namespace.getName());
     }
@@ -416,7 +420,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private SearchEntryJson toSearchEntry(SearchHit<ExtensionSearch> searchHit, String serverUrl, SearchService.Options options) {
         var searchItem = searchHit.getContent();
-        var extension = entityManager.find(Extension.class, searchItem.id);
+        var extension = extensions.getExtensionById(searchItem.id);
         if (extension == null || !extension.isActive())
             return null;
         var extVer = extension.getLatest();

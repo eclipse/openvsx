@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
@@ -16,13 +17,17 @@ import org.eclipse.openvsx.entities.Namespace;
 
 public interface NamespaceRepository extends Repository<Namespace, Long> {
 
+    @Cacheable("findByNameIgnoreCase")
     Namespace findByNameIgnoreCase(String name);
 
+    @Cacheable("findByPublicId")
     Namespace findByPublicId(String publicId);
 
+    @Cacheable("findOrphans")
     @Query("from Namespace n where not exists (from NamespaceMembership nm where nm.namespace = n)")
     Streamable<Namespace> findOrphans();
 
+    @Cacheable("Namespace.count")
     long count();
 
 }

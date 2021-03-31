@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
@@ -24,6 +25,7 @@ public interface ExtensionReviewRepository extends Repository<ExtensionReview, L
 
     Streamable<ExtensionReview> findByExtensionAndUserAndActiveTrue(Extension extension, UserData user);
 
+    @Cacheable("countByExtensionAndActiveTrue")
     long countByExtensionAndActiveTrue(Extension extension);
 
 }
