@@ -2,7 +2,7 @@ name: Release
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 env:
   SERVER_TAG: ghcr.io/eclipse/openvsx-server
