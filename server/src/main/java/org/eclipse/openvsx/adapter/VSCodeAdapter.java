@@ -258,8 +258,14 @@ public class VSCodeAdapter {
                 return repositories.findFileByType(extVersion, FileResource.LICENSE);
             case FILE_ICON:
                 return repositories.findFileByType(extVersion, FileResource.ICON);
-            default:
-                return null;
+            default: {
+                if (assetType.startsWith(FILE_WEB_RESOURCES)) {
+                    var name = assetType.substring((FILE_WEB_RESOURCES.length()));
+                    return repositories.findFileByTypeAndName(extVersion, FileResource.WEB_RESOURCE, name);
+                } else {
+                    return null;
+                }
+            }
         }
     }
 
@@ -361,6 +367,7 @@ public class VSCodeAdapter {
             queryVer.addFile(FILE_ICON, type2Url.get(FileResource.ICON));
             queryVer.addFile(FILE_VSIX, type2Url.get(FileResource.DOWNLOAD));
             queryVer.addFile(FILE_CHANGELOG, type2Url.get(FileResource.CHANGELOG));
+            storageUtil.getWebResourceUrls(extVer, serverUrl).forEach((name, url) -> queryVer.addFile(FILE_WEB_RESOURCES + name, url));
         }
 
         if (test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {

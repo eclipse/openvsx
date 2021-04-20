@@ -464,10 +464,12 @@ public class RegistryAPI {
     })
     public ResponseEntity<ExtensionJson> publish(
             InputStream content,
-            @RequestParam @ApiParam("A personal access token") String token
+            @RequestParam @ApiParam("A personal access token") String token,
+            @RequestParam(required = false, defaultValue = "false") @ApiParam("Flag to enable publishing web extensions") boolean web
         ) {
         try {
-            var json = local.publish(content, token);
+            var publishOptions = new PublishOptions(web);
+            var json = local.publish(content, token, publishOptions);
             var serverUrl = UrlUtil.getBaseUrl();
             var url = UrlUtil.createApiUrl(serverUrl, "api", json.namespace, json.name, json.version);
             return ResponseEntity.status(HttpStatus.CREATED)
