@@ -44,6 +44,8 @@ public class WebConfig implements WebMvcConfigurer {
             }
             registry.addMapping("/documents/**")
                     .allowedOrigins("*");
+            registry.addMapping("/api/**")
+                    .allowedOrigins("*");
         }
     }
 
