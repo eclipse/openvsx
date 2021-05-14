@@ -15,8 +15,10 @@ import java.nio.charset.Charset;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.HandlerMapping;
 
 public final class UrlUtil {
 
@@ -132,6 +134,22 @@ public final class UrlUtil {
 
         url.append(request.getContextPath());
         return url.toString();
+    }
+
+    /**
+     * Extract the rest ** of a wildcard path /<segments>/**
+     * @param request incoming request
+     * @return rest of the path
+     */
+    public static String extractWildcardPath(HttpServletRequest request){
+        String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+        String bestMatchPattern = (String ) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        if (path == null || bestMatchPattern == null) {
+            return "";
+        } else {
+            String restOfPath = new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+            return restOfPath;
+        }
     }
 
 }
