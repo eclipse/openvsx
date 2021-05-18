@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
+import javax.servlet.http.HttpServletRequest;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -220,16 +221,19 @@ public class VSCodeAdapter {
         }
     }
 
-    @GetMapping("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType:.+}")
+    @GetMapping("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}/**")
     @CrossOrigin
-    public ResponseEntity<byte[]> getAsset(@PathVariable String namespace,
+    public ResponseEntity<byte[]> getAsset(HttpServletRequest request,
+                                          @PathVariable String namespace,
                                           @PathVariable String extensionName,
                                           @PathVariable String version,
                                           @PathVariable String assetType) {
+        var restOfTheUrl = UrlUtil.extractWildcardPath(request);
+        var asset = (restOfTheUrl != null && restOfTheUrl.length() > 0) ? (assetType + "/" + restOfTheUrl) : assetType;
         var extVersion = repositories.findVersion(version, extensionName, namespace);
         if (extVersion == null || !extVersion.isActive())
             throw new NotFoundException();
-        var resource = getFileFromDB(extVersion, assetType);
+        var resource = getFileFromDB(extVersion, asset);
         if (resource == null)
             throw new NotFoundException();
         if (resource.getType().equals(FileResource.DOWNLOAD))
@@ -383,6 +387,9 @@ public class VSCodeAdapter {
                     .collect(Collectors.joining(","));
             queryVer.addProperty(PROP_EXTENSION_PACK, bundledExtensions);
             queryVer.addProperty(PROP_LOCALIZED_LANGUAGES, "");
+            if (isWebExtension(extVer)) {
+                queryVer.addProperty(PROP_WEB_EXTENSION, "true");
+            }
         }
         return queryVer;
     }
@@ -395,6 +402,10 @@ public class VSCodeAdapter {
                 .findFirst()
                 .map(engine -> engine.substring("vscode@".length()))
                 .orElse(null);
+    }
+
+    private boolean isWebExtension(ExtensionVersion extVer) {
+        return extVer.getExtensionKind() != null && extVer.getExtensionKind().contains("web");
     }
 
     private boolean test(int flags, int flag) {
