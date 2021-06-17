@@ -72,13 +72,18 @@ module.exports = function (argv: string[]): void {
 
     program
         .command('*', '', { noHelp: true })
-        .action((cmd: string) => {
+        .action((cmd: commander.Command) => {
             const availableCommands = program.commands.map((c: any) => c._name) as string[];
-            const suggestion = availableCommands.find(c => leven(c, cmd) < c.length * 0.4);
-            if (suggestion)
-                console.error(`Unknown command '${cmd}', did you mean '${suggestion}'?\n`);
-            else
-                console.error(`Unknown command '${cmd}'`);
+            const actualCommand = cmd.args[0];
+            if (actualCommand) {
+                const suggestion = availableCommands.find(c => leven(c, actualCommand) < c.length * 0.4);
+                if (suggestion)
+                    console.error(`Unknown command '${actualCommand}', did you mean '${suggestion}'?\n`);
+                else
+                    console.error(`Unknown command '${actualCommand}'.\n`);
+            } else {
+                console.error('Unknown command.');
+            }
             program.help();
         });
 
