@@ -84,7 +84,7 @@ async function useMITLicense(manifest: Manifest, packagePath?: string) {
     console.log('LICENSE file has been written. Please commit it to the source repository.');
 }
 
-const LICENSE_FILE_NAMES = ['license.md', 'license', 'license.txt'];
+const LICENSE_FILE_NAMES = ['license.md', 'license', 'license.txt', 'licence.md', 'licence', 'licence.txt'];
 
 async function hasLicenseFile(packagePath?: string): Promise<boolean> {
     const fileNames = await promisify(fs.readdir)(packagePath ?? '.');
