@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledFuture;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import org.apache.jena.ext.com.google.common.collect.Lists;
 import org.eclipse.openvsx.entities.FileResource;
@@ -41,7 +42,7 @@ public class StorageMigration {
     @Autowired
     TransactionTemplate transactions;
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

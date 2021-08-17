@@ -12,11 +12,11 @@ package org.eclipse.openvsx;
 import java.time.LocalDateTime;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Profile("test")
 public class TestService {
     
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Transactional

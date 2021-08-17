@@ -15,6 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
@@ -51,7 +52,7 @@ public class AdminService {
     @Autowired
     ExtensionService extensions;
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

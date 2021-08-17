@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +41,7 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +58,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
-@MockBean({ EntityManager.class, ClientRegistrationRepository.class })
+@MockBean({ ClientRegistrationRepository.class })
 public class UserAPITest {
 
     @SpyBean
@@ -70,6 +72,21 @@ public class UserAPITest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @MockBean
+    EntityManager entityManager;
+
+    @MockBean
+    EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    UserAPI userAPI;
+
+    @BeforeEach
+    public void setup() {
+        userAPI.entityManager = entityManager;
+        users.entityManager = entityManager;
+    }
 
     @Test
     public void testLoggedIn() throws Exception {

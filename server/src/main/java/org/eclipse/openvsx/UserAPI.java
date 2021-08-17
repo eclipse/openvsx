@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 
@@ -55,7 +56,7 @@ public class UserAPI {
 
     private final static int TOKEN_DESCRIPTION_SIZE = 255;
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

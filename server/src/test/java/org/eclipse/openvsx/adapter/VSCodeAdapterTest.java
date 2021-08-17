@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
@@ -44,6 +45,7 @@ import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,10 +84,21 @@ public class VSCodeAdapterTest {
     EntityManager entityManager;
 
     @MockBean
+    EntityManagerFactory entityManagerFactory;
+
+    @MockBean
     EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    VSCodeAdapter adapter;
+
+    @BeforeEach
+    public void setup() {
+        adapter.entityManager = entityManager;
+    }
 
     @Test
     public void testSearch() throws Exception {

@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Arrays;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +45,7 @@ public class TokenService {
     @Autowired
     TransactionTemplate transactions;
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

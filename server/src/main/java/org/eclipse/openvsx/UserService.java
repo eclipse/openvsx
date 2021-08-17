@@ -12,6 +12,7 @@ package org.eclipse.openvsx;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.entities.Namespace;
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserService {
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 import com.google.common.io.CharStreams;
 
@@ -58,7 +59,7 @@ import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(SpringExtension.class)
 @MockBean({
-    EntityManager.class, SearchService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class
+    EntityManagerFactory.class, SearchService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class
 })
 public class EclipseServiceTest {
 
@@ -77,8 +78,12 @@ public class EclipseServiceTest {
     @Autowired
     EclipseService eclipse;
 
+    @MockBean
+    EntityManager entityManager;
+
     @BeforeEach
     public void setup() {
+        eclipse.entityManager = entityManager;
         eclipse.publisherAgreementVersion = "1";
         eclipse.eclipseApiUrl = "https://test.openvsx.eclipse.org/";
     }

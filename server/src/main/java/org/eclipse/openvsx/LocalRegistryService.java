@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
@@ -65,7 +66,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

@@ -15,6 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 import javax.transaction.Transactional.TxType;
 
@@ -39,7 +40,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ExtensionService {
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +52,8 @@ import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,13 +88,25 @@ public class AdminAPITest {
     SearchService search;
 
     @MockBean
-    EntityManager entityManager;
-
-    @MockBean
     EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
+
+    @MockBean
+    private EntityManager entityManager;
+
+    @MockBean
+    private EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    AdminService admins;
+
+    @BeforeEach
+    public void setup() {
+        admins.entityManager = entityManager;
+        users.entityManager = entityManager;
+    }
 
     @Test
     public void testGetExtensionNotLoggedIn() throws Exception {

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 
 import com.google.common.base.Strings;
@@ -62,7 +63,7 @@ import org.springframework.web.servlet.ModelAndView;
 @RestController
 public class VSCodeAdapter {
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

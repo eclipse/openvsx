@@ -32,6 +32,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
@@ -59,6 +63,7 @@ import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,9 +82,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(RegistryAPI.class)
 @AutoConfigureWebClient
@@ -102,6 +104,9 @@ public class RegistryAPITest {
     EntityManager entityManager;
 
     @MockBean
+    EntityManagerFactory entityManagerFactory;
+
+    @MockBean
     EclipseService eclipse;
 
     @Autowired
@@ -109,6 +114,16 @@ public class RegistryAPITest {
 
     @Autowired
     ExtensionService extensionService;
+
+    @Autowired
+    LocalRegistryService local;
+
+    @BeforeEach
+    public void setup() {
+        users.entityManager = entityManager;
+        local.entityManager = entityManager;
+        extensionService.entityManager = entityManager;
+    }
 
     @Test
     public void testPublicNamespace() throws Exception {

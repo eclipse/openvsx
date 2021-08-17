@@ -12,6 +12,7 @@ package org.eclipse.openvsx.migration;
 import java.util.LinkedHashSet;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -29,7 +30,7 @@ public class OrphanNamespaceMigration {
 
     protected final Logger logger = LoggerFactory.getLogger(OrphanNamespaceMigration.class);
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

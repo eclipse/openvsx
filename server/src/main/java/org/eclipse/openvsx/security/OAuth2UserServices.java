@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import com.google.common.base.Strings;
 
@@ -52,7 +53,7 @@ public class OAuth2UserServices {
     @Autowired
     RepositoryService repositories;
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired

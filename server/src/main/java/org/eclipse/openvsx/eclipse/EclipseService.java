@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -82,7 +83,7 @@ public class EclipseService {
     @Autowired
     ExtensionService extensions;
 
-    @Autowired
+    @PersistenceContext
     EntityManager entityManager;
 
     @Autowired
