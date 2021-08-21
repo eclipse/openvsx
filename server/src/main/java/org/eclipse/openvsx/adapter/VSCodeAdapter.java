@@ -274,6 +274,7 @@ public class VSCodeAdapter {
     }
 
     @GetMapping("/vscode/item")
+    @CrossOrigin
     public ModelAndView getItemUrl(@RequestParam String itemName, ModelMap model) {
         var dotIndex = itemName.indexOf('.');
         if (dotIndex < 0) {
@@ -285,6 +286,7 @@ public class VSCodeAdapter {
     }
 
     @GetMapping("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage")
+    @CrossOrigin
     public ModelAndView download(@PathVariable String namespace, @PathVariable String extension,
                                  @PathVariable String version, ModelMap model) {
         if (googleStorage.isEnabled()) {
