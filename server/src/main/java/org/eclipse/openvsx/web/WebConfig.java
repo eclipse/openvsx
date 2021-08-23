@@ -46,6 +46,8 @@ public class WebConfig implements WebMvcConfigurer {
                     .allowedOrigins("*");
             registry.addMapping("/api/**")
                     .allowedOrigins("*");
+            registry.addMapping("/vscode/**")
+                    .allowedOrigins("*");
         }
     }
 
