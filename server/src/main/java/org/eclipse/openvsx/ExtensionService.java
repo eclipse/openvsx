@@ -158,10 +158,6 @@ public class ExtensionService {
         if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
             throw new ErrorResultException("Invalid 'extensionPack' format. Expected: '${namespace}.${name}'");
         }
-        var extensionCount = repositories.countExtensions(split[1], split[0]);
-        if (extensionCount == 0) {
-            throw new ErrorResultException("Cannot resolve bundled extension: " + bundled);
-        }
         var depList = extVersion.getBundledExtensions();
         if (depList == null) {
             depList = new ArrayList<>();
