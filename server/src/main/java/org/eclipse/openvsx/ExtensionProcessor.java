@@ -22,6 +22,8 @@ import java.util.zip.ZipFile;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.MissingNode;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -39,8 +41,8 @@ import org.springframework.http.HttpStatus;
  */
 public class ExtensionProcessor implements AutoCloseable {
 
+    private static final String VSIX_MANIFEST = "extension.vsixmanifest";
     private static final String PACKAGE_JSON = "extension/package.json";
-    private static final String PACKAGE_NLS_JSON = "extension/package.nls.json";
     private static final String[] README = { "extension/README.md", "extension/README", "extension/README.txt" };
     private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
     private static final String[] CHANGELOG = { "extension/CHANGELOG.md", "extension/CHANGELOG", "extension/CHANGELOG.txt" };
@@ -48,16 +50,16 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
     private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");
 
-    private final PublishOptions publishOptions;
+    private static final String WEB_EXTENSION_TAG = "__web_extension";
+
     private final InputStream inputStream;
     private byte[] content;
     private ZipFile zipFile;
     private JsonNode packageJson;
-    private JsonNode packageNlsJson;
+    private JsonNode vsixManifest;
 
-    public ExtensionProcessor(InputStream stream, PublishOptions publishOptions) {
+    public ExtensionProcessor(InputStream stream) {
         this.inputStream = stream;
-        this.publishOptions = publishOptions;
     }
 
     @Override
@@ -111,99 +113,135 @@ public class ExtensionProcessor implements AutoCloseable {
         } catch (IOException exc) {
             throw new RuntimeException(exc);
         }
+    }
 
-        // Read package.nls.json
-        bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_NLS_JSON);
-        if (bytes != null) {
-            try {
-                var mapper = new ObjectMapper();
-                packageNlsJson = mapper.readTree(bytes);
-            } catch (JsonParseException exc) {
-                throw new ErrorResultException("Invalid JSON format in " + PACKAGE_NLS_JSON
-                        + ": " + exc.getMessage());
-            } catch (IOException exc) {
-                throw new RuntimeException(exc);
-            }
+    private void loadVsixManifest() {
+        if (vsixManifest != null) {
+            return;
+        }
+
+        readInputStream();
+
+        // Read extension.vsixmanifest
+        var bytes = ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST);
+        if (bytes == null)
+            throw new ErrorResultException("Entry not found: " + VSIX_MANIFEST);
+        
+        try {
+            var mapper = new XmlMapper();
+            vsixManifest = mapper.readTree(bytes);
+        } catch (JsonParseException exc) {
+            throw new ErrorResultException("Invalid JSON format in " + VSIX_MANIFEST
+                    + ": " + exc.getMessage());
+        } catch (IOException exc) {
+            throw new RuntimeException(exc);
         }
     }
 
+    private JsonNode findByIdInArray(Iterable<JsonNode> iter, String id) {
+        for(JsonNode node : iter){
+            var idNode = node.get("Id");
+            if(idNode != null && idNode.asText().equals(id)){
+                return node;
+            }
+        }
+        return MissingNode.getInstance();
+    }
+
     public String getExtensionName() {
-        loadPackageJson();
-        return packageJson.path("name").asText();
+        loadVsixManifest();
+        return vsixManifest.path("Metadata").path("Identity").path("Id").asText();
     }
 
     public String getNamespace() {
-        loadPackageJson();
-        return packageJson.path("publisher").asText();
+        loadVsixManifest();
+        return vsixManifest.path("Metadata").path("Identity").path("Publisher").asText();
     }
 
     public List<String> getExtensionDependencies() {
-        loadPackageJson();
-        var result = getStringList(packageJson.path("extensionDependencies"));
-        return result != null ? result : Collections.emptyList();
+        loadVsixManifest();
+        var extDepenNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Code.ExtensionDependencies");
+        return asStringList(extDepenNode.path("Value").asText(), ",");
     }
 
     public List<String> getBundledExtensions() {
-        loadPackageJson();
-        var result = getStringList(packageJson.path("extensionPack"));
-        return result != null ? result : Collections.emptyList();
+        loadVsixManifest();
+        var extPackNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Code.ExtensionPack");
+        return asStringList(extPackNode.path("Value").asText(), ",");
+    }
+
+    public List<String> getExtensionKinds() {
+        loadVsixManifest();
+        var extKindNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Code.ExtensionKind");
+        return asStringList(extKindNode.path("Value").asText(), ",");
+    }
+
+    public String getHomepage() {
+        loadVsixManifest();
+        var extKindNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Services.Links.Learn");
+        return extKindNode.path("Value").asText();
+    }
+
+    public String getRepository() {
+        loadVsixManifest();
+        var sourceNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Services.Links.Source");
+        return sourceNode.path("Value").asText();
+    }
+
+    public String getBugs() {
+        loadVsixManifest();
+        var supportNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Services.Links.Support");
+        return supportNode.path("Value").asText();
+    }
+
+    public String getGalleryColor() {
+        loadVsixManifest();
+        var colorNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Services.Branding.Color");
+        return colorNode.path("Value").asText();
+    }
+
+    public String getGalleryTheme() {
+        loadVsixManifest();
+        var themeNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Services.Branding.Theme");
+        return themeNode.path("Value").asText();
+    }
+
+    public boolean isPreview() {
+        loadVsixManifest();
+        var galleryFlags = vsixManifest.path("Metadata").path("GalleryFlags");
+        return asStringList(galleryFlags.asText(), " ").contains("Preview");
     }
 
     public ExtensionVersion getMetadata() {
         loadPackageJson();
+        loadVsixManifest();
         var extension = new ExtensionVersion();
-        extension.setVersion(packageJson.path("version").textValue());
-        extension.setPreview(packageJson.path("preview").booleanValue());
-        extension.setDisplayName(getNlsValue(packageJson.path("displayName")));
-        extension.setDescription(getNlsValue(packageJson.path("description")));
+        extension.setVersion(vsixManifest.path("Metadata").path("Identity").path("Version").asText());
+        extension.setPreview(isPreview());
+        extension.setDisplayName(vsixManifest.path("Metadata").path("DisplayName").asText());
+        extension.setDescription(vsixManifest.path("Metadata").path("Description").path("").asText());
         extension.setEngines(getEngines(packageJson.path("engines")));
-        extension.setCategories(getStringList(packageJson.path("categories")));
-        extension.setExtensionKind(getStringList(packageJson.path("extensionKind")));
-        extension.setTags(getStringList(packageJson.path("keywords")));
+        extension.setCategories(asStringList(vsixManifest.path("Metadata").path("Categories").asText(), ","));
+        extension.setExtensionKind(getExtensionKinds());
+        extension.setTags(asStringList(vsixManifest.path("Metadata").path("Tags").asText(), ","));
         extension.setLicense(packageJson.path("license").textValue());
-        extension.setHomepage(getUrl(packageJson.path("homepage")));
-        extension.setRepository(getUrl(packageJson.path("repository")));
-        extension.setBugs(getUrl(packageJson.path("bugs")));
+        extension.setHomepage(getHomepage());
+        extension.setRepository(getRepository());
+        extension.setBugs(getBugs());
         extension.setMarkdown(packageJson.path("markdown").textValue());
-        var galleryBanner = packageJson.path("galleryBanner");
-        if (galleryBanner.isObject()) {
-            extension.setGalleryColor(galleryBanner.path("color").textValue());
-            extension.setGalleryTheme(galleryBanner.path("theme").textValue());
-        }
+        extension.setGalleryColor(getGalleryColor());
+        extension.setGalleryTheme(getGalleryTheme());
         extension.setQna(packageJson.path("qna").textValue());
+
         return extension;
     }
 
-    private List<String> getStringList(JsonNode node) {
-        if (node.isArray()) {
-            var set = new LinkedHashSet<String>();
-            for (var element : node) {
-                if (element.isTextual())
-                    set.add(element.textValue());
-            }
-            return new ArrayList<>(set);
+    private List<String> asStringList(String value, String sep){
+        if (Strings.isNullOrEmpty(value)){
+            return new ArrayList<String>();
         }
-        return null;
-    }
 
-    private String getNlsValue(JsonNode node) {
-        var value = node.textValue();
-        if (packageNlsJson != null && value.length() > 2 && value.startsWith("%") && value.endsWith("%")) {
-            var key = value.substring(1, value.length() - 1);
-            return packageNlsJson.path(key).textValue();
-        }
-        return value;
-    }
-
-    private String getUrl(JsonNode node) {
-        String result = null;
-        if (node.isTextual())
-            result = node.textValue();
-        if (node.isObject())
-            result = node.path("url").textValue();
-        if (result != null && (result.isEmpty() || result.equals(".")))
-            result = null;
-        return result;
+        return Arrays.asList(value.split(sep));
     }
 
     private List<String> getEngines(JsonNode node) {
@@ -217,6 +255,10 @@ public class ExtensionProcessor implements AutoCloseable {
             return result;
         }
         return null;
+    }
+
+    private boolean isWebExtensionKind(ExtensionVersion extension) {
+        return extension.getTags().contains(WEB_EXTENSION_TAG);
     }
 
     public List<FileResource> getResources(ExtensionVersion extension) {
@@ -239,7 +281,7 @@ public class ExtensionProcessor implements AutoCloseable {
         var icon = getIcon(extension);
         if (icon != null)
             resources.add(icon);
-        if (extension.getExtensionKind() != null && extension.getExtensionKind().contains("web") && publishOptions.web)
+        if (isWebExtensionKind(extension))
             resources.addAll(getWebResources(extension));
         return resources;
     }

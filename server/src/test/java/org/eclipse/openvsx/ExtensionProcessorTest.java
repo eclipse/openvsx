@@ -22,16 +22,16 @@ class ExtensionProcessorTest {
     void testTodoTree() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/todo-tree.zip");
-            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
+            var processor = new ExtensionProcessor(stream);
         ) {
             assertThat(processor.getNamespace()).isEqualTo("Gruntfuggly");
             assertThat(processor.getExtensionName()).isEqualTo("todo-tree");
 
             var metadata = processor.getMetadata();
-            assertThat(metadata.getVersion()).isEqualTo("0.0.160");
+            assertThat(metadata.getVersion()).isEqualTo("0.0.213");
             assertThat(metadata.getDisplayName()).isEqualTo("Todo Tree");
             assertThat(metadata.getDescription()).isEqualTo("Show TODO, FIXME, etc. comment tags in a tree view");
-            assertThat(metadata.getEngines()).isEqualTo(Arrays.asList("vscode@^1.5.0"));
+            assertThat(metadata.getEngines()).isEqualTo(Arrays.asList("vscode@^1.46.0"));
             assertThat(metadata.getCategories()).isEqualTo(Arrays.asList("Other"));
             assertThat(metadata.getTags()).isEqualTo(Arrays.asList("todo", "task", "tasklist", "multi-root ready"));
             assertThat(metadata.getLicense()).isEqualTo("MIT");
@@ -39,7 +39,7 @@ class ExtensionProcessorTest {
 
             checkResource(processor, FileResource.README, "README.md");
             checkResource(processor, FileResource.ICON, "todo-tree.png");
-            checkResource(processor, FileResource.LICENSE, "LICENSE.txt");
+            checkResource(processor, FileResource.LICENSE, "License.txt");
         }
     }
 
@@ -47,7 +47,7 @@ class ExtensionProcessorTest {
     void testChangelog() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/changelog.zip");
-            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
+            var processor = new ExtensionProcessor(stream);
         ) {
             checkResource(processor, FileResource.CHANGELOG, "CHANGELOG.md");
         }
@@ -57,7 +57,7 @@ class ExtensionProcessorTest {
     void testCapitalizedCaseForResources() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/with-capitalized-case.zip");
-            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
+            var processor = new ExtensionProcessor(stream);
         ) {
             checkResource(processor, FileResource.CHANGELOG, "Changelog.md");
             checkResource(processor, FileResource.README, "Readme.md");
@@ -69,7 +69,7 @@ class ExtensionProcessorTest {
     void testMinorCaseForResources() throws Exception {
         try (
             var stream = getClass().getResourceAsStream("util/with-minor-case.zip");
-            var processor = new ExtensionProcessor(stream, new PublishOptions(false));
+            var processor = new ExtensionProcessor(stream);
         ) {
             checkResource(processor, FileResource.CHANGELOG, "changelog.md");
             checkResource(processor, FileResource.README, "readme.md");

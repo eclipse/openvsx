@@ -6,5 +6,11 @@
     },
     "eslint.packageManager": "yarn",
     "java.dependency.syncWithFolderExplorer": true,
-    "java.format.enabled": false
+    "java.format.enabled": false,
+    "gradle.nestedProjects": true,
+    "gradle.javaDebug": {
+        "tasks": [
+            "runServer"
+        ]
+    }
 }

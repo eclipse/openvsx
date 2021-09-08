@@ -1135,6 +1135,36 @@ public class RegistryAPITest {
     private byte[] createExtensionPackage(String name, String version, String license) throws IOException {
         var bytes = new ByteArrayOutputStream();
         var archive = new ZipOutputStream(bytes);
+        archive.putNextEntry(new ZipEntry("extension.vsixmanifest"));
+        var vsixmanifest = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+            "<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">" +
+            "<Metadata>" +
+            "<Identity Language=\"en-US\" Id=\""+ name +"\" Version=\"" + version + "\" Publisher=\"foo\"  />" +
+            "<DisplayName>foo</DisplayName>" +
+            "<Description xml:space=\"preserve\"></Description>" +
+            "<Tags></Tags>" +
+            "<Categories>Other</Categories>" +
+            "<GalleryFlags>Public</GalleryFlags>" +
+            "<Badges></Badges>" +
+            "<Properties>" +
+            "<Property Id=\"Microsoft.VisualStudio.Code.Engine\" Value=\"^1.57.0\" />" +
+            "<Property Id=\"Microsoft.VisualStudio.Code.ExtensionDependencies\" Value=\"\" />" +
+            "<Property Id=\"Microsoft.VisualStudio.Code.ExtensionPack\" Value=\"\" />" +
+            "<Property Id=\"Microsoft.VisualStudio.Code.ExtensionKind\" Value=\"ui,web,workspace\" />" +
+            "<Property Id=\"Microsoft.VisualStudio.Code.LocalizedLanguages\" Value=\"\" />" +
+            "<Property Id=\"Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown\" Value=\"true\" />" +
+            "</Properties>" +
+            "</Metadata>" +
+            "<Installation>" +
+            "<InstallationTarget Id=\"Microsoft.VisualStudio.Code\"/>" +
+            "</Installation>" +
+            "<Dependencies/>" +
+            "<Assets>" +
+            "<Asset Type=\"Microsoft.VisualStudio.Code.Manifest\" Path=\"extension/package.json\" Addressable=\"true\" />" +
+            "</Assets>" +
+            "</PackageManifest>";
+        archive.write(vsixmanifest.getBytes());
+        archive.closeEntry();
         archive.putNextEntry(new ZipEntry("extension/package.json"));
         var packageJson = "{" +
                 "\"publisher\": \"foo\"," +
@@ -1143,6 +1173,7 @@ public class RegistryAPITest {
                 (license == null ? "" : ",\"license\": \"" + license + "\"" ) +
             "}";
         archive.write(packageJson.getBytes());
+        archive.closeEntry();
         archive.finish();
         return bytes.toByteArray();
     }

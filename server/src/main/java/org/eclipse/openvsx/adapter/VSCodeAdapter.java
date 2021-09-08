@@ -311,15 +311,21 @@ public class VSCodeAdapter {
         }
         var queryExt = new ExtensionQueryResult.Extension();
         var namespace = extension.getNamespace();
+        var latest = extension.getLatest();
+        queryExt.extensionId = extension.getPublicId();
+        queryExt.extensionName = extension.getName();
+        queryExt.displayName = latest.getDisplayName();
+        queryExt.shortDescription = latest.getDescription();
         queryExt.publisher = new ExtensionQueryResult.Publisher();
         queryExt.publisher.publisherId = namespace.getPublicId();
         queryExt.publisher.publisherName = namespace.getName();
-        queryExt.extensionId = extension.getPublicId();
-        queryExt.extensionName = extension.getName();
-        var latest = extension.getLatest();
-        queryExt.displayName = latest.getDisplayName();
+        queryExt.tags = latest.getTags();
+        // TODO: add these
+        // queryExt.releaseDate
+        // queryExt.publishedDate
+        // queryExt.lastUpdated
+        queryExt.categories = latest.getCategories();
         queryExt.flags = latest.isPreview() ? FLAG_PREVIEW : "";
-        queryExt.shortDescription = latest.getDescription();
 
         if (test(flags, FLAG_INCLUDE_LATEST_VERSION_ONLY)) {
             queryExt.versions = Lists.newArrayList(toQueryVersion(latest, flags));

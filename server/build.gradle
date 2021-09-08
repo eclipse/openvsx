@@ -60,6 +60,12 @@ dependencies {
     implementation "com.azure:azure-storage-blob:${versions.azure}"
     implementation "io.springfox:springfox-boot-starter:${versions.springfox}"
     implementation "com.google.guava:guava:${versions.guava}"
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.12.5'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.12.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
+    implementation 'com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.12.5'
+    implementation 'com.fasterxml.woodstox:woodstox-core:6.2.4'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.5'
     implementation("org.spdx:spdx-tools:${versions.spdx}") {
         exclude group: 'net.sf.saxon'
         exclude group: 'org.antlr', module: 'antlr'

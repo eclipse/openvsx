@@ -61,8 +61,8 @@ public class ExtensionService {
     boolean requireLicense;
 
     @Transactional(TxType.REQUIRED)
-    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token, PublishOptions publishOptions) {
-        try (var processor = new ExtensionProcessor(content, publishOptions)) {
+    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
+        try (var processor = new ExtensionProcessor(content)) {
             // Extract extension metadata from its manifest
             var extVersion = createExtensionVersion(processor, token.getUser(), token);
             processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));

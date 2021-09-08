@@ -28,7 +28,7 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
         console.log(); // new line
     }
 
-    const extension = await registry.publish(options.extensionFile!, options.pat, options.web);
+    const extension = await registry.publish(options.extensionFile!, options.pat);
     if (extension.error) {
         throw new Error(extension.error);
     }
@@ -57,10 +57,6 @@ export interface PublishOptions extends RegistryOptions {
 	 * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
 	 */
     yarn?: boolean;
-    /**
-     * Enables publishing of web extensions.
-     */
-    web?: boolean;
 }
 
 async function packageExtension(options: PublishOptions, registry: Registry): Promise<void> {
@@ -69,17 +65,12 @@ async function packageExtension(options: PublishOptions, registry: Registry): Pr
     }
 
     options.extensionFile = await createTempFile({ postfix: '.vsix' });
-    const createVSIXOptions: IPackageOptions = {
+    const createVSIXOptions: ICreateVSIXOptions = {
         cwd: options.packagePath,
         packagePath: options.extensionFile,
         baseContentUrl: options.baseContentUrl,
         baseImagesUrl: options.baseImagesUrl,
-        useYarn: options.yarn,
-        web: options.web
+        useYarn: options.yarn
     };
     await createVSIX(createVSIXOptions);
-}
-
-interface IPackageOptions extends ICreateVSIXOptions {
-    web?: boolean // experimental flag, not part of the public ICreateVSIXOptions api, yet
 }

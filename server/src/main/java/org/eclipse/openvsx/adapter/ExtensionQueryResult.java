@@ -11,6 +11,9 @@ package org.eclipse.openvsx.adapter;
 
 import java.util.List;
 
+// Keep interfaces in sync with
+// https://github.com/microsoft/vscode/blob/e7d7e9a9348e6a8cc8c03f877d39cb72e5dfb1ff/src/vs/platform/extensionManagement/common/extensionGalleryService.ts#L28-L67
+
 public class ExtensionQueryResult {
 
     public List<ResultItem> results;
@@ -23,29 +26,35 @@ public class ExtensionQueryResult {
     public static class Extension {
         public static final String FLAG_PREVIEW = "preview";
 
-        public Publisher publisher;
         public String extensionId;
         public String extensionName;
         public String displayName;
-        public String flags;
         public String shortDescription;
+        public Publisher publisher;
         public List<ExtensionVersion> versions;
         public List<Statistic> statistics;
+        public List<String> tags;
+        public String releaseDate;
+        public String publishedDate;
+        public String lastUpdated;
+        public List<String> categories;
+        public String flags;
     }
 
     public static class Publisher {
+        public String displayName;
         public String publisherId;
         public String publisherName;
-        public String displayName;
     }
 
     public static class ExtensionVersion {
         public String version;
         public String lastUpdated;
-        public List<ExtensionFile> files;
-        public List<Property> properties;
         public String assetUri;
         public String fallbackAssetUri;
+        public List<ExtensionFile> files;
+        public List<Property> properties;
+        public String targetPlatform;
 
         public void addFile(String assetType, String source) {
             if (source != null) {

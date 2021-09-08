@@ -25,7 +25,7 @@ public class ArchiveUtilTest {
             var archive = new ZipFile(packageUrl.getPath());
         ) {
             var packageJson = ArchiveUtil.readEntry(archive, "extension/package.json");
-            assertThat(packageJson.length).isEqualTo(24052);
+            assertThat(packageJson.length).isEqualTo(44712);
             var icon = ArchiveUtil.readEntry(archive, "extension/resources/todo-tree.png");
             assertThat(icon.length).isEqualTo(8854);
         }

@@ -58,12 +58,9 @@ export class Registry {
         }
     }
 
-    publish(file: string, pat: string, web?: boolean): Promise<Extension> {
+    publish(file: string, pat: string): Promise<Extension> {
         try {
             const query: { [key: string]: string } = { token: pat };
-            if (web) {
-                query.web = 'true';
-            }
             const url = this.getUrl('api/-/publish', query);
             return this.postFile(file, url, {
                 'Content-Type': 'application/octet-stream'
