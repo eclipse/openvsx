@@ -39,8 +39,7 @@ module.exports = function (argv: string[]): void {
         .option('--baseContentUrl <url>', 'Prepend all relative links in README.md with this URL.')
         .option('--baseImagesUrl <url>', 'Prepend all relative image links in README.md with this URL.')
         .option('--yarn', 'Use yarn instead of npm while packing extension files.')
-        .option('--web', 'Enables publishing of web extensions.')
-        .action((extensionFile: string, { packagePath, baseContentUrl, baseImagesUrl, yarn, web }) => {
+        .action((extensionFile: string, { packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -52,7 +51,7 @@ module.exports = function (argv: string[]): void {
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
-            publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn, web })
+            publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn })
                 .catch(handleError(program.debug,
                     'See the documentation for more information:\n'
                     + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions'

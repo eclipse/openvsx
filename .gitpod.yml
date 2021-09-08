@@ -57,8 +57,12 @@ tasks:
     for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub; done
     find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
     find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
-    find server/build/test-extensions-web -name '*.vsix' -exec cli/lib/ovsx publish --web '{}' \;
+    find server/build/test-extensions-web -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
 
 vscode:
   extensions:
-    - dbaeumer.vscode-eslint@2.1.3:1NRvj3UKNTNwmYjptmUmIw==
+    - dbaeumer.vscode-eslint
+    - redhat.java
+    - vscjava.vscode-java-debug
+    - vscjava.vscode-java-test
+    - richardwillis.vscode-gradle
