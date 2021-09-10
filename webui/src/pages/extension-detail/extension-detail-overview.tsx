@@ -144,6 +144,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
         const ReportAbuse = this.context.pageSettings.elements.reportAbuse;
         const otherAliases = Object.keys(extension.allVersions)
             .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
+        // filter internal tags
+        const tags = extension.tags?.filter(t => !t.startsWith('__'));
         return <React.Fragment>
             <Box className={classes.overview}>
                 <Box flex={5} overflow='auto'>
@@ -167,9 +169,9 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             : null
                         }
                         {
-                            extension.tags && extension.tags.length > 0 ?
+                            tags && tags.length > 0 ?
                             <Box mt={2}>
-                                {this.renderButtonList('search', 'Tags', extension.tags)}
+                                {this.renderButtonList('search', 'Tags', tags)}
                             </Box>
                             : null
                         }
