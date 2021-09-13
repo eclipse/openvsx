@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Iterables;
 
+import io.swagger.annotations.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.QueryParamJson;
@@ -44,15 +45,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Example;
-import io.swagger.annotations.ExampleProperty;
-import io.swagger.annotations.ResponseHeader;
 import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
@@ -343,9 +335,8 @@ public class RegistryAPI {
         return mergedEntries;
     }
 
-    @PostMapping(
+    @GetMapping(
         path = "/api/-/query",
-        consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -360,7 +351,78 @@ public class RegistryAPI {
             message = "The request contains an invalid parameter value"
         )
     })
-    public ResponseEntity<QueryResultJson> query(
+    public ResponseEntity<QueryResultJson> getQuery(
+            @RequestParam(required = false)
+            @ApiParam(value = "Name of a namespace", example = "foo")
+            String namespaceName,
+            @RequestParam(required = false)
+            @ApiParam(value = "Name of an extension", example = "bar")
+            String extensionName,
+            @RequestParam(required = false)
+            @ApiParam(value = "Version of an extension", example = "1")
+            String extensionVersion,
+            @RequestParam(required = false)
+            @ApiParam(value = "Identifier in the form {namespace}.{extension}", example = "foo.bar")
+            String extensionId,
+            @RequestParam(required = false)
+            @ApiParam(value = "Universally unique identifier of an extension", example = "5678")
+            String extensionUuid,
+            @RequestParam(required = false)
+            @ApiParam(value = "Universally unique identifier of a namespace", example = "1234")
+            String namespaceUuid,
+            @RequestParam(required = false)
+            @ApiParam(value = "Whether to include all versions of an extension")
+            boolean includeAllVersions
+        ) {
+        var param = new QueryParamJson();
+        param.namespaceName = namespaceName;
+        param.extensionName = extensionName;
+        param.extensionVersion = extensionVersion;
+        param.extensionId = extensionId;
+        param.extensionUuid = extensionUuid;
+        param.namespaceUuid = namespaceUuid;
+        param.includeAllVersions = includeAllVersions;
+
+        var result = new QueryResultJson();
+        for (var registry : getRegistries()) {
+            try {
+                var subResult = registry.query(param);
+                if (subResult.extensions != null) {
+                    if (result.extensions == null)
+                        result.extensions = subResult.extensions;
+                    else
+                        result.extensions.addAll(subResult.extensions);
+                }
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            } catch (ErrorResultException exc) {
+                return exc.toResponseEntity(QueryResultJson.class);
+            }
+        }
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(result);
+    }
+
+    @PostMapping(
+        path = "/api/-/query",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Deprecated
+    @ApiOperation("Deprecated: use GET method instead.\nProvides metadata of extensions matching the given parameters")
+    @ApiResponses({
+        @ApiResponse(
+            code = 200,
+            message = "Returns the (possibly empty) query results"
+        ),
+        @ApiResponse(
+            code = 400,
+            message = "The request contains an invalid parameter value"
+        )
+    })
+    public ResponseEntity<QueryResultJson> postQuery(
             @RequestBody @ApiParam("Parameters of the metadata query")
             QueryParamJson param
         ) {
