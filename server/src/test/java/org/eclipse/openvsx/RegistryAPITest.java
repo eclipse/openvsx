@@ -327,7 +327,102 @@ public class RegistryAPITest {
     }
 
     @Test
-    public void testQueryExtensionName() throws Exception {
+    public void testGetQueryExtensionName() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/api/-/query?extensionName={extensionName}", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testGetQueryNamespace() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/api/-/query?namespaceName={namespaceName}", "foo"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testGetQueryUnknownExtension() throws Exception {
+        mockExtension();
+        Mockito.when(repositories.findExtensions("baz")).thenReturn(Streamable.empty());
+        mockMvc.perform(get("/api/-/query?extensionName={extensionName}", "baz"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{ \"extensions\": [] }"));
+    }
+
+    @Test
+    public void testGetQueryInactiveExtension() throws Exception {
+        var extVersion = mockExtension();
+        extVersion.setActive(false);
+        extVersion.getExtension().setActive(false);
+
+        mockMvc.perform(get("/api/-/query?extensionId={extensionId}", "foo.bar"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{ \"extensions\": [] }"));
+    }
+
+    @Test
+    public void testGetQueryExtensionId() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/api/-/query?extensionId={extensionId}", "foo.bar"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testGetQueryExtensionUuid() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/api/-/query?extensionUuid={extensionUuid}", "5678"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testGetQueryNamespaceUuid() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/api/-/query?namespaceUuid={namespaceUuid}", "1234"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testPostQueryExtensionName() throws Exception {
         mockExtension();
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -344,7 +439,7 @@ public class RegistryAPITest {
     }
 
     @Test
-    public void testQueryNamespace() throws Exception {
+    public void testPostQueryNamespace() throws Exception {
         mockExtension();
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -361,7 +456,7 @@ public class RegistryAPITest {
     }
 
     @Test
-    public void testQueryUnknownExtension() throws Exception {
+    public void testPostQueryUnknownExtension() throws Exception {
         mockExtension();
         Mockito.when(repositories.findExtensions("baz")).thenReturn(Streamable.empty());
         mockMvc.perform(post("/api/-/query")
@@ -372,7 +467,7 @@ public class RegistryAPITest {
     }
 
     @Test
-    public void testQueryInactiveExtension() throws Exception {
+    public void testPostQueryInactiveExtension() throws Exception {
         var extVersion = mockExtension();
         extVersion.setActive(false);
         extVersion.getExtension().setActive(false);
@@ -385,7 +480,7 @@ public class RegistryAPITest {
     }
 
     @Test
-    public void testQueryExtensionId() throws Exception {
+    public void testPostQueryExtensionId() throws Exception {
         mockExtension();
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -402,7 +497,7 @@ public class RegistryAPITest {
     }
 
     @Test
-    public void testQueryExtensionUuid() throws Exception {
+    public void testPostQueryExtensionUuid() throws Exception {
         mockExtension();
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -419,7 +514,7 @@ public class RegistryAPITest {
     }
 
     @Test
-    public void testQueryNamespaceUuid() throws Exception {
+    public void testPostQueryNamespaceUuid() throws Exception {
         mockExtension();
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
