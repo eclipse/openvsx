@@ -410,8 +410,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    @Deprecated
-    @ApiOperation("Deprecated: use GET method instead.\nProvides metadata of extensions matching the given parameters")
+    @ApiOperation("Provides metadata of extensions matching the given parameters")
     @ApiResponses({
         @ApiResponse(
             code = 200,
