@@ -91,7 +91,7 @@ public class VSCodeAdapter {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    public ResponseEntity<ExtensionQueryResult> extensionQuery(@RequestBody ExtensionQueryParam param) {
+    public ExtensionQueryResult extensionQuery(@RequestBody ExtensionQueryParam param) {
         String queryString = null;
         String category = null;
         PageRequest pageRequest;
@@ -103,18 +103,18 @@ public class VSCodeAdapter {
             sortOrder = "desc";
         } else {
             var filter = param.filters.get(0);
-    
+
             var extensionIds = filter.findCriteria(FILTER_EXTENSION_ID);
             if (!extensionIds.isEmpty()) {
                 // Find extensions by identifier
-                return extensionQueryResponse(findExtensionsById(extensionIds, param.flags));
+                return findExtensionsById(extensionIds, param.flags);
             }
             var extensionNames = filter.findCriteria(FILTER_EXTENSION_NAME);
             if (!extensionNames.isEmpty()) {
                 // Find extensions by qualified name
-                return extensionQueryResponse(findExtensionsByName(extensionNames, param.flags));
+                return findExtensionsByName(extensionNames, param.flags);
             }
-    
+
             queryString = filter.findCriterion(FILTER_SEARCH_TEXT);
             if (queryString == null)
                 queryString = filter.findCriterion(FILTER_TAG);
@@ -125,22 +125,16 @@ public class VSCodeAdapter {
         }
 
         if (!search.isEnabled()) {
-            return extensionQueryResponse(toQueryResult(Collections.emptyList()));
+            return toQueryResult(Collections.emptyList());
         }
         try {
             var searchOptions = new SearchService.Options(queryString, category, pageRequest.getPageSize(),
                     pageRequest.getPageNumber() * pageRequest.getPageSize(), sortOrder, sortBy, false);
             var searchHits = search.search(searchOptions, pageRequest);
-            return extensionQueryResponse(findExtensions(searchHits, param.flags));
+            return findExtensions(searchHits, param.flags);
         } catch (ErrorResultException exc) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exc.getMessage(), exc);
         }
-    }
-
-    private ResponseEntity<ExtensionQueryResult> extensionQueryResponse(ExtensionQueryResult result) {
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                .body(result);
     }
 
     private ExtensionQueryResult findExtensionsById(List<String> ids, int flags) {
