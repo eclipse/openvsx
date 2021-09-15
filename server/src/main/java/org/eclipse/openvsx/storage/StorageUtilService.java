@@ -205,7 +205,7 @@ public class StorageUtilService implements IStorageService {
 
     public CacheControl getCacheControl(String fileName) {
         // Files are requested with a version string in the URL, so their content cannot change
-        return CacheControl.maxAge(30, TimeUnit.DAYS);
+        return CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic();
     }
     
 }

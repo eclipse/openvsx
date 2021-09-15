@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -45,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -89,7 +91,7 @@ public class VSCodeAdapter {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    public ExtensionQueryResult extensionQuery(@RequestBody ExtensionQueryParam param) {
+    public ResponseEntity<ExtensionQueryResult> extensionQuery(@RequestBody ExtensionQueryParam param) {
         String queryString = null;
         String category = null;
         PageRequest pageRequest;
@@ -105,12 +107,12 @@ public class VSCodeAdapter {
             var extensionIds = filter.findCriteria(FILTER_EXTENSION_ID);
             if (!extensionIds.isEmpty()) {
                 // Find extensions by identifier
-                return findExtensionsById(extensionIds, param.flags);
+                return extensionQueryResponse(findExtensionsById(extensionIds, param.flags));
             }
             var extensionNames = filter.findCriteria(FILTER_EXTENSION_NAME);
             if (!extensionNames.isEmpty()) {
                 // Find extensions by qualified name
-                return findExtensionsByName(extensionNames, param.flags);
+                return extensionQueryResponse(findExtensionsByName(extensionNames, param.flags));
             }
     
             queryString = filter.findCriterion(FILTER_SEARCH_TEXT);
@@ -123,16 +125,22 @@ public class VSCodeAdapter {
         }
 
         if (!search.isEnabled()) {
-            return toQueryResult(Collections.emptyList());
+            return extensionQueryResponse(toQueryResult(Collections.emptyList()));
         }
         try {
             var searchOptions = new SearchService.Options(queryString, category, pageRequest.getPageSize(),
                     pageRequest.getPageNumber() * pageRequest.getPageSize(), sortOrder, sortBy, false);
             var searchHits = search.search(searchOptions, pageRequest);
-            return findExtensions(searchHits, param.flags);
+            return extensionQueryResponse(findExtensions(searchHits, param.flags));
         } catch (ErrorResultException exc) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exc.getMessage(), exc);
         }
+    }
+
+    private ResponseEntity<ExtensionQueryResult> extensionQueryResponse(ExtensionQueryResult result) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(result);
     }
 
     private ExtensionQueryResult findExtensionsById(List<String> ids, int flags) {
@@ -244,6 +252,7 @@ public class VSCodeAdapter {
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(storageUtil.getLocation(resource))
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                     .build();
         }
     }
