@@ -11,6 +11,7 @@ package org.eclipse.openvsx.web;
 
 import java.net.URI;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -26,6 +27,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -75,7 +77,9 @@ public class SitemapController {
                 throw new RuntimeException(exc);
             }
         };
-        return new ResponseEntity<>(stream, HttpStatus.OK);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                .body(stream);
     }
 
     private String getBaseUrl() {

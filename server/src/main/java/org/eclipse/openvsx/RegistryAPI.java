@@ -238,8 +238,9 @@ public class RegistryAPI {
         ) {
         for (var registry : getRegistries()) {
             try {
-                var json = registry.getReviews(namespace, extension);
-                return ResponseEntity.ok(json);
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(registry.getReviews(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -318,7 +319,10 @@ public class RegistryAPI {
                 return exc.toResponseEntity(SearchResultJson.class);
             }
         }
-        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES)).body(result);
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(result);
     }
 
     private int mergeSearchResults(SearchResultJson result, List<SearchEntryJson> entries, int limit) {
