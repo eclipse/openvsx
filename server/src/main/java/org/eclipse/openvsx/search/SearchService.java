@@ -257,6 +257,8 @@ public class SearchService {
         if (!Strings.isNullOrEmpty(options.queryString)) {
             var boolQuery = QueryBuilders.boolQuery();
 
+            boolQuery.should(QueryBuilders.termQuery("extensionId.keyword", options.queryString)).boost(10);
+
             // Fuzzy matching of search query in multiple fields
             var multiMatchQuery = QueryBuilders.multiMatchQuery(options.queryString)
                     .field("name").boost(5)
