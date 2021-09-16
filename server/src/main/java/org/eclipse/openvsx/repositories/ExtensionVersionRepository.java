@@ -31,9 +31,11 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     ExtensionVersion findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
 
-    Streamable<ExtensionVersion> findByBundledExtensions(Extension extension);
+    @Query("select ev from ExtensionVersion ev where concat(',', ev.bundledExtensions, ',') like concat('%,', ?1, ',%')")
+    Streamable<ExtensionVersion> findByBundledExtensions(String extensionId);
 
-    Streamable<ExtensionVersion> findByDependencies(Extension extension);
+    @Query("select ev from ExtensionVersion ev where concat(',', ev.dependencies, ',') like concat('%,', ?1, ',%')")
+    Streamable<ExtensionVersion> findByDependencies(String extensionId);
 
     Streamable<ExtensionVersion> findByPublishedWith(PersonalAccessToken publishedWith);
 
