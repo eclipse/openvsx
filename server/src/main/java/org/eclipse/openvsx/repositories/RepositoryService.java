@@ -124,11 +124,15 @@ public class RepositoryService {
     }
 
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
-        return extensionVersionRepo.findByBundledExtensions(extension);
+        return extensionVersionRepo.findByBundledExtensions(extensionId(extension));
     }
 
     public Streamable<ExtensionVersion> findDependenciesReference(Extension extension) {
-        return extensionVersionRepo.findByDependencies(extension);
+        return extensionVersionRepo.findByDependencies(extensionId(extension));
+    }
+
+    private String extensionId(Extension extension) {
+        return extension.getNamespace().getName() + "." + extension.getName();
     }
 
     public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith) {
