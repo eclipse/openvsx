@@ -30,6 +30,9 @@ public class ExtensionSearch {
 
     public String namespace;
 
+    @Field(index = false)
+    public String extensionId;
+
     public String displayName;
 
     public String description;
