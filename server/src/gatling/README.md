@@ -12,7 +12,8 @@
 - Change baseUrl in each simulation file (scala/org/eclipse/openvsx), current value is: `val httpProtocol = http.baseUrl("http://localhost:8080")`
 
 ### resources/access-tokens.csv:
-- contains API access tokens. Create a couple of tokens using the web UI and paste them in this file
+- contains API access tokens. Create a couple of tokens using the web UI and add them to this file. 
+- make sure to keep the `access_token` header at the top of the file.
 
 ### scala/org/eclipse/openvsx/RegistryAPIPublishExtensionSimulation.scala:
 - change `val extensionDir = "<EXTENSION_DIR>"` to a directory that **only** contains extensions (*.vsix files). The simulation uses those files to upload them to the server.
