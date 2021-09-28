@@ -287,7 +287,7 @@ public class VSCodeAdapter {
         if (resource == null)
             throw new NotFoundException();
         if (resource.getType().equals(FileResource.DOWNLOAD))
-            storageUtil.increaseDownloadCount(extVersion);
+            storageUtil.increaseDownloadCount(extVersion, resource);
         if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
             var headers = storageUtil.getFileResponseHeaders(resource.getName());
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
@@ -348,7 +348,7 @@ public class VSCodeAdapter {
             if (resource == null)
                 throw new NotFoundException();
             if (resource.getStorageType().equals(FileResource.STORAGE_GOOGLE)) {
-                storageUtil.increaseDownloadCount(extVersion);
+                storageUtil.increaseDownloadCount(extVersion, resource);
                 return new ModelAndView("redirect:" + storageUtil.getLocation(resource), model);
             }
         }

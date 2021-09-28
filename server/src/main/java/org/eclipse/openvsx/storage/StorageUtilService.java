@@ -13,20 +13,21 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 
 import java.net.URI;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
 
+import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,6 +48,9 @@ public class StorageUtilService implements IStorageService {
 
     @Autowired
     SearchUtilService search;
+
+    @Autowired
+    EntityManager entityManager;
 
     @Autowired
     GoogleCloudStorageService googleStorage;
@@ -174,18 +178,30 @@ public class StorageUtilService implements IStorageService {
         return name2Url;
     }
 
-    /**
-     * Register a package file download by increasing its download count.
-     */
     @Transactional
-    public void increaseDownloadCount(ExtensionVersion extVersion) {
+    public void increaseDownloadCount(ExtensionVersion extVersion, FileResource resource) {
         if(azureDownloadCountService.isEnabled()) {
             // don't count downloads twice
             return;
         }
 
+        increaseDownloadCount(extVersion, resource, List.of(TimeUtil.getCurrentUTC()));
+    }
+
+    /**
+     * Register a package file download by increasing its download count.
+     */
+    public void increaseDownloadCount(ExtensionVersion extVersion, FileResource resource, List<LocalDateTime> downloadTimes) {
         var extension = extVersion.getExtension();
-        extension.setDownloadCount(extension.getDownloadCount() + 1);
+        extension.setDownloadCount(extension.getDownloadCount() + downloadTimes.size());
+        for(var time : downloadTimes) {
+            var download = new Download();
+            download.setAmount(1);
+            download.setTimestamp(time);
+            download.setFileResource(resource);
+            entityManager.persist(download);
+        }
+
         search.updateSearchEntry(extension);
     }
 

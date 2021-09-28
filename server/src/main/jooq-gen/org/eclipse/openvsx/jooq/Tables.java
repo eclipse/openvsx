@@ -4,7 +4,12 @@
 package org.eclipse.openvsx.jooq;
 
 
+import org.eclipse.openvsx.jooq.tables.AdminStatistics;
+import org.eclipse.openvsx.jooq.tables.AdminStatisticsExtensionsByRating;
+import org.eclipse.openvsx.jooq.tables.AdminStatisticsPublishersByExtensionsPublished;
 import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.jooq.tables.Download;
+import org.eclipse.openvsx.jooq.tables.EntityActiveState;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -27,9 +32,34 @@ import org.eclipse.openvsx.jooq.tables.UserData;
 public class Tables {
 
     /**
+     * The table <code>public.admin_statistics</code>.
+     */
+    public static final AdminStatistics ADMIN_STATISTICS = AdminStatistics.ADMIN_STATISTICS;
+
+    /**
+     * The table <code>public.admin_statistics_extensions_by_rating</code>.
+     */
+    public static final AdminStatisticsExtensionsByRating ADMIN_STATISTICS_EXTENSIONS_BY_RATING = AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING;
+
+    /**
+     * The table <code>public.admin_statistics_publishers_by_extensions_published</code>.
+     */
+    public static final AdminStatisticsPublishersByExtensionsPublished ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED = AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED;
+
+    /**
      * The table <code>public.azure_download_count_processed_item</code>.
      */
     public static final AzureDownloadCountProcessedItem AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM = AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM;
+
+    /**
+     * The table <code>public.download</code>.
+     */
+    public static final Download DOWNLOAD = Download.DOWNLOAD;
+
+    /**
+     * The table <code>public.entity_active_state</code>.
+     */
+    public static final EntityActiveState ENTITY_ACTIVE_STATE = EntityActiveState.ENTITY_ACTIVE_STATE;
 
     /**
      * The table <code>public.extension</code>.

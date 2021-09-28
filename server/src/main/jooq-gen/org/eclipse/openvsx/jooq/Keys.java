@@ -4,7 +4,12 @@
 package org.eclipse.openvsx.jooq;
 
 
+import org.eclipse.openvsx.jooq.tables.AdminStatistics;
+import org.eclipse.openvsx.jooq.tables.AdminStatisticsExtensionsByRating;
+import org.eclipse.openvsx.jooq.tables.AdminStatisticsPublishersByExtensionsPublished;
 import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.jooq.tables.Download;
+import org.eclipse.openvsx.jooq.tables.EntityActiveState;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -18,7 +23,12 @@ import org.eclipse.openvsx.jooq.tables.Shedlock;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
 import org.eclipse.openvsx.jooq.tables.UserData;
+import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsExtensionsByRatingRecord;
+import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsPublishersByExtensionsPublishedRecord;
+import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsRecord;
 import org.eclipse.openvsx.jooq.tables.records.AzureDownloadCountProcessedItemRecord;
+import org.eclipse.openvsx.jooq.tables.records.DownloadRecord;
+import org.eclipse.openvsx.jooq.tables.records.EntityActiveStateRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionReviewRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionVersionRecord;
@@ -50,7 +60,10 @@ public class Keys {
     // UNIQUE and PRIMARY KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final UniqueKey<AdminStatisticsRecord> ADMIN_STATISTICS_PKEY = Internal.createUniqueKey(AdminStatistics.ADMIN_STATISTICS, DSL.name("admin_statistics_pkey"), new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
     public static final UniqueKey<AzureDownloadCountProcessedItemRecord> AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_PKEY = Internal.createUniqueKey(AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM, DSL.name("azure_download_count_processed_item_pkey"), new TableField[] { AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM.ID }, true);
+    public static final UniqueKey<DownloadRecord> DOWNLOAD_PKEY = Internal.createUniqueKey(Download.DOWNLOAD, DSL.name("download_pkey"), new TableField[] { Download.DOWNLOAD.ID }, true);
+    public static final UniqueKey<EntityActiveStateRecord> ENTITY_ACTIVE_STATE_PKEY = Internal.createUniqueKey(EntityActiveState.ENTITY_ACTIVE_STATE, DSL.name("entity_active_state_pkey"), new TableField[] { EntityActiveState.ENTITY_ACTIVE_STATE.ID }, true);
     public static final UniqueKey<ExtensionRecord> EXTENSION_PKEY = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("extension_pkey"), new TableField[] { Extension.EXTENSION.ID }, true);
     public static final UniqueKey<ExtensionRecord> UNIQUE_EXTENSION_PUBLIC_ID = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("unique_extension_public_id"), new TableField[] { Extension.EXTENSION.PUBLIC_ID }, true);
     public static final UniqueKey<ExtensionReviewRecord> EXTENSION_REVIEW_PKEY = Internal.createUniqueKey(ExtensionReview.EXTENSION_REVIEW, DSL.name("extension_review_pkey"), new TableField[] { ExtensionReview.EXTENSION_REVIEW.ID }, true);
@@ -72,6 +85,9 @@ public class Keys {
     // FOREIGN KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final ForeignKey<AdminStatisticsExtensionsByRatingRecord, AdminStatisticsRecord> ADMIN_STATISTICS_EXTENSIONS_BY_RATING__ADMIN_STATISTICS_EXTENSIONS_BY_RATING_FKEY = Internal.createForeignKey(AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING, DSL.name("admin_statistics_extensions_by_rating_fkey"), new TableField[] { AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
+    public static final ForeignKey<AdminStatisticsPublishersByExtensionsPublishedRecord, AdminStatisticsRecord> ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY = Internal.createForeignKey(AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED, DSL.name("admin_statistics_publishers_by_extensions_published_fkey"), new TableField[] { AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
+    public static final ForeignKey<DownloadRecord, FileResourceRecord> DOWNLOAD__DOWNLOAD_FILE_RESOURCE_FKEY = Internal.createForeignKey(Download.DOWNLOAD, DSL.name("download_file_resource_fkey"), new TableField[] { Download.DOWNLOAD.FILE_RESOURCE_ID }, Keys.FILE_RESOURCE_PKEY, new TableField[] { FileResource.FILE_RESOURCE.ID }, true);
     public static final ForeignKey<ExtensionRecord, ExtensionVersionRecord> EXTENSION__EXTENSION_PREVIEW_FKEY = Internal.createForeignKey(Extension.EXTENSION, DSL.name("extension_preview_fkey"), new TableField[] { Extension.EXTENSION.PREVIEW_ID }, Keys.EXTENSION_VERSION_PKEY, new TableField[] { ExtensionVersion.EXTENSION_VERSION.ID }, true);
     public static final ForeignKey<ExtensionRecord, NamespaceRecord> EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN = Internal.createForeignKey(Extension.EXTENSION, DSL.name("fk64imd3nrj67d50tpkjs94ngmn"), new TableField[] { Extension.EXTENSION.NAMESPACE_ID }, Keys.NAMESPACE_PKEY, new TableField[] { Namespace.NAMESPACE.ID }, true);
     public static final ForeignKey<ExtensionRecord, ExtensionVersionRecord> EXTENSION__FKEQJ0WVHFFQQVNH4VOKNOHJHTW = Internal.createForeignKey(Extension.EXTENSION, DSL.name("fkeqj0wvhffqqvnh4voknohjhtw"), new TableField[] { Extension.EXTENSION.LATEST_ID }, Keys.EXTENSION_VERSION_PKEY, new TableField[] { ExtensionVersion.EXTENSION_VERSION.ID }, true);

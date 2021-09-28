@@ -16,6 +16,16 @@ import org.jooq.impl.SQLDataType;
 public class Sequences {
 
     /**
+     * The sequence <code>public.download_id_seq</code>
+     */
+    public static final Sequence<Long> DOWNLOAD_ID_SEQ = Internal.createSequence("download_id_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
+     * The sequence <code>public.entity_active_state_id_seq</code>
+     */
+    public static final Sequence<Long> ENTITY_ACTIVE_STATE_ID_SEQ = Internal.createSequence("entity_active_state_id_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.file_resource_id_seq</code>
      */
     public static final Sequence<Long> FILE_RESOURCE_ID_SEQ = Internal.createSequence("file_resource_id_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);

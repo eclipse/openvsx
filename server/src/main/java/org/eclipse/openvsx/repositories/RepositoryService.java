@@ -11,13 +11,17 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.dto.*;
 import org.eclipse.openvsx.entities.*;
+import org.jooq.Record2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 
@@ -38,6 +42,8 @@ public class RepositoryService {
     @Autowired ExtensionVersionDTORepository extensionVersionDTORepo;
     @Autowired FileResourceDTORepository fileResourceDTORepo;
     @Autowired NamespaceMembershipDTORepository namespaceMembershipDTORepo;
+    @Autowired AdminStatisticsRepository adminStatisticsRepo;
+    @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
@@ -308,5 +314,41 @@ public class RepositoryService {
 
     public List<NamespaceMembershipDTO> findAllNamespaceMembershipDTOs(Collection<Long> namespaceIds) {
         return namespaceMembershipDTORepo.findAllByNamespaceId(namespaceIds);
+    }
+
+    public AdminStatistics findAdminStatisticsByYearAndMonth(int year, int month) {
+        return adminStatisticsRepo.findByYearAndMonth(year, month);
+    }
+
+    public long countActiveExtensions(LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.countActiveExtensions(endExclusive);
+    }
+
+    public long countActiveExtensionPublishers(LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.countActiveExtensionPublishers(endExclusive);
+    }
+
+    public Map<Integer,Integer> countActiveExtensionPublishersGroupedByExtensionsPublished(LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive);
+    }
+
+    public Map<Integer,Integer> countActiveExtensionsGroupedByExtensionReviewRating(LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive);
+    }
+
+    public double averageNumberOfActiveReviewsPerActiveExtension(LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.averageNumberOfActiveReviewsPerActiveExtension(endExclusive);
+    }
+
+    public long countPublishersThatClaimedNamespaceOwnership(LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.countPublishersThatClaimedNamespaceOwnership(endExclusive);
+    }
+
+    public long downloadsUntil(LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.downloadsSumByTimestampLessThan(endExclusive);
+    }
+
+    public long downloadsBetween(LocalDateTime startInclusive, LocalDateTime endExclusive) {
+        return adminStatisticCalculationsRepo.downloadsSumByTimestampGreaterThanEqualAndTimestampLessThan(startInclusive, endExclusive);
     }
 }

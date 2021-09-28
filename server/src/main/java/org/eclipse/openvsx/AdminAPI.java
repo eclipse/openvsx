@@ -9,14 +9,18 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import java.net.URI;
+import java.util.stream.LongStream;
 
 import com.google.common.base.Strings;
 
+import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.PersistedLog;
@@ -46,9 +50,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
+
 @RestController
 public class AdminAPI {
-
     @Autowired
     RepositoryService repositories;
 
@@ -60,6 +65,28 @@ public class AdminAPI {
 
     @Autowired
     SearchUtilService search;
+
+    @GetMapping(
+            path = "/admin/report",
+            produces = "text/csv"
+    )
+    public ResponseEntity<String> getReport(
+            @RequestParam("token") String tokenValue,
+            @RequestParam("year") int year,
+            @RequestParam("month") int month
+    ) {
+        try {
+            var accessToken = repositories.findAccessToken(tokenValue);
+            if(accessToken == null || !accessToken.isActive() || accessToken.getUser() == null || !ROLE_ADMIN.equals(accessToken.getUser().getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            var statistics = admins.getAdminStatistics(year, month);
+            return ResponseEntity.ok(statistics.toCsv());
+        } catch (ErrorResultException exc) {
+            return ResponseEntity.status(exc.getStatus()).body(exc.getMessage());
+        }
+    }
 
     @GetMapping(
         path = "/admin/stats",
