@@ -41,6 +41,8 @@ management:
       enabled: true
 
 ovsx:
+  databasesearch:
+    enabled: false
   elasticsearch:
     clear-on-start: true
   eclipse:

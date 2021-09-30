@@ -20,7 +20,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 
@@ -41,7 +40,8 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.ISearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
@@ -77,7 +77,10 @@ public class VSCodeAdapterTest {
     RepositoryService repositories;
 
     @MockBean
-    SearchService search;
+    VSCodeIdService idService;
+
+    @MockBean
+    SearchUtilService search;
 
     @MockBean
     EntityManager entityManager;
@@ -158,7 +161,7 @@ public class VSCodeAdapterTest {
                 Arrays.asList(searchHit), new Aggregations(Collections.emptyList()));
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new SearchService.Options("yaml", null, 50, 0, "desc", "relevance", false);
+        var searchOptions = new ISearchService.Options("yaml", null, 50, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions, PageRequest.of(0, 50)))
                 .thenReturn(searchHits);
 

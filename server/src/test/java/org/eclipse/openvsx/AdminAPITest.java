@@ -46,7 +46,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
@@ -83,7 +83,7 @@ public class AdminAPITest {
     RepositoryService repositories;
 
     @MockBean
-    SearchService search;
+    SearchUtilService search;
 
     @MockBean
     EntityManager entityManager;

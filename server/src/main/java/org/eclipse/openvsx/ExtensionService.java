@@ -28,7 +28,7 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.SemanticVersion;
@@ -53,7 +53,7 @@ public class ExtensionService {
     UserService users;
 
     @Autowired
-    SearchService search;
+    SearchUtilService search;
 
     @Autowired
     ExtensionValidator validator;

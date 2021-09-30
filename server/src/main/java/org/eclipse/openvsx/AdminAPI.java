@@ -27,7 +27,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.StatsJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.SemanticVersion;
@@ -59,7 +59,7 @@ public class AdminAPI {
     LocalRegistryService local;
 
     @Autowired
-    SearchService search;
+    SearchUtilService search;
 
     @GetMapping(
         path = "/admin/stats",

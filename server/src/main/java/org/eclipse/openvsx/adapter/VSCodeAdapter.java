@@ -21,7 +21,9 @@ import org.eclipse.openvsx.repositories.ExtensionDTORepository;
 import org.eclipse.openvsx.repositories.ExtensionVersionDTORepository;
 import org.eclipse.openvsx.repositories.FileResourceDTORepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.ExtensionSearch;
+import org.eclipse.openvsx.search.ISearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -61,7 +63,10 @@ public class VSCodeAdapter {
     RepositoryService repositories;
 
     @Autowired
-    SearchService search;
+    VSCodeIdService idService;
+
+    @Autowired
+    SearchUtilService search;
 
     @Autowired
     StorageUtilService storageUtil;
@@ -128,7 +133,7 @@ public class VSCodeAdapter {
         } else {
             try {
                 var offset = pageRequest.getPageNumber() * pageRequest.getPageSize();
-                var searchOptions = new SearchService.Options(queryString, category, pageRequest.getPageSize(),
+                var searchOptions = new SearchUtilService.Options(queryString, category, pageRequest.getPageSize(),
                         offset, sortOrder, sortBy, false);
 
                 var searchResult = search.search(searchOptions, pageRequest);

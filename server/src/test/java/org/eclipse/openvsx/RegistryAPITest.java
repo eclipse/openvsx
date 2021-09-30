@@ -53,7 +53,8 @@ import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.ISearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
@@ -97,7 +98,7 @@ public class RegistryAPITest {
     RepositoryService repositories;
 
     @MockBean
-    SearchService search;
+    SearchUtilService search;
 
     @MockBean
     EntityManager entityManager;
@@ -1081,7 +1082,7 @@ public class RegistryAPITest {
                 Arrays.asList(searchHit), new Aggregations(Collections.emptyList()));
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new SearchService.Options("foo", null, 10, 0, "desc", "relevance", false);
+        var searchOptions = new ISearchService.Options("foo", null, 10, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions, PageRequest.of(0, 10)))
                 .thenReturn(searchHits);
         Mockito.when(entityManager.find(Extension.class, 1l))

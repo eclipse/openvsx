@@ -38,7 +38,7 @@ import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class SearchServiceTest {
+public class ElasticSearchServiceTest {
 
     @MockBean
     RepositoryService repositories;
@@ -47,7 +47,7 @@ public class SearchServiceTest {
     ElasticsearchOperations searchOperations;
 
     @Autowired
-    SearchService search;
+    ElasticSearchService search;
 
     @Test
     public void testRelevanceAverageRating() throws Exception {
@@ -258,8 +258,13 @@ public class SearchServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        SearchService searchService() {
-            return new SearchService();
+        ElasticSearchService searchService() {
+            return new ElasticSearchService();
+        }
+
+        @Bean
+        RelevanceService relevanceService() {
+            return new RelevanceService();
         }
     }
     
