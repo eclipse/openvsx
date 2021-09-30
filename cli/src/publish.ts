@@ -17,11 +17,25 @@ import { checkLicense } from './check-license';
  * Publishes an extension.
  */
 export async function publish(options: PublishOptions = {}): Promise<void> {
-    addEnvOptions(options);
+        addEnvOptions(options);
+        if (options.packagePath) {
+            // call the publish command for every package path
+            await Promise.all(options.packagePath.map(path => doPublish({ ...options, packagePath: path })));
+        } else {
+            return doPublish({ ... options, packagePath: undefined });
+        }
+}
+
+async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     if (!options.pat) {
         throw new Error("A personal access token must be given with the option '--pat'.");
     }
 
+    // if the packagePath is a link to a vsix, don't need to package it
+    if (options.packagePath && options.packagePath.endsWith('.vsix')) {
+        options.extensionFile = options.packagePath;
+        delete options.packagePath;
+    }
     const registry = new Registry(options);
     if (!options.extensionFile) {
         await packageExtension(options, registry);
@@ -35,16 +49,12 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
     console.log(`\ud83d\ude80  Published ${extension.namespace}.${extension.name} v${extension.version}`);
 }
 
-export interface PublishOptions extends RegistryOptions {
+interface PublishCommonOptions extends RegistryOptions {
     /**
      * Path to the vsix file to be published. Cannot be used together with `packagePath`.
      */
     extensionFile?: string;
-    /**
-     * Path to the extension to be packaged and published. Cannot be used together
-     * with `extensionFile`.
-     */
-    packagePath?: string;
+
     /**
 	 * The base URL for links detected in Markdown files. Only valid with `packagePath`.
 	 */
@@ -59,7 +69,28 @@ export interface PublishOptions extends RegistryOptions {
     yarn?: boolean;
 }
 
-async function packageExtension(options: PublishOptions, registry: Registry): Promise<void> {
+// Interface used by top level CLI
+export interface PublishOptions extends PublishCommonOptions {
+
+    /**
+     * Paths to the extension to be packaged and published. Cannot be used together
+     * with `extensionFile`.
+     */
+    packagePath?: string[];
+}
+
+// Interface used internally by the doPublish method
+interface InternalPublishOptions extends PublishCommonOptions {
+
+    /**
+     * Only one path for our internal command.
+     * Path to the extension to be packaged and published. Cannot be used together
+     * with `extensionFile`.
+     */
+    packagePath?: string;
+}
+
+async function packageExtension(options: InternalPublishOptions, registry: Registry): Promise<void> {
     if (registry.requiresLicense) {
         await checkLicense(options.packagePath!);
     }
