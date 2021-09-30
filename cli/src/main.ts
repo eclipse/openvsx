@@ -35,7 +35,7 @@ module.exports = function (argv: string[]): void {
 
     const publishCmd = program.command('publish [extension.vsix]');
     publishCmd.description('Publish an extension, packaging it first if necessary.')
-        .option('--packagePath <path>', 'Package and publish the extension at the specified path.')
+        .option('-i, --packagePath <paths...>', 'Publish the provided VSIX packages.')
         .option('--baseContentUrl <url>', 'Prepend all relative links in README.md with this URL.')
         .option('--baseImagesUrl <url>', 'Prepend all relative image links in README.md with this URL.')
         .option('--yarn', 'Use yarn instead of npm while packing extension files.')
@@ -51,7 +51,7 @@ module.exports = function (argv: string[]): void {
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
-            publish({ extensionFile, registryUrl, pat, packagePath, baseContentUrl, baseImagesUrl, yarn })
+            publish({ extensionFile, registryUrl, pat, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn })
                 .catch(handleError(program.debug,
                     'See the documentation for more information:\n'
                     + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions'
