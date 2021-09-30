@@ -27,7 +27,7 @@ import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
@@ -297,7 +297,7 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var options = new SearchService.Options(query, category, size, offset, sortOrder, sortBy, includeAllVersions);
+        var options = new ISearchService.Options(query, category, size, offset, sortOrder, sortBy, includeAllVersions);
         var result = new SearchResultJson();
         result.extensions = new ArrayList<>(size);
         for (var registry : getRegistries()) {

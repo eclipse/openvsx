@@ -44,7 +44,8 @@ import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.ISearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -78,7 +79,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     UserService users;
 
     @Autowired
-    SearchService search;
+    SearchUtilService search;
 
     @Autowired
     ExtensionValidator validator;
@@ -176,7 +177,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public SearchResultJson search(SearchService.Options options) {
+    public SearchResultJson search(ISearchService.Options options) {
         var json = new SearchResultJson();
         var size = options.requestedSize;
         if (size <= 0 || !search.isEnabled()) {
@@ -198,7 +199,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return json;
     }
 
-    private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> hits, int size, int offset, SearchService.Options options) {
+    private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> hits, int size, int offset, ISearchService.Options options) {
         var serverUrl = UrlUtil.getBaseUrl();
         var content = hits.getSearchHits();
         if (offset > 0 || size < content.size())
@@ -414,7 +415,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return (double) sum / count;
     }
 
-    private SearchEntryJson toSearchEntry(SearchHit<ExtensionSearch> searchHit, String serverUrl, SearchService.Options options) {
+    private SearchEntryJson toSearchEntry(SearchHit<ExtensionSearch> searchHit, String serverUrl, ISearchService.Options options) {
         var searchItem = searchHit.getContent();
         var extension = entityManager.find(Extension.class, searchItem.id);
         if (extension == null || !extension.isActive())

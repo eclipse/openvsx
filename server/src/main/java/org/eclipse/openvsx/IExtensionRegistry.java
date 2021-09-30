@@ -15,7 +15,7 @@ import org.eclipse.openvsx.json.QueryParamJson;
 import org.eclipse.openvsx.json.QueryResultJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.ISearchService;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -33,7 +33,7 @@ public interface IExtensionRegistry {
 
     ReviewListJson getReviews(String namespace, String extension);
 
-    SearchResultJson search(SearchService.Options options);
+    SearchResultJson search(ISearchService.Options options);
 
     QueryResultJson query(QueryParamJson param);
 

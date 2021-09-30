@@ -33,7 +33,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -61,7 +61,7 @@ public class AdminService {
     ExtensionValidator validator;
 
     @Autowired
-    SearchService search;
+    SearchUtilService search;
 
     @Autowired
     EclipseService eclipse;

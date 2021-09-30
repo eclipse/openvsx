@@ -34,7 +34,7 @@ import org.eclipse.openvsx.json.QueryParamJson;
 import org.eclipse.openvsx.json.QueryResultJson;
 import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchResultJson;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +123,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
 	@Override
-	public SearchResultJson search(SearchService.Options options) {
+	public SearchResultJson search(ISearchService.Options options) {
 		try {
             var searchUrl = createApiUrl(upstreamUrl, "api", "-", "search");
             var requestUrl = addQuery(searchUrl,

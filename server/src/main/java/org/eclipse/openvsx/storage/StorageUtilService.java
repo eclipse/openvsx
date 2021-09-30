@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,7 +46,7 @@ public class StorageUtilService implements IStorageService {
     RepositoryService repositories;
 
     @Autowired
-    SearchService search;
+    SearchUtilService search;
 
     @Autowired
     GoogleCloudStorageService googleStorage;
