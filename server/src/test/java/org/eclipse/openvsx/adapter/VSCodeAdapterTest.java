@@ -26,6 +26,7 @@ import javax.persistence.EntityManager;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
+import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.dto.ExtensionDTO;
@@ -45,6 +46,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
+import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -69,7 +71,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @WebMvcTest(VSCodeAdapter.class)
 @AutoConfigureWebClient
 @MockBean({
-    ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class
+    ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
+    AzureDownloadCountService.class, LockProvider.class
 })
 public class VSCodeAdapterTest {
 

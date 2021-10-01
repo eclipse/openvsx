@@ -21,6 +21,7 @@ import javax.persistence.EntityManager;
 
 import com.google.common.io.CharStreams;
 
+import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
@@ -37,6 +38,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
+import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -60,7 +62,7 @@ import org.springframework.web.client.RestTemplate;
 @ExtendWith(SpringExtension.class)
 @MockBean({
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    VSCodeIdService.class,
+    VSCodeIdService.class, AzureDownloadCountService.class, LockProvider.class
 })
 public class EclipseServiceTest {
 
