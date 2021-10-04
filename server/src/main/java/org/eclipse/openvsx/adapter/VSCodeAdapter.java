@@ -64,6 +64,8 @@ import org.springframework.web.servlet.ModelAndView;
 @RestController
 public class VSCodeAdapter {
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
     @Autowired
     EntityManager entityManager;
 
@@ -98,7 +100,7 @@ public class VSCodeAdapter {
         String sortOrder;
         String sortBy;
         if (param.filters == null || param.filters.isEmpty()) {
-            pageRequest = PageRequest.of(0, 20);
+            pageRequest = PageRequest.of(0, DEFAULT_PAGE_SIZE);
             sortBy = "relevance";
             sortOrder = "desc";
         } else {
@@ -119,7 +121,8 @@ public class VSCodeAdapter {
             if (queryString == null)
                 queryString = filter.findCriterion(FILTER_TAG);
             category = filter.findCriterion(FILTER_CATEGORY);
-            pageRequest = PageRequest.of(filter.pageNumber - 1, filter.pageSize);
+            var pageSize = filter.pageSize > 0 ? filter.pageSize : DEFAULT_PAGE_SIZE;
+            pageRequest = PageRequest.of(filter.pageNumber - 1, pageSize);
             sortOrder = getSortOrder(filter.sortOrder);
             sortBy = getSortBy(filter.sortBy);
         }
