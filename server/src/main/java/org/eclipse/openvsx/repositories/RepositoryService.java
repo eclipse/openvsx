@@ -9,6 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import org.eclipse.openvsx.dto.ExtensionDTO;
+import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
+import org.eclipse.openvsx.dto.ExtensionVersionDTO;
+import org.eclipse.openvsx.dto.FileResourceDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
@@ -16,6 +20,8 @@ import org.eclipse.openvsx.entities.PersistedLog;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
@@ -38,6 +44,9 @@ public class RepositoryService {
     @Autowired NamespaceMembershipRepository membershipRepo;
     @Autowired PersonalAccessTokenRepository tokenRepo;
     @Autowired PersistedLogRepository persistedLogRepo;
+    @Autowired ExtensionDTORepository extensionDTORepo;
+    @Autowired ExtensionVersionDTORepository extensionVersionDTORepo;
+    @Autowired FileResourceDTORepository fileResourceDTORepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
@@ -251,4 +260,27 @@ public class RepositoryService {
         return persistedLogRepo.findByTimestampAfterOrderByTimestampAsc(dateTime);
     }
 
+    public Streamable<ExtensionDTO> findAllActiveExtensionDTOsByPublicId(Collection<String> publicIds) {
+        return extensionDTORepo.findAllActiveByPublicId(publicIds);
+    }
+
+    public ExtensionDTO findActiveExtensionDTOByNameAndNamespaceName(String name, String namespaceName) {
+        return extensionDTORepo.findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespaceName);
+    }
+
+    public Streamable<ExtensionDTO> findAllActiveExtensionDTOsById(Collection<Long> ids) {
+        return extensionDTORepo.findAllActiveById(ids);
+    }
+
+    public Streamable<ExtensionVersionDTO> findAllActiveExtensionVersionDTOsByExtensionId(Collection<Long> extensionIds) {
+        return extensionVersionDTORepo.findAllActiveByExtensionId(extensionIds);
+    }
+
+    public Streamable<FileResourceDTO> findAllFileResourceDTOsByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
+        return fileResourceDTORepo.findAllByExtensionIdAndType(extensionVersionIds, types);
+    }
+
+    public Streamable<ExtensionReviewCountDTO> countAllActiveReviewsByExtensionId(Collection<Long> extensionIds) {
+        return extensionDTORepo.countAllActiveReviewsById(extensionIds);
+    }
 }

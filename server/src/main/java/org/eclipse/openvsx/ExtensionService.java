@@ -21,6 +21,7 @@ import javax.transaction.Transactional.TxType;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 
+import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -44,6 +45,9 @@ public class ExtensionService {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    VSCodeIdService vsCodeIdService;
 
     @Autowired
     UserService users;
@@ -111,6 +115,8 @@ public class ExtensionService {
             extension = new Extension();
             extension.setName(extensionName);
             extension.setNamespace(namespace);
+
+            vsCodeIdService.createPublicId(extension);
             entityManager.persist(extension);
         } else {
             var existingVersion = repositories.findVersion(extVersion.getVersion(), extension);

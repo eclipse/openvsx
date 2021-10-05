@@ -43,10 +43,6 @@ public class VSCodeIdService {
     @Value("${ovsx.vscode.upstream.gallery-url:}")
     String upstreamUrl;
 
-    @Autowired
-    EntityManager entityManager;
-
-    @Transactional
     public void createPublicId(Extension extension) {
         var upstreamExtension = getUpstreamData(extension);
         if (upstreamExtension != null) {
@@ -59,9 +55,6 @@ public class VSCodeIdService {
             extension.setPublicId(createRandomId());
         if (extension.getNamespace().getPublicId() == null)
             extension.getNamespace().setPublicId(createRandomId());
-
-        entityManager.merge(extension);
-        entityManager.merge(extension.getNamespace());
     }
 
     private String createRandomId() {

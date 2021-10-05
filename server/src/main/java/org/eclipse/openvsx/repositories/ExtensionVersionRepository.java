@@ -51,5 +51,4 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();
-
 }
