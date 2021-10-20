@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -18,9 +19,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 
@@ -29,6 +29,10 @@ import com.google.common.io.CharStreams;
 
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.dto.ExtensionDTO;
+import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
+import org.eclipse.openvsx.dto.ExtensionVersionDTO;
+import org.eclipse.openvsx.dto.FileResourceDTO;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -73,9 +77,6 @@ public class VSCodeAdapterTest {
     RepositoryService repositories;
 
     @MockBean
-    VSCodeIdService idService;
-
-    @MockBean
     SearchService search;
 
     @MockBean
@@ -89,7 +90,7 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testSearch() throws Exception {
-        mockSearch();
+        mockSearch(true);
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("search-yaml-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -99,7 +100,7 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testFindById() throws Exception {
-        mockSearch();
+        mockSearch(true);
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findid-yaml-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -109,12 +110,7 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testFindByIdInactive() throws Exception {
-        var extensions = mockSearch();
-        extensions.forEach(extension -> {
-            extension.setActive(false);
-            extension.getLatest().setActive(false);
-        });
-
+        mockSearch(false);
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findid-yaml-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -124,7 +120,7 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testFindByName() throws Exception {
-        mockSearch();
+        mockSearch(true);
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findname-yaml-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -154,8 +150,7 @@ public class VSCodeAdapterTest {
 
     // ---------- UTILITY ----------//
 
-    private List<Extension> mockSearch() {
-        var extVersion = mockExtension();
+    private void mockSearch(boolean active) {
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
         var searchHit = new SearchHit<ExtensionSearch>("0", "1", 1.0f, null, null, entry1);
@@ -166,9 +161,72 @@ public class VSCodeAdapterTest {
         var searchOptions = new SearchService.Options("yaml", null, 50, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions, PageRequest.of(0, 50)))
                 .thenReturn(searchHits);
-        Mockito.when(entityManager.find(Extension.class, 1l))
-                .thenReturn(extVersion.getExtension());
-        return Arrays.asList(extVersion.getExtension());
+
+        var extension = mockExtensionDTO();
+        Streamable<ExtensionDTO> results = active ? Streamable.of(extension) : Streamable.empty();
+        Mockito.when(repositories.findAllActiveExtensionDTOsById(List.of(entry1.id)))
+                .thenReturn(results);
+
+        var publicIds = List.of(extension.getPublicId());
+        Mockito.when(repositories.findAllActiveExtensionDTOsByPublicId(publicIds))
+                .thenReturn(results);
+
+        var ids = List.of(extension.getId());
+        Mockito.when(repositories.countAllActiveReviewsByExtensionId(ids))
+                .thenReturn(Streamable.of(new ExtensionReviewCountDTO(extension.getId(), 10l)));
+
+        var name = extension.getName();
+        var namespaceName = extension.getNamespace().getName();
+        Mockito.when(repositories.findActiveExtensionDTOByNameAndNamespaceName(name, namespaceName))
+                .thenReturn(extension);
+
+        mockFileResourceDTOs(extension.getLatest());
+    }
+
+    private ExtensionDTO mockExtensionDTO() {
+            var id = 1;
+            var publicId = "test-1";
+            var name = "vscode-yaml";
+            var averageRating = 3.0;
+            var downloadCount = 100;
+            var namespaceId = 2;
+            var namespacePublicId = "test-2";
+            var namespaceName = "redhat";
+            var latestId = 3;
+            var latestVersion = "0.5.2";
+            var latestPreview = true;
+            var latestTimestamp = LocalDateTime.parse("2000-01-01T10:00");
+            var latestDisplayName = "YAML";
+            var latestDescription = "YAML Language Support";
+            var latestEngines = Lists.newArrayList("vscode@^1.31.0");
+            var latestCategories = Lists.<String>newArrayList();
+            var latestTags = Lists.<String>newArrayList();
+            var latestExtensionKind = Lists.<String>newArrayList();
+            var latestRepository = "https://github.com/redhat-developer/vscode-yaml";
+            String latestGalleryColor = null;
+            String latestGalleryTheme = null;
+            var latestDependencies = Lists.<String>newArrayList();
+            var latestBundledExtensions = Lists.<String>newArrayList();
+
+            return new ExtensionDTO(id,publicId,name,averageRating,downloadCount,namespaceId,namespacePublicId,
+                    namespaceName,latestId,latestVersion,latestPreview,latestTimestamp,latestDisplayName,latestDescription,
+                    latestEngines,latestCategories,latestTags,latestExtensionKind,latestRepository,latestGalleryColor,
+                    latestGalleryTheme,latestDependencies,latestBundledExtensions);
+    }
+
+    private void mockFileResourceDTOs(ExtensionVersionDTO extensionVersion) {
+        var ids = new HashSet<>(List.of(extensionVersion.getId()));
+        var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, WEB_RESOURCE);
+
+        var extensionFile = new FileResourceDTO(5, extensionVersion.getId(), "redhat.vscode-yaml-0.5.2.vsix", DOWNLOAD);
+        var manifestFile = new FileResourceDTO(6, extensionVersion.getId(), "package.json", MANIFEST);
+        var readmeFile = new FileResourceDTO(7, extensionVersion.getId(), "README.md", README);
+        var changelogFile = new FileResourceDTO(8, extensionVersion.getId(), "CHANGELOG.md", CHANGELOG);
+        var licenseFile = new FileResourceDTO(9, extensionVersion.getId(), "LICENSE.txt", LICENSE);
+        var iconFile = new FileResourceDTO(10, extensionVersion.getId(), "icon128.png", ICON);
+
+        Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(ids, types))
+                .thenReturn(Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile));
     }
     
     private ExtensionVersion mockExtension() {

@@ -9,12 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
-
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.UserData;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.util.Streamable;
 
 public interface ExtensionReviewRepository extends Repository<ExtensionReview, Long> {
 
@@ -25,5 +24,4 @@ public interface ExtensionReviewRepository extends Repository<ExtensionReview, L
     Streamable<ExtensionReview> findByExtensionAndUserAndActiveTrue(Extension extension, UserData user);
 
     long countByExtensionAndActiveTrue(Extension extension);
-
 }

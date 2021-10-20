@@ -1,5 +1,6 @@
 package org.eclipse.openvsx
 
+import com.typesafe.config.ConfigFactory
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 
@@ -32,12 +33,19 @@ class RegistryAPIPublishExtensionSimulation extends Simulation {
     feeder
   }
 
+  val conf = ConfigFactory.load()
+
   val httpProtocol = http
-    .baseUrl("http://localhost:8080")
+    .baseUrl(conf.getString("baseUrl"))
     .disableCaching
 
-  val extensionDir = "<EXTENSION_DIR>"
+  val extensionDir = conf.getString("extensionDir")
   val feeder = this.extensionFilesFeeder(extensionDir)
+
+  var headers: Map[String,String] = Map()
+  if(conf.hasPath("auth")) {
+    headers += "Authorization" -> conf.getString("auth");
+  }
 
   val users = 4
   val repeatTimes = feeder.length / users
@@ -47,6 +55,7 @@ class RegistryAPIPublishExtensionSimulation extends Simulation {
         .feed(csv("access-tokens.csv").circular)
         .exec(http("publishExtension")
           .post("/api/-/publish")
+          .headers(headers)
           .queryParam("token", """${access_token}""")
           .body(ByteArrayBody(session => {
             val path = extensionDir + "\\" + session("extension_file").as[String]

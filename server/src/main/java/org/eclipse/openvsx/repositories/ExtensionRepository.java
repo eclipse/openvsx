@@ -38,5 +38,4 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     @Query("select max(e.downloadCount) from Extension e")
     int getMaxDownloadCount();
-
 }

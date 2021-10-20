@@ -30,6 +30,7 @@ import javax.persistence.EntityManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -71,7 +72,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class
+    AzureBlobStorageService.class, VSCodeIdService.class
 })
 public class AdminAPITest {
     
