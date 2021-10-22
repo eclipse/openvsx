@@ -33,7 +33,7 @@ class ExtensionProcessorTest {
             assertThat(metadata.getDescription()).isEqualTo("Show TODO, FIXME, etc. comment tags in a tree view");
             assertThat(metadata.getEngines()).isEqualTo(Arrays.asList("vscode@^1.46.0"));
             assertThat(metadata.getCategories()).isEqualTo(Arrays.asList("Other"));
-            assertThat(metadata.getTags()).isEqualTo(Arrays.asList("todo", "task", "tasklist", "multi-root ready"));
+            assertThat(metadata.getTags()).isEqualTo(Arrays.asList("multi-root ready", "task", "tasklist", "todo"));
             assertThat(metadata.getLicense()).isEqualTo("MIT");
             assertThat(metadata.getRepository()).isEqualTo("https://github.com/Gruntfuggly/todo-tree");
 

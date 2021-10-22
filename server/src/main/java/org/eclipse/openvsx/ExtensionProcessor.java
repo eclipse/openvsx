@@ -223,7 +223,7 @@ public class ExtensionProcessor implements AutoCloseable {
         extension.setEngines(getEngines(packageJson.path("engines")));
         extension.setCategories(asStringList(vsixManifest.path("Metadata").path("Categories").asText(), ","));
         extension.setExtensionKind(getExtensionKinds());
-        extension.setTags(asStringList(vsixManifest.path("Metadata").path("Tags").asText(), ","));
+        extension.setTags(getTags());
         extension.setLicense(packageJson.path("license").textValue());
         extension.setHomepage(getHomepage());
         extension.setRepository(getRepository());
@@ -234,6 +234,16 @@ public class ExtensionProcessor implements AutoCloseable {
         extension.setQna(packageJson.path("qna").textValue());
 
         return extension;
+    }
+
+    private List<String> getTags() {
+        var tags = vsixManifest.path("Metadata").path("Tags").asText();
+        return asStringList(tags, ",").stream()
+                .collect(Collectors.groupingBy(String::toLowerCase))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getValue().get(0))
+                .collect(Collectors.toList());
     }
 
     private List<String> asStringList(String value, String sep){
