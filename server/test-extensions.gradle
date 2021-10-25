@@ -158,7 +158,7 @@ task downloadTestExtensions {
         }
         download {
             src "https://github.com/VSCodeVim/Vim/releases/download/v1.19.3/vim-1.19.3.vsix"
-            dest "${buildDir}/test-extensions-web/vim-1.19.3.vsix"
+            dest "${buildDir}/test-extensions/vim-1.19.3.vsix"
         }
     }
 }

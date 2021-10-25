@@ -4,8 +4,9 @@ image:
 ports:
 # Web UI (static resources)
 - port: 3000
-# Server (API)
+# Server (API, must be public for CORS)
 - port: 8080
+  visibility: public
   onOpen: ignore
 # Test report
 - port: 8081
@@ -57,7 +58,6 @@ tasks:
     for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub; done
     find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
     find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
-    find server/build/test-extensions-web -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
 
 vscode:
   extensions:
