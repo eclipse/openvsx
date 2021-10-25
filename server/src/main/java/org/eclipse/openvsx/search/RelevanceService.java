@@ -42,7 +42,7 @@ public class RelevanceService {
     double downloadsRelevance;
     @Value("${ovsx.search.relevance.timestamp:1.0}")
     double timestampRelevance;
-    @Value("${ovsx.sesearch.relevance.unverified:0.5}")
+    @Value("${ovsx.search.relevance.unverified:0.5}")
     double unverifiedRelevance;
 
     @Value("${ovsx.elasticsearch.relevance.rating:-1.0}")
