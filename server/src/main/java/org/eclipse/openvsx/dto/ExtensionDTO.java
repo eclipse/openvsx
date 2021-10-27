@@ -11,16 +11,42 @@ package org.eclipse.openvsx.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 public class ExtensionDTO {
 
     private final long id;
-    private final String publicId;
+    private String publicId;
     private final String name;
     private final NamespaceDTO namespace;
-    private final ExtensionVersionDTO latest;
+    private Long latestId;
+    private ExtensionVersionDTO latest;
+    private Long previewId;
     private final Double averageRating;
-    private final int downloadCount;
+    private final Integer downloadCount;
+
+    public ExtensionDTO(
+            long id,
+            String publicId,
+            String name,
+            Long latestId,
+            Long previewId,
+            Double averageRating,
+            Integer downloadCount,
+            long namespaceId,
+            String namespacePublicId,
+            String namespaceName
+    ) {
+        this.id = id;
+        this.publicId = publicId;
+        this.name = name;
+        this.latestId = latestId;
+        this.previewId = previewId;
+        this.averageRating = averageRating;
+        this.downloadCount = downloadCount;
+
+        this.namespace = new NamespaceDTO(namespaceId, namespacePublicId, namespaceName);
+    }
 
     public ExtensionDTO(
             long id,
@@ -90,15 +116,23 @@ public class ExtensionDTO {
         return namespace;
     }
 
+    public Long getLatestId() {
+        return latestId;
+    }
+
     public ExtensionVersionDTO getLatest() {
         return latest;
+    }
+
+    public Long getPreviewId() {
+        return previewId;
     }
 
     public Double getAverageRating() {
         return averageRating;
     }
 
-    public int getDownloadCount() {
+    public Integer getDownloadCount() {
         return downloadCount;
     }
 }

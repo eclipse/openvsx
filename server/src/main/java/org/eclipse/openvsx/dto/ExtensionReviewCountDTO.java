@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.dto;
 
+import java.util.Objects;
+
 public class ExtensionReviewCountDTO {
 
     private final long extensiondId;

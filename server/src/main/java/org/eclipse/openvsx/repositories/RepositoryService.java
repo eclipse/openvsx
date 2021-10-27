@@ -9,28 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.dto.ExtensionDTO;
-import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
-import org.eclipse.openvsx.dto.ExtensionVersionDTO;
-import org.eclipse.openvsx.dto.FileResourceDTO;
+import org.eclipse.openvsx.dto.*;
+import org.eclipse.openvsx.entities.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
-import org.eclipse.openvsx.entities.PersistedLog;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionReview;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.UserData;
 
 @Component
 public class RepositoryService {
@@ -47,6 +33,7 @@ public class RepositoryService {
     @Autowired ExtensionDTORepository extensionDTORepo;
     @Autowired ExtensionVersionDTORepository extensionVersionDTORepo;
     @Autowired FileResourceDTORepository fileResourceDTORepo;
+    @Autowired NamespaceMembershipDTORepository namespaceMembershipDTORepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
@@ -276,11 +263,39 @@ public class RepositoryService {
         return extensionVersionDTORepo.findAllActiveByExtensionId(extensionIds);
     }
 
+    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionPublicId(String extensionPublicId) {
+        return extensionVersionDTORepo.findAllActiveByExtensionPublicId(extensionPublicId);
+    }
+
+    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespacePublicId(String namespacePublicId) {
+        return extensionVersionDTORepo.findAllActiveByNamespacePublicId(namespacePublicId);
+    }
+
+    public ExtensionVersionDTO findActiveExtensionVersionDTOByVersion(String extensionVersion, String extensionName, String namespaceName) {
+        return extensionVersionDTORepo.findActiveByVersionAndExtensionNameAndNamespaceName(extensionVersion, extensionName, namespaceName);
+    }
+
+    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName, String namespaceName) {
+        return extensionVersionDTORepo.findAllActiveByExtensionNameAndNamespaceName(extensionName, namespaceName);
+    }
+
+    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespaceName(String namespaceName) {
+        return extensionVersionDTORepo.findAllActiveByNamespaceName(namespaceName);
+    }
+
+    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName) {
+        return extensionVersionDTORepo.findAllActiveByExtensionName(extensionName);
+    }
+
     public Streamable<FileResourceDTO> findAllFileResourceDTOsByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
         return fileResourceDTORepo.findAllByExtensionIdAndType(extensionVersionIds, types);
     }
 
     public Streamable<ExtensionReviewCountDTO> countAllActiveReviewsByExtensionId(Collection<Long> extensionIds) {
         return extensionDTORepo.countAllActiveReviewsById(extensionIds);
+    }
+
+    public Streamable<NamespaceMembershipDTO> findAllNamespaceMembershipDTOs(Collection<Long> namespaceIds) {
+        return namespaceMembershipDTORepo.findAllByNamespaceId(namespaceIds);
     }
 }
