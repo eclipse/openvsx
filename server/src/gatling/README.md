@@ -9,22 +9,27 @@
 
 ## Gatling simulations
 ### Running against remote server:
-- Change baseUrl in each simulation file (scala/org/eclipse/openvsx), current value is: `val httpProtocol = http.baseUrl("http://localhost:8080")`
+- Change `baseUrl` property in `resources/application.properties`.
+- If the remote server requires authentication, uncomment and change the `auth` property in `resources/application.properties`. 
+  Simulations use the `auth` value to set the Authorization request header.
 
 ### resources/access-tokens.csv:
 - contains API access tokens. Create a couple of tokens using the web UI and add them to this file. 
 - make sure to keep the `access_token` header at the top of the file.
 
 ### scala/org/eclipse/openvsx/RegistryAPIPublishExtensionSimulation.scala:
-- change `val extensionDir = "<EXTENSION_DIR>"` to a directory that **only** contains extensions (*.vsix files). The simulation uses those files to upload them to the server.
+- Change `extensionDir` property in `resources/application.properties` to a directory that **only** contains extensions (*.vsix files). The simulation uses those files to upload them to the server.
 
 # Running Gatling
-**The Gatling simulations need to be run in a particular order at the moment:**
+**The Gatling 'post' simulations need to be run to fill the database:**
 - `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPICreateNamespaceSimulation`
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetNamespaceSimulation`
 - `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIPublishExtensionSimulation`
+
+**After running those simulations all other simulations can be run in no particular order:**
+- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetNamespaceSimulation`
 - `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetExtensionSimulation`
 - `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetExtensionVersionSimulation`
+- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.adapter.VSCodeAdapterExtensionQuerySimulation`
 
 ## Empty the database
 If you wish to empty the database after running the Gatling simulations, you can run:
