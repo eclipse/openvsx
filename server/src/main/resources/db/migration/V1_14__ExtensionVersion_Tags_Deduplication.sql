@@ -32,7 +32,7 @@ FROM (
 			FROM public.extension_version_tag
 			GROUP BY extension_version_id, tag_lower
 		) gt ON gt.extension_version_id = t.extension_version_id AND gt.min_index = t.tag_index_in_tags
-		ORDER BY t.extension_version_id, t.tag
+		ORDER BY t.extension_version_id, t.tag_lower COLLATE "ucs_basic"
 	) ot
 	GROUP BY ot.extension_version_id
 ) agg
