@@ -11,104 +11,84 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.dto.ExtensionDTO;
 import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
-import org.eclipse.openvsx.entities.Extension;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.SelectConditionStep;
+import org.jooq.impl.DSL;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.List;
 
-public interface ExtensionDTORepository extends Repository<Extension, Long> {
+import static org.eclipse.openvsx.jooq.Tables.*;
 
-    @Query("select new org.eclipse.openvsx.dto.ExtensionDTO(" +
-            "e.id," +
-            "e.publicId," +
-            "e.name," +
-            "e.averageRating," +
-            "e.downloadCount," +
-            "e.namespace.id," +
-            "e.namespace.publicId," +
-            "e.namespace.name," +
-            "e.latest.id," +
-            "e.latest.version," +
-            "e.latest.preview," +
-            "e.latest.timestamp," +
-            "e.latest.displayName," +
-            "e.latest.description," +
-            "e.latest.engines," +
-            "e.latest.categories," +
-            "e.latest.tags," +
-            "e.latest.extensionKind," +
-            "e.latest.repository," +
-            "e.latest.galleryColor," +
-            "e.latest.galleryTheme," +
-            "e.latest.dependencies," +
-            "e.latest.bundledExtensions" +
-            ") " +
-            "from Extension e " +
-            "where e.active = true and e.id in(?1)")
-    Streamable<ExtensionDTO> findAllActiveById(Collection<Long> ids);
+@Component
+public class ExtensionDTORepository {
 
-    @Query("select new org.eclipse.openvsx.dto.ExtensionDTO(" +
-            "e.id," +
-            "e.publicId," +
-            "e.name," +
-            "e.averageRating," +
-            "e.downloadCount," +
-            "e.namespace.id," +
-            "e.namespace.publicId," +
-            "e.namespace.name," +
-            "e.latest.id," +
-            "e.latest.version," +
-            "e.latest.preview," +
-            "e.latest.timestamp," +
-            "e.latest.displayName," +
-            "e.latest.description," +
-            "e.latest.engines," +
-            "e.latest.categories," +
-            "e.latest.tags," +
-            "e.latest.extensionKind," +
-            "e.latest.repository," +
-            "e.latest.galleryColor," +
-            "e.latest.galleryTheme," +
-            "e.latest.dependencies," +
-            "e.latest.bundledExtensions" +
-            ") " +
-            "from Extension e " +
-            "where e.active = true and e.publicId in(?1)")
-    Streamable<ExtensionDTO> findAllActiveByPublicId(Collection<String> publicIds);
+    @Autowired
+    DSLContext dsl;
 
-    @Query("select new org.eclipse.openvsx.dto.ExtensionDTO(" +
-            "e.id," +
-            "e.publicId," +
-            "e.name," +
-            "e.averageRating," +
-            "e.downloadCount," +
-            "e.namespace.id," +
-            "e.namespace.publicId," +
-            "e.namespace.name," +
-            "e.latest.id," +
-            "e.latest.version," +
-            "e.latest.preview," +
-            "e.latest.timestamp," +
-            "e.latest.displayName," +
-            "e.latest.description," +
-            "e.latest.engines," +
-            "e.latest.categories," +
-            "e.latest.tags," +
-            "e.latest.extensionKind," +
-            "e.latest.repository," +
-            "e.latest.galleryColor," +
-            "e.latest.galleryTheme," +
-            "e.latest.dependencies," +
-            "e.latest.bundledExtensions" +
-            ") " +
-            "from Extension e " +
-            "where e.active = true and upper(e.name) = upper(?1) and upper(e.namespace.name) = upper(?2)")
-    ExtensionDTO findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespaceName);
+    public List<ExtensionDTO> findAllActiveById(Collection<Long> ids) {
+        return fetch(findAllActive().and(EXTENSION.ID.in(ids)));
+    }
 
-    @Query("select new org.eclipse.openvsx.dto.ExtensionReviewCountDTO(r.extension.id, count(r.id)) " +
-            "from ExtensionReview r " +
-            "where r.active = true and r.extension.id in(?1) group by r.extension.id")
-    Streamable<ExtensionReviewCountDTO> countAllActiveReviewsById(Collection<Long> ids);
+    public List<ExtensionDTO> findAllActiveByPublicId(Collection<String> publicIds) {
+        return fetch(findAllActive().and(EXTENSION.PUBLIC_ID.in(publicIds)));
+    }
+
+    public ExtensionDTO findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespaceName) {
+        return findAllActive()
+                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(name)))
+                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)))
+                .fetchOneInto(ExtensionDTO.class);
+    }
+
+    public List<ExtensionReviewCountDTO> findAllActiveReviewCountsById(Collection<Long> ids) {
+        return dsl.select(EXTENSION_REVIEW.EXTENSION_ID, DSL.count(EXTENSION_REVIEW.ID))
+                .from(EXTENSION_REVIEW)
+                .where(EXTENSION_REVIEW.ACTIVE.eq(true))
+                .and(EXTENSION_REVIEW.EXTENSION_ID.in(ids))
+                .groupBy(EXTENSION_REVIEW.EXTENSION_ID)
+                .fetchInto(ExtensionReviewCountDTO.class);
+    }
+
+    private SelectConditionStep<Record> findAllActive() {
+        var latest = EXTENSION_VERSION.as("latest");
+        return dsl.select(
+                    EXTENSION.ID,
+                    EXTENSION.PUBLIC_ID,
+                    EXTENSION.NAME,
+                    EXTENSION.AVERAGE_RATING,
+                    EXTENSION.DOWNLOAD_COUNT,
+                    NAMESPACE.ID,
+                    NAMESPACE.PUBLIC_ID,
+                    NAMESPACE.NAME,
+                    latest.ID,
+                    latest.VERSION,
+                    latest.PREVIEW,
+                    latest.TIMESTAMP,
+                    latest.DISPLAY_NAME,
+                    latest.DESCRIPTION,
+                    latest.ENGINES,
+                    latest.CATEGORIES,
+                    latest.TAGS,
+                    latest.EXTENSION_KIND,
+                    latest.REPOSITORY,
+                    latest.GALLERY_COLOR,
+                    latest.GALLERY_THEME,
+                    latest.DEPENDENCIES,
+                    latest.BUNDLED_EXTENSIONS
+                )
+                .from(EXTENSION)
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .join(latest).on(latest.ID.eq(EXTENSION.LATEST_ID))
+                .where(EXTENSION.ACTIVE.eq(true));
+    }
+
+    private List<ExtensionDTO> fetch(SelectConditionStep<Record> query) {
+        return query.fetchInto(ExtensionDTO.class);
+    }
 }

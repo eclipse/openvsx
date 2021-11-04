@@ -7,6 +7,7 @@ buildscript {
     }
 }
 plugins {
+    id 'nu.studer.jooq' version '6.0.1'
     id 'de.undercouch.download' version '4.1.1'
     id 'org.springframework.boot' version '2.4.0'
     id 'io.spring.dependency-management' version '1.0.10.RELEASE'
@@ -15,6 +16,7 @@ plugins {
 }
 apply plugin: 'org.hibernate.orm'
 
+def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [
     java: '11',
     flyway: '7.3.1',
@@ -38,6 +40,9 @@ repositories {
 
 // The 'dev' source set contains the development setup. These files are not included in the jar.
 sourceSets {
+    main {
+        java.srcDirs += jooqSrcDir
+    }
     dev {
         compileClasspath += main.output
         runtimeClasspath += main.output
@@ -52,6 +57,7 @@ configurations {
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "org.springframework.boot:spring-boot-starter-validation"
+    implementation "org.springframework.boot:spring-boot-starter-jooq"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
     implementation "org.springframework.boot:spring-boot-starter-security"
@@ -78,6 +84,7 @@ dependencies {
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
     runtimeOnly "org.postgresql:postgresql"
+    jooqGenerator "org.postgresql:postgresql"
 
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
 
@@ -95,6 +102,39 @@ hibernate {
     enhance {
         enableLazyInitialization = true
         enableDirtyTracking = true
+    }
+}
+
+jooq {
+    // use jOOQ version defined in Spring Boot
+    version = dependencyManagement.importedProperties['jooq.version']
+    edition = nu.studer.gradle.jooq.JooqEdition.OSS
+    configurations {
+        main {
+            generateSchemaSourceOnCompilation = false
+            generationTool {
+                logging = org.jooq.meta.jaxb.Logging.WARN
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5432/postgres'
+                    user = 'gitpod'
+                    password = 'gitpod'
+                }
+                generator {
+                    name = 'org.jooq.codegen.DefaultGenerator'
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+                        includes = '.*'
+                        excludes = ''
+                    }
+                    target {
+                        packageName = 'org.eclipse.openvsx.jooq'
+                        directory = jooqSrcDir
+                    }
+                }
+            }
+        }
     }
 }
 

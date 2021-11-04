@@ -12,6 +12,7 @@ package org.eclipse.openvsx.dto;
 import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
+import org.eclipse.openvsx.entities.ListOfStringConverter;
 import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 
 public class ExtensionVersionDTO {
 
-    private Long extensionId;
+    private long extensionId;
     private ExtensionDTO extension;
 
     private final long id;
@@ -59,7 +60,7 @@ public class ExtensionVersionDTO {
             Long extensionLatestId,
             Long extensionPreviewId,
             Double extensionAverageRating,
-            Integer extensionDownloadCount,
+            int extensionDownloadCount,
             Long userId,
             String userLoginName,
             String userFullName,
@@ -72,10 +73,10 @@ public class ExtensionVersionDTO {
             LocalDateTime timestamp,
             String displayName,
             String description,
-            List<String> engines,
-            List<String> categories,
-            List<String> tags,
-            List<String> extensionKind,
+            String engines,
+            String categories,
+            String tags,
+            String extensionKind,
             String license,
             String homepage,
             String repository,
@@ -84,10 +85,11 @@ public class ExtensionVersionDTO {
             String galleryColor,
             String galleryTheme,
             String qna,
-            List<String> dependencies,
-            List<String> bundledExtensions
+            String dependencies,
+            String bundledExtensions
     ) {
         this(
+                extensionId,
                 id,
                 version,
                 preview,
@@ -105,7 +107,6 @@ public class ExtensionVersionDTO {
                 bundledExtensions
         );
 
-        this.extensionId = extensionId;
         this.extension = new ExtensionDTO(
                 extensionId,
                 extensionPublicId,
@@ -138,69 +139,34 @@ public class ExtensionVersionDTO {
             LocalDateTime timestamp,
             String displayName,
             String description,
-            List<String> engines,
-            List<String> categories,
-            List<String> tags,
-            List<String> extensionKind,
+            String engines,
+            String categories,
+            String tags,
+            String extensionKind,
             String repository,
             String galleryColor,
             String galleryTheme,
-            List<String> dependencies,
-            List<String> bundledExtensions
+            String dependencies,
+            String bundledExtensions
     ) {
-        this(
-                id,
-                version,
-                preview,
-                timestamp,
-                displayName,
-                description,
-                engines,
-                categories,
-                tags,
-                extensionKind,
-                repository,
-                galleryColor,
-                galleryTheme,
-                dependencies,
-                bundledExtensions
-        );
+        var toList = new ListOfStringConverter();
 
         this.extensionId = extensionId;
-    }
-
-    public ExtensionVersionDTO(
-            long id,
-            String version,
-            boolean preview,
-            LocalDateTime timestamp,
-            String displayName,
-            String description,
-            List<String> engines,
-            List<String> categories,
-            List<String> tags,
-            List<String> extensionKind,
-            String repository,
-            String galleryColor,
-            String galleryTheme,
-            List<String> dependencies,
-            List<String> bundledExtensions
-    ) {
         this.id = id;
         this.version = version;
         this.preview = preview;
         this.timestamp = timestamp;
         this.displayName = displayName;
         this.description = description;
-        this.engines = engines;
-        this.categories = categories;
-        this.tags = tags;
-        this.extensionKind = extensionKind;
+        this.engines = toList.convertToEntityAttribute(engines);
+        this.categories = toList.convertToEntityAttribute(categories);
+        this.tags = toList.convertToEntityAttribute(tags);
+        this.extensionKind = toList.convertToEntityAttribute(extensionKind);
         this.repository = repository;
         this.galleryColor = galleryColor;
         this.galleryTheme = galleryTheme;
-        this.dependencies = dependencies;
-        this.bundledExtensions = bundledExtensions;
+        this.dependencies = toList.convertToEntityAttribute(dependencies);
+        this.bundledExtensions = toList.convertToEntityAttribute(bundledExtensions);
     }
 
     private List<ExtensionReferenceJson> toExtensionReferenceJson(List<String> extensionReferences) {
@@ -276,16 +242,12 @@ public class ExtensionVersionDTO {
         return extensionId;
     }
 
-    public void setExtensionId(long extensionId) {
-        this.extensionId = extensionId;
-    }
-
     public ExtensionDTO getExtension() {
         return extension;
     }
 
     public void setExtension(ExtensionDTO extension) {
-        if(extensionId == null || extension.getId() == extensionId) {
+        if(extension.getId() == extensionId) {
             this.extension = extension;
         } else {
             throw new IllegalArgumentException("extension must have the same id as extensionId");

@@ -10,20 +10,18 @@
 package org.eclipse.openvsx.dto;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
 
 public class ExtensionDTO {
 
     private final long id;
-    private String publicId;
+    private final String publicId;
     private final String name;
     private final NamespaceDTO namespace;
     private Long latestId;
     private ExtensionVersionDTO latest;
     private Long previewId;
     private final Double averageRating;
-    private final Integer downloadCount;
+    private final int downloadCount;
 
     public ExtensionDTO(
             long id,
@@ -32,20 +30,18 @@ public class ExtensionDTO {
             Long latestId,
             Long previewId,
             Double averageRating,
-            Integer downloadCount,
+            int downloadCount,
             long namespaceId,
             String namespacePublicId,
             String namespaceName
     ) {
-        this.id = id;
-        this.publicId = publicId;
-        this.name = name;
+        this(
+                id, publicId, name, averageRating, downloadCount,
+                namespaceId, namespacePublicId, namespaceName
+        );
+
         this.latestId = latestId;
         this.previewId = previewId;
-        this.averageRating = averageRating;
-        this.downloadCount = downloadCount;
-
-        this.namespace = new NamespaceDTO(namespaceId, namespacePublicId, namespaceName);
     }
 
     public ExtensionDTO(
@@ -63,24 +59,23 @@ public class ExtensionDTO {
             LocalDateTime latestTimestamp,
             String latestDisplayName,
             String latestDescription,
-            List<String> latestEngines,
-            List<String> latestCategories,
-            List<String> latestTags,
-            List<String> latestExtensionKind,
+            String latestEngines,
+            String latestCategories,
+            String latestTags,
+            String latestExtensionKind,
             String latestRepository,
             String latestGalleryColor,
             String latestGalleryTheme,
-            List<String> latestDependencies,
-            List<String> latestBundledExtensions
+            String latestDependencies,
+            String latestBundledExtensions
     ) {
-        this.id = id;
-        this.publicId = publicId;
-        this.name = name;
-        this.averageRating = averageRating;
-        this.downloadCount = downloadCount;
+        this(
+                id, publicId, name, averageRating, downloadCount,
+                namespaceId, namespacePublicId, namespaceName
+        );
 
-        this.namespace = new NamespaceDTO(namespaceId, namespacePublicId, namespaceName);
         this.latest = new ExtensionVersionDTO(
+                id,
                 latestId,
                 latestVersion,
                 latestPreview,
@@ -98,6 +93,25 @@ public class ExtensionDTO {
                 latestBundledExtensions
         );
         this.latest.setExtension(this);
+    }
+
+    public ExtensionDTO(
+            long id,
+            String publicId,
+            String name,
+            Double averageRating,
+            int downloadCount,
+            long namespaceId,
+            String namespacePublicId,
+            String namespaceName
+    ) {
+        this.id = id;
+        this.publicId = publicId;
+        this.name = name;
+        this.averageRating = averageRating;
+        this.downloadCount = downloadCount;
+
+        this.namespace = new NamespaceDTO(namespaceId, namespacePublicId, namespaceName);
     }
 
     public long getId() {
@@ -132,7 +146,7 @@ public class ExtensionDTO {
         return averageRating;
     }
 
-    public Integer getDownloadCount() {
+    public int getDownloadCount() {
         return downloadCount;
     }
 }

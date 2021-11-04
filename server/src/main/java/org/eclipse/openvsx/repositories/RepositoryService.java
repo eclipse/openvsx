@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 
@@ -259,7 +258,7 @@ public class RepositoryService {
     public List<String> findAllSucceededAzureDownloadCountProcessedItemsByNameIn(List<String> names) {
         return downloadCountRepo.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(names);
     }
-    public Streamable<ExtensionDTO> findAllActiveExtensionDTOsByPublicId(Collection<String> publicIds) {
+    public List<ExtensionDTO> findAllActiveExtensionDTOsByPublicId(Collection<String> publicIds) {
         return extensionDTORepo.findAllActiveByPublicId(publicIds);
     }
 
@@ -267,19 +266,19 @@ public class RepositoryService {
         return extensionDTORepo.findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespaceName);
     }
 
-    public Streamable<ExtensionDTO> findAllActiveExtensionDTOsById(Collection<Long> ids) {
+    public List<ExtensionDTO> findAllActiveExtensionDTOsById(Collection<Long> ids) {
         return extensionDTORepo.findAllActiveById(ids);
     }
 
-    public Streamable<ExtensionVersionDTO> findAllActiveExtensionVersionDTOsByExtensionId(Collection<Long> extensionIds) {
+    public List<ExtensionVersionDTO> findAllActiveExtensionVersionDTOsByExtensionId(Collection<Long> extensionIds) {
         return extensionVersionDTORepo.findAllActiveByExtensionId(extensionIds);
     }
 
-    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionPublicId(String extensionPublicId) {
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionPublicId(String extensionPublicId) {
         return extensionVersionDTORepo.findAllActiveByExtensionPublicId(extensionPublicId);
     }
 
-    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespacePublicId(String namespacePublicId) {
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespacePublicId(String namespacePublicId) {
         return extensionVersionDTORepo.findAllActiveByNamespacePublicId(namespacePublicId);
     }
 
@@ -287,27 +286,27 @@ public class RepositoryService {
         return extensionVersionDTORepo.findActiveByVersionAndExtensionNameAndNamespaceName(extensionVersion, extensionName, namespaceName);
     }
 
-    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName, String namespaceName) {
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName, String namespaceName) {
         return extensionVersionDTORepo.findAllActiveByExtensionNameAndNamespaceName(extensionName, namespaceName);
     }
 
-    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespaceName(String namespaceName) {
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespaceName(String namespaceName) {
         return extensionVersionDTORepo.findAllActiveByNamespaceName(namespaceName);
     }
 
-    public Streamable<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName) {
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName) {
         return extensionVersionDTORepo.findAllActiveByExtensionName(extensionName);
     }
 
-    public Streamable<FileResourceDTO> findAllFileResourceDTOsByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
+    public List<FileResourceDTO> findAllFileResourceDTOsByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
         return fileResourceDTORepo.findAllByExtensionIdAndType(extensionVersionIds, types);
     }
 
-    public Streamable<ExtensionReviewCountDTO> countAllActiveReviewsByExtensionId(Collection<Long> extensionIds) {
-        return extensionDTORepo.countAllActiveReviewsById(extensionIds);
+    public List<ExtensionReviewCountDTO> findAllActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {
+        return extensionDTORepo.findAllActiveReviewCountsById(extensionIds);
     }
 
-    public Streamable<NamespaceMembershipDTO> findAllNamespaceMembershipDTOs(Collection<Long> namespaceIds) {
+    public List<NamespaceMembershipDTO> findAllNamespaceMembershipDTOs(Collection<Long> namespaceIds) {
         return namespaceMembershipDTORepo.findAllByNamespaceId(namespaceIds);
     }
 }
