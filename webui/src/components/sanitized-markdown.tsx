@@ -56,6 +56,7 @@ const markdownStyles = (theme: Theme) => createStyles({
         '& pre': {
             background: theme.palette.neutral.light,
             padding: '10px 5px',
+            overflow: 'auto',
             '& code': {
                 padding: 0,
                 background: 'inherit'
