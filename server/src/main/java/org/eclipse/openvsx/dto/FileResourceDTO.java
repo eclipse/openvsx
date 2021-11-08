@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.dto;
 
+import java.util.Objects;
+
 public class FileResourceDTO {
 
     private final long extensionVersionId;
