@@ -17,6 +17,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 
 @Component
 public class RepositoryService {
@@ -30,6 +34,7 @@ public class RepositoryService {
     @Autowired NamespaceMembershipRepository membershipRepo;
     @Autowired PersonalAccessTokenRepository tokenRepo;
     @Autowired PersistedLogRepository persistedLogRepo;
+    @Autowired AzureDownloadCountProcessedItemRepository downloadCountRepo;
     @Autowired ExtensionDTORepository extensionDTORepo;
     @Autowired ExtensionVersionDTORepository extensionVersionDTORepo;
     @Autowired FileResourceDTORepository fileResourceDTORepo;
@@ -159,6 +164,10 @@ public class RepositoryService {
         return fileResourceRepo.findByExtensionAndTypeAndNameIgnoreCase(extVersion, type, name);
     }
 
+    public Streamable<FileResource> findDownloadsByStorageTypeAndName(String storageType, Collection<String> names) {
+        return fileResourceRepo.findByTypeAndStorageTypeAndNameIgnoreCaseIn(DOWNLOAD, storageType, names);
+    }
+
     public FileResource findFileByType(ExtensionVersion extVersion, String type) {
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }
@@ -247,6 +256,9 @@ public class RepositoryService {
         return persistedLogRepo.findByTimestampAfterOrderByTimestampAsc(dateTime);
     }
 
+    public List<String> findAllSucceededAzureDownloadCountProcessedItemsByNameIn(List<String> names) {
+        return downloadCountRepo.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(names);
+    }
     public Streamable<ExtensionDTO> findAllActiveExtensionDTOsByPublicId(Collection<String> publicIds) {
         return extensionDTORepo.findAllActiveByPublicId(publicIds);
     }

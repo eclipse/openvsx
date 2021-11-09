@@ -32,6 +32,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.persistence.EntityManager;
 
+import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -58,6 +59,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
+import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -87,7 +89,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, VSCodeIdService.class
+    AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, LockProvider.class
 })
 public class RegistryAPITest {
 

@@ -52,3 +52,11 @@ then
     echo "ovsx.storage.azure.sas-token=$AZURE_SAS_TOKEN" >> $OVSX_APP_PROFILE
     echo "Using Azure Blob Storage: $AZURE_SERVICE_ENDPOINT"
 fi
+
+# Set the Azure Logs Storage service endpoint and sas token
+if [ -n "$AZURE_LOGS_SERVICE_ENDPOINT" ] && [ -n "$AZURE_LOGS_SAS_TOKEN" ]
+then
+    echo "ovsx.logs.azure.service-endpoint=$AZURE_LOGS_SERVICE_ENDPOINT" >> $OVSX_APP_PROFILE
+    echo "ovsx.logs.azure.sas-token=$AZURE_LOGS_SAS_TOKEN" >> $OVSX_APP_PROFILE
+    echo "Using Azure Logs Storage: $AZURE_LOGS_SERVICE_ENDPOINT"
+fi

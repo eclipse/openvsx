@@ -54,6 +54,9 @@ public class StorageUtilService implements IStorageService {
     @Autowired
     AzureBlobStorageService azureStorage;
 
+    @Autowired
+    AzureDownloadCountService azureDownloadCountService;
+
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
     String primaryService;
@@ -176,6 +179,11 @@ public class StorageUtilService implements IStorageService {
      */
     @Transactional
     public void increaseDownloadCount(ExtensionVersion extVersion) {
+        if(azureDownloadCountService.isEnabled()) {
+            // don't count downloads twice
+            return;
+        }
+
         var extension = extVersion.getExtension();
         extension.setDownloadCount(extension.getDownloadCount() + 1);
         search.updateSearchEntry(extension);

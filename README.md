@@ -83,6 +83,29 @@ If you would like to test file storage via Azure Blob, follow these steps:
  * Create an environment variable `AZURE_SERVICE_ENDPOINT` with the "Blob service" URL of your storage account. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
  * Generate a "Shared access signature" and put its token into an environment variable `AZURE_SAS_TOKEN`.
 
+If you also would like to test download count via Azure Blob, follow these steps:
+
+* Create an additional [storage account](https://portal.azure.com/) for diagnostics logging.
+  * Disable Blob public access.
+* Create an environment variable `AZURE_LOGS_SERVICE_ENDPOINT` with the "Blob service" URL of your storage account.
+  The URL must end with a slash.
+* Open the file storage account `diagnostic settings (preview)`.
+  * Click `blob`.
+  * Click `Add diagnostic setting`.
+  * Select `StorageRead`, `Transaction` and `Archive to a storage account`.
+  * Select the storage account you created in the previous step as `Storage account`.
+* Navigate to the diagnostics storage account containers. 
+  The `insights-logs-storageread` container should be added.
+* Configure a `Lifecycle management rule` on the diagnostics storage account, so that logs don't pile up and the download count service stays performant.
+  * Select `Limit blobs with filters`, `Block blobs` and `Base blobs`.
+  * Pick number of days.
+  * Enter `insights-logs-storageread/resourceId=` blob prefix to limit the rule to the insights-logs-storageread container.
+* Generate a "Shared access signature" for the `insights-logs-storageread` container.
+  * Must have `Read` and `List` permissions.
+  * Set the "Allowed IP Addresses" to the server's IP address.
+  * Put its token into an environment variable `AZURE_LOGS_SAS_TOKEN`.
+* If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
+
 ## License
 
 [Eclipse Public License 2.0](https://www.eclipse.org/legal/epl-2.0/)
