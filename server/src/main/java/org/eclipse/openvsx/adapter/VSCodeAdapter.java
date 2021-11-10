@@ -14,15 +14,12 @@ import org.eclipse.openvsx.dto.ExtensionDTO;
 import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.dto.FileResourceDTO;
-import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.ExtensionDTORepository;
 import org.eclipse.openvsx.repositories.ExtensionVersionDTORepository;
 import org.eclipse.openvsx.repositories.FileResourceDTORepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.ExtensionSearch;
-import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -116,7 +113,7 @@ public class VSCodeAdapter {
         Long totalCount = null;
         List<ExtensionDTO> extensions;
         if (!extensionIds.isEmpty()) {
-            extensions = repositories.findAllActiveExtensionDTOsByPublicId(extensionIds).toList();
+            extensions = repositories.findAllActiveExtensionDTOsByPublicId(extensionIds);
         } else if (!extensionNames.isEmpty()) {
             extensions = extensionNames.stream()
                     .map(name -> name.split("\\."))
@@ -204,7 +201,7 @@ public class VSCodeAdapter {
         Map<Long, Long> activeReviewCounts;
         if(test(flags, FLAG_INCLUDE_STATISTICS) && !extensions.isEmpty()) {
             var ids = extensions.stream().map(ExtensionDTO::getId).collect(Collectors.toList());
-            activeReviewCounts = repositories.countAllActiveReviewsByExtensionId(ids).stream()
+            activeReviewCounts = repositories.findAllActiveReviewCountsByExtensionId(ids).stream()
                     .collect(Collectors.toMap(ExtensionReviewCountDTO::getExtensiondId, ExtensionReviewCountDTO::getReviewCount));
         } else {
             activeReviewCounts = Collections.emptyMap();

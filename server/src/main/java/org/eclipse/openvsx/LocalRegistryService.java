@@ -228,11 +228,11 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         // Add extension by UUID (public_id)
         if (!Strings.isNullOrEmpty(param.extensionUuid)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByExtensionPublicId(param.extensionUuid).toList());
+            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByExtensionPublicId(param.extensionUuid));
         }
         // Add extensions by namespace UUID (public_id)
         if (!Strings.isNullOrEmpty(param.namespaceUuid)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByNamespacePublicId(param.namespaceUuid).toList());
+            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByNamespacePublicId(param.namespaceUuid));
         }
         // Add a specific version of an extension
         if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)
@@ -243,13 +243,13 @@ public class LocalRegistryService implements IExtensionRegistry {
             }
         // Add extension by namespace and name
         } else if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByExtensionName(param.extensionName, param.namespaceName).toList());
+            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByExtensionName(param.extensionName, param.namespaceName));
         // Add extensions by namespace
         } else if (!Strings.isNullOrEmpty(param.namespaceName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByNamespaceName(param.namespaceName).toList());
+            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByNamespaceName(param.namespaceName));
         // Add extensions by name
         } else if (!Strings.isNullOrEmpty(param.extensionName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByExtensionName(param.extensionName).toList());
+            extensionVersions.addAll(repositories.findActiveExtensionVersionDTOsByExtensionName(param.extensionName));
         }
 
         extensionVersions = extensionVersions.stream()
@@ -301,7 +301,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return Collections.emptyMap();
         }
 
-        return repositories.countAllActiveReviewsByExtensionId(extensionVersionsByExtensionId.keySet()).stream()
+        return repositories.findAllActiveReviewCountsByExtensionId(extensionVersionsByExtensionId.keySet()).stream()
                 .collect(Collectors.toMap(ExtensionReviewCountDTO::getExtensiondId, ExtensionReviewCountDTO::getReviewCount));
     }
 

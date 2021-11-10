@@ -364,7 +364,7 @@ public class RegistryAPITest {
     public void testGetQueryUnknownExtension() throws Exception {
         mockExtensionVersionDTO();
         Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName("baz"))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/-/query?extensionName={extensionName}", "baz"))
                 .andExpect(status().isOk())
@@ -465,7 +465,7 @@ public class RegistryAPITest {
     public void testPostQueryUnknownExtension() throws Exception {
         mockExtensionVersionDTO();
         Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName("baz"))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -950,11 +950,11 @@ public class RegistryAPITest {
 
     private void mockInactiveExtensionVersionDTO(String namespaceName, String extensionName) {
         Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName, namespaceName))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
         Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespaceName(namespaceName))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
         Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
     }
 
     private ExtensionVersionDTO mockExtensionVersionDTO() {
@@ -969,67 +969,35 @@ public class RegistryAPITest {
         var timestamp = LocalDateTime.parse("2000-01-01T10:00");
         var displayName = "Foo Bar";
 
-        var emptyList = Collections.<String>emptyList();
         var extVersion = new ExtensionVersionDTO(
-            namespaceId,
-            namespacePublicId,
-            namespaceName,
-            extensionId,
-            null,
-            extensionName,
-            extensionLatestId,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            id,
-            version,
-            false,
-            timestamp,
-            displayName,
-            null,
-            emptyList,
-            emptyList,
-            emptyList,
-            emptyList,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            emptyList,
-            emptyList
+                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, extensionLatestId,
+                null, null, 0, null, null, null,
+                null, null, null, id, version, false, timestamp, displayName, null,
+                null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null
         );
 
         var extensionPublicId = "5678";
         Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionPublicId(extensionPublicId))
-                .thenReturn(Streamable.of(extVersion));
+                .thenReturn(List.of(extVersion));
         Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespacePublicId(namespacePublicId))
-                .thenReturn(Streamable.of(extVersion));
+                .thenReturn(List.of(extVersion));
         Mockito.when(repositories.findActiveExtensionVersionDTOByVersion(version, extensionName, namespaceName))
                 .thenReturn(extVersion);
         Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName, namespaceName))
-                .thenReturn(Streamable.of(extVersion));
+                .thenReturn(List.of(extVersion));
         Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespaceName(namespaceName))
-                .thenReturn(Streamable.of(extVersion));
+                .thenReturn(List.of(extVersion));
         Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName))
-                .thenReturn(Streamable.of(extVersion));
+                .thenReturn(List.of(extVersion));
 
-        Mockito.when(repositories.countAllActiveReviewsByExtensionId(Set.of(extensionId)))
-                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(Set.of(extensionId)))
+                .thenReturn(Collections.emptyList());
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
         Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(List.of(id), fileTypes))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
         Mockito.when(repositories.findAllNamespaceMembershipDTOs(List.of(namespaceId)))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
 
         return extVersion;
     }

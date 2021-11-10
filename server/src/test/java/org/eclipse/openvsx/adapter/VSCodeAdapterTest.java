@@ -169,7 +169,7 @@ public class VSCodeAdapterTest {
                 .thenReturn(searchHits);
 
         var extension = mockExtensionDTO();
-        Streamable<ExtensionDTO> results = active ? Streamable.of(extension) : Streamable.empty();
+        List<ExtensionDTO> results = active ? List.of(extension) : Collections.emptyList();
         Mockito.when(repositories.findAllActiveExtensionDTOsById(List.of(entry1.id)))
                 .thenReturn(results);
 
@@ -178,8 +178,8 @@ public class VSCodeAdapterTest {
                 .thenReturn(results);
 
         var ids = List.of(extension.getId());
-        Mockito.when(repositories.countAllActiveReviewsByExtensionId(ids))
-                .thenReturn(Streamable.of(new ExtensionReviewCountDTO(extension.getId(), 10l)));
+        Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(ids))
+                .thenReturn(List.of(new ExtensionReviewCountDTO(extension.getId(), 10l)));
 
         var name = extension.getName();
         var namespaceName = extension.getNamespace().getName();
@@ -204,20 +204,13 @@ public class VSCodeAdapterTest {
             var latestTimestamp = LocalDateTime.parse("2000-01-01T10:00");
             var latestDisplayName = "YAML";
             var latestDescription = "YAML Language Support";
-            var latestEngines = Lists.newArrayList("vscode@^1.31.0");
-            var latestCategories = Lists.<String>newArrayList();
-            var latestTags = Lists.<String>newArrayList();
-            var latestExtensionKind = Lists.<String>newArrayList();
+            var latestEngines = "vscode@^1.31.0";
             var latestRepository = "https://github.com/redhat-developer/vscode-yaml";
-            String latestGalleryColor = null;
-            String latestGalleryTheme = null;
-            var latestDependencies = Lists.<String>newArrayList();
-            var latestBundledExtensions = Lists.<String>newArrayList();
 
             return new ExtensionDTO(id,publicId,name,averageRating,downloadCount,namespaceId,namespacePublicId,
                     namespaceName,latestId,latestVersion,latestPreview,latestTimestamp,latestDisplayName,latestDescription,
-                    latestEngines,latestCategories,latestTags,latestExtensionKind,latestRepository,latestGalleryColor,
-                    latestGalleryTheme,latestDependencies,latestBundledExtensions);
+                    latestEngines,null,null,null,latestRepository,null,
+                    null,null,null);
     }
 
     private void mockFileResourceDTOs(ExtensionVersionDTO extensionVersion) {
@@ -232,7 +225,7 @@ public class VSCodeAdapterTest {
         var iconFile = new FileResourceDTO(10, extensionVersion.getId(), "icon128.png", ICON);
 
         Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(ids, types))
-                .thenReturn(Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile));
+                .thenReturn(List.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile));
     }
     
     private ExtensionVersion mockExtension() {
