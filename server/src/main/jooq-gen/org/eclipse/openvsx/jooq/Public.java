@@ -7,7 +7,12 @@ package org.eclipse.openvsx.jooq;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.openvsx.jooq.tables.AdminStatistics;
+import org.eclipse.openvsx.jooq.tables.AdminStatisticsExtensionsByRating;
+import org.eclipse.openvsx.jooq.tables.AdminStatisticsPublishersByExtensionsPublished;
 import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.jooq.tables.Download;
+import org.eclipse.openvsx.jooq.tables.EntityActiveState;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -41,9 +46,34 @@ public class Public extends SchemaImpl {
     public static final Public PUBLIC = new Public();
 
     /**
+     * The table <code>public.admin_statistics</code>.
+     */
+    public final AdminStatistics ADMIN_STATISTICS = AdminStatistics.ADMIN_STATISTICS;
+
+    /**
+     * The table <code>public.admin_statistics_extensions_by_rating</code>.
+     */
+    public final AdminStatisticsExtensionsByRating ADMIN_STATISTICS_EXTENSIONS_BY_RATING = AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING;
+
+    /**
+     * The table <code>public.admin_statistics_publishers_by_extensions_published</code>.
+     */
+    public final AdminStatisticsPublishersByExtensionsPublished ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED = AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED;
+
+    /**
      * The table <code>public.azure_download_count_processed_item</code>.
      */
     public final AzureDownloadCountProcessedItem AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM = AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM;
+
+    /**
+     * The table <code>public.download</code>.
+     */
+    public final Download DOWNLOAD = Download.DOWNLOAD;
+
+    /**
+     * The table <code>public.entity_active_state</code>.
+     */
+    public final EntityActiveState ENTITY_ACTIVE_STATE = EntityActiveState.ENTITY_ACTIVE_STATE;
 
     /**
      * The table <code>public.extension</code>.
@@ -126,6 +156,8 @@ public class Public extends SchemaImpl {
     @Override
     public final List<Sequence<?>> getSequences() {
         return Arrays.<Sequence<?>>asList(
+            Sequences.DOWNLOAD_ID_SEQ,
+            Sequences.ENTITY_ACTIVE_STATE_ID_SEQ,
             Sequences.FILE_RESOURCE_ID_SEQ,
             Sequences.HIBERNATE_SEQUENCE);
     }
@@ -133,7 +165,12 @@ public class Public extends SchemaImpl {
     @Override
     public final List<Table<?>> getTables() {
         return Arrays.<Table<?>>asList(
+            AdminStatistics.ADMIN_STATISTICS,
+            AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING,
+            AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED,
             AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM,
+            Download.DOWNLOAD,
+            EntityActiveState.ENTITY_ACTIVE_STATE,
             Extension.EXTENSION,
             ExtensionReview.EXTENSION_REVIEW,
             ExtensionVersion.EXTENSION_VERSION,

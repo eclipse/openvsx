@@ -19,9 +19,7 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.AzureDownloadCountProcessedItem;
-import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.slf4j.Logger;
@@ -39,12 +37,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.STORAGE_AZURE;
 
@@ -65,6 +62,9 @@ public class AzureDownloadCountService {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    StorageUtilService storageUtil;
 
     @Autowired
     SearchUtilService search;
@@ -154,7 +154,7 @@ public class AzureDownloadCountService {
 
     private void processBlobItem(String blobName) {
         try {
-            var files = new ArrayList<String>();
+            var files = new HashMap<String, List<LocalDateTime>>();
             var bytes = getContainerClient().getBlobClient(blobName).openInputStream().readAllBytes();
             var jsonObjects = new String(bytes).split("\n");
             for (var jsonObject : jsonObjects) {
@@ -174,18 +174,17 @@ public class AzureDownloadCountService {
                     matchesStorageBlobContainer = storageBlobContainer.equals(container);
                 }
                 if(matchesStorageBlobContainer) {
-                    var fileName = pathParams[pathParams.length - 1];
-                    files.add(fileName);
+                    var fileName = pathParams[pathParams.length - 1].toUpperCase();
+                    var timestamps = files.getOrDefault(fileName, new ArrayList<>());
+                    timestamps.add(LocalDateTime.parse(node.get("time").asText(), DateTimeFormatter.ISO_ZONED_DATE_TIME));
+                    files.put(fileName, timestamps);
                 }
             }
 
-            var fileCounts = files.stream().collect(Collectors.groupingBy(String::toUpperCase, Collectors.counting()));
-            var fileResources = repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, fileCounts.keySet());
+            var fileResources = repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet());
             for (var fileResource : fileResources) {
-                int count = fileCounts.get(fileResource.getName().toUpperCase()).intValue();
-                var extension = fileResource.getExtension().getExtension();
-                extension.setDownloadCount(extension.getDownloadCount() + count);
-                search.updateSearchEntry(extension);
+                var timestamps = files.get(fileResource.getName().toUpperCase());
+                storageUtil.increaseDownloadCount(fileResource.getExtension(), fileResource, timestamps);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

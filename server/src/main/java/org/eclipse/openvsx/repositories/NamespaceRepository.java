@@ -14,6 +14,8 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 import org.eclipse.openvsx.entities.Namespace;
 
+import java.time.LocalDateTime;
+
 public interface NamespaceRepository extends Repository<Namespace, Long> {
 
     Namespace findByNameIgnoreCase(String name);
@@ -24,5 +26,4 @@ public interface NamespaceRepository extends Repository<Namespace, Long> {
     Streamable<Namespace> findOrphans();
 
     long count();
-
 }

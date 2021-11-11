@@ -149,7 +149,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (resource == null)
             throw new NotFoundException();
         if (resource.getType().equals(DOWNLOAD))
-            storageUtil.increaseDownloadCount(extVersion);
+            storageUtil.increaseDownloadCount(extVersion, resource);
         if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
             var headers = storageUtil.getFileResponseHeaders(fileName);
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);

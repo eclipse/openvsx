@@ -20,12 +20,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.EntityManager;
+import javax.persistence.MapKeyColumn;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,12 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipJson;
@@ -545,8 +543,155 @@ public class AdminAPITest {
         assertThat(versions.get(0).isActive()).isFalse();
     }
 
+    @Test
+    public void testReportNoAdminToken() throws Exception {
+        var token = mockNonAdminToken();
+        mockMvc.perform(get("/admin/report?token={token}&year=2021&month=3", token.getValue()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void testReportNegativeYear() throws Exception {
+        var token = mockAdminToken();
+        mockMvc.perform(get("/admin/report?token={token}&year=-1&month=3", token.getValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Year can't be negative"));
+    }
+
+    @Test
+    public void testReportFutureYear() throws Exception {
+        var token = mockAdminToken();
+        var future = LocalDateTime.now().plusYears(1);
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month=3", token.getValue(), future.getYear()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Year lies in the future"));
+    }
+
+    @Test
+    public void testReportMonthLessThanOne() throws Exception {
+        var token = mockAdminToken();
+        var now = LocalDateTime.now();
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month=0", token.getValue(), now.getYear()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Month must be a value between 1 and 12"));
+    }
+
+    @Test
+    public void testReportMonthGreaterThanTwelve() throws Exception {
+        var token = mockAdminToken();
+        var now = LocalDateTime.now();
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month=13", token.getValue(), now.getYear()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Month must be a value between 1 and 12"));
+    }
+
+    @Test
+    public void testReportFutureMonth() throws Exception {
+        var token = mockAdminToken();
+        var future = LocalDateTime.now().plusMonths(1);
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), future.getYear(), future.getMonthValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Month lies in the future"));
+    }
+
+    @Test
+    public void testArchivedReport() throws Exception {
+        var token = mockAdminToken();
+        var past = LocalDateTime.now().minusMonths(1);
+        var year = past.getYear();
+        var month = past.getMonthValue();
+
+        var stats = new AdminStatistics();
+        stats.setYear(year);
+        stats.setMonth(month);
+        stats.setExtensions(1234);
+        stats.setDownloads(423);
+        stats.setDownloadsTotal(67890);
+        stats.setPublishers(891);
+        stats.setAverageReviewsPerExtension(4.5);
+        stats.setNamespaceOwners(56);
+        stats.setExtensionsByRating(Map.of(1, 7, 2, 16, 3, 560, 4, 427, 5, 136));
+        stats.setPublishersByExtensionsPublished(Map.of(1, 670, 2, 99, 3, 70, 4, 52));
+
+        Mockito.when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(stats);
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), year, month))
+                .andExpect(status().isOk())
+                .andExpect(content().string(stats.toCsv()));
+    }
+
+    @Test
+    public void testAdminOnTheFlyReport() throws Exception {
+        var token = mockAdminToken();
+        var year = 2021;
+        var month = 7;
+        var extensions = 9123L;
+        var downloads = 2145L;
+        var downloadsTotal = 57199L;
+        var publishers = 846L;
+        var averageReviewsPerExtension = 8.75;
+        var namespaceOwners = 623L;
+        var extensionsByRating = Map.of(3, 8000, 5, 1123);
+        var publishersByExtensionsPublished = Map.of(1, 6590, 3, 815);
+
+        var stats = new AdminStatistics();
+        stats.setYear(year);
+        stats.setMonth(month);
+        stats.setExtensions(extensions);
+        stats.setDownloads(downloads);
+        stats.setDownloadsTotal(downloadsTotal);
+        stats.setPublishers(publishers);
+        stats.setAverageReviewsPerExtension(averageReviewsPerExtension);
+        stats.setNamespaceOwners(namespaceOwners);
+        stats.setExtensionsByRating(extensionsByRating);
+        stats.setPublishersByExtensionsPublished(publishersByExtensionsPublished);
+
+        Mockito.when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(null);
+
+        var startInclusive = LocalDateTime.of(year, month, 1, 0, 0);
+        var endExclusive = startInclusive.plusMonths(1);
+        Mockito.when(repositories.countActiveExtensions(endExclusive)).thenReturn(extensions);
+        Mockito.when(repositories.downloadsBetween(startInclusive, endExclusive)).thenReturn(downloads);
+        Mockito.when(repositories.downloadsUntil(endExclusive)).thenReturn(downloadsTotal);
+        Mockito.when(repositories.countActiveExtensionPublishers(endExclusive)).thenReturn(publishers);
+        Mockito.when(repositories.averageNumberOfActiveReviewsPerActiveExtension(endExclusive)).thenReturn(averageReviewsPerExtension);
+        Mockito.when(repositories.countPublishersThatClaimedNamespaceOwnership(endExclusive)).thenReturn(namespaceOwners);
+        Mockito.when(repositories.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive)).thenReturn(extensionsByRating);
+        Mockito.when(repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive)).thenReturn(publishersByExtensionsPublished);
+
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), year, month))
+                .andExpect(status().isOk())
+                .andExpect(content().string(stats.toCsv()));
+    }
 
     //---------- UTILITY ----------//
+
+    private PersonalAccessToken mockAdminToken() {
+        var user = new UserData();
+        user.setRole(UserData.ROLE_ADMIN);
+
+        var tokenValue = "admin_token";
+        var token = new PersonalAccessToken();
+        token.setActive(true);
+        token.setValue(tokenValue);
+        token.setUser(user);
+        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
+
+        return token;
+    }
+
+    private PersonalAccessToken mockNonAdminToken() {
+        var user = new UserData();
+        user.setRole(UserData.ROLE_PRIVILEGED);
+
+        var tokenValue = "normal_token";
+        var token = new PersonalAccessToken();
+        token.setActive(true);
+        token.setValue(tokenValue);
+        token.setUser(user);
+        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
+
+        return token;
+    }
 
     private UserData mockNormalUser() {
         var userData = new UserData();

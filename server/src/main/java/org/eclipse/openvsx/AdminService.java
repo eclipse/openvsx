@@ -9,9 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -22,12 +23,7 @@ import com.google.common.collect.Lists;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersistedLog;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -40,6 +36,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -291,4 +288,64 @@ public class AdminService {
         }
     }
 
+    @Transactional
+    public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {
+        if(year < 0) {
+            throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);
+        }
+        if(month < 1 || month > 12) {
+            throw new ErrorResultException("Month must be a value between 1 and 12", HttpStatus.BAD_REQUEST);
+        }
+
+        var now = LocalDateTime.now();
+        if(year > now.getYear()) {
+            throw new ErrorResultException("Year lies in the future", HttpStatus.BAD_REQUEST);
+        }
+        if(year == now.getYear() && month > now.getMonthValue()) {
+            throw new ErrorResultException("Month lies in the future", HttpStatus.BAD_REQUEST);
+        }
+
+        var statistics = repositories.findAdminStatisticsByYearAndMonth(year, month);
+        if(statistics == null) {
+            LocalDateTime startInclusive;
+            try {
+                startInclusive = LocalDateTime.of(year, month, 1, 0, 0);
+            } catch(DateTimeException e) {
+                throw new ErrorResultException("Invalid month or year", HttpStatus.BAD_REQUEST);
+            }
+
+            var currentYearAndMonth = now.getYear() == year && now.getMonthValue() == month;
+            var endExclusive = currentYearAndMonth
+                    ? now.truncatedTo(ChronoUnit.MINUTES)
+                    : startInclusive.plusMonths(1);
+
+            var extensions = repositories.countActiveExtensions(endExclusive);
+            var downloads = repositories.downloadsBetween(startInclusive, endExclusive);
+            var downloadsTotal = repositories.downloadsUntil(endExclusive);
+            var publishers = repositories.countActiveExtensionPublishers(endExclusive);
+            var averageReviewsPerExtension = repositories.averageNumberOfActiveReviewsPerActiveExtension(endExclusive);
+            var namespaceOwners = repositories.countPublishersThatClaimedNamespaceOwnership(endExclusive);
+            var extensionsByRating = repositories.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive);
+            var publishersByExtensionsPublished = repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive);
+
+            statistics = new AdminStatistics();
+            statistics.setYear(year);
+            statistics.setMonth(month);
+            statistics.setExtensions(extensions);
+            statistics.setDownloads(downloads);
+            statistics.setDownloadsTotal(downloadsTotal);
+            statistics.setPublishers(publishers);
+            statistics.setAverageReviewsPerExtension(averageReviewsPerExtension);
+            statistics.setNamespaceOwners(namespaceOwners);
+            statistics.setExtensionsByRating(extensionsByRating);
+            statistics.setPublishersByExtensionsPublished(publishersByExtensionsPublished);
+
+            if(!currentYearAndMonth) {
+                // archive statistics for quicker lookup next time
+                entityManager.persist(statistics);
+            }
+        }
+
+        return statistics;
+    }
 }
