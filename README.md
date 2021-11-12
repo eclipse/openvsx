@@ -77,7 +77,7 @@ If you would like to test file storage via Google Cloud, follow these steps:
 
 If you would like to test file storage via Azure Blob, follow these steps:
 
- * Create a [storage account](https://portal.azure.com/) and a container named `openvsx-resources` (a different name is possible if you change the `ovsx.storage.azure.blob-container` property).
+ * Create a file [storage account](https://portal.azure.com/) and a container named `openvsx-resources` (a different name is possible if you change the `ovsx.storage.azure.blob-container` property).
  * Allow Blob public access in the storage account and set the container's public access level to "Blob".
  * Configure CORS in your storage account with origin `"*"`, method `"GET"` and allowed headers `"x-market-client-id, x-market-user-id, x-client-name, x-client-version, x-machine-id, x-client-commit"`
  * Create an environment variable `AZURE_SERVICE_ENDPOINT` with the "Blob service" URL of your storage account. If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
@@ -86,25 +86,32 @@ If you would like to test file storage via Azure Blob, follow these steps:
 If you also would like to test download count via Azure Blob, follow these steps:
 
 * Create an additional [storage account](https://portal.azure.com/) for diagnostics logging.
+  * IMPORTANT: set the same location as the file storage account (e.g. North Europe).
   * Disable Blob public access.
-* Create an environment variable `AZURE_LOGS_SERVICE_ENDPOINT` with the "Blob service" URL of your storage account.
-  The URL must end with a slash.
-* Open the file storage account `diagnostic settings (preview)`.
-  * Click `blob`.
-  * Click `Add diagnostic setting`.
-  * Select `StorageRead`, `Transaction` and `Archive to a storage account`.
-  * Select the storage account you created in the previous step as `Storage account`.
-* Navigate to the diagnostics storage account containers. 
-  The `insights-logs-storageread` container should be added.
-* Configure a `Lifecycle management rule` on the diagnostics storage account, so that logs don't pile up and the download count service stays performant.
-  * Select `Limit blobs with filters`, `Block blobs` and `Base blobs`.
-  * Pick number of days.
-  * Enter `insights-logs-storageread/resourceId=` blob prefix to limit the rule to the insights-logs-storageread container.
-* Generate a "Shared access signature" for the `insights-logs-storageread` container.
-  * Must have `Read` and `List` permissions.
-  * Set the "Allowed IP Addresses" to the server's IP address.
-  * Put its token into an environment variable `AZURE_LOGS_SAS_TOKEN`.
-* If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
+* In the file storage account
+  * Open the diagnostic settings (`Monitoring` -> `Diagnostic settings (preview)`).
+    * Click `blob`.
+    * Click `Add diagnostic setting`.
+    * Select `StorageRead`, `Transaction` and `Archive to a storage account`.
+    * Select the diagnostic storage account you created in the previous step as `Storage account`.
+* Back to the diagnostic storage account
+  * Navigate to `Data Storage`-> `Containers`
+    * The `insights-logs-storageread` container should have been added (it might take a few minutes and you might need to do some test downloads or it won't get created).
+    * Create a "Shared access token" for the `insights-logs-storageread` container.
+      * Click on the `insights-logs-storageread` container.
+        * Click on `Settings` -> `Shared access token`
+          * Must have `Read` and `List` permissions.
+          * Set the expiry date to a reasonable value
+          * Set the "Allowed IP Addresses" to the server's IP address.
+  * Go to `Data Management`-> `Lifecycle management`
+    * Create a rule, so that logs don't pile up and the download count service stays performant.
+    * Select `Limit blobs with filters`, `Block blobs` and `Base blobs`.
+    * Pick number of days (e.g. 7).
+    * Enter `insights-logs-storageread/resourceId=` blob prefix to limit the rule to the `insights-logs-storageread` container.
+* You need to add two environment variables to your server environment
+  * `AZURE_LOGS_SERVICE_ENDPOINT` with the "Blob service" URL of your diagnostic storage account. The URL must end with a slash!
+  * `AZURE_LOGS_SAS_TOKEN` with the shared access token for the `insights-logs-storageread` container.
+  * If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
 
 ## License
 
