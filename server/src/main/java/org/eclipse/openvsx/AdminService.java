@@ -289,7 +289,7 @@ public class AdminService {
     }
 
     @Transactional
-    public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {
+    public String getAdminStatisticsCsv(int year, int month) throws ErrorResultException {
         if(year < 0) {
             throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);
         }
@@ -346,6 +346,6 @@ public class AdminService {
             }
         }
 
-        return statistics;
+        return statistics.toCsv();
     }
 }

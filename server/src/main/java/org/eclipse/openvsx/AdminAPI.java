@@ -81,8 +81,7 @@ public class AdminAPI {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            var statistics = admins.getAdminStatistics(year, month);
-            return ResponseEntity.ok(statistics.toCsv());
+            return ResponseEntity.ok(admins.getAdminStatisticsCsv(year, month));
         } catch (ErrorResultException exc) {
             return ResponseEntity.status(exc.getStatus()).body(exc.getMessage());
         }
