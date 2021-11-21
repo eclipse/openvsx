@@ -9,10 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,8 +19,8 @@ public class Download {
     @GeneratedValue
     long id;
 
-    @ManyToOne
-    FileResource fileResource;
+    @Column(name = "file_resource_id_not_fk")
+    long fileResourceId;
 
     LocalDateTime timestamp;
 
@@ -37,12 +34,12 @@ public class Download {
         this.id = id;
     }
 
-    public FileResource getFileResource() {
-        return fileResource;
+    public long getFileResourceId() {
+        return fileResourceId;
     }
 
-    public void setFileResource(FileResource fileResource) {
-        this.fileResource = fileResource;
+    public void setFileResourceId(long fileResourceId) {
+        this.fileResourceId = fileResourceId;
     }
 
     public LocalDateTime getTimestamp() {

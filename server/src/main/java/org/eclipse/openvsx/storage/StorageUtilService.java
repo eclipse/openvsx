@@ -198,7 +198,7 @@ public class StorageUtilService implements IStorageService {
             var download = new Download();
             download.setAmount(1);
             download.setTimestamp(time);
-            download.setFileResource(resource);
+            download.setFileResourceId(resource.getId());
             entityManager.persist(download);
         }
 
