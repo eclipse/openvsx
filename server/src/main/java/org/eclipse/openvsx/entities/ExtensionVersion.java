@@ -70,7 +70,7 @@ public class ExtensionVersion {
     @Convert(converter = ListOfStringConverter.class)
     List<String> categories;
 
-    @Column(length = 8192)
+    @Column(length = 16384)
     @Convert(converter = ListOfStringConverter.class)
     List<String> tags;
 
