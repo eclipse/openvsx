@@ -156,7 +156,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     /**
      * The column <code>public.extension_version.tags</code>.
      */
-    public final TableField<ExtensionVersionRecord, String> TAGS = createField(DSL.name("tags"), SQLDataType.VARCHAR(8192), this, "");
+    public final TableField<ExtensionVersionRecord, String> TAGS = createField(DSL.name("tags"), SQLDataType.VARCHAR(16384), this, "");
 
     /**
      * The column <code>public.extension_version.extension_kind</code>.
