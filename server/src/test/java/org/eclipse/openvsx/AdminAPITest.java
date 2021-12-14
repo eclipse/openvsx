@@ -564,7 +564,7 @@ public class AdminAPITest {
         var future = LocalDateTime.now().plusYears(1);
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month=3", token.getValue(), future.getYear()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Year lies in the future"));
+                .andExpect(content().string("Combination of year and month lies in the future"));
     }
 
     @Test
@@ -591,7 +591,7 @@ public class AdminAPITest {
         var future = LocalDateTime.now().plusMonths(1);
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), future.getYear(), future.getMonthValue()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Month lies in the future"));
+                .andExpect(content().string("Combination of year and month lies in the future"));
     }
 
     @Test
