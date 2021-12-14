@@ -25,7 +25,10 @@ import javax.persistence.UniqueConstraint;
 import org.eclipse.openvsx.search.ExtensionSearch;
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "publicId" }))
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "publicId" }),
+        @UniqueConstraint(columnNames = { "namespace_id", "name" })
+})
 public class Extension {
 
     @Id
