@@ -298,11 +298,8 @@ public class AdminService {
         }
 
         var now = LocalDateTime.now();
-        if(year > now.getYear()) {
-            throw new ErrorResultException("Year lies in the future", HttpStatus.BAD_REQUEST);
-        }
-        if(year == now.getYear() && month > now.getMonthValue()) {
-            throw new ErrorResultException("Month lies in the future", HttpStatus.BAD_REQUEST);
+        if(year > now.getYear() || (year == now.getYear() && month > now.getMonthValue())) {
+            throw new ErrorResultException("Combination of year and month lies in the future", HttpStatus.BAD_REQUEST);
         }
 
         var statistics = repositories.findAdminStatisticsByYearAndMonth(year, month);
