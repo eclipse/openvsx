@@ -21,6 +21,7 @@ import javax.transaction.Transactional.TxType;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobHttpHeaders;
+import com.azure.storage.blob.models.BlobStorageException;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
@@ -28,6 +29,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -101,7 +103,16 @@ public class AzureBlobStorageService implements IStorageService {
             throw new IllegalStateException("Cannot remove file "
                     + blobName + ": missing Azure blob service endpoint");
         }
-        getContainerClient().getBlobClient(blobName).delete();
+
+        try {
+            getContainerClient().getBlobClient(blobName).delete();
+        } catch(BlobStorageException e) {
+            if(e.getStatusCode() != HttpStatus.NOT_FOUND.value()) {
+                // 404 indicates that the file is already deleted
+                // so only throw an exception for other status codes
+                throw e;
+            }
+        }
 	}
 
 	@Override
