@@ -14,6 +14,16 @@ FROM (
 JOIN extension e ON e.namespace_id = g.namespace_id AND UPPER(e.name) = g.name
 WHERE g.first_extension_id <> e.id;
 
+UPDATE extension e
+SET download_count = e.download_count + j.other_download_count
+FROM (
+	SELECT d.first_id, SUM(e.download_count) other_download_count
+	FROM duplicate_id d 
+	JOIN extension e ON e.id = d.other_id
+	GROUP BY d.first_id
+) j
+WHERE e.id = j.first_id;
+
 UPDATE extension_version
 SET extension_id = d.first_id
 FROM duplicate_id d
