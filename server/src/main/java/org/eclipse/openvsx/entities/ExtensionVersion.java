@@ -26,6 +26,7 @@ import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
+@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "extension_id", "version" })})
 public class ExtensionVersion {
 
     public static final Comparator<ExtensionVersion> SORT_COMPARATOR =

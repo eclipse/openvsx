@@ -20,7 +20,10 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "publicId", "name" }))
+@Table(uniqueConstraints = {
+		@UniqueConstraint(columnNames = { "publicId" }),
+		@UniqueConstraint(columnNames = { "name" })
+})
 public class Namespace {
 
     @Id
