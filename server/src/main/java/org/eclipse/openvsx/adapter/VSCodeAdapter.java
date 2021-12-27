@@ -86,18 +86,18 @@ public class VSCodeAdapter {
         PageRequest pageRequest;
         String sortOrder;
         String sortBy;
-        List<String> extensionIds;
-        List<String> extensionNames;
+        Set<String> extensionIds;
+        Set<String> extensionNames;
         if (param.filters == null || param.filters.isEmpty()) {
             pageRequest = PageRequest.of(0, DEFAULT_PAGE_SIZE);
             sortBy = "relevance";
             sortOrder = "desc";
-            extensionIds = Collections.emptyList();
-            extensionNames = Collections.emptyList();
+            extensionIds = Collections.emptySet();
+            extensionNames = Collections.emptySet();
         } else {
             var filter = param.filters.get(0);
-            extensionIds = filter.findCriteria(FILTER_EXTENSION_ID);
-            extensionNames = filter.findCriteria(FILTER_EXTENSION_NAME);
+            extensionIds = new HashSet<>(filter.findCriteria(FILTER_EXTENSION_ID));
+            extensionNames = new HashSet<>(filter.findCriteria(FILTER_EXTENSION_NAME));
 
             queryString = filter.findCriterion(FILTER_SEARCH_TEXT);
             if (queryString == null)

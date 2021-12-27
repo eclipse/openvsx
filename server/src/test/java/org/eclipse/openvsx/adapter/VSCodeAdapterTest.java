@@ -115,6 +115,16 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testFindByIdDuplicate() throws Exception {
+        mockSearch(true);
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("findid-yaml-duplicate-query.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findid-yaml-response.json")));
+    }
+
+    @Test
     public void testFindByIdInactive() throws Exception {
         mockSearch(false);
         mockMvc.perform(post("/vscode/gallery/extensionquery")
@@ -129,6 +139,16 @@ public class VSCodeAdapterTest {
         mockSearch(true);
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findname-yaml-query.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response.json")));
+    }
+
+    @Test
+    public void testFindByNameDuplicate() throws Exception {
+        mockSearch(true);
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("findname-yaml-duplicate-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(file("findname-yaml-response.json")));
@@ -173,7 +193,7 @@ public class VSCodeAdapterTest {
         Mockito.when(repositories.findAllActiveExtensionDTOsById(List.of(entry1.id)))
                 .thenReturn(results);
 
-        var publicIds = List.of(extension.getPublicId());
+        var publicIds = Set.of(extension.getPublicId());
         Mockito.when(repositories.findAllActiveExtensionDTOsByPublicId(publicIds))
                 .thenReturn(results);
 
