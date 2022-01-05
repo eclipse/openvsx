@@ -278,7 +278,7 @@ public class RegistryAPI {
             @RequestParam(defaultValue = "0")
             @ApiParam(value = "Number of entries to skip (usually a multiple of the page size)", allowableValues = "range[0,infinity]")
             int offset,
-            @RequestParam(defaultValue = "desc") 
+            @RequestParam(defaultValue = "desc")
             @ApiParam(value = "Descending or ascending sort order", allowableValues = "asc,desc")
             String sortOrder,
             @RequestParam(defaultValue = "relevance")
@@ -301,12 +301,9 @@ public class RegistryAPI {
         var result = new SearchResultJson();
         result.extensions = new ArrayList<>(size);
         for (var registry : getRegistries()) {
-            if (result.extensions.size() >= size) {
-                return ResponseEntity.ok(result);
-            }
             try {
                 var subResult = registry.search(options);
-                if (subResult.extensions != null && subResult.extensions.size() > 0) {
+                if (result.extensions.size() < size && subResult.extensions != null && subResult.extensions.size() > 0) {
                     int limit = size - result.extensions.size();
                     var subResultSize = mergeSearchResults(result, subResult.extensions, limit);
                     result.offset += subResult.offset;
