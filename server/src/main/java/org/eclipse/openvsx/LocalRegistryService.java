@@ -488,8 +488,12 @@ public class LocalRegistryService implements IExtensionRegistry {
     private SearchEntryJson toSearchEntry(SearchHit<ExtensionSearch> searchHit, String serverUrl, ISearchService.Options options) {
         var searchItem = searchHit.getContent();
         var extension = entityManager.find(Extension.class, searchItem.id);
-        if (extension == null || !extension.isActive())
+        if (extension == null || !extension.isActive()){
+            extension = new Extension();
+            extension.setId(searchItem.id);
+            search.removeSearchEntry(extension);
             return null;
+        }
         var extVer = extension.getLatest();
         var entry = extVer.toSearchEntryJson();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
