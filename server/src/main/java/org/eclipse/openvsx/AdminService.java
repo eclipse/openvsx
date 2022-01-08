@@ -13,11 +13,14 @@ import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
@@ -36,7 +39,6 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -66,6 +68,10 @@ public class AdminService {
     @Autowired
     StorageUtilService storageUtil;
 
+    private final Cache<Integer, Object> deleteLocks = Caffeine.newBuilder()
+            .expireAfterAccess(5, TimeUnit.MINUTES)
+            .build();
+
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, String version, UserData admin)
             throws ErrorResultException {
@@ -77,12 +83,15 @@ public class AdminService {
             }
             return deleteExtension(extension, admin);
         } else {
-            var extVersion = repositories.findVersion(version, extensionName, namespaceName);
-            if (extVersion == null) {
-                throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName + " version " + version,
-                        HttpStatus.NOT_FOUND);
+            var extensionId = namespaceName + "." + extensionName;
+            synchronized (deleteLocks.get(extensionId.hashCode(), hashCode -> new Object())) {
+                var extVersion = repositories.findVersion(version, extensionName, namespaceName);
+                if (extVersion == null) {
+                    throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName + " version " + version,
+                            HttpStatus.NOT_FOUND);
+                }
+                return deleteExtension(extVersion, admin);
             }
-            return deleteExtension(extVersion, admin);
         }
     }
 
