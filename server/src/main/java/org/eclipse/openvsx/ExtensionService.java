@@ -76,11 +76,11 @@ public class ExtensionService {
             var resources = processor.getResources(extVersion);
             checkLicense(extVersion, resources);
 
-            // Update the 'latest' / 'preview' references and the search index
-            updateExtension(extVersion.getExtension());
-
             // Store file resources in the DB or external storage
             storeResources(extVersion, resources);
+
+            // Update the 'latest' / 'preview' references and the search index
+            updateExtension(extVersion.getExtension());
 
             return extVersion;
         }
