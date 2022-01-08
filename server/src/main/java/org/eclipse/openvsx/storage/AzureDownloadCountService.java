@@ -33,6 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StopWatch;
 
 import javax.persistence.EntityManager;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
@@ -153,9 +154,11 @@ public class AzureDownloadCountService {
     }
 
     private void processBlobItem(String blobName) {
-        try {
+        try (var outputStream = new ByteArrayOutputStream()) {
+            getContainerClient().getBlobClient(blobName).download(outputStream);
+            var bytes = outputStream.toByteArray();
+
             var files = new HashMap<String, List<LocalDateTime>>();
-            var bytes = getContainerClient().getBlobClient(blobName).openInputStream().readAllBytes();
             var jsonObjects = new String(bytes).split("\n");
             for (var jsonObject : jsonObjects) {
                 var node = getObjectMapper().readTree(jsonObject);
