@@ -33,7 +33,7 @@
         "ovsx": "lib/ovsx"
     },
     "engines": {
-        "node": ">= 10"
+        "node": ">= 14"
     },
     "dependencies": {
         "commander": "^6.1.0",
@@ -41,7 +41,7 @@
         "is-ci": "^2.0.0",
         "leven": "^3.1.0",
         "tmp": "^0.2.1",
-        "vsce": "~1.100.1"
+        "vsce": "^2.6.3"
     },
     "devDependencies": {
         "@types/follow-redirects": "^1.13.0",

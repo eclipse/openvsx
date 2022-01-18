@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
-if (global.URL === undefined) {
-    console.error('ovsx requires at least NodeJS version 10. Check your installed version with `node --version`.');
+const semver = require('semver');
+
+if (semver.gte(process.versions.node, '14.0.0')) {
+    console.error('ovsx requires at least NodeJS version 14. Check your installed version with `node --version`.');
     process.exit(1);
 }
 
