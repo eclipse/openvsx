@@ -10,7 +10,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Dependencies
 
-- Upgrade `vsce` from `1.97.0` to `2.6.3`
+- Upgrade `vsce` from `1.97.0` to `2.6.3` ([#403](https://github.com/eclipse/openvsx/pull/403))
 - Upgrade `follow-redirects`
 - Upgrade `nth-check`
 
@@ -20,7 +20,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### New Features
 
-- Also accept `LICENSE` files (alternative spelling to `LICENSE`)
+- Also accept `LICENCE` files (alternative spelling to `LICENSE`) ([#307](https://github.com/eclipse/openvsx/pull/307))
 - Remove `--web` option (it will now be inferred from the `package.json` file)
 
 #### Dependencies
