@@ -13,7 +13,7 @@
     "homepage": "https://open-vsx.org",
     "repository": {
         "type": "git",
-        "url": "ssh://git@github.com:eclipse/openvsx.git",
+        "url": "https://github.com/eclipse/openvsx.git",
         "directory": "webui"
     },
     "bugs": "https://github.com/eclipse/openvsx/issues",
