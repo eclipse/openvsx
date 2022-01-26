@@ -970,7 +970,7 @@ public class RegistryAPITest {
         var displayName = "Foo Bar";
 
         var extVersion = new ExtensionVersionDTO(
-                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, extensionLatestId,
+                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, false, extensionLatestId,
                 null, null, 0, null, null, null,
                 null, null, null, id, version, false, timestamp, displayName, null,
                 null, null, null, null, null, null, null, null,

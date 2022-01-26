@@ -49,7 +49,7 @@ public class ExtensionVersion {
     @Transient
     SemanticVersion semver;
 
-    boolean preview;
+    boolean preRelease;
 
     LocalDateTime timestamp;
 
@@ -118,7 +118,7 @@ public class ExtensionVersion {
         json.averageRating = extension.getAverageRating();
         json.downloadCount = extension.getDownloadCount();
         json.version = this.getVersion();
-        json.preview = this.isPreview();
+        json.preRelease = this.isPreRelease();
         if (this.getTimestamp() != null) {
             json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         }
@@ -226,12 +226,12 @@ public class ExtensionVersion {
         return semver;
     }
 
-	public boolean isPreview() {
-		return preview;
+	public boolean isPreRelease() {
+		return preRelease;
 	}
 
-	public void setPreview(boolean preview) {
-		this.preview = preview;
+	public void setPreRelease(boolean preRelease) {
+		this.preRelease = preRelease;
 	}
 
 	public LocalDateTime getTimestamp() {

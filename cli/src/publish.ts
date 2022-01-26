@@ -7,7 +7,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-
 import { createVSIX, ICreateVSIXOptions } from 'vsce';
 import { createTempFile, addEnvOptions } from './util';
 import { Registry, RegistryOptions } from './registry';
@@ -40,6 +39,8 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     if (!options.extensionFile) {
         await packageExtension(options, registry);
         console.log(); // new line
+    } else if (options.preRelease) {
+        console.warn("Ignoring option '--pre-release' for prepackaged extension.");
     }
 
     const extension = await registry.publish(options.extensionFile!, options.pat);
@@ -67,6 +68,10 @@ interface PublishCommonOptions extends RegistryOptions {
 	 * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
 	 */
     yarn?: boolean;
+    /**
+     * Mark this package as a pre-release. Only valid with `packagePath`.
+     */
+    preRelease?: boolean;
 }
 
 // Interface used by top level CLI
@@ -101,7 +106,8 @@ async function packageExtension(options: InternalPublishOptions, registry: Regis
         packagePath: options.extensionFile,
         baseContentUrl: options.baseContentUrl,
         baseImagesUrl: options.baseImagesUrl,
-        useYarn: options.yarn
+        useYarn: options.yarn,
+        preRelease: options.preRelease
     };
     await createVSIX(createVSIXOptions);
 }

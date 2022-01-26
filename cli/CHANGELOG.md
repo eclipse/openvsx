@@ -2,6 +2,12 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.4.0 (Feb. 2022)
+
+#### New Features
+
+- Added CLI parameter `--pre-release` to support pre-releases ([#410](https://github.com/eclipse/openvsx/pull/410))
+
 ### v0.3.0 (Jan. 2022)
 
 #### Breaking Changes

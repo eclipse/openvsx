@@ -57,6 +57,10 @@ public class ExtensionJson extends ResultJson {
     @NotNull
     public String version;
 
+    @ApiModelProperty("Indicates whether this is a pre-release version")
+    @NotNull
+    public boolean preRelease;
+
     @ApiModelProperty("Data of the user who published this version")
     @NotNull
     public UserJson publishedBy;
@@ -92,14 +96,14 @@ public class ExtensionJson extends ResultJson {
     @Min(0)
     public Long reviewCount;
 
-    @ApiModelProperty("Available version aliases ('latest' or 'preview')")
+    @ApiModelProperty("Available version aliases ('latest' or 'pre-release')")
     public List<String> versionAlias;
 
     @ApiModelProperty("Date and time when this version was published (ISO-8601)")
     @NotNull
     public String timestamp;
 
-    @ApiModelProperty("Indicates whether this is a preview version")
+    @ApiModelProperty("Indicates whether this is a preview extension")
     public Boolean preview;
 
     @ApiModelProperty("Name to be displayed in user interfaces")

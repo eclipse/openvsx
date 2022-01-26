@@ -130,11 +130,11 @@ public class LocalRegistryService implements IExtensionRegistry {
             if (extension == null || !extension.isActive())
                 return null;
             return extension.getLatest();
-        } else if ("preview".equals(version)) {
+        } else if ("pre-release".equals(version)) {
             var extension = repositories.findExtension(extensionName, namespace);
             if (extension == null || !extension.isActive())
                 return null;
-            return extension.getPreview();
+            return extension.getLatestPreRelease();
         } else {
             return repositories.findVersion(version, extensionName, namespace);
         }
@@ -520,11 +520,12 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, boolean onlyActive) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
+        json.preview = extension.isPreview();
         json.versionAlias = new ArrayList<>(2);
         if (extVersion == extension.getLatest())
             json.versionAlias.add("latest");
-        if (extVersion == extension.getPreview())
-            json.versionAlias.add("preview");
+        if (extVersion == extension.getLatestPreRelease())
+            json.versionAlias.add("pre-release");
         json.verified = isVerified(extVersion);
         json.namespaceAccess = "restricted";
         json.unrelatedPublisher = !json.verified;
@@ -539,8 +540,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.allVersions = Maps.newLinkedHashMapWithExpectedSize(allVersions.size() + 2);
         if (extension.getLatest() != null)
             json.allVersions.put("latest", createApiUrl(serverUrl, "api", json.namespace, json.name, "latest"));
-        if (extension.getPreview() != null)
-            json.allVersions.put("preview", createApiUrl(serverUrl, "api", json.namespace, json.name, "preview"));
+        if (extension.getLatestPreRelease() != null)
+            json.allVersions.put("pre-release", createApiUrl(serverUrl, "api", json.namespace, json.name, "pre-release"));
         for (var version : allVersions) {
             String url = createApiUrl(serverUrl, "api", json.namespace, json.name, version.toString());
             json.allVersions.put(version.toString(), url);
@@ -573,11 +574,12 @@ public class LocalRegistryService implements IExtensionRegistry {
     ) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
+        json.preview = extension.isPreview();
         json.versionAlias = new ArrayList<>(2);
         if (extension.getLatestId() != null && extVersion.getId() == extension.getLatestId())
             json.versionAlias.add("latest");
-        if (extension.getPreviewId() != null && extVersion.getId() == extension.getPreviewId())
-            json.versionAlias.add("preview");
+        if (extension.getLatestPreReleaseId() != null && extVersion.getId() == extension.getLatestPreReleaseId())
+            json.versionAlias.add("pre-release");
         json.verified = isVerified(extVersion, membershipsByNamespaceId);
         json.namespaceAccess = "restricted";
         json.unrelatedPublisher = !json.verified;
@@ -590,8 +592,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (extension.getLatestId() != null) {
             allVersions.add("latest");
         }
-        if (extension.getPreviewId() != null) {
-            allVersions.add("preview");
+        if (extension.getLatestPreReleaseId() != null) {
+            allVersions.add("pre-release");
         }
         if(versions != null) {
             allVersions.addAll(versions);

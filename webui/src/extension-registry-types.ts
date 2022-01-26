@@ -58,7 +58,7 @@ export interface SearchEntry {
     description?: string;
 }
 
-export const VERSION_ALIASES = ['latest', 'preview'];
+export const VERSION_ALIASES = ['latest', 'pre-release'];
 
 export interface Extension {
     namespaceUrl: UrlString;
@@ -69,6 +69,7 @@ export interface Extension {
     name: string;
     namespace: string;
     version: string;
+    preRelease?: boolean;
     publishedBy: UserData;
     verified: boolean;
     // key: version, value: url

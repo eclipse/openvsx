@@ -79,7 +79,7 @@ public class ExtensionService {
             // Store file resources in the DB or external storage
             storeResources(extVersion, resources);
 
-            // Update the 'latest' / 'preview' references and the search index
+            // Update the 'latest' / 'pre-release' references and the search index
             updateExtension(extVersion.getExtension());
 
             return extVersion;
@@ -115,6 +115,7 @@ public class ExtensionService {
             extension = new Extension();
             extension.setName(extensionName);
             extension.setNamespace(namespace);
+            extension.setPreview(processor.isPreview());
 
             vsCodeIdService.createPublicId(extension);
             entityManager.persist(extension);
@@ -205,10 +206,10 @@ public class ExtensionService {
     @Transactional(TxType.REQUIRED)
     public void updateExtension(Extension extension) {
         extension.setLatest(getLatestVersion(extension, false));
-        extension.setPreview(getLatestVersion(extension, true));
+        extension.setLatestPreRelease(getLatestVersion(extension, true));
         if (extension.getLatest() == null) {
-            // Use a preview version as latest if it's the only available version
-            extension.setLatest(extension.getPreview());
+            // Use a pre-release version as latest if it's the only available version
+            extension.setLatest(extension.getLatestPreRelease());
         }
 
         if (extension.getLatest() != null) {
@@ -222,10 +223,10 @@ public class ExtensionService {
         }
     }
 
-    private ExtensionVersion getLatestVersion(Extension extension, boolean preview) {
+    private ExtensionVersion getLatestVersion(Extension extension, boolean preRelease) {
         ExtensionVersion latest = null;
         SemanticVersion latestSemver = null;
-        for (var extVer : repositories.findActiveVersions(extension, preview)) {
+        for (var extVer : repositories.findActiveVersions(extension, preRelease)) {
             var semver = extVer.getSemanticVersion();
             if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
                 latest = extVer;
@@ -242,10 +243,10 @@ public class ExtensionService {
     @Transactional(TxType.REQUIRED)
     public void updateExtension(Extension extension, Iterable<ExtensionVersion> versions) {
         extension.setLatest(getLatestVersion(versions, false));
-        extension.setPreview(getLatestVersion(versions, true));
+        extension.setLatestPreRelease(getLatestVersion(versions, true));
         if (extension.getLatest() == null) {
-            // Use a preview version as latest if it's the only available version
-            extension.setLatest(extension.getPreview());
+            // Use a pre-release version as latest if it's the only available version
+            extension.setLatest(extension.getLatestPreRelease());
         }
 
         if (extension.getLatest() != null) {
@@ -259,11 +260,11 @@ public class ExtensionService {
         }
     }
 
-    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean preview) {
+    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean preRelease) {
         ExtensionVersion latest = null;
         SemanticVersion latestSemver = null;
         for (var extVer : versions) {
-            if (extVer.isActive() && extVer.isPreview() == preview) {
+            if (extVer.isActive() && extVer.isPreRelease() == preRelease) {
                 var semver = extVer.getSemanticVersion();
                 if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
                     latest = extVer;

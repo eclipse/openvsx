@@ -97,6 +97,7 @@ public class ExtensionQueryResult {
         public static final String PROP_BRANDING_COLOR = "Microsoft.VisualStudio.Services.Branding.Color";
         public static final String PROP_BRANDING_THEME = "Microsoft.VisualStudio.Services.Branding.Theme";
         public static final String PROP_WEB_EXTENSION = "Microsoft.VisualStudio.Code.WebExtension";
+        public static final String PROP_PRE_RELEASE = "Microsoft.VisualStudio.Code.PreRelease";
 
         public String key;
         public String value;

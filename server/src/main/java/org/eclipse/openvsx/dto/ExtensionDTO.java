@@ -16,10 +16,11 @@ public class ExtensionDTO {
     private final long id;
     private final String publicId;
     private final String name;
+    private final boolean preview;
     private final NamespaceDTO namespace;
     private Long latestId;
     private ExtensionVersionDTO latest;
-    private Long previewId;
+    private Long latestPreReleaseId;
     private final Double averageRating;
     private final int downloadCount;
 
@@ -27,8 +28,9 @@ public class ExtensionDTO {
             long id,
             String publicId,
             String name,
+            boolean preview,
             Long latestId,
-            Long previewId,
+            Long latestPreReleaseId,
             Double averageRating,
             int downloadCount,
             long namespaceId,
@@ -36,18 +38,19 @@ public class ExtensionDTO {
             String namespaceName
     ) {
         this(
-                id, publicId, name, averageRating, downloadCount,
+                id, publicId, name, preview, averageRating, downloadCount,
                 namespaceId, namespacePublicId, namespaceName
         );
 
         this.latestId = latestId;
-        this.previewId = previewId;
+        this.latestPreReleaseId = latestPreReleaseId;
     }
 
     public ExtensionDTO(
             long id,
             String publicId,
             String name,
+            boolean preview,
             Double averageRating,
             int downloadCount,
             long namespaceId,
@@ -55,7 +58,7 @@ public class ExtensionDTO {
             String namespaceName,
             long latestId,
             String latestVersion,
-            boolean latestPreview,
+            boolean latestPreRelease,
             LocalDateTime latestTimestamp,
             String latestDisplayName,
             String latestDescription,
@@ -70,7 +73,7 @@ public class ExtensionDTO {
             String latestBundledExtensions
     ) {
         this(
-                id, publicId, name, averageRating, downloadCount,
+                id, publicId, name, preview, averageRating, downloadCount,
                 namespaceId, namespacePublicId, namespaceName
         );
 
@@ -78,7 +81,7 @@ public class ExtensionDTO {
                 id,
                 latestId,
                 latestVersion,
-                latestPreview,
+                latestPreRelease,
                 latestTimestamp,
                 latestDisplayName,
                 latestDescription,
@@ -99,6 +102,7 @@ public class ExtensionDTO {
             long id,
             String publicId,
             String name,
+            boolean preview,
             Double averageRating,
             int downloadCount,
             long namespaceId,
@@ -108,6 +112,7 @@ public class ExtensionDTO {
         this.id = id;
         this.publicId = publicId;
         this.name = name;
+        this.preview = preview;
         this.averageRating = averageRating;
         this.downloadCount = downloadCount;
 
@@ -126,6 +131,8 @@ public class ExtensionDTO {
         return name;
     }
 
+    public boolean isPreview() { return preview; }
+
     public NamespaceDTO getNamespace() {
         return namespace;
     }
@@ -138,8 +145,8 @@ public class ExtensionDTO {
         return latest;
     }
 
-    public Long getPreviewId() {
-        return previewId;
+    public Long getLatestPreReleaseId() {
+        return latestPreReleaseId;
     }
 
     public Double getAverageRating() {

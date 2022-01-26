@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar, Paper } from '@material-ui/core';
+import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar, Paper, Badge } from '@material-ui/core';
 import { RouteComponentProps, Switch, Route, Link as RouteLink } from 'react-router-dom';
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
@@ -36,12 +36,19 @@ export namespace ExtensionDetailRoutes {
     export const ROOT = 'extension';
     export const MAIN = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.VERSION]);
     export const LATEST = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME]);
-    export const PREVIEW = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'preview']);
+    export const PRE_RELEASE = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'pre-release']);
     export const REVIEWS = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'reviews']);
     export const CHANGES = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'changes']);
 }
 
 const detailStyles = (theme: Theme) => createStyles({
+    badge: {
+        top: theme.spacing(1),
+        right: theme.spacing(-5)
+    },
+    badgePadding: {
+        paddingTop: theme.spacing(1)
+    },
     link: {
         display: 'contents',
         cursor: 'pointer',
@@ -250,7 +257,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         {this.renderBanner(extension, headerTheme)}
                         <Box className={classes.iconAndInfo}>
                             <img src={extension.files.icon || this.context.pageSettings.urls.extensionDefaultIcon}
-                                className={classes.extensionLogo}
+                                className={`${classes.extensionLogo} ${classes.badgePadding}`}
                                 alt={extension.displayName || extension.name} />
                             {this.renderHeaderInfo(extension, headerTheme)}
                         </Box>
@@ -320,10 +327,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
         const reviewCountFormatted = numberFormat.format(extension.reviewCount || 0);
         return (
-        <Box overflow='auto'>
-            <Typography variant='h5' className={classes.titleRow}>
-                {extension.displayName || extension.name}
-            </Typography>
+        <Box overflow='auto' className={classes.badgePadding}>
+            <Badge color='secondary' badgeContent='Preview' invisible={!extension.preview} classes={{ badge: classes.badge }}>
+                <Typography variant='h5' className={classes.titleRow}>
+                    { extension.displayName || extension.name}
+                </Typography>
+            </Badge>
             <Box className={`${themeClass} ${classes.infoRowBreak} ${classes.alignVertically}`}>
                 <Box className={classes.alignVertically}>
                     {this.renderAccessInfo(extension, themeClass)}&nbsp;<span
