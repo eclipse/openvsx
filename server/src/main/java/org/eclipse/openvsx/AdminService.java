@@ -13,14 +13,11 @@ import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
@@ -68,31 +65,26 @@ public class AdminService {
     @Autowired
     StorageUtilService storageUtil;
 
-    private final Cache<Integer, Object> deleteLocks = Caffeine.newBuilder()
-            .expireAfterAccess(5, TimeUnit.MINUTES)
-            .build();
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(String namespaceName, String extensionName, UserData admin)
+            throws ErrorResultException {
+        var extension = repositories.findExtension(extensionName, namespaceName);
+        if (extension == null) {
+            throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName,
+                    HttpStatus.NOT_FOUND);
+        }
+        return deleteExtension(extension, admin);
+    }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtension(String namespaceName, String extensionName, String version, UserData admin)
+    public ResultJson deleteExtensionVersion(String namespaceName, String extensionName, String version, UserData admin)
             throws ErrorResultException {
-        if (Strings.isNullOrEmpty(version)) {
-            var extension = repositories.findExtension(extensionName, namespaceName);
-            if (extension == null) {
-                throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName,
-                        HttpStatus.NOT_FOUND);
-            }
-            return deleteExtension(extension, admin);
-        } else {
-            var extensionId = namespaceName + "." + extensionName;
-            synchronized (deleteLocks.get(extensionId.hashCode(), hashCode -> new Object())) {
-                var extVersion = repositories.findVersion(version, extensionName, namespaceName);
-                if (extVersion == null) {
-                    throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName + " version " + version,
-                            HttpStatus.NOT_FOUND);
-                }
-                return deleteExtension(extVersion, admin);
-            }
+        var extVersion = repositories.findVersion(version, extensionName, namespaceName);
+        if (extVersion == null) {
+            throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName + " version " + version,
+                    HttpStatus.NOT_FOUND);
         }
+        return deleteExtension(extVersion, admin);
     }
 
     protected ResultJson deleteExtension(Extension extension, UserData admin) throws ErrorResultException {

@@ -24,12 +24,9 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialog.Prop
         try {
             setWorking(true);
             if (props.removeAll) {
-                await service.admin.deleteExtension({ namespace: props.extension.namespace, extension: props.extension.name });
+                await service.admin.deleteExtensions({ namespace: props.extension.namespace, extension: props.extension.name });
             } else {
-                const prms = props.versions.map(version =>
-                    service.admin.deleteExtension({ namespace: props.extension.namespace, extension: props.extension.name, version })
-                );
-                await Promise.all(prms);
+                await service.admin.deleteExtensions({ namespace: props.extension.namespace, extension: props.extension.name, versions: props.versions });
             }
             props.onUpdate();
             setDialogOpen(false);
