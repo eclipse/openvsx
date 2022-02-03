@@ -13,7 +13,10 @@ import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.net.URI;
 import java.util.stream.LongStream;
@@ -209,10 +212,23 @@ public class AdminAPI {
     )
     public ResponseEntity<ResultJson> deleteExtension(@PathVariable String namespaceName,
                                                       @PathVariable String extensionName,
-                                                      @RequestParam(required = false) String version) {
+                                                      @RequestBody(required = false) List<String> versions) {
         try {
+            ResultJson result;
             var adminUser = admins.checkAdminUser();
-            var result = admins.deleteExtension(namespaceName, extensionName, version, adminUser);
+            if(versions == null) {
+                result = admins.deleteExtension(namespaceName, extensionName, adminUser);
+            } else {
+                var results = new ArrayList<ResultJson>();
+                for(var version : versions) {
+                    results.add(admins.deleteExtensionVersion(namespaceName, extensionName, version, adminUser));
+                }
+
+                result = new ResultJson();
+                result.error = results.stream().map(r -> r.error).filter(Objects::nonNull).collect(Collectors.joining("\n"));
+                result.success = results.stream().map(r -> r.success).filter(Objects::nonNull).collect(Collectors.joining("\n"));
+            }
+
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();

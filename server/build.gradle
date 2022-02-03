@@ -26,7 +26,6 @@ def versions = [
     gcloud: '1.113.4',
     azure: '12.9.0',
     guava: '28.2-jre',
-    caffeine: '3.0.5',
     junit: '5.7.1',
     testcontainers: '1.15.2',
     jackson: '2.12.5',
@@ -73,7 +72,6 @@ dependencies {
     implementation "net.javacrumbs.shedlock:shedlock-spring:${versions.shedlock}"
     implementation "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${versions.shedlock}"
     implementation "com.google.guava:guava:${versions.guava}"
-    implementation "com.github.ben-manes.caffeine:caffeine:${versions.caffeine}"
     implementation "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"

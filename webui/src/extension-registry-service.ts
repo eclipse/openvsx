@@ -279,18 +279,20 @@ export class AdminService {
         });
     }
 
-    async deleteExtension(req: { namespace: string, extension: string, version?: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteExtensions(req: { namespace: string, extension: string, versions?: string[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.registry.getCsrfToken();
-        const headers: Record<string, string> = {};
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
             method: 'POST',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', req.namespace, req.extension, 'delete'],
-                [{ key: 'version', value: req.version }]),
-            headers
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', req.namespace, req.extension, 'delete']),
+            headers,
+            payload: req.versions
         });
     }
 

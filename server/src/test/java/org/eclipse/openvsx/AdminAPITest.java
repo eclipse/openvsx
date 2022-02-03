@@ -281,7 +281,9 @@ public class AdminAPITest {
     public void testDeleteExtensionVersion() throws Exception {
         mockAdminUser();
         mockExtension(2, 0, 0);
-        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete?version={version}", "foobar", "baz", "2")
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                .content("[\"2\"]")
+                .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
