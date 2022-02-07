@@ -86,7 +86,7 @@ public final class UrlUtil {
         return getBaseUrl(requestAttrs.getRequest());
     }
 
-    private static String getBaseUrl(HttpServletRequest request) {
+    protected static String getBaseUrl(HttpServletRequest request) {
         var url = new StringBuilder();
 
         // Use the scheme from the X-Forwarded-Proto header if present
@@ -131,6 +131,16 @@ public final class UrlUtil {
                     url.append(":").append(port);
                 break;
         }
+
+        // Use the prefix from the X-Forwarded-Prefix header if present
+        String prefix;
+        var forwardedPrefix = request.getHeader("X-Forwarded-Prefix");
+        if (forwardedPrefix == null) {
+            prefix = "";
+        } else {
+            prefix = forwardedPrefix;
+        }
+        url.append(prefix);
 
         url.append(request.getContextPath());
         return url.toString();
