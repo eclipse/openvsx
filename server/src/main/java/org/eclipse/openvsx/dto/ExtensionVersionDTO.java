@@ -30,7 +30,7 @@ public class ExtensionVersionDTO {
     private final long id;
     private final String version;
     private SemanticVersion semver;
-    private final boolean preview;
+    private final boolean preRelease;
     private final LocalDateTime timestamp;
     private PersonalAccessTokenDTO publishedWith;
     private final String displayName;
@@ -57,8 +57,9 @@ public class ExtensionVersionDTO {
             long extensionId,
             String extensionPublicId,
             String extensionName,
+            boolean extensionPreview,
             Long extensionLatestId,
-            Long extensionPreviewId,
+            Long extensionLatestPreReleaseId,
             Double extensionAverageRating,
             int extensionDownloadCount,
             Long userId,
@@ -69,7 +70,7 @@ public class ExtensionVersionDTO {
             String userProvider,
             long id,
             String version,
-            boolean preview,
+            boolean preRelease,
             LocalDateTime timestamp,
             String displayName,
             String description,
@@ -92,7 +93,7 @@ public class ExtensionVersionDTO {
                 extensionId,
                 id,
                 version,
-                preview,
+                preRelease,
                 timestamp,
                 displayName,
                 description,
@@ -111,8 +112,9 @@ public class ExtensionVersionDTO {
                 extensionId,
                 extensionPublicId,
                 extensionName,
+                extensionPreview,
                 extensionLatestId,
-                extensionPreviewId,
+                extensionLatestPreReleaseId,
                 extensionAverageRating,
                 extensionDownloadCount,
                 namespaceId,
@@ -135,7 +137,7 @@ public class ExtensionVersionDTO {
             long extensionId,
             long id,
             String version,
-            boolean preview,
+            boolean preRelease,
             LocalDateTime timestamp,
             String displayName,
             String description,
@@ -154,7 +156,7 @@ public class ExtensionVersionDTO {
         this.extensionId = extensionId;
         this.id = id;
         this.version = version;
-        this.preview = preview;
+        this.preRelease = preRelease;
         this.timestamp = timestamp;
         this.displayName = displayName;
         this.description = description;
@@ -194,7 +196,7 @@ public class ExtensionVersionDTO {
         json.averageRating = extension.getAverageRating();
         json.downloadCount = extension.getDownloadCount();
         json.version = this.getVersion();
-        json.preview = this.isPreview();
+        json.preRelease = this.isPreRelease();
         if (this.getTimestamp() != null) {
             json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         }
@@ -271,8 +273,8 @@ public class ExtensionVersionDTO {
         return semver;
     }
 
-    public boolean isPreview() {
-        return preview;
+    public boolean isPreRelease() {
+        return preRelease;
     }
 
     public LocalDateTime getTimestamp() {

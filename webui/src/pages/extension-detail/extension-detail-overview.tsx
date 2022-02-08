@@ -77,7 +77,7 @@ const overviewStyles = (theme: Theme) => createStyles({
         color: theme.palette.primary.dark,
         fontWeight: theme.typography.fontWeightBold
     },
-    previewFlag: {
+    preReleaseFlag: {
         color: theme.palette.primary.dark,
         fontStyle: 'italic',
         marginLeft: theme.spacing(2),
@@ -236,8 +236,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 </NativeSelect>
             }
             {
-                extension.preview ?
-                    <span className={classes.previewFlag}>(preview version)</span>
+                extension.preRelease ?
+                    <span className={classes.preReleaseFlag}>(pre-release version)</span>
                     : ''
             }
             {
@@ -279,7 +279,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             }
             {
                 aliasButtons ? <>
-                    Switch to {aliasButtons}
+                    {extension.versionAlias.length > 0 ? ' ' : ''}Switch to {aliasButtons}
                 </> : ''
             }
         </React.Fragment>;

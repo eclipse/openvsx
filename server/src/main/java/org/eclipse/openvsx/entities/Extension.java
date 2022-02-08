@@ -50,7 +50,9 @@ public class Extension {
     ExtensionVersion latest;
 
     @OneToOne
-    ExtensionVersion preview;
+    ExtensionVersion latestPreRelease;
+
+    boolean preview;
 
     boolean active;
 
@@ -123,13 +125,17 @@ public class Extension {
 		this.latest = latest;
 	}
 
-	public ExtensionVersion getPreview() {
-		return preview;
+	public ExtensionVersion getLatestPreRelease() {
+		return latestPreRelease;
 	}
 
-	public void setPreview(ExtensionVersion preview) {
-		this.preview = preview;
+	public void setLatestPreRelease(ExtensionVersion latestPreRelease) {
+		this.latestPreRelease = latestPreRelease;
 	}
+
+	public boolean isPreview() { return preview; }
+
+    public void setPreview(boolean preview) { this.preview = preview; }
 
     public boolean isActive() {
         return active;

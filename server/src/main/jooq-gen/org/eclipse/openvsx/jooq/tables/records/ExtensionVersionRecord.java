@@ -146,199 +146,199 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     }
 
     /**
-     * Setter for <code>public.extension_version.preview</code>.
-     */
-    public void setPreview(Boolean value) {
-        set(9, value);
-    }
-
-    /**
-     * Getter for <code>public.extension_version.preview</code>.
-     */
-    public Boolean getPreview() {
-        return (Boolean) get(9);
-    }
-
-    /**
      * Setter for <code>public.extension_version.qna</code>.
      */
     public void setQna(String value) {
-        set(10, value);
+        set(9, value);
     }
 
     /**
      * Getter for <code>public.extension_version.qna</code>.
      */
     public String getQna() {
-        return (String) get(10);
+        return (String) get(9);
     }
 
     /**
      * Setter for <code>public.extension_version.repository</code>.
      */
     public void setRepository(String value) {
-        set(11, value);
+        set(10, value);
     }
 
     /**
      * Getter for <code>public.extension_version.repository</code>.
      */
     public String getRepository() {
-        return (String) get(11);
+        return (String) get(10);
     }
 
     /**
      * Setter for <code>public.extension_version.timestamp</code>.
      */
     public void setTimestamp(LocalDateTime value) {
-        set(12, value);
+        set(11, value);
     }
 
     /**
      * Getter for <code>public.extension_version.timestamp</code>.
      */
     public LocalDateTime getTimestamp() {
-        return (LocalDateTime) get(12);
+        return (LocalDateTime) get(11);
     }
 
     /**
      * Setter for <code>public.extension_version.version</code>.
      */
     public void setVersion(String value) {
-        set(13, value);
+        set(12, value);
     }
 
     /**
      * Getter for <code>public.extension_version.version</code>.
      */
     public String getVersion() {
-        return (String) get(13);
+        return (String) get(12);
     }
 
     /**
      * Setter for <code>public.extension_version.extension_id</code>.
      */
     public void setExtensionId(Long value) {
-        set(14, value);
+        set(13, value);
     }
 
     /**
      * Getter for <code>public.extension_version.extension_id</code>.
      */
     public Long getExtensionId() {
-        return (Long) get(14);
+        return (Long) get(13);
     }
 
     /**
      * Setter for <code>public.extension_version.published_with_id</code>.
      */
     public void setPublishedWithId(Long value) {
-        set(15, value);
+        set(14, value);
     }
 
     /**
      * Getter for <code>public.extension_version.published_with_id</code>.
      */
     public Long getPublishedWithId() {
-        return (Long) get(15);
+        return (Long) get(14);
     }
 
     /**
      * Setter for <code>public.extension_version.active</code>.
      */
     public void setActive(Boolean value) {
-        set(16, value);
+        set(15, value);
     }
 
     /**
      * Getter for <code>public.extension_version.active</code>.
      */
     public Boolean getActive() {
-        return (Boolean) get(16);
+        return (Boolean) get(15);
     }
 
     /**
      * Setter for <code>public.extension_version.dependencies</code>.
      */
     public void setDependencies(String value) {
-        set(17, value);
+        set(16, value);
     }
 
     /**
      * Getter for <code>public.extension_version.dependencies</code>.
      */
     public String getDependencies() {
-        return (String) get(17);
+        return (String) get(16);
     }
 
     /**
      * Setter for <code>public.extension_version.bundled_extensions</code>.
      */
     public void setBundledExtensions(String value) {
-        set(18, value);
+        set(17, value);
     }
 
     /**
      * Getter for <code>public.extension_version.bundled_extensions</code>.
      */
     public String getBundledExtensions() {
-        return (String) get(18);
+        return (String) get(17);
     }
 
     /**
      * Setter for <code>public.extension_version.engines</code>.
      */
     public void setEngines(String value) {
-        set(19, value);
+        set(18, value);
     }
 
     /**
      * Getter for <code>public.extension_version.engines</code>.
      */
     public String getEngines() {
-        return (String) get(19);
+        return (String) get(18);
     }
 
     /**
      * Setter for <code>public.extension_version.categories</code>.
      */
     public void setCategories(String value) {
-        set(20, value);
+        set(19, value);
     }
 
     /**
      * Getter for <code>public.extension_version.categories</code>.
      */
     public String getCategories() {
-        return (String) get(20);
+        return (String) get(19);
     }
 
     /**
      * Setter for <code>public.extension_version.tags</code>.
      */
     public void setTags(String value) {
-        set(21, value);
+        set(20, value);
     }
 
     /**
      * Getter for <code>public.extension_version.tags</code>.
      */
     public String getTags() {
-        return (String) get(21);
+        return (String) get(20);
     }
 
     /**
      * Setter for <code>public.extension_version.extension_kind</code>.
      */
     public void setExtensionKind(String value) {
-        set(22, value);
+        set(21, value);
     }
 
     /**
      * Getter for <code>public.extension_version.extension_kind</code>.
      */
     public String getExtensionKind() {
-        return (String) get(22);
+        return (String) get(21);
+    }
+
+    /**
+     * Setter for <code>public.extension_version.pre_release</code>.
+     */
+    public void setPreRelease(Boolean value) {
+        set(22, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.pre_release</code>.
+     */
+    public Boolean getPreRelease() {
+        return (Boolean) get(22);
     }
 
     // -------------------------------------------------------------------------
@@ -364,7 +364,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -376,7 +376,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setHomepage(homepage);
         setLicense(license);
         setMarkdown(markdown);
-        setPreview(preview);
         setQna(qna);
         setRepository(repository);
         setTimestamp(timestamp);
@@ -390,5 +389,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setCategories(categories);
         setTags(tags);
         setExtensionKind(extensionKind);
+        setPreRelease(preRelease);
     }
 }

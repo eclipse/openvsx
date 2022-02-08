@@ -111,7 +111,7 @@ public class ExtensionValidator {
             issues.add(new Issue("Version must not be empty."));
             return;
         }
-        if (version.equals("latest") || version.equals("preview") || version.equals("reviews")) {
+        if (version.equals("latest") || version.equals("pre-release") || version.equals("reviews")) {
             issues.add(new Issue("The version string '" + version + "' is reserved."));
         }
         for (var i = 0; i < version.length(); i++) {

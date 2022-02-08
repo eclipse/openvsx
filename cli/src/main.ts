@@ -39,7 +39,8 @@ module.exports = function (argv: string[]): void {
         .option('--baseContentUrl <url>', 'Prepend all relative links in README.md with this URL.')
         .option('--baseImagesUrl <url>', 'Prepend all relative image links in README.md with this URL.')
         .option('--yarn', 'Use yarn instead of npm while packing extension files.')
-        .action((extensionFile: string, { packagePath, baseContentUrl, baseImagesUrl, yarn }) => {
+        .option('--pre-release', 'Mark this package as a pre-release')
+        .action((extensionFile: string, { packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -51,7 +52,7 @@ module.exports = function (argv: string[]): void {
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
-            publish({ extensionFile, registryUrl, pat, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn })
+            publish({ extensionFile, registryUrl, pat, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease })
                 .catch(handleError(program.debug,
                     'See the documentation for more information:\n'
                     + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions'

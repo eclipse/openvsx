@@ -16,9 +16,6 @@ import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.dto.FileResourceDTO;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.repositories.ExtensionDTORepository;
-import org.eclipse.openvsx.repositories.ExtensionVersionDTORepository;
-import org.eclipse.openvsx.repositories.FileResourceDTORepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
@@ -374,7 +371,7 @@ public class VSCodeAdapter {
         // queryExt.publishedDate
         // queryExt.lastUpdated
         queryExt.categories = latest.getCategories();
-        queryExt.flags = latest.isPreview() ? FLAG_PREVIEW : "";
+        queryExt.flags = extension.isPreview() ? FLAG_PREVIEW : "";
 
         if (test(flags, FLAG_INCLUDE_STATISTICS)) {
             queryExt.statistics = Lists.newArrayList();
@@ -426,6 +423,9 @@ public class VSCodeAdapter {
                     .collect(Collectors.joining(","));
             queryVer.addProperty(PROP_EXTENSION_PACK, bundledExtensions);
             queryVer.addProperty(PROP_LOCALIZED_LANGUAGES, "");
+            if (extVer.isPreRelease()) {
+                queryVer.addProperty(PROP_PRE_RELEASE, "true");
+            }
             if (isWebExtension(extVer)) {
                 queryVer.addProperty(PROP_WEB_EXTENSION, "true");
             }

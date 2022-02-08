@@ -212,12 +212,18 @@ public class ExtensionProcessor implements AutoCloseable {
         return asStringList(galleryFlags.asText(), " ").contains("Preview");
     }
 
+    public boolean isPreRelease() {
+        loadVsixManifest();
+        var preReleaseNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Code.PreRelease");
+        return preReleaseNode.path("Value").asBoolean(false);
+    }
+
     public ExtensionVersion getMetadata() {
         loadPackageJson();
         loadVsixManifest();
         var extension = new ExtensionVersion();
         extension.setVersion(vsixManifest.path("Metadata").path("Identity").path("Version").asText());
-        extension.setPreview(isPreview());
+        extension.setPreRelease(isPreRelease());
         extension.setDisplayName(vsixManifest.path("Metadata").path("DisplayName").asText());
         extension.setDescription(vsixManifest.path("Metadata").path("Description").path("").asText());
         extension.setEngines(getEngines(packageJson.path("engines")));

@@ -53,9 +53,9 @@ public class Download extends TableImpl<DownloadRecord> {
     public final TableField<DownloadRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.download.file_resource_id</code>.
+     * The column <code>public.download.file_resource_id_not_fk</code>.
      */
-    public final TableField<DownloadRecord, Long> FILE_RESOURCE_ID = createField(DSL.name("file_resource_id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<DownloadRecord, Long> FILE_RESOURCE_ID_NOT_FK = createField(DSL.name("file_resource_id_not_fk"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>public.download.timestamp</code>.
@@ -113,15 +113,6 @@ public class Download extends TableImpl<DownloadRecord> {
     @Override
     public List<UniqueKey<DownloadRecord>> getKeys() {
         return Arrays.<UniqueKey<DownloadRecord>>asList(Keys.DOWNLOAD_PKEY);
-    }
-
-    @Override
-    public List<ForeignKey<DownloadRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<DownloadRecord, ?>>asList(Keys.DOWNLOAD__DOWNLOAD_FILE_RESOURCE_FKEY);
-    }
-
-    public FileResource fileResource() {
-        return new FileResource(this, Keys.DOWNLOAD__DOWNLOAD_FILE_RESOURCE_FKEY);
     }
 
     @Override

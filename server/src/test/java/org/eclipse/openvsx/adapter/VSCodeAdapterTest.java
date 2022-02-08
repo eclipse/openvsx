@@ -213,6 +213,7 @@ public class VSCodeAdapterTest {
             var id = 1;
             var publicId = "test-1";
             var name = "vscode-yaml";
+            var preview = true;
             var averageRating = 3.0;
             var downloadCount = 100;
             var namespaceId = 2;
@@ -220,15 +221,15 @@ public class VSCodeAdapterTest {
             var namespaceName = "redhat";
             var latestId = 3;
             var latestVersion = "0.5.2";
-            var latestPreview = true;
+            var latestPreRelease = false;
             var latestTimestamp = LocalDateTime.parse("2000-01-01T10:00");
             var latestDisplayName = "YAML";
             var latestDescription = "YAML Language Support";
             var latestEngines = "vscode@^1.31.0";
             var latestRepository = "https://github.com/redhat-developer/vscode-yaml";
 
-            return new ExtensionDTO(id,publicId,name,averageRating,downloadCount,namespaceId,namespacePublicId,
-                    namespaceName,latestId,latestVersion,latestPreview,latestTimestamp,latestDisplayName,latestDescription,
+            return new ExtensionDTO(id,publicId,name,preview,averageRating,downloadCount,namespaceId,namespacePublicId,
+                    namespaceName,latestId,latestVersion,latestPreRelease,latestTimestamp,latestDisplayName,latestDescription,
                     latestEngines,null,null,null,latestRepository,null,
                     null,null,null);
     }
@@ -265,7 +266,7 @@ public class VSCodeAdapterTest {
         extension.setLatest(extVersion);
         extVersion.setExtension(extension);
         extVersion.setVersion("0.5.2");
-        extVersion.setPreview(true);
+        extVersion.setPreRelease(true);
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         extVersion.setActive(true);
         extVersion.setDisplayName("YAML");

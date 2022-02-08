@@ -94,11 +94,6 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     public final TableField<ExtensionVersionRecord, String> MARKDOWN = createField(DSL.name("markdown"), SQLDataType.VARCHAR(16), this, "");
 
     /**
-     * The column <code>public.extension_version.preview</code>.
-     */
-    public final TableField<ExtensionVersionRecord, Boolean> PREVIEW = createField(DSL.name("preview"), SQLDataType.BOOLEAN.nullable(false), this, "");
-
-    /**
      * The column <code>public.extension_version.qna</code>.
      */
     public final TableField<ExtensionVersionRecord, String> QNA = createField(DSL.name("qna"), SQLDataType.VARCHAR(255), this, "");
@@ -163,6 +158,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, String> EXTENSION_KIND = createField(DSL.name("extension_kind"), SQLDataType.VARCHAR(255), this, "");
 
+    /**
+     * The column <code>public.extension_version.pre_release</code>.
+     */
+    public final TableField<ExtensionVersionRecord, Boolean> PRE_RELEASE = createField(DSL.name("pre_release"), SQLDataType.BOOLEAN.nullable(false), this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -203,7 +203,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX, Indexes.EXTENSION_VERSION_EXT_AND_VER_IDX);
+        return Arrays.<Index>asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX, Indexes.UNIQUE_EXTENSION_VERSION);
     }
 
     @Override

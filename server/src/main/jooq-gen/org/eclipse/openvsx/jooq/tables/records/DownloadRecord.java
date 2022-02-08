@@ -37,16 +37,16 @@ public class DownloadRecord extends UpdatableRecordImpl<DownloadRecord> implemen
     }
 
     /**
-     * Setter for <code>public.download.file_resource_id</code>.
+     * Setter for <code>public.download.file_resource_id_not_fk</code>.
      */
-    public void setFileResourceId(Long value) {
+    public void setFileResourceIdNotFk(Long value) {
         set(1, value);
     }
 
     /**
-     * Getter for <code>public.download.file_resource_id</code>.
+     * Getter for <code>public.download.file_resource_id_not_fk</code>.
      */
-    public Long getFileResourceId() {
+    public Long getFileResourceIdNotFk() {
         return (Long) get(1);
     }
 
@@ -108,7 +108,7 @@ public class DownloadRecord extends UpdatableRecordImpl<DownloadRecord> implemen
 
     @Override
     public Field<Long> field2() {
-        return Download.DOWNLOAD.FILE_RESOURCE_ID;
+        return Download.DOWNLOAD.FILE_RESOURCE_ID_NOT_FK;
     }
 
     @Override
@@ -128,7 +128,7 @@ public class DownloadRecord extends UpdatableRecordImpl<DownloadRecord> implemen
 
     @Override
     public Long component2() {
-        return getFileResourceId();
+        return getFileResourceIdNotFk();
     }
 
     @Override
@@ -148,7 +148,7 @@ public class DownloadRecord extends UpdatableRecordImpl<DownloadRecord> implemen
 
     @Override
     public Long value2() {
-        return getFileResourceId();
+        return getFileResourceIdNotFk();
     }
 
     @Override
@@ -169,7 +169,7 @@ public class DownloadRecord extends UpdatableRecordImpl<DownloadRecord> implemen
 
     @Override
     public DownloadRecord value2(Long value) {
-        setFileResourceId(value);
+        setFileResourceIdNotFk(value);
         return this;
     }
 
@@ -208,11 +208,11 @@ public class DownloadRecord extends UpdatableRecordImpl<DownloadRecord> implemen
     /**
      * Create a detached, initialised DownloadRecord
      */
-    public DownloadRecord(Long id, Long fileResourceId, LocalDateTime timestamp, Integer amount) {
+    public DownloadRecord(Long id, Long fileResourceIdNotFk, LocalDateTime timestamp, Integer amount) {
         super(Download.DOWNLOAD);
 
         setId(id);
-        setFileResourceId(fileResourceId);
+        setFileResourceIdNotFk(fileResourceIdNotFk);
         setTimestamp(timestamp);
         setAmount(amount);
     }

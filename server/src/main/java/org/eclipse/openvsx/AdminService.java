@@ -106,7 +106,7 @@ public class AdminService {
                         .collect(Collectors.joining(", ")));
         }
         extension.setLatest(null);
-        extension.setPreview(null);
+        extension.setLatestPreRelease(null);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
@@ -203,6 +203,7 @@ public class AdminService {
             var versions = repositories.findVersionsByAccessToken(accessToken);
             for (var version : versions) {
                 var json = version.toExtensionJson();
+                json.preview = version.getExtension().isPreview();
                 json.active = version.isActive();
                 json.files = Maps.newLinkedHashMapWithExpectedSize(6);
                 storageUtil.addFileUrls(version, serverUrl, json.files, FileResource.DOWNLOAD, FileResource.MANIFEST,
