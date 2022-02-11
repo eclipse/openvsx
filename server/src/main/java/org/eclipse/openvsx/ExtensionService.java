@@ -35,6 +35,7 @@ import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -207,10 +208,6 @@ public class ExtensionService {
     public void updateExtension(Extension extension) {
         extension.setLatest(getLatestVersion(extension, false));
         extension.setLatestPreRelease(getLatestVersion(extension, true));
-        if (extension.getLatest() == null) {
-            // Use a pre-release version as latest if it's the only available version
-            extension.setLatest(extension.getLatestPreRelease());
-        }
 
         if (extension.getLatest() != null) {
             // There is at least one active version => activate the extension
@@ -223,17 +220,13 @@ public class ExtensionService {
         }
     }
 
-    private ExtensionVersion getLatestVersion(Extension extension, boolean preRelease) {
-        ExtensionVersion latest = null;
-        SemanticVersion latestSemver = null;
-        for (var extVer : repositories.findActiveVersions(extension, preRelease)) {
-            var semver = extVer.getSemanticVersion();
-            if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
-                latest = extVer;
-                latestSemver = semver;
-            }
+    private ExtensionVersion getLatestVersion(Extension extension, boolean onlyPreRelease) {
+        var versions = repositories.findActiveVersions(extension);
+        if(onlyPreRelease) {
+            versions = versions.filter(ExtensionVersion::isPreRelease);
         }
-        return latest;
+
+        return getLatestVersion(versions);
     }
 
     /**
@@ -244,10 +237,6 @@ public class ExtensionService {
     public void updateExtension(Extension extension, Iterable<ExtensionVersion> versions) {
         extension.setLatest(getLatestVersion(versions, false));
         extension.setLatestPreRelease(getLatestVersion(versions, true));
-        if (extension.getLatest() == null) {
-            // Use a pre-release version as latest if it's the only available version
-            extension.setLatest(extension.getLatestPreRelease());
-        }
 
         if (extension.getLatest() != null) {
             // There is at least one active version => activate the extension
@@ -260,18 +249,26 @@ public class ExtensionService {
         }
     }
 
-    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean preRelease) {
+    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean onlyPreRelease) {
+        var filteredVersions = Streamable.of(versions).filter(ExtensionVersion::isActive);
+        if(onlyPreRelease) {
+            filteredVersions = filteredVersions.filter(ExtensionVersion::isPreRelease);
+        }
+
+        return getLatestVersion(filteredVersions);
+    }
+
+    private ExtensionVersion getLatestVersion(Streamable<ExtensionVersion> versions) {
         ExtensionVersion latest = null;
         SemanticVersion latestSemver = null;
         for (var extVer : versions) {
-            if (extVer.isActive() && extVer.isPreRelease() == preRelease) {
-                var semver = extVer.getSemanticVersion();
-                if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
-                    latest = extVer;
-                    latestSemver = semver;
-                }
+            var semver = extVer.getSemanticVersion();
+            if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
+                latest = extVer;
+                latestSemver = semver;
             }
         }
+
         return latest;
     }
 

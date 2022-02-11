@@ -1192,7 +1192,7 @@ public class RegistryAPITest {
                 .thenReturn(0l);
         Mockito.when(repositories.findVersions(any(Extension.class)))
                 .thenReturn(Streamable.empty());
-        Mockito.when(repositories.findActiveVersions(any(Extension.class), any(boolean.class)))
+        Mockito.when(repositories.findActiveVersions(any(Extension.class)))
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.getVersionStrings(any(Extension.class)))
                 .thenReturn(Streamable.empty());
