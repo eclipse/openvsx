@@ -375,7 +375,7 @@ public class RegistryAPI {
             @ApiParam(value = "Universally unique identifier of a namespace", example = "1234")
             String namespaceUuid,
             @RequestParam(required = false)
-            @ApiParam(value = "Whether to include all versions of an extension")
+            @ApiParam(value = "Whether to include all versions of an extension, ignored if extensionVersion is specified")
             boolean includeAllVersions
         ) {
         var param = new QueryParamJson();

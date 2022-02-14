@@ -40,7 +40,7 @@ public class QueryParamJson {
     @ApiModelProperty("Universally unique identifier of a namespace")
     public String namespaceUuid;
 
-    @ApiModelProperty("Whether to include all versions of an extension")
+    @ApiModelProperty("Whether to include all versions of an extension, ignored if extensionVersion is specified")
     public boolean includeAllVersions;
     
 }

@@ -267,7 +267,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), toVersions(e.getValue())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if(!param.includeAllVersions) {
+        if(Strings.isNullOrEmpty(param.extensionVersion) && !param.includeAllVersions) {
             var latestIds = extensionVersions.stream()
                     .map(ExtensionVersionDTO::getExtension)
                     .map(ExtensionDTO::getLatestId)
