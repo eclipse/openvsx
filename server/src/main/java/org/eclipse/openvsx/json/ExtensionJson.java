@@ -58,8 +58,7 @@ public class ExtensionJson extends ResultJson {
     public String version;
 
     @ApiModelProperty("Indicates whether this is a pre-release version")
-    @NotNull
-    public boolean preRelease;
+    public Boolean preRelease;
 
     @ApiModelProperty("Data of the user who published this version")
     @NotNull
