@@ -130,7 +130,6 @@ public class ExtensionService {
             }
         }
 
-        extension.setPreview(processor.isPreview());
         extVersion.setExtension(extension);
         entityManager.persist(extVersion);
 

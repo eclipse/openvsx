@@ -51,6 +51,8 @@ public class ExtensionVersion {
 
     boolean preRelease;
 
+    boolean preview;
+
     LocalDateTime timestamp;
 
     @ManyToOne
@@ -233,6 +235,14 @@ public class ExtensionVersion {
 	public void setPreRelease(boolean preRelease) {
 		this.preRelease = preRelease;
 	}
+
+	public boolean isPreview() {
+        return preview; 
+    }
+
+    public void setPreview(boolean preview) {
+        this.preview = preview;
+    }
 
 	public LocalDateTime getTimestamp() {
 		return timestamp;

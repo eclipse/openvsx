@@ -520,7 +520,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, boolean onlyActive) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
-        json.preview = extension.isPreview();
+        json.preview = extension.getLatest().isPreview();
         json.versionAlias = new ArrayList<>(2);
         if (extVersion == extension.getLatest())
             json.versionAlias.add("latest");
