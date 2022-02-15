@@ -125,10 +125,6 @@ public class RepositoryService {
         return extensionVersionRepo.getActiveVersionStrings(extension);
     }
 
-    public Streamable<ExtensionVersion> findActiveVersions(Extension extension, boolean preRelease) {
-         return extensionVersionRepo.findByExtensionAndPreReleaseAndActiveTrue(extension, preRelease);
-    }
-
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
         return extensionVersionRepo.findByBundledExtensions(extensionId(extension));
     }

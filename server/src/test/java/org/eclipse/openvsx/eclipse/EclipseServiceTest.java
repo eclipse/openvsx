@@ -202,10 +202,8 @@ public class EclipseServiceTest {
         extVersion.setExtension(extension);
         Mockito.when(repositories.findVersionsByAccessToken(accessToken, false))
             .thenReturn(Streamable.of(extVersion));
-        Mockito.when(repositories.findActiveVersions(extension, false))
+        Mockito.when(repositories.findActiveVersions(extension))
             .thenReturn(Streamable.of(extVersion));
-        Mockito.when(repositories.findActiveVersions(extension, true))
-            .thenReturn(Streamable.empty());
 
         eclipse.signPublisherAgreement(user);
 

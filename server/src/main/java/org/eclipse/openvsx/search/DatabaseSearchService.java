@@ -71,7 +71,6 @@ public class DatabaseSearchService implements ISearchService {
         // filter text
         if (options.queryString != null) {
             matchingExtensions = matchingExtensions.filter(extension ->
-            // var latest = extension.getLatest();
             extension.getName().toLowerCase().contains(options.queryString.toLowerCase())
                     || extension.getNamespace().getName().contains(options.queryString.toLowerCase())
                     || (extension.getLatest().getDescription() != null && extension.getLatest().getDescription()
