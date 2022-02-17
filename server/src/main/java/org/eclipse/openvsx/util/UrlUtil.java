@@ -9,9 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -19,6 +18,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.util.UriUtils;
 
 public final class UrlUtil {
 
@@ -33,7 +33,6 @@ public final class UrlUtil {
         for (var segment : segments) {
             initialCapacity += segment.length() + 1;
         }
-        var charset = Charset.forName("UTF-8");
         var result = new StringBuilder(initialCapacity);
         result.append(baseUrl);
         for (var segment : segments) {
@@ -43,7 +42,7 @@ public final class UrlUtil {
                 continue;
             if (result.length() == 0 || result.charAt(result.length() - 1) != '/')
                 result.append('/');
-            result.append(URLEncoder.encode(segment, charset));
+            result.append(UriUtils.encodePathSegment(segment, StandardCharsets.UTF_8));
         }
         return result.toString();
     }
@@ -55,27 +54,24 @@ public final class UrlUtil {
     public static String addQuery(String url, String... parameters) {
         if (parameters.length % 2 != 0)
             throw new IllegalArgumentException("Expected an even number of parameters.");
-        try {
-            var result = new StringBuilder(url);
-            var printedParams = 0;
-            for (var i = 0; i < parameters.length; i += 2) {
-                var key = parameters[i];
-                var value = parameters[i + 1];
-                if (key == null)
-                    throw new NullPointerException("Parameter key must not be null");
-                if (value != null) {
-                    if (printedParams == 0)
-                        result.append('?');
-                    else
-                        result.append('&');
-                    result.append(key).append('=').append(URLEncoder.encode(value, "UTF-8"));
-                    printedParams++;
-                }
+
+        var result = new StringBuilder(url);
+        var printedParams = 0;
+        for (var i = 0; i < parameters.length; i += 2) {
+            var key = parameters[i];
+            var value = parameters[i + 1];
+            if (key == null)
+                throw new NullPointerException("Parameter key must not be null");
+            if (value != null) {
+                if (printedParams == 0)
+                    result.append('?');
+                else
+                    result.append('&');
+                result.append(key).append('=').append(UriUtils.encodeQueryParam(value, StandardCharsets.UTF_8));
+                printedParams++;
             }
-            return result.toString();
-        } catch (UnsupportedEncodingException exc) {
-            throw new RuntimeException(exc);
         }
+        return result.toString();
     }
 
     /**

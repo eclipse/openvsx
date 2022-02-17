@@ -47,9 +47,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 public class RegistryAPI {
-
     private final static int REVIEW_TITLE_SIZE = 255;
     private final static int REVIEW_COMMENT_SIZE = 2048;
 
@@ -172,7 +173,7 @@ public class RegistryAPI {
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
-    @GetMapping("/api/{namespace}/{extension}/{version}/file/{fileName:.+}")
+    @GetMapping("/api/{namespace}/{extension}/{version}/file/**")
     @CrossOrigin
     @ApiOperation("Access a file packaged by an extension")
     @ApiResponses({
@@ -195,15 +196,15 @@ public class RegistryAPI {
         )
     })
     public ResponseEntity<byte[]> getFile(
+            HttpServletRequest request,
             @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
             String namespace,
             @PathVariable @ApiParam(value = "Extension name", example = "java")
             String extension,
             @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
-            String version,
-            @PathVariable @ApiParam(value = "Name of the file to access", example = "LICENSE.txt")
-            String fileName
+            String version
         ) {
+        var fileName = UrlUtil.extractWildcardPath(request);
         for (var registry : getRegistries()) {
             try {
                 return registry.getFile(namespace, extension, version, fileName);
