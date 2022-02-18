@@ -11,7 +11,6 @@ package org.eclipse.openvsx.adapter;
 
 import com.google.common.collect.Lists;
 import org.eclipse.openvsx.dto.ExtensionDTO;
-import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.dto.FileResourceDTO;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -195,11 +194,10 @@ public class VSCodeAdapter {
             resources = Collections.emptyMap();
         }
 
-        Map<Long, Long> activeReviewCounts;
+        Map<Long, Integer> activeReviewCounts;
         if(test(flags, FLAG_INCLUDE_STATISTICS) && !extensions.isEmpty()) {
             var ids = extensions.stream().map(ExtensionDTO::getId).collect(Collectors.toList());
-            activeReviewCounts = repositories.findAllActiveReviewCountsByExtensionId(ids).stream()
-                    .collect(Collectors.toMap(ExtensionReviewCountDTO::getExtensiondId, ExtensionReviewCountDTO::getReviewCount));
+            activeReviewCounts = repositories.findAllActiveReviewCountsByExtensionId(ids);
         } else {
             activeReviewCounts = Collections.emptyMap();
         }
@@ -353,7 +351,7 @@ public class VSCodeAdapter {
         return new ModelAndView("redirect:" + UrlUtil.createApiUrl(serverUrl, "vscode", "asset", namespace, extension, version, FILE_VSIX), model);
     }
 
-    private ExtensionQueryResult.Extension toQueryExtension(ExtensionDTO extension, Map<Long, Long> activeReviewCounts, int flags) {
+    private ExtensionQueryResult.Extension toQueryExtension(ExtensionDTO extension, Map<Long, Integer> activeReviewCounts, int flags) {
         var namespace = extension.getNamespace();
         var latest = extension.getLatest();
 
@@ -371,7 +369,7 @@ public class VSCodeAdapter {
         // queryExt.publishedDate
         // queryExt.lastUpdated
         queryExt.categories = latest.getCategories();
-        queryExt.flags = extension.isPreview() ? FLAG_PREVIEW : "";
+        queryExt.flags = latest.isPreview() ? FLAG_PREVIEW : "";
 
         if (test(flags, FLAG_INCLUDE_STATISTICS)) {
             queryExt.statistics = Lists.newArrayList();
@@ -387,7 +385,7 @@ public class VSCodeAdapter {
             }
             var ratingCountStat = new ExtensionQueryResult.Statistic();
             ratingCountStat.statisticName = STAT_RATING_COUNT;
-            ratingCountStat.value = activeReviewCounts.getOrDefault(extension.getId(), 0L);
+            ratingCountStat.value = activeReviewCounts.getOrDefault(extension.getId(), 0);
             queryExt.statistics.add(ratingCountStat);
         }
 

@@ -30,6 +30,7 @@ public class ExtensionVersionDTO {
     private final long id;
     private final String version;
     private SemanticVersion semver;
+    private final boolean preview;
     private final boolean preRelease;
     private final LocalDateTime timestamp;
     private PersonalAccessTokenDTO publishedWith;
@@ -57,7 +58,6 @@ public class ExtensionVersionDTO {
             long extensionId,
             String extensionPublicId,
             String extensionName,
-            boolean extensionPreview,
             Long extensionLatestId,
             Long extensionLatestPreReleaseId,
             Double extensionAverageRating,
@@ -70,6 +70,7 @@ public class ExtensionVersionDTO {
             String userProvider,
             long id,
             String version,
+            boolean preview,
             boolean preRelease,
             LocalDateTime timestamp,
             String displayName,
@@ -93,6 +94,7 @@ public class ExtensionVersionDTO {
                 extensionId,
                 id,
                 version,
+                preview,
                 preRelease,
                 timestamp,
                 displayName,
@@ -112,7 +114,6 @@ public class ExtensionVersionDTO {
                 extensionId,
                 extensionPublicId,
                 extensionName,
-                extensionPreview,
                 extensionLatestId,
                 extensionLatestPreReleaseId,
                 extensionAverageRating,
@@ -137,6 +138,7 @@ public class ExtensionVersionDTO {
             long extensionId,
             long id,
             String version,
+            boolean preview,
             boolean preRelease,
             LocalDateTime timestamp,
             String displayName,
@@ -156,6 +158,7 @@ public class ExtensionVersionDTO {
         this.extensionId = extensionId;
         this.id = id;
         this.version = version;
+        this.preview = preview;
         this.preRelease = preRelease;
         this.timestamp = timestamp;
         this.displayName = displayName;
@@ -272,6 +275,8 @@ public class ExtensionVersionDTO {
         }
         return semver;
     }
+
+    public boolean isPreview() { return preview; }
 
     public boolean isPreRelease() {
         return preRelease;

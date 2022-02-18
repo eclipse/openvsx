@@ -989,9 +989,9 @@ public class RegistryAPITest {
         var displayName = "Foo Bar";
 
         var extVersion = new ExtensionVersionDTO(
-                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, false, extensionLatestId,
+                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, extensionLatestId,
                 null, null, 0, null, null, null,
-                null, null, null, id, version, false, timestamp, displayName, null,
+                null, null, null, id, version, false, false, timestamp, displayName, null,
                 null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null
         );
@@ -1011,9 +1011,11 @@ public class RegistryAPITest {
                 .thenReturn(List.of(extVersion));
 
         Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(Set.of(extensionId)))
-                .thenReturn(Collections.emptyList());
+                .thenReturn(Collections.emptyMap());
+        Mockito.when(repositories.findExtensionIsPreview(Set.of(extensionId)))
+                .thenReturn(Map.of(extensionId, false));
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
-        Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(List.of(id), fileTypes))
+        Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(Set.of(id), fileTypes))
                 .thenReturn(Collections.emptyList());
         Mockito.when(repositories.findAllNamespaceMembershipDTOs(List.of(namespaceId)))
                 .thenReturn(Collections.emptyList());

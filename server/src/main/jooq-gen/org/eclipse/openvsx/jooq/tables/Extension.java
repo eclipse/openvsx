@@ -16,7 +16,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row10;
+import org.jooq.Row9;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -87,11 +87,6 @@ public class Extension extends TableImpl<ExtensionRecord> {
      * The column <code>public.extension.active</code>.
      */
     public final TableField<ExtensionRecord, Boolean> ACTIVE = createField(DSL.name("active"), SQLDataType.BOOLEAN.nullable(false), this, "");
-
-    /**
-     * The column <code>public.extension.preview</code>.
-     */
-    public final TableField<ExtensionRecord, Boolean> PREVIEW = createField(DSL.name("preview"), SQLDataType.BOOLEAN.nullable(false), this, "");
 
     /**
      * The column <code>public.extension.latest_pre_release_id</code>.
@@ -195,11 +190,11 @@ public class Extension extends TableImpl<ExtensionRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row10 type methods
+    // Row9 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row10<Long, Double, Integer, String, Long, Long, String, Boolean, Boolean, Long> fieldsRow() {
-        return (Row10) super.fieldsRow();
+    public Row9<Long, Double, Integer, String, Long, Long, String, Boolean, Long> fieldsRow() {
+        return (Row9) super.fieldsRow();
     }
 }
