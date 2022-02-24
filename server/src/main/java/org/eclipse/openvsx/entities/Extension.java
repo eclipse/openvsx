@@ -52,8 +52,6 @@ public class Extension {
     @OneToOne
     ExtensionVersion latestPreRelease;
 
-    boolean preview;
-
     boolean active;
 
     Double averageRating;
@@ -132,10 +130,6 @@ public class Extension {
 	public void setLatestPreRelease(ExtensionVersion latestPreRelease) {
 		this.latestPreRelease = latestPreRelease;
 	}
-
-	public boolean isPreview() { return preview; }
-
-    public void setPreview(boolean preview) { this.preview = preview; }
 
     public boolean isActive() {
         return active;

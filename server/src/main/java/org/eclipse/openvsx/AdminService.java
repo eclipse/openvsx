@@ -203,7 +203,7 @@ public class AdminService {
             var versions = repositories.findVersionsByAccessToken(accessToken);
             for (var version : versions) {
                 var json = version.toExtensionJson();
-                json.preview = version.getExtension().isPreview();
+                json.preview = version.getExtension().getLatest().isPreview();
                 json.active = version.isActive();
                 json.files = Maps.newLinkedHashMapWithExpectedSize(6);
                 storageUtil.addFileUrls(version, serverUrl, json.files, FileResource.DOWNLOAD, FileResource.MANIFEST,

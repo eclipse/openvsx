@@ -30,7 +30,6 @@ import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.dto.ExtensionDTO;
-import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.dto.FileResourceDTO;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -199,7 +198,7 @@ public class VSCodeAdapterTest {
 
         var ids = List.of(extension.getId());
         Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(ids))
-                .thenReturn(List.of(new ExtensionReviewCountDTO(extension.getId(), 10l)));
+                .thenReturn(Map.of(extension.getId(), 10));
 
         var name = extension.getName();
         var namespaceName = extension.getNamespace().getName();
@@ -213,7 +212,6 @@ public class VSCodeAdapterTest {
             var id = 1;
             var publicId = "test-1";
             var name = "vscode-yaml";
-            var preview = true;
             var averageRating = 3.0;
             var downloadCount = 100;
             var namespaceId = 2;
@@ -221,6 +219,7 @@ public class VSCodeAdapterTest {
             var namespaceName = "redhat";
             var latestId = 3;
             var latestVersion = "0.5.2";
+            var latestPreview = true;
             var latestPreRelease = false;
             var latestTimestamp = LocalDateTime.parse("2000-01-01T10:00");
             var latestDisplayName = "YAML";
@@ -228,8 +227,8 @@ public class VSCodeAdapterTest {
             var latestEngines = "vscode@^1.31.0";
             var latestRepository = "https://github.com/redhat-developer/vscode-yaml";
 
-            return new ExtensionDTO(id,publicId,name,preview,averageRating,downloadCount,namespaceId,namespacePublicId,
-                    namespaceName,latestId,latestVersion,latestPreRelease,latestTimestamp,latestDisplayName,latestDescription,
+            return new ExtensionDTO(id,publicId,name,averageRating,downloadCount,namespaceId,namespacePublicId,
+                    namespaceName,latestId,latestVersion,latestPreview,latestPreRelease,latestTimestamp,latestDisplayName,latestDescription,
                     latestEngines,null,null,null,latestRepository,null,
                     null,null,null);
     }

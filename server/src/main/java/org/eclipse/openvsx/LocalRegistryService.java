@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -259,14 +260,6 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .filter(ev -> addToResult(ev, param))
                 .collect(Collectors.toList());
 
-        var extensionVersionsByExtensionId = extensionVersions.stream()
-                .collect(Collectors.groupingBy(ExtensionVersionDTO::getExtensionId));
-
-        var reviewCounts = getReviewCounts(extensionVersionsByExtensionId);
-        var versionsByExtensionId = extensionVersionsByExtensionId.entrySet().stream()
-                .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), toVersions(e.getValue())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         if(Strings.isNullOrEmpty(param.extensionVersion) && !param.includeAllVersions) {
             var latestIds = extensionVersions.stream()
                     .map(ExtensionVersionDTO::getExtension)
@@ -279,6 +272,13 @@ public class LocalRegistryService implements IExtensionRegistry {
                     .collect(Collectors.toList());
         }
 
+        var extensionIds = extensionVersions.stream()
+                .map(ExtensionVersionDTO::getExtensionId)
+                .collect(Collectors.toSet());
+
+        var reviewCounts = getReviewCounts(extensionIds);
+        var versionStrings = getVersionStrings(extensionIds);
+        var previewsByExtensionId = getPreviews(extensionIds);
         var fileResourcesByExtensionVersionId = getFileResources(extensionVersions);
         var membershipsByNamespaceId = getMemberships(extensionVersions);
 
@@ -286,23 +286,33 @@ public class LocalRegistryService implements IExtensionRegistry {
         result.extensions = extensionVersions.stream()
                 .sorted(getExtensionVersionComparator())
                 .map(ev -> {
-                    var reviewCount = reviewCounts.getOrDefault(ev.getExtensionId(), 0L);
-                    var versions = versionsByExtensionId.get(ev.getExtensionId());
+                    var reviewCount = reviewCounts.getOrDefault(ev.getExtensionId(), 0);
+                    var preview = previewsByExtensionId.get(ev.getExtensionId());
+                    var versions = versionStrings.get(ev.getExtensionId());
                     var fileResources = fileResourcesByExtensionVersionId.getOrDefault(ev.getId(), Collections.emptyList());
-                    return toExtensionVersionJson(ev, reviewCount, versions, fileResources, membershipsByNamespaceId);
+                    return toExtensionVersionJson(ev, reviewCount, preview, versions, fileResources, membershipsByNamespaceId);
                 })
                 .collect(Collectors.toList());
 
         return result;
     }
 
-    private Map<Long, Long> getReviewCounts(Map<Long, List<ExtensionVersionDTO>> extensionVersionsByExtensionId) {
-        if(extensionVersionsByExtensionId.isEmpty()) {
-            return Collections.emptyMap();
-        }
+    private Map<Long, Integer> getReviewCounts(Collection<Long> extensionIds) {
+        return !extensionIds.isEmpty()
+                ? repositories.findAllActiveReviewCountsByExtensionId(extensionIds)
+                : Collections.emptyMap();
+    }
 
-        return repositories.findAllActiveReviewCountsByExtensionId(extensionVersionsByExtensionId.keySet()).stream()
-                .collect(Collectors.toMap(ExtensionReviewCountDTO::getExtensiondId, ExtensionReviewCountDTO::getReviewCount));
+    private Map<Long, List<String>> getVersionStrings(Collection<Long> extensionIds) {
+        return !extensionIds.isEmpty()
+                ? repositories.getVersionStrings(extensionIds, true)
+                : Collections.emptyMap();
+    }
+
+    private Map<Long, Boolean> getPreviews(Collection<Long> extensionIds) {
+        return !extensionIds.isEmpty()
+                ? repositories.findExtensionIsPreview(extensionIds)
+                : Collections.emptyMap();
     }
 
     private Map<Long, List<FileResourceDTO>> getFileResources(List<ExtensionVersionDTO> extensionVersions) {
@@ -313,7 +323,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
         var extensionVersionIds = extensionVersions.stream()
                 .map(ExtensionVersionDTO::getId)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
         return repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(extensionVersionIds, fileTypes).stream()
                 .collect(Collectors.groupingBy(FileResourceDTO::getExtensionVersionId));
@@ -328,7 +338,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(ExtensionVersionDTO::getExtension)
                 .map(ExtensionDTO::getNamespace)
                 .map(NamespaceDTO::getId)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
         return repositories.findAllNamespaceMembershipDTOs(namespaceIds).stream()
                 .collect(Collectors.groupingBy(NamespaceMembershipDTO::getNamespaceId));
@@ -520,7 +530,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, boolean onlyActive) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
-        json.preview = extension.isPreview();
+        json.preview = extension.getLatest().isPreview();
         json.versionAlias = new ArrayList<>(2);
         if (extVersion == extension.getLatest())
             json.versionAlias.add("latest");
@@ -568,13 +578,14 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson toExtensionVersionJson(
             ExtensionVersionDTO extVersion,
             long reviewCount,
+            boolean preview,
             List<String> versions,
             List<FileResourceDTO> resources,
             Map<Long, List<NamespaceMembershipDTO>> membershipsByNamespaceId
     ) {
         var extension = extVersion.getExtension();
         var json = extVersion.toExtensionJson();
-        json.preview = extension.isPreview();
+        json.preview = preview;
         json.versionAlias = new ArrayList<>(2);
         if (extension.getLatestId() != null && extVersion.getId() == extension.getLatestId())
             json.versionAlias.add("latest");

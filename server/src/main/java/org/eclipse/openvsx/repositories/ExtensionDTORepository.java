@@ -10,18 +10,17 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.dto.ExtensionDTO;
-import org.eclipse.openvsx.dto.ExtensionReviewCountDTO;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.SelectConditionStep;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
 
@@ -46,13 +45,26 @@ public class ExtensionDTORepository {
                 .fetchOneInto(ExtensionDTO.class);
     }
 
-    public List<ExtensionReviewCountDTO> findAllActiveReviewCountsById(Collection<Long> ids) {
-        return dsl.select(EXTENSION_REVIEW.EXTENSION_ID, DSL.count(EXTENSION_REVIEW.ID))
+    public Map<Long, Integer> findAllActiveReviewCountsById(Collection<Long> ids) {
+        var count = DSL.count(EXTENSION_REVIEW.ID).as("count");
+        return dsl.select(EXTENSION_REVIEW.EXTENSION_ID, count)
                 .from(EXTENSION_REVIEW)
                 .where(EXTENSION_REVIEW.ACTIVE.eq(true))
                 .and(EXTENSION_REVIEW.EXTENSION_ID.in(ids))
                 .groupBy(EXTENSION_REVIEW.EXTENSION_ID)
-                .fetchInto(ExtensionReviewCountDTO.class);
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(r -> r.get(EXTENSION_REVIEW.EXTENSION_ID), r -> r.get(count)));
+    }
+
+    public Map<Long, Boolean> findIsPreview(Collection<Long> ids) {
+        return dsl.select(EXTENSION.ID, EXTENSION_VERSION.PREVIEW)
+                .from(EXTENSION)
+                .join(EXTENSION_VERSION).on(EXTENSION_VERSION.ID.eq(EXTENSION.LATEST_ID))
+                .where(EXTENSION.ID.in(ids))
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(r -> r.get(EXTENSION.ID), r -> r.get(EXTENSION_VERSION.PREVIEW)));
     }
 
     private SelectConditionStep<Record> findAllActive() {
@@ -61,7 +73,6 @@ public class ExtensionDTORepository {
                     EXTENSION.ID,
                     EXTENSION.PUBLIC_ID,
                     EXTENSION.NAME,
-                    EXTENSION.PREVIEW,
                     EXTENSION.AVERAGE_RATING,
                     EXTENSION.DOWNLOAD_COUNT,
                     NAMESPACE.ID,
@@ -69,6 +80,7 @@ public class ExtensionDTORepository {
                     NAMESPACE.NAME,
                     latest.ID,
                     latest.VERSION,
+                    latest.PREVIEW,
                     latest.PRE_RELEASE,
                     latest.TIMESTAMP,
                     latest.DISPLAY_NAME,

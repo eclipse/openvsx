@@ -626,6 +626,7 @@ public class RegistryAPITest {
         try {
             extensionService.requireLicense = true;
             mockForPublish("contributor");
+            mockActiveVersion();
             var bytes = createExtensionPackage("bar", "1", "MIT");
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -671,6 +672,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishVerifiedOwner() throws Exception {
         mockForPublish("owner");
+        mockActiveVersion();
         var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -690,6 +692,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishVerifiedContributor() throws Exception {
         mockForPublish("contributor");
+        mockActiveVersion();
         var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -709,6 +712,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishSoleContributor() throws Exception {
         mockForPublish("sole-contributor");
+        mockActiveVersion();
         var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -728,6 +732,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishRestrictedPrivileged() throws Exception {
         mockForPublish("privileged");
+        mockActiveVersion();
         var bytes = createExtensionPackage("bar", "1", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -932,6 +937,20 @@ public class RegistryAPITest {
 
     //---------- UTILITY ----------//
 
+    private void mockActiveVersion() {
+        var namespace = new Namespace();
+        namespace.setName("foo");
+        var extension = new Extension();
+        extension.setName("bar");
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setExtension(extension);
+        extVersion.setVersion("1");
+        extVersion.setActive(true);
+        extVersion.setExtension(extension);
+        Mockito.when(repositories.findActiveVersions(any(Extension.class))).thenReturn(Streamable.of(extVersion));
+    }
+
     private Namespace mockNamespace() {
         var namespace = new Namespace();
         namespace.setName("foobar");
@@ -970,9 +989,9 @@ public class RegistryAPITest {
         var displayName = "Foo Bar";
 
         var extVersion = new ExtensionVersionDTO(
-                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, false, extensionLatestId,
+                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, extensionLatestId,
                 null, null, 0, null, null, null,
-                null, null, null, id, version, false, timestamp, displayName, null,
+                null, null, null, id, version, false, false, timestamp, displayName, null,
                 null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null
         );
@@ -992,9 +1011,11 @@ public class RegistryAPITest {
                 .thenReturn(List.of(extVersion));
 
         Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(Set.of(extensionId)))
-                .thenReturn(Collections.emptyList());
+                .thenReturn(Collections.emptyMap());
+        Mockito.when(repositories.findExtensionIsPreview(Set.of(extensionId)))
+                .thenReturn(Map.of(extensionId, false));
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
-        Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(List.of(id), fileTypes))
+        Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(Set.of(id), fileTypes))
                 .thenReturn(Collections.emptyList());
         Mockito.when(repositories.findAllNamespaceMembershipDTOs(List.of(namespaceId)))
                 .thenReturn(Collections.emptyList());

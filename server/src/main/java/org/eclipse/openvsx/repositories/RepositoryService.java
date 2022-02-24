@@ -121,6 +121,10 @@ public class RepositoryService {
         return extensionVersionRepo.getVersionStrings(extension);
     }
 
+    public Map<Long, List<String>> getVersionStrings(Collection<Long> extensionIds, boolean onlyIncludeActive) {
+        return extensionVersionDTORepo.getVersionStrings(extensionIds, onlyIncludeActive);
+    }
+
     public Streamable<String> getActiveVersionStrings(Extension extension) {
         return extensionVersionRepo.getActiveVersionStrings(extension);
     }
@@ -272,6 +276,10 @@ public class RepositoryService {
         return extensionDTORepo.findAllActiveById(ids);
     }
 
+    public Map<Long, Boolean> findExtensionIsPreview(Collection<Long> ids) {
+        return extensionDTORepo.findIsPreview(ids);
+    }
+
     public List<ExtensionVersionDTO> findAllActiveExtensionVersionDTOsByExtensionId(Collection<Long> extensionIds) {
         return extensionVersionDTORepo.findAllActiveByExtensionId(extensionIds);
     }
@@ -304,7 +312,7 @@ public class RepositoryService {
         return fileResourceDTORepo.findAllByExtensionIdAndType(extensionVersionIds, types);
     }
 
-    public List<ExtensionReviewCountDTO> findAllActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {
+    public Map<Long, Integer> findAllActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {
         return extensionDTORepo.findAllActiveReviewCountsById(extensionIds);
     }
 

@@ -94,6 +94,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     public final TableField<ExtensionVersionRecord, String> MARKDOWN = createField(DSL.name("markdown"), SQLDataType.VARCHAR(16), this, "");
 
     /**
+     * The column <code>public.extension_version.preview</code>.
+     */
+    public final TableField<ExtensionVersionRecord, Boolean> PREVIEW = createField(DSL.name("preview"), SQLDataType.BOOLEAN.nullable(false), this, "");
+
+    /**
      * The column <code>public.extension_version.qna</code>.
      */
     public final TableField<ExtensionVersionRecord, String> QNA = createField(DSL.name("qna"), SQLDataType.VARCHAR(255), this, "");

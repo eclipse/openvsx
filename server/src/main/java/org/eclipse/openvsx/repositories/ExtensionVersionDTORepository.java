@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
 
@@ -33,6 +35,7 @@ public class ExtensionVersionDTORepository {
                     EXTENSION_VERSION.EXTENSION_ID,
                     EXTENSION_VERSION.ID,
                     EXTENSION_VERSION.VERSION,
+                    EXTENSION_VERSION.PREVIEW,
                     EXTENSION_VERSION.PRE_RELEASE,
                     EXTENSION_VERSION.TIMESTAMP,
                     EXTENSION_VERSION.DISPLAY_NAME,
@@ -85,6 +88,24 @@ public class ExtensionVersionDTORepository {
         return fetch(findAllActive().and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName))));
     }
 
+    public Map<Long, List<String>> getVersionStrings(Collection<Long> extensionIds, boolean onlyIncludeActive) {
+        var query = dsl.select(EXTENSION_VERSION.EXTENSION_ID, EXTENSION_VERSION.VERSION)
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .where(EXTENSION.ID.in(extensionIds));
+
+        if(onlyIncludeActive) {
+            query = query.and(EXTENSION_VERSION.ACTIVE.eq(true));
+        }
+
+        return query.orderBy(EXTENSION_VERSION.TIMESTAMP.desc())
+                .fetch()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        r -> r.get(EXTENSION_VERSION.EXTENSION_ID),
+                        Collectors.mapping(r -> r.get(EXTENSION_VERSION.VERSION), Collectors.toList())));
+    }
+
     private SelectConditionStep<Record> findAllActive() {
         return dsl.select(
                     NAMESPACE.ID,
@@ -93,7 +114,6 @@ public class ExtensionVersionDTORepository {
                     EXTENSION.ID,
                     EXTENSION.PUBLIC_ID,
                     EXTENSION.NAME,
-                    EXTENSION.PREVIEW,
                     EXTENSION.LATEST_ID,
                     EXTENSION.LATEST_PRE_RELEASE_ID,
                     EXTENSION.AVERAGE_RATING,
@@ -106,6 +126,7 @@ public class ExtensionVersionDTORepository {
                     USER_DATA.PROVIDER,
                     EXTENSION_VERSION.ID,
                     EXTENSION_VERSION.VERSION,
+                    EXTENSION_VERSION.PREVIEW,
                     EXTENSION_VERSION.PRE_RELEASE,
                     EXTENSION_VERSION.TIMESTAMP,
                     EXTENSION_VERSION.DISPLAY_NAME,
@@ -136,5 +157,4 @@ public class ExtensionVersionDTORepository {
     private List<ExtensionVersionDTO> fetch(SelectConditionStep<Record> query) {
         return query.fetchInto(ExtensionVersionDTO.class);
     }
-
 }

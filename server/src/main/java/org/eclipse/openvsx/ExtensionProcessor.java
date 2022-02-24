@@ -223,6 +223,7 @@ public class ExtensionProcessor implements AutoCloseable {
         loadVsixManifest();
         var extension = new ExtensionVersion();
         extension.setVersion(vsixManifest.path("Metadata").path("Identity").path("Version").asText());
+        extension.setPreview(isPreview());
         extension.setPreRelease(isPreRelease());
         extension.setDisplayName(vsixManifest.path("Metadata").path("DisplayName").asText());
         extension.setDescription(vsixManifest.path("Metadata").path("Description").path("").asText());
