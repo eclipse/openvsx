@@ -616,9 +616,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         json.files = Maps.newLinkedHashMapWithExpectedSize(6);
-        var versionUrl = UrlUtil.createApiUrl(versionBaseUrl, json.version);
+        var fileBaseUrl = UrlUtil.createApiUrl(versionBaseUrl, json.version, "file");
         for (var resource : resources) {
-            var fileUrl = UrlUtil.createApiUrl(versionUrl, "file", resource.getName());
+            var fileUrl = UrlUtil.createApiUrl(fileBaseUrl, resource.getName().split("/"));
             json.files.put(resource.getType(), fileUrl);
         }
 

@@ -11,9 +11,7 @@ package org.eclipse.openvsx.storage;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 
 import javax.transaction.Transactional;
 import javax.transaction.Transactional.TxType;
@@ -22,11 +20,11 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobHttpHeaders;
 import com.azure.storage.blob.models.BlobStorageException;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
-import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -68,7 +66,7 @@ public class AzureBlobStorageService implements IStorageService {
 	@Override
 	@Transactional(TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
-        var blobName = getBlobName(resource.getName(), resource.getExtension());
+        var blobName = getBlobName(resource);
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
@@ -98,7 +96,7 @@ public class AzureBlobStorageService implements IStorageService {
 
 	@Override
 	public void removeFile(FileResource resource) {
-		var blobName = getBlobName(resource.getName(), resource.getExtension());
+		var blobName = getBlobName(resource);
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot remove file "
                     + blobName + ": missing Azure blob service endpoint");
@@ -117,7 +115,7 @@ public class AzureBlobStorageService implements IStorageService {
 
 	@Override
 	public URI getLocation(FileResource resource) {
-		var blobName = getBlobName(resource.getName(), resource.getExtension());
+        var blobName = getBlobName(resource);
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot determine location of file "
                     + blobName + ": missing Azure blob service endpoint");
@@ -128,18 +126,13 @@ public class AzureBlobStorageService implements IStorageService {
         return URI.create(serviceEndpoint + blobContainer + "/" + blobName);
 	}
 
-    protected String getBlobName(String name, ExtensionVersion extVersion) {
-        Preconditions.checkNotNull(name);
-        try {
-            var extension = extVersion.getExtension();
-            var namespace = extension.getNamespace();
-			return namespace.getName()
-			        + "/" + extension.getName()
-			        + "/" + URLEncoder.encode(extVersion.getVersion(), "UTF-8")
-			        + "/" + name;
-		} catch (UnsupportedEncodingException exc) {
-			throw new RuntimeException(exc);
-		}
+    protected String getBlobName(FileResource resource) {
+        var extVersion = resource.getExtension();
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        var segments = new String[]{namespace.getName(), extension.getName(), extVersion.getVersion()};
+        segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
+        return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
     }
     
 }

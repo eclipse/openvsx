@@ -48,7 +48,7 @@ public class UriUtilTest {
     public void testQuery() throws Exception {
         var url = "http://localhost/api/foo";
         assertThat(UrlUtil.addQuery(url, "a", "1", "b", null, "c", "b\ta/r"))
-                .isEqualTo("http://localhost/api/foo?a=1&c=b%09a%2Fr");
+                .isEqualTo("http://localhost/api/foo?a=1&c=b%09a/r");
     }
 
     // Check base URL is localhost:8080 if there is no XForwarded headers

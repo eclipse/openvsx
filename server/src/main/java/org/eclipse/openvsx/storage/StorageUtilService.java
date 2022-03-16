@@ -22,6 +22,7 @@ import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -145,8 +146,9 @@ public class StorageUtilService implements IStorageService {
     private String getFileUrl(String name, ExtensionVersion extVersion, String serverUrl) {
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
-        return UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(),
-                "file", name);
+        var segments = new String[]{"api", namespace.getName(), extension.getName(), extVersion.getVersion(), "file"};
+        segments = ArrayUtils.addAll(segments, name.split("/"));
+        return UrlUtil.createApiUrl(serverUrl, segments);
     }
 
     /**
@@ -155,10 +157,10 @@ public class StorageUtilService implements IStorageService {
     public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url, String... types) {
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
-        var versionUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion());
+        var baseUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(), "file");
         var resources = repositories.findFilesByType(extVersion, Arrays.asList(types));
         for (var resource : resources) {
-            var fileUrl = UrlUtil.createApiUrl(versionUrl, "file", resource.getName());
+            var fileUrl = UrlUtil.createApiUrl(baseUrl, resource.getName().split("/"));
             type2Url.put(resource.getType(), fileUrl);
         }
     }
@@ -167,11 +169,11 @@ public class StorageUtilService implements IStorageService {
         var name2Url = new HashMap<String, String>();
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
-        var versionUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion());
+        var baseUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(), "file");
         var resources = repositories.findFilesByType(extVersion, Arrays.asList(WEB_RESOURCE));
         if (resources != null) {
             for (var resource : resources) {
-                var fileUrl = UrlUtil.createApiUrl(versionUrl, "file", resource.getName());
+                var fileUrl = UrlUtil.createApiUrl(baseUrl, resource.getName().split("/"));
                 name2Url.put(resource.getName(), fileUrl);
             }
         }

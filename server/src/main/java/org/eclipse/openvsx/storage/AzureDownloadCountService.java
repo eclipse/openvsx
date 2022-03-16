@@ -31,11 +31,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StopWatch;
+import org.springframework.web.util.UriUtils;
 
 import javax.persistence.EntityManager;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -177,7 +179,7 @@ public class AzureDownloadCountService {
                     matchesStorageBlobContainer = storageBlobContainer.equals(container);
                 }
                 if(matchesStorageBlobContainer) {
-                    var fileName = pathParams[pathParams.length - 1].toUpperCase();
+                    var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
                     var timestamps = files.getOrDefault(fileName, new ArrayList<>());
                     timestamps.add(LocalDateTime.parse(node.get("time").asText(), DateTimeFormatter.ISO_ZONED_DATE_TIME));
                     files.put(fileName, timestamps);

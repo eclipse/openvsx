@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.dto.ExtensionDTO;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.dto.FileResourceDTO;
@@ -224,7 +225,8 @@ public class VSCodeAdapter {
     }
 
     private String createFileUrl(FileResourceDTO resource, String versionUrl) {
-        return resource != null ? UrlUtil.createApiUrl(versionUrl, "file", resource.getName()) : null;
+        var segments = ArrayUtils.addAll(new String[]{"file"}, resource.getName().split("/"));
+        return resource != null ? UrlUtil.createApiUrl(versionUrl, segments) : null;
     }
 
     private ExtensionQueryResult toQueryResult(List<ExtensionQueryResult.Extension> extensions, long totalCount) {
