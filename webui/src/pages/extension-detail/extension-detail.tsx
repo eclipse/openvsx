@@ -15,7 +15,7 @@ import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 import WarningIcon from '@material-ui/icons/Warning';
 import { MainContext } from '../../context';
-import { createRoute } from '../../utils';
+import { createRoute, getTargetPlatforms } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { HoverPopover } from '../../components/hover-popover';
 import { Extension, UserData, isError } from '../../extension-registry-types';
@@ -30,15 +30,21 @@ export namespace ExtensionDetailRoutes {
     export namespace Parameters {
         export const NAMESPACE = ':namespace';
         export const NAME = ':name';
+        export const TARGET = `:target(${getTargetPlatforms().join('|')})`;
         export const VERSION = ':version?';
     }
 
     export const ROOT = 'extension';
     export const MAIN = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.VERSION]);
+    export const MAIN_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, Parameters.VERSION]);
     export const LATEST = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME]);
+    export const LATEST_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET]);
     export const PRE_RELEASE = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'pre-release']);
+    export const PRE_RELEASE_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, 'pre-release']);
     export const REVIEWS = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'reviews']);
+    export const REVIEWS_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, 'reviews']);
     export const CHANGES = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'changes']);
+    export const CHANGES_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, 'changes']);
 }
 
 const detailStyles = (theme: Theme) => createStyles({
@@ -168,7 +174,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     componentDidUpdate(prevProps: ExtensionDetailComponent.Props): void {
         const prevParams = prevProps.match.params as ExtensionDetailComponent.Params;
         const newParams = this.props.match.params as ExtensionDetailComponent.Params;
-        if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name
+        if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name || newParams.target !== prevParams.target
                 || newParams.version !== prevParams.version && !versionPointsToTab(newParams)
                 && !(newParams.version === undefined && versionPointsToTab(prevParams))) {
             if (newParams.namespace === prevParams.namespace && newParams.name === prevParams.name) {
@@ -216,13 +222,15 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
 
     protected onVersionSelect = (version: string): void => {
         const params = this.props.match.params as ExtensionDetailComponent.Params;
-        let newRoute: string;
-        if (version === 'latest') {
-            newRoute = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name]);
-        } else {
-            newRoute = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, version]);
+        const arr = [ExtensionDetailRoutes.ROOT, params.namespace, params.name];
+        if (params.target) {
+            arr.push(params.target);
         }
-        this.props.history.push(newRoute);
+        if (version !== 'latest') {
+            arr.push(version);
+        }
+
+        this.props.history.push(createRoute(arr));
     };
 
     render(): React.ReactNode {
@@ -272,19 +280,20 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     </Box>
                     <Box>
                         <Switch>
-                            <Route path={ExtensionDetailRoutes.CHANGES}>
+                            <Route path={[ExtensionDetailRoutes.CHANGES_TARGET, ExtensionDetailRoutes.CHANGES]}>
                                 <ExtensionDetailChanges
                                     extension={extension}
                                 />
                             </Route>
-                            <Route path={ExtensionDetailRoutes.REVIEWS}>
+                            <Route path={[ExtensionDetailRoutes.REVIEWS_TARGET, ExtensionDetailRoutes.REVIEWS]}>
                                 <ExtensionDetailReviews
                                     extension={extension}
                                     reviewsDidUpdate={this.onReviewUpdate}
                                 />
                             </Route>
-                            <Route path={ExtensionDetailRoutes.LATEST}>
+                            <Route path={[ExtensionDetailRoutes.LATEST_TARGET, ExtensionDetailRoutes.LATEST]}>
                                 <ExtensionDetailOverview
+                                    params={this.props.match.params as ExtensionDetailComponent.Params}
                                     extension={extension}
                                     selectVersion={this.onVersionSelect}
                                 />
@@ -474,6 +483,7 @@ export namespace ExtensionDetailComponent {
     export interface Params {
         readonly namespace: string;
         readonly name: string;
+        readonly target? : string;
         readonly version?: string;
     }
 }

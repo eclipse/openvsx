@@ -355,6 +355,20 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         return (Boolean) get(23);
     }
 
+    /**
+     * Setter for <code>public.extension_version.target_platform</code>.
+     */
+    public void setTargetPlatform(String value) {
+        set(24, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.target_platform</code>.
+     */
+    public String getTargetPlatform() {
+        return (String) get(24);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -378,7 +392,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -405,5 +419,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setTags(tags);
         setExtensionKind(extensionKind);
         setPreRelease(preRelease);
+        setTargetPlatform(targetPlatform);
     }
 }

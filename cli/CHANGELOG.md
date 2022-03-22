@@ -2,6 +2,12 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.5.0 (Mar. 2022)
+
+#### New Features
+
+- Added CLI parameter `--target` to support target platforms ([#406](https://github.com/eclipse/openvsx/pull/406))
+
 ### v0.4.0 (Feb. 2022)
 
 #### New Features

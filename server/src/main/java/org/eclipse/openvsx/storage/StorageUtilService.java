@@ -144,36 +144,28 @@ public class StorageUtilService implements IStorageService {
     }
 
     private String getFileUrl(String name, ExtensionVersion extVersion, String serverUrl) {
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var segments = new String[]{"api", namespace.getName(), extension.getName(), extVersion.getVersion(), "file"};
-        segments = ArrayUtils.addAll(segments, name.split("/"));
-        return UrlUtil.createApiUrl(serverUrl, segments);
+        return UrlUtil.createApiFileUrl(serverUrl, extVersion, name);
     }
 
     /**
      * Adds URLs for the given file types to a map to be used in JSON response data.
      */
     public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url, String... types) {
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var baseUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(), "file");
+        var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, extVersion);
         var resources = repositories.findFilesByType(extVersion, Arrays.asList(types));
         for (var resource : resources) {
-            var fileUrl = UrlUtil.createApiUrl(baseUrl, resource.getName().split("/"));
+            var fileUrl = UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName());
             type2Url.put(resource.getType(), fileUrl);
         }
     }
 
     public Map<String, String> getWebResourceUrls(ExtensionVersion extVersion, String serverUrl) {
         var name2Url = new HashMap<String, String>();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var baseUrl = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName(), extension.getName(), extVersion.getVersion(), "file");
+        var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, extVersion);
         var resources = repositories.findFilesByType(extVersion, Arrays.asList(WEB_RESOURCE));
         if (resources != null) {
             for (var resource : resources) {
-                var fileUrl = UrlUtil.createApiUrl(baseUrl, resource.getName().split("/"));
+                var fileUrl = UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName());
                 name2Url.put(resource.getName(), fileUrl);
             }
         }

@@ -22,17 +22,20 @@ export class ExtensionDetailTabsComponent extends React.Component<ExtensionDetai
         const previousTab = versionPointsToTab(params) ? params.version : 'overview';
         if (newTab !== previousTab) {
             const extension = this.props.extension;
-            let route: string;
-            if (newTab === 'reviews' || newTab === 'changes') {
-                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, newTab]);
-            } else if (params.version && !versionPointsToTab(params)) {
-                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, params.version]);
-            } else if (extension && !this.isLatestVersion(extension)) {
-                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name, extension.version]);
-            } else {
-                route = createRoute([ExtensionDetailRoutes.ROOT, params.namespace, params.name]);
+            const arr = [ExtensionDetailRoutes.ROOT, params.namespace, params.name];
+            if (params.target) {
+                arr.push(params.target);
             }
-            this.props.history.push(route);
+
+            if (newTab === 'reviews' || newTab === 'changes') {
+                arr.push(newTab);
+            } else if (params.version && !versionPointsToTab(params)) {
+                arr.push(params.version);
+            } else if (extension && !this.isLatestVersion(extension)) {
+                arr.push(extension.version);
+            }
+
+            this.props.history.push(createRoute(arr));
         }
     };
 
@@ -61,6 +64,7 @@ export namespace ExtensionDetailTabs {
     export interface Params {
         readonly namespace: string;
         readonly name: string;
+        readonly target?: string;
         readonly version?: string;
     }
 }

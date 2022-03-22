@@ -24,6 +24,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -113,7 +114,12 @@ public class GoogleCloudStorageService implements IStorageService {
         var extVersion = resource.getExtension();
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
-        var segments = new String[]{namespace.getName(), extension.getName(), extVersion.getVersion()};
+        var segments = new String[]{namespace.getName(), extension.getName()};
+        if(!TargetPlatform.isUniversal(extVersion)) {
+			segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
+        }
+
+		segments = ArrayUtils.add(segments, extVersion.getVersion());
         segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
         return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
     }

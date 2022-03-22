@@ -14,6 +14,9 @@ import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.json.ExtensionJson;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -23,6 +26,64 @@ import org.springframework.web.util.UriUtils;
 public final class UrlUtil {
 
     private UrlUtil() {
+    }
+
+    public static String createApiFileUrl(String baseUrl, ExtensionVersion extVersion, String fileName) {
+        var extension = extVersion.getExtension();
+        var namespaceName = extension.getNamespace().getName();
+        return createApiFileUrl(baseUrl, namespaceName, extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion(), fileName);
+    }
+
+    public static String createApiFileUrl(String baseUrl, String namespaceName, String extensionName, String targetPlatform, String version, String fileName) {
+        return createApiFileUrl(createApiFileBaseUrl(baseUrl, namespaceName, extensionName, targetPlatform, version), fileName);
+    }
+
+    public static String createApiFileUrl(String fileBaseUrl, String fileName) {
+        var segments = ArrayUtils.addAll(new String[]{"file"}, fileName.split("/"));
+        return createApiUrl(fileBaseUrl, segments);
+    }
+
+    public static String createApiFileBaseUrl(String baseUrl, ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        var namespaceName = extension.getNamespace().getName();
+        return createApiFileBaseUrl(baseUrl, namespaceName, extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
+    }
+
+    public static String createApiFileBaseUrl(String baseUrl, String namespaceName, String extensionName, String targetPlatform, String version) {
+        return createApiUrl(baseUrl, createApiVersionSegments(namespaceName, extensionName, targetPlatform, true, version));
+    }
+
+    public static String createApiVersionUrl(String baseUrl, ExtensionJson json) {
+        return createApiVersionUrl(baseUrl, json.namespace, json.name, json.targetPlatform, json.version);
+    }
+
+    public static String createApiVersionUrl(String baseUrl, ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        return createApiVersionUrl(baseUrl, namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
+    }
+
+    public static String createApiVersionUrl(String baseUrl, String namespaceName, String extensionName, String targetPlatform, String version) {
+        return createApiUrl(baseUrl, createApiVersionSegments(namespaceName, extensionName, targetPlatform, false, version));
+    }
+
+    public static String createApiVersionBaseUrl(String baseUrl, String namespaceName, String extensionName, String targetPlatform) {
+        return createApiUrl(baseUrl, createApiVersionSegments(namespaceName, extensionName, targetPlatform,false, null));
+    }
+
+    private static String[] createApiVersionSegments(String namespaceName, String extensionName, String targetPlatform, boolean excludeUniversalTargetPlatform, String version) {
+        var segments = new String[]{ "api", namespaceName, extensionName };
+        if(excludeUniversalTargetPlatform && TargetPlatform.isUniversal(targetPlatform)) {
+            targetPlatform = null;
+        }
+        if(targetPlatform != null) {
+            segments = ArrayUtils.add(segments, targetPlatform);
+        }
+        if(version != null) {
+            segments = ArrayUtils.add(segments, version);
+        }
+
+        return segments;
     }
 
     /**
@@ -142,20 +203,23 @@ public final class UrlUtil {
         return url.toString();
     }
 
+    public static String extractWildcardPath(HttpServletRequest request) {
+        return extractWildcardPath(request, (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE));
+    }
+
     /**
      * Extract the rest ** of a wildcard path /<segments>/**
      * @param request incoming request
+     * @param pattern ant pattern to match against
      * @return rest of the path
      */
-    public static String extractWildcardPath(HttpServletRequest request){
+    public static String extractWildcardPath(HttpServletRequest request, String pattern) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-        String bestMatchPattern = (String ) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-        if (path == null || bestMatchPattern == null) {
+        if (path == null || pattern == null) {
             return "";
         } else {
-            String restOfPath = new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+            String restOfPath = new AntPathMatcher().extractPathWithinPattern(pattern, path);
             return restOfPath;
         }
     }
-
 }

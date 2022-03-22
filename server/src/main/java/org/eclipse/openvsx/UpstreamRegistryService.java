@@ -16,6 +16,8 @@ import java.net.URI;
 
 import com.google.common.base.Strings;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -66,9 +68,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ExtensionJson getExtension(String namespace, String extension) {
+    public ExtensionJson getExtension(String namespace, String extension, String targetPlatform) {
         try {
-            String requestUrl = createApiUrl(upstreamUrl, "api", namespace, extension);
+            var segments = new String[]{ "api", namespace, extension };
+            if(targetPlatform != null) {
+                segments = ArrayUtils.add(segments, targetPlatform);
+            }
+
+            String requestUrl = createApiUrl(upstreamUrl, segments);
             return restTemplate.getForObject(requestUrl, ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
@@ -77,9 +84,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ExtensionJson getExtension(String namespace, String extension, String version) {
+    public ExtensionJson getExtension(String namespace, String extension, String targetPlatform, String version) {
         try {
-            String requestUrl = createApiUrl(upstreamUrl, "api", namespace, extension, version);
+            String requestUrl = UrlUtil.createApiVersionUrl(upstreamUrl, namespace, extension, targetPlatform, version);
             return restTemplate.getForObject(requestUrl, ExtensionJson.class);
         } catch (RestClientException exc) {
             handleError(exc);
@@ -88,8 +95,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<byte[]> getFile(String namespace, String extension, String version, String fileName) {
-        return getFile(createApiUrl(upstreamUrl, "api", namespace, extension, version, "file", fileName));
+    public ResponseEntity<byte[]> getFile(String namespace, String extension, String targetPlatform, String version, String fileName) {
+        return getFile(UrlUtil.createApiFileUrl(upstreamUrl, namespace, extension, targetPlatform, version, fileName));
     }
 
     private ResponseEntity<byte[]> getFile(String url) {
@@ -133,7 +140,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
                 "offset", Integer.toString(options.requestedOffset),
                 "sortOrder", options.sortOrder,
                 "sortBy", options.sortBy,
-                "includeAllVersions", Boolean.toString(options.includeAllVersions)
+                "includeAllVersions", Boolean.toString(options.includeAllVersions),
+                "targetPlatform", options.targetPlatform
             );
             return restTemplate.getForObject(requestUrl, SearchResultJson.class);
         } catch (RestClientException exc) {

@@ -11,17 +11,14 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.dto.*;
 import org.eclipse.openvsx.entities.*;
-import org.jooq.Record2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 
@@ -101,32 +98,24 @@ public class RepositoryService {
         return extensionRepo.getMaxDownloadCount();
     }
 
-    public ExtensionVersion findVersion(String version, Extension extension) {
-        return extensionVersionRepo.findByVersionAndExtension(version, extension);
+    public ExtensionVersion findVersion(String version, String targetPlatform, Extension extension) {
+        return extensionVersionRepo.findByVersionAndTargetPlatformAndExtension(version, targetPlatform, extension);
     }
 
-    public ExtensionVersion findVersion(String version, String extensionName, String namespace) {
-        return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespace);
+    public ExtensionVersion findVersion(String version, String targetPlatform, String extensionName, String namespace) {
+        return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, targetPlatform, extensionName, namespace);
     }
 
     public Streamable<ExtensionVersion> findVersions(Extension extension) {
          return extensionVersionRepo.findByExtension(extension);
     }
 
+    public Streamable<ExtensionVersion> findVersions(String version, Extension extension) {
+        return extensionVersionRepo.findByVersionAndExtension(version, extension);
+    }
+
     public Streamable<ExtensionVersion> findActiveVersions(Extension extension) {
          return extensionVersionRepo.findByExtensionAndActiveTrue(extension);
-    }
-
-    public Streamable<String> getVersionStrings(Extension extension) {
-        return extensionVersionRepo.getVersionStrings(extension);
-    }
-
-    public Map<Long, List<String>> getVersionStrings(Collection<Long> extensionIds, boolean onlyIncludeActive) {
-        return extensionVersionDTORepo.getVersionStrings(extensionIds, onlyIncludeActive);
-    }
-
-    public Streamable<String> getActiveVersionStrings(Extension extension) {
-        return extensionVersionRepo.getActiveVersionStrings(extension);
     }
 
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
@@ -197,10 +186,6 @@ public class RepositoryService {
         return extensionReviewRepo.countByExtensionAndActiveTrue(extension);
     }
 
-    public UserData findUserByAuthId(String provider, String providerId) {
-        return userDataRepo.findByProviderAndAuthId(provider, providerId);
-    }
-
     public UserData findUserByLoginName(String provider, String loginName) {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
@@ -268,7 +253,7 @@ public class RepositoryService {
         return extensionDTORepo.findAllActiveByPublicId(publicIds);
     }
 
-    public ExtensionDTO findActiveExtensionDTOByNameAndNamespaceName(String name, String namespaceName) {
+    public ExtensionDTO findActiveExtensionDTO(String name, String namespaceName) {
         return extensionDTORepo.findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespaceName);
     }
 
@@ -276,36 +261,28 @@ public class RepositoryService {
         return extensionDTORepo.findAllActiveById(ids);
     }
 
-    public Map<Long, Boolean> findExtensionIsPreview(Collection<Long> ids) {
-        return extensionDTORepo.findIsPreview(ids);
+    public List<ExtensionVersionDTO> findAllActiveExtensionVersionDTOs(Collection<Long> extensionIds, String targetPlatform) {
+        return extensionVersionDTORepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
     }
 
-    public List<ExtensionVersionDTO> findAllActiveExtensionVersionDTOsByExtensionId(Collection<Long> extensionIds) {
-        return extensionVersionDTORepo.findAllActiveByExtensionId(extensionIds);
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionPublicId(String targetPlatform, String extensionPublicId) {
+        return extensionVersionDTORepo.findAllActiveByExtensionPublicId(targetPlatform, extensionPublicId);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionPublicId(String extensionPublicId) {
-        return extensionVersionDTORepo.findAllActiveByExtensionPublicId(extensionPublicId);
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespacePublicId(String targetPlatform, String namespacePublicId) {
+        return extensionVersionDTORepo.findAllActiveByNamespacePublicId(targetPlatform, namespacePublicId);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespacePublicId(String namespacePublicId) {
-        return extensionVersionDTORepo.findAllActiveByNamespacePublicId(namespacePublicId);
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String targetPlatform, String extensionName, String namespaceName) {
+        return extensionVersionDTORepo.findAllActiveByExtensionNameAndNamespaceName(targetPlatform, extensionName, namespaceName);
     }
 
-    public ExtensionVersionDTO findActiveExtensionVersionDTOByVersion(String extensionVersion, String extensionName, String namespaceName) {
-        return extensionVersionDTORepo.findActiveByVersionAndExtensionNameAndNamespaceName(extensionVersion, extensionName, namespaceName);
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespaceName(String targetPlatform, String namespaceName) {
+        return extensionVersionDTORepo.findAllActiveByNamespaceName(targetPlatform, namespaceName);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName, String namespaceName) {
-        return extensionVersionDTORepo.findAllActiveByExtensionNameAndNamespaceName(extensionName, namespaceName);
-    }
-
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespaceName(String namespaceName) {
-        return extensionVersionDTORepo.findAllActiveByNamespaceName(namespaceName);
-    }
-
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String extensionName) {
-        return extensionVersionDTORepo.findAllActiveByExtensionName(extensionName);
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String targetPlatform, String extensionName) {
+        return extensionVersionDTORepo.findAllActiveByExtensionName(targetPlatform, extensionName);
     }
 
     public List<FileResourceDTO> findAllFileResourceDTOsByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
@@ -354,5 +331,9 @@ public class RepositoryService {
 
     public long downloadsBetween(LocalDateTime startInclusive, LocalDateTime endExclusive) {
         return adminStatisticCalculationsRepo.downloadsSumByTimestampGreaterThanEqualAndTimestampLessThan(startInclusive, endExclusive);
+    }
+
+    public Streamable<ExtensionVersion> findTargetPlatformVersions(String version, String extensionName, String namespaceName) {
+        return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespaceName);
     }
 }

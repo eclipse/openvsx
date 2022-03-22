@@ -12,6 +12,7 @@ package org.eclipse.openvsx.web;
 import java.net.URI;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -23,7 +24,10 @@ import javax.xml.transform.stream.StreamResult;
 
 import com.google.common.base.Strings;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,14 +59,26 @@ public class SitemapController {
         var baseUrl = getBaseUrl();
         var timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         repositories.findAllActiveExtensions().forEach(extension -> {
-            var entry = document.createElement("url");
-            var loc = document.createElement("loc");
-            loc.setTextContent(UrlUtil.createApiUrl(baseUrl, "extension", extension.getNamespace().getName(), extension.getName()));
-            entry.appendChild(loc);
-            var lastmod = document.createElement("lastmod");
-            lastmod.setTextContent(extension.getLatest().getTimestamp().format(timestampFormatter));
-            entry.appendChild(lastmod);
-            urlset.appendChild(entry);
+            var targetPlatforms = extension.getVersions().stream()
+                    .map(ExtensionVersion::getTargetPlatform)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            for(var targetPlatform : targetPlatforms) {
+                var entry = document.createElement("url");
+                var loc = document.createElement("loc");
+                var segments = new String[]{ "extension", extension.getNamespace().getName(), extension.getName() };
+                if(!TargetPlatform.isUniversal(targetPlatform)) {
+                    segments = ArrayUtils.add(segments, targetPlatform);
+                }
+
+                loc.setTextContent(UrlUtil.createApiUrl(baseUrl, segments));
+                entry.appendChild(loc);
+                var lastmod = document.createElement("lastmod");
+                lastmod.setTextContent(extension.getLatest(targetPlatform, true).getTimestamp().format(timestampFormatter));
+                entry.appendChild(lastmod);
+                urlset.appendChild(entry);
+            }
         });
 
         StreamingResponseBody stream = out -> {

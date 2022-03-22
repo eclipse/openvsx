@@ -31,6 +31,12 @@ public class ResultJson {
         return result;
     }
 
+    public static ResultJson warning(String message) {
+        var result = new ResultJson();
+        result.warning = message;
+        return result;
+    }
+
     public static ResultJson error(String message) {
         var result = new ResultJson();
         result.error = message;
@@ -39,6 +45,9 @@ public class ResultJson {
 
     @ApiModelProperty("Indicates success of the operation (omitted if a more specific result type is returned)")
     public String success;
+
+    @ApiModelProperty("Indicates a warning; when this is present, other properties can still be used")
+    public String warning;
 
     @ApiModelProperty("Indicates an error; when this is present, all other properties should be ignored")
     public String error;

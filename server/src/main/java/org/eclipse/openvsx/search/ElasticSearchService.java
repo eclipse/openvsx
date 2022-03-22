@@ -18,6 +18,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -223,6 +224,10 @@ public class ElasticSearchService implements ISearchService {
         if (!Strings.isNullOrEmpty(options.category)) {
             // Filter by selected category
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", options.category));
+        }
+        if (TargetPlatform.isValid(options.targetPlatform)) {
+            // Filter by selected target platform
+            queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("targetPlatforms", options.targetPlatform));
         }
 
         // Sort search results according to 'sortOrder' and 'sortBy' options

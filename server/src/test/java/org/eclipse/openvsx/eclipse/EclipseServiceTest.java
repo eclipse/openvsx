@@ -27,13 +27,7 @@ import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
-import org.eclipse.openvsx.entities.AuthToken;
-import org.eclipse.openvsx.entities.EclipseData;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.TokenService;
@@ -42,6 +36,7 @@ import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -198,11 +193,11 @@ public class EclipseServiceTest {
         extension.setName("bar");
         extension.setNamespace(namespace);
         var extVersion = new ExtensionVersion();
-        extVersion.setVersion("1");
+        extVersion.setVersion("1.0.0");
+        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
+        extension.getVersions().add(extVersion);
         Mockito.when(repositories.findVersionsByAccessToken(accessToken, false))
-            .thenReturn(Streamable.of(extVersion));
-        Mockito.when(repositories.findActiveVersions(extension))
             .thenReturn(Streamable.of(extVersion));
 
         eclipse.signPublisherAgreement(user);

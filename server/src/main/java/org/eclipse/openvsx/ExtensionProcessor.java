@@ -32,6 +32,7 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LicenseDetection;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.common.Strings;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
@@ -223,6 +224,7 @@ public class ExtensionProcessor implements AutoCloseable {
         loadVsixManifest();
         var extension = new ExtensionVersion();
         extension.setVersion(vsixManifest.path("Metadata").path("Identity").path("Version").asText());
+        extension.setTargetPlatform(getTargetPlatform());
         extension.setPreview(isPreview());
         extension.setPreRelease(isPreRelease());
         extension.setDisplayName(vsixManifest.path("Metadata").path("DisplayName").asText());
@@ -241,6 +243,15 @@ public class ExtensionProcessor implements AutoCloseable {
         extension.setQna(packageJson.path("qna").textValue());
 
         return extension;
+    }
+
+    private String getTargetPlatform() {
+        var targetPlatform = vsixManifest.path("Metadata").path("Identity").path("TargetPlatform").asText();
+        if(targetPlatform.isEmpty()) {
+            targetPlatform = TargetPlatform.NAME_UNIVERSAL;
+        }
+
+        return targetPlatform;
     }
 
     private List<String> getTags() {

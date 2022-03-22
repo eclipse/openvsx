@@ -69,6 +69,7 @@ export interface Extension {
     name: string;
     namespace: string;
     version: string;
+    targetPlatform: string;
     preRelease?: boolean;
     publishedBy: UserData;
     verified: boolean;
@@ -101,6 +102,12 @@ export interface Extension {
     badges?: Badge[];
     dependencies?: ExtensionReference[];
     bundledExtensions?: ExtensionReference[];
+
+    // key: target platform, value: download link
+    downloads: { [targetPlatform: string]: UrlString };
+
+    // key: version, value: target platforms
+    allTargetPlatformVersions: { [version: string]: string[] };
 }
 
 export interface Badge {
@@ -206,6 +213,12 @@ export interface PublisherInfo {
     user: UserData;
     extensions: Extension[];
     activeAccessTokenNum: number;
+}
+
+export interface TargetPlatformVersion {
+    targetPlatform: string;
+    version: string;
+    checked: boolean;
 }
 
 export type MembershipRole = 'contributor' | 'owner';

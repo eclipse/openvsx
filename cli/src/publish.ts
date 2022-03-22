@@ -17,12 +17,15 @@ import { checkLicense } from './check-license';
  */
 export async function publish(options: PublishOptions = {}): Promise<void> {
         addEnvOptions(options);
-        if (options.packagePath) {
-            // call the publish command for every package path
-            await Promise.all(options.packagePath.map(path => doPublish({ ...options, packagePath: path })));
-        } else {
-            return doPublish({ ... options, packagePath: undefined });
+        const internalPublishOptions = [];
+        const packagePaths = options.packagePath || [undefined];
+        const targets = options.targets || [undefined];
+        for (const packagePath of packagePaths) {
+            for (const target of targets) {
+                internalPublishOptions.push({ ... options, packagePath: packagePath, target: target });
+            }
         }
+        await Promise.all(internalPublishOptions.map(publishOptions => doPublish(publishOptions)));
 }
 
 async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
@@ -34,6 +37,7 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     if (options.packagePath && options.packagePath.endsWith('.vsix')) {
         options.extensionFile = options.packagePath;
         delete options.packagePath;
+        delete options.target;
     }
     const registry = new Registry(options);
     if (!options.extensionFile) {
@@ -47,7 +51,17 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     if (extension.error) {
         throw new Error(extension.error);
     }
-    console.log(`\ud83d\ude80  Published ${extension.namespace}.${extension.name} v${extension.version}`);
+
+    const name = `${extension.namespace}.${extension.name}`;
+	let description = `${name} v${extension.version}`;
+    if (options.target) {
+        description += `@${options.target}`;
+    }
+
+    console.log(`\ud83d\ude80  Published ${description}`);
+    if (extension.warning) {
+        console.log(`\n!!  ${extension.warning}`);
+    }
 }
 
 interface PublishCommonOptions extends RegistryOptions {
@@ -78,6 +92,11 @@ interface PublishCommonOptions extends RegistryOptions {
 export interface PublishOptions extends PublishCommonOptions {
 
     /**
+     * Target architectures.
+     */
+    targets?: string[];
+
+    /**
      * Paths to the extension to be packaged and published. Cannot be used together
      * with `extensionFile`.
      */
@@ -86,6 +105,12 @@ export interface PublishOptions extends PublishCommonOptions {
 
 // Interface used internally by the doPublish method
 interface InternalPublishOptions extends PublishCommonOptions {
+
+    /**
+     * Only one target for our internal command.
+     * Target architecture.
+     */
+     target?: string;
 
     /**
      * Only one path for our internal command.
@@ -102,6 +127,7 @@ async function packageExtension(options: InternalPublishOptions, registry: Regis
 
     options.extensionFile = await createTempFile({ postfix: '.vsix' });
     const createVSIXOptions: ICreateVSIXOptions = {
+        target: options.target,
         cwd: options.packagePath,
         packagePath: options.extensionFile,
         baseContentUrl: options.baseContentUrl,

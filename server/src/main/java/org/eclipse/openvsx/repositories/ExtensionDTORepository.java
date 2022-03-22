@@ -11,7 +11,6 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.dto.ExtensionDTO;
 import org.jooq.DSLContext;
-import org.jooq.Record;
 import org.jooq.SelectConditionStep;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,18 +56,7 @@ public class ExtensionDTORepository {
                 .collect(Collectors.toMap(r -> r.get(EXTENSION_REVIEW.EXTENSION_ID), r -> r.get(count)));
     }
 
-    public Map<Long, Boolean> findIsPreview(Collection<Long> ids) {
-        return dsl.select(EXTENSION.ID, EXTENSION_VERSION.PREVIEW)
-                .from(EXTENSION)
-                .join(EXTENSION_VERSION).on(EXTENSION_VERSION.ID.eq(EXTENSION.LATEST_ID))
-                .where(EXTENSION.ID.in(ids))
-                .fetch()
-                .stream()
-                .collect(Collectors.toMap(r -> r.get(EXTENSION.ID), r -> r.get(EXTENSION_VERSION.PREVIEW)));
-    }
-
-    private SelectConditionStep<Record> findAllActive() {
-        var latest = EXTENSION_VERSION.as("latest");
+    private SelectConditionStep<?> findAllActive() {
         return dsl.select(
                     EXTENSION.ID,
                     EXTENSION.PUBLIC_ID,
@@ -77,31 +65,14 @@ public class ExtensionDTORepository {
                     EXTENSION.DOWNLOAD_COUNT,
                     NAMESPACE.ID,
                     NAMESPACE.PUBLIC_ID,
-                    NAMESPACE.NAME,
-                    latest.ID,
-                    latest.VERSION,
-                    latest.PREVIEW,
-                    latest.PRE_RELEASE,
-                    latest.TIMESTAMP,
-                    latest.DISPLAY_NAME,
-                    latest.DESCRIPTION,
-                    latest.ENGINES,
-                    latest.CATEGORIES,
-                    latest.TAGS,
-                    latest.EXTENSION_KIND,
-                    latest.REPOSITORY,
-                    latest.GALLERY_COLOR,
-                    latest.GALLERY_THEME,
-                    latest.DEPENDENCIES,
-                    latest.BUNDLED_EXTENSIONS
+                    NAMESPACE.NAME
                 )
                 .from(EXTENSION)
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .join(latest).on(latest.ID.eq(EXTENSION.LATEST_ID))
                 .where(EXTENSION.ACTIVE.eq(true));
     }
 
-    private List<ExtensionDTO> fetch(SelectConditionStep<Record> query) {
+    private List<ExtensionDTO> fetch(SelectConditionStep<?> query) {
         return query.fetchInto(ExtensionDTO.class);
     }
 }

@@ -1,0 +1,102 @@
+{
+    "results": [
+        {
+            "extensions": [
+                {
+                    "publisher": {
+                        "publisherId": "test-2",
+                        "publisherName": "redhat",
+                        "displayName": null
+                    },
+                    "extensionId": "test-1",
+                    "extensionName": "vscode-yaml",
+                    "displayName": "YAML",
+                    "flags": "preview",
+                    "shortDescription": "YAML Language Support",
+                    "versions": [
+                        {
+                            "version": "0.5.2",
+                            "lastUpdated": "2000-01-01T10:00",
+                            "targetPlatform": "darwin-x64",
+                            "files": [
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Code.Manifest",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/package.json"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.Content.Details",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/README.md"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.Content.License",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/LICENSE.txt"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.Icons.Default",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/icon128.png"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.VSIXPackage",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/redhat.vscode-yaml-0.5.2.vsix"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/CHANGELOG.md"
+                                }
+                            ],
+                            "properties": [
+                                {
+                                    "key": "Microsoft.VisualStudio.Services.Links.Source",
+                                    "value": "https://github.com/redhat-developer/vscode-yaml"
+                                },
+                                {
+                                    "key": "Microsoft.VisualStudio.Code.Engine",
+                                    "value": "^1.31.0"
+                                },
+                                {
+                                    "key": "Microsoft.VisualStudio.Code.ExtensionDependencies",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "Microsoft.VisualStudio.Code.ExtensionPack",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "Microsoft.VisualStudio.Code.LocalizedLanguages",
+                                    "value": ""
+                                }
+                            ],
+                            "assetUri": "http://localhost/vscode/asset/redhat/vscode-yaml/0.5.2",
+                            "fallbackAssetUri": "http://localhost/vscode/asset/redhat/vscode-yaml/0.5.2"
+                        }
+                    ],
+                    "statistics": [
+                        {
+                            "statisticName": "install",
+                            "value": 100
+                        },
+                        {
+                            "statisticName": "averagerating",
+                            "value": 3.0
+                        },
+                        {
+                            "statisticName": "ratingcount",
+                            "value": 10
+                        }
+                    ]
+                }
+            ],
+            "resultMetadata": [
+                {
+                    "metadataType": "ResultCount",
+                    "metadataItems": [
+                        {
+                            "name": "TotalCount",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

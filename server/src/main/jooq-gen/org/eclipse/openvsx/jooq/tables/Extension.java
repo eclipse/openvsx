@@ -16,7 +16,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row9;
+import org.jooq.Row7;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -69,11 +69,6 @@ public class Extension extends TableImpl<ExtensionRecord> {
     public final TableField<ExtensionRecord, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(255), this, "");
 
     /**
-     * The column <code>public.extension.latest_id</code>.
-     */
-    public final TableField<ExtensionRecord, Long> LATEST_ID = createField(DSL.name("latest_id"), SQLDataType.BIGINT, this, "");
-
-    /**
      * The column <code>public.extension.namespace_id</code>.
      */
     public final TableField<ExtensionRecord, Long> NAMESPACE_ID = createField(DSL.name("namespace_id"), SQLDataType.BIGINT, this, "");
@@ -87,11 +82,6 @@ public class Extension extends TableImpl<ExtensionRecord> {
      * The column <code>public.extension.active</code>.
      */
     public final TableField<ExtensionRecord, Boolean> ACTIVE = createField(DSL.name("active"), SQLDataType.BOOLEAN.nullable(false), this, "");
-
-    /**
-     * The column <code>public.extension.latest_pre_release_id</code>.
-     */
-    public final TableField<ExtensionRecord, Long> LATEST_PRE_RELEASE_ID = createField(DSL.name("latest_pre_release_id"), SQLDataType.BIGINT, this, "");
 
     private Extension(Name alias, Table<ExtensionRecord> aliased) {
         this(alias, aliased, null);
@@ -133,7 +123,7 @@ public class Extension extends TableImpl<ExtensionRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.EXTENSION__LATEST_ID__IDX, Indexes.EXTENSION__NAMESPACE_ID__IDX);
+        return Arrays.<Index>asList(Indexes.EXTENSION__NAMESPACE_ID__IDX);
     }
 
     @Override
@@ -148,19 +138,11 @@ public class Extension extends TableImpl<ExtensionRecord> {
 
     @Override
     public List<ForeignKey<ExtensionRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<ExtensionRecord, ?>>asList(Keys.EXTENSION__FKEQJ0WVHFFQQVNH4VOKNOHJHTW, Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN, Keys.EXTENSION__EXTENSION_LATEST_PRE_RELEASE_FKEY);
-    }
-
-    public ExtensionVersion fkeqj0wvhffqqvnh4voknohjhtw() {
-        return new ExtensionVersion(this, Keys.EXTENSION__FKEQJ0WVHFFQQVNH4VOKNOHJHTW);
+        return Arrays.<ForeignKey<ExtensionRecord, ?>>asList(Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN);
     }
 
     public Namespace namespace() {
         return new Namespace(this, Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN);
-    }
-
-    public ExtensionVersion extensionLatestPreReleaseFkey() {
-        return new ExtensionVersion(this, Keys.EXTENSION__EXTENSION_LATEST_PRE_RELEASE_FKEY);
     }
 
     @Override
@@ -190,11 +172,11 @@ public class Extension extends TableImpl<ExtensionRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row9 type methods
+    // Row7 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row9<Long, Double, Integer, String, Long, Long, String, Boolean, Long> fieldsRow() {
-        return (Row9) super.fieldsRow();
+    public Row7<Long, Double, Integer, String, Long, String, Boolean> fieldsRow() {
+        return (Row7) super.fieldsRow();
     }
 }

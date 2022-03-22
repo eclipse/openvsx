@@ -51,16 +51,18 @@ public interface ISearchService {
     public static class Options {
         public final String queryString;
         public final String category;
+        public final String targetPlatform;
         public final int requestedSize;
         public final int requestedOffset;
         public final String sortOrder;
         public final String sortBy;
         public final boolean includeAllVersions;
 
-        public Options(String queryString, String category, int size, int offset, String sortOrder,
-                String sortBy, boolean includeAllVersions) {
+        public Options(String queryString, String category, String targetPlatform, int size, int offset,
+                       String sortOrder, String sortBy, boolean includeAllVersions) {
             this.queryString = queryString;
             this.category = category;
+            this.targetPlatform = targetPlatform;
             this.requestedSize = size;
             this.requestedOffset = offset;
             this.sortOrder = sortOrder;
@@ -79,6 +81,8 @@ public interface ISearchService {
                 return false;
             if (!Objects.equals(this.category, other.category))
                 return false;
+            if (!Objects.equals(this.targetPlatform, other.targetPlatform))
+                return false;
             if (this.requestedSize != other.requestedSize)
                 return false;
             if (this.requestedOffset != other.requestedOffset)
@@ -94,8 +98,8 @@ public interface ISearchService {
 
         @Override
         public int hashCode() {
-            return Objects.hash(queryString, category, requestedSize, requestedOffset, sortOrder, sortBy,
-                    includeAllVersions);
+            return Objects.hash(queryString, category, targetPlatform, requestedSize, requestedOffset,
+                    sortOrder, sortBy, includeAllVersions);
         }
     }
 

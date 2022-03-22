@@ -53,6 +53,9 @@ public class ExtensionJson extends ResultJson {
     @NotNull
     public String namespace;
 
+    @ApiModelProperty("Name of the target platform")
+    public String targetPlatform;
+
     @ApiModelProperty("Selected version, or the latest version if none was specified")
     @NotNull
     public String version;
@@ -153,4 +156,9 @@ public class ExtensionJson extends ResultJson {
     @ApiModelProperty("List of extensions bundled with this extension")
     public List<ExtensionReferenceJson> bundledExtensions;
 
+    @ApiModelProperty("Map of download links by target platform")
+    public Map<String, String> downloads;
+
+    @ApiModelProperty("Map of target platforms by extension version")
+    public Map<String, List<String>> allTargetPlatformVersions;
 }

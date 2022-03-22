@@ -37,21 +37,21 @@
     },
     "dependencies": {
         "commander": "^6.1.0",
-        "follow-redirects": "^1.13.2",
+        "follow-redirects": "^1.14.6",
         "is-ci": "^2.0.0",
         "leven": "^3.1.0",
         "tmp": "^0.2.1",
         "vsce": "^2.6.3"
     },
     "devDependencies": {
-        "@types/follow-redirects": "^1.13.0",
+        "@types/follow-redirects": "^1.13.1",
         "@types/is-ci": "^2.0.0",
-        "@types/node": "^10.14.18",
-        "@types/semver": "^7.1.0",
+        "@types/node": "^10.17.60",
+        "@types/semver": "^7.3.9",
         "@types/tmp": "^0.1.0",
-        "@typescript-eslint/eslint-plugin": "^3.6.1",
-        "@typescript-eslint/parser": "^3.6.1",
-        "eslint": "^7.4.0",
+        "@typescript-eslint/eslint-plugin": "^3.10.1",
+        "@typescript-eslint/parser": "^3.10.1",
+        "eslint": "^7.32.0",
         "rimraf": "^3.0.2",
         "typescript": "3.8.3"
     },

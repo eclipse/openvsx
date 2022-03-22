@@ -19,14 +19,17 @@ import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions } fr
  */
 export async function getExtension(options: GetOptions): Promise<void> {
     addEnvOptions(options);
-    const registry = new Registry(options);
+    if (!options.target) {
+        options.target = 'universal';
+    }
 
+    const registry = new Registry(options);
     const match = matchExtensionId(options.extensionId);
     if (!match) {
         throw new Error('The extension identifier must have the form `namespace.extension`.');
     }
 
-    const extension = await registry.getMetadata(match[1], match[2]);
+    const extension = await registry.getMetadata(match[1], match[2], options.target);
     if (extension.error) {
         throw new Error(extension.error);
     }
@@ -48,7 +51,7 @@ function findMatchingVersion(registry: Registry, extension: Extension, constrain
         return Promise.resolve(extension);
     }
     for (const version of Object.keys(extension.allVersions)) {
-        if (semver.satisfies(version, constraint)) {
+        if (!isAlias(extension, version) && semver.satisfies(version, constraint)) {
             try {
                 return registry.getJson(new URL(extension.allVersions[version]));
             } catch (err) {
@@ -57,6 +60,10 @@ function findMatchingVersion(registry: Registry, extension: Extension, constrain
         }
     }
     return Promise.reject(`Extension ${extension.namespace}.${extension.name} has no published version matching '${constraint}'`);
+}
+
+function isAlias(extension: Extension, version: string): boolean {
+    return extension.versionAlias.includes(version);
 }
 
 async function printMetadata(registry: Registry, extension: Extension, output?: string): Promise<void> {
@@ -83,7 +90,7 @@ async function download(registry: Registry, extension: Extension, output?: strin
         throw new Error(`Extension ${extension.namespace}.${extension.name} does not provide a download URL.`);
     }
     const fileNameIndex = downloadUrl.lastIndexOf('/');
-    const fileName = downloadUrl.substring(fileNameIndex + 1);
+    const fileName = decodeURIComponent(downloadUrl.substring(fileNameIndex + 1));
     let filePath: string | undefined;
     if (output) {
         const stats = await optionalStat(output);
@@ -96,7 +103,8 @@ async function download(registry: Registry, extension: Extension, output?: strin
         filePath = path.resolve(process.cwd(), fileName);
     }
     await makeDirs(path.dirname(filePath));
-    console.log(`Downloading ${extension.namespace}.${extension.name} v${extension.version} to ${filePath}`);
+    const target = extension.targetPlatform !== 'universal' ? '@' + extension.targetPlatform : '';
+    console.log(`Downloading ${extension.namespace}.${extension.name}-${extension.version}${target} to ${filePath}`);
     await registry.download(filePath, new URL(downloadUrl));
 }
 
@@ -105,6 +113,10 @@ export interface GetOptions extends RegistryOptions {
      * Identifier in the form `namespace.extension` or `namespace/extension`.
      */
     extensionId: string;
+    /**
+     * Target platform.
+     */
+    target?: string;
     /**
      * An exact version or version range.
      */

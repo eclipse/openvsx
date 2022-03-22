@@ -9,11 +9,21 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useState, useEffect } from 'react';
-import { Extension, VERSION_ALIASES } from '../../extension-registry-types';
+import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
 import { Grid, makeStyles, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@material-ui/core';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
+import { getTargetPlatformDisplayName } from '../../utils';
 
 const useStyles = makeStyles((theme) => ({
+    indent0: {
+        paddingLeft: '0 px'
+    },
+    indent1: {
+        paddingLeft: `${theme.spacing(4)}px`
+    },
+    indent2: {
+        paddingLeft: `${theme.spacing(8)}px`
+    },
     extensionLogo: {
         height: '7.5rem',
         maxWidth: '9rem',
@@ -37,50 +47,70 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainer.Props> = props => {
+    const WILDCARD = '*';
     const { extension } = props;
     const classes = useStyles();
 
-    const getVersions = () => {
-        const versionMap = new Map<string, boolean>();
-        Object.keys(extension.allVersions)
+    const getTargetPlatformVersions = () => {
+        const versionMap: TargetPlatformVersion[] = [];
+        versionMap.push({ targetPlatform: WILDCARD, version: WILDCARD, checked: false });
+        Object.keys(extension.allTargetPlatformVersions)
             .filter(version => VERSION_ALIASES.indexOf(version) < 0)
             .forEach(version => {
-            versionMap.set(version, false);
-        });
+                versionMap.push({ targetPlatform: WILDCARD, version: version, checked: false });
+                const targetPlatforms = extension.allTargetPlatformVersions[version];
+                targetPlatforms.forEach(targetPlatform => versionMap.push({ targetPlatform: targetPlatform, version: version, checked: false }));
+            });
+
         return versionMap;
     };
 
-    const [versions, setVersions] = useState(getVersions());
-    const [allChecked, setAllChecked] = useState(false);
+    const [targetPlatformVersions, setTargetPlatformVersions] = useState(getTargetPlatformVersions());
 
     useEffect(() => {
-        setVersions(getVersions());
+        setTargetPlatformVersions(getTargetPlatformVersions());
     }, [props.extension]);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const newVersionMap = new Map<string, boolean>();
-        let newAllChecked = true;
-        versions.forEach((checked, version) => {
-            if (version === event.target.name) {
-                checked = event.target.checked;
-            }
-            newVersionMap.set(version, checked);
-            if (!checked) {
-                newAllChecked = false;
-            }
-        });
-        setVersions(newVersionMap);
-        setAllChecked(newAllChecked);
-    };
+        const newTargetPlatformVersions: TargetPlatformVersion[] = [];
+        targetPlatformVersions.forEach((targetPlatformVersion) => {
+            const equals = (change: string, current: string) => {
+                return change === WILDCARD || current === change;
+            };
 
-    const handleChangeAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const newVersionMap = new Map<string, boolean>();
-        const newAllChecked = event.target.checked;
-        versions.forEach((_, version) => {
-            newVersionMap.set(version, newAllChecked);
+            const [changedTarget, changedVersion] = event.target.name.split('/');
+            if (equals(changedVersion, targetPlatformVersion.version) && equals(changedTarget, targetPlatformVersion.targetPlatform)) {
+                targetPlatformVersion.checked = event.target.checked;
+            }
+
+            newTargetPlatformVersions.push(targetPlatformVersion);
         });
-        setAllChecked(newAllChecked);
-        setVersions(newVersionMap);
+
+        const newVersionsMap = new Map<string, boolean>();
+        newTargetPlatformVersions.forEach((targetPlatformVersion) => {
+            if (targetPlatformVersion.version !== WILDCARD && targetPlatformVersion.targetPlatform !== WILDCARD) {
+                let checked = newVersionsMap.get(targetPlatformVersion.version);
+                if (checked === undefined) {
+                    checked = true;
+                }
+
+                newVersionsMap.set(targetPlatformVersion.version, checked && targetPlatformVersion.checked);
+            }
+        });
+
+        newVersionsMap.forEach((checked, version) => {
+            const targetVersion = newTargetPlatformVersions.find(t => t.version === version && t.targetPlatform === WILDCARD);
+            targetVersion!.checked = checked;
+        });
+
+        const checkedCount = Array.from(newTargetPlatformVersions).filter(t => t.checked === true).length;
+        if (checkedCount < newTargetPlatformVersions.length) {
+            const allChecked = checkedCount === newTargetPlatformVersions.length - 1;
+            const allVersions = newTargetPlatformVersions.find(t => t.version === WILDCARD && t.targetPlatform === WILDCARD);
+            allVersions!.checked = allChecked;
+        }
+
+        setTargetPlatformVersions(newTargetPlatformVersions);
     };
 
     return <>
@@ -116,18 +146,28 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                 <Grid item container xs={12} md={8} direction='column'>
                     <FormControl component='fieldset'>
                         <FormGroup>
-                            <FormControlLabel
-                                control={<Checkbox checked={allChecked} onChange={handleChangeAll} name='checkAll' />}
-                                label='All Versions'
-                            />
                             {
-                                Array.from(versions.entries())
-                                    .map(([version, checked], index) =>
-                                    <FormControlLabel
-                                        key={`${version}_${index}`}
-                                        control={<Checkbox checked={checked} onChange={handleChange} name={version} />}
-                                        label={version} />
-                                )
+                                targetPlatformVersions.map((targetPlatformVersion, index) => {
+                                        let label: string;
+                                        let indentClass: string;
+                                        if (targetPlatformVersion.version === WILDCARD && targetPlatformVersion.targetPlatform === WILDCARD) {
+                                            label = 'All Versions';
+                                            indentClass = classes.indent0;
+                                        } else if (targetPlatformVersion.targetPlatform === WILDCARD) {
+                                            label = targetPlatformVersion.version;
+                                            indentClass = classes.indent1;
+                                        } else {
+                                            label = getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform);
+                                            indentClass = classes.indent2;
+                                        }
+
+                                        const name = `${targetPlatformVersion.targetPlatform}/${targetPlatformVersion.version}`;
+                                        return <FormControlLabel
+                                            classes={{ root: indentClass }}
+                                            key={`${name}_${index}`}
+                                            control={<Checkbox checked={targetPlatformVersion.checked} onChange={handleChange} name={name} />}
+                                            label={label} />;
+                                    })
                             }
                         </FormGroup>
                     </FormControl>
@@ -140,11 +180,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                     <ExtensionRemoveDialog
                         onUpdate={props.onUpdate}
                         extension={extension}
-                        removeAll={allChecked}
-                        versions={
-                            Array.from(versions.entries())
-                                .filter(([_, checked]) => checked)
-                                .map(([version]) => version)} />
+                        targetPlatformVersions={targetPlatformVersions.filter((targetPlatformVersion) => targetPlatformVersion.checked)} />
                 </Grid>
             </Grid>
         </Grid>
