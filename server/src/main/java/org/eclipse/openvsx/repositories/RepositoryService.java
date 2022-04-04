@@ -286,7 +286,11 @@ public class RepositoryService {
     }
 
     public List<FileResourceDTO> findAllFileResourceDTOsByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
-        return fileResourceDTORepo.findAllByExtensionIdAndType(extensionVersionIds, types);
+        return fileResourceDTORepo.findAll(extensionVersionIds, types);
+    }
+
+    public List<FileResourceDTO> findAllResourceFileResourceDTOs(String namespaceName, String extensionName, String version, String prefix) {
+        return fileResourceDTORepo.findAllResources(namespaceName, extensionName, version, prefix);
     }
 
     public Map<Long, Integer> findAllActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {

@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.dto;
 
+import org.eclipse.openvsx.entities.FileResource;
+
 import java.util.Objects;
 
 public class FileResourceDTO {
@@ -19,6 +21,14 @@ public class FileResourceDTO {
     private final long id;
     private final String name;
     private final String type;
+    private String storageType;
+    private byte[] content;
+
+    public FileResourceDTO(long id, long extensionVersionId, String name, String type, String storageType, byte[] content) {
+        this(id, extensionVersionId, name, type);
+        this.storageType = storageType;
+        this.content = content;
+    }
 
     public FileResourceDTO(long id, long extensionVersionId, String name, String type) {
         this.id = id;
@@ -53,5 +63,17 @@ public class FileResourceDTO {
 
     public String getType() {
         return type;
+    }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public byte[] getContent() {
+        return content;
+    }
+
+    public boolean isWebResource() {
+        return type.equals(FileResource.RESOURCE) && name.startsWith("extension/");
     }
 }

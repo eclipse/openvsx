@@ -9,33 +9,25 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URI;
-
-import javax.transaction.Transactional;
-import javax.transaction.Transactional.TxType;
-
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobHttpHeaders;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.google.common.base.Strings;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+
 @Component
 public class AzureBlobStorageService implements IStorageService {
-
-    @Autowired
-    StorageUtilService storageUtil;
 
     @Value("${ovsx.storage.azure.service-endpoint:}")
     String serviceEndpoint;
@@ -65,7 +57,6 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
 	@Override
-	@Transactional(TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var blobName = getBlobName(resource);
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
@@ -74,17 +65,16 @@ public class AzureBlobStorageService implements IStorageService {
         }
 
         uploadFile(resource.getContent(), resource.getName(), blobName);
-        resource.setStorageType(FileResource.STORAGE_AZURE);
     }
     
     protected void uploadFile(byte[] content, String fileName, String blobName) {
         var blobClient = getContainerClient().getBlobClient(blobName);
         var headers = new BlobHttpHeaders();
-        headers.setContentType(storageUtil.getFileType(fileName).toString());
+        headers.setContentType(StorageUtil.getFileType(fileName).toString());
         if (fileName.endsWith(".vsix")) {
             headers.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
-            var cacheControl = storageUtil.getCacheControl(fileName);
+            var cacheControl = StorageUtil.getCacheControl(fileName);
             headers.setCacheControl(cacheControl.getHeaderValue());
         }
         try (var dataStream = new ByteArrayInputStream(content)) {
