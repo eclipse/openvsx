@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.javacrumbs.shedlock.core.LockProvider;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -57,7 +58,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
-@MockBean({ EntityManager.class, ClientRegistrationRepository.class, LockProvider.class })
+@MockBean({ EntityManager.class, ClientRegistrationRepository.class, LockProvider.class, CacheService.class })
 public class UserAPITest {
 
     @SpyBean

@@ -22,12 +22,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.UserPublishInfoJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -64,6 +62,9 @@ public class AdminService {
 
     @Autowired
     StorageUtilService storageUtil;
+
+    @Autowired
+    CacheService cache;
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, UserData admin)
@@ -109,6 +110,8 @@ public class AdminService {
                         .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
                         .collect(Collectors.joining(", ")));
         }
+
+        cache.evictExtensionJsons(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
@@ -126,12 +129,13 @@ public class AdminService {
 
     protected ResultJson deleteExtension(ExtensionVersion extVersion, UserData admin) {
         var extension = extVersion.getExtension();
-        var versions = Lists.newArrayList(repositories.findVersions(extension));
-        if (versions.size() == 1) {
+        if (repositories.findVersions(extension).stream().count() == 1) {
             return deleteExtension(extension, admin);
         }
+
+        cache.evictExtensionJsons(extension);
         removeExtensionVersion(extVersion);
-        versions.remove(extVersion);
+        extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
 
         var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName()

@@ -154,6 +154,7 @@ task unitTests(type: Test) {
     classpath = sourceSets.test.runtimeClasspath
     useJUnitPlatform()
     exclude 'org/eclipse/openvsx/IntegrationTest.class'
+    exclude 'org/eclipse/openvsx/cache/CacheServiceTest.class'
 }
 
 apply from: 'dependencies.gradle'

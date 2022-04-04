@@ -23,6 +23,7 @@ import javax.transaction.Transactional;
 import com.google.common.base.Strings;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -49,6 +50,9 @@ public class StorageUtilService implements IStorageService {
 
     @Autowired
     SearchUtilService search;
+
+    @Autowired
+    CacheService cache;
 
     @Autowired
     EntityManager entityManager;
@@ -188,6 +192,7 @@ public class StorageUtilService implements IStorageService {
         }
 
         search.updateSearchEntry(extension);
+        cache.evictExtensionJsons(extension);
     }
 
     public HttpHeaders getFileResponseHeaders(String fileName) {

@@ -29,6 +29,8 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 
+import static org.eclipse.openvsx.cache.CacheService.CACHE_DATABASE_SEARCH;
+
 /**
  * Alternative to ElasticSearch service using database search.
  */
@@ -48,7 +50,7 @@ public class DatabaseSearchService implements ISearchService {
     @Autowired
     RepositoryService repositories;
 
-    @Cacheable("database.search")
+    @Cacheable(CACHE_DATABASE_SEARCH)
     public SearchHits<ExtensionSearch> search(ISearchService.Options options, Pageable pageRequest) {
         // grab all extensions
         var matchingExtensions = repositories.findAllActiveExtensions();
@@ -160,7 +162,7 @@ public class DatabaseSearchService implements ISearchService {
      * Clear the cache when asked to update the search index. It could be done also
      * through a cron job as well
      */
-    @CacheEvict(value = "database.search")
+    @CacheEvict(value = CACHE_DATABASE_SEARCH)
     @Override
     public void updateSearchIndex(boolean clear) {
 

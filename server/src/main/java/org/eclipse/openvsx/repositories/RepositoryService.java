@@ -340,4 +340,8 @@ public class RepositoryService {
     public Streamable<ExtensionVersion> findTargetPlatformVersions(String version, String extensionName, String namespaceName) {
         return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespaceName);
     }
+
+    public Streamable<ExtensionVersion> findVersions(UserData user) {
+        return extensionVersionRepo.findByPublishedWithUser(user);
+    }
 }

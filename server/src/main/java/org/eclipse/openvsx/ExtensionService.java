@@ -20,6 +20,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.adapter.VSCodeIdService;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -50,6 +51,9 @@ public class ExtensionService {
     SearchUtilService search;
 
     @Autowired
+    CacheService cache;
+
+    @Autowired
     ExtensionValidator validator;
 
     @Autowired
@@ -73,7 +77,7 @@ public class ExtensionService {
             // Store file resources in the DB or external storage
             storeResources(extVersion, resources);
 
-            // Update the 'latest' / 'pre-release' references and the search index
+            // Update whether extension is active, the search index and evict cache
             updateExtension(extVersion.getExtension());
 
             return extVersion;
@@ -206,6 +210,8 @@ public class ExtensionService {
      */
     @Transactional(TxType.REQUIRED)
     public void updateExtension(Extension extension) {
+        cache.evictExtensionJsons(extension);
+
         if (extension.getLatest() != null) {
             // There is at least one active version => activate the extension
             extension.setActive(true);

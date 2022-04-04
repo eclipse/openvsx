@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
+import static org.eclipse.openvsx.cache.CacheService.GENERATOR_EXTENSION_JSON;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
@@ -23,21 +25,13 @@ import javax.transaction.Transactional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.jena.ext.com.google.common.collect.Maps;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.dto.*;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.QueryParamJson;
-import org.eclipse.openvsx.json.QueryResultJson;
-import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.ReviewJson;
-import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.SearchEntryJson;
-import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
@@ -45,6 +39,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -81,6 +76,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Autowired
     EclipseService eclipse;
 
+    @Autowired
+    CacheService cache;
+
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
         var namespace = repositories.findNamespace(namespaceName);
@@ -105,6 +103,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
         var json = toExtensionVersionJson(extVersion, targetPlatform, true);
@@ -503,6 +502,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         entityManager.persist(extReview);
         extension.setAverageRating(computeAverageRating(extension));
         search.updateSearchEntry(extension);
+        cache.evictExtensionJsons(namespace, extensionName);
         return ResultJson.success("Added review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 
@@ -526,6 +526,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         extension.setAverageRating(computeAverageRating(extension));
         search.updateSearchEntry(extension);
+        cache.evictExtensionJsons(namespace, extensionName);
         return ResultJson.success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 

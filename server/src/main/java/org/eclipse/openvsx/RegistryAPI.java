@@ -31,10 +31,7 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.*;
 import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -125,7 +122,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getExtension(namespace, extension, null));
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -199,7 +196,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                        .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getExtension(namespace, extension, null, version));
             } catch (NotFoundException exc) {
                 // Try the next registry

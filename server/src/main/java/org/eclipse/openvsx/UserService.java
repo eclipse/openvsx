@@ -14,6 +14,7 @@ import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -36,6 +37,9 @@ public class UserService {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    CacheService cache;
 
     public UserData findLoggedInUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -66,21 +70,35 @@ public class UserService {
     public UserData updateExistingUser(UserData user, OAuth2User oauth2User) {
         switch (user.getProvider()) {
             case "github": {
+                var updated = false;
                 String loginName = oauth2User.getAttribute("login");
-                if (loginName != null && !loginName.equals(user.getLoginName()))
+                if (loginName != null && !loginName.equals(user.getLoginName())) {
                     user.setLoginName(loginName);
+                    updated = true;
+                }
                 String fullName = oauth2User.getAttribute("name");
-                if (fullName != null && !fullName.equals(user.getFullName()))
+                if (fullName != null && !fullName.equals(user.getFullName())) {
                     user.setFullName(fullName);
+                    updated = true;
+                }
                 String email = oauth2User.getAttribute("email");
-                if (email != null && !email.equals(user.getEmail()))
+                if (email != null && !email.equals(user.getEmail())) {
                     user.setEmail(email);
+                    updated = true;
+                }
                 String providerUrl = oauth2User.getAttribute("html_url");
-                if (providerUrl != null && !providerUrl.equals(user.getProviderUrl()))
+                if (providerUrl != null && !providerUrl.equals(user.getProviderUrl())) {
                     user.setProviderUrl(providerUrl);
+                    updated = true;
+                }
                 String avatarUrl = oauth2User.getAttribute("avatar_url");
-                if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl()))
+                if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl())) {
                     user.setAvatarUrl(avatarUrl);
+                    updated = true;
+                }
+                if (updated) {
+                    cache.evictExtensionJsons(user);
+                }
                 break;
             }
         }
