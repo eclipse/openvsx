@@ -9,34 +9,24 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import java.net.URI;
-
-import javax.transaction.Transactional;
-import javax.transaction.Transactional.TxType;
-
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-
 import org.apache.commons.lang3.ArrayUtils;
-import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.net.URI;
 
 @Component
 public class GoogleCloudStorageService implements IStorageService {
 
     private static final String BASE_URL = "https://storage.googleapis.com/";
-
-    @Autowired
-    StorageUtilService storageUtil;
 
     @Value("${ovsx.storage.gcp.project-id:}")
     String projectId;
@@ -67,7 +57,6 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    @Transactional(TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var objectId = getObjectId(resource);
         if (Strings.isNullOrEmpty(bucketId)) {
@@ -76,16 +65,15 @@ public class GoogleCloudStorageService implements IStorageService {
         }
 
         uploadFile(resource.getContent(), resource.getName(), objectId);
-        resource.setStorageType(FileResource.STORAGE_GOOGLE);
     }
 
     protected void uploadFile(byte[] content, String fileName, String objectId) {
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
-                .setContentType(storageUtil.getFileType(fileName).toString());
+                .setContentType(StorageUtil.getFileType(fileName).toString());
         if (fileName.endsWith(".vsix")) {
             blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
-            var cacheControl = storageUtil.getCacheControl(fileName);
+            var cacheControl = StorageUtil.getCacheControl(fileName);
             blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
         }
         getStorage().create(blobInfoBuilder.build(), content);

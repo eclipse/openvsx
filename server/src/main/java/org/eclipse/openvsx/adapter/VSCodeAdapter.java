@@ -9,10 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.eclipse.openvsx.dto.*;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
@@ -30,7 +34,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -50,6 +56,9 @@ public class VSCodeAdapter {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    EntityManager entityManager;
 
     @Autowired
     VSCodeIdService idService;
@@ -152,7 +161,6 @@ public class VSCodeAdapter {
             totalCount = (long) extensions.size();
         }
 
-
         var flags = param.flags;
         var extensionsMap = extensions.stream().collect(Collectors.toMap(e -> e.getId(), e -> e));
         List<ExtensionVersionDTO> allActiveExtensionVersions = repositories.findAllActiveExtensionVersionDTOs(extensionsMap.keySet(), targetPlatform);
@@ -185,21 +193,21 @@ public class VSCodeAdapter {
                 .sorted(comparator)
                 .collect(Collectors.groupingBy(ExtensionVersionDTO::getExtension));
 
-        Map<ExtensionVersionDTO, List<FileResourceDTO>> resources;
+        Map<ExtensionVersionDTO, List<FileResourceDTO>> fileResources;
         if (test(flags, FLAG_INCLUDE_FILES) && !extensionVersionsMap.isEmpty()) {
-            var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, WEB_RESOURCE);
+            var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, RESOURCE);
             var idsMap = extensionVersionsMap.values().stream()
                     .flatMap(Collection::stream)
                     .collect(Collectors.toMap(ev -> ev.getId(), ev -> ev));
 
-            resources = repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(idsMap.keySet(), types).stream()
+            fileResources = repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(idsMap.keySet(), types).stream()
                     .map(r -> {
                         r.setExtensionVersion(idsMap.get(r.getExtensionVersionId()));
                         return r;
                     })
                     .collect(Collectors.groupingBy(FileResourceDTO::getExtensionVersion));
         } else {
-            resources = Collections.emptyMap();
+            fileResources = Collections.emptyMap();
         }
 
         Map<Long, Integer> activeReviewCounts;
@@ -222,7 +230,7 @@ public class VSCodeAdapter {
             var latest = latestVersions.get(extension.getId());
             var queryExt = toQueryExtension(extension, latest, activeReviewCounts, flags);
             queryExt.versions = extensionVersionsMap.getOrDefault(extension, Collections.emptyList()).stream()
-                    .map(extVer -> toQueryVersion(extVer, resources, flags))
+                    .map(extVer -> toQueryVersion(extVer, fileResources, flags))
                     .collect(Collectors.toList());
 
             extensionQueryResults.add(queryExt);
@@ -326,12 +334,13 @@ public class VSCodeAdapter {
             case FILE_ICON:
                 return repositories.findFileByType(extVersion, FileResource.ICON);
             default: {
-                if (assetType.startsWith(FILE_WEB_RESOURCES)) {
-                    var name = assetType.substring((FILE_WEB_RESOURCES.length()));
-                    return repositories.findFileByTypeAndName(extVersion, FileResource.WEB_RESOURCE, name);
-                } else {
-                    return null;
-                }
+                var name = assetType.startsWith(FILE_WEB_RESOURCES)
+                        ? assetType.substring((FILE_WEB_RESOURCES.length()))
+                        : null;
+
+                return name != null && name.startsWith("extension/") // is web resource
+                        ? repositories.findFileByTypeAndName(extVersion, FileResource.RESOURCE, name)
+                        : null;
             }
         }
     }
@@ -373,6 +382,101 @@ public class VSCodeAdapter {
         return new ModelAndView("redirect:" + apiUrl, model);
     }
 
+    @GetMapping("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/**")
+    @CrossOrigin
+    public ResponseEntity<byte[]> browse(
+            HttpServletRequest request,
+            @PathVariable String namespaceName,
+            @PathVariable String extensionName,
+            @PathVariable String version
+    ) {
+        var path = UrlUtil.extractWildcardPath(request);
+        var resources = repositories.findAllResourceFileResourceDTOs(namespaceName, extensionName, version, path);
+        if(resources.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        } else if(resources.size() == 1 && resources.get(0).getName().equals(path)) {
+            return browseFile(resources.get(0), namespaceName, extensionName, version);
+        } else {
+            return browseDirectory(resources, namespaceName, extensionName, version, path);
+        }
+    }
+
+    private ResponseEntity<byte[]> browseFile(
+            FileResourceDTO resource,
+            String namespaceName,
+            String extensionName,
+            String version
+    ) {
+        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+            var headers = storageUtil.getFileResponseHeaders(resource.getName());
+            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
+        } else {
+            var namespace = new Namespace();
+            namespace.setName(namespaceName);
+
+            var extension = new Extension();
+            extension.setName(extensionName);
+            extension.setNamespace(namespace);
+
+            var extVersion = new ExtensionVersion();
+            extVersion.setVersion(version);
+            extVersion.setExtension(extension);
+
+            var fileResource = new FileResource();
+            fileResource.setName(resource.getName());
+            fileResource.setExtension(extVersion);
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(storageUtil.getLocation(fileResource))
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .build();
+        }
+    }
+
+    private ResponseEntity<byte[]> browseDirectory(
+            List<FileResourceDTO> resources,
+            String namespaceName,
+            String extensionName,
+            String version,
+            String path
+    ) {
+        if(!path.isEmpty() && !path.endsWith("/")) {
+            path += "/";
+        }
+
+        var urls = new HashSet<String>();
+        var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespaceName, extensionName, version);
+        for(var resource : resources) {
+            var name = resource.getName();
+            if(name.startsWith(path)) {
+                var index = name.indexOf('/', path.length());
+                var isDirectory = index != -1;
+                if(isDirectory) {
+                    name = name.substring(0, index);
+                }
+
+                var url = UrlUtil.createApiUrl(baseUrl, name.split("/"));
+                if(isDirectory) {
+                    url += '/';
+                }
+
+                urls.add(url);
+            }
+        }
+
+        String json;
+        try {
+            json = new ObjectMapper().writeValueAsString(urls);
+        } catch (JsonProcessingException e) {
+            throw new ErrorResultException("Failed to generate JSON: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                .body(json.getBytes(StandardCharsets.UTF_8));
+    }
+
     private ExtensionQueryResult.Extension toQueryExtension(ExtensionDTO extension, ExtensionVersionDTO latest, Map<Long, Integer> activeReviewCounts, int flags) {
         var namespace = extension.getNamespace();
 
@@ -384,6 +488,7 @@ public class VSCodeAdapter {
         queryExt.publisher = new ExtensionQueryResult.Publisher();
         queryExt.publisher.publisherId = namespace.getPublicId();
         queryExt.publisher.publisherName = namespace.getName();
+        queryExt.publisher.displayName = namespace.getName();
         queryExt.tags = latest.getTags();
         // TODO: add these
         // queryExt.releaseDate
@@ -415,7 +520,7 @@ public class VSCodeAdapter {
 
     private ExtensionQueryResult.ExtensionVersion toQueryVersion(
             ExtensionVersionDTO extVer,
-            Map<ExtensionVersionDTO, List<FileResourceDTO>> resources,
+            Map<ExtensionVersionDTO, List<FileResourceDTO>> fileResources,
             int flags
     ) {
         var queryVer = new ExtensionQueryResult.ExtensionVersion();
@@ -451,11 +556,11 @@ public class VSCodeAdapter {
             }
         }
 
-        if(resources.containsKey(extVer)) {
-            var resourcesByType = resources.get(extVer).stream()
+        if(fileResources.containsKey(extVer)) {
+            var resourcesByType = fileResources.get(extVer).stream()
                     .collect(Collectors.groupingBy(FileResourceDTO::getType));
 
-            var webResources = resourcesByType.remove(WEB_RESOURCE);
+            var resources = resourcesByType.remove(RESOURCE);
             var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, namespaceName, extensionName, extVer.getTargetPlatform(), extVer.getVersion());
 
             queryVer.files = Lists.newArrayList();
@@ -466,11 +571,13 @@ public class VSCodeAdapter {
             queryVer.addFile(FILE_VSIX, createFileUrl(resourcesByType.get(DOWNLOAD), fileBaseUrl));
             queryVer.addFile(FILE_CHANGELOG, createFileUrl(resourcesByType.get(CHANGELOG), fileBaseUrl));
 
-            if (webResources != null) {
-                for (var webResource : webResources) {
-                    var name = webResource.getName();
-                    var url = createFileUrl(webResource, fileBaseUrl);
-                    queryVer.addFile(FILE_WEB_RESOURCES + name, url);
+            if (resources != null) {
+                for (var resource : resources) {
+                    if(resource.isWebResource()) {
+                        var name = resource.getName();
+                        var url = createFileUrl(resource, fileBaseUrl);
+                        queryVer.addFile(FILE_WEB_RESOURCES + name, url);
+                    }
                 }
             }
         }

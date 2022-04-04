@@ -285,12 +285,8 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    private boolean isWebExtensionKind(ExtensionVersion extension) {
-        return extension.getTags().contains(WEB_EXTENSION_TAG);
-    }
-
     public List<FileResource> getResources(ExtensionVersion extension) {
-        var resources = new ArrayList<FileResource>();
+        var resources = new ArrayList<>(getAllResources(extension));
         var binary = getBinary(extension);
         if (binary != null)
             resources.add(binary);
@@ -309,27 +305,24 @@ public class ExtensionProcessor implements AutoCloseable {
         var icon = getIcon(extension);
         if (icon != null)
             resources.add(icon);
-        if (isWebExtensionKind(extension))
-            resources.addAll(getWebResources(extension));
+
         return resources;
     }
 
-    protected List<FileResource> getWebResources(ExtensionVersion extension) {
+    protected List<FileResource> getAllResources(ExtensionVersion extension) {
         readInputStream();
-        var namePrefix = "extension/";
         return zipFile.stream()
-                .filter(zipEntry -> zipEntry.getName().startsWith(namePrefix))
                 .map(zipEntry -> {
                     var bytes = ArchiveUtil.readEntry(zipFile, zipEntry);
                     if (bytes == null) {
                         return null;
                     }
-                    var webResource = new FileResource();
-                    webResource.setExtension(extension);
-                    webResource.setName(zipEntry.getName());
-                    webResource.setType(FileResource.WEB_RESOURCE);
-                    webResource.setContent(bytes);
-                    return webResource;
+                    var resource = new FileResource();
+                    resource.setExtension(extension);
+                    resource.setName(zipEntry.getName());
+                    resource.setType(FileResource.RESOURCE);
+                    resource.setContent(bytes);
+                    return resource;
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

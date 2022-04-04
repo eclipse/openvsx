@@ -104,8 +104,10 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
+    @Transactional(Transactional.TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
-        switch (getActiveStorageType()) {
+        var storageType = getActiveStorageType();
+        switch (storageType) {
             case STORAGE_GOOGLE:
                 googleStorage.uploadFile(resource);
                 break;
@@ -115,6 +117,8 @@ public class StorageUtilService implements IStorageService {
             default:
                 throw new RuntimeException("External storage is not available.");
         }
+
+        resource.setStorageType(storageType);
     }
 
     @Override
@@ -159,19 +163,6 @@ public class StorageUtilService implements IStorageService {
         }
     }
 
-    public Map<String, String> getWebResourceUrls(ExtensionVersion extVersion, String serverUrl) {
-        var name2Url = new HashMap<String, String>();
-        var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, extVersion);
-        var resources = repositories.findFilesByType(extVersion, Arrays.asList(WEB_RESOURCE));
-        if (resources != null) {
-            for (var resource : resources) {
-                var fileUrl = UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName());
-                name2Url.put(resource.getName(), fileUrl);
-            }
-        }
-        return name2Url;
-    }
-
     @Transactional
     public void increaseDownloadCount(ExtensionVersion extVersion, FileResource resource) {
         if(azureDownloadCountService.isEnabled()) {
@@ -201,29 +192,12 @@ public class StorageUtilService implements IStorageService {
 
     public HttpHeaders getFileResponseHeaders(String fileName) {
         var headers = new HttpHeaders();
-        headers.setContentType(getFileType(fileName));
+        headers.setContentType(StorageUtil.getFileType(fileName));
         if (fileName.endsWith(".vsix")) {
             headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
         } else {
-            headers.setCacheControl(getCacheControl(fileName));
+            headers.setCacheControl(StorageUtil.getCacheControl(fileName));
         }
         return headers;
     }
-
-    public MediaType getFileType(String fileName) {
-        if (fileName.endsWith(".vsix"))
-            return MediaType.APPLICATION_OCTET_STREAM;
-        if (fileName.endsWith(".json"))
-            return MediaType.APPLICATION_JSON;
-        var contentType = URLConnection.guessContentTypeFromName(fileName);
-        if (contentType != null)
-            return MediaType.parseMediaType(contentType);
-        return MediaType.TEXT_PLAIN;
-    }
-
-    public CacheControl getCacheControl(String fileName) {
-        // Files are requested with a version string in the URL, so their content cannot change
-        return CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic();
-    }
-    
 }

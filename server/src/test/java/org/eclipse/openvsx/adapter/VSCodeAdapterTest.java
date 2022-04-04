@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,6 +49,7 @@ import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionUtil;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -96,7 +98,7 @@ public class VSCodeAdapterTest {
     @Test
     public void testSearch() throws Exception {
         var extension = mockSearch(true);
-        mockExtensionVersionDTOs(extension, null, "");
+        mockExtensionVersionDTOs(extension, null, "universal");
 
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("search-yaml-query.json"))
@@ -133,7 +135,7 @@ public class VSCodeAdapterTest {
     @Test
     public void testFindById() throws Exception {
         var extension = mockSearch(true);
-        mockExtensionVersionDTOs(extension, null, "");
+        mockExtensionVersionDTOs(extension, null, "universal");
 
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findid-yaml-query.json"))
@@ -158,7 +160,7 @@ public class VSCodeAdapterTest {
     @Test
     public void testFindByIdDuplicate() throws Exception {
         var extension = mockSearch(true);
-        mockExtensionVersionDTOs(extension, null, "");
+        mockExtensionVersionDTOs(extension, null, "universal");
 
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findid-yaml-duplicate-query.json"))
@@ -180,7 +182,7 @@ public class VSCodeAdapterTest {
     @Test
     public void testFindByName() throws Exception {
         var extension = mockSearch(true);
-        mockExtensionVersionDTOs(extension, null, "");
+        mockExtensionVersionDTOs(extension, null, "universal");
 
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findname-yaml-query.json"))
@@ -205,7 +207,7 @@ public class VSCodeAdapterTest {
     @Test
     public void testFindByNameDuplicate() throws Exception {
         var extension = mockSearch(true);
-        mockExtensionVersionDTOs(extension, null,"");
+        mockExtensionVersionDTOs(extension, null,"universal");
 
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findname-yaml-duplicate-query.json"))
@@ -249,6 +251,121 @@ public class VSCodeAdapterTest {
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
     }
+
+    @Test
+    public void testWebResourceAsset() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
+                "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.WebResources/extension/img/logo.png"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("logo.png"));
+    }
+
+    @Test
+    public void testNotWebResourceAsset() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
+                "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.WebResources/img/logo.png"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testBrowseNotFound() throws Exception {
+        Mockito.when(repositories.findAllResourceFileResourceDTOs("foo", "bar", "1.3.4", "extension/img"))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "foo", "bar", "1.3.4", "extension/img"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testBrowseTopDir() throws Exception {
+        var vsixResource = new FileResourceDTO(15, 1, "extension.vsixmanifest", RESOURCE, STORAGE_DB, "<xml></xml>".getBytes(StandardCharsets.UTF_8));
+        var manifestResource = new FileResourceDTO(16, 1, "extension/package.json", RESOURCE, STORAGE_DB, "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8));
+        var readmeResource = new FileResourceDTO(17, 1, "extension/README.md", RESOURCE, STORAGE_DB, "README".getBytes(StandardCharsets.UTF_8));
+        var changelogResource = new FileResourceDTO(18, 1, "extension/CHANGELOG.md", RESOURCE, STORAGE_DB, "CHANGELOG".getBytes(StandardCharsets.UTF_8));
+        var licenseResource = new FileResourceDTO(19, 1, "extension/LICENSE.txt", RESOURCE, STORAGE_DB, "LICENSE".getBytes(StandardCharsets.UTF_8));
+        var iconResource = new FileResourceDTO(20, 1, "extension/images/icon128.png", RESOURCE, STORAGE_DB, "ICON128".getBytes(StandardCharsets.UTF_8));
+        Mockito.when(repositories.findAllResourceFileResourceDTOs("foo", "bar", "1.3.4", ""))
+                .thenReturn(List.of(vsixResource, manifestResource, readmeResource, changelogResource, licenseResource, iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}", "foo", "bar", "1.3.4"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("[\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension.vsixmanifest\",\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/\"]"));
+    }
+
+    @Test
+    public void testBrowseVsixManifest() throws Exception {
+        var content = "<xml></xml>".getBytes(StandardCharsets.UTF_8);
+        var vsixResource = new FileResourceDTO(15, 1, "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
+        Mockito.when(repositories.findAllResourceFileResourceDTOs("foo", "bar", "1.3.4", "extension.vsixmanifest"))
+                .thenReturn(List.of(vsixResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "foo", "bar", "1.3.4", "extension.vsixmanifest"))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(content));
+    }
+
+    @Test
+    public void testBrowseExtensionDir() throws Exception {
+        var manifestResource = new FileResourceDTO(16, 1, "extension/package.json", RESOURCE, STORAGE_DB, "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8));
+        var readmeResource = new FileResourceDTO(17, 1, "extension/README.md", RESOURCE, STORAGE_DB, "README".getBytes(StandardCharsets.UTF_8));
+        var changelogResource = new FileResourceDTO(18, 1, "extension/CHANGELOG.md", RESOURCE, STORAGE_DB, "CHANGELOG".getBytes(StandardCharsets.UTF_8));
+        var licenseResource = new FileResourceDTO(19, 1, "extension/LICENSE.txt", RESOURCE, STORAGE_DB, "LICENSE".getBytes(StandardCharsets.UTF_8));
+        var iconResource = new FileResourceDTO(20, 1, "extension/images/icon128.png", RESOURCE, STORAGE_DB, "ICON128".getBytes(StandardCharsets.UTF_8));
+
+        Mockito.when(repositories.findAllResourceFileResourceDTOs("foo", "bar", "1.3.4", "extension"))
+                .thenReturn(List.of(manifestResource, readmeResource, changelogResource, licenseResource, iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "foo", "bar", "1.3.4", "extension/"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("[" +
+                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/package.json\"," +
+                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/README.md\"," +
+                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/CHANGELOG.md\"," +
+                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/LICENSE.txt\"," +
+                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/images/\"" +
+                        "]"));
+    }
+
+    @Test
+    public void testBrowsePackageJson() throws Exception {
+        var content = "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8);
+        var manifestResource = new FileResourceDTO(16, 1, "extension/package.json", RESOURCE, STORAGE_DB, content);
+        Mockito.when(repositories.findAllResourceFileResourceDTOs("foo", "bar", "1.3.4", "extension/package.json"))
+                .thenReturn(List.of(manifestResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "foo", "bar", "1.3.4", "extension/package.json"))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(content));
+    }
+
+    @Test
+    public void testBrowseImagesDir() throws Exception {
+        var iconResource = new FileResourceDTO(20, 1, "extension/images/icon128.png", RESOURCE, STORAGE_DB, "ICON128".getBytes(StandardCharsets.UTF_8));
+        Mockito.when(repositories.findAllResourceFileResourceDTOs("foo", "bar", "1.3.4", "extension/images"))
+                .thenReturn(List.of(iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "foo", "bar", "1.3.4", "extension/images/"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("[\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/images/icon128.png\"]"));
+    }
+
+    @Test
+    public void testBrowseIcon() throws Exception {
+        var content = "ICON128".getBytes(StandardCharsets.UTF_8);
+        var iconResource = new FileResourceDTO(20, 1, "extension/images/icon128.png", RESOURCE, STORAGE_DB, content);
+        Mockito.when(repositories.findAllResourceFileResourceDTOs("foo", "bar", "1.3.4", "extension/images/icon128.png"))
+                .thenReturn(List.of(iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "foo", "bar", "1.3.4", "extension/images/icon128.png"))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(content));
+    }
+
 
     @Test
     public void testGetItemBadRequest() throws Exception {
@@ -307,6 +424,7 @@ public class VSCodeAdapterTest {
         Mockito.when(repositories.findActiveExtensionDTO(name, namespaceName))
                 .thenReturn(extension);
 
+        mockExtensionVersionDTOs(extension, targetPlatform, targetPlatform);
         return extension;
     }
 
@@ -346,7 +464,7 @@ public class VSCodeAdapterTest {
 
     private void mockFileResourceDTOs(List<ExtensionVersionDTO> extensionVersions) {
         var ids = extensionVersions.stream().map(ExtensionVersionDTO::getId).collect(Collectors.toSet());
-        var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, WEB_RESOURCE);
+        var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, RESOURCE);
 
         var files = new ArrayList<FileResourceDTO>();
         for(var id : ids) {
@@ -356,6 +474,8 @@ public class VSCodeAdapterTest {
             files.add(new FileResourceDTO(id * 100 + 8, id, "CHANGELOG.md", CHANGELOG));
             files.add(new FileResourceDTO(id * 100 + 9, id, "LICENSE.txt", LICENSE));
             files.add(new FileResourceDTO(id * 100 + 10, id, "icon128.png", ICON));
+            files.add(new FileResourceDTO(id * 100 + 11, id, "extension/themes/dark.json", RESOURCE));
+            files.add(new FileResourceDTO(id * 100 + 12, id, "extension/img/logo.png", RESOURCE));
         }
 
         Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(ids, types))
@@ -451,6 +571,14 @@ public class VSCodeAdapterTest {
         iconFile.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.ICON))
                 .thenReturn(iconFile);
+        var webResourceFile = new FileResource();
+        webResourceFile.setExtension(extVersion);
+        webResourceFile.setName("extension/img/logo.png");
+        webResourceFile.setType(FileResource.RESOURCE);
+        webResourceFile.setStorageType(STORAGE_DB);
+        webResourceFile.setContent("logo.png".getBytes());
+        Mockito.when(repositories.findFileByTypeAndName(extVersion, FileResource.RESOURCE, "extension/img/logo.png"))
+                .thenReturn(webResourceFile);
         Mockito.when(repositories.findFilesByType(extVersion, Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD, FileResource.CHANGELOG)))
                 .thenReturn(Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile));
         return extVersion;
