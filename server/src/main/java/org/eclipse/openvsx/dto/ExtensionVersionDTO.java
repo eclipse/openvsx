@@ -24,11 +24,12 @@ import java.util.stream.Collectors;
 
 public class ExtensionVersionDTO {
 
-    private long extensionId;
+    private final long extensionId;
     private ExtensionDTO extension;
 
     private final long id;
     private final String version;
+    private final String targetPlatform;
     private SemanticVersion semver;
     private final boolean preview;
     private final boolean preRelease;
@@ -58,8 +59,6 @@ public class ExtensionVersionDTO {
             long extensionId,
             String extensionPublicId,
             String extensionName,
-            Long extensionLatestId,
-            Long extensionLatestPreReleaseId,
             Double extensionAverageRating,
             int extensionDownloadCount,
             Long userId,
@@ -70,6 +69,7 @@ public class ExtensionVersionDTO {
             String userProvider,
             long id,
             String version,
+            String targetPlatform,
             boolean preview,
             boolean preRelease,
             LocalDateTime timestamp,
@@ -94,6 +94,7 @@ public class ExtensionVersionDTO {
                 extensionId,
                 id,
                 version,
+                targetPlatform,
                 preview,
                 preRelease,
                 timestamp,
@@ -114,8 +115,6 @@ public class ExtensionVersionDTO {
                 extensionId,
                 extensionPublicId,
                 extensionName,
-                extensionLatestId,
-                extensionLatestPreReleaseId,
                 extensionAverageRating,
                 extensionDownloadCount,
                 namespaceId,
@@ -138,6 +137,7 @@ public class ExtensionVersionDTO {
             long extensionId,
             long id,
             String version,
+            String targetPlatform,
             boolean preview,
             boolean preRelease,
             LocalDateTime timestamp,
@@ -158,6 +158,7 @@ public class ExtensionVersionDTO {
         this.extensionId = extensionId;
         this.id = id;
         this.version = version;
+        this.targetPlatform = targetPlatform;
         this.preview = preview;
         this.preRelease = preRelease;
         this.timestamp = timestamp;
@@ -199,6 +200,7 @@ public class ExtensionVersionDTO {
         json.averageRating = extension.getAverageRating();
         json.downloadCount = extension.getDownloadCount();
         json.version = this.getVersion();
+        json.targetPlatform = this.getTargetPlatform();
         json.preRelease = this.isPreRelease();
         if (this.getTimestamp() != null) {
             json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
@@ -276,7 +278,11 @@ public class ExtensionVersionDTO {
         return semver;
     }
 
-    public boolean isPreview() { return preview; }
+    public String getTargetPlatform() { return targetPlatform; }
+
+    public boolean isPreview() {
+        return preview;
+    }
 
     public boolean isPreRelease() {
         return preRelease;
@@ -352,5 +358,18 @@ public class ExtensionVersionDTO {
 
     public List<String> getBundledExtensions() {
         return bundledExtensions;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExtensionVersionDTO that = (ExtensionVersionDTO) o;
+        return extensionId == that.extensionId && id == that.id && preview == that.preview && preRelease == that.preRelease && Objects.equals(extension, that.extension) && Objects.equals(version, that.version) && Objects.equals(targetPlatform, that.targetPlatform) && Objects.equals(semver, that.semver) && Objects.equals(timestamp, that.timestamp) && Objects.equals(publishedWith, that.publishedWith) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(engines, that.engines) && Objects.equals(categories, that.categories) && Objects.equals(tags, that.tags) && Objects.equals(extensionKind, that.extensionKind) && Objects.equals(license, that.license) && Objects.equals(homepage, that.homepage) && Objects.equals(repository, that.repository) && Objects.equals(bugs, that.bugs) && Objects.equals(markdown, that.markdown) && Objects.equals(galleryColor, that.galleryColor) && Objects.equals(galleryTheme, that.galleryTheme) && Objects.equals(qna, that.qna) && Objects.equals(dependencies, that.dependencies) && Objects.equals(bundledExtensions, that.bundledExtensions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(extensionId, extension, id, version, targetPlatform, semver, preview, preRelease, timestamp, publishedWith, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna, dependencies, bundledExtensions);
     }
 }

@@ -148,3 +148,54 @@ export function getCookieValueByKey(key: string): string | undefined {
     }
     return undefined;
 }
+
+namespace TargetPlatform {
+    export const WIN32_IA32 = 'win32-ia32';
+    export const WIN32_X64 = 'win32-x64';
+    export const WIN32_ARM64 = 'win32-arm64';
+    export const LINUX_X64 = 'linux-x64';
+    export const LINUX_ARM64 = 'linux-arm64';
+    export const LINUX_ARMHF = 'linux-armhf';
+    export const ALPINE_X64 = 'alpine-x64';
+    export const ALPINE_ARM64 = 'alpine-arm64';
+    export const DARWIN_X64 = 'darwin-x64';
+    export const DARWIN_ARM64 = 'darwin-arm64';
+    export const WEB = 'web';
+    export const UNIVERSAL = 'universal';
+}
+
+export function getTargetPlatforms(): string[] {
+    return [
+        TargetPlatform.WIN32_IA32,
+        TargetPlatform.WIN32_X64,
+        TargetPlatform.WIN32_ARM64,
+        TargetPlatform.LINUX_X64,
+        TargetPlatform.LINUX_ARM64,
+        TargetPlatform.LINUX_ARMHF,
+        TargetPlatform.ALPINE_X64,
+        TargetPlatform.ALPINE_ARM64,
+        TargetPlatform.DARWIN_X64,
+        TargetPlatform.DARWIN_ARM64,
+        TargetPlatform.WEB,
+        TargetPlatform.UNIVERSAL
+    ];
+}
+
+export function getTargetPlatformDisplayName(targetPlatform: string): string {
+    const targetPlatformDisplayNames = new Map([
+        [TargetPlatform.UNIVERSAL, 'Universal'],
+        [TargetPlatform.WIN32_IA32, 'Windows x86'],
+        [TargetPlatform.WIN32_X64, 'Windows x64'],
+        [TargetPlatform.WIN32_ARM64, 'Windows ARM'],
+        [TargetPlatform.LINUX_X64, 'Linux x64'],
+        [TargetPlatform.LINUX_ARM64, 'Linux ARM64'],
+        [TargetPlatform.LINUX_ARMHF, 'Linux ARMhf'],
+        [TargetPlatform.ALPINE_X64, 'Alpine Linux 64 bit'],
+        [TargetPlatform.ALPINE_ARM64, 'Alpine Linux ARM64'],
+        [TargetPlatform.DARWIN_X64, 'macOS Intel'],
+        [TargetPlatform.DARWIN_ARM64, 'macOS Apple Silicon'],
+        [TargetPlatform.WEB, 'Web']
+    ]);
+
+    return targetPlatformDisplayNames.get(targetPlatform) || '';
+}

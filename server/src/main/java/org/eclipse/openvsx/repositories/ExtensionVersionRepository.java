@@ -25,9 +25,13 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
 
-    ExtensionVersion findByVersionAndExtension(String version, Extension extension);
+    Streamable<ExtensionVersion> findByVersionAndExtension(String version, Extension extension);
 
-    ExtensionVersion findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
+    ExtensionVersion findByVersionAndTargetPlatformAndExtension(String version, String targetPlatform, Extension extension);
+
+    ExtensionVersion findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String targetPlatform, String extensionName, String namespace);
+
+    Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
 
     @Query("select ev from ExtensionVersion ev where concat(',', ev.bundledExtensions, ',') like concat('%,', ?1, ',%')")
     Streamable<ExtensionVersion> findByBundledExtensions(String extensionId);
@@ -38,14 +42,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     Streamable<ExtensionVersion> findByPublishedWith(PersonalAccessToken publishedWith);
 
     Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
-
-    Streamable<ExtensionVersion> findAll();
-
-    @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 order by ev.timestamp desc")
-    Streamable<String> getVersionStrings(Extension extension);
-
-    @Query("select ev.version from ExtensionVersion ev where ev.extension = ?1 and ev.active is true order by ev.timestamp desc")
-    Streamable<String> getActiveVersionStrings(Extension extension);
 
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();

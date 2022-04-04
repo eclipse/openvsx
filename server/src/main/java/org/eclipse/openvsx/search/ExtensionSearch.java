@@ -33,6 +33,8 @@ public class ExtensionSearch {
     @Field(index = false)
     public String extensionId;
 
+    public List<String> targetPlatforms;
+
     public String displayName;
 
     public String description;
@@ -51,5 +53,4 @@ public class ExtensionSearch {
     public List<String> categories;
 
     public List<String> tags;
-
 }

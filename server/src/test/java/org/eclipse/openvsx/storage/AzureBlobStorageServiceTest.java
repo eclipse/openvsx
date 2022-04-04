@@ -47,6 +47,7 @@ public class AzureBlobStorageServiceTest {
 
         var extVersion = new ExtensionVersion();
         extVersion.setVersion("1.3.4");
+        extVersion.setTargetPlatform("universal");
         extVersion.setExtension(extension);
 
         var resource = new FileResource();

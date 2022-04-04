@@ -25,11 +25,11 @@ public interface IExtensionRegistry {
 
     NamespaceJson getNamespace(String namespace);
 
-    ExtensionJson getExtension(String namespace, String extension);
+    ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform);
 
-    ExtensionJson getExtension(String namespace, String extension, String version);
+    ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version);
 
-    ResponseEntity<byte[]> getFile(String namespace, String extension, String version, String fileName);
+    ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName);
 
     ReviewListJson getReviews(String namespace, String extension);
 

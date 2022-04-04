@@ -9,93 +9,14 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.dto;
 
-import java.time.LocalDateTime;
-
 public class ExtensionDTO {
 
     private final long id;
     private final String publicId;
     private final String name;
     private final NamespaceDTO namespace;
-    private Long latestId;
-    private ExtensionVersionDTO latest;
-    private Long latestPreReleaseId;
     private final Double averageRating;
     private final int downloadCount;
-
-    public ExtensionDTO(
-            long id,
-            String publicId,
-            String name,
-            Long latestId,
-            Long latestPreReleaseId,
-            Double averageRating,
-            int downloadCount,
-            long namespaceId,
-            String namespacePublicId,
-            String namespaceName
-    ) {
-        this(
-                id, publicId, name, averageRating, downloadCount,
-                namespaceId, namespacePublicId, namespaceName
-        );
-
-        this.latestId = latestId;
-        this.latestPreReleaseId = latestPreReleaseId;
-    }
-
-    public ExtensionDTO(
-            long id,
-            String publicId,
-            String name,
-            Double averageRating,
-            int downloadCount,
-            long namespaceId,
-            String namespacePublicId,
-            String namespaceName,
-            long latestId,
-            String latestVersion,
-            boolean latestPreview,
-            boolean latestPreRelease,
-            LocalDateTime latestTimestamp,
-            String latestDisplayName,
-            String latestDescription,
-            String latestEngines,
-            String latestCategories,
-            String latestTags,
-            String latestExtensionKind,
-            String latestRepository,
-            String latestGalleryColor,
-            String latestGalleryTheme,
-            String latestDependencies,
-            String latestBundledExtensions
-    ) {
-        this(
-                id, publicId, name, averageRating, downloadCount,
-                namespaceId, namespacePublicId, namespaceName
-        );
-
-        this.latest = new ExtensionVersionDTO(
-                id,
-                latestId,
-                latestVersion,
-                latestPreview,
-                latestPreRelease,
-                latestTimestamp,
-                latestDisplayName,
-                latestDescription,
-                latestEngines,
-                latestCategories,
-                latestTags,
-                latestExtensionKind,
-                latestRepository,
-                latestGalleryColor,
-                latestGalleryTheme,
-                latestDependencies,
-                latestBundledExtensions
-        );
-        this.latest.setExtension(this);
-    }
 
     public ExtensionDTO(
             long id,
@@ -130,18 +51,6 @@ public class ExtensionDTO {
 
     public NamespaceDTO getNamespace() {
         return namespace;
-    }
-
-    public Long getLatestId() {
-        return latestId;
-    }
-
-    public ExtensionVersionDTO getLatest() {
-        return latest;
-    }
-
-    public Long getLatestPreReleaseId() {
-        return latestPreReleaseId;
     }
 
     public Double getAverageRating() {

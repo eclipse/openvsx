@@ -42,5 +42,7 @@ public class QueryParamJson {
 
     @ApiModelProperty("Whether to include all versions of an extension, ignored if extensionVersion is specified")
     public boolean includeAllVersions;
-    
+
+    @ApiModelProperty("Name of the target platform")
+    public String targetPlatform;
 }

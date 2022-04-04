@@ -10,9 +10,7 @@
 package org.eclipse.openvsx;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -22,20 +20,15 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.adapter.VSCodeIdService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.SemanticVersion;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -120,17 +113,18 @@ public class ExtensionService {
             vsCodeIdService.createPublicId(extension);
             entityManager.persist(extension);
         } else {
-            var existingVersion = repositories.findVersion(extVersion.getVersion(), extension);
+            var existingVersion = repositories.findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
             if (existingVersion != null) {
                 throw new ErrorResultException(
                         "Extension " + namespace.getName() + "." + extension.getName()
-                        + " version " + extVersion.getVersion()
+                        + " " + extVersion.getVersion()
+                        + (TargetPlatform.isUniversal(extVersion) ? "" : " (" + extVersion.getTargetPlatform() + ")")
                         + " is already published"
                         + (existingVersion.isActive() ? "." : ", but is currently inactive and therefore not visible."));
             }
         }
-
         extVersion.setExtension(extension);
+        extension.getVersions().add(extVersion);
         entityManager.persist(extVersion);
 
         var metadataIssues = validator.validateMetadata(extVersion);
@@ -187,7 +181,13 @@ public class ExtensionService {
         var namespace = extension.getNamespace();
         resources.forEach(resource -> {
             if (resource.getType().equals(FileResource.DOWNLOAD)) {
-                resource.setName(namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + ".vsix");
+                var resourceName = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
+                if(!TargetPlatform.isUniversal(extVersion)) {
+                    resourceName += "@" + extVersion.getTargetPlatform();
+                }
+
+                resourceName += ".vsix";
+                resource.setName(resourceName);
             }
             if (storageUtil.shouldStoreExternally(resource)) {
                 storageUtil.uploadFile(resource);
@@ -206,9 +206,6 @@ public class ExtensionService {
      */
     @Transactional(TxType.REQUIRED)
     public void updateExtension(Extension extension) {
-        extension.setLatest(getLatestVersion(extension, false));
-        extension.setLatestPreRelease(getLatestVersion(extension, true));
-
         if (extension.getLatest() != null) {
             // There is at least one active version => activate the extension
             extension.setActive(true);
@@ -218,58 +215,6 @@ public class ExtensionService {
             extension.setActive(false);
             search.removeSearchEntry(extension);
         }
-    }
-
-    private ExtensionVersion getLatestVersion(Extension extension, boolean onlyPreRelease) {
-        var versions = repositories.findActiveVersions(extension);
-        if(onlyPreRelease) {
-            versions = versions.filter(ExtensionVersion::isPreRelease);
-        }
-
-        return getLatestVersion(versions);
-    }
-
-    /**
-     * Update the given extension after one or more version have been deleted. The given list
-     * of versions should reflect the applied deletion.
-     */
-    @Transactional(TxType.REQUIRED)
-    public void updateExtension(Extension extension, Iterable<ExtensionVersion> versions) {
-        extension.setLatest(getLatestVersion(versions, false));
-        extension.setLatestPreRelease(getLatestVersion(versions, true));
-
-        if (extension.getLatest() != null) {
-            // There is at least one active version => activate the extension
-            extension.setActive(true);
-            search.updateSearchEntry(extension);
-        } else if (extension.isActive()) {
-            // All versions are deactivated => deactivate the extensions
-            extension.setActive(false);
-            search.removeSearchEntry(extension);
-        }
-    }
-
-    private ExtensionVersion getLatestVersion(Iterable<ExtensionVersion> versions, boolean onlyPreRelease) {
-        var filteredVersions = Streamable.of(versions).filter(ExtensionVersion::isActive);
-        if(onlyPreRelease) {
-            filteredVersions = filteredVersions.filter(ExtensionVersion::isPreRelease);
-        }
-
-        return getLatestVersion(filteredVersions);
-    }
-
-    private ExtensionVersion getLatestVersion(Streamable<ExtensionVersion> versions) {
-        ExtensionVersion latest = null;
-        SemanticVersion latestSemver = null;
-        for (var extVer : versions) {
-            var semver = extVer.getSemanticVersion();
-            if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
-                latest = extVer;
-                latestSemver = semver;
-            }
-        }
-
-        return latest;
     }
 
     /**
@@ -290,5 +235,4 @@ public class ExtensionService {
             updateExtension(extension);
         }
     }
-    
 }

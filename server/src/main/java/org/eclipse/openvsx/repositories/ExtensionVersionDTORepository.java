@@ -17,9 +17,8 @@ import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
@@ -30,11 +29,12 @@ public class ExtensionVersionDTORepository {
     @Autowired
     DSLContext dsl;
 
-    public List<ExtensionVersionDTO> findAllActiveByExtensionId(Collection<Long> extensionIds) {
-        return dsl.select(
+    public List<ExtensionVersionDTO> findAllActiveByExtensionIdAndTargetPlatform(Collection<Long> extensionIds, String targetPlatform) {
+        var query = dsl.select(
                     EXTENSION_VERSION.EXTENSION_ID,
                     EXTENSION_VERSION.ID,
                     EXTENSION_VERSION.VERSION,
+                    EXTENSION_VERSION.TARGET_PLATFORM,
                     EXTENSION_VERSION.PREVIEW,
                     EXTENSION_VERSION.PRE_RELEASE,
                     EXTENSION_VERSION.TIMESTAMP,
@@ -52,58 +52,61 @@ public class ExtensionVersionDTORepository {
                 )
                 .from(EXTENSION_VERSION)
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
-                .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds))
-                .fetchInto(ExtensionVersionDTO.class);
+                .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
+
+        if(targetPlatform != null) {
+            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
+
+        return query.fetchInto(ExtensionVersionDTO.class);
     }
 
-    List<ExtensionVersionDTO> findAllActiveByExtensionPublicId(String extensionPublicId) {
-        return fetch(findAllActive().and(EXTENSION.PUBLIC_ID.eq(extensionPublicId)));
-    }
-
-    List<ExtensionVersionDTO> findAllActiveByNamespacePublicId(String namespacePublicId) {
-        return fetch(findAllActive().and(NAMESPACE.PUBLIC_ID.eq(namespacePublicId)));
-    }
-
-    ExtensionVersionDTO findActiveByVersionAndExtensionNameAndNamespaceName(String extensionVersion, String extensionName, String namespaceName) {
-        return findAllActive()
-                .and(EXTENSION_VERSION.VERSION.eq(extensionVersion))
-                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)))
-                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)))
-                .fetchOneInto(ExtensionVersionDTO.class);
-    }
-
-    List<ExtensionVersionDTO> findAllActiveByExtensionNameAndNamespaceName(String extensionName, String namespaceName) {
-        var query = findAllActive()
-                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)))
-                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)));
+    public List<ExtensionVersionDTO> findAllActiveByExtensionPublicId(String targetPlatform, String extensionPublicId) {
+        var query = findAllActive().and(EXTENSION.PUBLIC_ID.eq(extensionPublicId));
+        if(targetPlatform != null) {
+            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
 
         return fetch(query);
     }
 
-    List<ExtensionVersionDTO> findAllActiveByNamespaceName(String namespaceName) {
-        return fetch(findAllActive().and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName))));
-    }
-
-    List<ExtensionVersionDTO> findAllActiveByExtensionName(String extensionName) {
-        return fetch(findAllActive().and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName))));
-    }
-
-    public Map<Long, List<String>> getVersionStrings(Collection<Long> extensionIds, boolean onlyIncludeActive) {
-        var query = dsl.select(EXTENSION_VERSION.EXTENSION_ID, EXTENSION_VERSION.VERSION)
-                .from(EXTENSION_VERSION)
-                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                .where(EXTENSION.ID.in(extensionIds));
-
-        if(onlyIncludeActive) {
-            query = query.and(EXTENSION_VERSION.ACTIVE.eq(true));
+    public List<ExtensionVersionDTO> findAllActiveByNamespacePublicId(String targetPlatform, String namespacePublicId) {
+        var query = findAllActive().and(NAMESPACE.PUBLIC_ID.eq(namespacePublicId));
+        if(targetPlatform != null) {
+            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
-        return query.orderBy(EXTENSION_VERSION.TIMESTAMP.desc())
-                .fetch()
-                .stream()
-                .collect(Collectors.groupingBy(
-                        r -> r.get(EXTENSION_VERSION.EXTENSION_ID),
-                        Collectors.mapping(r -> r.get(EXTENSION_VERSION.VERSION), Collectors.toList())));
+        return fetch(query);
+    }
+
+    public List<ExtensionVersionDTO> findAllActiveByExtensionNameAndNamespaceName(String targetPlatform, String extensionName, String namespaceName) {
+        var query = findAllActive()
+                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)))
+                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)));
+
+        if(targetPlatform != null) {
+            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
+
+        return fetch(query);
+    }
+
+    public List<ExtensionVersionDTO> findAllActiveByNamespaceName(String targetPlatform, String namespaceName) {
+        var query = findAllActive().and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)));
+        if(targetPlatform != null) {
+            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
+
+        return fetch(query);
+    }
+
+    List<ExtensionVersionDTO> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
+        var query = findAllActive().and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)));
+        if(targetPlatform != null) {
+            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
+
+        return fetch(query);
     }
 
     private SelectConditionStep<Record> findAllActive() {
@@ -114,8 +117,6 @@ public class ExtensionVersionDTORepository {
                     EXTENSION.ID,
                     EXTENSION.PUBLIC_ID,
                     EXTENSION.NAME,
-                    EXTENSION.LATEST_ID,
-                    EXTENSION.LATEST_PRE_RELEASE_ID,
                     EXTENSION.AVERAGE_RATING,
                     EXTENSION.DOWNLOAD_COUNT,
                     USER_DATA.ID,
@@ -126,6 +127,7 @@ public class ExtensionVersionDTORepository {
                     USER_DATA.PROVIDER,
                     EXTENSION_VERSION.ID,
                     EXTENSION_VERSION.VERSION,
+                    EXTENSION_VERSION.TARGET_PLATFORM,
                     EXTENSION_VERSION.PREVIEW,
                     EXTENSION_VERSION.PRE_RELEASE,
                     EXTENSION_VERSION.TIMESTAMP,

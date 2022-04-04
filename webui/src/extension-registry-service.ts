@@ -31,12 +31,16 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'logout']);
     }
 
-    getExtensionApiUrl(ext: { namespace: string, name: string, version?: string }): string {
-        if (ext.version) {
-            return createAbsoluteURL([this.serverUrl, 'api', ext.namespace, ext.name, ext.version]);
-        } else {
-            return createAbsoluteURL([this.serverUrl, 'api', ext.namespace, ext.name]);
+    getExtensionApiUrl(ext: { namespace: string, name: string, target?: string, version?: string }): string {
+        const arr = [this.serverUrl, 'api', ext.namespace, ext.name];
+        if (ext.target) {
+            arr.push(ext.target);
         }
+        if (ext.version) {
+            arr.push(ext.version);
+        }
+
+        return createAbsoluteURL(arr);
     }
 
     search(filter?: ExtensionFilter): Promise<Readonly<SearchResult | ErrorResult>> {
@@ -279,7 +283,7 @@ export class AdminService {
         });
     }
 
-    async deleteExtensions(req: { namespace: string, extension: string, versions?: string[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteExtensions(req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfToken = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -292,7 +296,7 @@ export class AdminService {
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', req.namespace, req.extension, 'delete']),
             headers,
-            payload: req.versions
+            payload: req.targetPlatformVersions
         });
     }
 

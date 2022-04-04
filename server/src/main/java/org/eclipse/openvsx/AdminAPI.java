@@ -9,37 +9,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.time.DateTimeException;
-import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.net.URI;
-import java.util.stream.LongStream;
 
 import com.google.common.base.Strings;
 
-import org.eclipse.openvsx.entities.AdminStatistics;
-import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.PersistedLog;
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.NamespaceMembershipListJson;
-import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.StatsJson;
-import org.eclipse.openvsx.json.UserPublishInfoJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.SemanticVersion;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
@@ -177,14 +160,17 @@ public class AdminAPI {
 
             ExtensionJson json;
             // Don't rely on the 'latest' relationship here because the extension might be inactive
-            var extVersion = getLatestVersion(extension);
-            if (extVersion == null) {
+            var latest = VersionUtil.getLatest(repositories.findVersions(extension), Collections.emptyList());
+            if (latest == null) {
                 json = new ExtensionJson();
                 json.namespace = extension.getNamespace().getName();
                 json.name = extension.getName();
                 json.allVersions = Collections.emptyMap();
+                json.allTargetPlatformVersions = Collections.emptyMap();
             } else {
-                json = local.toExtensionVersionJson(extVersion, false);
+                json = local.toExtensionVersionJson(latest, null, false);
+                json.allTargetPlatformVersions = extension.getVersions().stream()
+                        .collect(Collectors.groupingBy(ExtensionVersion::getVersion, Collectors.mapping(ExtensionVersion::getTargetPlatform, Collectors.toList())));
             }
             json.active = extension.isActive();
             return ResponseEntity.ok(json);
@@ -193,35 +179,22 @@ public class AdminAPI {
         }
     }
 
-    private ExtensionVersion getLatestVersion(Extension extension) {
-        ExtensionVersion latest = null;
-        SemanticVersion latestSemver = null;
-        for (var extVer : repositories.findVersions(extension)) {
-            var semver = extVer.getSemanticVersion();
-            if (latestSemver == null || latestSemver.compareTo(semver) < 0) {
-                latest = extVer;
-                latestSemver = semver;
-            }
-        }
-        return latest;
-    }
-
     @PostMapping(
         path = "/admin/extension/{namespaceName}/{extensionName}/delete",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> deleteExtension(@PathVariable String namespaceName,
                                                       @PathVariable String extensionName,
-                                                      @RequestBody(required = false) List<String> versions) {
+                                                      @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions) {
         try {
             ResultJson result;
             var adminUser = admins.checkAdminUser();
-            if(versions == null) {
+            if(targetVersions == null) {
                 result = admins.deleteExtension(namespaceName, extensionName, adminUser);
             } else {
                 var results = new ArrayList<ResultJson>();
-                for(var version : versions) {
-                    results.add(admins.deleteExtensionVersion(namespaceName, extensionName, version, adminUser));
+                for(var targetVersion : targetVersions) {
+                    results.add(admins.deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform, targetVersion.version, adminUser));
                 }
 
                 result = new ResultJson();

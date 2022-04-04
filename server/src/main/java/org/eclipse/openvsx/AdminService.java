@@ -77,13 +77,17 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtensionVersion(String namespaceName, String extensionName, String version, UserData admin)
+    public ResultJson deleteExtension(String namespaceName, String extensionName, String targetPlatform, String version, UserData admin)
             throws ErrorResultException {
-        var extVersion = repositories.findVersion(version, extensionName, namespaceName);
+        var extVersion = repositories.findVersion(version, targetPlatform, extensionName, namespaceName);
         if (extVersion == null) {
-            throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName + " version " + version,
-                    HttpStatus.NOT_FOUND);
+            var message = "Extension not found: " + namespaceName + "." + extensionName +
+                    " " + version +
+                    (Strings.isNullOrEmpty(targetPlatform) ? "" : " (" + targetPlatform + ")");
+
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
         }
+
         return deleteExtension(extVersion, admin);
     }
 
@@ -105,14 +109,13 @@ public class AdminService {
                         .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
                         .collect(Collectors.joining(", ")));
         }
-        extension.setLatest(null);
-        extension.setLatestPreRelease(null);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
         for (var review : repositories.findAllReviews(extension)) {
             entityManager.remove(review);
         }
+
         entityManager.remove(extension);
         search.removeSearchEntry(extension);
 
@@ -129,10 +132,10 @@ public class AdminService {
         }
         removeExtensionVersion(extVersion);
         versions.remove(extVersion);
-        extensions.updateExtension(extension, versions);
+        extensions.updateExtension(extension);
 
         var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName()
-                + " version " + extVersion.getVersion());
+                + " " + extVersion.getVersion());
         logAdminAction(admin, result);
         return result;
     }

@@ -39,7 +39,7 @@ You can use `ovsx` for downloading extensions from an Open VSX instance. Extensi
 
 Variants:
  * `ovsx get <extension>`
-   downloads an extension and saves it in a file as specified in its download URL (usually in the format `namespace.extension-version.vsix`) in the current working directory.
+   downloads an extension and saves it to a file as specified in its download URL in the current working directory. This is usually in the format `namespace.extension-version.vsix`. For [target platform specific extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions) (e.g. `linux-x64`) the format is `namespace.extension-version@target.vsix`.
  * `ovsx get <extension> -o <path>`
    downloads an extension and saves it in the specified file or directory.
  * `ovsx get <extension> --metadata`

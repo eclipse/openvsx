@@ -28,9 +28,7 @@ import org.eclipse.openvsx.json.ReviewListJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.search.ISearchService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
 import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -53,6 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 public class RegistryAPI {
     private final static int REVIEW_TITLE_SIZE = 255;
     private final static int REVIEW_COMMENT_SIZE = 2048;
+    private final static String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
 
     @Autowired
     LocalRegistryService local;
@@ -127,7 +126,7 @@ public class RegistryAPI {
             try {
                 return ResponseEntity.ok()
                         .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                        .body(registry.getExtension(namespace, extension));
+                        .body(registry.getExtension(namespace, extension, null));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -137,7 +136,44 @@ public class RegistryAPI {
     }
 
     @GetMapping(
-        path = "/api/{namespace}/{extension}/{version}",
+        path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @ApiOperation("Provides metadata of the latest version of an extension")
+    @ApiResponses({
+        @ApiResponse(
+            code = 200,
+            message = "The extension metadata are returned in JSON format"
+        ),
+        @ApiResponse(
+            code = 404,
+            message = "The specified extension could not be found"
+        )
+    })
+    public ResponseEntity<ExtensionJson> getExtension(
+            @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @ApiParam(value = "Extension name", example = "java")
+            String extension,
+            @PathVariable @ApiParam(value = "Target platform", example = TargetPlatform.NAME_LINUX_ARM64, allowableValues = TargetPlatform.NAMES_PARAM_METADATA)
+            CharSequence targetPlatform
+        ) {
+        for (var registry : getRegistries()) {
+            try {
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(registry.getExtension(namespace, extension, targetPlatform.toString()));
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " (" + targetPlatform + ")");
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping(
+        path = "/api/{namespace}/{extension}/{version:" + VERSION_PATH_PARAM_REGEX + "}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -164,16 +200,55 @@ public class RegistryAPI {
             try {
                 return ResponseEntity.ok()
                         .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
-                        .body(registry.getExtension(namespace, extension, version));
+                        .body(registry.getExtension(namespace, extension, null, version));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " version " + version);
+        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " " + version);
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
-    @GetMapping("/api/{namespace}/{extension}/{version}/file/**")
+    @GetMapping(
+        path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/{version:" + VERSION_PATH_PARAM_REGEX + "}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @ApiOperation("Provides metadata of a specific version of an extension")
+    @ApiResponses({
+        @ApiResponse(
+            code = 200,
+            message = "The extension metadata are returned in JSON format"
+        ),
+        @ApiResponse(
+            code = 404,
+            message = "The specified extension could not be found"
+        )
+    })
+    public ResponseEntity<ExtensionJson> getExtension(
+            @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @ApiParam(value = "Extension name", example = "java")
+            String extension,
+            @PathVariable @ApiParam(value = "Target platform", example = TargetPlatform.NAME_LINUX_ARM64, allowableValues = TargetPlatform.NAMES_PARAM_METADATA)
+            String targetPlatform,
+            @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
+            String version
+        ) {
+        for (var registry : getRegistries()) {
+            try {
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                        .body(registry.getExtension(namespace, extension, targetPlatform, version));
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " " + version + " (" + targetPlatform + ")");
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/api/{namespace}/{extension}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
     @CrossOrigin
     @ApiOperation("Access a file packaged by an extension")
     @ApiResponses({
@@ -203,11 +278,55 @@ public class RegistryAPI {
             String extension,
             @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
             String version
-        ) {
-        var fileName = UrlUtil.extractWildcardPath(request);
+    ) {
+        var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{version}/file/**");
         for (var registry : getRegistries()) {
             try {
-                return registry.getFile(namespace, extension, version, fileName);
+                return registry.getFile(namespace, extension, TargetPlatform.NAME_UNIVERSAL, version, fileName);
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+        throw new NotFoundException();
+    }
+
+    @GetMapping("/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
+    @CrossOrigin
+    @ApiOperation("Access a file packaged by an extension")
+    @ApiResponses({
+        @ApiResponse(
+            code = 200,
+            message = "The file content is returned"
+        ),
+        @ApiResponse(
+            code = 302,
+            message = "The file is found at the specified location",
+            responseHeaders = @ResponseHeader(
+                name = "Location",
+                description = "The actual URL where the file can be accessed",
+                response = String.class
+            )
+        ),
+        @ApiResponse(
+            code = 404,
+            message = "The specified file could not be found"
+        )
+    })
+    public ResponseEntity<byte[]> getFile(
+            HttpServletRequest request,
+            @PathVariable @ApiParam(value = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @ApiParam(value = "Extension name", example = "java")
+            String extension,
+            @PathVariable @ApiParam(value = "Target platform", example = TargetPlatform.NAME_LINUX_ARM64, allowableValues = TargetPlatform.NAMES_PARAM_METADATA)
+            String targetPlatform,
+            @PathVariable @ApiParam(value = "Extension version", example = "0.65.0")
+            String version
+        ) {
+        var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{targetPlatform}/{version}/file/**");
+        for (var registry : getRegistries()) {
+            try {
+                return registry.getFile(namespace, extension, targetPlatform, version, fileName);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
@@ -273,6 +392,9 @@ public class RegistryAPI {
             @RequestParam(required = false)
             @ApiParam(value = "Extension category as shown in the UI", example = "Programming Languages")
             String category,
+            @RequestParam(required = false)
+            @ApiParam(value = "Target platform", example = TargetPlatform.NAME_LINUX_ARM64, allowableValues = TargetPlatform.NAMES_PARAM_METADATA)
+            String targetPlatform,
             @RequestParam(defaultValue = "18")
             @ApiParam(value = "Maximal number of entries to return", allowableValues = "range[0,infinity]")
             int size,
@@ -298,7 +420,7 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var options = new ISearchService.Options(query, category, size, offset, sortOrder, sortBy, includeAllVersions);
+        var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions);
         var result = new SearchResultJson();
         result.extensions = new ArrayList<>(size);
         for (var registry : getRegistries()) {
@@ -377,7 +499,10 @@ public class RegistryAPI {
             String namespaceUuid,
             @RequestParam(required = false)
             @ApiParam(value = "Whether to include all versions of an extension, ignored if extensionVersion is specified")
-            boolean includeAllVersions
+            boolean includeAllVersions,
+            @RequestParam(required = false)
+            @ApiParam(value = "Target platform", example = TargetPlatform.NAME_LINUX_X64, allowableValues = TargetPlatform.NAMES_PARAM_METADATA)
+            String targetPlatform
         ) {
         var param = new QueryParamJson();
         param.namespaceName = namespaceName;
@@ -387,6 +512,7 @@ public class RegistryAPI {
         param.extensionUuid = extensionUuid;
         param.namespaceUuid = namespaceUuid;
         param.includeAllVersions = includeAllVersions;
+        param.targetPlatform = targetPlatform;
 
         var result = new QueryResultJson();
         for (var registry : getRegistries()) {
@@ -535,7 +661,7 @@ public class RegistryAPI {
         try {
             var json = local.publish(content, token);
             var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "api", json.namespace, json.name, json.version);
+            var url = UrlUtil.createApiVersionUrl(serverUrl, json);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);

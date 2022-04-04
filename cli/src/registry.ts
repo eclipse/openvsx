@@ -70,9 +70,12 @@ export class Registry {
         }
     }
 
-    getMetadata(namespace: string, extension: string): Promise<Extension> {
+    getMetadata(namespace: string, extension: string, target?: string): Promise<Extension> {
         try {
-            const path = `api/${encodeURIComponent(namespace)}/${encodeURIComponent(extension)}`;
+            let path = `api/${encodeURIComponent(namespace)}/${encodeURIComponent(extension)}`;
+            if (target) {
+                path += `/${encodeURIComponent(target)}`;
+            }
             return this.getJson(this.getUrl(path));
         } catch (err) {
             return Promise.reject(err);
@@ -240,6 +243,7 @@ export interface RegistryOptions {
 
 export interface Response {
     success?: string;
+    warning?: string;
     error?: string;
 }
 
@@ -252,6 +256,7 @@ export interface Extension extends Response {
     name: string;
     namespace: string;
     version: string;
+    targetPlatform: string;
     publishedBy: UserData;
     verified: boolean;
     // key: version, value: url

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class UriUtilTest {
+public class UrlUtilTest {
 
     @Mock
     private HttpServletRequest request;
@@ -35,6 +35,34 @@ public class UriUtilTest {
     @AfterEach
     public void releaseMocks() throws Exception {
         closeable.close();
+    }
+
+    @Test
+    public void testCreateApiFileUrl() throws Exception {
+        var baseUrl = "http://localhost/";
+        assertThat(UrlUtil.createApiFileUrl(baseUrl, "foo", "bar", "linux-x64", "0.1.0", "foo.bar-0.1.0@linux-x64.vsix"))
+                .isEqualTo("http://localhost/api/foo/bar/linux-x64/0.1.0/file/foo.bar-0.1.0@linux-x64.vsix");
+    }
+
+    @Test
+    public void testCreateApiFileUrlUniversalTarget() throws Exception {
+        var baseUrl = "http://localhost/";
+        assertThat(UrlUtil.createApiFileUrl(baseUrl, "foo", "bar", "universal", "0.1.0", "foo.bar-0.1.0.vsix"))
+                .isEqualTo("http://localhost/api/foo/bar/0.1.0/file/foo.bar-0.1.0.vsix");
+    }
+
+    @Test
+    public void testCreateApiVersionUrl() throws Exception {
+        var baseUrl = "http://localhost/";
+        assertThat(UrlUtil.createApiVersionUrl(baseUrl, "foo", "bar", "universal", "1.0.0"))
+                .isEqualTo("http://localhost/api/foo/bar/universal/1.0.0");
+    }
+
+    @Test
+    public void testCreateApiVersionUrlNoTarget() throws Exception {
+        var baseUrl = "http://localhost/";
+        assertThat(UrlUtil.createApiVersionUrl(baseUrl, "foo", "bar", null, "1.0.0"))
+                .isEqualTo("http://localhost/api/foo/bar/1.0.0");
     }
 
     @Test

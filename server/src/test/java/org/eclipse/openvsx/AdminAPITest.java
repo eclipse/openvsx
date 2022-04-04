@@ -48,6 +48,7 @@ import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -278,19 +279,21 @@ public class AdminAPITest {
         mockAdminUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
-                .content("[\"2\"]")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"2\"}]")
                 .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz version 2")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 2")));
     }
 
     @Test
     public void testDeleteLastExtensionVersion() throws Exception {
         mockAdminUser();
         mockExtension(1, 0, 0);
-        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete?version={version}", "foobar", "baz", "1")
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"1\"}]")
+                .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
@@ -536,7 +539,7 @@ public class AdminAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deactivated 1 tokens and deactivated 1 extensions of user github/test.")));
-        
+
         assertThat(token.isActive()).isFalse();
         assertThat(versions.get(0).isActive()).isFalse();
     }
@@ -745,33 +748,34 @@ public class AdminAPITest {
         for (var i = 0; i < numberOfVersions; i++) {
             var extVersion = new ExtensionVersion();
             extVersion.setExtension(extension);
+            extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
             extVersion.setVersion(Integer.toString(i + 1));
             extVersion.setActive(true);
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
             Mockito.when(repositories.findFilesByType(eq(extVersion), any()))
                     .thenReturn(Streamable.empty());
-            Mockito.when(repositories.findVersion(extVersion.getVersion(), "baz", "foobar"))
+            Mockito.when(repositories.findVersion(extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
+            Mockito.when(repositories.findTargetPlatformVersions(extVersion.getVersion(), "baz", "foobar"))
+                    .thenReturn(Streamable.of(versions));
             versions.add(extVersion);
         }
-        extension.setLatest(versions.get(versions.size() - 1));
+        extension.getVersions().addAll(versions);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
         Mockito.when(repositories.findActiveVersions(extension))
                 .thenReturn(Streamable.of(versions));
-        Mockito.when(repositories.getVersionStrings(extension))
-                .thenReturn(Streamable.of(versions).map(ev -> ev.getVersion()));
-        Mockito.when(repositories.getActiveVersionStrings(extension))
-                .thenReturn(Streamable.of(versions).map(ev -> ev.getVersion()));
 
         var bundleExt = new Extension();
         bundleExt.setName("bundle");
         bundleExt.setNamespace(namespace);
+
         var bundles = new ArrayList<ExtensionVersion>(numberOfBundles);
         for (var i = 0; i < numberOfBundles; i++) {
             var bundle = new ExtensionVersion();
             bundle.setExtension(bundleExt);
+            bundle.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
             bundle.setVersion(Integer.toString(i + 1));
             bundles.add(bundle);
         }
@@ -781,10 +785,12 @@ public class AdminAPITest {
         var dependantExt = new Extension();
         dependantExt.setName("dependant");
         dependantExt.setNamespace(namespace);
+
         var dependants = new ArrayList<ExtensionVersion>(numberOfDependants);
         for (var i = 0; i < numberOfDependants; i++) {
             var dependant = new ExtensionVersion();
             dependant.setExtension(dependantExt);
+            dependant.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
             dependant.setVersion(Integer.toString(i + 1));
             dependants.add(dependant);
         }

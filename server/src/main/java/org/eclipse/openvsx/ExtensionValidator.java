@@ -22,26 +22,19 @@ import java.util.regex.Pattern;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ExtensionValidator {
 
-    private final static List<String> MARKDOWN_VALUES = Arrays.asList(new String[] {
-        "github", "standard"
-    });
+    private final static List<String> MARKDOWN_VALUES = List.of("github", "standard");
 
-    private final static List<String> GALLERY_THEME_VALUES = Arrays.asList(new String[] {
-        "dark", "light"
-    });
+    private final static List<String> GALLERY_THEME_VALUES = List.of("dark", "light");
 
-    private final static List<String> QNA_VALUES = Arrays.asList(new String[] {
-        "marketplace", "false"
-    });
+    private final static List<String> QNA_VALUES = List.of("marketplace", "false");
 
-    private final static List<Character> VERSION_CHARS = Arrays.asList(new Character[] {
-        '$', '+', '-', ',', '.', ':', ';', '_'
-    });
+    private final static List<Character> VERSION_CHARS = List.of('$', '+', '-', ',', '.', ':', ';', '_');
 
     private final static int DEFAULT_STRING_SIZE = 255;
     private final static int DESCRIPTION_SIZE = 2048;
@@ -78,6 +71,7 @@ public class ExtensionValidator {
     public List<Issue> validateMetadata(ExtensionVersion extVersion) {
         var issues = new ArrayList<Issue>();
         checkVersion(extVersion.getVersion(), issues);
+        checkTargetPlatform(extVersion.getTargetPlatform(), issues);
         checkCharacters(extVersion.getDisplayName(), "displayName", issues);
         checkFieldSize(extVersion.getDisplayName(), DEFAULT_STRING_SIZE, "displayName", issues);
         checkCharacters(extVersion.getDescription(), "description", issues);
@@ -120,6 +114,12 @@ public class ExtensionValidator {
                 issues.add(new Issue("Invalid character '" + c + "' found in version (index " + i + ")."));
                 return;
             }
+        }
+    }
+
+    private void checkTargetPlatform(String targetPlatform, List<Issue> issues) {
+        if(!TargetPlatform.isValid(targetPlatform)) {
+            issues.add(new Issue("Unsupported target platform '" + targetPlatform + "'"));
         }
     }
 

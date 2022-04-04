@@ -219,7 +219,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                             userLoading={this.state.userLoading}
                                         />
                                     } />
-                                <Route path={ExtensionDetailRoutes.MAIN}
+                                <Route path={[ExtensionDetailRoutes.MAIN_TARGET, ExtensionDetailRoutes.MAIN]}
                                     render={routeProps =>
                                         <ExtensionDetail
                                             {...routeProps}

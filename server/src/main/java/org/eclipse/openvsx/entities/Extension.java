@@ -10,19 +10,15 @@
 package org.eclipse.openvsx.entities;
 
 import java.time.ZoneOffset;
-import java.util.List;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
 
 import org.eclipse.openvsx.search.ExtensionSearch;
+import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionUtil;
 
 @Entity
 @Table(uniqueConstraints = {
@@ -46,18 +42,11 @@ public class Extension {
     @OneToMany(mappedBy = "extension")
     List<ExtensionVersion> versions;
 
-    @OneToOne
-    ExtensionVersion latest;
-
-    @OneToOne
-    ExtensionVersion latestPreRelease;
-
     boolean active;
 
     Double averageRating;
 
     int downloadCount;
-
 
     /**
      * Convert to a search entity for Elasticsearch.
@@ -70,6 +59,11 @@ public class Extension {
         search.extensionId = search.namespace + "." + search.name;
         search.averageRating = this.getAverageRating();
         search.downloadCount = this.getDownloadCount();
+        search.targetPlatforms = this.getVersions().stream()
+                .map(ExtensionVersion::getTargetPlatform)
+                .distinct()
+                .collect(Collectors.toList());
+
         var extVer = this.getLatest();
         search.displayName = extVer.getDisplayName();
         search.description = extVer.getDescription();
@@ -106,29 +100,9 @@ public class Extension {
 	public Namespace getNamespace() {
 		return namespace;
     }
-    
-    public List<ExtensionVersion> getVersions() {
-        return versions;
-    }
 
 	public void setNamespace(Namespace namespace) {
 		this.namespace = namespace;
-	}
-
-	public ExtensionVersion getLatest() {
-		return latest;
-	}
-
-	public void setLatest(ExtensionVersion latest) {
-		this.latest = latest;
-	}
-
-	public ExtensionVersion getLatestPreRelease() {
-		return latestPreRelease;
-	}
-
-	public void setLatestPreRelease(ExtensionVersion latestPreRelease) {
-		this.latestPreRelease = latestPreRelease;
 	}
 
     public boolean isActive() {
@@ -155,4 +129,45 @@ public class Extension {
         this.downloadCount = downloadCount;
     }
 
+    public List<ExtensionVersion> getVersions() {
+        if(versions == null) {
+            versions = new ArrayList<>();
+        }
+
+        return versions;
+    }
+
+    public ExtensionVersion getLatest() {
+        return getLatest(null, true);
+    }
+
+    public ExtensionVersion getLatest(String targetPlatform, boolean onlyActive) {
+        var filters = new ArrayList<Predicate<ExtensionVersion>>();
+        if(TargetPlatform.isValid(targetPlatform)) {
+            filters.add(ev -> ev.getTargetPlatform().equals(targetPlatform));
+        }
+        if(onlyActive) {
+            filters.add(ExtensionVersion::isActive);
+        }
+
+        return VersionUtil.getLatest(getVersions(), filters);
+    }
+
+    public ExtensionVersion getLatestPreRelease() {
+        return getLatestPreRelease(null, true);
+    }
+
+    public ExtensionVersion getLatestPreRelease(String targetPlatform, boolean onlyActive) {
+        var filters = new ArrayList<Predicate<ExtensionVersion>>();
+        if(TargetPlatform.isValid(targetPlatform)) {
+            filters.add(ev -> ev.getTargetPlatform().equals(targetPlatform));
+        }
+
+        filters.add(ExtensionVersion::isPreRelease);
+        if(onlyActive) {
+            filters.add(ExtensionVersion::isActive);
+        }
+
+        return VersionUtil.getLatest(getVersions(), filters);
+    }
 }

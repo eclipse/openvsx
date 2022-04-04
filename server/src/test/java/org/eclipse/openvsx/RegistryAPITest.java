@@ -36,14 +36,7 @@ import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionReview;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -62,6 +55,7 @@ import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -160,10 +154,45 @@ public class RegistryAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testExtensionNonDefaultTarget() throws Exception {
+        var extVersion = mockExtension("alpine-x64");
+        extVersion.setDisplayName("Foo Bar (alpine x64)");
+
+        mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (alpine x64)";
+                    e.targetPlatform = "alpine-x64";
+                })));
+    }
+
+    @Test
+    public void testExtensionLinuxTarget() throws Exception {
+        var extVersion = mockExtension("linux-x64");
+        extVersion.setDisplayName("Foo Bar (linux x64)");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}", "foo", "bar", "linux-x64"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.targetPlatform = "linux-x64";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (linux x64)";
                 })));
     }
 
@@ -187,17 +216,57 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testUnknownExtensionTarget() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}", "foo", "bar", "win32-ia32"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(errorJson("Extension not found: foo.bar (win32-ia32)")));
+    }
+
+    @Test
     public void testExtensionVersion() throws Exception {
         mockExtension();
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testExtensionVersionNonDefaultTarget() throws Exception {
+        var extVersion = mockExtension("darwin-arm64");
+        extVersion.setDisplayName("Foo Bar (darwin arm64)");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1.0.0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (darwin arm64)";
+                })));
+    }
+
+    @Test
+    public void testExtensionVersionMacOSXTarget() throws Exception {
+        var extVersion = mockExtension("darwin-arm64");
+        extVersion.setDisplayName("Foo Bar (darwin arm64)");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "darwin-arm64", "1.0.0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (darwin arm64)";
                 })));
     }
 
@@ -209,10 +278,103 @@ public class RegistryAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
+                    e.versionAlias = List.of("latest");
+                })));
+    }
+
+    @Test
+    public void testLatestExtensionVersionNonDefaultTarget() throws Exception {
+        var extVersion = mockExtension("alpine-arm64");
+        extVersion.setDisplayName("Foo Bar (alpine arm64)");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "latest"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (alpine arm64)";
+                    e.versionAlias = List.of("latest");
+                    e.targetPlatform = "alpine-arm64";
+                })));
+    }
+
+    @Test
+    public void testLatestExtensionVersionAlpineLinuxTarget() throws Exception {
+        var extVersion = mockExtension("alpine-arm64");
+        extVersion.setDisplayName("Foo Bar (alpine arm64)");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "alpine-arm64", "latest"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (alpine arm64)";
+                    e.versionAlias = List.of("latest");
+                    e.targetPlatform = "alpine-arm64";
+                })));
+    }
+
+    @Test
+    public void testPreReleaseExtensionVersion() throws Exception {
+        var extVersion = mockExtension();
+        extVersion.setPreRelease(true);
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "pre-release"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                    e.versionAlias = List.of("pre-release", "latest");
+                    e.preRelease = true;
+                })));
+    }
+
+    @Test
+    public void testPreReleaseExtensionVersionNonDefaultTarget() throws Exception {
+        var extVersion = mockExtension("web");
+        extVersion.setPreRelease(true);
+        extVersion.setDisplayName("Foo Bar (web)");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "pre-release"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (web)";
+                    e.versionAlias = List.of("pre-release", "latest");
+                    e.preRelease = true;
+                })));
+    }
+
+    @Test
+    public void testPreReleaseExtensionVersionWebTarget() throws Exception {
+        var extVersion = mockExtension("web");
+        extVersion.setPreRelease(true);
+        extVersion.setDisplayName("Foo Bar (web)");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "web", "pre-release"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar (web)";
+                    e.versionAlias = List.of("pre-release", "latest");
+                    e.preRelease = true;
                 })));
     }
 
@@ -221,31 +383,54 @@ public class RegistryAPITest {
         var extVersion = mockExtension();
         extVersion.setActive(false);
 
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1.0.0"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().json(errorJson("Extension not found: foo.bar version 1")));
+                .andExpect(content().json(errorJson("Extension not found: foo.bar 1.0.0")));
     }
 
     @Test
     public void testUnknownExtensionVersion() throws Exception {
         mockExtension();
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "2"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "2.0.0"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().json(errorJson("Extension not found: foo.bar version 2")));
+                .andExpect(content().json(errorJson("Extension not found: foo.bar 2.0.0")));
     }
 
     @Test
-    public void testReadme() throws Exception {
+    public void testUnknownExtensionVersionTarget() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "linux-armhf", "1.0.0"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(errorJson("Extension not found: foo.bar 1.0.0 (linux-armhf)")));
+    }
+
+    @Test
+    public void testReadmeUniversalTarget() throws Exception {
         mockReadme();
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "README"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "README"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Please read me"));
     }
 
     @Test
+    public void testReadmeWindowsTarget() throws Exception {
+        mockReadme("win32-x64");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}/file/{fileName}", "foo", "bar", "win32-x64", "1.0.0", "README"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Please read me"));
+    }
+
+    @Test
+    public void testReadmeUnknownTarget() throws Exception {
+        mockReadme();
+        mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}/file/{fileName}", "foo", "bar", "darwin-x64", "1.0.0", "README"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     public void testChangelog() throws Exception {
         mockChangelog();
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "CHANGELOG"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "CHANGELOG"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("All notable changes is documented here"));
     }
@@ -253,7 +438,7 @@ public class RegistryAPITest {
     @Test
     public void testLicense() throws Exception {
         mockLicense();
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "LICENSE"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "LICENSE"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("I never broke the Law! I am the law!"));
     }
@@ -263,14 +448,14 @@ public class RegistryAPITest {
         var extVersion = mockExtension();
         extVersion.setActive(false);
 
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "README"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "README"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     public void testUnknownFile() throws Exception {
         mockExtension();
-        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1", "unknown.txt"))
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "unknown.txt"))
                 .andExpect(status().isNotFound());
     }
 
@@ -310,7 +495,7 @@ public class RegistryAPITest {
                     var e1 = new SearchEntryJson();
                     e1.namespace = "foo";
                     e1.name = "bar";
-                    e1.version = "1";
+                    e1.version = "1.0.0";
                     e1.timestamp = "2000-01-01T10:00Z";
                     e1.displayName = "Foo Bar";
                     s.extensions.add(e1);
@@ -338,7 +523,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -353,7 +538,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -363,7 +548,7 @@ public class RegistryAPITest {
     @Test
     public void testGetQueryUnknownExtension() throws Exception {
         mockExtensionVersionDTO();
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName("baz"))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(TargetPlatform.NAME_UNIVERSAL, "baz"))
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/-/query?extensionName={extensionName}", "baz"))
@@ -390,7 +575,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -405,7 +590,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -420,10 +605,44 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testGetQueryMultipleTargets() throws Exception {
+        mockExtensionVersionDTOs();
+        mockMvc.perform(get("/api/-/query?namespaceUuid={namespaceUuid}", "1234"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                    e.targetPlatform = "darwin-x64";
+                },
+                e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                    e.targetPlatform = "linux-x64";
+                },
+                e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                    e.targetPlatform = "alpine-arm64";
                 })));
     }
 
@@ -437,7 +656,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -454,7 +673,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -464,7 +683,7 @@ public class RegistryAPITest {
     @Test
     public void testPostQueryUnknownExtension() throws Exception {
         mockExtensionVersionDTO();
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName("baz"))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(null, "baz"))
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/api/-/query")
@@ -494,7 +713,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -511,7 +730,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -528,7 +747,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(queryResultJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
@@ -595,7 +814,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishOrphan() throws Exception {
         mockForPublish("orphan");
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -609,7 +828,7 @@ public class RegistryAPITest {
         try {
             extensionService.requireLicense = true;
             mockForPublish("contributor");
-            var bytes = createExtensionPackage("bar", "1", null);
+            var bytes = createExtensionPackage("bar", "1.0.0", null);
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .content(bytes))
@@ -627,7 +846,7 @@ public class RegistryAPITest {
             extensionService.requireLicense = true;
             mockForPublish("contributor");
             mockActiveVersion();
-            var bytes = createExtensionPackage("bar", "1", "MIT");
+            var bytes = createExtensionPackage("bar", "1.0.0", "MIT");
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .content(bytes))
@@ -635,7 +854,7 @@ public class RegistryAPITest {
                     .andExpect(content().json(extensionJson(e -> {
                         e.namespace = "foo";
                         e.name = "bar";
-                        e.version = "1";
+                        e.version = "1.0.0";
                         var u = new UserJson();
                         u.loginName = "test_user";
                         e.publishedBy = u;
@@ -649,7 +868,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishInactiveToken() throws Exception {
         mockForPublish("invalid");
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -660,7 +879,7 @@ public class RegistryAPITest {
     @Test
     public void testPublishUnknownNamespace() throws Exception {
         mockAccessToken();
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -673,7 +892,7 @@ public class RegistryAPITest {
     public void testPublishVerifiedOwner() throws Exception {
         mockForPublish("owner");
         mockActiveVersion();
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -681,19 +900,19 @@ public class RegistryAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = true;
                 })));
     }
-    
+
     @Test
     public void testPublishVerifiedContributor() throws Exception {
         mockForPublish("contributor");
         mockActiveVersion();
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -701,19 +920,19 @@ public class RegistryAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = true;
                 })));
     }
-    
+
     @Test
     public void testPublishSoleContributor() throws Exception {
         mockForPublish("sole-contributor");
         mockActiveVersion();
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -721,19 +940,19 @@ public class RegistryAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = false;
                 })));
     }
-    
+
     @Test
     public void testPublishRestrictedPrivileged() throws Exception {
         mockForPublish("privileged");
         mockActiveVersion();
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
@@ -741,47 +960,85 @@ public class RegistryAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foo";
                     e.name = "bar";
-                    e.version = "1";
+                    e.version = "1.0.0";
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = false;
                 })));
     }
-    
+
     @Test
     public void testPublishRestrictedUnrelated() throws Exception {
         mockForPublish("unrelated");
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Insufficient access rights for publisher: foo")));
     }
-    
+
     @Test
     public void testPublishExistingExtension() throws Exception {
         mockForPublish("existing");
-        var bytes = createExtensionPackage("bar", "1", null);
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(errorJson("Extension foo.bar version 1 is already published.")));
+                .andExpect(content().json(errorJson("Extension foo.bar 1.0.0 is already published.")));
     }
-    
+
+    @Test
+    public void testPublishSameVersionDifferentTargetPlatformPreRelease() throws Exception {
+        var extVersion = mockExtension(TargetPlatform.NAME_WIN32_X64);
+        extVersion.setVersion("1.0.0");
+        extVersion.setPreRelease(false);
+
+        mockForPublish("contributor");
+        Mockito.when(repositories.findVersions(eq("1.0.0"), any(Extension.class)))
+                .thenReturn(Streamable.of(extVersion));
+
+        var bytes = createExtensionPackage("bar", "1.0.0", null, true, TargetPlatform.NAME_LINUX_X64);
+        mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .content(bytes))
+                .andExpect(status().isCreated())
+                .andExpect(content().json(warningJson("A stable release already exists for foo.bar-1.0.0.\n" +
+                        "To prevent update conflicts, we recommend that this pre-release uses 1.1.0 as its version instead.")));
+    }
+
+    @Test
+    public void testPublishSameVersionDifferentTargetPlatformStableRelease() throws Exception {
+        var extVersion = mockExtension(TargetPlatform.NAME_DARWIN_ARM64);
+        extVersion.setVersion("1.5.0");
+        extVersion.setPreRelease(true);
+
+        mockForPublish("contributor");
+        Mockito.when(repositories.findVersions(eq("1.5.0"), any(Extension.class)))
+                .thenReturn(Streamable.of(extVersion));
+
+        var bytes = createExtensionPackage("bar", "1.5.0", null, false, TargetPlatform.NAME_ALPINE_ARM64);
+        mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .content(bytes))
+                .andExpect(status().isCreated())
+                .andExpect(content().json(warningJson("A pre-release already exists for foo.bar-1.5.0.\n" +
+                        "To prevent update conflicts, we recommend that this stable release uses 1.6.0 as its version instead.")));
+    }
+
     @Test
     public void testPublishInvalidName() throws Exception {
         mockForPublish("contributor");
-        var bytes = createExtensionPackage("b.a.r", "1", null);
+        var bytes = createExtensionPackage("b.a.r", "1.0.0", null);
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid extension name: b.a.r")));
     }
-    
+
     @Test
     public void testPublishInvalidVersion() throws Exception {
         mockForPublish("contributor");
@@ -941,14 +1198,16 @@ public class RegistryAPITest {
         var namespace = new Namespace();
         namespace.setName("foo");
         var extension = new Extension();
+        extension.setId(1);
         extension.setName("bar");
+        extension.setActive(true);
         extension.setNamespace(namespace);
         var extVersion = new ExtensionVersion();
-        extVersion.setExtension(extension);
-        extVersion.setVersion("1");
+        extVersion.setVersion("1.0.0");
         extVersion.setActive(true);
+        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
-        Mockito.when(repositories.findActiveVersions(any(Extension.class))).thenReturn(Streamable.of(extVersion));
+        extension.getVersions().add(extVersion);
     }
 
     private Namespace mockNamespace() {
@@ -968,11 +1227,57 @@ public class RegistryAPITest {
     }
 
     private void mockInactiveExtensionVersionDTO(String namespaceName, String extensionName) {
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName, namespaceName))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(null, extensionName, namespaceName))
                 .thenReturn(Collections.emptyList());
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespaceName(namespaceName))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespaceName(null, namespaceName))
                 .thenReturn(Collections.emptyList());
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(null, extensionName))
+                .thenReturn(Collections.emptyList());
+    }
+
+    private void mockExtensionVersionDTOs() {
+        var namespaceId = 1L;
+        var namespacePublicId = "1234";
+        var namespaceName = "foo";
+        var extensionId = 2L;
+        var extensionName = "bar";
+        var id = 3L;
+        var version = "1.0.0";
+        var timestamp = LocalDateTime.parse("2000-01-01T10:00");
+        var displayName = "Foo Bar";
+
+        var versions = new ArrayList<ExtensionVersionDTO>();
+        var targetPlatforms = List.of("darwin-x64", "linux-x64", "alpine-arm64");
+        for(var i = 0; i < targetPlatforms.size(); i++) {
+            var targetPlatform = targetPlatforms.get(i);
+            versions.add(new ExtensionVersionDTO(
+                    namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, null, 0,
+                    null, null, null, null, null, null, id + i, version, targetPlatform, false, false, timestamp, displayName,
+                    null, null, null, null, null, null, null, null, null,
+                    null, null, null, null, null, null
+            ));
+        }
+
+        var extensionPublicId = "5678";
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionPublicId(null, extensionPublicId))
+                .thenReturn(versions);
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespacePublicId(null, namespacePublicId))
+                .thenReturn(versions);
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(null, extensionName, namespaceName))
+                .thenReturn(versions);
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespaceName(null, namespaceName))
+                .thenReturn(versions);
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(null, extensionName))
+                .thenReturn(versions);
+        Mockito.when(repositories.findAllActiveExtensionVersionDTOs(Set.of(extensionId), null))
+                .thenReturn(versions);
+
+        Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(Set.of(extensionId)))
+                .thenReturn(Collections.emptyMap());
+        var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
+        Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(List.of(id), fileTypes))
+                .thenReturn(Collections.emptyList());
+        Mockito.when(repositories.findAllNamespaceMembershipDTOs(List.of(namespaceId)))
                 .thenReturn(Collections.emptyList());
     }
 
@@ -983,37 +1288,33 @@ public class RegistryAPITest {
         var extensionId = 2L;
         var extensionName = "bar";
         var id = 3L;
-        var extensionLatestId = id;
-        var version = "1";
+        var version = "1.0.0";
         var timestamp = LocalDateTime.parse("2000-01-01T10:00");
         var displayName = "Foo Bar";
 
         var extVersion = new ExtensionVersionDTO(
-                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, extensionLatestId,
-                null, null, 0, null, null, null,
-                null, null, null, id, version, false, false, timestamp, displayName, null,
-                null, null, null, null, null, null, null, null,
+                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, null, 0,
+                null, null, null, null, null, null, id, version, TargetPlatform.NAME_UNIVERSAL, false, false, timestamp, displayName,
+                null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null
         );
 
         var extensionPublicId = "5678";
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionPublicId(extensionPublicId))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionPublicId(null, extensionPublicId))
                 .thenReturn(List.of(extVersion));
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespacePublicId(namespacePublicId))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespacePublicId(null, namespacePublicId))
                 .thenReturn(List.of(extVersion));
-        Mockito.when(repositories.findActiveExtensionVersionDTOByVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName, namespaceName))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(null, extensionName, namespaceName))
                 .thenReturn(List.of(extVersion));
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespaceName(namespaceName))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByNamespaceName(null, namespaceName))
                 .thenReturn(List.of(extVersion));
-        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(extensionName))
+        Mockito.when(repositories.findActiveExtensionVersionDTOsByExtensionName(null, extensionName))
+                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findAllActiveExtensionVersionDTOs(Set.of(extensionId), null))
                 .thenReturn(List.of(extVersion));
 
         Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(Set.of(extensionId)))
                 .thenReturn(Collections.emptyMap());
-        Mockito.when(repositories.findExtensionIsPreview(Set.of(extensionId)))
-                .thenReturn(Map.of(extensionId, false));
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
         Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(Set.of(id), fileTypes))
                 .thenReturn(Collections.emptyList());
@@ -1022,41 +1323,41 @@ public class RegistryAPITest {
 
         return extVersion;
     }
-    
+
     private ExtensionVersion mockExtension() {
+        return mockExtension(TargetPlatform.NAME_UNIVERSAL);
+    }
+
+    private ExtensionVersion mockExtension(String targetPlatform) {
         var namespace = new Namespace();
         namespace.setName("foo");
         namespace.setPublicId("1234");
         var extension = new Extension();
         extension.setName("bar");
+        extension.setId(extension.getName().hashCode());
         extension.setNamespace(namespace);
         extension.setPublicId("5678");
         extension.setActive(true);
         var extVersion = new ExtensionVersion();
-        extension.setLatest(extVersion);
-        extVersion.setExtension(extension);
-        extVersion.setVersion("1");
+        extVersion.setTargetPlatform(targetPlatform);
+        extVersion.setVersion("1.0.0");
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         extVersion.setActive(true);
         extVersion.setDisplayName("Foo Bar");
+        extVersion.setExtension(extension);
+        extension.getVersions().add(extVersion);
         Mockito.when(repositories.findExtension("bar", "foo"))
                 .thenReturn(extension);
-        Mockito.when(repositories.findVersion("1", "bar", "foo"))
+        Mockito.when(repositories.findVersion("1.0.0", targetPlatform, "bar", "foo"))
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
         Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
-        Mockito.when(repositories.getVersionStrings(extension))
-                .thenReturn(Streamable.of(extVersion.getVersion()));
-        Mockito.when(repositories.getActiveVersionStrings(extension))
-                .thenReturn(Streamable.of(extVersion.getVersion()));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0l);
         Mockito.when(repositories.countActiveReviews(extension))
                 .thenReturn(0l);
-        Mockito.when(repositories.findFilesByType(eq(extVersion), anyCollection()))
-                .thenReturn(Streamable.empty());
         Mockito.when(repositories.findNamespace("foo"))
                 .thenReturn(namespace);
         Mockito.when(repositories.findExtensions("bar"))
@@ -1065,6 +1366,17 @@ public class RegistryAPITest {
                 .thenReturn(namespace);
         Mockito.when(repositories.findExtensionByPublicId("5678"))
                 .thenReturn(extension);
+
+        var download = new FileResource();
+        download.setExtension(extVersion);
+        download.setType(DOWNLOAD);
+        download.setStorageType(STORAGE_DB);
+        download.setName("extension-1.0.0.vsix");
+        Mockito.when(repositories.findFilesByType(eq(extVersion), anyCollection())).thenAnswer(invocation -> {
+            Collection<String> types = invocation.getArgument(1);
+            return types.contains(DOWNLOAD) ? Streamable.of(download) : Streamable.empty();
+        });
+
         return extVersion;
     }
 
@@ -1074,12 +1386,21 @@ public class RegistryAPITest {
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String queryResultJson(Consumer<ExtensionJson> content) throws JsonProcessingException {
-        return "{\"extensions\":[" + extensionJson(content) + "]}";
+    private String queryResultJson(Consumer<ExtensionJson>... contents) throws JsonProcessingException {
+        var extensionJsons = new ArrayList<String>();
+        for(var content : contents) {
+            extensionJsons.add(extensionJson(content));
+        }
+
+        return "{\"extensions\":[" + String.join(",", extensionJsons) + "]}";
     }
 
     private FileResource mockReadme() {
-        var extVersion = mockExtension();
+        return mockReadme(TargetPlatform.NAME_UNIVERSAL);
+    }
+
+    private FileResource mockReadme(String targetPlatform) {
+        var extVersion = mockExtension(targetPlatform);
         var resource = new FileResource();
         resource.setExtension(extVersion);
         resource.setName("README");
@@ -1160,7 +1481,7 @@ public class RegistryAPITest {
                 Arrays.asList(searchHit), new Aggregations(Collections.emptyList()));
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new ISearchService.Options("foo", null, 10, 0, "desc", "relevance", false);
+        var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions, PageRequest.of(0, 10)))
                 .thenReturn(searchHits);
         Mockito.when(entityManager.find(Extension.class, 1l))
@@ -1201,25 +1522,21 @@ public class RegistryAPITest {
             var extension = new Extension();
             extension.setName("bar");
             var extVersion = new ExtensionVersion();
-            extVersion.setExtension(extension);
-            extVersion.setVersion("1");
+            extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+            extVersion.setVersion("1.0.0");
             extVersion.setActive(true);
             Mockito.when(repositories.findExtension("bar", namespace))
                     .thenReturn(extension);
-            Mockito.when(repositories.findVersion("1", extension))
+            Mockito.when(repositories.findVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, extension))
                     .thenReturn(extVersion);
         }
         Mockito.when(repositories.countActiveReviews(any(Extension.class)))
                 .thenReturn(0l);
         Mockito.when(repositories.findVersions(any(Extension.class)))
                 .thenReturn(Streamable.empty());
-        Mockito.when(repositories.findActiveVersions(any(Extension.class)))
-                .thenReturn(Streamable.empty());
-        Mockito.when(repositories.getVersionStrings(any(Extension.class)))
-                .thenReturn(Streamable.empty());
-        Mockito.when(repositories.getActiveVersionStrings(any(Extension.class)))
-                .thenReturn(Streamable.empty());
         Mockito.when(repositories.findFilesByType(any(ExtensionVersion.class), anyCollection()))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findVersions(eq("1.0.0"), any(Extension.class)))
                 .thenReturn(Streamable.empty());
         if (mode.equals("owner")) {
             var ownerMem = new NamespaceMembership();
@@ -1306,15 +1623,24 @@ public class RegistryAPITest {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
     }
-    
+
+    private String warningJson(String message) throws JsonProcessingException {
+        var json = ResultJson.warning(message);
+        return new ObjectMapper().writeValueAsString(json);
+    }
+
     private byte[] createExtensionPackage(String name, String version, String license) throws IOException {
+        return createExtensionPackage(name, version, license, false, null);
+    }
+
+    private byte[] createExtensionPackage(String name, String version, String license, boolean preRelease, String targetPlatform) throws IOException {
         var bytes = new ByteArrayOutputStream();
         var archive = new ZipOutputStream(bytes);
         archive.putNextEntry(new ZipEntry("extension.vsixmanifest"));
         var vsixmanifest = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
             "<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">" +
             "<Metadata>" +
-            "<Identity Language=\"en-US\" Id=\""+ name +"\" Version=\"" + version + "\" Publisher=\"foo\"  />" +
+            "<Identity Language=\"en-US\" Id=\""+ name +"\" Version=\"" + version + "\" Publisher=\"foo\" " + (targetPlatform != null ? "TargetPlatform=\"" + targetPlatform + "\"" : "")  + " />" +
             "<DisplayName>foo</DisplayName>" +
             "<Description xml:space=\"preserve\"></Description>" +
             "<Tags></Tags>" +
@@ -1328,6 +1654,7 @@ public class RegistryAPITest {
             "<Property Id=\"Microsoft.VisualStudio.Code.ExtensionKind\" Value=\"ui,web,workspace\" />" +
             "<Property Id=\"Microsoft.VisualStudio.Code.LocalizedLanguages\" Value=\"\" />" +
             "<Property Id=\"Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown\" Value=\"true\" />" +
+            (preRelease ? "<Property Id=\"Microsoft.VisualStudio.Code.PreRelease\" Value=\"true\" />" : "") +
             "</Properties>" +
             "</Metadata>" +
             "<Installation>" +

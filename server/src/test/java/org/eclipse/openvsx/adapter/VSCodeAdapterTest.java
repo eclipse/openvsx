@@ -12,17 +12,20 @@ package org.eclipse.openvsx.adapter;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
@@ -33,11 +36,7 @@ import org.eclipse.openvsx.dto.ExtensionDTO;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.dto.FileResourceDTO;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
@@ -48,6 +47,7 @@ import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -95,7 +95,9 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testSearch() throws Exception {
-        mockSearch(true);
+        var extension = mockSearch(true);
+        mockExtensionVersionDTOs(extension, null, "");
+
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("search-yaml-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -104,8 +106,35 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testSearchMacOSXTarget() throws Exception {
+        var targetPlatform = "darwin-x64";
+        var extension = mockSearch(targetPlatform, true);
+        mockExtensionVersionDTOs(extension, targetPlatform, targetPlatform);
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("search-yaml-query-darwin.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("search-yaml-response-darwin.json")));
+    }
+
+    @Test
+    public void testSearchMultipleTargetsResponse() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersionDTOs(extension, null, "darwin-x64", "linux-x64", "alpine-arm64");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("search-yaml-query.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("search-yaml-response-targets.json")));
+    }
+
+    @Test
     public void testFindById() throws Exception {
-        mockSearch(true);
+        var extension = mockSearch(true);
+        mockExtensionVersionDTOs(extension, null, "");
+
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findid-yaml-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -114,8 +143,23 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testFindByIdAlpineTarget() throws Exception {
+        var targetPlatform = "alpine-arm64";
+        var extension = mockSearch(targetPlatform, true);
+        mockExtensionVersionDTOs(extension, targetPlatform, targetPlatform);
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("findid-yaml-query-alpine.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findid-yaml-response-alpine.json")));
+    }
+
+    @Test
     public void testFindByIdDuplicate() throws Exception {
-        mockSearch(true);
+        var extension = mockSearch(true);
+        mockExtensionVersionDTOs(extension, null, "");
+
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findid-yaml-duplicate-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -135,7 +179,9 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testFindByName() throws Exception {
-        mockSearch(true);
+        var extension = mockSearch(true);
+        mockExtensionVersionDTOs(extension, null, "");
+
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findname-yaml-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -144,8 +190,23 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testFindByNameLinuxTarget() throws Exception {
+        var targetPlatform = "linux-x64";
+        var extension = mockSearch(targetPlatform, true);
+        mockExtensionVersionDTOs(extension, targetPlatform, targetPlatform);
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("findname-yaml-query-linux.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response-linux.json")));
+    }
+
+    @Test
     public void testFindByNameDuplicate() throws Exception {
-        mockSearch(true);
+        var extension = mockSearch(true);
+        mockExtensionVersionDTOs(extension, null,"");
+
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findname-yaml-duplicate-query.json"))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -163,6 +224,16 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testAssetMacOSX() throws Exception {
+        var target = "darwin-arm64";
+        mockExtension(target);
+        mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}?targetPlatform={target}",
+                "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest", target))
+                .andExpect(status().isOk())
+                .andExpect(content().string("{\"foo\":\"bar\",\"target\":\"darwin-arm64\"}"));
+    }
+
+    @Test
     public void testAssetNotFound() throws Exception {
         var extVersion = mockExtension();
         Mockito.when(repositories.findFileByType(extVersion, FileResource.MANIFEST))
@@ -172,10 +243,41 @@ public class VSCodeAdapterTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    public void testGetItem() throws Exception {
+        mockMvc.perform(get("/vscode/item?itemName={itemName}", "redhat.vscode-yaml"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
+    }
+
+    @Test
+    public void testGetItemBadRequest() throws Exception {
+        mockMvc.perform(get("/vscode/item?itemName={itemName}", "vscode-yaml"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testDownload() throws Exception {
+        mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage",
+                "redhat", "vscode-yaml", "0.5.2"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "http://localhost/vscode/asset/redhat/vscode-yaml/0.5.2/Microsoft.VisualStudio.Services.VSIXPackage"));
+    }
+
+    @Test
+    public void testDownloadMacOSX() throws Exception {
+        mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage?targetPlatform={target}",
+                "redhat", "vscode-yaml", "0.5.2", "darwin-arm64"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "http://localhost/vscode/asset/redhat/vscode-yaml/0.5.2/Microsoft.VisualStudio.Services.VSIXPackage?targetPlatform=darwin-arm64"));
+    }
 
     // ---------- UTILITY ----------//
+    private ExtensionDTO mockSearch(boolean active) {
+        return mockSearch(null, active);
+    }
 
-    private void mockSearch(boolean active) {
+    private ExtensionDTO mockSearch(String targetPlatform, boolean active) {
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
         var searchHit = new SearchHit<ExtensionSearch>("0", "1", 1.0f, null, null, entry1);
@@ -183,7 +285,7 @@ public class VSCodeAdapterTest {
                 Arrays.asList(searchHit), new Aggregations(Collections.emptyList()));
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new ISearchService.Options("yaml", null, 50, 0, "desc", "relevance", false);
+        var searchOptions = new ISearchService.Options("yaml", null, targetPlatform, 50, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions, PageRequest.of(0, 50)))
                 .thenReturn(searchHits);
 
@@ -202,10 +304,10 @@ public class VSCodeAdapterTest {
 
         var name = extension.getName();
         var namespaceName = extension.getNamespace().getName();
-        Mockito.when(repositories.findActiveExtensionDTOByNameAndNamespaceName(name, namespaceName))
+        Mockito.when(repositories.findActiveExtensionDTO(name, namespaceName))
                 .thenReturn(extension);
 
-        mockFileResourceDTOs(extension.getLatest());
+        return extension;
     }
 
     private ExtensionDTO mockExtensionDTO() {
@@ -217,38 +319,58 @@ public class VSCodeAdapterTest {
             var namespaceId = 2;
             var namespacePublicId = "test-2";
             var namespaceName = "redhat";
-            var latestId = 3;
-            var latestVersion = "0.5.2";
-            var latestPreview = true;
-            var latestPreRelease = false;
-            var latestTimestamp = LocalDateTime.parse("2000-01-01T10:00");
-            var latestDisplayName = "YAML";
-            var latestDescription = "YAML Language Support";
-            var latestEngines = "vscode@^1.31.0";
-            var latestRepository = "https://github.com/redhat-developer/vscode-yaml";
 
-            return new ExtensionDTO(id,publicId,name,averageRating,downloadCount,namespaceId,namespacePublicId,
-                    namespaceName,latestId,latestVersion,latestPreview,latestPreRelease,latestTimestamp,latestDisplayName,latestDescription,
-                    latestEngines,null,null,null,latestRepository,null,
-                    null,null,null);
+            return new ExtensionDTO(id, publicId, name, averageRating, downloadCount, namespaceId, namespacePublicId, namespaceName);
     }
 
-    private void mockFileResourceDTOs(ExtensionVersionDTO extensionVersion) {
-        var ids = new HashSet<>(List.of(extensionVersion.getId()));
+    private void mockExtensionVersionDTOs(ExtensionDTO extension, String queryTargetPlatform, String... targetPlatforms) {
+        var id = 2;
+        var versions = new ArrayList<ExtensionVersionDTO>(targetPlatforms.length);
+        for(var targetPlatform : targetPlatforms) {
+            versions.add(mockExtensionVersionDTO(extension, id, targetPlatform));
+            id++;
+        }
+
+        Mockito.when(repositories.findAllActiveExtensionVersionDTOs(Set.of(extension.getId()), queryTargetPlatform))
+                .thenReturn(versions);
+
+        mockFileResourceDTOs(versions);
+    }
+
+    private ExtensionVersionDTO mockExtensionVersionDTO(ExtensionDTO extension, long id, String targetPlatform) {
+        return new ExtensionVersionDTO(
+                    extension.getId(), id, "0.5.2", targetPlatform, true, false, LocalDateTime.parse("2000-01-01T10:00"),
+                    "YAML", "YAML Language Support", "vscode@^1.31.0", null, null,
+                    null, "https://github.com/redhat-developer/vscode-yaml", null, null, null, null);
+    }
+
+    private void mockFileResourceDTOs(List<ExtensionVersionDTO> extensionVersions) {
+        var ids = extensionVersions.stream().map(ExtensionVersionDTO::getId).collect(Collectors.toSet());
         var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, WEB_RESOURCE);
 
-        var extensionFile = new FileResourceDTO(5, extensionVersion.getId(), "redhat.vscode-yaml-0.5.2.vsix", DOWNLOAD);
-        var manifestFile = new FileResourceDTO(6, extensionVersion.getId(), "package.json", MANIFEST);
-        var readmeFile = new FileResourceDTO(7, extensionVersion.getId(), "README.md", README);
-        var changelogFile = new FileResourceDTO(8, extensionVersion.getId(), "CHANGELOG.md", CHANGELOG);
-        var licenseFile = new FileResourceDTO(9, extensionVersion.getId(), "LICENSE.txt", LICENSE);
-        var iconFile = new FileResourceDTO(10, extensionVersion.getId(), "icon128.png", ICON);
+        var files = new ArrayList<FileResourceDTO>();
+        for(var id : ids) {
+            files.add(new FileResourceDTO(id * 100 + 5, id, "redhat.vscode-yaml-0.5.2.vsix", DOWNLOAD));
+            files.add(new FileResourceDTO(id * 100 + 6, id, "package.json", MANIFEST));
+            files.add(new FileResourceDTO(id * 100 + 7, id, "README.md", README));
+            files.add(new FileResourceDTO(id * 100 + 8, id, "CHANGELOG.md", CHANGELOG));
+            files.add(new FileResourceDTO(id * 100 + 9, id, "LICENSE.txt", LICENSE));
+            files.add(new FileResourceDTO(id * 100 + 10, id, "icon128.png", ICON));
+        }
 
         Mockito.when(repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(ids, types))
-                .thenReturn(List.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile));
+                .thenReturn(files);
     }
-    
-    private ExtensionVersion mockExtension() {
+
+    private ExtensionVersion mockExtension() throws JsonProcessingException {
+        return mockExtension(TargetPlatform.NAME_UNIVERSAL);
+    }
+
+    private ExtensionVersion mockExtension(String targetPlatform) throws JsonProcessingException {
+        var namespace = new Namespace();
+        namespace.setId(2);
+        namespace.setPublicId("test-2");
+        namespace.setName("redhat");
         var extension = new Extension();
         extension.setId(1);
         extension.setPublicId("test-1");
@@ -256,14 +378,10 @@ public class VSCodeAdapterTest {
         extension.setActive(true);
         extension.setDownloadCount(100);
         extension.setAverageRating(3.0);
-        var namespace = new Namespace();
-        namespace.setId(2);
-        namespace.setPublicId("test-2");
-        namespace.setName("redhat");
         extension.setNamespace(namespace);
         var extVersion = new ExtensionVersion();
-        extension.setLatest(extVersion);
-        extVersion.setExtension(extension);
+        extension.getVersions().add(extVersion);
+        extVersion.setTargetPlatform(targetPlatform);
         extVersion.setVersion("0.5.2");
         extVersion.setPreRelease(true);
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
@@ -278,14 +396,10 @@ public class VSCodeAdapterTest {
                 .thenReturn(extension);
         Mockito.when(repositories.findExtension("vscode-yaml", "redhat"))
                 .thenReturn(extension);
-        Mockito.when(repositories.findVersion("0.5.2", "vscode-yaml", "redhat"))
+        Mockito.when(repositories.findVersion("0.5.2", targetPlatform, "vscode-yaml", "redhat"))
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
-        Mockito.when(repositories.getVersionStrings(extension))
-                .thenReturn(Streamable.of(extVersion.getVersion()));
-        Mockito.when(repositories.getActiveVersionStrings(extension))
-                .thenReturn(Streamable.of(extVersion.getVersion()));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0l);
         Mockito.when(repositories.countActiveReviews(extension))
@@ -301,7 +415,11 @@ public class VSCodeAdapterTest {
         manifestFile.setExtension(extVersion);
         manifestFile.setName("package.json");
         manifestFile.setType(FileResource.MANIFEST);
-        manifestFile.setContent("{\"foo\":\"bar\"}".getBytes());
+        var manifestContent = new HashMap<String, String>();
+        manifestContent.put("foo", "bar");
+        if(!targetPlatform.equals(TargetPlatform.NAME_UNIVERSAL))
+            manifestContent.put("target", targetPlatform);
+        manifestFile.setContent(new ObjectMapper().writeValueAsBytes(manifestContent));
         manifestFile.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.MANIFEST))
                 .thenReturn(manifestFile);

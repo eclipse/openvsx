@@ -16,13 +16,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -49,14 +47,19 @@ public class ElasticSearchServiceTest {
     @Autowired
     ElasticSearchService search;
 
+    @AfterEach
+    public void afterEach() {
+        VersionUtil.clearCache();
+    }
+
     @Test
     public void testRelevanceAverageRating() throws Exception {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", 3.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
-        var ext2 = mockExtension("bar", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext2 = mockExtension( "bar", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
-        
+
         assertThat(index.entries).hasSize(2);
         assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
     }
@@ -68,7 +71,7 @@ public class ElasticSearchServiceTest {
         var ext2 = mockExtension("bar", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
-        
+
         assertThat(index.entries).hasSize(2);
         assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
     }
@@ -80,7 +83,7 @@ public class ElasticSearchServiceTest {
         var ext2 = mockExtension("bar", 0.0, 0, 10, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
-        
+
         assertThat(index.entries).hasSize(2);
         assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
     }
@@ -92,7 +95,7 @@ public class ElasticSearchServiceTest {
         var ext2 = mockExtension("bar", 0.0, 0, 0, LocalDateTime.parse("2020-10-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
-        
+
         assertThat(index.entries).hasSize(2);
         assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
     }
@@ -104,7 +107,7 @@ public class ElasticSearchServiceTest {
         var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
-        
+
         assertThat(index.entries).hasSize(2);
         assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
     }
@@ -116,7 +119,7 @@ public class ElasticSearchServiceTest {
         var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
-        
+
         assertThat(index.entries).hasSize(2);
         assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
     }
@@ -126,7 +129,7 @@ public class ElasticSearchServiceTest {
         var index = mockIndex(true);
         mockExtensions();
         search.updateSearchIndex(false);
-        
+
         assertThat(index.created).isFalse();
         assertThat(index.deleted).isFalse();
         assertThat(index.entries).hasSize(3);
@@ -137,7 +140,7 @@ public class ElasticSearchServiceTest {
         var index = mockIndex(false);
         mockExtensions();
         search.updateSearchIndex(false);
-        
+
         assertThat(index.created).isTrue();
         assertThat(index.deleted).isFalse();
         assertThat(index.entries).hasSize(3);
@@ -148,7 +151,7 @@ public class ElasticSearchServiceTest {
         var index = mockIndex(true);
         mockExtensions();
         search.updateSearchIndex(true);
-        
+
         assertThat(index.created).isTrue();
         assertThat(index.deleted).isTrue();
         assertThat(index.entries).hasSize(3);
@@ -159,7 +162,7 @@ public class ElasticSearchServiceTest {
         var index = mockIndex(false);
         mockExtensions();
         search.updateSearchIndex(true);
-        
+
         assertThat(index.created).isTrue();
         assertThat(index.deleted).isFalse();
         assertThat(index.entries).hasSize(3);
@@ -219,6 +222,7 @@ public class ElasticSearchServiceTest {
             LocalDateTime timestamp, boolean isUnverified, boolean isUnrelated) {
         var extension = new Extension();
         extension.setName(name);
+        extension.setId(name.hashCode());
         extension.setAverageRating(averageRating);
         extension.setDownloadCount(downloadCount);
         Mockito.when(repositories.countActiveReviews(extension))
@@ -229,9 +233,11 @@ public class ElasticSearchServiceTest {
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(isUnverified ? 0l : 1l);
         var extVer = new ExtensionVersion();
-        extVer.setExtension(extension);
+        extVer.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVer.setTimestamp(timestamp);
-        extension.setLatest(extVer);
+        extVer.setActive(true);
+        extVer.setExtension(extension);
+        extension.getVersions().add(extVer);
         var user = new UserData();
         var token = new PersonalAccessToken();
         token.setUser(user);

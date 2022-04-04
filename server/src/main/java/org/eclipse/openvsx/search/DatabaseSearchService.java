@@ -10,12 +10,10 @@
 
 package org.eclipse.openvsx.search;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -52,7 +50,6 @@ public class DatabaseSearchService implements ISearchService {
 
     @Cacheable("database.search")
     public SearchHits<ExtensionSearch> search(ISearchService.Options options, Pageable pageRequest) {
-
         // grab all extensions
         var matchingExtensions = repositories.findAllActiveExtensions();
 
@@ -62,10 +59,15 @@ public class DatabaseSearchService implements ISearchService {
             return new SearchHitsImpl<ExtensionSearch>(0,TotalHitsRelation.OFF, 0f, "", Collections.emptyList(), aggregations);
         }
 
+        // filter target platform
+        if(TargetPlatform.isValid(options.targetPlatform)) {
+            matchingExtensions = matchingExtensions.filter(extension -> extension.getVersions().stream().anyMatch(ev -> ev.getTargetPlatform().equals(options.targetPlatform)));
+        }
+
         // filter category
         if (options.category != null) {
             matchingExtensions = matchingExtensions.filter(extension -> extension.getLatest().getCategories().stream()
-                    .anyMatch(category -> category.toLowerCase().equals(options.category.toLowerCase())));
+                    .anyMatch(category -> category.equalsIgnoreCase(options.category)));
         }
 
         // filter text
@@ -89,13 +91,14 @@ public class DatabaseSearchService implements ISearchService {
             var searchStats = new SearchStats(repositories);
 
             // needs to add relevance on extensions
-            sortedExtensions = new ArrayList<>(matchingExtensions
+            sortedExtensions = matchingExtensions
                     .map(extension -> relevanceService.toSearchEntry(extension, searchStats))
-                    .toList());
-            // sort it
-            sortedExtensions.sort(new RelevanceComparator());
+                    .stream()
+                    .sorted(new RelevanceComparator())
+                    .collect(Collectors.toList());
         } else {
-            sortedExtensions = matchingExtensions.stream().map(extension -> extension.toSearch())
+            sortedExtensions = matchingExtensions.stream()
+                    .map(Extension::toSearch)
                     .collect(Collectors.toList());
             if ("downloadCount".equals(options.sortBy)) {
                 sortedExtensions.sort(new DownloadedCountComparator());

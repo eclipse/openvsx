@@ -168,6 +168,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, Boolean> PRE_RELEASE = createField(DSL.name("pre_release"), SQLDataType.BOOLEAN.nullable(false), this, "");
 
+    /**
+     * The column <code>public.extension_version.target_platform</code>.
+     */
+    public final TableField<ExtensionVersionRecord, String> TARGET_PLATFORM = createField(DSL.name("target_platform"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -208,7 +213,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX, Indexes.UNIQUE_EXTENSION_VERSION);
+        return Arrays.<Index>asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX);
     }
 
     @Override
@@ -218,7 +223,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public List<UniqueKey<ExtensionVersionRecord>> getKeys() {
-        return Arrays.<UniqueKey<ExtensionVersionRecord>>asList(Keys.EXTENSION_VERSION_PKEY);
+        return Arrays.<UniqueKey<ExtensionVersionRecord>>asList(Keys.EXTENSION_VERSION_PKEY, Keys.UNIQUE_EXTENSION_VERSION);
     }
 
     @Override
