@@ -33,6 +33,7 @@ import com.google.common.io.CharStreams;
 import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.dto.ExtensionDTO;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.dto.FileResourceDTO;
@@ -73,7 +74,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    AzureDownloadCountService.class, LockProvider.class
+    AzureDownloadCountService.class, LockProvider.class, CacheService.class
 })
 public class VSCodeAdapterTest {
 

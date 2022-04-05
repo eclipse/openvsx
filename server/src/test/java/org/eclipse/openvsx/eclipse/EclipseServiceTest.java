@@ -27,6 +27,7 @@ import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -57,7 +58,7 @@ import org.springframework.web.client.RestTemplate;
 @ExtendWith(SpringExtension.class)
 @MockBean({
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    VSCodeIdService.class, AzureDownloadCountService.class, LockProvider.class
+    VSCodeIdService.class, AzureDownloadCountService.class, LockProvider.class, CacheService.class
 })
 public class EclipseServiceTest {
 

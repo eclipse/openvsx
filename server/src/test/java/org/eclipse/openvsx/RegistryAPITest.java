@@ -34,6 +34,8 @@ import javax.persistence.EntityManager;
 
 import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
+import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -83,7 +85,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, LockProvider.class
+    AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, LockProvider.class,
+    CacheService.class
 })
 public class RegistryAPITest {
 
@@ -1716,6 +1719,9 @@ public class RegistryAPITest {
         StorageUtilService storageUtilService() {
             return new StorageUtilService();
         }
+
+        @Bean
+        ExtensionJsonCacheKeyGenerator extensionJsonCacheKeyGenerator() { return new ExtensionJsonCacheKeyGenerator(); }
     }
     
 }
