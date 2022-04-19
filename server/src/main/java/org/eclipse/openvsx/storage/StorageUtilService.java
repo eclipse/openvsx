@@ -150,6 +150,11 @@ public class StorageUtilService implements IStorageService {
         return UrlUtil.createApiFileUrl(serverUrl, extVersion, name);
     }
 
+    public Map<String, String> getFileUrls(ExtensionVersion extVersion, String serverUrl, String... types) {
+        var fileUrls = getFileUrls(List.of(extVersion), serverUrl, types);
+        return fileUrls.get(extVersion.getId());
+    }
+
     /**
      * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */

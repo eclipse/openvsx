@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.server.ResponseStatusException;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
@@ -55,6 +56,9 @@ public class RegistryAPI {
 
     @Autowired
     UpstreamRegistryService upstream;
+
+    @Autowired
+    UserService users;
 
     protected Iterable<IExtensionRegistry> getRegistries() {
         var registries = new ArrayList<IExtensionRegistry>();
@@ -622,6 +626,60 @@ public class RegistryAPI {
     }
 
     @PostMapping(
+            path = "/api/user/namespace/create",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @ApiOperation("Create a namespace")
+    @ApiResponses({
+            @ApiResponse(
+                    code = 201,
+                    message = "Successfully created the namespace",
+                    examples = @Example(@ExampleProperty(value="{ \"success\": \"Created namespace foobar\" }", mediaType = "application/json")),
+                    responseHeaders = @ResponseHeader(
+                            name = "Location",
+                            description = "The URL of the namespace metadata",
+                            response = String.class
+                    )
+            ),
+            @ApiResponse(
+                    code = 400,
+                    message = "The namespace could not be created",
+                    examples = @Example(@ExampleProperty(value="{ \"error\": \"Invalid access token.\" }", mediaType = "application/json"))
+            ),
+            @ApiResponse(
+                    code = 403,
+                    message = "User is not logged in"
+            )
+    })
+    public ResponseEntity<ResultJson> createNamespace(
+            @RequestBody @ApiParam("Describes the namespace to create")
+                    NamespaceJson namespace
+    ) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        if (namespace == null) {
+            return ResponseEntity.ok(ResultJson.error("No JSON input."));
+        }
+        if (Strings.isNullOrEmpty(namespace.name)) {
+            return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
+        }
+        try {
+            var json = local.createNamespace(namespace, user);
+            var serverUrl = UrlUtil.getBaseUrl();
+            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.name);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create(url))
+                    .body(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
         path = "/api/-/publish",
         consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -659,6 +717,60 @@ public class RegistryAPI {
             var json = local.publish(content, token);
             var serverUrl = UrlUtil.getBaseUrl();
             var url = UrlUtil.createApiVersionUrl(serverUrl, json);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create(url))
+                    .body(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ExtensionJson.class);
+        }
+    }
+
+    @PostMapping(
+            path = "/api/user/publish",
+            consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @ApiOperation("Publish an extension by uploading a vsix file")
+    @ApiImplicitParams({
+            @ApiImplicitParam(
+                    name = "content",
+                    paramType = "body",
+                    value = "Uploaded vsix file to publish",
+                    required = true
+            )
+    })
+    @ApiResponses({
+            @ApiResponse(
+                    code = 201,
+                    message = "Successfully published the extension",
+                    responseHeaders = @ResponseHeader(
+                            name = "Location",
+                            description = "The URL of the extension metadata",
+                            response = String.class
+                    )
+            ),
+            @ApiResponse(
+                    code = 400,
+                    message = "The extension could not be published",
+                    examples = @Example(@ExampleProperty(value="{ \"error\": \"Unknown publisher: foobar\" }", mediaType = "application/json"))
+            ),
+            @ApiResponse(
+                    code = 403,
+                    message = "User is not logged in"
+            )
+    })
+    public ResponseEntity<ExtensionJson> publish(
+            InputStream content
+    ) {
+        try {
+            var user = users.findLoggedInUser();
+            if (user == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+
+            var json = local.publish(content, user);
+            var serverUrl = UrlUtil.getBaseUrl();
+            var url = UrlUtil.createApiUrl(serverUrl, "api", json.namespace, json.name, json.version);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);

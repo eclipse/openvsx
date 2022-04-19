@@ -42,6 +42,7 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +59,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
-@MockBean({ EntityManager.class, ClientRegistrationRepository.class, LockProvider.class, CacheService.class })
+@MockBean({ EntityManager.class, ClientRegistrationRepository.class, LockProvider.class, StorageUtilService.class, CacheService.class })
 public class UserAPITest {
 
     @SpyBean
@@ -488,6 +489,8 @@ public class UserAPITest {
         membership2.setRole(NamespaceMembership.ROLE_OWNER);
         Mockito.when(repositories.findMemberships(userData, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(Streamable.of(membership1, membership2));
+        Mockito.when(repositories.findMemberships(userData, NamespaceMembership.ROLE_CONTRIBUTOR))
+                .thenReturn(Streamable.empty());
     }
 
     private String namespacesJson(Consumer<List<NamespaceJson>> content) throws JsonProcessingException {

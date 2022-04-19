@@ -408,15 +408,22 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var namespaceIssue = validator.validateNamespace(json.name);
-        if (namespaceIssue.isPresent()) {
-            throw new ErrorResultException(namespaceIssue.get().toString());
-        }
         var token = users.useAccessToken(tokenValue);
         if (token == null) {
             throw new ErrorResultException("Invalid access token.");
         }
-        eclipse.checkPublisherAgreement(token.getUser());
+
+        return createNamespace(json, token.getUser());
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson createNamespace(NamespaceJson json, UserData user) {
+        var namespaceIssue = validator.validateNamespace(json.name);
+        if (namespaceIssue.isPresent()) {
+            throw new ErrorResultException(namespaceIssue.get().toString());
+        }
+
+        eclipse.checkPublisherAgreement(user);
         var namespace = repositories.findNamespace(json.name);
         if (namespace != null) {
             throw new ErrorResultException("Namespace already exists: " + namespace.getName());
@@ -430,11 +437,27 @@ public class LocalRegistryService implements IExtensionRegistry {
         // Assign the requesting user as contributor
         var membership = new NamespaceMembership();
         membership.setNamespace(namespace);
-        membership.setUser(token.getUser());
+        membership.setUser(user);
         membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
         entityManager.persist(membership);
 
         return ResultJson.success("Created namespace " + namespace.getName());
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
+        var token = new PersonalAccessToken();
+        token.setDescription("One time use publish token");
+        token.setValue(users.generateTokenValue());
+        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
+        token.setAccessedTimestamp(token.getCreatedTimestamp());
+        token.setUser(user);
+        token.setActive(true);
+        entityManager.persist(token);
+
+        var json = publish(content, token.getValue());
+        token.setActive(false);
+        return json;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)

@@ -28,7 +28,7 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
     return createMuiTheme({
         palette: {
             primary: {
-                main: themeType === 'dark' ? '#444' : '#eeeeee',
+                main: themeType === 'dark' ? '#eeeeee' : '#444',
                 dark: themeType === 'dark' ? '#f4f4f4' : '#565157'
             },
             secondary: {

@@ -169,7 +169,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                 </Route>
                 <Route path='*'>
                     <Box className={classes.main}>
-                        <AppBar position='relative'>
+                        <AppBar position='relative' color='inherit'>
                             <Toolbar classes={{ root: classes.spreadHorizontally }}>
                                 <Box className={classes.alignVertically}>
                                     {ToolbarContent ? <ToolbarContent /> : null}

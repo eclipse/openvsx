@@ -135,6 +135,10 @@ public class RepositoryService {
         return extension.getNamespace().getName() + "." + extension.getName();
     }
 
+    public Streamable<ExtensionVersion> findVersionsByUser(UserData user) {
+        return extensionVersionRepo.findByPublishedWithUser(user);
+    }
+
     public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith) {
         return extensionVersionRepo.findByPublishedWith(publishedWith);
     }

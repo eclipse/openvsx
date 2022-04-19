@@ -40,6 +40,7 @@ export const UserSettingTabs = (props: UserSettingTabs.Props): React.ReactElemen
                 <Tab value='profile' label='Profile' />
                 <Tab value='tokens' label='Access Tokens' />
                 <Tab value='namespaces' label='Namespaces' />
+                <Tab value='extensions' label='Extensions' />
             </Tabs>
         </React.Fragment>
     );
