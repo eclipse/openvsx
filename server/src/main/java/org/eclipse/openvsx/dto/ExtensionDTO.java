@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.dto;
 
+import java.time.LocalDateTime;
+
 public class ExtensionDTO {
 
     private final long id;
@@ -17,6 +19,8 @@ public class ExtensionDTO {
     private final NamespaceDTO namespace;
     private final Double averageRating;
     private final int downloadCount;
+    private final LocalDateTime publishedDate;
+    private final LocalDateTime lastUpdatedDate;
 
     public ExtensionDTO(
             long id,
@@ -24,6 +28,8 @@ public class ExtensionDTO {
             String name,
             Double averageRating,
             int downloadCount,
+            LocalDateTime publishedDate,
+            LocalDateTime lastUpdatedDate,
             long namespaceId,
             String namespacePublicId,
             String namespaceName
@@ -33,6 +39,8 @@ public class ExtensionDTO {
         this.name = name;
         this.averageRating = averageRating;
         this.downloadCount = downloadCount;
+        this.publishedDate = publishedDate;
+        this.lastUpdatedDate = lastUpdatedDate;
 
         this.namespace = new NamespaceDTO(namespaceId, namespacePublicId, namespaceName);
     }
@@ -59,5 +67,13 @@ public class ExtensionDTO {
 
     public int getDownloadCount() {
         return downloadCount;
+    }
+
+    public LocalDateTime getPublishedDate() {
+        return publishedDate;
+    }
+
+    public LocalDateTime getLastUpdatedDate() {
+        return lastUpdatedDate;
     }
 }

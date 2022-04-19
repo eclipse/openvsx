@@ -490,10 +490,9 @@ public class VSCodeAdapter {
         queryExt.publisher.publisherName = namespace.getName();
         queryExt.publisher.displayName = namespace.getName();
         queryExt.tags = latest.getTags();
-        // TODO: add these
-        // queryExt.releaseDate
-        // queryExt.publishedDate
-        // queryExt.lastUpdated
+        queryExt.releaseDate = TimeUtil.toUTCString(extension.getPublishedDate());
+        queryExt.publishedDate = TimeUtil.toUTCString(extension.getPublishedDate());
+        queryExt.lastUpdated = TimeUtil.toUTCString(extension.getLastUpdatedDate());
         queryExt.categories = latest.getCategories();
         queryExt.flags = latest.isPreview() ? FLAG_PREVIEW : "";
 
@@ -525,7 +524,7 @@ public class VSCodeAdapter {
     ) {
         var queryVer = new ExtensionQueryResult.ExtensionVersion();
         queryVer.version = extVer.getVersion();
-        queryVer.lastUpdated = extVer.getTimestamp().toString();
+        queryVer.lastUpdated = TimeUtil.toUTCString(extVer.getTimestamp());
         queryVer.targetPlatform = extVer.getTargetPlatform();
         var serverUrl = UrlUtil.getBaseUrl();
         var namespaceName = extVer.getExtension().getNamespace().getName();

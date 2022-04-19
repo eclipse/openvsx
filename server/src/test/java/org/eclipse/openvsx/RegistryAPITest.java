@@ -1254,10 +1254,13 @@ public class RegistryAPITest {
         for(var i = 0; i < targetPlatforms.size(); i++) {
             var targetPlatform = targetPlatforms.get(i);
             versions.add(new ExtensionVersionDTO(
-                    namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, null, 0,
-                    null, null, null, null, null, null, id + i, version, targetPlatform, false, false, timestamp, displayName,
-                    null, null, null, null, null, null, null, null, null,
-                    null, null, null, null, null, null
+                    namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName,
+                    null, 0, null, null,
+                    null, null, null, null, null, null,
+                    id + i, version, targetPlatform, false, false, timestamp, displayName,
+                    null, null, null, null, null, null, null,
+                    null, null, null, null, null, null, null,
+                    null
             ));
         }
 
@@ -1296,10 +1299,13 @@ public class RegistryAPITest {
         var displayName = "Foo Bar";
 
         var extVersion = new ExtensionVersionDTO(
-                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName, null, 0,
-                null, null, null, null, null, null, id, version, TargetPlatform.NAME_UNIVERSAL, false, false, timestamp, displayName,
-                null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null
+                namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName,
+                null, 0, null, null,
+                null, null, null, null, null, null, id,
+                version, TargetPlatform.NAME_UNIVERSAL, false, false, timestamp, displayName,
+                null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null,
+                null
         );
 
         var extensionPublicId = "5678";

@@ -13,10 +13,13 @@
                     "displayName": "YAML",
                     "flags": "preview",
                     "shortDescription": "YAML Language Support",
+                    "releaseDate": "1999-12-01T09:00Z",
+                    "publishedDate": "1999-12-01T09:00Z",
+                    "lastUpdated": "2000-01-01T10:00Z",
                     "versions": [
                         {
                             "version": "0.5.2",
-                            "lastUpdated": "2000-01-01T10:00",
+                            "lastUpdated": "2000-01-01T10:00Z",
                             "files": [
                                 {
                                     "assetType": "Microsoft.VisualStudio.Code.Manifest",

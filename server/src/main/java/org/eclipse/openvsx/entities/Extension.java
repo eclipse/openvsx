@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.function.Predicate;
@@ -47,6 +48,10 @@ public class Extension {
     Double averageRating;
 
     int downloadCount;
+
+    LocalDateTime publishedDate;
+
+    LocalDateTime lastUpdatedDate;
 
     /**
      * Convert to a search entity for Elasticsearch.
@@ -129,6 +134,21 @@ public class Extension {
         this.downloadCount = downloadCount;
     }
 
+    public LocalDateTime getPublishedDate() {
+        return publishedDate;
+    }
+
+    public void setPublishedDate(LocalDateTime publishedDate) {
+        this.publishedDate = publishedDate;
+    }
+
+    public LocalDateTime getLastUpdatedDate() {
+        return lastUpdatedDate;
+    }
+
+    public void setLastUpdatedDate(LocalDateTime lastUpdatedDate) {
+        this.lastUpdatedDate = lastUpdatedDate;
+    }
     public List<ExtensionVersion> getVersions() {
         if(versions == null) {
             versions = new ArrayList<>();

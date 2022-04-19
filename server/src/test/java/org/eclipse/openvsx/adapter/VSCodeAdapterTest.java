@@ -439,7 +439,8 @@ public class VSCodeAdapterTest {
             var namespacePublicId = "test-2";
             var namespaceName = "redhat";
 
-            return new ExtensionDTO(id, publicId, name, averageRating, downloadCount, namespaceId, namespacePublicId, namespaceName);
+            return new ExtensionDTO(id,publicId,name,averageRating,downloadCount, LocalDateTime.parse("1999-12-01T09:00"),
+                    LocalDateTime.parse("2000-01-01T10:00"), namespaceId,namespacePublicId, namespaceName);
     }
 
     private void mockExtensionVersionDTOs(ExtensionDTO extension, String queryTargetPlatform, String... targetPlatforms) {
