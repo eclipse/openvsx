@@ -34,6 +34,8 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LicenseDetection;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.common.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -52,6 +54,8 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");
 
     private static final String WEB_EXTENSION_TAG = "__web_extension";
+
+    protected final Logger logger = LoggerFactory.getLogger(ExtensionProcessor.class);
 
     private final InputStream inputStream;
     private byte[] content;
@@ -313,7 +317,13 @@ public class ExtensionProcessor implements AutoCloseable {
         readInputStream();
         return zipFile.stream()
                 .map(zipEntry -> {
-                    var bytes = ArchiveUtil.readEntry(zipFile, zipEntry);
+                    byte[] bytes;
+                    try {
+                        bytes = ArchiveUtil.readEntry(zipFile, zipEntry);
+                    } catch(ErrorResultException exc) {
+                        logger.warn("Failed to read entry", exc);
+                        bytes = null;
+                    }
                     if (bytes == null) {
                         return null;
                     }
