@@ -113,6 +113,7 @@ public class ExtensionService {
             extension = new Extension();
             extension.setName(extensionName);
             extension.setNamespace(namespace);
+            extension.setPublishedDate(extVersion.getTimestamp());
 
             vsCodeIdService.createPublicId(extension);
             entityManager.persist(extension);
@@ -127,6 +128,7 @@ public class ExtensionService {
                         + (existingVersion.isActive() ? "." : ", but is currently inactive and therefore not visible."));
             }
         }
+        extension.setLastUpdatedDate(extVersion.getTimestamp());
         extVersion.setExtension(extension);
         extension.getVersions().add(extVersion);
         entityManager.persist(extVersion);

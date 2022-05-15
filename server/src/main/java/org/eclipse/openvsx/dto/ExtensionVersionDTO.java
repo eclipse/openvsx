@@ -61,6 +61,8 @@ public class ExtensionVersionDTO {
             String extensionName,
             Double extensionAverageRating,
             int extensionDownloadCount,
+            LocalDateTime extensionPublishedDate,
+            LocalDateTime extensionLastUpdatedDate,
             Long userId,
             String userLoginName,
             String userFullName,
@@ -117,6 +119,8 @@ public class ExtensionVersionDTO {
                 extensionName,
                 extensionAverageRating,
                 extensionDownloadCount,
+                extensionPublishedDate,
+                extensionLastUpdatedDate,
                 namespaceId,
                 namespacePublicId,
                 namespaceName

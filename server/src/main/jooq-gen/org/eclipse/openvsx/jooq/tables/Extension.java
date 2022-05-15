@@ -4,6 +4,7 @@
 package org.eclipse.openvsx.jooq.tables;
 
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -16,7 +17,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row7;
+import org.jooq.Row9;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -82,6 +83,16 @@ public class Extension extends TableImpl<ExtensionRecord> {
      * The column <code>public.extension.active</code>.
      */
     public final TableField<ExtensionRecord, Boolean> ACTIVE = createField(DSL.name("active"), SQLDataType.BOOLEAN.nullable(false), this, "");
+
+    /**
+     * The column <code>public.extension.published_date</code>.
+     */
+    public final TableField<ExtensionRecord, LocalDateTime> PUBLISHED_DATE = createField(DSL.name("published_date"), SQLDataType.LOCALDATETIME(6), this, "");
+
+    /**
+     * The column <code>public.extension.last_updated_date</code>.
+     */
+    public final TableField<ExtensionRecord, LocalDateTime> LAST_UPDATED_DATE = createField(DSL.name("last_updated_date"), SQLDataType.LOCALDATETIME(6), this, "");
 
     private Extension(Name alias, Table<ExtensionRecord> aliased) {
         this(alias, aliased, null);
@@ -172,11 +183,11 @@ public class Extension extends TableImpl<ExtensionRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row7 type methods
+    // Row9 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row7<Long, Double, Integer, String, Long, String, Boolean> fieldsRow() {
-        return (Row7) super.fieldsRow();
+    public Row9<Long, Double, Integer, String, Long, String, Boolean, LocalDateTime, LocalDateTime> fieldsRow() {
+        return (Row9) super.fieldsRow();
     }
 }

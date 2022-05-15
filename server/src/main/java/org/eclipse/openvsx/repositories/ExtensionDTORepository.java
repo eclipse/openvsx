@@ -63,6 +63,8 @@ public class ExtensionDTORepository {
                     EXTENSION.NAME,
                     EXTENSION.AVERAGE_RATING,
                     EXTENSION.DOWNLOAD_COUNT,
+                    EXTENSION.PUBLISHED_DATE,
+                    EXTENSION.LAST_UPDATED_DATE,
                     NAMESPACE.ID,
                     NAMESPACE.PUBLIC_ID,
                     NAMESPACE.NAME

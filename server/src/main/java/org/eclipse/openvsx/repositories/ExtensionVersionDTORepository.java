@@ -119,6 +119,8 @@ public class ExtensionVersionDTORepository {
                     EXTENSION.NAME,
                     EXTENSION.AVERAGE_RATING,
                     EXTENSION.DOWNLOAD_COUNT,
+                    EXTENSION.PUBLISHED_DATE,
+                    EXTENSION.LAST_UPDATED_DATE,
                     USER_DATA.ID,
                     USER_DATA.LOGIN_NAME,
                     USER_DATA.FULL_NAME,
