@@ -40,7 +40,7 @@ public class Extension {
     @ManyToOne
     Namespace namespace;
 
-    @OneToMany(mappedBy = "extension")
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "extension")
     List<ExtensionVersion> versions;
 
     boolean active;

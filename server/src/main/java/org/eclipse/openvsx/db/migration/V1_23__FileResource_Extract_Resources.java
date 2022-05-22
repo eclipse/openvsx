@@ -24,12 +24,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Component
@@ -38,10 +40,10 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
     private static final String COL_FR_ID = "fr_id";
     private static final String COL_FR_NAME = "fr_name";
     private static final String COL_FR_TYPE = "fr_type";
-    private static final String COL_FR_CONTENT = "fr_content";
     private static final String COL_FR_STORAGE_TYPE = "fr_storage_type";
     private static final String COL_EV_ID = "ev_id";
     private static final String COL_EV_VERSION = "ev_version";
+    private static final String COL_EV_TARGET_PLATFORM = "ev_target_platform";
     private static final String COL_E_NAME = "e_name";
     private static final String COL_N_NAME = "n_name";
 
@@ -57,12 +59,18 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
     @Override
     public void migrate(Context context) throws Exception {
         var connection = context.getConnection();
+        var uploadFutures = new ArrayList<CompletableFuture<Void>>();
         var downloads = getAllDownloads(connection);
-        var resources = extractResources(downloads);
-        uploadResources(resources);
-        deleteResources(connection);
-        insertResources(resources, connection);
-        deleteWebResources(connection);
+        for(var download : downloads) {
+            var resources = extractResources(download, connection);
+            uploadFutures.addAll(uploadResources(resources));
+            deleteType("resource", download.getExtension().getId(), connection);
+            insertResources(resources, connection);
+            deleteType("web-resource", download.getExtension().getId(), connection);
+        }
+        for(var future : uploadFutures) {
+            future.join();
+        }
     }
 
     private List<FileResource> getAllDownloads(Connection connection) throws SQLException {
@@ -70,10 +78,10 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
                 "fr.id " + COL_FR_ID + ", " +
                 "fr.name " + COL_FR_NAME + ", " +
                 "fr.type " + COL_FR_TYPE + ", " +
-                "fr.content " + COL_FR_CONTENT + ", " +
                 "fr.storage_type " + COL_FR_STORAGE_TYPE + ", " +
                 "ev.id " + COL_EV_ID + ", " +
                 "ev.version " + COL_EV_VERSION + ", " +
+                "ev.target_platform " + COL_EV_TARGET_PLATFORM + ", " +
                 "e.name " + COL_E_NAME + ", " +
                 "n.name " + COL_N_NAME + " " +
                 "FROM file_resource fr " +
@@ -105,65 +113,73 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
         var extVersion = new ExtensionVersion();
         extVersion.setId(result.getLong(COL_EV_ID));
         extVersion.setVersion(result.getString(COL_EV_VERSION));
+        extVersion.setTargetPlatform(result.getString(COL_EV_TARGET_PLATFORM));
         extVersion.setExtension(extension);
 
         var resource = new FileResource();
         resource.setId(result.getLong(COL_FR_ID));
         resource.setName(result.getString(COL_FR_NAME));
         resource.setType(result.getString(COL_FR_TYPE));
-        resource.setContent(result.getBytes(COL_FR_CONTENT));
         resource.setStorageType(result.getString(COL_FR_STORAGE_TYPE));
         resource.setExtension(extVersion);
 
         return resource;
     }
 
-    private List<FileResource> extractResources(List<FileResource> downloads) {
+    private List<FileResource> extractResources(FileResource download, Connection connection) throws SQLException, IOException {
         var storages = Map.of(
                 FileResource.STORAGE_GOOGLE, googleStorage,
                 FileResource.STORAGE_AZURE, azureStorage
         );
 
-        var resources = new ArrayList<FileResource>();
-        for(var download : downloads) {
-            byte[] content;
-            if(download.getStorageType().equals(FileResource.STORAGE_DB)) {
-                content = download.getContent();
-            } else {
-                var storage = storages.get(download.getStorageType());
-                var uri = storage.getLocation(download);
-                content = restTemplate.getForObject(uri, byte[].class);
-            }
-
-            try(var processor = new ExtensionProcessor(new ByteArrayInputStream(content))) {
-                var processedResources = processor.getResources(download.getExtension()).stream()
-                        .filter(resource -> resource.getType().equals(FileResource.RESOURCE))
-                        .map(resource -> {
-                            resource.setStorageType(download.getStorageType());
-                            return resource;
-                        })
-                        .collect(Collectors.toList());
-
-                resources.addAll(processedResources);
-            }
+        byte[] content;
+        if(download.getStorageType().equals(FileResource.STORAGE_DB)) {
+            content = getContent(download.getId(), connection);
+        } else {
+            var storage = storages.get(download.getStorageType());
+            var uri = storage.getLocation(download);
+            content = restTemplate.getForObject(uri, byte[].class);
         }
 
-        return resources;
+        try(var input = new ByteArrayInputStream(content)) {
+            try(var processor = new ExtensionProcessor(input)) {
+                var resources = new ArrayList<FileResource>();
+                var allResources = processor.getResources(download.getExtension());
+                for(var resource : allResources) {
+                    if(resource.getType().equals(FileResource.RESOURCE)) {
+                        resource.setStorageType(download.getStorageType());
+                        resources.add(resource);
+                    }
+                }
+
+                return resources;
+            }
+        }
     }
 
-    private void uploadResources(List<FileResource> resources) {
+    private byte[] getContent(long fileResourceId, Connection connection) throws SQLException {
+        try(var statement = connection.prepareStatement("SELECT content FROM file_resource WHERE id = ?")) {
+            statement.setLong(1, fileResourceId);
+            try(var result = statement.executeQuery()) {
+                return result.next() ? result.getBytes("content"): null;
+            }
+        }
+    }
+
+    private List<CompletableFuture<Void>> uploadResources(List<FileResource> resources) {
         var storages = Map.of(
                 FileResource.STORAGE_GOOGLE, googleStorage,
                 FileResource.STORAGE_AZURE, azureStorage
         );
 
-        for(var resource : resources) {
-            if(!resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-                var storage = storages.get(resource.getStorageType());
-                storage.uploadFile(resource);
-                resource.setContent(null);
-            }
-        }
+        return resources.stream()
+                .filter(resource -> !resource.getStorageType().equals(FileResource.STORAGE_DB))
+                .map(resource -> CompletableFuture.runAsync(() -> {
+                    var storage = storages.get(resource.getStorageType());
+                    storage.uploadFile(resource);
+                    resource.setContent(null);
+                }))
+                .collect(Collectors.toList());
     }
 
     private void insertResources(List<FileResource> resources, Connection connection) throws SQLException {
@@ -180,16 +196,11 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
         }
     }
 
-    private void deleteResources(Connection connection) throws SQLException {
-        var query = "DELETE FROM file_resource WHERE type = 'resource'";
+    private void deleteType(String type, long extensionId, Connection connection) throws SQLException {
+        var query = "DELETE FROM file_resource WHERE type = ? AND extension_id = ?";
         try(var statement = connection.prepareStatement(query)) {
-            statement.executeUpdate();
-        }
-    }
-
-    private void deleteWebResources(Connection connection) throws SQLException {
-        var query = "DELETE FROM file_resource WHERE type = 'web-resource'";
-        try(var statement = connection.prepareStatement(query)) {
+            statement.setString(1, type);
+            statement.setLong(2, extensionId);
             statement.executeUpdate();
         }
     }
