@@ -25,6 +25,7 @@ def versions = [
     spdx: '2.2.4',
     gcloud: '1.113.4',
     azure: '12.9.0',
+    aws: '1.12.247',
     guava: '28.2-jre',
     junit: '5.7.1',
     testcontainers: '1.15.2',
@@ -68,6 +69,7 @@ dependencies {
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
+    implementation "com.amazonaws:aws-java-sdk-s3:${versions.aws}"
     implementation "io.springfox:springfox-boot-starter:${versions.springfox}"
     implementation "net.javacrumbs.shedlock:shedlock-spring:${versions.shedlock}"
     implementation "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${versions.shedlock}"
