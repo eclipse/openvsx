@@ -12,6 +12,7 @@ package org.eclipse.openvsx.storage;
 import static org.eclipse.openvsx.entities.FileResource.*;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -140,6 +141,20 @@ public class StorageUtilService implements IStorageService {
                 break;
             case STORAGE_AWS:
                 awsStorage.removeFile(resource);
+        }
+    }
+
+    @Override
+    public Duration getCacheDuration(FileResource resource) {
+        switch (getActiveStorageType()) {
+            case STORAGE_GOOGLE:
+                return googleStorage.getCacheDuration(resource);
+            case STORAGE_AZURE:
+                return azureStorage.getCacheDuration(resource);
+            case STORAGE_AWS:
+                return awsStorage.getCacheDuration(resource);
+            default:
+                throw new RuntimeException("cache duration is not provided.");
         }
     }
 

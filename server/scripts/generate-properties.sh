@@ -70,4 +70,5 @@ then
   echo "ovsx.storage.aws.service-endpoint=$AWS_SERVICE_ENDPOINT" >> $OVSX_APP_PROFILE
   echo "ovsx.storage.aws.bucket=$AWS_BUCKET" >> $OVSX_APP_PROFILE
   echo "ovsx.storage.aws.path-style-access=$AWS_PATH_STYLE_ACCESS" >> $OVSX_APP_PROFILE
+  echo "ovsx.storage.aws.presign-expiry-minutes=$AWS_CACHE_DURATION_MINUTES" >> $OVSX_APP_PROFILE
   echo "Using AWS S3 Storage: $AWS_SERVICE_ENDPOINT"

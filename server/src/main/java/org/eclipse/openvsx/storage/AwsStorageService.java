@@ -20,6 +20,8 @@ import com.google.common.base.Strings;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.Calendar;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -47,6 +49,9 @@ public class AwsStorageService implements IStorageService {
 
     @Value("${ovsx.storage.aws.path-style-access:false}")
     boolean pathStyleAccess;
+
+    @Value("${ovsx.storage.aws.presign-expiry-minutes:60}")
+    int presignExpiryMinutes;
 
     private AmazonS3 s3Client;
 
@@ -93,12 +98,20 @@ public class AwsStorageService implements IStorageService {
     }
 
     @Override
+    public Duration getCacheDuration(FileResource resource) {
+        return Duration.ofMinutes(presignExpiryMinutes);
+    }
+
+    @Override
     public URI getLocation(FileResource resource) {
         var client = getS3Client();
         var objectKey = getObjectKey(resource);
 
+        var calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE, presignExpiryMinutes);
+
         try {
-            return client.generatePresignedUrl(bucket, objectKey, null).toURI();
+            return client.generatePresignedUrl(bucket, objectKey, calendar.getTime()).toURI();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

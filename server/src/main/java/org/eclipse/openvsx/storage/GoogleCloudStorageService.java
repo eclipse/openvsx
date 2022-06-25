@@ -14,6 +14,7 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.common.base.Strings;
+import java.time.Duration;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -87,6 +88,11 @@ public class GoogleCloudStorageService implements IStorageService {
                     + objectId + ": missing Google bucket id");
         }
         getStorage().delete(BlobId.of(bucketId, objectId));
+    }
+
+    @Override
+    public Duration getCacheDuration(FileResource resource) {
+        return Duration.ofDays(7);
     }
 
     @Override

@@ -36,6 +36,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -170,7 +171,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(storageUtil.getLocation(resource))
-                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .cacheControl(CacheControl.maxAge(storageUtil.getCacheDuration(resource)).cachePublic())
                     .build();
         }
     }
