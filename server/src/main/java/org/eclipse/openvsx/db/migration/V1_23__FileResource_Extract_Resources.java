@@ -15,6 +15,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.flywaydb.core.api.migration.BaseJavaMigration;
@@ -55,6 +56,9 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
 
     @Autowired
     AzureBlobStorageService azureStorage;
+
+    @Autowired
+    AwsStorageService awsStorage;
 
     @Override
     public void migrate(Context context) throws Exception {
@@ -129,7 +133,8 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
     private List<FileResource> extractResources(FileResource download, Connection connection) throws SQLException, IOException {
         var storages = Map.of(
                 FileResource.STORAGE_GOOGLE, googleStorage,
-                FileResource.STORAGE_AZURE, azureStorage
+                FileResource.STORAGE_AZURE, azureStorage,
+                FileResource.STORAGE_AWS, awsStorage
         );
 
         byte[] content;
@@ -169,7 +174,8 @@ public class V1_23__FileResource_Extract_Resources extends BaseJavaMigration {
     private List<CompletableFuture<Void>> uploadResources(List<FileResource> resources) {
         var storages = Map.of(
                 FileResource.STORAGE_GOOGLE, googleStorage,
-                FileResource.STORAGE_AZURE, azureStorage
+                FileResource.STORAGE_AZURE, azureStorage,
+                FileResource.STORAGE_AWS, awsStorage
         );
 
         return resources.stream()
