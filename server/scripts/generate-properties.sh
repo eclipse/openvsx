@@ -69,5 +69,5 @@ then
   echo "ovsx.storage.aws.region=$AWS_REGION" >> $OVSX_APP_PROFILE
   echo "ovsx.storage.aws.service-endpoint=$AWS_SERVICE_ENDPOINT" >> $OVSX_APP_PROFILE
   echo "ovsx.storage.aws.bucket=$AWS_BUCKET" >> $OVSX_APP_PROFILE
-  echo "ovsx.storage.aws.path-style-access" >> $OVSX_APP_PROFILE
+  echo "ovsx.storage.aws.path-style-access=$AWS_PATH_STYLE_ACCESS" >> $OVSX_APP_PROFILE
   echo "Using AWS S3 Storage: $AWS_SERVICE_ENDPOINT"
