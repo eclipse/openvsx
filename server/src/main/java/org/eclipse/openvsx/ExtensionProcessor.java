@@ -14,8 +14,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
@@ -290,7 +292,7 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     public List<FileResource> getResources(ExtensionVersion extension) {
-        var resources = new ArrayList<>(getAllResources(extension));
+        var resources = new ArrayList<>(getAllResources(extension).collect(Collectors.toList()));
         var binary = getBinary(extension);
         if (binary != null)
             resources.add(binary);
@@ -313,7 +315,11 @@ public class ExtensionProcessor implements AutoCloseable {
         return resources;
     }
 
-    protected List<FileResource> getAllResources(ExtensionVersion extension) {
+    public void processEachResource(ExtensionVersion extension, Consumer<FileResource> processor) {
+        getAllResources(extension).forEach(processor);
+    }
+
+    protected Stream<FileResource> getAllResources(ExtensionVersion extension) {
         readInputStream();
         return zipFile.stream()
                 .map(zipEntry -> {
@@ -334,8 +340,7 @@ public class ExtensionProcessor implements AutoCloseable {
                     resource.setContent(bytes);
                     return resource;
                 })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .filter(Objects::nonNull);
     }
 
     protected FileResource getBinary(ExtensionVersion extension) {

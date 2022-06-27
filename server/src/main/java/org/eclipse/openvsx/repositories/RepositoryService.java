@@ -41,6 +41,7 @@ public class RepositoryService {
     @Autowired NamespaceMembershipDTORepository namespaceMembershipDTORepo;
     @Autowired AdminStatisticsRepository adminStatisticsRepo;
     @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
+    @Autowired ExtractResourcesMigrationItemRepository extractResourcesMigrationItemRepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
@@ -343,5 +344,13 @@ public class RepositoryService {
 
     public Streamable<ExtensionVersion> findVersions(UserData user) {
         return extensionVersionRepo.findByPublishedWithUser(user);
+    }
+
+    public Streamable<ExtractResourcesMigrationItem> findNotMigratedResources() {
+        return extractResourcesMigrationItemRepo.findByMigrationScheduledFalseOrderByExtensionExtensionDownloadCountDesc();
+    }
+
+    public void deleteFileResources(ExtensionVersion extVersion, String type) {
+        fileResourceRepo.deleteByExtensionAndType(extVersion, type);
     }
 }
