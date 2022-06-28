@@ -8,6 +8,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: gitpod
     password: gitpod
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0.1.0
+    baseline-description: JobRunr tables
   jpa:
     open-in-view: false
     properties:
@@ -50,6 +54,8 @@ org:
       worker-count: 2
     dashboard:
       enabled: false
+    miscellaneous:
+      allow-anonymous-data-usage: false
 
 ovsx:
   databasesearch:
