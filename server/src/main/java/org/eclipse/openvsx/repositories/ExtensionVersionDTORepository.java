@@ -134,6 +134,7 @@ public class ExtensionVersionDTORepository {
                     EXTENSION.PUBLISHED_DATE,
                     EXTENSION.LAST_UPDATED_DATE,
                     USER_DATA.ID,
+                    USER_DATA.ROLE,
                     USER_DATA.LOGIN_NAME,
                     USER_DATA.FULL_NAME,
                     USER_DATA.AVATAR_URL,

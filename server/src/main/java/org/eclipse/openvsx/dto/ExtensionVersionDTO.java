@@ -81,6 +81,7 @@ public class ExtensionVersionDTO implements Serializable {
             LocalDateTime extensionPublishedDate,
             LocalDateTime extensionLastUpdatedDate,
             Long userId,
+            String userRole,
             String userLoginName,
             String userFullName,
             String userAvatarUrl,
@@ -144,7 +145,7 @@ public class ExtensionVersionDTO implements Serializable {
         );
 
         if(userId != null) {
-            this.publishedWith = new PersonalAccessTokenDTO(userId, userLoginName, userFullName, userAvatarUrl, userProviderUrl, userProvider);
+            this.publishedWith = new PersonalAccessTokenDTO(userId, userRole, userLoginName, userFullName, userAvatarUrl, userProviderUrl, userProvider);
         }
 
         this.license = license;
