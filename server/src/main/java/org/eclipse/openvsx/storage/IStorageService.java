@@ -11,9 +11,7 @@ package org.eclipse.openvsx.storage;
 
 import java.net.URI;
 
-import java.time.Duration;
 import org.eclipse.openvsx.entities.FileResource;
-import org.springframework.http.CacheControl;
 
 public interface IStorageService {
 
@@ -31,11 +29,6 @@ public interface IStorageService {
      * Remove a file from the external storage.
      */
     void removeFile(FileResource resource);
-
-    /**
-     * Returns the cache control duration of a resource.
-     */
-    Duration getCacheDuration(FileResource resource);
 
     /**
      * Returns the public access location of a resource.

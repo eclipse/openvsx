@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2022 TypeFox and others
+ * Copyright (c) 2022 Marshall Walker and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,19 +18,25 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.google.common.base.Strings;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
-import java.util.Calendar;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AwsStorageService implements IStorageService {
+
+    @Autowired
+    FileCacheDurationConfig fileCacheDurationConfig;
 
     @Value("${ovsx.storage.aws.access-key-id:}")
     String accessKeyId;
@@ -49,9 +55,6 @@ public class AwsStorageService implements IStorageService {
 
     @Value("${ovsx.storage.aws.path-style-access:false}")
     boolean pathStyleAccess;
-
-    @Value("${ovsx.storage.aws.presign-expiry-minutes:60}")
-    int presignExpiryMinutes;
 
     private AmazonS3 s3Client;
 
@@ -76,7 +79,6 @@ public class AwsStorageService implements IStorageService {
     public void uploadFile(FileResource resource) {
         var client = getS3Client();
         var key = getObjectKey(resource);
-        var stream = new ByteArrayInputStream(resource.getContent());
         var resourceName = resource.getName();
 
         var metadata = new ObjectMetadata();
@@ -88,18 +90,17 @@ public class AwsStorageService implements IStorageService {
         } else {
             metadata.setCacheControl(StorageUtil.getCacheControl(resourceName).getHeaderValue());
         }
-        client.putObject(bucket, key, stream, metadata);
+
+        try(var stream = new ByteArrayInputStream(resource.getContent())) {
+            client.putObject(bucket, key, stream, metadata);
+        } catch(IOException exc) {
+            throw new RuntimeException(exc);
+        }
     }
 
     @Override
     public void removeFile(FileResource resource) {
-        var client = getS3Client();
-        client.deleteObject(bucket, getObjectKey(resource));
-    }
-
-    @Override
-    public Duration getCacheDuration(FileResource resource) {
-        return Duration.ofMinutes(presignExpiryMinutes);
+        getS3Client().deleteObject(bucket, getObjectKey(resource));
     }
 
     @Override
@@ -107,11 +108,12 @@ public class AwsStorageService implements IStorageService {
         var client = getS3Client();
         var objectKey = getObjectKey(resource);
 
-        var calendar = Calendar.getInstance();
-        calendar.add(Calendar.MINUTE, presignExpiryMinutes);
+        var instant = LocalDateTime.now().toInstant(ZoneOffset.UTC);
+        instant.plus(fileCacheDurationConfig.getCacheDuration());
+        var date = Date.from(instant);
 
         try {
-            return client.generatePresignedUrl(bucket, objectKey, calendar.getTime()).toURI();
+            return client.generatePresignedUrl(bucket, objectKey, date).toURI();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

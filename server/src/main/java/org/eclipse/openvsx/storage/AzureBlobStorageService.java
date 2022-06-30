@@ -14,7 +14,6 @@ import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobHttpHeaders;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.google.common.base.Strings;
-import java.time.Duration;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -104,11 +103,6 @@ public class AzureBlobStorageService implements IStorageService {
             }
         }
 	}
-
-    @Override
-    public Duration getCacheDuration(FileResource resource) {
-        return Duration.ofDays(7);
-    }
 
     @Override
 	public URI getLocation(FileResource resource) {
