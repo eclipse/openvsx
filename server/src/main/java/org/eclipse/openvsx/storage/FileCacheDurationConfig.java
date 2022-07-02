@@ -17,10 +17,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class FileCacheDurationConfig {
 
-    @Value("ovsx.storage.file-cache-duration:P7D")
-    String cacheDuration;
+    @Value("#{T(java.time.Duration).parse('${ovsx.storage.file-cache-duration:P7D}')}")
+    private Duration cacheDuration;
 
     public Duration getCacheDuration() {
-        return Duration.parse(cacheDuration);
+        return cacheDuration;
     }
 }

@@ -113,6 +113,22 @@ If you also would like to test download count via Azure Blob, follow these steps
   * `AZURE_LOGS_SAS_TOKEN` with the shared access token for the `insights-logs-storageread` container.
   * If you change the variables in a running workspace, run `scripts/generate-properties.sh` in the `server` directory to update the application properties.
 
+### Amazon S3 Setup
+
+If you would like to test file storage via Amazon S3, follow these steps:
+
+* Login to the AWS Console and create an S3 [storage bucket](https://s3.console.aws.amazon.com/s3/home?refid=ft_card)
+* Follow the steps for [programmatic access](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) to create your access key id and secret access key
+* Configure the following environment variables on your server environment
+  * `AWS_ACCESS_KEY_ID` with your access key id
+  * `AWS_SECRET_ACCESS_KEY` with your secret access key
+  * `AWS_REGION` with your bucket region name
+  * `AWS_SERVICE_ENDPOINT` with the url of your S3 provider if not using AWS (for AWS do not set)
+  * `AWS_BUCKET` with your bucket name
+  * `AWS_PATH_STYLE_ACCESS` whether or not to use path style access, (defaults to `false`)
+    * Path-style access: `https://s3.<region>.amazonaws.com/<bucket-name>/<resource-key>`
+    * Virtual-style access: `https://<bucket-name>.s3.<region>.amazonaws.com/<resource-key>`
+
 ## License
 
 [Eclipse Public License 2.0](https://www.eclipse.org/legal/epl-2.0/)

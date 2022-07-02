@@ -61,18 +61,24 @@ public class AwsStorageService implements IStorageService {
     protected AmazonS3 getS3Client() {
         if (s3Client == null) {
             var credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
-            this.s3Client = AmazonS3ClientBuilder.standard()
+            var s3ClientBuilder = AmazonS3ClientBuilder.standard()
                 .withPathStyleAccessEnabled(pathStyleAccess)
-                .withEndpointConfiguration(new EndpointConfiguration(serviceEndpoint, region))
-                .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .build();
+                .withCredentials(new AWSStaticCredentialsProvider(credentials));
+
+            if (Strings.isNullOrEmpty(serviceEndpoint)) {
+                s3ClientBuilder.withRegion(region);
+            } else {
+                s3ClientBuilder.withEndpointConfiguration(
+                    new EndpointConfiguration(serviceEndpoint, region));
+            }
+            s3Client = s3ClientBuilder.build();
         }
         return s3Client;
     }
 
     @Override
     public boolean isEnabled() {
-        return !Strings.isNullOrEmpty(serviceEndpoint);
+        return !Strings.isNullOrEmpty(accessKeyId);
     }
 
     @Override
