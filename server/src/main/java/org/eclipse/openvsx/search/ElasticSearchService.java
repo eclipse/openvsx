@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -29,9 +31,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.SearchHitsImpl;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -192,9 +197,16 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
-    public SearchHits<ExtensionSearch> search(Options options, Pageable pageRequest) {
-        var queryBuilder = new NativeSearchQueryBuilder()
-                .withPageable(pageRequest);
+    public SearchHits<ExtensionSearch> search(Options options) {
+        var indexOps = searchOperations.indexOps(ExtensionSearch.class);
+        var settings = indexOps.getSettings(true);
+        var maxResultWindow = Long.parseLong(settings.get("index.max_result_window").toString());
+        var resultWindow = options.requestedOffset + options.requestedSize;
+        if(resultWindow > maxResultWindow) {
+            throw new ErrorResultException("Result window is too large, offset + size must be less than or equal to: " + maxResultWindow + " but was " + resultWindow);
+        }
+
+        var queryBuilder = new NativeSearchQueryBuilder();
         if (!Strings.isNullOrEmpty(options.queryString)) {
             var boolQuery = QueryBuilders.boolQuery();
 
@@ -232,13 +244,46 @@ public class ElasticSearchService implements ISearchService {
 
         // Sort search results according to 'sortOrder' and 'sortBy' options
         sortResults(queryBuilder, options.sortOrder, options.sortBy);
-        
-        try {
-            rwLock.readLock().lock();
-            var indexOps = searchOperations.indexOps(ExtensionSearch.class);
-            return searchOperations.search(queryBuilder.build(), ExtensionSearch.class, indexOps.getIndexCoordinates());
-        } finally {
-            rwLock.readLock().unlock();
+
+        var pages = new ArrayList<Pageable>();
+        pages.add(PageRequest.of(options.requestedOffset / options.requestedSize, options.requestedSize));
+        if(options.requestedOffset % options.requestedSize > 0) {
+            // size is not exact multiple of offset; this means we need to get two pages
+            // e.g. when offset is 20 and size is 50, you want results 20 to 70 which span pages 0 and 1 of a 50 item page
+            pages.add(pages.get(0).next());
+        }
+
+        var searchHitsList = new ArrayList<SearchHits<ExtensionSearch>>(pages.size());
+        for(var page : pages) {
+            queryBuilder.withPageable(page);
+            try {
+                rwLock.readLock().lock();
+                var searchHits = searchOperations.search(queryBuilder.build(), ExtensionSearch.class, indexOps.getIndexCoordinates());
+                searchHitsList.add(searchHits);
+            } finally {
+                rwLock.readLock().unlock();
+            }
+        }
+
+        if(searchHitsList.size() == 2) {
+            var firstSearchHitsPage = searchHitsList.get(0);
+            var secondSearchHitsPage = searchHitsList.get(1);
+
+            List<SearchHit<ExtensionSearch>> searchHits = new ArrayList<>(firstSearchHitsPage.getSearchHits());
+            searchHits.addAll(secondSearchHitsPage.getSearchHits());
+            var endIndex = Math.min(searchHits.size(), options.requestedOffset + options.requestedSize);
+            var startIndex = Math.min(endIndex, options.requestedOffset);
+            searchHits = searchHits.subList(startIndex, endIndex);
+            return new SearchHitsImpl<>(
+                    firstSearchHitsPage.getTotalHits(),
+                    firstSearchHitsPage.getTotalHitsRelation(),
+                    firstSearchHitsPage.getMaxScore(),
+                    null,
+                    searchHits,
+                    null
+            );
+        } else {
+            return searchHitsList.get(0);
         }
     }
 

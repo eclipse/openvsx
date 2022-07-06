@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.search;
 
 import java.util.Objects;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.eclipse.openvsx.entities.Extension;
 
@@ -27,7 +26,7 @@ public interface ISearchService {
     /**
      * Search with given options
      */
-    SearchHits<ExtensionSearch> search(Options options, Pageable pageRequest);
+    SearchHits<ExtensionSearch> search(Options options);
 
     /**
      * Updating the search index has two modes:

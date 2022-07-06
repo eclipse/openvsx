@@ -15,11 +15,14 @@ import static org.mockito.ArgumentMatchers.any;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionUtil;
+import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -168,6 +171,14 @@ public class ElasticSearchServiceTest {
         assertThat(index.entries).hasSize(3);
     }
 
+    @Test
+    public void testSearchResultWindowTooLarge() {
+        mockIndex(true);
+
+        var options = new ISearchService.Options("foo", "bar", "universal", 50, 10000, null, null, false);
+        var throwable = Assert.assertThrows(ErrorResultException.class, () -> search.search(options));
+        assertThat(throwable.getMessage()).isEqualTo("Result window is too large, offset + size must be less than or equal to: 10000 but was 10050");
+    }
 
     //---------- UTILITY ----------//
 
@@ -200,6 +211,9 @@ public class ElasticSearchServiceTest {
             .thenReturn(indexOps);
         Mockito.when(indexOps.getIndexCoordinates())
             .thenReturn(IndexCoordinates.of("extensions"));
+
+        Mockito.when(indexOps.getSettings(true))
+                .thenReturn(Map.of("index.max_result_window", "10000"));
 
         Mockito.when(indexOps.exists())
             .thenReturn(exists);

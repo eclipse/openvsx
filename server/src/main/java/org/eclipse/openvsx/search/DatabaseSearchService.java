@@ -17,7 +17,6 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.SearchHitsImpl;
@@ -51,7 +50,7 @@ public class DatabaseSearchService implements ISearchService {
     RepositoryService repositories;
 
     @Cacheable(CACHE_DATABASE_SEARCH)
-    public SearchHits<ExtensionSearch> search(ISearchService.Options options, Pageable pageRequest) {
+    public SearchHits<ExtensionSearch> search(ISearchService.Options options) {
         // grab all extensions
         var matchingExtensions = repositories.findAllActiveExtensions();
 
@@ -120,25 +119,9 @@ public class DatabaseSearchService implements ISearchService {
 
         // Paging
         var totalHits = sortedExtensions.size();
-        if (pageRequest != null) {
-            var pageNumber = pageRequest.getPageNumber();
-            var pageSize = pageRequest.getPageSize();
-
-            var toSkip = 0;
-            if (pageNumber >= 1) {
-                // page is zero indexed
-                toSkip = pageNumber * (pageSize - 1) + pageNumber;
-            }
-            // if something to skip, remove the first elements
-            if (toSkip > 0 && toSkip < sortedExtensions.size()) {
-                sortedExtensions = sortedExtensions.subList(toSkip, sortedExtensions.size());
-            }
-
-            // keep only the pageSize elements
-            if (sortedExtensions.size() > pageSize) {
-                sortedExtensions = sortedExtensions.subList(0, pageSize);
-            }
-        }
+        var endIndex = Math.min(sortedExtensions.size(), options.requestedOffset + options.requestedSize);
+        var startIndex = Math.min(endIndex, options.requestedOffset);
+        sortedExtensions = sortedExtensions.subList(startIndex, endIndex);
 
         List<SearchHit<ExtensionSearch>> searchHits;
         if (sortedExtensions.isEmpty()) {
