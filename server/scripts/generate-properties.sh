@@ -62,7 +62,7 @@ then
 fi
 
 # Set the AWS Storage service access key id, secret access key, region and endpoint
-if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY"] && [ -n "$AWS_REGION"] && [ -n "$AWS_BUCKET"]
+if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ] && [ -n "$AWS_REGION" ] && [ -n "$AWS_BUCKET" ]
 then
   echo "ovsx.storage.aws.access-key-id=$AWS_ACCESS_KEY_ID" >> $OVSX_APP_PROFILE
   echo "ovsx.storage.aws.secret-access-key=$AWS_SECRET_ACCESS_KEY" >> $OVSX_APP_PROFILE
@@ -71,3 +71,4 @@ then
   echo "ovsx.storage.aws.bucket=$AWS_BUCKET" >> $OVSX_APP_PROFILE
   echo "ovsx.storage.aws.path-style-access=$AWS_PATH_STYLE_ACCESS" >> $OVSX_APP_PROFILE
   echo "Using AWS S3 Storage: $AWS_SERVICE_ENDPOINT"
+fi
