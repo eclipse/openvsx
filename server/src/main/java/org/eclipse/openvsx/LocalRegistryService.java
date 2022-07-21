@@ -23,7 +23,6 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -40,9 +39,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -200,28 +197,16 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var offset = options.requestedOffset;
-        var pageRequest = PageRequest.of(offset / size, size);
-        var searchHits = search.search(options, pageRequest);
-        json.extensions = toSearchEntries(searchHits, size, offset % size, options);
+        var searchHits = search.search(options);
+        var serverUrl = UrlUtil.getBaseUrl();
+        json.extensions = searchHits.stream()
+                .map(hit -> toSearchEntry(hit, serverUrl, options))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
         json.offset = offset;
         json.totalSize = (int) searchHits.getTotalHits();
-        if (json.extensions.size() < size && searchHits.getTotalHits() > offset + size) {
-            // This is necessary when offset % size > 0
-            var remainder = search.search(options, pageRequest.next());
-            json.extensions.addAll(toSearchEntries(remainder, size - json.extensions.size(), 0, options));
-        }
-        return json;
-    }
 
-    private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> hits, int size, int offset, ISearchService.Options options) {
-        var serverUrl = UrlUtil.getBaseUrl();
-        var content = hits.getSearchHits();
-        if (offset > 0 || size < content.size())
-            return CollectionUtil.map(
-                    Iterables.limit(Iterables.skip(content, offset), size),
-                    hit -> toSearchEntry(hit, serverUrl, options));
-        else
-            return CollectionUtil.map(content, hit -> toSearchEntry(hit, serverUrl, options));
+        return json;
     }
 
     @Override

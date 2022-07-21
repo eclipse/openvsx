@@ -26,7 +26,6 @@ import javax.persistence.EntityManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
@@ -50,7 +49,6 @@ import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionUtil;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -60,7 +58,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHitsImpl;
 import org.springframework.data.elasticsearch.core.TotalHitsRelation;
@@ -404,7 +401,7 @@ public class VSCodeAdapterTest {
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new ISearchService.Options("yaml", null, targetPlatform, 50, 0, "desc", "relevance", false);
-        Mockito.when(search.search(searchOptions, PageRequest.of(0, 50)))
+        Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
 
         var extension = mockExtensionDTO();

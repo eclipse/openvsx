@@ -68,7 +68,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHitsImpl;
 import org.springframework.data.elasticsearch.core.TotalHitsRelation;
@@ -1491,7 +1490,7 @@ public class RegistryAPITest {
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false);
-        Mockito.when(search.search(searchOptions, PageRequest.of(0, 10)))
+        Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
         Mockito.when(entityManager.find(Extension.class, 1l))
                 .thenReturn(extension);
