@@ -45,14 +45,6 @@
                 {
                   "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
                   "source": "http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/CHANGELOG.md"
-                },
-                {
-                  "assetType":"Microsoft.VisualStudio.Code.WebResources/extension/themes/dark.json",
-                  "source":"http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/extension/themes/dark.json"
-                },
-                {
-                  "assetType":"Microsoft.VisualStudio.Code.WebResources/extension/img/logo.png",
-                  "source":"http://localhost/api/redhat/vscode-yaml/darwin-x64/0.5.2/file/extension/img/logo.png"
                 }
               ],
               "properties": [
@@ -108,14 +100,6 @@
                 {
                   "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
                   "source": "http://localhost/api/redhat/vscode-yaml/linux-x64/0.5.2/file/CHANGELOG.md"
-                },
-                {
-                  "assetType":"Microsoft.VisualStudio.Code.WebResources/extension/themes/dark.json",
-                  "source":"http://localhost/api/redhat/vscode-yaml/linux-x64/0.5.2/file/extension/themes/dark.json"
-                },
-                {
-                  "assetType":"Microsoft.VisualStudio.Code.WebResources/extension/img/logo.png",
-                  "source":"http://localhost/api/redhat/vscode-yaml/linux-x64/0.5.2/file/extension/img/logo.png"
                 }
               ],
               "properties": [
@@ -171,14 +155,6 @@
                 {
                   "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
                   "source": "http://localhost/api/redhat/vscode-yaml/alpine-arm64/0.5.2/file/CHANGELOG.md"
-                },
-                {
-                  "assetType":"Microsoft.VisualStudio.Code.WebResources/extension/themes/dark.json",
-                  "source":"http://localhost/api/redhat/vscode-yaml/alpine-arm64/0.5.2/file/extension/themes/dark.json"
-                },
-                {
-                  "assetType":"Microsoft.VisualStudio.Code.WebResources/extension/img/logo.png",
-                  "source":"http://localhost/api/redhat/vscode-yaml/alpine-arm64/0.5.2/file/extension/img/logo.png"
                 }
               ],
               "properties": [

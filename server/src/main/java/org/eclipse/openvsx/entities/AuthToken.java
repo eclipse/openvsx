@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
@@ -17,7 +18,7 @@ import java.util.Set;
  * This class is not mapped to a database entity, but parsed / serialized to
  * JSON via a column converter.
  */
-public class AuthToken {
+public class AuthToken implements Serializable {
 
     public String accessToken;
 

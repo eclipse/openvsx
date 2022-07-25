@@ -13,7 +13,9 @@ package org.eclipse.openvsx.search;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,6 +29,8 @@ import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+
+import javax.transaction.Transactional;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_DATABASE_SEARCH;
 
@@ -49,7 +53,11 @@ public class DatabaseSearchService implements ISearchService {
     @Autowired
     RepositoryService repositories;
 
+    @Autowired
+    VersionService versions;
+
     @Cacheable(CACHE_DATABASE_SEARCH)
+    @Transactional
     public SearchHits<ExtensionSearch> search(ISearchService.Options options) {
         // grab all extensions
         var matchingExtensions = repositories.findAllActiveExtensions();
@@ -67,19 +75,23 @@ public class DatabaseSearchService implements ISearchService {
 
         // filter category
         if (options.category != null) {
-            matchingExtensions = matchingExtensions.filter(extension -> extension.getLatest().getCategories().stream()
-                    .anyMatch(category -> category.equalsIgnoreCase(options.category)));
+            matchingExtensions = matchingExtensions.filter(extension -> {
+                var latest = versions.getLatest(extension, null, false, true);
+                return latest.getCategories().stream().anyMatch(category -> category.equalsIgnoreCase(options.category));
+            });
         }
 
         // filter text
         if (options.queryString != null) {
-            matchingExtensions = matchingExtensions.filter(extension ->
-            extension.getName().toLowerCase().contains(options.queryString.toLowerCase())
+            matchingExtensions = matchingExtensions.filter(extension -> {
+                var latest = versions.getLatest(extension, null, false, true);
+                return extension.getName().toLowerCase().contains(options.queryString.toLowerCase())
                     || extension.getNamespace().getName().contains(options.queryString.toLowerCase())
-                    || (extension.getLatest().getDescription() != null && extension.getLatest().getDescription()
-                            .toLowerCase().contains(options.queryString.toLowerCase()))
-                    || (extension.getLatest().getDisplayName() != null && extension.getLatest().getDisplayName()
-                            .toLowerCase().contains(options.queryString.toLowerCase())));
+                    || (latest.getDescription() != null && latest.getDescription()
+                        .toLowerCase().contains(options.queryString.toLowerCase()))
+                    || (latest.getDisplayName() != null && latest.getDisplayName()
+                        .toLowerCase().contains(options.queryString.toLowerCase()));
+            });
         }
 
         List<ExtensionSearch> sortedExtensions;
@@ -99,7 +111,10 @@ public class DatabaseSearchService implements ISearchService {
                     .collect(Collectors.toList());
         } else {
             sortedExtensions = matchingExtensions.stream()
-                    .map(Extension::toSearch)
+                    .map(extension -> {
+                        var latest = versions.getLatest(extension, null, false, true);
+                        return extension.toSearch(latest);
+                    })
                     .collect(Collectors.toList());
             if ("downloadCount".equals(options.sortBy)) {
                 sortedExtensions.sort(new DownloadedCountComparator());

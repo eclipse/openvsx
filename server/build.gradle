@@ -30,7 +30,8 @@ def versions = [
     testcontainers: '1.15.2',
     jackson: '2.12.5',
     woodstox: '6.2.4',
-    jobrunr: '5.1.2'
+    jobrunr: '5.1.2',
+    ehcache: '3.10.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -63,9 +64,11 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
+    implementation "org.ehcache:ehcache:${versions.ehcache}"
     implementation "org.jobrunr:jobrunr-spring-boot-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
@@ -141,6 +144,7 @@ jooq {
 }
 
 task runServer(type: JavaExec) {
+//    jvmArgs = ['-Xverify:none']
     classpath = sourceSets.dev.runtimeClasspath
     main = 'org.eclipse.openvsx.RegistryApplication'
 }

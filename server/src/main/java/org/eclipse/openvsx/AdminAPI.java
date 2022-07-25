@@ -36,12 +36,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.transaction.Transactional;
+
 import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
 
 @RestController
 public class AdminAPI {
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    VersionService versions;
 
     @Autowired
     AdminService admins;
@@ -147,6 +152,7 @@ public class AdminAPI {
         path = "/admin/extension/{namespaceName}/{extensionName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Transactional
     public ResponseEntity<ExtensionJson> getExtension(@PathVariable String namespaceName,
                                                       @PathVariable String extensionName) {
         try {
@@ -159,8 +165,7 @@ public class AdminAPI {
             }
 
             ExtensionJson json;
-            // Don't rely on the 'latest' relationship here because the extension might be inactive
-            var latest = VersionUtil.getLatest(repositories.findVersions(extension), Collections.emptyList());
+            var latest = versions.getLatest(extension, null, false, false);
             if (latest == null) {
                 json = new ExtensionJson();
                 json.namespace = extension.getNamespace().getName();

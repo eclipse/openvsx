@@ -9,10 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SemanticVersion implements Comparable<SemanticVersion> {
+public class SemanticVersion implements Comparable<SemanticVersion>, Serializable {
 
     // source: https://semver.org/, search for: https://regex101.com/r/vkijKf/1/
     // has been modified to only use non-capturing groups (?:.*), so that it can be used as a URI template regex

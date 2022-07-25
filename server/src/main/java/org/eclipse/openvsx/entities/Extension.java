@@ -9,24 +9,23 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.persistence.*;
+import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.search.ExtensionSearch;
-import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionUtil;
 
 @Entity
 @Table(uniqueConstraints = {
         @UniqueConstraint(columnNames = { "publicId" }),
         @UniqueConstraint(columnNames = { "namespace_id", "name" })
 })
-public class Extension {
+public class Extension implements Serializable {
 
     @Id
     @GeneratedValue
@@ -40,7 +39,7 @@ public class Extension {
     @ManyToOne
     Namespace namespace;
 
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "extension")
+    @OneToMany(mappedBy = "extension")
     List<ExtensionVersion> versions;
 
     boolean active;
@@ -56,7 +55,7 @@ public class Extension {
     /**
      * Convert to a search entity for Elasticsearch.
      */
-    public ExtensionSearch toSearch() {
+    public ExtensionSearch toSearch(ExtensionVersion latest) {
         var search = new ExtensionSearch();
         search.id = this.getId();
         search.name = this.getName();
@@ -69,12 +68,12 @@ public class Extension {
                 .distinct()
                 .collect(Collectors.toList());
 
-        var extVer = this.getLatest();
-        search.displayName = extVer.getDisplayName();
-        search.description = extVer.getDescription();
-        search.timestamp = extVer.getTimestamp().toEpochSecond(ZoneOffset.UTC);
-        search.categories = extVer.getCategories();
-        search.tags = extVer.getTags();
+        search.displayName = latest.getDisplayName();
+        search.description = latest.getDescription();
+        search.timestamp = latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
+        search.categories = latest.getCategories();
+        search.tags = latest.getTags();
+
         return search;
     }
 
@@ -149,6 +148,7 @@ public class Extension {
     public void setLastUpdatedDate(LocalDateTime lastUpdatedDate) {
         this.lastUpdatedDate = lastUpdatedDate;
     }
+
     public List<ExtensionVersion> getVersions() {
         if(versions == null) {
             versions = new ArrayList<>();
@@ -157,37 +157,25 @@ public class Extension {
         return versions;
     }
 
-    public ExtensionVersion getLatest() {
-        return getLatest(null, true);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Extension extension = (Extension) o;
+        return id == extension.id
+                && active == extension.active
+                && downloadCount == extension.downloadCount
+                && Objects.equals(publicId, extension.publicId)
+                && Objects.equals(name, extension.name)
+                && Objects.equals(namespace, extension.namespace)
+                && Objects.equals(versions, extension.versions)
+                && Objects.equals(averageRating, extension.averageRating)
+                && Objects.equals(publishedDate, extension.publishedDate)
+                && Objects.equals(lastUpdatedDate, extension.lastUpdatedDate);
     }
 
-    public ExtensionVersion getLatest(String targetPlatform, boolean onlyActive) {
-        var filters = new ArrayList<Predicate<ExtensionVersion>>();
-        if(TargetPlatform.isValid(targetPlatform)) {
-            filters.add(ev -> ev.getTargetPlatform().equals(targetPlatform));
-        }
-        if(onlyActive) {
-            filters.add(ExtensionVersion::isActive);
-        }
-
-        return VersionUtil.getLatest(getVersions(), filters);
-    }
-
-    public ExtensionVersion getLatestPreRelease() {
-        return getLatestPreRelease(null, true);
-    }
-
-    public ExtensionVersion getLatestPreRelease(String targetPlatform, boolean onlyActive) {
-        var filters = new ArrayList<Predicate<ExtensionVersion>>();
-        if(TargetPlatform.isValid(targetPlatform)) {
-            filters.add(ev -> ev.getTargetPlatform().equals(targetPlatform));
-        }
-
-        filters.add(ExtensionVersion::isPreRelease);
-        if(onlyActive) {
-            filters.add(ExtensionVersion::isActive);
-        }
-
-        return VersionUtil.getLatest(getVersions(), filters);
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, publicId, name, namespace, versions, active, averageRating, downloadCount, publishedDate, lastUpdatedDate);
     }
 }

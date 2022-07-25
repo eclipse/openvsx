@@ -9,7 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -18,7 +20,7 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 @Document(indexName = "extensions")
-public class ExtensionSearch {
+public class ExtensionSearch implements Serializable {
 
     @Field(index = false)
     public long id;
@@ -53,4 +55,32 @@ public class ExtensionSearch {
     public List<String> categories;
 
     public List<String> tags;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExtensionSearch that = (ExtensionSearch) o;
+        return id == that.id
+                && Double.compare(that.relevance, relevance) == 0
+                && timestamp == that.timestamp
+                && downloadCount == that.downloadCount
+                && Objects.equals(name, that.name)
+                && Objects.equals(namespace, that.namespace)
+                && Objects.equals(extensionId, that.extensionId)
+                && Objects.equals(targetPlatforms, that.targetPlatforms)
+                && Objects.equals(displayName, that.displayName)
+                && Objects.equals(description, that.description)
+                && Objects.equals(averageRating, that.averageRating)
+                && Objects.equals(categories, that.categories)
+                && Objects.equals(tags, that.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                id, relevance, name, namespace, extensionId, targetPlatforms, displayName, description, timestamp,
+                averageRating, downloadCount, categories, tags
+        );
+    }
 }

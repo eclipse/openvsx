@@ -9,8 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -26,7 +28,7 @@ import io.swagger.annotations.ApiModelProperty;
     description = "Metadata of an extension"
 )
 @JsonInclude(Include.NON_NULL)
-public class ExtensionJson extends ResultJson {
+public class ExtensionJson extends ResultJson implements Serializable {
 
     public static ExtensionJson error(String message) {
         var info = new ExtensionJson();
@@ -161,4 +163,61 @@ public class ExtensionJson extends ResultJson {
 
     @ApiModelProperty("Map of target platforms by extension version")
     public Map<String, List<String>> allTargetPlatformVersions;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExtensionJson that = (ExtensionJson) o;
+        return Objects.equals(namespaceUrl, that.namespaceUrl)
+                && Objects.equals(reviewsUrl, that.reviewsUrl)
+                && Objects.equals(files, that.files)
+                && Objects.equals(name, that.name)
+                && Objects.equals(namespace, that.namespace)
+                && Objects.equals(targetPlatform, that.targetPlatform)
+                && Objects.equals(version, that.version)
+                && Objects.equals(preRelease, that.preRelease)
+                && Objects.equals(publishedBy, that.publishedBy)
+                && Objects.equals(active, that.active)
+                && Objects.equals(verified, that.verified)
+                && Objects.equals(unrelatedPublisher, that.unrelatedPublisher)
+                && Objects.equals(namespaceAccess, that.namespaceAccess)
+                && Objects.equals(allVersions, that.allVersions)
+                && Objects.equals(averageRating, that.averageRating)
+                && Objects.equals(downloadCount, that.downloadCount)
+                && Objects.equals(reviewCount, that.reviewCount)
+                && Objects.equals(versionAlias, that.versionAlias)
+                && Objects.equals(timestamp, that.timestamp)
+                && Objects.equals(preview, that.preview)
+                && Objects.equals(displayName, that.displayName)
+                && Objects.equals(description, that.description)
+                && Objects.equals(engines, that.engines)
+                && Objects.equals(categories, that.categories)
+                && Objects.equals(extensionKind, that.extensionKind)
+                && Objects.equals(tags, that.tags)
+                && Objects.equals(license, that.license)
+                && Objects.equals(homepage, that.homepage)
+                && Objects.equals(repository, that.repository)
+                && Objects.equals(bugs, that.bugs)
+                && Objects.equals(markdown, that.markdown)
+                && Objects.equals(galleryColor, that.galleryColor)
+                && Objects.equals(galleryTheme, that.galleryTheme)
+                && Objects.equals(qna, that.qna)
+                && Objects.equals(badges, that.badges)
+                && Objects.equals(dependencies, that.dependencies)
+                && Objects.equals(bundledExtensions, that.bundledExtensions)
+                && Objects.equals(downloads, that.downloads)
+                && Objects.equals(allTargetPlatformVersions, that.allTargetPlatformVersions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                namespaceUrl, reviewsUrl, files, name, namespace, targetPlatform, version, preRelease, publishedBy,
+                active, verified, unrelatedPublisher, namespaceAccess, allVersions, averageRating, downloadCount,
+                reviewCount, versionAlias, timestamp, preview, displayName, description, engines, categories,
+                extensionKind, tags, license, homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna,
+                badges, dependencies, bundledExtensions, downloads, allTargetPlatformVersions
+        );
+    }
 }

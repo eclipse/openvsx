@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
@@ -25,10 +26,12 @@ import javax.xml.transform.stream.StreamResult;
 import com.google.common.base.Strings;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -46,10 +49,14 @@ public class SitemapController {
     @Autowired
     RepositoryService repositories;
 
+    @Autowired
+    VersionService versions;
+
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
     @GetMapping(path = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    @Transactional
     public ResponseEntity<StreamingResponseBody> getSitemap() throws ParserConfigurationException {
         var document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         document.setXmlStandalone(true);
@@ -59,26 +66,17 @@ public class SitemapController {
         var baseUrl = getBaseUrl();
         var timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         repositories.findAllActiveExtensions().forEach(extension -> {
-            var targetPlatforms = extension.getVersions().stream()
-                    .map(ExtensionVersion::getTargetPlatform)
-                    .distinct()
-                    .collect(Collectors.toList());
+            var entry = document.createElement("url");
+            var loc = document.createElement("loc");
+            var namespaceName = extension.getNamespace().getName();
+            loc.setTextContent(UrlUtil.createApiUrl(baseUrl, "extension", namespaceName, extension.getName()));
+            entry.appendChild(loc);
 
-            for(var targetPlatform : targetPlatforms) {
-                var entry = document.createElement("url");
-                var loc = document.createElement("loc");
-                var segments = new String[]{ "extension", extension.getNamespace().getName(), extension.getName() };
-                if(!TargetPlatform.isUniversal(targetPlatform)) {
-                    segments = ArrayUtils.add(segments, targetPlatform);
-                }
-
-                loc.setTextContent(UrlUtil.createApiUrl(baseUrl, segments));
-                entry.appendChild(loc);
-                var lastmod = document.createElement("lastmod");
-                lastmod.setTextContent(extension.getLatest(targetPlatform, true).getTimestamp().format(timestampFormatter));
-                entry.appendChild(lastmod);
-                urlset.appendChild(entry);
-            }
+            var lastmod = document.createElement("lastmod");
+            var latest = versions.getLatest(extension, null, false, true);
+            lastmod.setTextContent(latest.getTimestamp().format(timestampFormatter));
+            entry.appendChild(lastmod);
+            urlset.appendChild(entry);
         });
 
         StreamingResponseBody stream = out -> {

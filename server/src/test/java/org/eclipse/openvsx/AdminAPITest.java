@@ -10,8 +10,7 @@
 package org.eclipse.openvsx;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,6 +31,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
+import org.eclipse.openvsx.cache.LatestExtensionVersionDTOCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -50,6 +51,7 @@ import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -755,7 +757,7 @@ public class AdminAPITest {
             extVersion.setActive(true);
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
-            Mockito.when(repositories.findFilesByType(eq(extVersion), any()))
+            Mockito.when(repositories.findFilesByType(anyCollection(), any()))
                     .thenReturn(Streamable.empty());
             Mockito.when(repositories.findVersion(extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
@@ -764,6 +766,7 @@ public class AdminAPITest {
             versions.add(extVersion);
         }
         extension.getVersions().addAll(versions);
+        Mockito.when(repositories.countVersions(extension)).thenReturn(versions.size());
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
         Mockito.when(repositories.findActiveVersions(extension))
@@ -866,6 +869,21 @@ public class AdminAPITest {
         @Bean
         StorageUtilService storageUtilService() {
             return new StorageUtilService();
+        }
+
+        @Bean
+        VersionService versionService() {
+            return new VersionService();
+        }
+
+        @Bean
+        LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
+            return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        LatestExtensionVersionDTOCacheKeyGenerator latestExtensionVersionDTOCacheKeyGenerator() {
+            return new LatestExtensionVersionDTOCacheKeyGenerator();
         }
     }
 }

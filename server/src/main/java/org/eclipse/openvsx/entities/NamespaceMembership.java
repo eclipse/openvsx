@@ -18,8 +18,11 @@ import javax.persistence.ManyToOne;
 
 import org.eclipse.openvsx.json.NamespaceMembershipJson;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 @Entity
-public class NamespaceMembership {
+public class NamespaceMembership implements Serializable {
 
     public static final String ROLE_OWNER = "owner";
     public static final String ROLE_CONTRIBUTOR = "contributor";
@@ -79,4 +82,19 @@ public class NamespaceMembership {
         this.role = role;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NamespaceMembership that = (NamespaceMembership) o;
+        return id == that.id
+                && Objects.equals(namespace, that.namespace)
+                && Objects.equals(user, that.user)
+                && Objects.equals(role, that.role);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, namespace, user, role);
+    }
 }

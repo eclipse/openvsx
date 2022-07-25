@@ -10,23 +10,15 @@
 package org.eclipse.openvsx.util;
 
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class VersionUtilTest {
-
-    @AfterEach
-    public void afterEach() {
-        VersionUtil.clearCache();
-    }
+public class VersionServiceTest {
 
     @Test
     public void testGetLatestVersion() {
@@ -42,7 +34,9 @@ public class VersionUtilTest {
         major.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         major.setVersion("0.3.0");
 
-        var latest = VersionUtil.getLatest(List.of(major, minor, release), Collections.emptyList());
+        var extension = new Extension();
+        extension.getVersions().addAll(List.of(major, minor, release));
+        var latest = new VersionService().getLatest(extension, null, false, false);
         assertEquals(release, latest);
     }
 
@@ -61,12 +55,14 @@ public class VersionUtilTest {
         windows.setTargetPlatform(TargetPlatform.NAME_WIN32_ARM64);
         windows.setVersion(version);
 
-        var latest = VersionUtil.getLatest(List.of(windows, linux, universal), Collections.emptyList());
+        var extension = new Extension();
+        extension.getVersions().addAll(List.of(windows, linux, universal));
+        var latest = new VersionService().getLatest(extension, null, false, false);
         assertEquals(universal, latest);
     }
 
     @Test
-    public void testGetLatestActivePredicate() {
+    public void testGetLatestActive() {
         var release = new ExtensionVersion();
         release.setActive(false);
         release.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
@@ -82,13 +78,14 @@ public class VersionUtilTest {
         major.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         major.setVersion("0.3.0");
 
-        List<Predicate<ExtensionVersion>> predicates = List.of(ExtensionVersion::isActive);
-        var latest = VersionUtil.getLatest(List.of(major, minor, release), predicates);
+        var extension = new Extension();
+        extension.getVersions().addAll(List.of(major, minor, release));
+        var latest = new VersionService().getLatest(extension, null, false, true);
         assertEquals(minor, latest);
     }
 
     @Test
-    public void testGetLatestTargetPlatformPredicate() {
+    public void testGetLatestByTargetPlatform() {
         var release = new ExtensionVersion();
         release.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         release.setVersion("1.0.0");
@@ -101,8 +98,9 @@ public class VersionUtilTest {
         major.setTargetPlatform(TargetPlatform.NAME_LINUX_ARM64);
         major.setVersion("0.3.0");
 
-        List<Predicate<ExtensionVersion>> predicates = List.of(ev -> ev.getTargetPlatform().equals(TargetPlatform.NAME_LINUX_ARM64));
-        var latest = VersionUtil.getLatest(List.of(major, minor, release), predicates);
+        var extension = new Extension();
+        extension.getVersions().addAll(List.of(major, minor, release));
+        var latest = new VersionService().getLatest(extension, TargetPlatform.NAME_LINUX_ARM64, false, false);
         assertEquals(major, latest);
     }
 
@@ -112,7 +110,7 @@ public class VersionUtilTest {
         var minor = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.0.5");
         var major = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.3.0");
 
-        var latest = VersionUtil.getLatest(List.of(major, minor, release));
+        var latest = new VersionService().getLatest(List.of(major, minor, release));
         assertEquals(release, latest);
     }
 
@@ -123,7 +121,7 @@ public class VersionUtilTest {
         var linux = constructExtensionVersionDTO(TargetPlatform.NAME_LINUX_X64, version);
         var windows = constructExtensionVersionDTO(TargetPlatform.NAME_WIN32_ARM64, version);
 
-        var latest = VersionUtil.getLatest(List.of(windows, linux, universal));
+        var latest = new VersionService().getLatest(List.of(windows, linux, universal));
         assertEquals(universal, latest);
     }
 

@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +25,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "targetPlatform", "version" })})
-public class ExtensionVersion {
+public class ExtensionVersion implements Serializable {
 
     public static final Comparator<ExtensionVersion> SORT_COMPARATOR =
         Comparator.<ExtensionVersion, SemanticVersion>comparing(ev -> ev.getSemanticVersion())

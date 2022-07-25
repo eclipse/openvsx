@@ -123,6 +123,7 @@ public class ElasticSearchService implements ISearchService {
      * In any case, this method scans all extensions in the database and indexes their
      * relevant metadata.
      */
+    @Transactional
     public void updateSearchIndex(boolean clear) {
         var locked = false;
         try {
