@@ -12,6 +12,9 @@ package org.eclipse.openvsx.util;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -159,11 +162,19 @@ public final class UrlUtil {
         // Use the host and port from the X-Forwarded-Host header if present
         String host;
         int port;
-        var forwardedHost = request.getHeader("X-Forwarded-Host");
-        if (forwardedHost == null) {
+        var forwardedHostHeadersEnumeration = request.getHeaders("X-Forwarded-Host");
+        if (forwardedHostHeadersEnumeration == null || !forwardedHostHeadersEnumeration.hasMoreElements()) {
             host = request.getServerName();
             port = request.getServerPort();
         } else {
+            // take the first one
+            var forwardedHost = forwardedHostHeadersEnumeration.nextElement();
+
+            // if it's comma separated, take the first one
+            var forwardedHosts = forwardedHost.split(",");
+            if (forwardedHosts.length > 1) {
+                forwardedHost = forwardedHosts[0];
+            }
             int colonIndex = forwardedHost.lastIndexOf(':');
             if (colonIndex > 0) {
                 host = forwardedHost.substring(0, colonIndex);
