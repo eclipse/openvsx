@@ -1,5 +1,8 @@
 FROM gitpod/workspace-postgres:latest
 
+# the following env variable is solely here to invalidate the docker image. We want to rebuild the image from time to time to get the latest base image which is cached).
+ENV DOCKER_BUMP=1
+
 USER gitpod
 
 RUN bash -c ". /home/gitpod/.sdkman/bin/sdkman-init.sh \
