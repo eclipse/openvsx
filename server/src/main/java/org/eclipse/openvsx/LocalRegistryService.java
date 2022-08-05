@@ -16,7 +16,6 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -35,6 +34,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.storage.FileCacheDurationConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +75,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     CacheService cache;
+
+    @Autowired
+    FileCacheDurationConfig fileCacheDurationConfig;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -167,7 +170,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(storageUtil.getLocation(resource))
-                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .cacheControl(CacheControl.maxAge(fileCacheDurationConfig.getCacheDuration()).cachePublic())
                     .build();
         }
     }

@@ -67,7 +67,7 @@ public class StorageMigration {
             return;
         }
 
-        var migrations = Lists.newArrayList(STORAGE_DB, STORAGE_GOOGLE, STORAGE_AZURE);
+        var migrations = Lists.newArrayList(STORAGE_DB, STORAGE_GOOGLE, STORAGE_AZURE, STORAGE_AWS);
         migrations.remove(storageType);
         var migrationCount = new int[migrations.size()];
         for (var i = 0; i < migrations.size(); i++) {

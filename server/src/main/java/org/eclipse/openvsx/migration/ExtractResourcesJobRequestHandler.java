@@ -13,6 +13,7 @@ import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.ExtractResourcesMigrationItem;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.IStorageService;
@@ -51,6 +52,9 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Extr
 
     @Autowired
     GoogleCloudStorageService googleStorage;
+
+    @Autowired
+    AwsStorageService awsStorage;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -102,7 +106,8 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Extr
     private IStorageService getStorage(FileResource resource) {
         var storages = Map.of(
                 FileResource.STORAGE_AZURE, azureStorage,
-                FileResource.STORAGE_GOOGLE, googleStorage
+                FileResource.STORAGE_GOOGLE, googleStorage,
+                FileResource.STORAGE_AWS, awsStorage
         );
 
         return storages.get(resource.getStorageType());

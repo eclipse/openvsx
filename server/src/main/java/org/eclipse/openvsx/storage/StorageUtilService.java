@@ -12,17 +12,14 @@ package org.eclipse.openvsx.storage;
 import static org.eclipse.openvsx.entities.FileResource.*;
 
 import java.net.URI;
-import java.net.URLConnection;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -33,9 +30,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -66,6 +61,9 @@ public class StorageUtilService implements IStorageService {
     @Autowired
     AzureDownloadCountService azureDownloadCountService;
 
+    @Autowired
+    AwsStorageService awsStorage;
+
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
     String primaryService;
@@ -86,15 +84,17 @@ public class StorageUtilService implements IStorageService {
 
     @Override
     public boolean isEnabled() {
-        return googleStorage.isEnabled() || azureStorage.isEnabled();
+        return googleStorage.isEnabled() || azureStorage.isEnabled() || awsStorage.isEnabled();
     }
 
     public String getActiveStorageType() {
-        var storageTypes = new ArrayList<String>(2);
+        var storageTypes = new ArrayList<String>(3);
         if (googleStorage.isEnabled())
             storageTypes.add(STORAGE_GOOGLE);
         if (azureStorage.isEnabled())
             storageTypes.add(STORAGE_AZURE);
+        if (awsStorage.isEnabled())
+            storageTypes.add(STORAGE_AWS);
         if (!Strings.isNullOrEmpty(primaryService)) {
             if (!storageTypes.contains(primaryService))
                 throw new RuntimeException("The selected primary storage service is not available.");
@@ -111,12 +111,16 @@ public class StorageUtilService implements IStorageService {
     @Transactional(Transactional.TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var storageType = getActiveStorageType();
+
         switch (storageType) {
             case STORAGE_GOOGLE:
                 googleStorage.uploadFile(resource);
                 break;
             case STORAGE_AZURE:
                 azureStorage.uploadFile(resource);
+                break;
+            case STORAGE_AWS:
+                awsStorage.uploadFile(resource);
                 break;
             default:
                 throw new RuntimeException("External storage is not available.");
@@ -134,6 +138,8 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_AZURE:
                 azureStorage.removeFile(resource);
                 break;
+            case STORAGE_AWS:
+                awsStorage.removeFile(resource);
         }
     }
 
@@ -144,6 +150,8 @@ public class StorageUtilService implements IStorageService {
                 return googleStorage.getLocation(resource);
             case STORAGE_AZURE:
                 return azureStorage.getLocation(resource);
+            case STORAGE_AWS:
+                return awsStorage.getLocation(resource);
             case STORAGE_DB:
                 return URI.create(getFileUrl(resource.getName(), resource.getExtension(), UrlUtil.getBaseUrl()));
             default:
