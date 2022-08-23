@@ -109,6 +109,18 @@ public class ExtensionVersionDTORepository {
         return fetch(query);
     }
 
+    public List<ExtensionVersionDTO> findAllActiveExtensionsByVersionAndExtensionNameAndNamespaceName(String version, String extensionName, String namespaceName) {
+        return dsl.select(EXTENSION.ID, EXTENSION_VERSION.ID, EXTENSION_VERSION.TARGET_PLATFORM, EXTENSION_VERSION.VERSION)
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                .and(EXTENSION_VERSION.VERSION.eq(version))
+                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)))
+                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)))
+                .fetchInto(ExtensionVersionDTO.class);
+    }
+
     private SelectConditionStep<Record> findAllActive() {
         return dsl.select(
                     NAMESPACE.ID,

@@ -9,8 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,7 +29,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = "value") })
-public class PersonalAccessToken {
+public class PersonalAccessToken implements Serializable {
 
     @Id
     @GeneratedValue
@@ -124,4 +126,23 @@ public class PersonalAccessToken {
         this.description = description;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PersonalAccessToken that = (PersonalAccessToken) o;
+        return id == that.id
+                && active == that.active
+                && Objects.equals(user, that.user)
+                && Objects.equals(value, that.value)
+                && Objects.equals(createdTimestamp, that.createdTimestamp)
+                && Objects.equals(accessedTimestamp, that.accessedTimestamp)
+                && Objects.equals(description, that.description)
+                && Objects.equals(publishedVersions, that.publishedVersions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, user, value, active, createdTimestamp, accessedTimestamp, description, publishedVersions);
+    }
 }

@@ -15,6 +15,7 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -25,6 +26,8 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     Streamable<ExtensionVersion> findByExtension(Extension extension);
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
+
+    Streamable<ExtensionVersion> findByExtensionInAndActiveTrue(Collection<Extension> extensions);
 
     Streamable<ExtensionVersion> findByVersionAndExtension(String version, Extension extension);
 
@@ -48,4 +51,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();
+
+    int countByExtension(Extension extension);
 }

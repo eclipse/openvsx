@@ -9,20 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import static org.eclipse.openvsx.entities.FileResource.*;
-
-import java.net.URI;
-import java.net.URLConnection;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import com.google.common.base.Strings;
-
-import org.apache.commons.lang3.ArrayUtils;
+import com.google.common.collect.Maps;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -33,10 +21,17 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.eclipse.openvsx.entities.FileResource.*;
 
 /**
  * Provides utility around storing file resources and acts as a composite storage
@@ -156,18 +151,22 @@ public class StorageUtilService implements IStorageService {
     }
 
     /**
-     * Adds URLs for the given file types to a map to be used in JSON response data.
+     * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */
-    public void addFileUrls(ExtensionVersion extVersion, String serverUrl, Map<String, String> type2Url, String... types) {
-        var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, extVersion);
-        var resources = repositories.findFilesByType(extVersion, Arrays.asList(types));
+    public Map<Long, Map<String, String>> getFileUrls(Collection<ExtensionVersion> extVersions, String serverUrl, String... types) {
+        var type2Url = extVersions.stream()
+                .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
         for (var resource : resources) {
-            var fileUrl = UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName());
-            type2Url.put(resource.getType(), fileUrl);
+            var extVersion = resource.getExtension();
+            type2Url.get(extVersion.getId()).put(resource.getType(), getFileUrl(resource.getName(), extVersion, serverUrl));
         }
+
+        return type2Url;
     }
 
-    @Transactional
     public void increaseDownloadCount(ExtensionVersion extVersion, FileResource resource) {
         if(azureDownloadCountService.isEnabled()) {
             // don't count downloads twice

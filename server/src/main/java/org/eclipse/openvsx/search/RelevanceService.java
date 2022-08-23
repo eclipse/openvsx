@@ -12,16 +12,19 @@ package org.eclipse.openvsx.search;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import javax.annotation.PostConstruct;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.VersionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +60,9 @@ public class RelevanceService {
     @Autowired
     RepositoryService repositories;
 
+    @Autowired
+    VersionService versions;
+
     @PostConstruct
     void init() {
         if (deprecatedElasticSearchRatingRelevance != -1.0) {
@@ -78,7 +84,9 @@ public class RelevanceService {
     }
 
     protected ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
-        var entry = extension.toSearch();
+        var latest = versions.getLatest(extension, null, false, true);
+        var entry = extension.toSearch(latest);
+
         var ratingValue = 0.0;
         if (entry.averageRating != null) {
             var reviewCount = repositories.countActiveReviews(extension);
@@ -87,13 +95,13 @@ public class RelevanceService {
             ratingValue = (entry.averageRating / 5.0) * countRelevance;
         }
         var downloadsValue = entry.downloadCount / stats.downloadRef;
-        var timestamp = extension.getLatest().getTimestamp();
+        var timestamp = latest.getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
         entry.relevance = ratingRelevance * limit(ratingValue) + downloadsRelevance * limit(downloadsValue)
                 + timestampRelevance * limit(timestampValue);
 
         // Reduce the relevance value of unverified extensions
-        if (!isVerified(extension.getLatest())) {
+        if (!isVerified(latest)) {
             entry.relevance *= unverifiedRelevance;
         }
 

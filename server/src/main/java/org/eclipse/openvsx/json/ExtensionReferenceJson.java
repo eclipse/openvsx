@@ -15,14 +15,17 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.annotations.ApiModelProperty;
+
+import java.io.Serializable;
+import java.util.Objects;
 
 @ApiModel(
     value = "ExtensionReference",
     description = "A reference to another extension in the registry"
 )
 @JsonInclude(Include.NON_NULL)
-public class ExtensionReferenceJson {
+public class ExtensionReferenceJson implements Serializable {
 
     @ApiModelProperty("URL to get metadata of the referenced extension")
     @NotNull
@@ -39,4 +42,19 @@ public class ExtensionReferenceJson {
     @ApiModelProperty(hidden = true)
     public String version;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExtensionReferenceJson that = (ExtensionReferenceJson) o;
+        return Objects.equals(url, that.url)
+                && Objects.equals(namespace, that.namespace)
+                && Objects.equals(extension, that.extension)
+                && Objects.equals(version, that.version);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, namespace, extension, version);
+    }
 }

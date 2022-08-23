@@ -16,11 +16,13 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
+import org.eclipse.openvsx.cache.LatestExtensionVersionDTOCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionUtil;
-import org.junit.jupiter.api.AfterEach;
+import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -39,12 +41,10 @@ public class DatabaseSearchServiceTest {
     RepositoryService repositories;
 
     @Autowired
-    DatabaseSearchService search;
+    VersionService versions;
 
-    @AfterEach
-    public void afterEach() {
-        VersionUtil.clearCache();
-    }
+    @Autowired
+    DatabaseSearchService search;
 
     @Test
     public void testCategory() throws Exception {
@@ -189,9 +189,9 @@ public class DatabaseSearchServiceTest {
     public void testQueryStringDescription() throws Exception {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        ext2.getLatest().setDescription("another desc");
+        versions.getLatest(ext2, null, false, false).setDescription("another desc");
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        ext3.getLatest().setDescription("my custom desc");
+        versions.getLatest(ext3, null, false, false).setDescription("my custom desc");
         var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
@@ -208,9 +208,9 @@ public class DatabaseSearchServiceTest {
     @Test
     public void testQueryStringDisplayName() throws Exception {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        ext1.getLatest().setDisplayName("This is a YAML extension");
+        versions.getLatest(ext1, null, false, false).setDisplayName("This is a YAML extension");
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        ext2.getLatest().setDisplayName("Red Hat");
+        versions.getLatest(ext2, null, false, false).setDisplayName("Red Hat");
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
         var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
@@ -229,13 +229,13 @@ public class DatabaseSearchServiceTest {
     @Test
     public void testSortByTimeStamp() throws Exception {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        ext1.getLatest().setTimestamp(LocalDateTime.parse("2021-10-10T00:00"));
+        versions.getLatest(ext1, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-10T00:00"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        ext2.getLatest().setTimestamp(LocalDateTime.parse("2021-10-07T00:00"));
+        versions.getLatest(ext2, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-07T00:00"));
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        ext3.getLatest().setTimestamp(LocalDateTime.parse("2021-10-11T00:00"));
+        versions.getLatest(ext3, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-11T00:00"));
         var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
-        ext4.getLatest().setTimestamp(LocalDateTime.parse("2021-10-06T00:00"));
+        versions.getLatest(ext4, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-06T00:00"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "timestamp", false);
@@ -344,6 +344,21 @@ public class DatabaseSearchServiceTest {
         @Bean
         RelevanceService relevanceService() {
             return new RelevanceService();
+        }
+
+        @Bean
+        VersionService versionService() {
+            return new VersionService();
+        }
+
+        @Bean
+        LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
+            return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        LatestExtensionVersionDTOCacheKeyGenerator latestExtensionVersionDTOCacheKeyGenerator() {
+            return new LatestExtensionVersionDTOCacheKeyGenerator();
         }
     }
 }

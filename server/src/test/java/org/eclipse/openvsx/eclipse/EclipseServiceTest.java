@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.eq;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 
@@ -28,6 +29,8 @@ import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
+import org.eclipse.openvsx.cache.LatestExtensionVersionDTOCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -38,6 +41,7 @@ import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -309,6 +313,21 @@ public class EclipseServiceTest {
         @Bean
         StorageUtilService storageUtilService() {
             return new StorageUtilService();
+        }
+
+        @Bean
+        VersionService versionService() {
+            return new VersionService();
+        }
+
+        @Bean
+        LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
+            return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        LatestExtensionVersionDTOCacheKeyGenerator latestExtensionVersionDTOCacheKeyGenerator() {
+            return new LatestExtensionVersionDTOCacheKeyGenerator();
         }
     }
     

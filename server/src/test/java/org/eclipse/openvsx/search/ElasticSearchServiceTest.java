@@ -17,13 +17,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
+import org.eclipse.openvsx.cache.LatestExtensionVersionDTOCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionUtil;
+import org.eclipse.openvsx.util.VersionService;
 import org.junit.Assert;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -50,16 +51,11 @@ public class ElasticSearchServiceTest {
     @Autowired
     ElasticSearchService search;
 
-    @AfterEach
-    public void afterEach() {
-        VersionUtil.clearCache();
-    }
-
     @Test
     public void testRelevanceAverageRating() throws Exception {
         var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 3.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
-        var ext2 = mockExtension( "bar", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext1 = mockExtension("foo", "n1", "u1",3.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext2 = mockExtension( "bar", "n2", "u2", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
 
@@ -70,8 +66,8 @@ public class ElasticSearchServiceTest {
     @Test
     public void testRelevanceReviewCount() throws Exception {
         var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 4.0, 2, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
-        var ext2 = mockExtension("bar", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext1 = mockExtension("foo", "n1", "u1",4.0, 2, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext2 = mockExtension("bar", "n2", "u2",4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
 
@@ -82,8 +78,8 @@ public class ElasticSearchServiceTest {
     @Test
     public void testRelevanceDownloadCount() throws Exception {
         var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 0.0, 0, 1, LocalDateTime.parse("2020-01-01T00:00"), false, false);
-        var ext2 = mockExtension("bar", 0.0, 0, 10, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext1 = mockExtension("foo", "n1", "u1",0.0, 0, 1, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext2 = mockExtension("bar", "n2", "u2",0.0, 0, 10, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
 
@@ -94,8 +90,8 @@ public class ElasticSearchServiceTest {
     @Test
     public void testRelevanceTimestamp() throws Exception {
         var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 0.0, 0, 0, LocalDateTime.parse("2020-02-01T00:00"), false, false);
-        var ext2 = mockExtension("bar", 0.0, 0, 0, LocalDateTime.parse("2020-10-01T00:00"), false, false);
+        var ext1 = mockExtension("foo", "n2", "u2",0.0, 0, 0, LocalDateTime.parse("2020-02-01T00:00"), false, false);
+        var ext2 = mockExtension("bar", "n1", "u1",0.0, 0, 0, LocalDateTime.parse("2020-10-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
 
@@ -106,8 +102,8 @@ public class ElasticSearchServiceTest {
     @Test
     public void testRelevanceUnverified1() throws Exception {
         var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, true);
-        var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
+        var ext1 = mockExtension("foo", "n1", "u1",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, true);
+        var ext2 = mockExtension("bar", "n2", "u2",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
 
@@ -118,8 +114,8 @@ public class ElasticSearchServiceTest {
     @Test
     public void testRelevanceUnverified2() throws Exception {
         var index = mockIndex(true);
-        var ext1 = mockExtension("foo", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), true, false);
-        var ext2 = mockExtension("bar", 4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
+        var ext1 = mockExtension("foo", "n1", "u1",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), true, false);
+        var ext2 = mockExtension("bar", "n2", "u2",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
         search.updateSearchEntry(ext1);
         search.updateSearchEntry(ext2);
 
@@ -232,7 +228,7 @@ public class ElasticSearchServiceTest {
         return index;
     }
 
-    private Extension mockExtension(String name, double averageRating, int ratingCount, int downloadCount,
+    private Extension mockExtension(String name, String namespaceName, String userName, double averageRating, int ratingCount, int downloadCount,
             LocalDateTime timestamp, boolean isUnverified, boolean isUnrelated) {
         var extension = new Extension();
         extension.setName(name);
@@ -242,10 +238,10 @@ public class ElasticSearchServiceTest {
         Mockito.when(repositories.countActiveReviews(extension))
                 .thenReturn((long) ratingCount);
         var namespace = new Namespace();
-        namespace.setName("test");
+        namespace.setName(namespaceName);
         extension.setNamespace(namespace);
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(isUnverified ? 0l : 1l);
+                .thenReturn(isUnverified ? 0L : 1L);
         var extVer = new ExtensionVersion();
         extVer.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVer.setTimestamp(timestamp);
@@ -253,18 +249,19 @@ public class ElasticSearchServiceTest {
         extVer.setExtension(extension);
         extension.getVersions().add(extVer);
         var user = new UserData();
+        user.setLoginName(userName);
         var token = new PersonalAccessToken();
         token.setUser(user);
         extVer.setPublishedWith(token);
         Mockito.when(repositories.countMemberships(user, namespace))
-                .thenReturn(isUnrelated ? 0l : 1l);
+                .thenReturn(isUnrelated ? 0L : 1L);
         return extension;
     }
 
     private void mockExtensions() {
-        var ext1 = mockExtension("foo", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
-        var ext2 = mockExtension("bar", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
-        var ext3 = mockExtension("baz", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext1 = mockExtension("foo", "n1", "u1",3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext2 = mockExtension("bar", "n2", "u2", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
+        var ext3 = mockExtension("baz", "n3", "u3", 3.0, 1, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         Mockito.when(repositories.findAllActiveExtensions())
                 .thenReturn(Streamable.of(ext1, ext2, ext3));
     }
@@ -285,6 +282,21 @@ public class ElasticSearchServiceTest {
         @Bean
         RelevanceService relevanceService() {
             return new RelevanceService();
+        }
+
+        @Bean
+        VersionService versionService() {
+            return new VersionService();
+        }
+
+        @Bean
+        LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
+            return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        LatestExtensionVersionDTOCacheKeyGenerator latestExtensionVersionDTOCacheKeyGenerator() {
+            return new LatestExtensionVersionDTOCacheKeyGenerator();
         }
     }
     

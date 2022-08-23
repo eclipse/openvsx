@@ -119,6 +119,10 @@ public class RepositoryService {
          return extensionVersionRepo.findByExtensionAndActiveTrue(extension);
     }
 
+    public Streamable<ExtensionVersion> findActiveVersions(Collection<Extension> extensions) {
+        return extensionVersionRepo.findByExtensionInAndActiveTrue(extensions);
+    }
+
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
         return extensionVersionRepo.findByBundledExtensions(extensionId(extension));
     }
@@ -169,6 +173,10 @@ public class RepositoryService {
 
     public Streamable<FileResource> findFilesByType(ExtensionVersion extVersion, Collection<String> types) {
         return fileResourceRepo.findByExtensionAndTypeIn(extVersion, types);
+    }
+
+    public Streamable<FileResource> findFilesByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
+        return fileResourceRepo.findByExtensionInAndTypeIn(extVersions, types);
     }
 
     public Streamable<ExtensionReview> findActiveReviews(Extension extension) {
@@ -278,6 +286,10 @@ public class RepositoryService {
         return extensionVersionDTORepo.findAllActiveByExtensionNameAndNamespaceName(targetPlatform, extensionName, namespaceName);
     }
 
+    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByVersion(String version, String extensionName, String namespaceName) {
+        return extensionVersionDTORepo.findAllActiveExtensionsByVersionAndExtensionNameAndNamespaceName(version, extensionName, namespaceName);
+    }
+
     public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespaceName(String targetPlatform, String namespaceName) {
         return extensionVersionDTORepo.findAllActiveByNamespaceName(targetPlatform, namespaceName);
     }
@@ -290,8 +302,8 @@ public class RepositoryService {
         return fileResourceDTORepo.findAll(extensionVersionIds, types);
     }
 
-    public List<FileResourceDTO> findAllResourceFileResourceDTOs(String namespaceName, String extensionName, String version, String prefix) {
-        return fileResourceDTORepo.findAllResources(namespaceName, extensionName, version, prefix);
+    public List<FileResourceDTO> findAllResourceFileResourceDTOs(long extVersionId, String prefix) {
+        return fileResourceDTORepo.findAllResources(extVersionId, prefix);
     }
 
     public Map<Long, Integer> findAllActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {
@@ -352,5 +364,9 @@ public class RepositoryService {
 
     public void deleteFileResources(ExtensionVersion extVersion, String type) {
         fileResourceRepo.deleteByExtensionAndType(extVersion, type);
+    }
+
+    public int countVersions(Extension extension) {
+        return extensionVersionRepo.countByExtension(extension);
     }
 }

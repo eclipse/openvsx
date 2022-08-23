@@ -36,6 +36,8 @@ import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
+import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
+import org.eclipse.openvsx.cache.LatestExtensionVersionDTOCacheKeyGenerator;
 import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -58,6 +60,7 @@ import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionService;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -108,7 +111,10 @@ public class RegistryAPITest {
     MockMvc mockMvc;
 
     @Autowired
-    ExtensionService extensionService;
+    ExtensionService extensions;
+
+    @Autowired
+    VersionService versions;
 
     @Test
     public void testPublicNamespace() throws Exception {
@@ -506,10 +512,10 @@ public class RegistryAPITest {
 
     @Test
     public void testSearchInactive() throws Exception {
-        var extensions = mockSearch();
-        extensions.forEach(extension -> {
+        var extensionsList = mockSearch();
+        extensionsList.forEach(extension -> {
             extension.setActive(false);
-            extension.getLatest().setActive(false);
+            versions.getLatest(extension, null, false, false).setActive(false);
         });
 
         mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "10", "0"))
@@ -826,9 +832,9 @@ public class RegistryAPITest {
     
     @Test
     public void testPublishRequireLicenseNone() throws Exception {
-        var previousRequireLicense = extensionService.requireLicense;
+        var previousRequireLicense = extensions.requireLicense;
         try {
-            extensionService.requireLicense = true;
+            extensions.requireLicense = true;
             mockForPublish("contributor");
             var bytes = createExtensionPackage("bar", "1.0.0", null);
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
@@ -837,15 +843,15 @@ public class RegistryAPITest {
                     .andExpect(status().isBadRequest())
                     .andExpect(content().json(errorJson("This extension cannot be accepted because it has no license.")));
         } finally {
-            extensionService.requireLicense = previousRequireLicense;
+            extensions.requireLicense = previousRequireLicense;
         }
     }
     
     @Test
     public void testPublishRequireLicenseOk() throws Exception {
-        var previousRequireLicense = extensionService.requireLicense;
+        var previousRequireLicense = extensions.requireLicense;
         try {
-            extensionService.requireLicense = true;
+            extensions.requireLicense = true;
             mockForPublish("contributor");
             mockActiveVersion();
             var bytes = createExtensionPackage("bar", "1.0.0", "MIT");
@@ -863,7 +869,7 @@ public class RegistryAPITest {
                         e.verified = true;
                     })));
         } finally {
-            extensionService.requireLicense = previousRequireLicense;
+            extensions.requireLicense = previousRequireLicense;
         }
     }
     
@@ -1380,9 +1386,12 @@ public class RegistryAPITest {
         download.setType(DOWNLOAD);
         download.setStorageType(STORAGE_DB);
         download.setName("extension-1.0.0.vsix");
-        Mockito.when(repositories.findFilesByType(eq(extVersion), anyCollection())).thenAnswer(invocation -> {
+        Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection())).thenAnswer(invocation -> {
+            Collection<ExtensionVersion> extVersions = invocation.getArgument(0);
             Collection<String> types = invocation.getArgument(1);
-            return types.contains(DOWNLOAD) ? Streamable.of(download) : Streamable.empty();
+            return types.contains(DOWNLOAD) && extVersions.iterator().hasNext() && download.getExtension().equals(extVersions.iterator().next())
+                    ? Streamable.of(download)
+                    : Streamable.empty();
         });
 
         return extVersion;
@@ -1542,7 +1551,7 @@ public class RegistryAPITest {
                 .thenReturn(0l);
         Mockito.when(repositories.findVersions(any(Extension.class)))
                 .thenReturn(Streamable.empty());
-        Mockito.when(repositories.findFilesByType(any(ExtensionVersion.class), anyCollection()))
+        Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection()))
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.findVersions(eq("1.0.0"), any(Extension.class)))
                 .thenReturn(Streamable.empty());
@@ -1727,6 +1736,20 @@ public class RegistryAPITest {
 
         @Bean
         ExtensionJsonCacheKeyGenerator extensionJsonCacheKeyGenerator() { return new ExtensionJsonCacheKeyGenerator(); }
+
+        @Bean
+        VersionService versionService() {
+            return new VersionService();
+        }
+
+        @Bean
+        LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
+            return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        LatestExtensionVersionDTOCacheKeyGenerator latestExtensionVersionDTOCacheKeyGenerator() {
+            return new LatestExtensionVersionDTOCacheKeyGenerator();
+        }
     }
-    
 }

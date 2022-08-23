@@ -9,7 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 import javax.validation.constraints.NotNull;
 
@@ -24,7 +26,7 @@ import io.swagger.annotations.ApiModelProperty;;
     description = "User data"
 )
 @JsonInclude(Include.NON_NULL)
-public class UserJson extends ResultJson {
+public class UserJson extends ResultJson implements Serializable {
 
     public static UserJson error(String message) {
         var user = new UserJson();
@@ -64,13 +66,46 @@ public class UserJson extends ResultJson {
     public List<UserJson> additionalLogins;
 
     @JsonInclude(Include.NON_NULL)
-    public static class PublisherAgreement {
+    public static class PublisherAgreement implements Serializable {
 
         /* 'none' | 'signed' | 'outdated' */
         public String status;
 
         public String timestamp;
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PublisherAgreement that = (PublisherAgreement) o;
+            return Objects.equals(status, that.status) && Objects.equals(timestamp, that.timestamp);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(status, timestamp);
+        }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserJson userJson = (UserJson) o;
+        return Objects.equals(loginName, userJson.loginName)
+                && Objects.equals(tokensUrl, userJson.tokensUrl)
+                && Objects.equals(createTokenUrl, userJson.createTokenUrl)
+                && Objects.equals(role, userJson.role)
+                && Objects.equals(fullName, userJson.fullName)
+                && Objects.equals(avatarUrl, userJson.avatarUrl)
+                && Objects.equals(homepage, userJson.homepage)
+                && Objects.equals(provider, userJson.provider)
+                && Objects.equals(publisherAgreement, userJson.publisherAgreement)
+                && Objects.equals(additionalLogins, userJson.additionalLogins);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(loginName, tokensUrl, createTokenUrl, role, fullName, avatarUrl, homepage, provider, publisherAgreement, additionalLogins);
+    }
 }

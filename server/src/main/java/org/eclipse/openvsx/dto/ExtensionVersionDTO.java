@@ -16,41 +16,58 @@ import org.eclipse.openvsx.entities.ListOfStringConverter;
 import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class ExtensionVersionDTO {
+public class ExtensionVersionDTO implements Serializable {
 
-    private final long extensionId;
+    public enum Type {
+        REGULAR,
+        MINIMAL,
+        EXTENDED
+    }
+
+    private long extensionId;
     private ExtensionDTO extension;
 
     private final long id;
     private final String version;
     private final String targetPlatform;
     private SemanticVersion semver;
-    private final boolean preview;
-    private final boolean preRelease;
-    private final LocalDateTime timestamp;
+    private boolean preview;
+    private boolean preRelease;
+    private LocalDateTime timestamp;
     private PersonalAccessTokenDTO publishedWith;
-    private final String displayName;
-    private final String description;
-    private final List<String> engines;
-    private final List<String> categories;
-    private final List<String> tags;
-    private final List<String> extensionKind;
+    private String displayName;
+    private String description;
+    private List<String> engines;
+    private List<String> categories;
+    private List<String> tags;
+    private List<String> extensionKind;
     private String license;
     private String homepage;
-    private final String repository;
+    private String repository;
     private String bugs;
     private String markdown;
-    private final String galleryColor;
-    private final String galleryTheme;
+    private String galleryColor;
+    private String galleryTheme;
     private String qna;
-    private final List<String> dependencies;
-    private final List<String> bundledExtensions;
+    private List<String> dependencies;
+    private List<String> bundledExtensions;
+
+    private Type type;
+
+    public ExtensionVersionDTO(long extensionId, long id, String targetPlatform, String version) {
+        this.extensionId = extensionId;
+        this.id = id;
+        this.targetPlatform = targetPlatform;
+        this.version = version;
+        type = Type.MINIMAL;
+    }
 
     public ExtensionVersionDTO(
             long namespaceId,
@@ -135,6 +152,7 @@ public class ExtensionVersionDTO {
         this.bugs = bugs;
         this.markdown = markdown;
         this.qna = qna;
+        type = Type.EXTENDED;
     }
 
     public ExtensionVersionDTO(
@@ -177,6 +195,7 @@ public class ExtensionVersionDTO {
         this.galleryTheme = galleryTheme;
         this.dependencies = toList.convertToEntityAttribute(dependencies);
         this.bundledExtensions = toList.convertToEntityAttribute(bundledExtensions);
+        type = Type.REGULAR;
     }
 
     private List<ExtensionReferenceJson> toExtensionReferenceJson(List<String> extensionReferences) {
@@ -364,16 +383,50 @@ public class ExtensionVersionDTO {
         return bundledExtensions;
     }
 
+    public ExtensionVersionDTO.Type getType() {
+        return type;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ExtensionVersionDTO that = (ExtensionVersionDTO) o;
-        return extensionId == that.extensionId && id == that.id && preview == that.preview && preRelease == that.preRelease && Objects.equals(extension, that.extension) && Objects.equals(version, that.version) && Objects.equals(targetPlatform, that.targetPlatform) && Objects.equals(semver, that.semver) && Objects.equals(timestamp, that.timestamp) && Objects.equals(publishedWith, that.publishedWith) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(engines, that.engines) && Objects.equals(categories, that.categories) && Objects.equals(tags, that.tags) && Objects.equals(extensionKind, that.extensionKind) && Objects.equals(license, that.license) && Objects.equals(homepage, that.homepage) && Objects.equals(repository, that.repository) && Objects.equals(bugs, that.bugs) && Objects.equals(markdown, that.markdown) && Objects.equals(galleryColor, that.galleryColor) && Objects.equals(galleryTheme, that.galleryTheme) && Objects.equals(qna, that.qna) && Objects.equals(dependencies, that.dependencies) && Objects.equals(bundledExtensions, that.bundledExtensions);
+        return extensionId == that.extensionId
+                && id == that.id
+                && preview == that.preview
+                && preRelease == that.preRelease
+                && Objects.equals(extension, that.extension)
+                && Objects.equals(version, that.version)
+                && Objects.equals(targetPlatform, that.targetPlatform)
+                && Objects.equals(semver, that.semver)
+                && Objects.equals(timestamp, that.timestamp)
+                && Objects.equals(publishedWith, that.publishedWith)
+                && Objects.equals(displayName, that.displayName)
+                && Objects.equals(description, that.description)
+                && Objects.equals(engines, that.engines)
+                && Objects.equals(categories, that.categories)
+                && Objects.equals(tags, that.tags)
+                && Objects.equals(extensionKind, that.extensionKind)
+                && Objects.equals(license, that.license)
+                && Objects.equals(homepage, that.homepage)
+                && Objects.equals(repository, that.repository)
+                && Objects.equals(bugs, that.bugs)
+                && Objects.equals(markdown, that.markdown)
+                && Objects.equals(galleryColor, that.galleryColor)
+                && Objects.equals(galleryTheme, that.galleryTheme)
+                && Objects.equals(qna, that.qna)
+                && Objects.equals(dependencies, that.dependencies)
+                && Objects.equals(bundledExtensions, that.bundledExtensions)
+                && type == that.type;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(extensionId, extension, id, version, targetPlatform, semver, preview, preRelease, timestamp, publishedWith, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna, dependencies, bundledExtensions);
+        return Objects.hash(
+                extensionId, extension, id, version, targetPlatform, semver, preview, preRelease, timestamp,
+                publishedWith, displayName, description, engines, categories, tags, extensionKind, license, homepage,
+                repository, bugs, markdown, galleryColor, galleryTheme, qna, dependencies, bundledExtensions, type
+        );
     }
 }

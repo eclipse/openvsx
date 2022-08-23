@@ -9,11 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
+import org.hibernate.annotations.Fetch;
+
+import javax.persistence.*;
 
 @Entity
 public class FileResource {
@@ -44,6 +42,7 @@ public class FileResource {
     @Column(length = 32)
     String type;
 
+    @Basic(fetch = FetchType.LAZY)
     byte[] content;
 
     @Column(length = 32)

@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -19,7 +20,7 @@ import java.util.Objects;
  * <p>This class is not mapped to a database entity, but parsed / serialized to
  * JSON via a column converter.
  */
-public class EclipseData implements Cloneable {
+public class EclipseData implements Cloneable, Serializable {
 
     public String personId;
 

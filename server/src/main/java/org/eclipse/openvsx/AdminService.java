@@ -19,9 +19,7 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 
-import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -32,6 +30,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -44,6 +43,9 @@ public class AdminService {
 
     @Autowired
     ExtensionService extensions;
+
+    @Autowired
+    VersionService versions;
 
     @Autowired
     EntityManager entityManager;
@@ -129,7 +131,7 @@ public class AdminService {
 
     protected ResultJson deleteExtension(ExtensionVersion extVersion, UserData admin) {
         var extension = extVersion.getExtension();
-        if (repositories.findVersions(extension).stream().count() == 1) {
+        if (repositories.countVersions(extension) == 1) {
             return deleteExtension(extension, admin);
         }
 
@@ -192,7 +194,8 @@ public class AdminService {
         entityManager.persist(namespace);
         return ResultJson.success("Created namespace " + namespace.getName());
     }
-    
+
+    @Transactional
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
@@ -207,14 +210,15 @@ public class AdminService {
             if (accessToken.isActive()) {
                 activeAccessTokenNum++;
             }
-            var versions = repositories.findVersionsByAccessToken(accessToken);
-            for (var version : versions) {
+            var versionList = repositories.findVersionsByAccessToken(accessToken).toList();
+            var fileUrls = storageUtil.getFileUrls(versionList, serverUrl, FileResource.DOWNLOAD, FileResource.MANIFEST,
+                    FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);
+            for (var version : versionList) {
+                var latest = versions.getLatest(version.getExtension(), null, false, true);
                 var json = version.toExtensionJson();
-                json.preview = version.getExtension().getLatest().isPreview();
+                json.preview = latest.isPreview();
                 json.active = version.isActive();
-                json.files = Maps.newLinkedHashMapWithExpectedSize(6);
-                storageUtil.addFileUrls(version, serverUrl, json.files, FileResource.DOWNLOAD, FileResource.MANIFEST,
-                        FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);
+                json.files = fileUrls.get(version.getId());
                 versionJsons.add(json);
             }
         }

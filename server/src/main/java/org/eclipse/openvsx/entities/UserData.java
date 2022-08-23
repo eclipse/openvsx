@@ -9,7 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -21,7 +23,7 @@ import javax.persistence.OneToMany;
 import org.eclipse.openvsx.json.UserJson;
 
 @Entity
-public class UserData {
+public class UserData implements Serializable {
 
     public static final String ROLE_ADMIN = "admin";
     public static final String ROLE_PRIVILEGED = "privileged";
@@ -175,5 +177,33 @@ public class UserData {
     public void setEclipseToken(AuthToken eclipseToken) {
         this.eclipseToken = eclipseToken;
     }
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserData userData = (UserData) o;
+        return id == userData.id
+                && Objects.equals(role, userData.role)
+                && Objects.equals(loginName, userData.loginName)
+                && Objects.equals(fullName, userData.fullName)
+                && Objects.equals(email, userData.email)
+                && Objects.equals(avatarUrl, userData.avatarUrl)
+                && Objects.equals(provider, userData.provider)
+                && Objects.equals(authId, userData.authId)
+                && Objects.equals(providerUrl, userData.providerUrl)
+                && Objects.equals(tokens, userData.tokens)
+                && Objects.equals(memberships, userData.memberships)
+                && Objects.equals(eclipseData, userData.eclipseData)
+                && Objects.equals(githubToken, userData.githubToken)
+                && Objects.equals(eclipseToken, userData.eclipseToken);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                id, role, loginName, fullName, email, avatarUrl, provider, authId, providerUrl, tokens, memberships,
+                eclipseData, githubToken, eclipseToken
+        );
+    }
 }

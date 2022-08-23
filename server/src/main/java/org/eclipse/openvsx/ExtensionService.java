@@ -129,8 +129,8 @@ public class ExtensionService {
             }
         }
         extension.setLastUpdatedDate(extVersion.getTimestamp());
-        extVersion.setExtension(extension);
         extension.getVersions().add(extVersion);
+        extVersion.setExtension(extension);
         entityManager.persist(extVersion);
 
         var metadataIssues = validator.validateMetadata(extVersion);
@@ -212,9 +212,10 @@ public class ExtensionService {
      */
     @Transactional(TxType.REQUIRED)
     public void updateExtension(Extension extension) {
+        cache.evictLatestExtensionVersion(extension);
         cache.evictExtensionJsons(extension);
 
-        if (extension.getLatest() != null) {
+        if (extension.getVersions().stream().anyMatch(ExtensionVersion::isActive)) {
             // There is at least one active version => activate the extension
             extension.setActive(true);
             search.updateSearchEntry(extension);

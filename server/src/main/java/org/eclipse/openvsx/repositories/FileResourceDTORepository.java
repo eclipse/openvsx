@@ -37,16 +37,11 @@ public class FileResourceDTORepository {
                 .fetchInto(FileResourceDTO.class);
     }
 
-    public List<FileResourceDTO> findAllResources(String namespaceName, String extensionName, String version, String prefix) {
+    public List<FileResourceDTO> findAllResources(long extVersionId, String prefix) {
         return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE, FILE_RESOURCE.STORAGE_TYPE, FILE_RESOURCE.CONTENT)
                 .from(FILE_RESOURCE)
-                .join(EXTENSION_VERSION).on(EXTENSION_VERSION.ID.eq(FILE_RESOURCE.EXTENSION_ID))
-                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .where(NAMESPACE.NAME.eq(namespaceName))
-                .and(EXTENSION.NAME.eq(extensionName))
-                .and(EXTENSION_VERSION.VERSION.eq(version))
-                .and(FILE_RESOURCE.TYPE.eq(FileResource.RESOURCE))
+                .where(FILE_RESOURCE.TYPE.eq(FileResource.RESOURCE))
+                .and(FILE_RESOURCE.EXTENSION_ID.eq(extVersionId))
                 .and(FILE_RESOURCE.NAME.startsWith(prefix))
                 .fetchInto(FileResourceDTO.class);
     }

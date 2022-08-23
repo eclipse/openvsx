@@ -4,6 +4,9 @@ server:
 spring:
   profiles:
     include: ovsx
+  cache:
+    jcache:
+      config: classpath:ehcache.xml
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: gitpod
