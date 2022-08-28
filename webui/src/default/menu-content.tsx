@@ -96,7 +96,7 @@ export const MobileMenuContent = withStyles(menuContentStyle)(MobileMenuContentC
 
 //-------------------- Default View --------------------//
 
-export class DefaultMenuConentComponent extends React.Component<WithStyles<typeof menuContentStyle>> {
+export class DefaultMenuContentComponent extends React.Component<WithStyles<typeof menuContentStyle>> {
     render(): React.ReactElement {
         const classes = this.props.classes;
         return <React.Fragment>
@@ -113,4 +113,4 @@ export class DefaultMenuConentComponent extends React.Component<WithStyles<typeo
     }
 }
 
-export const DefaultMenuContent = withStyles(menuContentStyle)(DefaultMenuConentComponent);
+export const DefaultMenuContent = withStyles(menuContentStyle)(DefaultMenuContentComponent);
