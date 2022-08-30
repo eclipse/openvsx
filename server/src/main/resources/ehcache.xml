@@ -1,12 +1,15 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://www.ehcache.org/v3"
         xsi:schemaLocation="http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core.xsd">
+    <persistence directory="ehcache"/>
     <cache alias="database.search">
         <expiry>
             <ttl unit="seconds">3600</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1000</heap>
+            <heap unit="entries">1024</heap>
+            <offheap unit="MB">32</offheap>
+            <disk unit="MB">128</disk>
         </resources>
     </cache>
     <cache alias="extension.json">
@@ -14,7 +17,9 @@
             <ttl unit="seconds">3600</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1000</heap>
+            <heap unit="entries">1024</heap>
+            <offheap unit="MB">32</offheap>
+            <disk unit="MB">128</disk>
         </resources>
     </cache>
     <cache alias="latest.extension.version">
@@ -22,7 +27,9 @@
             <ttl unit="seconds">3600</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1000</heap>
+            <heap unit="entries">1024</heap>
+            <offheap unit="MB">32</offheap>
+            <disk unit="MB">128</disk>
         </resources>
     </cache>
     <cache alias="latest.extension.version.dto">
@@ -30,7 +37,9 @@
             <ttl unit="seconds">3600</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1000</heap>
+            <heap unit="entries">1024</heap>
+            <offheap unit="MB">32</offheap>
+            <disk unit="MB">128</disk>
         </resources>
     </cache>
 </config>

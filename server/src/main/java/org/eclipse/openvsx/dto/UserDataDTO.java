@@ -11,9 +11,10 @@ package org.eclipse.openvsx.dto;
 
 import org.eclipse.openvsx.json.UserJson;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class UserDataDTO {
+public class UserDataDTO  implements Serializable {
 
     private final long id;
     private final String loginName;
@@ -71,5 +72,23 @@ public class UserDataDTO {
 
     public String getProvider() {
         return provider;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserDataDTO that = (UserDataDTO) o;
+        return id == that.id
+                && Objects.equals(loginName, that.loginName)
+                && Objects.equals(fullName, that.fullName)
+                && Objects.equals(avatarUrl, that.avatarUrl)
+                && Objects.equals(providerUrl, that.providerUrl)
+                && Objects.equals(provider, that.provider);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, loginName, fullName, avatarUrl, providerUrl, provider);
     }
 }

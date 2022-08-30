@@ -9,9 +9,11 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.dto;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-public class ExtensionDTO {
+public class ExtensionDTO implements Serializable {
 
     private final long id;
     private final String publicId;
@@ -75,5 +77,25 @@ public class ExtensionDTO {
 
     public LocalDateTime getLastUpdatedDate() {
         return lastUpdatedDate;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExtensionDTO that = (ExtensionDTO) o;
+        return id == that.id
+                && downloadCount == that.downloadCount
+                && Objects.equals(publicId, that.publicId)
+                && Objects.equals(name, that.name)
+                && Objects.equals(namespace, that.namespace)
+                && Objects.equals(averageRating, that.averageRating)
+                && Objects.equals(publishedDate, that.publishedDate)
+                && Objects.equals(lastUpdatedDate, that.lastUpdatedDate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, publicId, name, namespace, averageRating, downloadCount, publishedDate, lastUpdatedDate);
     }
 }
