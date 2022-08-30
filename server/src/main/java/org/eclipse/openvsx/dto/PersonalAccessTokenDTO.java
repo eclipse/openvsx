@@ -9,9 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.dto;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class PersonalAccessTokenDTO {
+public class PersonalAccessTokenDTO implements Serializable {
     private final UserDataDTO user;
 
     public PersonalAccessTokenDTO(
@@ -27,5 +28,18 @@ public class PersonalAccessTokenDTO {
 
     public UserDataDTO getUser() {
         return user;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PersonalAccessTokenDTO that = (PersonalAccessTokenDTO) o;
+        return Objects.equals(user, that.user);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(user);
     }
 }
