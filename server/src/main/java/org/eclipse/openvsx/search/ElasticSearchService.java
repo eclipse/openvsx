@@ -242,6 +242,12 @@ public class ElasticSearchService implements ISearchService {
             // Filter by selected target platform
             queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("targetPlatforms", options.targetPlatform));
         }
+        if (options.namespacesToExclude != null) {
+            // Exclude namespaces
+            for(var namespaceToExclude : options.namespacesToExclude) {
+                queryBuilder.withFilter(QueryBuilders.boolQuery().mustNot(QueryBuilders.matchPhraseQuery("namespace", namespaceToExclude)));
+            }
+        }
 
         // Sort search results according to 'sortOrder' and 'sortBy' options
         sortResults(queryBuilder, options.sortOrder, options.sortBy);

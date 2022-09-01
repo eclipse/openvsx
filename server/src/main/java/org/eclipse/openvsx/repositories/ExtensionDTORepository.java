@@ -33,8 +33,13 @@ public class ExtensionDTORepository {
         return fetch(findAllActive().and(EXTENSION.ID.in(ids)));
     }
 
-    public List<ExtensionDTO> findAllActiveByPublicId(Collection<String> publicIds) {
-        return fetch(findAllActive().and(EXTENSION.PUBLIC_ID.in(publicIds)));
+    public List<ExtensionDTO> findAllActiveByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
+        var query = findAllActive().and(EXTENSION.PUBLIC_ID.in(publicIds));
+        for(var namespaceToExclude : namespacesToExclude) {
+            query = query.and(NAMESPACE.NAME.notEqual(namespaceToExclude));
+        }
+
+        return fetch(query);
     }
 
     public ExtensionDTO findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespaceName) {

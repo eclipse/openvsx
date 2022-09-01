@@ -258,8 +258,8 @@ public class RepositoryService {
     public List<String> findAllSucceededAzureDownloadCountProcessedItemsByNameIn(List<String> names) {
         return downloadCountRepo.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(names);
     }
-    public List<ExtensionDTO> findAllActiveExtensionDTOsByPublicId(Collection<String> publicIds) {
-        return extensionDTORepo.findAllActiveByPublicId(publicIds);
+    public List<ExtensionDTO> findAllActiveExtensionDTOsByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
+        return extensionDTORepo.findAllActiveByPublicId(publicIds, namespacesToExclude);
     }
 
     public ExtensionDTO findActiveExtensionDTO(String name, String namespaceName) {
