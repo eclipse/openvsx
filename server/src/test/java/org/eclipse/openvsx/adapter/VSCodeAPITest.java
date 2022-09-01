@@ -71,13 +71,13 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
-@WebMvcTest(VSCodeAdapter.class)
+@WebMvcTest(VSCodeAPI.class)
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    AzureDownloadCountService.class, LockProvider.class, CacheService.class
+    AzureDownloadCountService.class, LockProvider.class, CacheService.class, UpstreamVSCodeService.class
 })
-public class VSCodeAdapterTest {
+public class VSCodeAPITest {
 
     @MockBean
     RepositoryService repositories;
@@ -260,6 +260,14 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testGetItem() throws Exception {
+        mockExtension();
+        mockMvc.perform(get("/vscode/item?itemName={itemName}", "redhat.vscode-yaml"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
+    }
+
+    @Test
     public void testWebResourceAsset() throws Exception {
         mockExtension();
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
@@ -282,13 +290,6 @@ public class VSCodeAdapterTest {
                 "vscode", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Built-in extension namespace 'vscode' not allowed"));
-    }
-
-    @Test
-    public void testGetItem() throws Exception {
-        mockMvc.perform(get("/vscode/item?itemName={itemName}", "redhat.vscode-yaml"))
-                .andExpect(status().isFound())
-                .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
     }
 
     @Test
@@ -497,6 +498,7 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testDownload() throws Exception {
+        mockExtension();
         mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage",
                 "redhat", "vscode-yaml", "0.5.2"))
                 .andExpect(status().isFound())
@@ -505,6 +507,7 @@ public class VSCodeAdapterTest {
 
     @Test
     public void testDownloadMacOSX() throws Exception {
+        mockExtension("darwin-arm64");
         mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage?targetPlatform={target}",
                 "redhat", "vscode-yaml", "0.5.2", "darwin-arm64"))
                 .andExpect(status().isFound())
@@ -750,6 +753,11 @@ public class VSCodeAdapterTest {
         @Bean
         TokenService tokenService() {
             return new TokenService();
+        }
+
+        @Bean
+        LocalVSCodeService localVSCodeService() {
+            return new LocalVSCodeService();
         }
 
         @Bean

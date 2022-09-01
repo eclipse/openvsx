@@ -178,12 +178,16 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             : null
                         }
                     </Box>
-                    <Box className={classes.resourcesGroup}>
-                        <Box>
-                            <Typography variant='h6'>Works With</Typography>
-                            {this.renderWorksWithList(extension.downloads)}
+                    {
+                        extension.downloads ?
+                        <Box className={classes.resourcesGroup}>
+                            <Box>
+                                <Typography variant='h6'>Works With</Typography>
+                                {this.renderWorksWithList(extension.downloads)}
+                            </Box>
                         </Box>
-                    </Box>
+                        : null
+                    }
                     <Box className={classes.resourcesGroup}>
                         <Box>
                             <Typography variant='h6'>Resources</Typography>
@@ -192,11 +196,11 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                             {this.renderResourceLink('Bugs', extension.bugs)}
                             {this.renderResourceLink('Q\'n\'A', extension.qna)}
                             {
-                                Object.keys(extension.downloads).length > 1 ?
+                                extension.downloads && Object.keys(extension.downloads).length > 1 ?
                                 <ExtensionDetailDownloadsMenu downloads={extension.downloads}/>
-                                : Object.keys(extension.downloads).length == 1 ?
+                                : extension.downloads && Object.keys(extension.downloads).length == 1 ?
                                 <Button variant='contained' color='secondary'
-                                    href={extension.files.download}
+                                    href={extension.downloads[Object.keys(extension.downloads)[0]]}
                                     className={classes.downloadButton}>
                                     Download
                                 </Button>

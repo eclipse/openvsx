@@ -13,10 +13,12 @@ import static org.eclipse.openvsx.util.UrlUtil.addQuery;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.net.URI;
+import java.util.HashMap;
 
 import com.google.common.base.Strings;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,7 +78,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             }
 
             String requestUrl = createApiUrl(upstreamUrl, segments);
-            return restTemplate.getForObject(requestUrl, ExtensionJson.class);
+            var json = restTemplate.getForObject(requestUrl, ExtensionJson.class);
+            makeDownloadsCompatible(json);
+            return json;
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -87,7 +91,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform, String version) {
         try {
             String requestUrl = UrlUtil.createApiVersionUrl(upstreamUrl, namespace, extension, targetPlatform, version);
-            return restTemplate.getForObject(requestUrl, ExtensionJson.class);
+            var json = restTemplate.getForObject(requestUrl, ExtensionJson.class);
+            makeDownloadsCompatible(json);
+            return json;
         } catch (RestClientException exc) {
             handleError(exc);
             throw exc;
@@ -113,7 +119,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             return response;
         }
         if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-            logger.error("HEAD " + url + ": " + response.toString());
+            logger.error("HEAD {}: {}", url, response);
         }
         throw new NotFoundException();
     }
@@ -174,4 +180,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         }
     }
 
+    private void makeDownloadsCompatible(ExtensionJson json) {
+        if(json.downloads == null && json.files.containsKey("download")) {
+            json.downloads = new HashMap<>();
+            json.downloads.put(TargetPlatform.NAME_UNIVERSAL, json.files.get("download"));
+        }
+    }
 }
