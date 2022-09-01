@@ -35,6 +35,8 @@ public class WebConfig implements WebMvcConfigurer {
                 "/user/**",
                 "/logout",
                 "/api/*/*/review/**",
+                "/api/user/publish",
+                "/api/user/namespace/create",
                 "/admin/**"
             };
             for (var endpoint : authorizedEndpoints) {

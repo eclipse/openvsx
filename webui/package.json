@@ -45,6 +45,7 @@
         "markdown-it-anchor": "^6.0.1",
         "react": "^16.14.0",
         "react-dom": "^16.14.0",
+        "react-dropzone": "^14.2.1",
         "react-infinite-scroller": "^1.2.4",
         "react-router-dom": "^5.2.0"
     },

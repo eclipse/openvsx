@@ -10,12 +10,15 @@
 
 import * as React from 'react';
 import { withStyles, createStyles } from '@material-ui/styles';
-import { Theme, WithStyles, Typography, MenuItem, Link } from '@material-ui/core';
+import { Theme, WithStyles, Typography, MenuItem, Link, Button } from '@material-ui/core';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { Link as RouteLink } from 'react-router-dom';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import MenuBookIcon from '@material-ui/icons/MenuBook';
 import ForumIcon from '@material-ui/icons/Forum';
 import InfoIcon from '@material-ui/icons/Info';
+import PublishIcon from '@material-ui/icons/Publish';
+import { UserSettingsRoutes } from '../pages/user/user-settings';
 
 const menuContentStyle = (theme: Theme) => createStyles({
     headerItem: {
@@ -30,6 +33,10 @@ const menuContentStyle = (theme: Theme) => createStyles({
             color: theme.palette.secondary.main,
             textDecoration: 'none'
         }
+    },
+    publishButton: {
+        marginLeft: theme.spacing(2.5),
+        marginRight: theme.spacing(2.5)
     },
     menuItem: {
         cursor: 'auto',
@@ -51,7 +58,7 @@ const menuContentStyle = (theme: Theme) => createStyles({
 
 //-------------------- Mobile View --------------------//
 
-export class MobileMenuContentComponent extends React.Component<WithStyles<typeof menuContentStyle>> {
+export class MobileMenuContentComponent extends React.Component<MobileMenuContent.Props> {
     render(): React.ReactElement {
         const classes = this.props.classes;
         return <React.Fragment>
@@ -87,16 +94,34 @@ export class MobileMenuContentComponent extends React.Component<WithStyles<typeo
                     </Typography>
                 </RouteLink>
             </MenuItem>
+            {
+                !this.props.location.pathname.startsWith(UserSettingsRoutes.ROOT)
+                ? <MenuItem className={classes.menuItem}>
+                    <RouteLink to='/user-settings/extensions'>
+                        <Typography variant='body2' color='textPrimary' className={classes.alignVertically}>
+                            <PublishIcon className={classes.itemIcon} />
+                            Publish Extension
+                        </Typography>
+                    </RouteLink>
+                </MenuItem>
+                : null
+            }
         </React.Fragment>;
     }
 }
 
-export const MobileMenuContent = withStyles(menuContentStyle)(MobileMenuContentComponent);
+export namespace MobileMenuContent {
+    export interface Props extends WithStyles<typeof menuContentStyle>, RouteComponentProps {
+
+    }
+}
+
+export const MobileMenuContent = withStyles(menuContentStyle)(withRouter(MobileMenuContentComponent));
 
 
 //-------------------- Default View --------------------//
 
-export class DefaultMenuContentComponent extends React.Component<WithStyles<typeof menuContentStyle>> {
+export class DefaultMenuContentComponent extends React.Component<DefaultMenuContent.Props> {
     render(): React.ReactElement {
         const classes = this.props.classes;
         return <React.Fragment>
@@ -109,8 +134,17 @@ export class DefaultMenuContentComponent extends React.Component<WithStyles<type
             <RouteLink to='/about' className={classes.headerItem}>
                 About
             </RouteLink>
+            <Button variant='contained' color='secondary' href='/user-settings/extensions' className={classes.publishButton}>
+                Publish
+            </Button>
         </React.Fragment>;
     }
 }
 
-export const DefaultMenuContent = withStyles(menuContentStyle)(DefaultMenuContentComponent);
+export namespace DefaultMenuContent {
+    export interface Props extends WithStyles<typeof menuContentStyle>, RouteComponentProps {
+
+    }
+}
+
+export const DefaultMenuContent = withStyles(menuContentStyle)(withRouter(DefaultMenuContentComponent));

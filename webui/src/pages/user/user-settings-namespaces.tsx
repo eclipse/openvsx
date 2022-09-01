@@ -19,9 +19,25 @@ import { makeStyles } from '@material-ui/styles';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
 import { NamespaceDetail } from './user-settings-namespace-detail';
+import { CreateNamespaceDialog } from './create-namespace-dialog';
 
 
 const namespacesStyle = (theme: Theme) => createStyles({
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column',
+            alignItems: 'center'
+        }
+    },
+    buttons: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        [theme.breakpoints.down('sm')]: {
+            justifyContent: 'center'
+        }
+    },
     namespaceManagementContainer: {
         display: 'flex',
         width: '100%',
@@ -106,32 +122,48 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
         const namespaceAccessUrl = this.context.pageSettings.urls.namespaceAccessInfo;
         const user = this.context.user;
         return <React.Fragment>
-            <DelayedLoadIndicator loading={this.state.loading} />
-            {
-                this.state.namespaces.length > 0 && namespace ?
-                    <React.Fragment>
-                        <Box className={this.props.classes.namespaceManagementContainer}>
-                            <NamespacesTabs
-                                chosenNamespace={namespace}
-                                namespaces={this.state.namespaces}
-                                onChange={this.handleChangeNamespace}
-                            />
-                            <NamespaceDetail
-                                namespace={namespace}
-                                setLoadingState={loading => this.setState({ loading })}
-                                filterUsers={foundUser => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName}
-                                fixSelf={true} />
-                        </Box>
-                    </React.Fragment>
-                    : !this.state.loading ? <Typography variant='body1'>No namespaces available. {
-                        namespaceAccessUrl ?
-                            <React.Fragment>
-                                Read <Link color='secondary' href={namespaceAccessUrl} target='_blank'>here</Link> about claiming namespaces.
-                            </React.Fragment>
-                            : null
-                    }
-                    </Typography> : null
-            }
+            <Box className={this.props.classes.header}>
+                <Box>
+                    <Typography variant='h5' gutterBottom>Namespaces</Typography>
+                </Box>
+                <Box className={this.props.classes.buttons}>
+                    <Box mr={1} mb={1}>
+                        <CreateNamespaceDialog
+                            namespaceCreated={this.handleNamespaceCreated}
+                        />
+                    </Box>
+                </Box>
+            </Box>
+            <Box mt={2}>
+                <DelayedLoadIndicator loading={this.state.loading}/>
+                {
+                    this.state.namespaces.length > 0 && namespace ?
+                        <React.Fragment>
+                            <Box className={this.props.classes.namespaceManagementContainer}>
+                                <NamespacesTabs
+                                    chosenNamespace={namespace}
+                                    namespaces={this.state.namespaces}
+                                    onChange={this.handleChangeNamespace}
+                                />
+                                <NamespaceDetail
+                                    namespace={namespace}
+                                    setLoadingState={loading => this.setState({ loading })}
+                                    filterUsers={foundUser => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName}
+                                    fixSelf={true}
+                                    namespaceAccessUrl={namespaceAccessUrl}
+                                    theme={this.context.pageSettings.themeType}/>
+                            </Box>
+                        </React.Fragment>
+                        : !this.state.loading ? <Typography variant='body1'>No namespaces available. {
+                            namespaceAccessUrl ?
+                                <React.Fragment>
+                                    Read <Link color='secondary' href={namespaceAccessUrl} target='_blank'>here</Link> about claiming namespaces.
+                                </React.Fragment>
+                                : null
+                        }
+                        </Typography> : null
+                }
+            </Box>
         </React.Fragment>;
     }
 
@@ -144,10 +176,20 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     }
 
     protected async initNamespaces(): Promise<void> {
-        const namespaces = await this.context.service.getNamespaces();
-        const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
-        this.setState({ namespaces, chosenNamespace, loading: false });
+        try {
+            const namespaces = await this.context.service.getNamespaces();
+            const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
+            this.setState({ namespaces, chosenNamespace, loading: false });
+        } catch (err) {
+            this.context.handleError(err);
+            this.setState({ loading: false });
+        }
     }
+
+    protected handleNamespaceCreated = () => {
+        this.setState({ loading: true });
+        this.initNamespaces();
+    };
 }
 
 export namespace UserSettingsNamespacesComponent {

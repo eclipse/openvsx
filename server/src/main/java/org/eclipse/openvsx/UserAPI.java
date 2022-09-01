@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.util.LinkedHashMap;
@@ -18,23 +19,21 @@ import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 
+import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.eclipse.EclipseService;
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.json.AccessTokenJson;
-import org.eclipse.openvsx.json.CsrfTokenJson;
-import org.eclipse.openvsx.json.ErrorJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.NamespaceMembershipListJson;
-import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.UserJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -66,6 +65,9 @@ public class UserAPI {
 
     @Autowired
     EclipseService eclipse;
+
+    @Autowired
+    StorageUtilService storageUtil;
 
     /**
      * Redirect to GitHub Oauth2 login as default login provider.
@@ -203,6 +205,27 @@ public class UserAPI {
     }
 
     @GetMapping(
+            path = "/user/extensions",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<ExtensionJson> getOwnExtensions() {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        return repositories.findVersionsByUser(user)
+                .map(extVersion -> {
+                    var json = extVersion.toExtensionJson();
+                    json.files = storageUtil.getFileUrls(extVersion, UrlUtil.getBaseUrl(),
+                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
+
+                    return json;
+                })
+                .toList();
+    }
+
+    @GetMapping(
         path = "/user/namespaces",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -212,7 +235,8 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        var memberships = repositories.findMemberships(user, NamespaceMembership.ROLE_OWNER);
+        var memberships = repositories.findMemberships(user, NamespaceMembership.ROLE_OWNER)
+                .and(repositories.findMemberships(user, NamespaceMembership.ROLE_CONTRIBUTOR));
 
         return memberships.map(membership -> {
             var namespace = membership.getNamespace();
@@ -224,9 +248,14 @@ public class UserAPI {
                 String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
                 json.extensions.put(ext.getName(), url);
             }
-            json.verified = true;
-            json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
-            json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
+
+            var isOwner = membership.getRole().equals(NamespaceMembership.ROLE_OWNER);
+            json.verified = isOwner || repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0;
+            if(isOwner) {
+                json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
+                json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
+            }
+
             return json;
         }).toList();
     }

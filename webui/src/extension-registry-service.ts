@@ -270,6 +270,57 @@ export class ExtensionRegistryService {
             followRedirect: true
         });
     }
+
+    async publishExtension(extensionPackage: File): Promise<Readonly<Extension | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/octet-stream'
+        };
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest<Extension | ErrorResult>({
+            method: 'POST',
+            credentials: true,
+            payload: extensionPackage,
+            headers: headers,
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', 'user', 'publish'])
+        });
+    }
+
+    async createNamespace(name: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest<SuccessResult | ErrorResult>({
+            method: 'POST',
+            credentials: true,
+            payload: { name: name },
+            headers: headers,
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', 'user', 'namespace', 'create'])
+        });
+    }
+
+    async getExtensions(): Promise<Readonly<Extension[] | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfToken)) {
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest<Extension[] | ErrorResult>({
+            method: 'GET',
+            credentials: true,
+            headers: headers,
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'extensions'])
+        });
+    }
 }
 
 export class AdminService {

@@ -17,6 +17,7 @@ import { UserSettingTabs } from './user-setting-tabs';
 import { UserSettingsTokens } from './user-settings-tokens';
 import { UserSettingsProfile } from './user-settings-profile';
 import { UserSettingsNamespaces } from './user-settings-namespaces';
+import { UserSettingsExtensions } from './user-settings-extensions';
 import { MainContext } from '../../context';
 
 export namespace UserSettingsRoutes {
@@ -25,6 +26,7 @@ export namespace UserSettingsRoutes {
     export const PROFILE = createRoute([ROOT, 'profile']);
     export const TOKENS = createRoute([ROOT, 'tokens']);
     export const NAMESPACES = createRoute([ROOT, 'namespaces']);
+    export const EXTENSIONS = createRoute([ROOT, 'extensions']);
 }
 
 const profileStyles = (theme: Theme) => createStyles({
@@ -94,6 +96,9 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                                 </Route>
                                 <Route path={UserSettingsRoutes.NAMESPACES}>
                                     <UserSettingsNamespaces />
+                                </Route>
+                                <Route path={UserSettingsRoutes.EXTENSIONS}>
+                                    <UserSettingsExtensions />
                                 </Route>
                             </Box>
                         </Grid>

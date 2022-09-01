@@ -41,7 +41,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         method: req.method
     };
     if (req.payload) {
-        param.body = JSON.stringify(req.payload);
+        param.body = (req.payload instanceof File) ? req.payload : JSON.stringify(req.payload);
     }
     param.headers = req.headers;
     if (req.followRedirect) {
