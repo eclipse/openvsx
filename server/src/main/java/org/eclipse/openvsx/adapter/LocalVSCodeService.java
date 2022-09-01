@@ -1,12 +1,12 @@
-/********************************************************************************
- * Copyright (c) 2020 TypeFox and others
+/** ******************************************************************************
+ * Copyright (c) 2022 Precies. Software and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +21,6 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,13 +29,10 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -51,8 +47,8 @@ import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Property.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Statistic.*;
 import static org.eclipse.openvsx.entities.FileResource.*;
 
-@RestController
-public class VSCodeAdapter {
+@Component
+public class LocalVSCodeService implements IVSCodeService {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final String BUILT_IN_EXTENSION_NAMESPACE = "vscode";
@@ -75,19 +71,11 @@ public class VSCodeAdapter {
     @Autowired
     StorageUtilService storageUtil;
 
-    @Autowired
-    GoogleCloudStorageService googleStorage;
-
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
-    @PostMapping(
-        path = "/vscode/gallery/extensionquery",
-        consumes = MediaType.APPLICATION_JSON_VALUE,
-        produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    @CrossOrigin
-    public ExtensionQueryResult extensionQuery(@RequestBody ExtensionQueryParam param) {
+    @Override
+    public ExtensionQueryResult extensionQuery(ExtensionQueryParam param, int defaultPageSize) {
         String targetPlatform;
         String queryString = null;
         String category = null;
@@ -99,7 +87,7 @@ public class VSCodeAdapter {
         Set<String> extensionNames;
         if (param.filters == null || param.filters.isEmpty()) {
             pageNumber = 0;
-            pageSize = DEFAULT_PAGE_SIZE;
+            pageSize = defaultPageSize;
             sortBy = "relevance";
             sortOrder = "desc";
             targetPlatform = null;
@@ -119,7 +107,7 @@ public class VSCodeAdapter {
             targetPlatform = TargetPlatform.isValid(targetCriterion) ? targetCriterion : null;
 
             pageNumber = Math.max(0, filter.pageNumber - 1);
-            pageSize = filter.pageSize > 0 ? filter.pageSize : DEFAULT_PAGE_SIZE;
+            pageSize = filter.pageSize > 0 ? filter.pageSize : defaultPageSize;
             sortOrder = getSortOrder(filter.sortOrder);
             sortBy = getSortBy(filter.sortBy);
         }
@@ -269,11 +257,11 @@ public class VSCodeAdapter {
         countMetadataItem.count = totalCount;
         var countMetadata = new ExtensionQueryResult.ResultMetadata();
         countMetadata.metadataType = "ResultCount";
-        countMetadata.metadataItems = Lists.newArrayList(countMetadataItem);
-        resultItem.resultMetadata = Lists.newArrayList(countMetadata);
+        countMetadata.metadataItems = List.of(countMetadataItem);
+        resultItem.resultMetadata = List.of(countMetadata);
 
         var result = new ExtensionQueryResult();
-        result.results = Lists.newArrayList(resultItem);
+        result.results = List.of(resultItem);
         return result;
     }
 
@@ -299,29 +287,28 @@ public class VSCodeAdapter {
         }
     }
 
-    @GetMapping("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}/**")
-    @CrossOrigin
-    @Transactional
-    public ResponseEntity<byte[]> getAsset(HttpServletRequest request,
-                                           @PathVariable String namespace,
-                                           @PathVariable String extensionName,
-                                           @PathVariable String version,
-                                           @PathVariable String assetType,
-                                           @RequestParam(defaultValue = TargetPlatform.NAME_UNIVERSAL) String targetPlatform) {
+    @Override
+    public ResponseEntity<byte[]> getAsset(
+            String namespace, String extensionName, String version, String assetType, String targetPlatform,
+            String restOfTheUrl
+    ) {
         if(isBuiltInExtensionNamespace(namespace)) {
             return new ResponseEntity<>(("Built-in extension namespace '" + namespace + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
         }
 
-        var restOfTheUrl = UrlUtil.extractWildcardPath(request);
-        var asset = (restOfTheUrl != null && restOfTheUrl.length() > 0) ? (assetType + "/" + restOfTheUrl) : assetType;
         var extVersion = repositories.findVersion(version, targetPlatform, extensionName, namespace);
-        if (extVersion == null || !extVersion.isActive())
+        if (extVersion == null || !extVersion.isActive()) {
             throw new NotFoundException();
+        }
+
+        var asset = (restOfTheUrl != null && restOfTheUrl.length() > 0) ? (assetType + "/" + restOfTheUrl) : assetType;
         var resource = getFileFromDB(extVersion, asset);
-        if (resource == null)
+        if (resource == null) {
             throw new NotFoundException();
-        if (resource.getType().equals(FileResource.DOWNLOAD))
+        }
+        if (resource.getType().equals(FileResource.DOWNLOAD)) {
             storageUtil.increaseDownloadCount(extVersion, resource);
+        }
         if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
             var headers = storageUtil.getFileResponseHeaders(resource.getName());
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
@@ -359,59 +346,51 @@ public class VSCodeAdapter {
         }
     }
 
-    @GetMapping("/vscode/item")
-    @CrossOrigin
-    public ModelAndView getItemUrl(@RequestParam String itemName, ModelMap model) {
-        var dotIndex = itemName.indexOf('.');
-        if (dotIndex < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expecting an item of the form `{publisher}.{name}`");
-        }
-        var namespace = itemName.substring(0, dotIndex);
-        if(isBuiltInExtensionNamespace(namespace)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespace + "' not allowed");
+    @Override
+    public String getItemUrl(String namespaceName, String extensionName) {
+        if(isBuiltInExtensionNamespace(namespaceName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespaceName + "' not allowed");
         }
 
-        var extension = itemName.substring(dotIndex + 1);
-        return new ModelAndView("redirect:" + UrlUtil.createApiUrl(webuiUrl, "extension", namespace, extension), model);
+        var extension = repositories.findExtension(extensionName, namespaceName);
+        if (extension == null || !extension.isActive()) {
+            throw new NotFoundException();
+        }
+
+        return UrlUtil.createApiUrl(webuiUrl, "extension", namespaceName, extensionName);
     }
 
-    @GetMapping("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage")
-    @CrossOrigin
-    @Transactional
-    public ModelAndView download(@PathVariable String namespace, @PathVariable String extension,
-                                 @PathVariable String version, @RequestParam(defaultValue = TargetPlatform.NAME_UNIVERSAL) String targetPlatform, ModelMap model) {
+    @Override
+    public String download(String namespace, String extension, String version, String targetPlatform) {
         if(isBuiltInExtensionNamespace(namespace)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespace + "' not allowed");
         }
-        if (googleStorage.isEnabled()) {
-            var extVersion = repositories.findVersion(version, targetPlatform, extension, namespace);
-            if (extVersion == null || !extVersion.isActive())
-                throw new NotFoundException();
-            var resource = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-            if (resource == null)
-                throw new NotFoundException();
-            if (resource.getStorageType().equals(FileResource.STORAGE_GOOGLE)) {
-                storageUtil.increaseDownloadCount(extVersion, resource);
-                return new ModelAndView("redirect:" + storageUtil.getLocation(resource), model);
+
+        var extVersion = repositories.findVersion(version, targetPlatform, extension, namespace);
+        if (extVersion == null || !extVersion.isActive()) {
+            throw new NotFoundException();
+        }
+
+        var resource = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
+        if (resource == null) {
+            throw new NotFoundException();
+        }
+
+        if(resource.getStorageType().equals(STORAGE_DB)) {
+            var apiUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "asset", namespace, extension, version, FILE_VSIX);
+            if(!TargetPlatform.isUniversal(targetPlatform)) {
+                apiUrl = UrlUtil.addQuery(apiUrl, "targetPlatform", targetPlatform);
             }
-        }
 
-        var apiUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "asset", namespace, extension, version, FILE_VSIX);
-        if(!TargetPlatform.isUniversal(targetPlatform)) {
-            apiUrl = UrlUtil.addQuery(apiUrl, "targetPlatform", targetPlatform);
+            return apiUrl;
+        } else {
+            storageUtil.increaseDownloadCount(extVersion, resource);
+            return storageUtil.getLocation(resource).toString();
         }
-        
-        return new ModelAndView("redirect:" + apiUrl, model);
     }
 
-    @GetMapping("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/**")
-    @CrossOrigin
-    public ResponseEntity<byte[]> browse(
-            HttpServletRequest request,
-            @PathVariable String namespaceName,
-            @PathVariable String extensionName,
-            @PathVariable String version
-    ) {
+    @Override
+    public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path) {
         if(isBuiltInExtensionNamespace(namespaceName)) {
             return new ResponseEntity<>(("Built-in extension namespace '" + namespaceName + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
         }
@@ -425,10 +404,9 @@ public class VSCodeAdapter {
             return ResponseEntity.notFound().build();
         }
 
-        var path = UrlUtil.extractWildcardPath(request);
         var resources = repositories.findAllResourceFileResourceDTOs(extVersion.getId(), path);
         if(resources.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException();
         } else if(resources.size() == 1 && resources.get(0).getName().equals(path)) {
             return browseFile(resources.get(0), namespaceName, extensionName, extVersion.getTargetPlatform(), version);
         } else {
