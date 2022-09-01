@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import java.util.Arrays;
 import java.util.Objects;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.eclipse.openvsx.entities.Extension;
@@ -56,9 +57,10 @@ public interface ISearchService {
         public final String sortOrder;
         public final String sortBy;
         public final boolean includeAllVersions;
+        public final String[] namespacesToExclude;
 
         public Options(String queryString, String category, String targetPlatform, int size, int offset,
-                       String sortOrder, String sortBy, boolean includeAllVersions) {
+                       String sortOrder, String sortBy, boolean includeAllVersions, String... namespacesToExclude) {
             this.queryString = queryString;
             this.category = category;
             this.targetPlatform = targetPlatform;
@@ -67,6 +69,7 @@ public interface ISearchService {
             this.sortOrder = sortOrder;
             this.sortBy = sortBy;
             this.includeAllVersions = includeAllVersions;
+            this.namespacesToExclude = namespacesToExclude;
         }
 
         @Override
@@ -92,13 +95,15 @@ public interface ISearchService {
                 return false;
             if (this.includeAllVersions != other.includeAllVersions)
                 return false;
+            if (!Arrays.equals(this.namespacesToExclude, other.namespacesToExclude))
+                return false;
             return true;
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(queryString, category, targetPlatform, requestedSize, requestedOffset,
-                    sortOrder, sortBy, includeAllVersions);
+                    sortOrder, sortBy, includeAllVersions, namespacesToExclude);
         }
     }
 

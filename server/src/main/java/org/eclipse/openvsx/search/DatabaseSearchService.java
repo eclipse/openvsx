@@ -68,6 +68,13 @@ public class DatabaseSearchService implements ISearchService {
             return new SearchHitsImpl<ExtensionSearch>(0,TotalHitsRelation.OFF, 0f, "", Collections.emptyList(), aggregations);
         }
 
+        // exlude namespaces
+        if(options.namespacesToExclude != null) {
+            for(var namespaceToExclude : options.namespacesToExclude) {
+                matchingExtensions = matchingExtensions.filter(extension -> !extension.getNamespace().getName().equals(namespaceToExclude));
+            }
+        }
+
         // filter target platform
         if(TargetPlatform.isValid(options.targetPlatform)) {
             matchingExtensions = matchingExtensions.filter(extension -> extension.getVersions().stream().anyMatch(ev -> ev.getTargetPlatform().equals(options.targetPlatform)));

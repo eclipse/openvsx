@@ -123,6 +123,18 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testSearchExcludeBuiltInExtensions() throws Exception {
+        var extension = mockSearch(null, "vscode", true);
+        mockExtensionVersionDTOs(extension, null,"universal");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                .content(file("search-yaml-query.json"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("search-yaml-response-builtin-extensions.json")));
+    }
+
+    @Test
     public void testSearchMultipleTargetsResponse() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersionDTOs(extension, null, "darwin-x64", "linux-x64", "alpine-arm64");
@@ -248,13 +260,6 @@ public class VSCodeAdapterTest {
     }
 
     @Test
-    public void testGetItem() throws Exception {
-        mockMvc.perform(get("/vscode/item?itemName={itemName}", "redhat.vscode-yaml"))
-                .andExpect(status().isFound())
-                .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
-    }
-
-    @Test
     public void testWebResourceAsset() throws Exception {
         mockExtension();
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
@@ -272,6 +277,35 @@ public class VSCodeAdapterTest {
     }
 
     @Test
+    public void testAssetExcludeBuiltInExtensions() throws Exception {
+        mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
+                "vscode", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Built-in extension namespace 'vscode' not allowed"));
+    }
+
+    @Test
+    public void testGetItem() throws Exception {
+        mockMvc.perform(get("/vscode/item?itemName={itemName}", "redhat.vscode-yaml"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
+    }
+
+    @Test
+    public void testGetItemExcludeBuiltInExtensions() throws Exception {
+        mockMvc.perform(get("/vscode/item?itemName={itemName}", "vscode.vscode-yaml"))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason("Built-in extension namespace 'vscode' not allowed"));
+    }
+
+    @Test
+    public void testGetItemBadRequest() throws Exception {
+        mockMvc.perform(get("/vscode/item?itemName={itemName}", "vscode-yaml"))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason("Expecting an item of the form `{publisher}.{name}`"));
+    }
+
+    @Test
     public void testBrowseNotFound() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
@@ -284,6 +318,13 @@ public class VSCodeAdapterTest {
 
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/img"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testBrowseExcludeBuiltInExtensions() throws Exception {
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "vscode", "bar", "1.3.4", "extension/img"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Built-in extension namespace 'vscode' not allowed"));
     }
 
     @Test
@@ -454,13 +495,6 @@ public class VSCodeAdapterTest {
                 .andExpect(content().bytes(content));
     }
 
-
-    @Test
-    public void testGetItemBadRequest() throws Exception {
-        mockMvc.perform(get("/vscode/item?itemName={itemName}", "vscode-yaml"))
-                .andExpect(status().isBadRequest());
-    }
-
     @Test
     public void testDownload() throws Exception {
         mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage",
@@ -477,46 +511,59 @@ public class VSCodeAdapterTest {
                 .andExpect(header().string("Location", "http://localhost/vscode/asset/redhat/vscode-yaml/0.5.2/Microsoft.VisualStudio.Services.VSIXPackage?targetPlatform=darwin-arm64"));
     }
 
+    @Test
+    public void testDownloadExcludeBuiltInExtensions() throws Exception {
+        mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage",
+                "vscode", "vscode-yaml", "0.5.2"))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason("Built-in extension namespace 'vscode' not allowed"));
+    }
+
     // ---------- UTILITY ----------//
     private ExtensionDTO mockSearch(boolean active) {
         return mockSearch(null, active);
     }
 
     private ExtensionDTO mockSearch(String targetPlatform, boolean active) {
+        return mockSearch(targetPlatform, null, active);
+    }
+
+    private ExtensionDTO mockSearch(String targetPlatform, String namespaceName, boolean active) {
+        var builtInExtensionNamespace = "vscode";
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
-        var searchHit = new SearchHit<ExtensionSearch>("0", "1", 1.0f, null, null, entry1);
-        var searchHits = new SearchHitsImpl<ExtensionSearch>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1",
-                Arrays.asList(searchHit), new Aggregations(Collections.emptyList()));
+        List<SearchHit<ExtensionSearch>> searchResults = !builtInExtensionNamespace.equals(namespaceName)
+                ? Collections.singletonList(new SearchHit<>("0", "1", 1.0f, null, null, entry1))
+                : Collections.emptyList();
+        var searchHits = new SearchHitsImpl<>(searchResults.size(), TotalHitsRelation.EQUAL_TO, 1.0f, "1",
+                searchResults, new Aggregations(Collections.emptyList()));
+
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new ISearchService.Options("yaml", null, targetPlatform, 50, 0, "desc", "relevance", false);
+        var searchOptions = new ISearchService.Options("yaml", null, targetPlatform, 50, 0, "desc", "relevance", false, builtInExtensionNamespace);
         Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
 
-        var extension = mockExtensionDTO();
+        var extension = mockExtensionDTO(namespaceName);
         List<ExtensionDTO> results = active ? List.of(extension) : Collections.emptyList();
         Mockito.when(repositories.findAllActiveExtensionDTOsById(List.of(entry1.id)))
                 .thenReturn(results);
 
         var publicIds = Set.of(extension.getPublicId());
-        Mockito.when(repositories.findAllActiveExtensionDTOsByPublicId(publicIds))
+        Mockito.when(repositories.findAllActiveExtensionDTOsByPublicId(publicIds, builtInExtensionNamespace))
                 .thenReturn(results);
 
         var ids = List.of(extension.getId());
         Mockito.when(repositories.findAllActiveReviewCountsByExtensionId(ids))
                 .thenReturn(Map.of(extension.getId(), 10));
-
-        var name = extension.getName();
-        var namespaceName = extension.getNamespace().getName();
-        Mockito.when(repositories.findActiveExtensionDTO(name, namespaceName))
+        Mockito.when(repositories.findActiveExtensionDTO(extension.getName(), extension.getNamespace().getName()))
                 .thenReturn(extension);
 
         mockExtensionVersionDTOs(extension, targetPlatform, targetPlatform);
         return extension;
     }
 
-    private ExtensionDTO mockExtensionDTO() {
+    private ExtensionDTO mockExtensionDTO(String namespaceName) {
             var id = 1;
             var publicId = "test-1";
             var name = "vscode-yaml";
@@ -524,7 +571,9 @@ public class VSCodeAdapterTest {
             var downloadCount = 100;
             var namespaceId = 2;
             var namespacePublicId = "test-2";
-            var namespaceName = "redhat";
+            if(namespaceName == null) {
+                namespaceName = "redhat";
+            }
 
             return new ExtensionDTO(id,publicId,name,averageRating,downloadCount, LocalDateTime.parse("1999-12-01T09:00"),
                     LocalDateTime.parse("2000-01-01T10:00"), namespaceId,namespacePublicId, namespaceName);

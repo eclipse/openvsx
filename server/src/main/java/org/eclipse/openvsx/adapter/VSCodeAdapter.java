@@ -9,29 +9,28 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import com.azure.core.http.ContentType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.eclipse.openvsx.dto.*;
+import org.eclipse.openvsx.dto.ExtensionDTO;
+import org.eclipse.openvsx.dto.ExtensionVersionDTO;
+import org.eclipse.openvsx.dto.FileResourceDTO;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.json.ErrorJson;
-import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
-import org.springframework.util.MimeType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
@@ -56,6 +55,7 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 public class VSCodeAdapter {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final String BUILT_IN_EXTENSION_NAMESPACE = "vscode";
 
     @Autowired
     RepositoryService repositories;
@@ -127,11 +127,12 @@ public class VSCodeAdapter {
         Long totalCount = null;
         List<ExtensionDTO> extensionsList;
         if (!extensionIds.isEmpty()) {
-            extensionsList = repositories.findAllActiveExtensionDTOsByPublicId(extensionIds);
+            extensionsList = repositories.findAllActiveExtensionDTOsByPublicId(extensionIds, BUILT_IN_EXTENSION_NAMESPACE);
         } else if (!extensionNames.isEmpty()) {
             extensionsList = extensionNames.stream()
                     .map(name -> name.split("\\."))
                     .filter(split -> split.length == 2)
+                    .filter(split -> !isBuiltInExtensionNamespace(split[0]))
                     .map(split -> {
                         var name = split[1];
                         var namespaceName = split[0];
@@ -144,8 +145,8 @@ public class VSCodeAdapter {
         } else {
             try {
                 var pageOffset = pageNumber * pageSize;
-                var searchOptions = new ISearchService.Options(queryString, category, targetPlatform, pageSize,
-                        pageOffset, sortOrder, sortBy, false);
+                var searchOptions = new SearchUtilService.Options(queryString, category, targetPlatform, pageSize,
+                        pageOffset, sortOrder, sortBy, false, BUILT_IN_EXTENSION_NAMESPACE);
 
                 var searchResult = search.search(searchOptions);
                 totalCount = searchResult.getTotalHits();
@@ -307,6 +308,10 @@ public class VSCodeAdapter {
                                            @PathVariable String version,
                                            @PathVariable String assetType,
                                            @RequestParam(defaultValue = TargetPlatform.NAME_UNIVERSAL) String targetPlatform) {
+        if(isBuiltInExtensionNamespace(namespace)) {
+            return new ResponseEntity<>(("Built-in extension namespace '" + namespace + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
+        }
+
         var restOfTheUrl = UrlUtil.extractWildcardPath(request);
         var asset = (restOfTheUrl != null && restOfTheUrl.length() > 0) ? (assetType + "/" + restOfTheUrl) : assetType;
         var extVersion = repositories.findVersion(version, targetPlatform, extensionName, namespace);
@@ -362,6 +367,10 @@ public class VSCodeAdapter {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expecting an item of the form `{publisher}.{name}`");
         }
         var namespace = itemName.substring(0, dotIndex);
+        if(isBuiltInExtensionNamespace(namespace)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespace + "' not allowed");
+        }
+
         var extension = itemName.substring(dotIndex + 1);
         return new ModelAndView("redirect:" + UrlUtil.createApiUrl(webuiUrl, "extension", namespace, extension), model);
     }
@@ -371,6 +380,9 @@ public class VSCodeAdapter {
     @Transactional
     public ModelAndView download(@PathVariable String namespace, @PathVariable String extension,
                                  @PathVariable String version, @RequestParam(defaultValue = TargetPlatform.NAME_UNIVERSAL) String targetPlatform, ModelMap model) {
+        if(isBuiltInExtensionNamespace(namespace)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespace + "' not allowed");
+        }
         if (googleStorage.isEnabled()) {
             var extVersion = repositories.findVersion(version, targetPlatform, extension, namespace);
             if (extVersion == null || !extVersion.isActive())
@@ -400,6 +412,10 @@ public class VSCodeAdapter {
             @PathVariable String extensionName,
             @PathVariable String version
     ) {
+        if(isBuiltInExtensionNamespace(namespaceName)) {
+            return new ResponseEntity<>(("Built-in extension namespace '" + namespaceName + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
+        }
+
         var extVersions = repositories.findActiveExtensionVersionDTOsByVersion(version, extensionName, namespaceName);
         var extVersion = extVersions.stream().max(Comparator.<ExtensionVersionDTO, Boolean>comparing(TargetPlatform::isUniversal)
                 .thenComparing(ExtensionVersionDTO::getTargetPlatform))
@@ -490,7 +506,7 @@ public class VSCodeAdapter {
         try {
             json = new ObjectMapper().writeValueAsString(urls);
         } catch (JsonProcessingException e) {
-            throw new ErrorResultException("Failed to generate JSON: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate JSON: " + e.getMessage());
         }
 
         return ResponseEntity.ok()
@@ -611,5 +627,9 @@ public class VSCodeAdapter {
 
     private boolean test(int flags, int flag) {
         return (flags & flag) != 0;
+    }
+
+    private boolean isBuiltInExtensionNamespace(String namespaceName) {
+        return namespaceName.equals(BUILT_IN_EXTENSION_NAMESPACE);
     }
 }
