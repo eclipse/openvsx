@@ -73,39 +73,26 @@ public interface ISearchService {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (obj == this)
-                return true;
-            if (!(obj instanceof Options))
-                return false;
-            var other = (Options) obj;
-            if (!Objects.equals(this.queryString, other.queryString))
-                return false;
-            if (!Objects.equals(this.category, other.category))
-                return false;
-            if (!Objects.equals(this.targetPlatform, other.targetPlatform))
-                return false;
-            if (this.requestedSize != other.requestedSize)
-                return false;
-            if (this.requestedOffset != other.requestedOffset)
-                return false;
-            if (!Objects.equals(this.sortOrder, other.sortOrder))
-                return false;
-            if (!Objects.equals(this.sortBy, other.sortBy))
-                return false;
-            if (this.includeAllVersions != other.includeAllVersions)
-                return false;
-            if (!Arrays.equals(this.namespacesToExclude, other.namespacesToExclude))
-                return false;
-            return true;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Options options = (Options) o;
+            return requestedSize == options.requestedSize
+                    && requestedOffset == options.requestedOffset
+                    && includeAllVersions == options.includeAllVersions
+                    && Objects.equals(queryString, options.queryString)
+                    && Objects.equals(category, options.category)
+                    && Objects.equals(targetPlatform, options.targetPlatform)
+                    && Objects.equals(sortOrder, options.sortOrder)
+                    && Objects.equals(sortBy, options.sortBy)
+                    && Arrays.equals(namespacesToExclude, options.namespacesToExclude);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(queryString, category, targetPlatform, requestedSize, requestedOffset,
-                    sortOrder, sortBy, includeAllVersions, namespacesToExclude);
+            int result = Objects.hash(queryString, category, targetPlatform, requestedSize, requestedOffset, sortOrder, sortBy, includeAllVersions);
+            result = 31 * result + Arrays.hashCode(namespacesToExclude);
+            return result;
         }
     }
-
-
 }

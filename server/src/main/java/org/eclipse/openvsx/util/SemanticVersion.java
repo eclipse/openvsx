@@ -12,6 +12,7 @@ package org.eclipse.openvsx.util;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class SemanticVersion implements Comparable<SemanticVersion>, Serializable {
 
@@ -72,19 +73,19 @@ public class SemanticVersion implements Comparable<SemanticVersion>, Serializabl
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SemanticVersion))
-            return false;
-        var other = (SemanticVersion) obj;
-        return this.parts.equals(other.parts);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SemanticVersion that = (SemanticVersion) o;
+        return Objects.equals(parts, that.parts);
     }
 
     @Override
     public int hashCode() {
-        return parts.hashCode();
+        return Objects.hash(parts);
     }
 
-	@Override
+    @Override
 	public int compareTo(SemanticVersion other) {
         int minSize = Math.min(this.parts.size(), other.parts.size());
         for (int i = 0; i < minSize; i++) {

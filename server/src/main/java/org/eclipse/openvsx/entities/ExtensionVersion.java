@@ -435,9 +435,11 @@ public class ExtensionVersion implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, preRelease, preview, active, getId(extension), version, targetPlatform, timestamp,
-                getId(publishedWith), displayName, description, engines, categories, tags, extensionKind, license,
-                homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna, dependencies, bundledExtensions);
+        return Objects.hash(
+                id, getId(extension), version, targetPlatform, preRelease, preview, timestamp, getId(publishedWith),
+                active, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
+                bugs, markdown, galleryColor, galleryTheme, qna, dependencies, bundledExtensions
+        );
     }
 
     private Long getId(Extension extension) {
