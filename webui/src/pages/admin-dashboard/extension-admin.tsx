@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@material-ui/core';
@@ -18,6 +18,13 @@ import { ExtensionVersionContainer } from './extension-version-container';
 import { StyledInput } from './namespace-input';
 
 export const ExtensionAdmin: FunctionComponent = props => {
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
+
     const [loading, setLoading] = useState(false);
 
     const [extensionValue, setExtensionValue] = useState('');
@@ -52,7 +59,7 @@ export const ExtensionAdmin: FunctionComponent = props => {
         setExtensionFieldError(false);
         try {
             setLoading(true);
-            const extensionDetail = await service.admin.getExtension(namespaceValue, extensionValue);
+            const extensionDetail = await service.admin.getExtension(abortController, namespaceValue, extensionValue);
             if (isError(extensionDetail)) {
                 throw extensionDetail;
             }

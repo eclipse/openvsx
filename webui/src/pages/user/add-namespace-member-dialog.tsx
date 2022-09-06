@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
 import { UserData } from '../..';
 import {
     Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Popper, Fade, Paper,
@@ -55,6 +55,12 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
     const [foundUsers, setFoundUsers] = useState<UserData[]>([]);
     const [showUserPopper, setShowUserPopper] = useState(false);
     const [popperTarget, setPopperTarget] = useState<HTMLInputElement | undefined>(undefined);
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
 
     const addUser = async (user: UserData) => {
         try {
@@ -68,7 +74,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
             }
             props.setLoadingState(true);
             const endpoint = props.namespace.roleUrl;
-            const result = await service.setNamespaceMember(endpoint, user, config.defaultMemberRole || 'contributor');
+            const result = await service.setNamespaceMember(abortController, endpoint, user, config.defaultMemberRole || 'contributor');
             if (isError(result)) {
                 throw result;
             }
@@ -93,7 +99,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
         let showUserPopper = false;
         let foundUsers: UserData[] = [];
         if (val) {
-            const users = await service.getUserByName(val);
+            const users = await service.getUserByName(abortController, val);
             if (users) {
                 showUserPopper = true;
                 foundUsers = users;

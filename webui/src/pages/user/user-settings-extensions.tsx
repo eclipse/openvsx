@@ -41,6 +41,8 @@ class UserSettingsExtensionsComponent extends React.Component<UserSettingsExtens
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: UserSettingsExtensionsComponent.Props) {
         super(props);
 
@@ -87,7 +89,7 @@ class UserSettingsExtensionsComponent extends React.Component<UserSettingsExtens
             return;
         }
         try {
-            const response = await this.context.service.getExtensions();
+            const response = await this.context.service.getExtensions(this.abortController);
             if (isError(response)) {
                 throw response;
             }

@@ -31,6 +31,7 @@ def versions = [
     jackson: '2.12.5',
     woodstox: '6.2.4',
     jobrunr: '5.1.2',
+    bucket4j: '0.4.0',
     ehcache: '3.10.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
@@ -70,6 +71,7 @@ dependencies {
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.springframework.retry:spring-retry"
     implementation "org.ehcache:ehcache:${versions.ehcache}"
+    implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
     implementation "org.jobrunr:jobrunr-spring-boot-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"

@@ -45,6 +45,7 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
     declare context: MainContext;
 
     protected avatarButton: HTMLElement | null;
+    protected abortController = new AbortController();
 
     constructor(props: UserAvatarComponent.Props) {
         super(props);
@@ -58,9 +59,13 @@ class UserAvatarComponent extends React.Component<UserAvatarComponent.Props, Use
         this.updateCsrf();
     }
 
+    componentWillUnmount() {
+        this.abortController.abort();
+    }
+
     protected async updateCsrf() {
         try {
-            const csrfToken = await this.context.service.getCsrfToken();
+            const csrfToken = await this.context.service.getCsrfToken(this.abortController);
             if (!isError(csrfToken)) {
                 this.setState({ csrf: csrfToken.value });
             }

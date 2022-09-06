@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useContext, FunctionComponent } from 'react';
+import React, { useContext, FunctionComponent, useState, useEffect } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, makeStyles } from '@material-ui/core';
 import { Link as RouteLink } from 'react-router-dom';
@@ -56,11 +56,26 @@ const itemStyles = makeStyles(theme => ({
 }));
 
 export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
-    const { pageSettings } = useContext(MainContext);
+    const { pageSettings, service } = useContext(MainContext);
+    const [icon, setIcon] = useState<string | undefined>(undefined);
     const { extension } = props;
     const classes = itemStyles();
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
     const inactive = extension.active === false;
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
+    useEffect(() => {
+        if (icon) {
+            URL.revokeObjectURL(icon);
+        }
+
+        service.getExtensionIcon(abortController, extension).then(setIcon);
+    }, [extension]);
+
     return (
         extension ? (
             <RouteLink to={route} className={classes.link}>
@@ -68,7 +83,7 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     title={`${extension.namespace}.${extension.name} ${extension.version} ${inactive ? '(deactivated)' : ''}`}
                     className={inactive ? `${classes.paper} ${classes.inactive}` : classes.paper} >
                     <img
-                        src={extension.files.icon || (pageSettings && pageSettings.urls.extensionDefaultIcon) || ''}
+                        src={icon || (pageSettings && pageSettings.urls.extensionDefaultIcon) || ''}
                         alt={extension.displayName || extension.name}
                         className={classes.extensionLogo}
                     />

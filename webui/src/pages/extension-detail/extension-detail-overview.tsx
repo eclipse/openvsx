@@ -105,6 +105,8 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: ExtensionDetailOverview.Props) {
         super(props);
         this.state = { loading: true };
@@ -112,6 +114,10 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
     componentDidMount(): void {
         this.updateReadme();
+    }
+
+    componentWillUnmount(): void {
+        this.abortController.abort();
     }
 
     componentDidUpdate(prevProps: ExtensionDetailOverview.Props) {
@@ -126,7 +132,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
     protected async updateReadme(): Promise<void> {
         if (this.props.extension.files.readme) {
             try {
-                const readme = await this.context.service.getExtensionReadme(this.props.extension);
+                const readme = await this.context.service.getExtensionReadme(this.abortController, this.props.extension);
                 this.setState({ readme, loading: false });
             } catch (err) {
                 this.context.handleError(err);

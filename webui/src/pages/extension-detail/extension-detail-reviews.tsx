@@ -52,6 +52,8 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: ExtensionDetailReviewsComponent.Props) {
         super(props);
 
@@ -62,9 +64,13 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
         this.updateReviews();
     }
 
+    componentWillUnmount() {
+        this.abortController.abort();
+    }
+
     protected async updateReviews() {
         try {
-            const reviewList = await this.context.service.getExtensionReviews(this.props.extension);
+            const reviewList = await this.context.service.getExtensionReviews(this.abortController, this.props.extension);
             this.setState({ reviewList, loading: false, revoked: false });
         } catch (err) {
             this.context.handleError(err);
@@ -81,7 +87,7 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
     protected handleRevokeButton = async () => {
         this.setState({ revoked: true });
         try {
-            const result = await this.context.service.deleteReview(this.state.reviewList!.deleteUrl);
+            const result = await this.context.service.deleteReview(this.abortController, this.state.reviewList!.deleteUrl);
             if (isError(result)) {
                 throw result;
             }

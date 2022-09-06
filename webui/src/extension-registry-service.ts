@@ -10,7 +10,7 @@
 
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken,
-    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, MembershipRole, SortBy, SortOrder, UrlString, NamespaceMembershipList, PublisherInfo
+    SearchResult, NewReview, SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, MembershipRole, SortBy, SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -43,7 +43,7 @@ export class ExtensionRegistryService {
         return createAbsoluteURL(arr);
     }
 
-    search(filter?: ExtensionFilter): Promise<Readonly<SearchResult | ErrorResult>> {
+    search(abortController: AbortController, filter?: ExtensionFilter): Promise<Readonly<SearchResult | ErrorResult>> {
         const query: { key: string, value: string | number }[] = [];
         if (filter) {
             if (filter.query)
@@ -60,26 +60,44 @@ export class ExtensionRegistryService {
                 query.push({ key: 'sortOrder', value: filter.sortOrder });
         }
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', '-', 'search'], query);
-        return sendRequest({ endpoint });
+        return sendRequest({ abortController, endpoint });
     }
 
-    getExtensionDetail(extensionUrl: UrlString): Promise<Readonly<Extension | ErrorResult>> {
-        return sendRequest({ endpoint: extensionUrl });
+    getExtensionDetail(abortController: AbortController, extensionUrl: UrlString): Promise<Readonly<Extension | ErrorResult>> {
+        return sendRequest({ abortController, endpoint: extensionUrl });
     }
 
-    getExtensionReadme(extension: Extension): Promise<string> {
+    getExtensionReadme(abortController: AbortController, extension: Extension): Promise<string> {
         return sendRequest({
+            abortController,
             endpoint: extension.files.readme!,
             headers: { 'Accept': 'text/plain' },
             followRedirect: true
         });
     }
 
-    getExtensionChangelog(extension: Extension): Promise<string> {
+    getExtensionChangelog(abortController: AbortController, extension: Extension): Promise<string> {
         return sendRequest({
+            abortController,
             endpoint: extension.files.changelog!,
             headers: { 'Accept': 'text/plain' },
             followRedirect: true
+        });
+    }
+
+    getExtensionIcon(abortController: AbortController, extension: Extension | SearchEntry): Promise<string | undefined> {
+        if (!extension.files.icon) {
+            return Promise.resolve(undefined);
+        }
+
+        return sendRequest({
+            abortController,
+            endpoint: extension.files.icon,
+            headers: { 'Accept': 'application/octet-stream' },
+            followRedirect: true
+        }).then(value => {
+            const blob = value as Blob;
+            return URL.createObjectURL(blob);
         });
     }
 
@@ -103,12 +121,12 @@ export class ExtensionRegistryService {
         ];
     }
 
-    getExtensionReviews(extension: Extension): Promise<Readonly<ExtensionReviewList>> {
-        return sendRequest({ endpoint: extension.reviewsUrl });
+    getExtensionReviews(abortController: AbortController, extension: Extension): Promise<Readonly<ExtensionReviewList>> {
+        return sendRequest({ abortController, endpoint: extension.reviewsUrl });
     }
 
-    async postReview(review: NewReview, postReviewUrl: UrlString): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
+    async postReview(abortController: AbortController, review: NewReview, postReviewUrl: UrlString): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -116,6 +134,7 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
+            abortController,
             method: 'POST',
             payload: review,
             credentials: true,
@@ -124,13 +143,14 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteReview(deleteReviewUrl: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
+    async deleteReview(abortController: AbortController, deleteReviewUrl: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
+            abortController,
             method: 'POST',
             credentials: true,
             endpoint: deleteReviewUrl,
@@ -138,42 +158,47 @@ export class ExtensionRegistryService {
         });
     }
 
-    getUser(): Promise<Readonly<UserData | ErrorResult>> {
+    getUser(abortController: AbortController): Promise<Readonly<UserData | ErrorResult>> {
         return sendRequest({
+            abortController,
             endpoint: createAbsoluteURL([this.serverUrl, 'user']),
             credentials: true
         });
     }
 
-    getUserAuthError(): Promise<Readonly<ErrorResponse>> {
+    getUserAuthError(abortController: AbortController): Promise<Readonly<ErrorResponse>> {
         return sendRequest({
+            abortController,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'auth-error']),
             credentials: true
         });
     }
 
-    getUserByName(name: string): Promise<Readonly<UserData>[]> {
+    getUserByName(abortController: AbortController, name: string): Promise<Readonly<UserData>[]> {
         return sendRequest({
+            abortController,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'search', name]),
             credentials: true
         });
     }
 
-    getAccessTokens(user: UserData): Promise<Readonly<PersonalAccessToken>[]> {
+    getAccessTokens(abortController: AbortController, user: UserData): Promise<Readonly<PersonalAccessToken>[]> {
         return sendRequest({
+            abortController,
             credentials: true,
             endpoint: user.tokensUrl
         });
     }
 
-    async createAccessToken(user: UserData, description: string): Promise<Readonly<PersonalAccessToken>> {
-        const csrfToken = await this.getCsrfToken();
+    async createAccessToken(abortController: AbortController, user: UserData, description: string): Promise<Readonly<PersonalAccessToken>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
         const endpoint = addQuery(user.createTokenUrl, [{ key: 'description', value: description }]);
         return sendRequest({
+            abortController,
             method: 'POST',
             credentials: true,
             endpoint,
@@ -181,13 +206,14 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAccessToken(token: PersonalAccessToken): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
+    async deleteAccessToken(abortController: AbortController, token: PersonalAccessToken): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
+            abortController,
             method: 'POST',
             credentials: true,
             endpoint: token.deleteTokenUrl,
@@ -195,13 +221,14 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAllAccessTokens(tokens: PersonalAccessToken[]): Promise<Readonly<SuccessResult | ErrorResult>[]> {
-        const csrfToken = await this.getCsrfToken();
+    async deleteAllAccessTokens(abortController: AbortController, tokens: PersonalAccessToken[]): Promise<Readonly<SuccessResult | ErrorResult>[]> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
         return await Promise.all(tokens.map(token => sendRequest<SuccessResult | ErrorResult>({
+            abortController,
             method: 'POST',
             credentials: true,
             endpoint: token.deleteTokenUrl,
@@ -209,29 +236,32 @@ export class ExtensionRegistryService {
         })));
     }
 
-    getCsrfToken(): Promise<Readonly<CsrfTokenJson | ErrorResult>> {
+    getCsrfToken(abortController: AbortController): Promise<Readonly<CsrfTokenJson | ErrorResult>> {
         return sendRequest({
+            abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'csrf'])
         });
     }
 
-    getNamespaces(): Promise<Readonly<Namespace>[]> {
+    getNamespaces(abortController: AbortController): Promise<Readonly<Namespace>[]> {
         return sendRequest({
+            abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'namespaces'])
         });
     }
 
-    getNamespaceMembers(namespace: Namespace): Promise<Readonly<NamespaceMembershipList>> {
+    getNamespaceMembers(abortController: AbortController, namespace: Namespace): Promise<Readonly<NamespaceMembershipList>> {
         return sendRequest({
+            abortController,
             credentials: true,
             endpoint: namespace.membersUrl
         });
     }
 
-    async setNamespaceMember(endpoint: UrlString, user: UserData, role: MembershipRole | 'remove'): Promise<Readonly<SuccessResult | ErrorResult>[]> {
-        const csrfToken = await this.getCsrfToken();
+    async setNamespaceMember(abortController: AbortController, endpoint: UrlString, user: UserData, role: MembershipRole | 'remove'): Promise<Readonly<SuccessResult | ErrorResult>[]> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
@@ -242,6 +272,7 @@ export class ExtensionRegistryService {
             { key: 'role', value: role }
         ];
         return sendRequest({
+            abortController,
             headers,
             method: 'POST',
             credentials: true,
@@ -249,13 +280,14 @@ export class ExtensionRegistryService {
         });
     }
 
-    async signPublisherAgreement(): Promise<Readonly<UserData | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
+    async signPublisherAgreement(abortController: AbortController): Promise<Readonly<UserData | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest<UserData | ErrorResult>({
+            abortController,
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'publisher-agreement']),
@@ -263,16 +295,17 @@ export class ExtensionRegistryService {
         });
     }
 
-    getStaticContent(url: string): Promise<string> {
+    getStaticContent(abortController: AbortController, url: string): Promise<string> {
         return sendRequest({
+            abortController,
             endpoint: url,
             headers: { 'Accept': 'text/plain' },
             followRedirect: true
         });
     }
 
-    async publishExtension(extensionPackage: File): Promise<Readonly<Extension | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
+    async publishExtension(abortController: AbortController, extensionPackage: File): Promise<Readonly<Extension | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/octet-stream'
         };
@@ -281,6 +314,7 @@ export class ExtensionRegistryService {
         }
 
         return sendRequest<Extension | ErrorResult>({
+            abortController,
             method: 'POST',
             credentials: true,
             payload: extensionPackage,
@@ -289,8 +323,8 @@ export class ExtensionRegistryService {
         });
     }
 
-    async createNamespace(name: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
+    async createNamespace(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -299,6 +333,7 @@ export class ExtensionRegistryService {
         }
 
         return sendRequest<SuccessResult | ErrorResult>({
+            abortController,
             method: 'POST',
             credentials: true,
             payload: { name: name },
@@ -307,14 +342,15 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getExtensions(): Promise<Readonly<Extension[] | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken();
+    async getExtensions(abortController: AbortController): Promise<Readonly<Extension[] | ErrorResult>> {
+        const csrfToken = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
 
         return sendRequest<Extension[] | ErrorResult>({
+            abortController,
             method: 'GET',
             credentials: true,
             headers: headers,
@@ -327,15 +363,16 @@ export class AdminService {
 
     constructor(readonly registry: ExtensionRegistryService) { }
 
-    getExtension(namespace: string, extension: string): Promise<Readonly<Extension>> {
+    getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
         return sendRequest({
+            abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', namespace, extension])
         });
     }
 
-    async deleteExtensions(req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken();
+    async deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -343,6 +380,7 @@ export class AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
+            abortController,
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', req.namespace, req.extension, 'delete']),
@@ -351,15 +389,16 @@ export class AdminService {
         });
     }
 
-    getNamespace(name: string): Promise<Readonly<Namespace>> {
+    getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>> {
         return sendRequest({
+            abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'namespace', name])
         });
     }
 
-    async createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken();
+    async createNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -367,6 +406,7 @@ export class AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
+            abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'create-namespace']),
             method: 'POST',
@@ -375,20 +415,22 @@ export class AdminService {
         });
     }
 
-    async getPublisherInfo(provider: string, login: string): Promise<Readonly<PublisherInfo>> {
+    async getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>> {
         return sendRequest({
+            abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login]),
             credentials: true
         });
     }
 
-    async revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken();
+    async revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfToken = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfToken)) {
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
+            abortController,
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'revoke']),

@@ -42,4 +42,14 @@
             <disk unit="MB">128</disk>
         </resources>
     </cache>
+    <cache alias="buckets">
+        <expiry>
+            <ttl unit="seconds">3600</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">1024</heap>
+            <offheap unit="MB">32</offheap>
+            <disk unit="MB">128</disk>
+        </resources>
+    </cache>
 </config>

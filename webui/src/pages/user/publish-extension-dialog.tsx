@@ -77,6 +77,8 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: PublishExtensionDialogComponent.Props) {
         super(props);
         this.state = {
@@ -159,7 +161,7 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
 
     protected tryPublishExtension = async (fileToPublish: File): Promise<boolean> => {
         let published = false;
-        const publishResponse = await this.context.service.publishExtension(fileToPublish);
+        const publishResponse = await this.context.service.publishExtension(this.abortController, fileToPublish);
         if (isError(publishResponse)) {
             throw publishResponse;
         }
@@ -174,7 +176,7 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
             const namespaceError = 'Unknown publisher: ';
             if (publishResponse.error.startsWith(namespaceError)) {
                 const namespace = publishResponse.error.substring(namespaceError.length, publishResponse.error.indexOf('\n', namespaceError.length));
-                const namespaceResponse = await this.context.service.createNamespace(namespace);
+                const namespaceResponse = await this.context.service.createNamespace(this.abortController, namespace);
                 if (isError(namespaceResponse)) {
                     throw namespaceError;
                 }

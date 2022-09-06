@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
 import {
     Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Link
 } from '@material-ui/core';
@@ -24,6 +24,12 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Prop
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
 
     if (props.publisherInfo.user.publisherAgreement
             && !(user && user.additionalLogins && user.additionalLogins.find(login => login.provider === 'eclipse'))) {
@@ -39,7 +45,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Prop
         try {
             setWorking(true);
             const user = props.publisherInfo.user;
-            const result = await service.admin.revokePublisherContributions(user.provider!, user.loginName);
+            const result = await service.admin.revokePublisherContributions(abortController, user.provider!, user.loginName);
             if (isError(result)) {
                 throw result;
             }

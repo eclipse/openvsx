@@ -39,6 +39,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
     protected enableLoadMore: boolean;
     protected lastRequestedPage: number = 0;
     protected pageOffset: number = 0;
+    protected abortController = new AbortController();
 
     constructor(props: ExtensionListComponent.Props) {
         super(props);
@@ -58,6 +59,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
     }
 
     componentWillUnmount(): void {
+        this.abortController.abort();
         clearTimeout(this.cancellationToken.timeout);
         this.enableLoadMore = false;
     }
@@ -71,7 +73,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         debounce(
             async () => {
                 try {
-                    const result = await this.context.service.search(newFilter);
+                    const result = await this.context.service.search(this.abortController, newFilter);
                     if (isError(result)) {
                         throw result;
                     }
@@ -107,7 +109,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         }
         try {
             filter.offset = (p - this.pageOffset) * this.filterSize;
-            const result = await this.context.service.search(filter);
+            const result = await this.context.service.search(this.abortController, filter);
             if (isError(result)) {
                 throw result;
             }

@@ -51,6 +51,8 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: ExtensionDetailChanges.Props) {
         super(props);
         this.state = { loading: true };
@@ -58,6 +60,10 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
 
     componentDidMount(): void {
         this.updateChanges();
+    }
+
+    componentWillUnmount(): void {
+        this.abortController.abort();
     }
 
     componentDidUpdate(prevProps: ExtensionDetailChanges.Props) {
@@ -72,7 +78,7 @@ class ExtensionDetailChangesComponent extends React.Component<ExtensionDetailCha
     protected async updateChanges(): Promise<void> {
         if (this.props.extension.files.changelog) {
             try {
-                const changelog = await this.context.service.getExtensionChangelog(this.props.extension);
+                const changelog = await this.context.service.getExtensionChangelog(this.abortController, this.props.extension);
                 this.setState({ changelog, loading: false });
             } catch (err) {
                 this.context.handleError(err);

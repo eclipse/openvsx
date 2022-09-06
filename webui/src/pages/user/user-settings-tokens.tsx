@@ -62,6 +62,8 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: UserSettingsTokensComponent.Props) {
         super(props);
 
@@ -72,12 +74,16 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
         this.updateTokens();
     }
 
+    componentWillUnmount() {
+        this.abortController.abort();
+    }
+
     protected async updateTokens() {
         if (!this.context.user) {
             return;
         }
         try {
-            const tokens = await this.context.service.getAccessTokens(this.context.user);
+            const tokens = await this.context.service.getAccessTokens(this.abortController, this.context.user);
             this.setState({ tokens, loading: false });
         } catch (err) {
             this.context.handleError(err);
@@ -88,7 +94,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     protected handleDelete = async (token: PersonalAccessToken) => {
         this.setState({ loading: true });
         try {
-            await this.context.service.deleteAccessToken(token);
+            await this.context.service.deleteAccessToken(this.abortController, token);
             this.updateTokens();
         } catch (err) {
             this.context.handleError(err);
@@ -98,7 +104,7 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
     protected handleDeleteAll = async () => {
         this.setState({ loading: true });
         try {
-            await this.context.service.deleteAllAccessTokens(this.state.tokens);
+            await this.context.service.deleteAllAccessTokens(this.abortController, this.state.tokens);
             this.updateTokens();
         } catch (err) {
             this.context.handleError(err);

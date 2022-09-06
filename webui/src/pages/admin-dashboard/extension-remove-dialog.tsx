@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@material-ui/core';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Extension, TargetPlatformVersion } from '../../extension-registry-types';
@@ -17,6 +17,13 @@ import { getTargetPlatformDisplayName } from '../../utils';
 
 export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialog.Props> = props => {
     const { service, handleError } = useContext(MainContext);
+
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
@@ -42,7 +49,7 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialog.Prop
                     });
             }
 
-            await service.admin.deleteExtensions({ namespace: props.extension.namespace, extension: props.extension.name, targetPlatformVersions: targetPlatformVersions });
+            await service.admin.deleteExtensions(abortController, { namespace: props.extension.namespace, extension: props.extension.name, targetPlatformVersions: targetPlatformVersions });
 
             props.onUpdate();
             setDialogOpen(false);

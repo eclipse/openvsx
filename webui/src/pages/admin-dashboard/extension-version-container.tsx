@@ -13,6 +13,7 @@ import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extensi
 import { Grid, makeStyles, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@material-ui/core';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
 import { getTargetPlatformDisplayName } from '../../utils';
+import { MainContext } from '../../context';
 
 const useStyles = makeStyles((theme) => ({
     indent0: {
@@ -49,6 +50,7 @@ const useStyles = makeStyles((theme) => ({
 export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainer.Props> = props => {
     const WILDCARD = '*';
     const { extension } = props;
+    const { service } = React.useContext(MainContext);
     const classes = useStyles();
 
     const getTargetPlatformVersions = () => {
@@ -65,9 +67,21 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         return versionMap;
     };
 
-    const [targetPlatformVersions, setTargetPlatformVersions] = useState(getTargetPlatformVersions());
-
+    const abortController = new AbortController();
     useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
+
+    const [targetPlatformVersions, setTargetPlatformVersions] = useState(getTargetPlatformVersions());
+    const [icon, setIcon] = useState<string | undefined>(undefined);
+    useEffect(() => {
+        if (icon) {
+            URL.revokeObjectURL(icon);
+        }
+
+        service.getExtensionIcon(abortController, props.extension).then(setIcon);
         setTargetPlatformVersions(getTargetPlatformVersions());
     }, [props.extension]);
 
@@ -117,9 +131,9 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         <Grid container direction='column' className={classes.extensionContainer}>
             <Grid item container>
                 {
-                    extension.files.icon ?
+                    icon ?
                         <Grid item xs={12} md={4}>
-                            <img src={extension.files.icon}
+                            <img src={icon}
                                 className={classes.extensionLogo}
                                 alt={extension.displayName || extension.name} />
                         </Grid>

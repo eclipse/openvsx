@@ -32,6 +32,8 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: GenerateTokenDialogComponent.Props) {
         super(props);
 
@@ -69,7 +71,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
         }
         this.setState({ posted: true });
         try {
-            const token = await this.context.service.createAccessToken(this.context.user, this.state.description);
+            const token = await this.context.service.createAccessToken(this.abortController, this.context.user, this.state.description);
             if (isError(token)) {
                 throw token;
             }
@@ -91,6 +93,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     }
 
     componentWillUnmount() {
+        this.abortController.abort();
         document.removeEventListener('keydown', this.handleEnter);
     }
 
