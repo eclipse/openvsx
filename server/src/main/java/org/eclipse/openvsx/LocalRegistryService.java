@@ -38,11 +38,13 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -444,6 +446,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
+    @Retryable(value = { DataIntegrityViolationException.class })
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
         var token = new PersonalAccessToken();
