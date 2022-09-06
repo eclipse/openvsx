@@ -16,7 +16,7 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.v3.oas.annotations.media.Schema;;
+import io.swagger.v3.oas.annotations.media.Schema;;import java.util.Objects;
 
 @Schema(
     name = "Review",
@@ -44,4 +44,20 @@ public class ReviewJson {
     @Max(5)
     public int rating;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReviewJson that = (ReviewJson) o;
+        return rating == that.rating
+                && user.equals(that.user)
+                && timestamp.equals(that.timestamp)
+                && Objects.equals(title, that.title)
+                && Objects.equals(comment, that.comment);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(user, timestamp, title, comment, rating);
+    }
 }

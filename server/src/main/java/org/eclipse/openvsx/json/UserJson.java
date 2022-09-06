@@ -85,7 +85,6 @@ public class UserJson extends ResultJson implements Serializable {
             return Objects.hash(status, timestamp);
         }
     }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

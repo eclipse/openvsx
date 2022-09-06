@@ -139,8 +139,13 @@ public final class UrlUtil {
      * Get the base URL to use for API requests from the current servlet request.
      */
     public static String getBaseUrl() {
-        var requestAttrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-        return getBaseUrl(requestAttrs.getRequest());
+        try {
+            var requestAttrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+            return getBaseUrl(requestAttrs.getRequest());
+        } catch (IllegalStateException e) {
+            // method is called outside of web request context
+            return "";
+        }
     }
 
     protected static String getBaseUrl(HttpServletRequest request) {

@@ -50,6 +50,9 @@ public class StorageUtilService implements IStorageService {
     @Autowired
     DownloadCountService downloadCountService;
 
+    @Value("${ovsx.data.mirror.enabled:false}")
+    boolean readOnly;
+
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
     String primaryService;
@@ -95,15 +98,17 @@ public class StorageUtilService implements IStorageService {
     @Transactional(Transactional.TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var storageType = getActiveStorageType();
-        switch (storageType) {
-            case STORAGE_GOOGLE:
-                googleStorage.uploadFile(resource);
-                break;
-            case STORAGE_AZURE:
-                azureStorage.uploadFile(resource);
-                break;
-            default:
-                throw new RuntimeException("External storage is not available.");
+        if(!readOnly) {
+            switch (storageType) {
+                case STORAGE_GOOGLE:
+                    googleStorage.uploadFile(resource);
+                    break;
+                case STORAGE_AZURE:
+                    azureStorage.uploadFile(resource);
+                    break;
+                default:
+                    throw new RuntimeException("External storage is not available.");
+            }
         }
 
         resource.setStorageType(storageType);
@@ -111,6 +116,10 @@ public class StorageUtilService implements IStorageService {
 
     @Override
     public void removeFile(FileResource resource) {
+        if(readOnly) {
+            return;
+        }
+
         switch (resource.getStorageType()) {
             case STORAGE_GOOGLE:
                 googleStorage.removeFile(resource);
@@ -162,7 +171,7 @@ public class StorageUtilService implements IStorageService {
     }
 
     public void increaseDownloadCount(ExtensionVersion extVersion, FileResource resource) {
-        if(azureDownloadCountService.isEnabled()) {
+        if(readOnly || azureDownloadCountService.isEnabled()) {
             // don't count downloads twice
             return;
         }

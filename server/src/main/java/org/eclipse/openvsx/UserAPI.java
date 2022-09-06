@@ -17,21 +17,16 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
-import javax.transaction.Transactional;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.CollectionUtil;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
@@ -159,7 +154,6 @@ public class UserAPI {
         path = "/user/token/create",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional
     public ResponseEntity<AccessTokenJson> createAccessToken(@RequestParam(required = false) String description) {
         if (description != null && description.length() > TOKEN_DESCRIPTION_SIZE) {
             var json = AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
@@ -169,39 +163,25 @@ public class UserAPI {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
-        var token = new PersonalAccessToken();
-        token.setUser(user);
-        token.setValue(users.generateTokenValue());
-        token.setActive(true);
-        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
-        token.setDescription(description);
-        entityManager.persist(token);
-        var json = token.toAccessTokenJson();
-        // Include the token value after creation so the user can copy it
-        json.value = token.getValue();
-        var serverUrl = UrlUtil.getBaseUrl();
-        json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId()));
-        return new ResponseEntity<>(json, HttpStatus.CREATED);
+
+        return new ResponseEntity<>(users.createAccessToken(user, description), HttpStatus.CREATED);
     }
 
     @PostMapping(
         path = "/user/token/delete/{id}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional
     public ResponseEntity<ResultJson> deleteAccessToken(@PathVariable long id) {
         var user = users.findLoggedInUser();
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        var token = repositories.findAccessToken(id);
-        if (token == null || !token.isActive() || !token.getUser().equals(user)) {
-            var json = ResultJson.error("Token does not exist.");
-            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+
+        try {
+            return ResponseEntity.ok(users.deleteAccessToken(user, id));
+        } catch(NotFoundException e) {
+            return new ResponseEntity<>(ResultJson.error("Token does not exist."), HttpStatus.NOT_FOUND);
         }
-        token.setActive(false);
-        var json = ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
-        return ResponseEntity.ok(json);
     }
 
     @GetMapping(

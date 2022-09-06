@@ -12,10 +12,13 @@ package org.eclipse.openvsx;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+import org.eclipse.openvsx.mirror.ReadOnlyRequestFilter;
 import org.eclipse.openvsx.web.ShallowEtagHeaderFilter;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.cache.annotation.EnableCaching;
@@ -70,6 +73,11 @@ public class RegistryApplication {
     }
 
     @Bean
+    public UpstreamRegistryService upstream(RestTemplate restTemplate, @Value("${ovsx.upstream.url:}") String upstreamUrl) {
+        return new UpstreamRegistryService(restTemplate, upstreamUrl);
+    }
+
+    @Bean
     public FilterRegistrationBean<ShallowEtagHeaderFilter> shallowEtagHeaderFilter() {
         var registrationBean = new FilterRegistrationBean<ShallowEtagHeaderFilter>();
         registrationBean.setFilter(new ShallowEtagHeaderFilter());
@@ -77,5 +85,34 @@ public class RegistryApplication {
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
 
         return registrationBean;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
+    public FilterRegistrationBean<ReadOnlyRequestFilter> readOnlyRequestFilter(
+            @Value("${ovsx.data.mirror.read-only.allowed-endpoints}") String[] allowedEndpoints,
+            @Value("${ovsx.data.mirror.read-only.disallowed-methods}") String[] disallowedMethods
+    ) {
+        var registrationBean = new FilterRegistrationBean<ReadOnlyRequestFilter>();
+        registrationBean.setFilter(new ReadOnlyRequestFilter(allowedEndpoints, disallowedMethods));
+        registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
+
+        return registrationBean;
+    }
+
+    @Bean
+    @Qualifier("mirror")
+    @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
+    public IExtensionRegistry mirror(
+            RestTemplate restTemplate,
+            @Value("${ovsx.data.mirror.server-url}") String serverUrl,
+            @Value("${ovsx.data.mirror.requests-per-second:-1}") double requestsPerSecond
+    ) {
+        IExtensionRegistry registry = new UpstreamRegistryService(restTemplate, serverUrl);
+        if(requestsPerSecond != -1) {
+            registry = new RateLimitedRegistryService(registry, requestsPerSecond);
+        }
+
+        return registry;
     }
 }

@@ -1,0 +1,42 @@
+/** ******************************************************************************
+ * Copyright (c) 2022 Precies. Software Ltd and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ * ****************************************************************************** */
+package org.eclipse.openvsx.mirror;
+
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class ReadOnlyRequestFilter extends OncePerRequestFilter {
+
+    private List<String> allowedEndpoints;
+    private List<String> disallowedMethods;
+
+    public ReadOnlyRequestFilter(String[] allowedEndpoints, String[] disallowedMethods) {
+        this.allowedEndpoints = Arrays.asList(allowedEndpoints);
+        this.disallowedMethods = Arrays.asList(disallowedMethods);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return !(disallowedMethods.contains(request.getMethod()) && !allowedEndpoints.contains(request.getRequestURI()));
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+    }
+}

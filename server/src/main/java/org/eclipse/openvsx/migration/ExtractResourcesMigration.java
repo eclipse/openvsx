@@ -10,15 +10,13 @@
 package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.jobrunr.scheduling.JobRequestScheduler;
+import org.eclipse.openvsx.schedule.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import javax.transaction.Transactional;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 @Component
 public class ExtractResourcesMigration {
@@ -27,7 +25,7 @@ public class ExtractResourcesMigration {
     RepositoryService repositories;
 
     @Autowired
-    JobRequestScheduler scheduler;
+    Scheduler scheduler;
 
     @EventListener
     @Transactional
@@ -35,10 +33,7 @@ public class ExtractResourcesMigration {
         repositories.findNotMigratedResources()
                 .forEach(item -> {
                     var id = item.getId();
-                    var jobIdText = "ExtractResourcesMigration::itemId=" + id;
-                    var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
-
-                    scheduler.enqueue(jobId, new ExtractResourcesJobRequest(id));
+                    scheduler.enqueueExtractResourcesMigration(id);
                     item.setMigrationScheduled(true);
                 });
     }

@@ -105,6 +105,18 @@ bucket4j:
               unit: seconds
 
 ovsx:
+  data:
+    mirror:
+      enabled: true
+      server-url: https://open-vsx.org
+      requests-per-second: 0.2
+      user-name: mirror_user
+      schedule:
+        extensions: '35 10 * * *'
+        metadata: '21 10 * * *'
+      read-only:
+        disallowed-methods: POST, PUT, PATCH, DELETE
+        allowed-endpoints: /vscode/gallery/extensionquery, /admin/update-search-index, /api/-/query
   databasesearch:
     enabled: false
   elasticsearch:

@@ -20,13 +20,10 @@ import com.google.common.base.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -41,16 +38,17 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
 public class UpstreamRegistryService implements IExtensionRegistry {
 
     protected final Logger logger = LoggerFactory.getLogger(UpstreamRegistryService.class);
 
-    @Autowired
-    RestTemplate restTemplate;
+    private RestTemplate restTemplate;
+    private String upstreamUrl;
 
-    @Value("${ovsx.upstream.url:}")
-    String upstreamUrl;
+    public UpstreamRegistryService(RestTemplate restTemplate, String upstreamUrl) {
+        this.restTemplate = restTemplate;
+        this.upstreamUrl = upstreamUrl;
+    }
 
     public boolean isValid() {
         return !Strings.isNullOrEmpty(upstreamUrl);
