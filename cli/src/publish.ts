@@ -15,7 +15,7 @@ import { checkLicense } from './check-license';
 /**
  * Publishes an extension.
  */
-export async function publish(options: PublishOptions = {}): Promise<void> {
+export async function publish(options: PublishOptions = {}): Promise<PromiseSettledResult<void>[]> {
         addEnvOptions(options);
         const internalPublishOptions = [];
         const packagePaths = options.packagePath || [undefined];
@@ -25,7 +25,8 @@ export async function publish(options: PublishOptions = {}): Promise<void> {
                 internalPublishOptions.push({ ... options, packagePath: packagePath, target: target });
             }
         }
-        await Promise.all(internalPublishOptions.map(publishOptions => doPublish(publishOptions)));
+
+        return Promise.allSettled(internalPublishOptions.map(publishOptions => doPublish(publishOptions)));
 }
 
 async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
@@ -53,7 +54,7 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     }
 
     const name = `${extension.namespace}.${extension.name}`;
-	let description = `${name} v${extension.version}`;
+    let description = `${name} v${extension.version}`;
     if (options.target) {
         description += `@${options.target}`;
     }
@@ -71,16 +72,16 @@ interface PublishCommonOptions extends RegistryOptions {
     extensionFile?: string;
 
     /**
-	 * The base URL for links detected in Markdown files. Only valid with `packagePath`.
-	 */
+     * The base URL for links detected in Markdown files. Only valid with `packagePath`.
+     */
     baseContentUrl?: string;
     /**
-	 * The base URL for images detected in Markdown files. Only valid with `packagePath`.
-	 */
+     * The base URL for images detected in Markdown files. Only valid with `packagePath`.
+     */
     baseImagesUrl?: string;
     /**
-	 * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
-	 */
+     * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
+     */
     yarn?: boolean;
     /**
      * Mark this package as a pre-release. Only valid with `packagePath`.
@@ -110,7 +111,7 @@ interface InternalPublishOptions extends PublishCommonOptions {
      * Only one target for our internal command.
      * Target architecture.
      */
-     target?: string;
+    target?: string;
 
     /**
      * Only one path for our internal command.

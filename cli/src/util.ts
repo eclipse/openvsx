@@ -68,7 +68,7 @@ export function createTempFile(options: tmp.TmpNameOptions): Promise<string> {
     });
 }
 
-export function handleError(debug?: boolean, additionalMessage?: string): (reason: any) => void {
+export function handleError(debug?: boolean, additionalMessage?: string, exit: boolean = true): (reason: any) => void {
     return reason => {
         if (reason instanceof Error && !debug) {
             console.error(`\u274c  ${reason.message}`);
@@ -82,7 +82,10 @@ export function handleError(debug?: boolean, additionalMessage?: string): (reaso
         } else {
             console.error('An unknown error occurred.');
         }
-        process.exit(1);
+
+        if (exit) {
+            process.exit(1);
+        }
     };
 }
 

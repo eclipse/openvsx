@@ -68,6 +68,7 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
+    implementation "org.springframework.retry:spring-retry"
     implementation "org.ehcache:ehcache:${versions.ehcache}"
     implementation "org.jobrunr:jobrunr-spring-boot-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"

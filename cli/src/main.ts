@@ -58,10 +58,22 @@ module.exports = function (argv: string[]): void {
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
             publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease })
-                .catch(handleError(program.debug,
-                    'See the documentation for more information:\n'
-                    + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions'
-                ));
+                .then(results => {
+                    const reasons = results.filter(result => result.status === 'rejected')
+                        .map(result => result as PromiseRejectedResult)
+                        .map(rejectedResult => rejectedResult.reason);
+
+                    if (reasons.length > 0) {
+                        const message = 'See the documentation for more information:\n'
+                        + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions';
+                        const errorHandler = handleError(program.debug, message, false);
+                        for (const reason of reasons) {
+                            errorHandler(reason);
+                        }
+
+                        process.exit(1);
+                    }
+                });
         });
 
     const getCmd = program.command('get <namespace.extension>');
