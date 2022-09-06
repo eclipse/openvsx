@@ -87,6 +87,7 @@ public class UserDataDTO  implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         UserDataDTO that = (UserDataDTO) o;
         return id == that.id
+                && Objects.equals(role, that.role)
                 && Objects.equals(loginName, that.loginName)
                 && Objects.equals(fullName, that.fullName)
                 && Objects.equals(avatarUrl, that.avatarUrl)
@@ -96,6 +97,6 @@ public class UserDataDTO  implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, loginName, fullName, avatarUrl, providerUrl, provider);
+        return Objects.hash(id, role, loginName, fullName, avatarUrl, providerUrl, provider);
     }
 }

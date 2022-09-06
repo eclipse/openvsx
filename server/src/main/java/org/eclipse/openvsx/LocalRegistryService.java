@@ -635,9 +635,9 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(latest -> latest.isPreview())
                 .orElse(false);
         json.versionAlias = new ArrayList<>(2);
-        if (extVersion == versions.getLatest(extension, targetPlatform, false, onlyActive))
+        if (extVersion.equals(versions.getLatest(extension, targetPlatform, false, onlyActive)))
             json.versionAlias.add("latest");
-        if (extVersion == versions.getLatest(extension, targetPlatform, true, onlyActive))
+        if (extVersion.equals(versions.getLatest(extension, targetPlatform, true, onlyActive)))
             json.versionAlias.add("pre-release");
         json.verified = isVerified(extVersion);
         json.namespaceAccess = "restricted";
@@ -709,10 +709,10 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
 
         json.versionAlias = new ArrayList<>(2);
-        if (extVersion == latest) {
+        if (extVersion.equals(latest)) {
             json.versionAlias.add("latest");
         }
-        if (extVersion == latestPreRelease) {
+        if (extVersion.equals(latestPreRelease)) {
             json.versionAlias.add("pre-release");
         }
 

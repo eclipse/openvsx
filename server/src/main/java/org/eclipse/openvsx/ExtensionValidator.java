@@ -206,18 +206,16 @@ public class ExtensionValidator {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Issue))
-                return false;
-            var other = (Issue) obj;
-            if (!Objects.equals(this.message, other.message))
-                return false;
-            return true;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Issue issue = (Issue) o;
+            return Objects.equals(message, issue.message);
         }
 
         @Override
         public int hashCode() {
-            return message.hashCode();
+            return Objects.hash(message);
         }
 
         @Override
