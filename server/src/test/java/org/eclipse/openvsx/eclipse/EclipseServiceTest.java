@@ -43,6 +43,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,7 +65,7 @@ import org.springframework.web.client.RestTemplate;
 @MockBean({
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
     VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class, LockProvider.class,
-    CacheService.class, UserService.class
+    CacheService.class, UserService.class, JobRequestScheduler.class
 })
 public class EclipseServiceTest {
 

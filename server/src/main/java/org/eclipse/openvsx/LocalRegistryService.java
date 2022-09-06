@@ -475,6 +475,8 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var extVersion = extensions.publishVersion(content, token);
         var json = toExtensionVersionJson(extVersion, null, true);
+        json.success = "It can take a couple minutes before the extension version is available";
+
         var sameVersions = repositories.findVersions(extVersion.getVersion(), extVersion.getExtension());
         if(sameVersions.stream().anyMatch(ev -> ev.isPreRelease() != extVersion.isPreRelease())) {
             var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
@@ -630,14 +632,15 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, String targetPlatform, boolean onlyActive) {
         var extension = extVersion.getExtension();
+        var latest = versions.getLatest(extension, targetPlatform, false, onlyActive);
+        var latestPreRelease = versions.getLatest(extension, targetPlatform, true, onlyActive);
+
         var json = extVersion.toExtensionJson();
-        json.preview = Optional.ofNullable(versions.getLatest(extension, null, false, onlyActive))
-                .map(latest -> latest.isPreview())
-                .orElse(false);
+        json.preview = latest != null ? latest.isPreview() : false;
         json.versionAlias = new ArrayList<>(2);
-        if (extVersion.equals(versions.getLatest(extension, targetPlatform, false, onlyActive)))
+        if (extVersion.equals(latest))
             json.versionAlias.add("latest");
-        if (extVersion.equals(versions.getLatest(extension, targetPlatform, true, onlyActive)))
+        if (extVersion.equals(latestPreRelease))
             json.versionAlias.add("pre-release");
         json.verified = isVerified(extVersion);
         json.namespaceAccess = "restricted";
@@ -649,9 +652,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         json.allVersions = Maps.newLinkedHashMap();
         var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.namespace, json.name, targetPlatform);
-        if (versions.getLatest(extension, targetPlatform, false, onlyActive) != null)
+        if (latest != null)
             json.allVersions.put("latest", createApiUrl(versionBaseUrl,"latest"));
-        if (versions.getLatest(extension, targetPlatform, true, onlyActive) != null)
+        if (latestPreRelease != null)
             json.allVersions.put("pre-release", createApiUrl(versionBaseUrl, "pre-release"));
 
         if(extension.getVersions() != null) {

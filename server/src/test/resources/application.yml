@@ -23,3 +23,15 @@ spring:
             github:
               client-id: dummy-client-id
               client-secret: dummy-client-secret
+
+org:
+  jobrunr:
+    job-scheduler:
+      enabled: true
+    background-job-server:
+      enabled: true
+      worker-count: 1
+    dashboard:
+      enabled: false
+    miscellaneous:
+      allow-anonymous-data-usage: false
