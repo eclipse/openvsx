@@ -55,8 +55,8 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
 
     const name = `${extension.namespace}.${extension.name}`;
     let description = `${name} v${extension.version}`;
-    if (options.target) {
-        description += `@${options.target}`;
+    if (extension.targetPlatform !== 'universal') {
+        description += `@${extension.targetPlatform}`;
     }
 
     console.log(`\ud83d\ude80  Published ${description}`);
