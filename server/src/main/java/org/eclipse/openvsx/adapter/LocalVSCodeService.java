@@ -32,8 +32,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +48,6 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class LocalVSCodeService implements IVSCodeService {
 
-    private static final int DEFAULT_PAGE_SIZE = 20;
     private static final String BUILT_IN_EXTENSION_NAMESPACE = "vscode";
 
     @Autowired
@@ -58,12 +55,6 @@ public class LocalVSCodeService implements IVSCodeService {
 
     @Autowired
     VersionService versions;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    VSCodeIdService idService;
 
     @Autowired
     SearchUtilService search;

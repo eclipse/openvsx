@@ -22,6 +22,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.HttpURLConnection;
@@ -46,7 +47,14 @@ public class UpstreamVSCodeService implements IVSCodeService {
     public ExtensionQueryResult extensionQuery(ExtensionQueryParam param, int defaultPageSize) {
         var apiUrl = UrlUtil.createApiUrl(upstreamUrl, "vscode", "gallery", "extensionquery");
         var request = new RequestEntity<>(param, HttpMethod.POST, URI.create(apiUrl));
-        var response = restTemplate.exchange(request, ExtensionQueryResult.class);
+        ResponseEntity<ExtensionQueryResult> response;
+        try {
+            response = restTemplate.exchange(request, ExtensionQueryResult.class);
+        } catch(RestClientException exc) {
+            logger.error("POST " + apiUrl, exc);
+            throw new NotFoundException();
+        }
+
         var statusCode = response.getStatusCode();
         if(statusCode.is2xxSuccessful()) {
             return response.getBody();
@@ -63,7 +71,14 @@ public class UpstreamVSCodeService implements IVSCodeService {
         var segments = new String[]{ "vscode", "unpkg", namespaceName, extensionName, version, path };
         var apiUrl = UrlUtil.createApiUrl(upstreamUrl, segments);
         var request = new RequestEntity<Void>(HttpMethod.GET, URI.create(apiUrl));
-        var response = restTemplate.exchange(request, byte[].class);
+        ResponseEntity<byte[]> response;
+        try {
+            response = restTemplate.exchange(request, byte[].class);
+        } catch(RestClientException exc) {
+            logger.error("GET " + apiUrl, exc);
+            throw new NotFoundException();
+        }
+
         var statusCode = response.getStatusCode();
         if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
             return response;
@@ -80,7 +95,14 @@ public class UpstreamVSCodeService implements IVSCodeService {
         var segments = new String[]{ "vscode", "gallery", "publishers", namespace, "vsextensions", extension, version, "vspackage" };
         var apiUrl = UrlUtil.createApiUrl(upstreamUrl, segments);
         var request = new RequestEntity<Void>(HttpMethod.GET, URI.create(apiUrl));
-        var response = nonRedirectingRestTemplate().exchange(request, Void.class);
+        ResponseEntity<Void> response;
+        try {
+            response = nonRedirectingRestTemplate().exchange(request, Void.class);
+        } catch(RestClientException exc) {
+            logger.error("GET " + apiUrl, exc);
+            throw new NotFoundException();
+        }
+
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
             return response.getHeaders().getLocation().toString();
@@ -97,7 +119,14 @@ public class UpstreamVSCodeService implements IVSCodeService {
         var apiUrl = UrlUtil.createApiUrl(upstreamUrl, "vscode", "item");
         apiUrl = UrlUtil.addQuery(apiUrl, "itemName", String.join(".", namespace, extension));
         var request = new RequestEntity<Void>(HttpMethod.GET, URI.create(apiUrl));
-        var response = nonRedirectingRestTemplate().exchange(request, Void.class);
+        ResponseEntity<Void> response;
+        try {
+            response = nonRedirectingRestTemplate().exchange(request, Void.class);
+        } catch (RestClientException exc) {
+            logger.error("GET " + apiUrl, exc);
+            throw new NotFoundException();
+        }
+
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
             return response.getHeaders().getLocation().toString();
@@ -114,7 +143,14 @@ public class UpstreamVSCodeService implements IVSCodeService {
         var segments = new String[]{ "vscode", "asset", namespace, extensionName, version, assetType, restOfTheUrl };
         var apiUrl = UrlUtil.createApiUrl(upstreamUrl, segments);
         var request = new RequestEntity<Void>(HttpMethod.GET, URI.create(apiUrl));
-        var response = restTemplate.exchange(request, byte[].class);
+        ResponseEntity<byte[]> response;
+        try {
+            response = restTemplate.exchange(request, byte[].class);
+        } catch (RestClientException exc) {
+            logger.error("GET " + apiUrl, exc);
+            throw new NotFoundException();
+        }
+
         var statusCode = response.getStatusCode();
         if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
             return response;
