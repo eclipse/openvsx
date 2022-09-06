@@ -12,23 +12,20 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.io.Serializable;
+import io.swagger.v3.oas.annotations.media.Schema;;import java.io.Serializable;
 import java.util.Objects;
 
-@ApiModel(
-    value = "Badge",
+@Schema(
+    name = "Badge",
     description = "A badge to be shown in the sidebar of the extension page in the registry"
 )
 @JsonInclude(Include.NON_NULL)
 public class BadgeJson implements Serializable {
 
-    @ApiModelProperty("Image URL of the badge")
+    @Schema(description = "Image URL of the badge")
     public String url;
 
-    @ApiModelProperty("The link users will follow when clicking the badge")
+    @Schema(description = "The link users will follow when clicking the badge")
     public String href;
 
     public String description;

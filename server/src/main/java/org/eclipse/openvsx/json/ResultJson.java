@@ -12,14 +12,14 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.v3.oas.annotations.media.Schema;;
 
-@ApiModel(
-    value = "Result",
+@Schema(
+    name = "Result",
     description = "Generic result indicator",
     subTypes = {
-        ExtensionJson.class, NamespaceJson.class, ReviewListJson.class, SearchResultJson.class, UserJson.class
+        ExtensionJson.class, NamespaceJson.class, NamespaceMembershipListJson.class, QueryResultJson.class,
+        ReviewListJson.class, SearchResultJson.class, UserJson.class
     }
 )
 @JsonInclude(Include.NON_NULL)
@@ -43,13 +43,13 @@ public class ResultJson {
         return result;
     }
 
-    @ApiModelProperty("Indicates success of the operation (omitted if a more specific result type is returned)")
+    @Schema(description = "Indicates success of the operation (omitted if a more specific result type is returned)")
     public String success;
 
-    @ApiModelProperty("Indicates a warning; when this is present, other properties can still be used")
+    @Schema(description = "Indicates a warning; when this is present, other properties can still be used")
     public String warning;
 
-    @ApiModelProperty("Indicates an error; when this is present, all other properties should be ignored")
+    @Schema(description = "Indicates an error; when this is present, all other properties should be ignored")
     public String error;
 
 }

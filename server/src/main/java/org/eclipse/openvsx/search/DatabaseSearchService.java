@@ -18,15 +18,11 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.elasticsearch.core.*;
 import org.springframework.stereotype.Component;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.SearchHitsImpl;
-import org.springframework.data.elasticsearch.core.TotalHitsRelation;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.RelevanceService.SearchStats;
-import org.elasticsearch.search.aggregations.Aggregations;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 
@@ -64,8 +60,7 @@ public class DatabaseSearchService implements ISearchService {
 
         // no extensions in the database
         if (matchingExtensions.isEmpty()) {
-            Aggregations aggregations = new Aggregations(Collections.emptyList());
-            return new SearchHitsImpl<ExtensionSearch>(0,TotalHitsRelation.OFF, 0f, "", Collections.emptyList(), aggregations);
+            return new SearchHitsImpl<>(0,TotalHitsRelation.OFF, 0f, "", Collections.emptyList(), null, null);
         }
 
         // exlude namespaces
@@ -150,17 +145,10 @@ public class DatabaseSearchService implements ISearchService {
             searchHits = Collections.emptyList();
         } else {
             // client is interested only in the extension IDs
-            searchHits = sortedExtensions.stream().map(extensionSearch -> {
-                return new SearchHit<ExtensionSearch>(null, null, 0.0f, Collections.emptyList().toArray(),
-                        Collections.emptyMap(), extensionSearch);
-            }).collect(Collectors.toList());
+            searchHits = sortedExtensions.stream().map(extensionSearch -> new SearchHit<>(null, null, null, 0.0f, null, null, null, null, null, null, extensionSearch)).collect(Collectors.toList());
         }
 
-        Aggregations aggregations = new Aggregations(Collections.emptyList());
-        SearchHits<ExtensionSearch> searchHitsResult = new SearchHitsImpl<ExtensionSearch>(totalHits,
-                TotalHitsRelation.OFF, 0f, "", searchHits, aggregations);
-
-        return searchHitsResult;
+        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, "", searchHits, null, null);
     }
 
     /**

@@ -34,6 +34,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
+import org.springframework.data.elasticsearch.core.index.Settings;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.util.Streamable;
@@ -209,7 +210,7 @@ public class ElasticSearchServiceTest {
             .thenReturn(IndexCoordinates.of("extensions"));
 
         Mockito.when(indexOps.getSettings(true))
-                .thenReturn(Map.of("index.max_result_window", "10000"));
+                .thenReturn(new Settings(Map.of("index.max_result_window", "10000")));
 
         Mockito.when(indexOps.exists())
             .thenReturn(exists);

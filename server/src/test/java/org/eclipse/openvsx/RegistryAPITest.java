@@ -55,13 +55,9 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
-import org.eclipse.openvsx.storage.AzureBlobStorageService;
-import org.eclipse.openvsx.storage.AzureDownloadCountService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
-import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
-import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,8 +83,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, LockProvider.class,
-    CacheService.class
+    AzureBlobStorageService.class, VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class,
+    LockProvider.class, CacheService.class, EclipseService.class
 })
 public class RegistryAPITest {
 
@@ -103,9 +99,6 @@ public class RegistryAPITest {
 
     @MockBean
     EntityManager entityManager;
-
-    @MockBean
-    EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
@@ -1493,9 +1486,8 @@ public class RegistryAPITest {
         extension.setId(1l);
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
-        var searchHit = new SearchHit<ExtensionSearch>("0", "1", 1.0f, null, null, entry1);
-        var searchHits = new SearchHitsImpl<ExtensionSearch>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1",
-                Arrays.asList(searchHit), new Aggregations(Collections.emptyList()));
+        var searchHit = new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1);
+        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1", List.of(searchHit), null, null);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false);

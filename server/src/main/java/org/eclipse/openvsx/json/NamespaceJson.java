@@ -16,11 +16,10 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.v3.oas.annotations.media.Schema;;
 
-@ApiModel(
-    value = "Namespace",
+@Schema(
+    name = "Namespace",
     description = "Metadata of a namespace"
 )
 @JsonInclude(Include.NON_NULL)
@@ -32,25 +31,28 @@ public class NamespaceJson extends ResultJson {
         return result;
     }
 
-    @ApiModelProperty("Name of the namespace")
+    @Schema(description = "Name of the namespace")
     @NotNull
     public String name;
 
-    @ApiModelProperty("Map of extension names to their metadata URLs (not required for creating)")
+    @Schema(description = "Map of extension names to their metadata URLs (not required for creating)")
     public Map<String, String> extensions;
 
-    @ApiModelProperty("Indicates whether the namespace has an owner (not required for creating)")
+    @Schema(description = "Indicates whether the namespace has an owner (not required for creating)")
     @NotNull
     public Boolean verified;
 
-    @ApiModelProperty(value = "Access level of the namespace. Deprecated: namespaces are now always restricted", allowableValues = "public,restricted")
+    @Schema(
+        description = "Access level of the namespace. Deprecated: namespaces are now always restricted",
+        allowableValues = {"public", "restricted"}
+    )
     @Deprecated
     public String access;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String membersUrl;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String roleUrl;
 
 }

@@ -11,12 +11,9 @@ package org.eclipse.openvsx.storage;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
-import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,15 +39,6 @@ public class StorageUtilService implements IStorageService {
     RepositoryService repositories;
 
     @Autowired
-    SearchUtilService search;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
     GoogleCloudStorageService googleStorage;
 
     @Autowired
@@ -60,6 +46,9 @@ public class StorageUtilService implements IStorageService {
 
     @Autowired
     AzureDownloadCountService azureDownloadCountService;
+
+    @Autowired
+    DownloadCountService downloadCountService;
 
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
@@ -178,25 +167,7 @@ public class StorageUtilService implements IStorageService {
             return;
         }
 
-        increaseDownloadCount(extVersion, resource, List.of(TimeUtil.getCurrentUTC()));
-    }
-
-    /**
-     * Register a package file download by increasing its download count.
-     */
-    public void increaseDownloadCount(ExtensionVersion extVersion, FileResource resource, List<LocalDateTime> downloadTimes) {
-        var extension = extVersion.getExtension();
-        extension.setDownloadCount(extension.getDownloadCount() + downloadTimes.size());
-        for(var time : downloadTimes) {
-            var download = new Download();
-            download.setAmount(1);
-            download.setTimestamp(time);
-            download.setFileResourceId(resource.getId());
-            entityManager.persist(download);
-        }
-
-        search.updateSearchEntry(extension);
-        cache.evictExtensionJsons(extension);
+        downloadCountService.increaseDownloadCount(extVersion, resource, List.of(TimeUtil.getCurrentUTC()));
     }
 
     public HttpHeaders getFileResponseHeaders(String fileName) {

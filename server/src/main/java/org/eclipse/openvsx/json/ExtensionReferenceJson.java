@@ -14,34 +14,30 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.io.Serializable;
+import io.swagger.v3.oas.annotations.media.Schema;;import java.io.Serializable;
 import java.util.Objects;
 
-@ApiModel(
-    value = "ExtensionReference",
+@Schema(
+    name = "ExtensionReference",
     description = "A reference to another extension in the registry"
 )
 @JsonInclude(Include.NON_NULL)
 public class ExtensionReferenceJson implements Serializable {
 
-    @ApiModelProperty("URL to get metadata of the referenced extension")
+    @Schema(description = "URL to get metadata of the referenced extension")
     @NotNull
     public String url;
 
-    @ApiModelProperty("Namespace of the referenced extension")
+    @Schema(description = "Namespace of the referenced extension")
     @NotNull
     public String namespace;
 
-    @ApiModelProperty("Name of the referenced extension")
+    @Schema(description = "Name of the referenced extension")
     @NotNull
     public String extension;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String version;
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
