@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.search;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -23,6 +24,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
@@ -33,10 +35,7 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.SearchHitsImpl;
+import org.springframework.data.elasticsearch.core.*;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -204,7 +203,7 @@ public class ElasticSearchService implements ISearchService {
         var maxResultWindow = Long.parseLong(settings.get("index.max_result_window").toString());
         var resultWindow = options.requestedOffset + options.requestedSize;
         if(resultWindow > maxResultWindow) {
-            throw new ErrorResultException("Result window is too large, offset + size must be less than or equal to: " + maxResultWindow + " but was " + resultWindow);
+            return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, "", Collections.emptyList(), null, null);
         }
 
         var queryBuilder = new NativeSearchQueryBuilder();

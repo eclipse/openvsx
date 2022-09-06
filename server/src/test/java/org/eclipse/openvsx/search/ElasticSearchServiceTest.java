@@ -173,8 +173,9 @@ public class ElasticSearchServiceTest {
         mockIndex(true);
 
         var options = new ISearchService.Options("foo", "bar", "universal", 50, 10000, null, null, false);
-        var throwable = Assert.assertThrows(ErrorResultException.class, () -> search.search(options));
-        assertThat(throwable.getMessage()).isEqualTo("Result window is too large, offset + size must be less than or equal to: 10000 but was 10050");
+        var searchHits = search.search(options);
+        assertThat(searchHits.getSearchHits()).isEmpty();
+        assertThat(searchHits.getTotalHits()).isEqualTo(0L);
     }
 
     //---------- UTILITY ----------//
