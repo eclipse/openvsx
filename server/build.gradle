@@ -9,7 +9,7 @@ buildscript {
 plugins {
     id 'nu.studer.jooq' version '6.0.1'
     id 'de.undercouch.download' version '4.1.1'
-    id 'org.springframework.boot' version '2.4.0'
+    id 'org.springframework.boot' version '2.7.0'
     id 'io.spring.dependency-management' version '1.0.10.RELEASE'
     id 'io.gatling.gradle' version '3.6.1'
     id 'java'
@@ -20,7 +20,7 @@ def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [
     java: '11',
     flyway: '7.3.1',
-    springfox: '3.0.0',
+    springdoc: '1.6.9',
     shedlock: '4.28.0',
     spdx: '2.2.4',
     gcloud: '1.113.4',
@@ -73,7 +73,7 @@ dependencies {
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
-    implementation "io.springfox:springfox-boot-starter:${versions.springfox}"
+    implementation "org.springdoc:springdoc-openapi-ui:${versions.springdoc}"
     implementation "net.javacrumbs.shedlock:shedlock-spring:${versions.shedlock}"
     implementation "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${versions.shedlock}"
     implementation "com.google.guava:guava:${versions.guava}"

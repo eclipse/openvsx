@@ -48,6 +48,13 @@ management:
     probes:
       enabled: true
 
+springdoc:
+  swagger-ui:
+    docExpansion: list
+    operationsSorter: alpha
+    supportedSubmitMethods:
+      - get
+
 org:
   jobrunr:
     job-scheduler:

@@ -45,13 +45,9 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
-import org.eclipse.openvsx.storage.AzureBlobStorageService;
-import org.eclipse.openvsx.storage.AzureDownloadCountService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
-import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
-import org.elasticsearch.search.aggregations.Aggregations;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -528,10 +524,10 @@ public class VSCodeAPITest {
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
         List<SearchHit<ExtensionSearch>> searchResults = !builtInExtensionNamespace.equals(namespaceName)
-                ? Collections.singletonList(new SearchHit<>("0", "1", 1.0f, null, null, entry1))
+                ? Collections.singletonList(new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1))
                 : Collections.emptyList();
         var searchHits = new SearchHitsImpl<>(searchResults.size(), TotalHitsRelation.EQUAL_TO, 1.0f, "1",
-                searchResults, new Aggregations(Collections.emptyList()));
+                searchResults, null, null);
 
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
@@ -760,6 +756,11 @@ public class VSCodeAPITest {
         @Bean
         StorageUtilService storageUtilService() {
             return new StorageUtilService();
+        }
+
+        @Bean
+        DownloadCountService downloadCountService() {
+            return new DownloadCountService();
         }
 
         @Bean

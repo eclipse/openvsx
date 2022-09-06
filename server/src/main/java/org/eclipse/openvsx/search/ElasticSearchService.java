@@ -287,6 +287,7 @@ public class ElasticSearchService implements ISearchService {
                     firstSearchHitsPage.getMaxScore(),
                     null,
                     searchHits,
+                    null,
                     null
             );
         } else {

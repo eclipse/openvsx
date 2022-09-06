@@ -9,15 +9,17 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.json;
 
-import io.swagger.annotations.ApiModelProperty;
-
 import javax.validation.constraints.NotNull;
 
 public class TargetPlatformVersionJson {
-    @ApiModelProperty("Name of the target platform")
+    /***
+     * Name of the target platform
+     */
     public String targetPlatform;
 
-    @ApiModelProperty("Selected version, or the latest version if none was specified")
+    /***
+     * Selected version, or the latest version if none was specified
+     */
     @NotNull
     public String version;
 }

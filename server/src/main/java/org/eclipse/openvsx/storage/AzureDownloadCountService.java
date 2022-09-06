@@ -67,7 +67,7 @@ public class AzureDownloadCountService {
     RepositoryService repositories;
 
     @Autowired
-    StorageUtilService storageUtil;
+    DownloadCountService downloadCountService;
 
     @Autowired
     SearchUtilService search;
@@ -189,7 +189,7 @@ public class AzureDownloadCountService {
             var fileResources = repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet());
             for (var fileResource : fileResources) {
                 var timestamps = files.get(fileResource.getName().toUpperCase());
-                storageUtil.increaseDownloadCount(fileResource.getExtension(), fileResource, timestamps);
+                downloadCountService.increaseDownloadCount(fileResource.getExtension(), fileResource, timestamps);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

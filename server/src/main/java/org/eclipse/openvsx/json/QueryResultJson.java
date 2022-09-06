@@ -14,11 +14,10 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@ApiModel(
-    value = "QueryResult",
+@Schema(
+    name = "QueryResult",
     description = "Metadata query result"
 )
 @JsonInclude(Include.NON_NULL)
@@ -30,7 +29,7 @@ public class QueryResultJson extends ResultJson {
         return result;
     }
 
-    @ApiModelProperty("Extensions that match the given query (may be empty)")
+    @Schema(description = "Extensions that match the given query (may be empty)")
     public List<ExtensionJson> extensions;
     
 }

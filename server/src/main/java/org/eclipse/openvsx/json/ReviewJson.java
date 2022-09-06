@@ -16,30 +16,29 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.v3.oas.annotations.media.Schema;;
 
-@ApiModel(
-    value = "Review",
+@Schema(
+    name = "Review",
     description = "A review of an extension"
 )
 @JsonInclude(Include.NON_NULL)
 public class ReviewJson {
 
-    @ApiModelProperty("Data of the user who posted this review")
+    @Schema(description = "Data of the user who posted this review")
     @NotNull
     public UserJson user;
 
-    @ApiModelProperty("Date and time when this review was posted (ISO-8601)")
+    @Schema(description = "Date and time when this review was posted (ISO-8601)")
     @NotNull
     public String timestamp;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String title;
 
     public String comment;
 
-    @ApiModelProperty(value = "Number of stars")
+    @Schema(description = "Number of stars")
     @NotNull
     @Min(0)
     @Max(5)

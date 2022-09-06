@@ -14,17 +14,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@ApiModel(
-    value = "Extension",
+@Schema(
+    name = "Extension",
     description = "Metadata of an extension"
 )
 @JsonInclude(Include.NON_NULL)
@@ -36,132 +36,134 @@ public class ExtensionJson extends ResultJson implements Serializable {
         return info;
     }
 
-    @ApiModelProperty("URL to get metadata of the extension's namespace")
+    @Schema(description = "URL to get metadata of the extension's namespace")
     @NotNull
     public String namespaceUrl;
 
-    @ApiModelProperty("URL to get the list of reviews of this extension")
+    @Schema(description = "URL to get the list of reviews of this extension")
     @NotNull
     public String reviewsUrl;
 
-    @ApiModelProperty("Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
+    @Schema(description = "Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
     public Map<String, String> files;
 
-    @ApiModelProperty("Name of the extension")
+    @Schema(description = "Name of the extension")
     @NotNull
     public String name;
 
-    @ApiModelProperty("Namespace of the extension")
+    @Schema(description = "Namespace of the extension")
     @NotNull
     public String namespace;
 
-    @ApiModelProperty("Name of the target platform")
+    @Schema(description = "Name of the target platform")
     public String targetPlatform;
 
-    @ApiModelProperty("Selected version, or the latest version if none was specified")
+    @Schema(description = "Selected version, or the latest version if none was specified")
     @NotNull
     public String version;
 
-    @ApiModelProperty("Indicates whether this is a pre-release version")
+    @Schema(description = "Indicates whether this is a pre-release version")
     public Boolean preRelease;
 
-    @ApiModelProperty("Data of the user who published this version")
+    @Schema(description = "Data of the user who published this version")
     @NotNull
     public UserJson publishedBy;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public Boolean active;
 
-    @ApiModelProperty("The value 'true' means the publishing user is a member of the extension's namespace and the namespace has at least one owner.")
+    @Schema(description = "The value 'true' means the publishing user is a member of the extension's namespace and the namespace has at least one owner.")
     @NotNull
     public Boolean verified;
 
-    @ApiModelProperty("Deprecated: use 'verified' instead (this property is just the negation of 'verified')")
+    @Schema(description = "Deprecated: use 'verified' instead (this property is just the negation of 'verified')")
     @NotNull
     @Deprecated
     public Boolean unrelatedPublisher;
 
-    @ApiModelProperty(value = "Access level of the extension's namespace. Deprecated: namespaces are now always restricted", allowableValues = "public,restricted")
+    @Schema(description = "Access level of the extension's namespace. Deprecated: namespaces are now always restricted", allowableValues = {"public", "restricted"})
     @NotNull
     @Deprecated
     public String namespaceAccess;
 
-    @ApiModelProperty("Map of available versions to their metadata URLs")
+    @Schema(description = "Map of available versions to their metadata URLs")
     public Map<String, String> allVersions;
 
-    @ApiModelProperty(value = "Average rating", allowableValues = "range[0,5]")
+    @Schema(description = "Average rating")
+    @Min(0)
+    @Max(5)
     public Double averageRating;
 
-    @ApiModelProperty("Number of downloads of the extension package")
+    @Schema(description = "Number of downloads of the extension package")
     @Min(0)
     public Integer downloadCount;
 
-    @ApiModelProperty("Number of reviews")
+    @Schema(description = "Number of reviews")
     @Min(0)
     public Long reviewCount;
 
-    @ApiModelProperty("Available version aliases ('latest' or 'pre-release')")
+    @Schema(description = "Available version aliases ('latest' or 'pre-release')")
     public List<String> versionAlias;
 
-    @ApiModelProperty("Date and time when this version was published (ISO-8601)")
+    @Schema(description = "Date and time when this version was published (ISO-8601)")
     @NotNull
     public String timestamp;
 
-    @ApiModelProperty("Indicates whether this is a preview extension")
+    @Schema(description = "Indicates whether this is a preview extension")
     public Boolean preview;
 
-    @ApiModelProperty("Name to be displayed in user interfaces")
+    @Schema(description = "Name to be displayed in user interfaces")
     public String displayName;
 
     public String description;
 
-    @ApiModelProperty("Map of engine names to the respective version constraints")
+    @Schema(description = "Map of engine names to the respective version constraints")
     public Map<String, String> engines;
 
     public List<String> categories;
 
-    @ApiModelProperty("A list that indicates where the extension should run in remote configurations. Values are \"ui\" (run locally), \"workspace\" (run on remote machine) and \"web\"")
+    @Schema(description = "A list that indicates where the extension should run in remote configurations. Values are \"ui\" (run locally), \"workspace\" (run on remote machine) and \"web\"")
     public List<String> extensionKind;
 
     public List<String> tags;
 
-    @ApiModelProperty("License identifier")
+    @Schema(description = "License identifier")
     public String license;
 
-    @ApiModelProperty("URL of the extension's homepage")
+    @Schema(description = "URL of the extension's homepage")
     public String homepage;
 
-    @ApiModelProperty("URL of the extension's source repository")
+    @Schema(description = "URL of the extension's source repository")
     public String repository;
 
-    @ApiModelProperty("URL of the extension's bug tracker")
+    @Schema(description = "URL of the extension's bug tracker")
     public String bugs;
 
-    @ApiModelProperty(value = "Markdown rendering engine to use in user interfaces", allowableValues = "standard,github")
+    @Schema(description = "Markdown rendering engine to use in user interfaces", allowableValues = {"standard", "github"})
     public String markdown;
 
-    @ApiModelProperty("CSS color to use as background in user interfaces")
+    @Schema(description = "CSS color to use as background in user interfaces")
     public String galleryColor;
 
-    @ApiModelProperty(value = "Theme type for user interfaces", allowableValues = "light,dark")
+    @Schema(description = "Theme type for user interfaces", allowableValues = {"light", "dark"})
     public String galleryTheme;
 
-    @ApiModelProperty("URL of the extension's Q&A page")
+    @Schema(description = "URL of the extension's Q&A page")
     public String qna;
 
-    @ApiModelProperty("List of badges to display in user interfaces")
+    @Schema(description = "List of badges to display in user interfaces")
     public List<BadgeJson> badges;
 
-    @ApiModelProperty("List of dependencies to other extensions")
+    @Schema(description = "List of dependencies to other extensions")
     public List<ExtensionReferenceJson> dependencies;
 
-    @ApiModelProperty("List of extensions bundled with this extension")
+    @Schema(description = "List of extensions bundled with this extension")
     public List<ExtensionReferenceJson> bundledExtensions;
 
-    @ApiModelProperty("Map of download links by target platform")
+    @Schema(description = "Map of download links by target platform")
     public Map<String, String> downloads;
 
-    @ApiModelProperty("Map of target platforms by extension version")
+    @Schema(description = "Map of target platforms by extension version")
     public Map<String, List<String>> allTargetPlatformVersions;
 
     @Override

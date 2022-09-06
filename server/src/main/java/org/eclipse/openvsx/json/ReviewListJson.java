@@ -16,11 +16,10 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.v3.oas.annotations.media.Schema;;
 
-@ApiModel(
-    value = "ReviewList",
+@Schema(
+    name = "ReviewList",
     description = "List of reviews of an extension"
 )
 @JsonInclude(Include.NON_NULL)
@@ -32,11 +31,11 @@ public class ReviewListJson extends ResultJson {
         return info;
     }
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     @NotNull
     public String postUrl;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     @NotNull
     public String deleteUrl;
 

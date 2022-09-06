@@ -18,11 +18,10 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.v3.oas.annotations.media.Schema;;
 
-@ApiModel(
-    value = "User",
+@Schema(
+    name = "User",
     description = "User data"
 )
 @JsonInclude(Include.NON_NULL)
@@ -34,35 +33,35 @@ public class UserJson extends ResultJson implements Serializable {
         return user;
     }
 
-    @ApiModelProperty("Login name")
+    @Schema(description = "Login name")
     @NotNull
     public String loginName;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String tokensUrl;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String createTokenUrl;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String role;
 
-    @ApiModelProperty("Full name")
+    @Schema(description = "Full name")
     public String fullName;
 
-    @ApiModelProperty("URL to the user's avatar image")
+    @Schema(description = "URL to the user's avatar image")
     public String avatarUrl;
 
-    @ApiModelProperty("URL to the user's profile page")
+    @Schema(description = "URL to the user's profile page")
     public String homepage;
 
-    @ApiModelProperty("Authentication provider (e.g. github)")
+    @Schema(description = "Authentication provider (e.g. github)")
     public String provider;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public PublisherAgreement publisherAgreement;
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public List<UserJson> additionalLogins;
 
     @JsonInclude(Include.NON_NULL)

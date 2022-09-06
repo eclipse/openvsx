@@ -12,76 +12,78 @@ package org.eclipse.openvsx.json;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;;
+import io.swagger.v3.oas.annotations.media.Schema;;
 
-@ApiModel(
-    value = "SearchEntry",
+@Schema(
+    name = "SearchEntry",
     description = "Summary of metadata of an extension"
 )
 @JsonInclude(Include.NON_NULL)
 public class SearchEntryJson {
 
-    @ApiModelProperty("URL to get the full metadata of the extension")
+    @Schema(description = "URL to get the full metadata of the extension")
     @NotNull
     public String url;
 
-    @ApiModelProperty("Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
+    @Schema(description = "Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
     @NotNull
     public Map<String, String> files;
 
-    @ApiModelProperty("Name of the extension")
+    @Schema(description = "Name of the extension")
     @NotNull
     public String name;
 
-    @ApiModelProperty("Namespace of the extension")
+    @Schema(description = "Namespace of the extension")
     @NotNull
     public String namespace;
 
-    @ApiModelProperty("The latest published version")
+    @Schema(description = "The latest published version")
     @NotNull
     public String version;
 
-    @ApiModelProperty("Date and time when this version was published (ISO-8601)")
+    @Schema(description = "Date and time when this version was published (ISO-8601)")
     @NotNull
     public String timestamp;
 
-    @ApiModelProperty("Essential metadata of all available versions")
+    @Schema(description = "Essential metadata of all available versions")
     public List<VersionReference> allVersions;
 
-    @ApiModelProperty(value = "Average rating", allowableValues = "range[0,5]")
+    @Schema(description = "Average rating")
+    @Min(0)
+    @Max(5)
     public Double averageRating;
 
-    @ApiModelProperty("Number of downloads of the extension package")
+    @Schema(description = "Number of downloads of the extension package")
     @Min(0)
     public int downloadCount;
 
-    @ApiModelProperty("Name to be displayed in user interfaces")
+    @Schema(description = "Name to be displayed in user interfaces")
     public String displayName;
 
     public String description;
 
-    @ApiModel(
-        value = "VersionReference",
+    @Schema(
+        name = "VersionReference",
         description = "Essential metadata of an extension version"
     )
     public static class VersionReference {
 
-        @ApiModelProperty("URL to get the full metadata of this version")
+        @Schema(description = "URL to get the full metadata of this version")
         public String url;
 
-        @ApiModelProperty("Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
+        @Schema(description = "Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
         public Map<String, String> files;
 
         public String version;
 
-        @ApiModelProperty("Map of engine names to the respective version constraints")
+        @Schema(description = "Map of engine names to the respective version constraints")
         public Map<String, String> engines;
 
     }
