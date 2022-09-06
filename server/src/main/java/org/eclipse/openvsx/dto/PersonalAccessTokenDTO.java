@@ -17,13 +17,14 @@ public class PersonalAccessTokenDTO implements Serializable {
 
     public PersonalAccessTokenDTO(
             Long userId,
+            String userRole,
             String loginName,
             String fullName,
             String avatarUrl,
             String providerUrl,
             String provider
     ) {
-        this.user = new UserDataDTO(userId, loginName, fullName, avatarUrl, providerUrl, provider);
+        this.user = new UserDataDTO(userId, userRole, loginName, fullName, avatarUrl, providerUrl, provider);
     }
 
     public UserDataDTO getUser() {

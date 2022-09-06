@@ -17,6 +17,7 @@ import java.util.Objects;
 public class UserDataDTO  implements Serializable {
 
     private final long id;
+    private final String role;
     private final String loginName;
     private final String fullName;
     private final String avatarUrl;
@@ -25,6 +26,7 @@ public class UserDataDTO  implements Serializable {
 
     public UserDataDTO(
             long id,
+            String role,
             String loginName,
             String fullName,
             String avatarUrl,
@@ -32,6 +34,7 @@ public class UserDataDTO  implements Serializable {
             String provider
     ) {
         this.id = id;
+        this.role = role;
         this.loginName = loginName;
         this.fullName = fullName;
         this.avatarUrl = avatarUrl;
@@ -53,6 +56,10 @@ public class UserDataDTO  implements Serializable {
     }
 
     public long getId() { return id; }
+
+    public String getRole() {
+        return role;
+    }
 
     public String getLoginName() {
         return loginName;

@@ -965,7 +965,7 @@ public class RegistryAPITest {
                     var u = new UserJson();
                     u.loginName = "test_user";
                     e.publishedBy = u;
-                    e.verified = false;
+                    e.verified = true;
                 })));
     }
 
@@ -1254,7 +1254,7 @@ public class RegistryAPITest {
             versions.add(new ExtensionVersionDTO(
                     namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName,
                     null, 0, null, null,
-                    null, null, null, null, null, null,
+                    null, null, null, null, null, null, null,
                     id + i, version, targetPlatform, false, false, timestamp, displayName,
                     null, null, null, null, null, null, null,
                     null, null, null, null, null, null, null,
@@ -1299,7 +1299,7 @@ public class RegistryAPITest {
         var extVersion = new ExtensionVersionDTO(
                 namespaceId, namespacePublicId, namespaceName, extensionId, null, extensionName,
                 null, 0, null, null,
-                null, null, null, null, null, null, id,
+                null, null, null, null, null, null, null, id,
                 version, TargetPlatform.NAME_UNIVERSAL, false, false, timestamp, displayName,
                 null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null,

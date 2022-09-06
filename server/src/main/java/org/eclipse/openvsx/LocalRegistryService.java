@@ -754,20 +754,31 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private boolean isVerified(ExtensionVersion extVersion) {
-        if (extVersion.getPublishedWith() == null)
+        if (extVersion.getPublishedWith() == null) {
             return false;
+        }
+
         var user = extVersion.getPublishedWith().getUser();
+        if(UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+            return true;
+        }
+
         var namespace = extVersion.getExtension().getNamespace();
         return repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0
                 && repositories.countMemberships(user, namespace) > 0;
     }
 
     private boolean isVerified(ExtensionVersionDTO extVersion, Map<Long, List<NamespaceMembershipDTO>> membershipsByNamespaceId) {
-        if (extVersion.getPublishedWith() == null)
+        if (extVersion.getPublishedWith() == null) {
             return false;
-        var user = extVersion.getPublishedWith().getUser();
-        var namespace = extVersion.getExtension().getNamespace().getId();
+        }
 
+        var user = extVersion.getPublishedWith().getUser();
+        if(UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+            return true;
+        }
+
+        var namespace = extVersion.getExtension().getNamespace().getId();
         var memberships = membershipsByNamespaceId.get(namespace);
         return memberships.stream().anyMatch(m -> m.getRole().equalsIgnoreCase(NamespaceMembership.ROLE_OWNER))
                 && memberships.stream().anyMatch(m -> m.getUserId() == user.getId());
