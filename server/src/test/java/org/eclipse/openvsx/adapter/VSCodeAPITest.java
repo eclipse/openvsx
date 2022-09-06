@@ -23,8 +23,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -71,11 +69,14 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
+
 @WebMvcTest(VSCodeAPI.class)
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    AzureDownloadCountService.class, LockProvider.class, CacheService.class, UpstreamVSCodeService.class
+    AzureDownloadCountService.class, LockProvider.class, CacheService.class, UpstreamVSCodeService.class,
+    VSCodeIdService.class, EntityManager.class, EclipseService.class
 })
 public class VSCodeAPITest {
 
@@ -83,16 +84,7 @@ public class VSCodeAPITest {
     RepositoryService repositories;
 
     @MockBean
-    VSCodeIdService idService;
-
-    @MockBean
     SearchUtilService search;
-
-    @MockBean
-    EntityManager entityManager;
-
-    @MockBean
-    EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;
