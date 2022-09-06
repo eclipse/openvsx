@@ -58,6 +58,7 @@ import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,7 +85,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class,
-    LockProvider.class, CacheService.class, EclipseService.class
+    LockProvider.class, CacheService.class, EclipseService.class, JobRequestScheduler.class
 })
 public class RegistryAPITest {
 

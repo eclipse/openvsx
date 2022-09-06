@@ -9,8 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import org.jobrunr.jobs.mappers.JobMapper;
 import org.jobrunr.storage.InMemoryStorageProvider;
 import org.jobrunr.storage.StorageProvider;
+import org.jobrunr.utils.mapper.JsonMapper;
+import org.jobrunr.utils.mapper.jackson.JacksonJsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -20,7 +23,20 @@ import org.springframework.context.annotation.Profile;
 public class JobRunrConfig {
 
     @Bean
-    public StorageProvider jobRunrStorageProvider() {
-        return new InMemoryStorageProvider();
+    public StorageProvider storageProvider(JobMapper jobMapper) {
+        var storageProvider = new InMemoryStorageProvider();
+        storageProvider.setJobMapper(jobMapper);
+
+        return storageProvider;
+    }
+
+    @Bean
+    public JobMapper jobMapper(JsonMapper jsonMapper) {
+        return new JobMapper(jsonMapper);
+    }
+
+    @Bean
+    public JsonMapper jsonMapper() {
+        return new JacksonJsonMapper(true);
     }
 }

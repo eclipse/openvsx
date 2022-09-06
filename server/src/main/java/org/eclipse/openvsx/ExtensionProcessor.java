@@ -229,7 +229,7 @@ public class ExtensionProcessor implements AutoCloseable {
         loadPackageJson();
         loadVsixManifest();
         var extension = new ExtensionVersion();
-        extension.setVersion(vsixManifest.path("Metadata").path("Identity").path("Version").asText());
+        extension.setVersion(getVersion());
         extension.setTargetPlatform(getTargetPlatform());
         extension.setPreview(isPreview());
         extension.setPreRelease(isPreRelease());
@@ -249,6 +249,10 @@ public class ExtensionProcessor implements AutoCloseable {
         extension.setQna(packageJson.path("qna").textValue());
 
         return extension;
+    }
+
+    private String getVersion() {
+        return vsixManifest.path("Metadata").path("Identity").path("Version").asText();
     }
 
     private String getTargetPlatform() {
@@ -291,35 +295,54 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    public List<FileResource> getResources(ExtensionVersion extension) {
-        var resources = new ArrayList<>(getAllResources(extension).collect(Collectors.toList()));
-        var binary = getBinary(extension);
-        if (binary != null)
-            resources.add(binary);
-        var manifest = getManifest(extension);
-        if (manifest != null)
-            resources.add(manifest);
-        var readme = getReadme(extension);
-        if (readme != null)
-            resources.add(readme);
-        var changelog = getChangelog(extension);
-        if (changelog != null)
-            resources.add(changelog);
-        var license = getLicense(extension);
-        if (license != null)
-            resources.add(license);
-        var icon = getIcon(extension);
-        if (icon != null)
-            resources.add(icon);
+    public List<FileResource> getResources(ExtensionVersion extVersion) {
+        return getResources(extVersion, Collections.emptyList());
+    }
+
+    public List<FileResource> getResources(ExtensionVersion extVersion, List<String> excludes) {
+        var resources = new ArrayList<FileResource>();
+        if(!excludes.contains(FileResource.RESOURCE)) {
+            resources.addAll(getAllResources(extVersion).collect(Collectors.toList()));
+        }
+        if(!excludes.contains(FileResource.DOWNLOAD)) {
+            var binary = getBinary(extVersion);
+            if (binary != null)
+                resources.add(binary);
+        }
+        if(!excludes.contains(FileResource.MANIFEST)) {
+            var manifest = getManifest(extVersion);
+            if (manifest != null)
+                resources.add(manifest);
+        }
+        if(!excludes.contains(FileResource.README)) {
+            var readme = getReadme(extVersion);
+            if (readme != null)
+                resources.add(readme);
+        }
+        if(!excludes.contains(FileResource.CHANGELOG)) {
+            var changelog = getChangelog(extVersion);
+            if (changelog != null)
+                resources.add(changelog);
+        }
+        if(!excludes.contains(FileResource.LICENSE)) {
+            var license = getLicense(extVersion);
+            if (license != null)
+                resources.add(license);
+        }
+        if(!excludes.contains(FileResource.ICON)) {
+            var icon = getIcon(extVersion);
+            if (icon != null)
+                resources.add(icon);
+        }
 
         return resources;
     }
 
-    public void processEachResource(ExtensionVersion extension, Consumer<FileResource> processor) {
-        getAllResources(extension).forEach(processor);
+    public void processEachResource(ExtensionVersion extVersion, Consumer<FileResource> processor) {
+        getAllResources(extVersion).forEach(processor);
     }
 
-    protected Stream<FileResource> getAllResources(ExtensionVersion extension) {
+    protected Stream<FileResource> getAllResources(ExtensionVersion extVersion) {
         readInputStream();
         return zipFile.stream()
                 .map(zipEntry -> {
@@ -334,7 +357,7 @@ public class ExtensionProcessor implements AutoCloseable {
                         return null;
                     }
                     var resource = new FileResource();
-                    resource.setExtension(extension);
+                    resource.setExtension(extVersion);
                     resource.setName(zipEntry.getName());
                     resource.setType(FileResource.RESOURCE);
                     resource.setContent(bytes);
@@ -343,66 +366,78 @@ public class ExtensionProcessor implements AutoCloseable {
                 .filter(Objects::nonNull);
     }
 
-    protected FileResource getBinary(ExtensionVersion extension) {
+    public FileResource getBinary(ExtensionVersion extVersion) {
         var binary = new FileResource();
-        binary.setExtension(extension);
+        binary.setExtension(extVersion);
+        binary.setName(getBinaryName());
         binary.setType(FileResource.DOWNLOAD);
         binary.setContent(content);
         return binary;
     }
 
-    protected FileResource getManifest(ExtensionVersion extension) {
+    private String getBinaryName() {
+        loadVsixManifest();
+        var resourceName = getNamespace() + "." + getExtensionName() + "-" + getVersion();
+        if(!TargetPlatform.isUniversal(getTargetPlatform())) {
+            resourceName += "@" + getTargetPlatform();
+        }
+
+        resourceName += ".vsix";
+        return resourceName;
+    }
+
+    protected FileResource getManifest(ExtensionVersion extVersion) {
         readInputStream();
         var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
         if (bytes == null) {
             return null;
         }
         var manifest = new FileResource();
-        manifest.setExtension(extension);
+        manifest.setExtension(extVersion);
         manifest.setName("package.json");
         manifest.setType(FileResource.MANIFEST);
         manifest.setContent(bytes);
         return manifest;
     }
 
-    protected FileResource getReadme(ExtensionVersion extension) {
+    protected FileResource getReadme(ExtensionVersion extVersion) {
         readInputStream();
         var result = readFromAlternateNames(README);
         if (result == null) {
             return null;
         }
         var readme = new FileResource();
-        readme.setExtension(extension);
+        readme.setExtension(extVersion);
         readme.setName(result.getSecond());
         readme.setType(FileResource.README);
         readme.setContent(result.getFirst());
         return readme;
     }
 
-    public FileResource getChangelog(ExtensionVersion extension) {
+    public FileResource getChangelog(ExtensionVersion extVersion) {
         readInputStream();
         var result = readFromAlternateNames(CHANGELOG);
         if (result == null) {
             return null;
         }
         var changelog = new FileResource();
-        changelog.setExtension(extension);
+        changelog.setExtension(extVersion);
         changelog.setName(result.getSecond());
         changelog.setType(FileResource.CHANGELOG);
         changelog.setContent(result.getFirst());
         return changelog;
     }
 
-    protected FileResource getLicense(ExtensionVersion extension) {
+    public FileResource getLicense(ExtensionVersion extVersion) {
         readInputStream();
         var license = new FileResource();
-        license.setExtension(extension);
+        license.setExtension(extVersion);
         license.setType(FileResource.LICENSE);
         // Parse specifications in the form "SEE MIT LICENSE IN LICENSE.txt"
-        if (!Strings.isNullOrEmpty(extension.getLicense())) {
-            var matcher = LICENSE_PATTERN.matcher(extension.getLicense());
+        if (!Strings.isNullOrEmpty(extVersion.getLicense())) {
+            var matcher = LICENSE_PATTERN.matcher(extVersion.getLicense());
             if (matcher.find()) {
-                extension.setLicense(matcher.group("license"));
+                extVersion.setLicense(matcher.group("license"));
                 var fileName = matcher.group("file");
                 var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
                 if (bytes != null) {
@@ -410,7 +445,7 @@ public class ExtensionProcessor implements AutoCloseable {
                     var lastSegment = fileName.substring(lastSegmentIndex + 1);
                     license.setName(lastSegment);
                     license.setContent(bytes);
-                    detectLicense(bytes, extension);
+                    detectLicense(bytes, extVersion);
                     return license;
                 }
             }
@@ -422,14 +457,14 @@ public class ExtensionProcessor implements AutoCloseable {
         }
         license.setName(result.getSecond());
         license.setContent(result.getFirst());
-        detectLicense(result.getFirst(), extension);
+        detectLicense(result.getFirst(), extVersion);
         return license;
     }
 
-    private void detectLicense(byte[] content, ExtensionVersion extension) {
-        if (Strings.isNullOrEmpty(extension.getLicense())) {
+    private void detectLicense(byte[] content, ExtensionVersion extVersion) {
+        if (Strings.isNullOrEmpty(extVersion.getLicense())) {
             var detection = new LicenseDetection();
-            extension.setLicense(detection.detectLicense(content));
+            extVersion.setLicense(detection.detectLicense(content));
         }
     }
 
@@ -446,7 +481,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    protected FileResource getIcon(ExtensionVersion extension) {
+    protected FileResource getIcon(ExtensionVersion extVersion) {
         loadPackageJson();
         var iconPath = packageJson.get("icon");
         if (iconPath == null || !iconPath.isTextual())
@@ -456,7 +491,7 @@ public class ExtensionProcessor implements AutoCloseable {
         if (bytes == null)
             return null;
         var icon = new FileResource();
-        icon.setExtension(extension);
+        icon.setExtension(extVersion);
         var fileNameIndex = iconPathStr.lastIndexOf('/');
         if (fileNameIndex >= 0)
             icon.setName(iconPathStr.substring(fileNameIndex + 1));

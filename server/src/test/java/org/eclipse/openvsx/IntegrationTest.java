@@ -50,11 +50,13 @@ public class IntegrationTest {
         testService.createUser();
         createNamespace();
         publishExtension();
+
+        // Wait a bit until the publish extension background job has finished
+        Thread.sleep(15000);
         getExtensionMetadata();
 
         // Wait a bit until the new entry has landed in the search index
         Thread.sleep(2000);
-
         searchExtension();
     }
 

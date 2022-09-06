@@ -10,7 +10,9 @@
 package org.eclipse.openvsx;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -22,12 +24,13 @@ import com.google.common.base.Strings;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.publish.PublishExtensionVersionJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -57,7 +60,7 @@ public class ExtensionService {
     ExtensionValidator validator;
 
     @Autowired
-    StorageUtilService storageUtil;
+    JobRequestScheduler scheduler;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
@@ -67,18 +70,35 @@ public class ExtensionService {
         try (var processor = new ExtensionProcessor(content)) {
             // Extract extension metadata from its manifest
             var extVersion = createExtensionVersion(processor, token.getUser(), token);
-            processor.getExtensionDependencies().forEach(dep -> addDependency(dep, extVersion));
-            processor.getBundledExtensions().forEach(dep -> addBundledExtension(dep, extVersion));
+            var dependencies = processor.getExtensionDependencies().stream()
+                    .map(this::checkDependency)
+                    .collect(Collectors.toList());
+            var bundledExtensions = processor.getBundledExtensions().stream()
+                    .map(this::checkBundledExtension)
+                    .collect(Collectors.toList());
+
+            extVersion.setDependencies(dependencies);
+            extVersion.setBundledExtensions(bundledExtensions);
 
             // Check the extension's license
-            var resources = processor.getResources(extVersion);
-            checkLicense(extVersion, resources);
+            var license = processor.getLicense(extVersion);
+            checkLicense(extVersion, license);
+            if(license != null) {
+                license.setStorageType(FileResource.STORAGE_DB);
+                entityManager.persist(license);
+            }
 
-            // Store file resources in the DB or external storage
-            storeResources(extVersion, resources);
+            var binary = processor.getBinary(extVersion);
+            binary.setStorageType(FileResource.STORAGE_DB);
+            entityManager.persist(binary);
 
-            // Update whether extension is active, the search index and evict cache
-            updateExtension(extVersion.getExtension());
+            var extension = extVersion.getExtension();
+            var namespace = extension.getNamespace();
+            var identifier = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
+            var jobIdText = "PublishExtensionVersion::" + identifier;
+            var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+            scheduler.enqueue(jobId, new PublishExtensionVersionJobRequest(namespace.getName(), extension.getName(),
+                    extVersion.getTargetPlatform(), extVersion.getVersion()));
 
             return extVersion;
         }
@@ -106,11 +126,12 @@ public class ExtensionService {
         }
         extVersion.setTimestamp(TimeUtil.getCurrentUTC());
         extVersion.setPublishedWith(token);
-        extVersion.setActive(true);
+        extVersion.setActive(false);
 
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null) {
             extension = new Extension();
+            extension.setActive(false);
             extension.setName(extensionName);
             extension.setNamespace(namespace);
             extension.setPublishedDate(extVersion.getTimestamp());
@@ -131,7 +152,6 @@ public class ExtensionService {
         extension.setLastUpdatedDate(extVersion.getTimestamp());
         extension.getVersions().add(extVersion);
         extVersion.setExtension(extension);
-        entityManager.persist(extVersion);
 
         var metadataIssues = validator.validateMetadata(extVersion);
         if (!metadataIssues.isEmpty()) {
@@ -141,10 +161,12 @@ public class ExtensionService {
             throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
                     + Joiner.on("\n").join(metadataIssues));
         }
+
+        entityManager.persist(extVersion);
         return extVersion;
     }
 
-    private void addDependency(String dependency, ExtensionVersion extVersion) {
+    private String checkDependency(String dependency) {
         var split = dependency.split("\\.");
         if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
             throw new ErrorResultException("Invalid 'extensionDependencies' format. Expected: '${namespace}.${name}'");
@@ -153,57 +175,25 @@ public class ExtensionService {
         if (extensionCount == 0) {
             throw new ErrorResultException("Cannot resolve dependency: " + dependency);
         }
-        var depList = extVersion.getDependencies();
-        if (depList == null) {
-            depList = new ArrayList<>();
-            extVersion.setDependencies(depList);
-        }
-        depList.add(dependency);
+
+        return dependency;
     }
 
-    private void addBundledExtension(String bundled, ExtensionVersion extVersion) {
-        var split = bundled.split("\\.");
+    private String checkBundledExtension(String bundledExtension) {
+        var split = bundledExtension.split("\\.");
         if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
             throw new ErrorResultException("Invalid 'extensionPack' format. Expected: '${namespace}.${name}'");
         }
-        var depList = extVersion.getBundledExtensions();
-        if (depList == null) {
-            depList = new ArrayList<>();
-            extVersion.setBundledExtensions(depList);
-        }
-        depList.add(bundled);
+
+        return bundledExtension;
     }
 
-    private void checkLicense(ExtensionVersion extVersion, List<FileResource> resources) {
+    private void checkLicense(ExtensionVersion extVersion, FileResource license) {
         if (requireLicense
                 && Strings.isNullOrEmpty(extVersion.getLicense())
-                && resources.stream().noneMatch(r -> r.getType().equals(FileResource.LICENSE))) {
+                && (license == null || !license.getType().equals(FileResource.LICENSE))) {
             throw new ErrorResultException("This extension cannot be accepted because it has no license.");
         }
-    }
-
-    private void storeResources(ExtensionVersion extVersion, List<FileResource> resources) {
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        resources.forEach(resource -> {
-            if (resource.getType().equals(FileResource.DOWNLOAD)) {
-                var resourceName = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
-                if(!TargetPlatform.isUniversal(extVersion)) {
-                    resourceName += "@" + extVersion.getTargetPlatform();
-                }
-
-                resourceName += ".vsix";
-                resource.setName(resourceName);
-            }
-            if (storageUtil.shouldStoreExternally(resource)) {
-                storageUtil.uploadFile(resource);
-                // Don't store the binary content in the DB - it's now stored externally
-                resource.setContent(null);
-            } else {
-                resource.setStorageType(FileResource.STORAGE_DB);
-            }
-            entityManager.persist(resource);
-        });
     }
 
     /**
