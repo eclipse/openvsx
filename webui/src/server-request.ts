@@ -9,6 +9,7 @@
  ********************************************************************************/
 
 export interface ServerAPIRequest {
+    abortController: AbortController;
     endpoint: string;
     method?: 'GET' | 'DELETE' | 'POST' | 'PUT';
     headers?: Record<string, string>;
@@ -38,7 +39,8 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
     }
 
     const param: RequestInit = {
-        method: req.method
+        method: req.method,
+        signal: req.abortController.signal
     };
     if (req.payload) {
         param.body = (req.payload instanceof File) ? req.payload : JSON.stringify(req.payload);
@@ -58,9 +60,17 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
                 return response.json();
             case 'text/plain':
                 return response.text() as Promise<any>;
+            case 'application/octet-stream':
+                return response.blob() as Promise<any>;
             default:
                 throw new Error(`Unsupported type ${req.headers!['Accept']}`);
         }
+    } else if (response.status === 429) {
+        const retrySeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds') || '0';
+        const jitter = Math.floor(Math.random() * 100);
+        const timeoutMillis = ((Number(retrySeconds) + 1) * 1000) + jitter;
+        return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req))
+            .then(request => sendRequest(request));
     } else {
         let err: ErrorResponse;
         try {

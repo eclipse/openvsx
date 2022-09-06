@@ -42,6 +42,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     declare context: MainContext;
 
     protected starSetter: ExtensionRatingStarSetter | null;
+    protected abortController = new AbortController();
 
     constructor(props: ExtensionReviewDialogComponent.Props) {
         super(props);
@@ -65,7 +66,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
         this.setState({ posted: true });
         try {
             const rating = this.starSetter ? this.starSetter.state.number : 1;
-            const result = await this.context.service.postReview({
+            const result = await this.context.service.postReview(this.abortController, {
                 rating,
                 comment: this.state.comment
             }, this.props.reviewPostUrl);
@@ -99,6 +100,7 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
     }
 
     componentWillUnmount() {
+        this.abortController.abort();
         document.removeEventListener('keydown', this.handleEnter);
     }
 

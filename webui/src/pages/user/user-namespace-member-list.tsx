@@ -41,6 +41,13 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberList.
         fetchMembers();
     }, [props.namespace]);
 
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
+
     const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
     const handleCloseAddDialog = async () => {
         setAddDialogIsOpen(false);
@@ -52,7 +59,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberList.
 
     const fetchMembers = async () => {
         try {
-            const membershipList = await service.getNamespaceMembers(props.namespace);
+            const membershipList = await service.getNamespaceMembers(abortController, props.namespace);
             const members = membershipList.namespaceMemberships;
             setMembers(members);
         } catch (err) {
@@ -64,7 +71,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberList.
         try {
             props.setLoadingState(true);
             const endpoint = props.namespace.roleUrl;
-            const result = await service.setNamespaceMember(endpoint, membership.user, role);
+            const result = await service.setNamespaceMember(abortController, endpoint, membership.user, role);
             if (isError(result)) {
                 throw result;
             }

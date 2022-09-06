@@ -26,6 +26,8 @@
      static contextType = MainContext;
      declare context: MainContext;
 
+     protected abortController = new AbortController();
+
      constructor(props: CreateNamespaceDialogComponent.Props) {
          super(props);
 
@@ -62,7 +64,7 @@
          }
          this.setState({ posted: true });
          try {
-             const response = await this.context.service.createNamespace(this.state.name);
+             const response = await this.context.service.createNamespace(this.abortController, this.state.name);
              if (isError(response)) {
                  throw response;
              }

@@ -102,6 +102,8 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: UserSettingsNamespacesComponent.Props) {
         super(props);
 
@@ -115,6 +117,10 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
     componentDidMount() {
         this.initNamespaces();
+    }
+
+    componentWillUnmount() {
+        this.abortController.abort();
     }
 
     render() {
@@ -177,7 +183,7 @@ class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamesp
 
     protected async initNamespaces(): Promise<void> {
         try {
-            const namespaces = await this.context.service.getNamespaces();
+            const namespaces = await this.context.service.getNamespaces(this.abortController);
             const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
             this.setState({ namespaces, chosenNamespace, loading: false });
         } catch (err) {

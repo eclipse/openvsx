@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
 import { Typography, Box } from '@material-ui/core';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';
@@ -18,12 +18,19 @@ import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 
 export const NamespaceAdmin: FunctionComponent = props => {
-    const [loading, setLoading] = useState(false);
-
     const { pageSettings, service, user, handleError } = useContext(MainContext);
 
+    const [loading, setLoading] = useState(false);
     const [currentNamespace, setCurrentNamespace] = useState<Namespace | undefined>();
     const [notFound, setNotFound] = useState('');
+
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
+
     const fetchNamespace = async (namespaceName: string) => {
         if (!namespaceName) {
             setCurrentNamespace(undefined);
@@ -32,7 +39,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
         }
         try {
             setLoading(true);
-            const namespace = await service.admin.getNamespace(namespaceName);
+            const namespace = await service.admin.getNamespace(abortController, namespaceName);
             if (isError(namespace)) {
                 throw namespace;
             }
@@ -59,7 +66,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
     const onCreate = async () => {
         try {
             setCreating(true);
-            await service.admin.createNamespace({
+            await service.admin.createNamespace(abortController, {
                 name: inputValue
             });
             await fetchNamespace(inputValue);

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, createContext } from 'react';
+import React, { FunctionComponent, useState, useContext, createContext, useEffect } from 'react';
 import { Typography, Box } from '@material-ui/core';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -18,10 +18,16 @@ import { PublisherDetails } from './publisher-details';
 
 export const UpdateContext = createContext({ handleUpdate: () => { } });
 export const PublisherAdmin: FunctionComponent = props => {
-    const [loading, setLoading] = useState(false);
-
     const { pageSettings, service, user, handleError } = useContext(MainContext);
 
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
+
+    const [loading, setLoading] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const onChangeInput = (name: string) => {
         setInputValue(name);
@@ -34,7 +40,7 @@ export const PublisherAdmin: FunctionComponent = props => {
         try {
             setLoading(true);
             if (publisherName !== '') {
-                const publisher = await service.admin.getPublisherInfo('github', publisherName);
+                const publisher = await service.admin.getPublisherInfo(abortController, 'github', publisherName);
                 setNotFound('');
                 setPublisher(publisher);
             } else {

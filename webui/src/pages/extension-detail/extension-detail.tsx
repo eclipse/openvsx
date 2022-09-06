@@ -160,6 +160,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: ExtensionDetailComponent.Props) {
         super(props);
         this.state = { loading: true };
@@ -169,6 +171,13 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
         const params = this.props.match.params as ExtensionDetailComponent.Params;
         document.title = `${params.name} – ${this.context.pageSettings.pageTitle}`;
         this.updateExtension(params);
+    }
+
+    componentWillUnmount(): void {
+        this.abortController.abort();
+        if (this.state.icon) {
+            URL.revokeObjectURL(this.state.icon);
+        }
     }
 
     componentDidUpdate(prevProps: ExtensionDetailComponent.Props): void {
@@ -196,12 +205,13 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     protected async updateExtension(params: ExtensionDetailComponent.Params): Promise<void> {
         const extensionUrl = this.getExtensionApiUrl(params);
         try {
-            const extension = await this.context.service.getExtensionDetail(extensionUrl);
+            const extension = await this.context.service.getExtensionDetail(this.abortController, extensionUrl);
             if (isError(extension)) {
                 throw extension;
             }
             document.title = `${extension.displayName || extension.name} – ${this.context.pageSettings.pageTitle}`;
-            this.setState({ extension, loading: false });
+            const icon = await this.updateIcon(extension);
+            this.setState({ extension, icon, loading: false });
         } catch (err) {
             if (err && err.status === 404) {
                 this.setState({
@@ -213,6 +223,14 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             }
             this.setState({ loading: false });
         }
+    }
+
+    protected async updateIcon(extension: Extension): Promise<string | undefined> {
+        if (this.state.icon) {
+            URL.revokeObjectURL(this.state.icon);
+        }
+
+        return await this.context.service.getExtensionIcon(this.abortController, extension);
     }
 
     protected onReviewUpdate = (): void => {
@@ -234,7 +252,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
     };
 
     render(): React.ReactNode {
-        const { extension } = this.state;
+        const { extension, icon } = this.state;
         if (!extension) {
             return <>
                 <DelayedLoadIndicator loading={this.state.loading} />
@@ -264,7 +282,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     <Box className={classes.header}>
                         {this.renderBanner(extension, headerTheme)}
                         <Box className={classes.iconAndInfo}>
-                            <img src={extension.files.icon || this.context.pageSettings.urls.extensionDefaultIcon}
+                            <img src={icon || this.context.pageSettings.urls.extensionDefaultIcon }
                                 className={`${classes.extensionLogo} ${classes.badgePadding}`}
                                 alt={extension.displayName || extension.name} />
                             {this.renderHeaderInfo(extension, headerTheme)}
@@ -476,6 +494,7 @@ export namespace ExtensionDetailComponent {
 
     export interface State {
         extension?: Extension;
+        icon?: string;
         loading: boolean;
         notFoundError?: string;
     }

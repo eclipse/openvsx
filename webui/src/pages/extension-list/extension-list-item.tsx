@@ -12,6 +12,7 @@ import * as React from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Grid, Fade } from '@material-ui/core';
 import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
+import { MainContext } from '../../context';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 import { SearchEntry } from '../../extension-registry-types';
 import { ExportRatingStars } from '../extension-detail/extension-rating-stars';
@@ -41,9 +42,52 @@ const itemStyles = (theme: Theme) => createStyles({
     }
 });
 
-class ExtensionListItemComponent extends React.Component<ExtensionListItemComponent.Props> {
+class ExtensionListItemComponent extends React.Component<ExtensionListItemComponent.Props, ExtensionListItemComponent.State> {
+
+    static contextType = MainContext;
+    declare context: MainContext;
+
+    protected abortController = new AbortController();
+
+    constructor(props: ExtensionListItemComponent.Props) {
+        super(props);
+        this.state = { icon: undefined };
+    }
+
+    componentDidMount(): void {
+        this.updateChanges();
+    }
+
+    componentDidUpdate(prevProps: ExtensionListItemComponent.Props) {
+        const prevExt = prevProps.extension;
+        const newExt = this.props.extension;
+        if (prevExt.namespace !== newExt.namespace || prevExt.name !== newExt.name || prevExt.version !== newExt.version) {
+            this.updateChanges();
+        }
+    }
+
+    componentWillUnmount() {
+        this.abortController.abort();
+        if (this.state.icon) {
+            URL.revokeObjectURL(this.state.icon);
+        }
+    }
+
+    protected async updateChanges(): Promise<void> {
+        if (this.state.icon) {
+            URL.revokeObjectURL(this.state.icon);
+        }
+        try {
+            const icon = await this.context.service.getExtensionIcon(this.abortController, this.props.extension);
+            this.setState({ icon });
+        } catch (err) {
+            this.context.handleError(err);
+        }
+    }
+
     render() {
         const { classes, extension } = this.props;
+        const { icon } = this.state;
         const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
         return <React.Fragment>
             <Fade in={true} timeout={{ enter: ((this.props.filterSize + this.props.idx) % this.props.filterSize) * 200 }}>
@@ -51,9 +95,9 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                     <RouteLink to={route} className={classes.link}>
                         <Paper className={classes.paper}>
                             <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
-                                <img src={extension.files.icon || this.props.pageSettings.urls.extensionDefaultIcon}
-                                    className={classes.img}
-                                    alt={extension.displayName || extension.name} />
+                                <img src={ icon || this.props.pageSettings.urls.extensionDefaultIcon }
+                                className={classes.img}
+                                alt={extension.displayName || extension.name} />
                             </Box>
                             <Box display='flex' justifyContent='center'>
                                 <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
@@ -85,6 +129,9 @@ export namespace ExtensionListItemComponent {
         idx: number;
         pageSettings: PageSettings;
         filterSize: number;
+    }
+    export interface State {
+        icon?: string;
     }
 }
 

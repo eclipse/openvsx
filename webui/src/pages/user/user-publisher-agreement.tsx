@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useState } from 'react';
+import React, { FunctionComponent, useContext, useState, useEffect } from 'react';
 import {
     Box, Typography, Paper, Button, makeStyles, Dialog, DialogContent, DialogContentText, Link
 } from '@material-ui/core';
@@ -35,11 +35,17 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
     const { service, pageSettings, updateUser, handleError } = useContext(MainContext);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
+    const abortController = new AbortController();
+    useEffect(() => {
+        return () => {
+            abortController.abort();
+        };
+    }, []);
 
     const signPublisherAgreement = async (): Promise<void> => {
         try {
             setWorking(true);
-            const result = await service.signPublisherAgreement();
+            const result = await service.signPublisherAgreement(abortController);
             if (isError(result)) {
                 throw result;
             }
@@ -68,7 +74,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
         const agreementURL = pageSettings.urls.publisherAgreement;
         if (agreementURL) {
             try {
-                const agreementMd = await service.getStaticContent(agreementURL);
+                const agreementMd = await service.getStaticContent(abortController, agreementURL);
                 setAgreementText(agreementMd);
             } catch (err) {
                 handleError(err);

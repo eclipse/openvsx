@@ -19,6 +19,8 @@ export class UserNamespaceExtensionListContainer extends React.Component<UserNam
     static contextType = MainContext;
     declare context: MainContext;
 
+    protected abortController = new AbortController();
+
     constructor(props: UserNamespaceExtensionListContainerComponent.Props) {
         super(props);
 
@@ -30,6 +32,10 @@ export class UserNamespaceExtensionListContainer extends React.Component<UserNam
 
     componentDidMount(): void {
         this.updateExtensions();
+    }
+
+    componentWillUnmount(): void {
+        this.abortController.abort();
     }
 
     componentDidUpdate(prevProps: UserNamespaceExtensionListContainerComponent.Props): void {
@@ -45,7 +51,7 @@ export class UserNamespaceExtensionListContainer extends React.Component<UserNam
         const getExtension = async (url: string) => {
             let result: Extension | ErrorResult;
             try {
-                result = await this.context.service.getExtensionDetail(url);
+                result = await this.context.service.getExtensionDetail(this.abortController, url);
                 if (isError(result)) {
                     throw result;
                 }

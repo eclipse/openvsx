@@ -64,6 +64,8 @@ const mainStyles = (theme: Theme) => createStyles({
 
 class MainComponent extends React.Component<MainComponent.Props, MainComponent.State> {
 
+    protected abortController = new AbortController();
+
     constructor(props: MainComponent.Props) {
         super(props);
 
@@ -79,7 +81,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         // If there was an authentication error, get the message from the server and show it
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.has('auth-error')) {
-            this.props.service.getUserAuthError()
+            this.props.service.getUserAuthError(this.abortController)
                 .then(this.handleError);
         }
 
@@ -100,10 +102,14 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
         }
     }
 
+    componentWillUnmount() {
+        this.abortController.abort();
+    }
+
     protected readonly updateUser = async () => {
         try {
             this.setState({ userLoading: true });
-            const user = await this.props.service.getUser();
+            const user = await this.props.service.getUser(this.abortController);
             if (isError(user)) {
                 // An error result with HTTP OK status indicates that the user is not logged in.
                 this.setState({ user: undefined, userLoading: false });
@@ -117,6 +123,11 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
     };
 
     readonly handleError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
+        if (err instanceof DOMException && err.message.trim() === 'The operation was aborted.') {
+            // ignore error caused by AbortController.abort()
+            return;
+        }
+
         const message = handleError(err);
         const code = (err as ReportedError).code;
         this.setState({ error: { message, code }, isErrorDialogOpen: true });
