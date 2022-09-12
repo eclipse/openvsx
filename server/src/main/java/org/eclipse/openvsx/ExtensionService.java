@@ -24,13 +24,13 @@ import com.google.common.base.Strings;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.publish.PublishExtensionVersionJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.schedule.SchedulerService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.jobrunr.scheduling.JobRequestScheduler;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -60,7 +60,7 @@ public class ExtensionService {
     ExtensionValidator validator;
 
     @Autowired
-    JobRequestScheduler scheduler;
+    SchedulerService schedulerService;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
@@ -94,11 +94,11 @@ public class ExtensionService {
 
             var extension = extVersion.getExtension();
             var namespace = extension.getNamespace();
-            var identifier = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
-            var jobIdText = "PublishExtensionVersion::" + identifier;
-            var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
-            scheduler.enqueue(jobId, new PublishExtensionVersionJobRequest(namespace.getName(), extension.getName(),
-                    extVersion.getTargetPlatform(), extVersion.getVersion()));
+            try {
+                schedulerService.publishExtensionVersion(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
+            } catch (SchedulerException e) {
+                throw new ErrorResultException("Failed to schedule publish extension version job", e);
+            }
 
             return extVersion;
         }

@@ -50,6 +50,7 @@ import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.schedule.SchedulerService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -58,7 +59,6 @@ import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
-import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +85,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class,
-    LockProvider.class, CacheService.class, EclipseService.class, JobRequestScheduler.class
+    LockProvider.class, CacheService.class, EclipseService.class, SchedulerService.class
 })
 public class RegistryAPITest {
 

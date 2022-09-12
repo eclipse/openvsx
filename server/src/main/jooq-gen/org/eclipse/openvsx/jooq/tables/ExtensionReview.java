@@ -147,12 +147,21 @@ public class ExtensionReview extends TableImpl<ExtensionReviewRecord> {
         return Arrays.<ForeignKey<ExtensionReviewRecord, ?>>asList(Keys.EXTENSION_REVIEW__FKGD2DQDC23OGBNOBX8AFJFPNKP, Keys.EXTENSION_REVIEW__FKINJBN9GRK135Y6IK0UT4UJP0W);
     }
 
+    private transient Extension _extension;
+    private transient UserData _userData;
+
     public Extension extension() {
-        return new Extension(this, Keys.EXTENSION_REVIEW__FKGD2DQDC23OGBNOBX8AFJFPNKP);
+        if (_extension == null)
+            _extension = new Extension(this, Keys.EXTENSION_REVIEW__FKGD2DQDC23OGBNOBX8AFJFPNKP);
+
+        return _extension;
     }
 
     public UserData userData() {
-        return new UserData(this, Keys.EXTENSION_REVIEW__FKINJBN9GRK135Y6IK0UT4UJP0W);
+        if (_userData == null)
+            _userData = new UserData(this, Keys.EXTENSION_REVIEW__FKINJBN9GRK135Y6IK0UT4UJP0W);
+
+        return _userData;
     }
 
     @Override

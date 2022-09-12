@@ -1,5 +1,5 @@
 /** ******************************************************************************
- * Copyright (c) 2022 Precies. Software and others
+ * Copyright (c) 2022 Precies. Software Ltd and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -11,26 +11,24 @@ package org.eclipse.openvsx.publish;
 
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
-import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.TargetPlatform;
-import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Streamable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.List;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 import static org.eclipse.openvsx.entities.FileResource.LICENSE;
 
 @Component
-public class PublishExtensionVersionJobRequestHandler implements JobRequestHandler<PublishExtensionVersionJobRequest> {
+public class PublishExtensionVersionService {
 
     @Autowired
     ExtensionService extensions;
@@ -44,11 +42,12 @@ public class PublishExtensionVersionJobRequestHandler implements JobRequestHandl
     @Autowired
     StorageUtilService storageUtil;
 
-    @Override
+    @Value("${ovsx.data.mirror.enabled:false}")
+    boolean mirrorModeEnabled;
+
     @Transactional
-    public void run(PublishExtensionVersionJobRequest jobRequest) throws Exception {
-        var extVersion = repositories.findVersion(jobRequest.getVersion(), jobRequest.getTargetPlatform(),
-                jobRequest.getExtensionName(), jobRequest.getNamespaceName());
+    public void publish(String namespaceName, String extensionName, String targetPlatform, String version) throws IOException {
+        var extVersion = repositories.findVersion(version, targetPlatform, extensionName, namespaceName);
 
         var resources = repositories.findFiles(extVersion);
         var download = resources.stream().filter(r -> r.getType().equals(DOWNLOAD)).findFirst().get();
@@ -72,8 +71,11 @@ public class PublishExtensionVersionJobRequestHandler implements JobRequestHandl
             }
         }
 
-        // Update whether extension is active, the search index and evict cache
-        extVersion.setActive(true);
-        extensions.updateExtension(extVersion.getExtension());
+        // When mirror mode is enabled all extension versions are activated at once in MirrorActivateExtensionJob
+        if(!mirrorModeEnabled) {
+            // Update whether extension is active, the search index and evict cache
+            extVersion.setActive(true);
+            extensions.updateExtension(extVersion.getExtension());
+        }
     }
 }

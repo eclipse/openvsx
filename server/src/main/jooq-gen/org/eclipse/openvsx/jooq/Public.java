@@ -16,12 +16,25 @@ import org.eclipse.openvsx.jooq.tables.EntityActiveState;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
+import org.eclipse.openvsx.jooq.tables.ExtractResourcesMigrationItem;
 import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
 import org.eclipse.openvsx.jooq.tables.Namespace;
 import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
+import org.eclipse.openvsx.jooq.tables.QrtzBlobTriggers;
+import org.eclipse.openvsx.jooq.tables.QrtzCalendars;
+import org.eclipse.openvsx.jooq.tables.QrtzCronTriggers;
+import org.eclipse.openvsx.jooq.tables.QrtzFiredTriggers;
+import org.eclipse.openvsx.jooq.tables.QrtzJobChains;
+import org.eclipse.openvsx.jooq.tables.QrtzJobDetails;
+import org.eclipse.openvsx.jooq.tables.QrtzLocks;
+import org.eclipse.openvsx.jooq.tables.QrtzPausedTriggerGrps;
+import org.eclipse.openvsx.jooq.tables.QrtzSchedulerState;
+import org.eclipse.openvsx.jooq.tables.QrtzSimpleTriggers;
+import org.eclipse.openvsx.jooq.tables.QrtzSimpropTriggers;
+import org.eclipse.openvsx.jooq.tables.QrtzTriggers;
 import org.eclipse.openvsx.jooq.tables.Shedlock;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
@@ -91,6 +104,11 @@ public class Public extends SchemaImpl {
     public final ExtensionVersion EXTENSION_VERSION = ExtensionVersion.EXTENSION_VERSION;
 
     /**
+     * The table <code>public.extract_resources_migration_item</code>.
+     */
+    public final ExtractResourcesMigrationItem EXTRACT_RESOURCES_MIGRATION_ITEM = ExtractResourcesMigrationItem.EXTRACT_RESOURCES_MIGRATION_ITEM;
+
+    /**
      * The table <code>public.file_resource</code>.
      */
     public final FileResource FILE_RESOURCE = FileResource.FILE_RESOURCE;
@@ -119,6 +137,66 @@ public class Public extends SchemaImpl {
      * The table <code>public.personal_access_token</code>.
      */
     public final PersonalAccessToken PERSONAL_ACCESS_TOKEN = PersonalAccessToken.PERSONAL_ACCESS_TOKEN;
+
+    /**
+     * The table <code>public.qrtz_blob_triggers</code>.
+     */
+    public final QrtzBlobTriggers QRTZ_BLOB_TRIGGERS = QrtzBlobTriggers.QRTZ_BLOB_TRIGGERS;
+
+    /**
+     * The table <code>public.qrtz_calendars</code>.
+     */
+    public final QrtzCalendars QRTZ_CALENDARS = QrtzCalendars.QRTZ_CALENDARS;
+
+    /**
+     * The table <code>public.qrtz_cron_triggers</code>.
+     */
+    public final QrtzCronTriggers QRTZ_CRON_TRIGGERS = QrtzCronTriggers.QRTZ_CRON_TRIGGERS;
+
+    /**
+     * The table <code>public.qrtz_fired_triggers</code>.
+     */
+    public final QrtzFiredTriggers QRTZ_FIRED_TRIGGERS = QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS;
+
+    /**
+     * The table <code>public.qrtz_job_chains</code>.
+     */
+    public final QrtzJobChains QRTZ_JOB_CHAINS = QrtzJobChains.QRTZ_JOB_CHAINS;
+
+    /**
+     * The table <code>public.qrtz_job_details</code>.
+     */
+    public final QrtzJobDetails QRTZ_JOB_DETAILS = QrtzJobDetails.QRTZ_JOB_DETAILS;
+
+    /**
+     * The table <code>public.qrtz_locks</code>.
+     */
+    public final QrtzLocks QRTZ_LOCKS = QrtzLocks.QRTZ_LOCKS;
+
+    /**
+     * The table <code>public.qrtz_paused_trigger_grps</code>.
+     */
+    public final QrtzPausedTriggerGrps QRTZ_PAUSED_TRIGGER_GRPS = QrtzPausedTriggerGrps.QRTZ_PAUSED_TRIGGER_GRPS;
+
+    /**
+     * The table <code>public.qrtz_scheduler_state</code>.
+     */
+    public final QrtzSchedulerState QRTZ_SCHEDULER_STATE = QrtzSchedulerState.QRTZ_SCHEDULER_STATE;
+
+    /**
+     * The table <code>public.qrtz_simple_triggers</code>.
+     */
+    public final QrtzSimpleTriggers QRTZ_SIMPLE_TRIGGERS = QrtzSimpleTriggers.QRTZ_SIMPLE_TRIGGERS;
+
+    /**
+     * The table <code>public.qrtz_simprop_triggers</code>.
+     */
+    public final QrtzSimpropTriggers QRTZ_SIMPROP_TRIGGERS = QrtzSimpropTriggers.QRTZ_SIMPROP_TRIGGERS;
+
+    /**
+     * The table <code>public.qrtz_triggers</code>.
+     */
+    public final QrtzTriggers QRTZ_TRIGGERS = QrtzTriggers.QRTZ_TRIGGERS;
 
     /**
      * The table <code>public.shedlock</code>.
@@ -174,12 +252,25 @@ public class Public extends SchemaImpl {
             Extension.EXTENSION,
             ExtensionReview.EXTENSION_REVIEW,
             ExtensionVersion.EXTENSION_VERSION,
+            ExtractResourcesMigrationItem.EXTRACT_RESOURCES_MIGRATION_ITEM,
             FileResource.FILE_RESOURCE,
             FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY,
             Namespace.NAMESPACE,
             NamespaceMembership.NAMESPACE_MEMBERSHIP,
             PersistedLog.PERSISTED_LOG,
             PersonalAccessToken.PERSONAL_ACCESS_TOKEN,
+            QrtzBlobTriggers.QRTZ_BLOB_TRIGGERS,
+            QrtzCalendars.QRTZ_CALENDARS,
+            QrtzCronTriggers.QRTZ_CRON_TRIGGERS,
+            QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS,
+            QrtzJobChains.QRTZ_JOB_CHAINS,
+            QrtzJobDetails.QRTZ_JOB_DETAILS,
+            QrtzLocks.QRTZ_LOCKS,
+            QrtzPausedTriggerGrps.QRTZ_PAUSED_TRIGGER_GRPS,
+            QrtzSchedulerState.QRTZ_SCHEDULER_STATE,
+            QrtzSimpleTriggers.QRTZ_SIMPLE_TRIGGERS,
+            QrtzSimpropTriggers.QRTZ_SIMPROP_TRIGGERS,
+            QrtzTriggers.QRTZ_TRIGGERS,
             Shedlock.SHEDLOCK,
             SpringSession.SPRING_SESSION,
             SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES,

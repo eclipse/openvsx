@@ -10,31 +10,35 @@
 package org.eclipse.openvsx.mirror;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.schedule.Scheduler;
-import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.eclipse.openvsx.schedule.SchedulerService;
+import org.eclipse.openvsx.util.TimeUtil;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 
+import static org.eclipse.openvsx.schedule.JobUtil.completed;
+import static org.eclipse.openvsx.schedule.JobUtil.starting;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
-@Component
-public class MirrorSitemapJobRequestHandler implements JobRequestHandler<MirrorSitemapJobRequest> {
+public class MirrorSitemapJob implements Job {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MirrorSitemapJobRequestHandler.class);
+    protected final Logger logger = LoggerFactory.getLogger(MirrorSitemapJob.class);
 
     @Autowired
     RepositoryService repositories;
@@ -43,22 +47,15 @@ public class MirrorSitemapJobRequestHandler implements JobRequestHandler<MirrorS
     RestTemplate restTemplate;
 
     @Autowired
-    Scheduler scheduler;
+    SchedulerService schedulerService;
 
-    @Value("${ovsx.data.mirror.server-url:}")
+    @Value("${ovsx.data.mirror.server-url}")
     String serverUrl;
 
-    @Value("${ovsx.data.mirror.enabled:false}")
-    boolean enabled;
-
     @Override
-    @Job(name="Mirror Sitemap", retries=10)
-    public void run(MirrorSitemapJobRequest jobRequest) throws Exception {
-        if(!enabled) {
-            return;
-        }
-
-        LOGGER.info(">> Starting MirrorSitemapJob");
+    public void execute(JobExecutionContext context) throws JobExecutionException {
+        starting(context, logger);
+        var timestamp = TimeUtil.getCurrentUTC().toEpochSecond(ZoneOffset.UTC);
         var extensionIds = new ArrayList<String>();
         try(var reader = new StringReader(getSitemap())) {
             var factory = DocumentBuilderFactory.newInstance();
@@ -72,15 +69,23 @@ public class MirrorSitemapJobRequestHandler implements JobRequestHandler<MirrorS
                 var namespace = pathParams[pathParams.length - 2];
                 var extension = pathParams[pathParams.length - 1];
                 var lastModified = url.getElementsByTagName("lastmod").item(0).getTextContent();
-                scheduler.enqueueMirrorExtension(namespace, extension, lastModified);
+                schedulerService.mirrorExtension(namespace, extension, lastModified, i);
                 extensionIds.add(String.join(".", namespace, extension));
+            }
+        } catch (ParserConfigurationException | IOException | SAXException | SchedulerException e) {
+            throw new JobExecutionException(e);
+        }
+
+        var notMatchingExtensions = repositories.findAllNotMatchingByExtensionId(extensionIds);
+        for(var extension : notMatchingExtensions) {
+            try {
+                schedulerService.mirrorDeleteExtension(extension.getNamespace().getName(), extension.getName(), timestamp);
+            } catch (SchedulerException e) {
+                throw new JobExecutionException(e);
             }
         }
 
-        repositories.findAllNotMatchingByExtensionId(extensionIds).forEach(extension -> {
-            scheduler.enqueueDeleteExtension(extension.getNamespace().getName(), extension.getName());
-        });
-        LOGGER.info("<< Completed MirrorSitemapJob");
+        completed(context, logger);
     }
 
     private String getSitemap() {

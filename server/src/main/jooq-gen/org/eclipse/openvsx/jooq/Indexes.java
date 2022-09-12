@@ -4,6 +4,7 @@
 package org.eclipse.openvsx.jooq;
 
 
+import org.eclipse.openvsx.jooq.tables.Download;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -11,6 +12,9 @@ import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
 import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
+import org.eclipse.openvsx.jooq.tables.QrtzFiredTriggers;
+import org.eclipse.openvsx.jooq.tables.QrtzJobDetails;
+import org.eclipse.openvsx.jooq.tables.QrtzTriggers;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.jooq.Index;
 import org.jooq.OrderField;
@@ -28,13 +32,35 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
+    public static final Index DOWNLOAD_TIMESTAMP_BRIN_IDX = Internal.createIndex(DSL.name("download_timestamp_brin_idx"), Download.DOWNLOAD, new OrderField[] { Download.DOWNLOAD.TIMESTAMP }, false);
     public static final Index EXTENSION__NAMESPACE_ID__IDX = Internal.createIndex(DSL.name("extension__namespace_id__idx"), Extension.EXTENSION, new OrderField[] { Extension.EXTENSION.NAMESPACE_ID }, false);
     public static final Index EXTENSION_REVIEW__EXTENSION_ID__IDX = Internal.createIndex(DSL.name("extension_review__extension_id__idx"), ExtensionReview.EXTENSION_REVIEW, new OrderField[] { ExtensionReview.EXTENSION_REVIEW.EXTENSION_ID }, false);
     public static final Index EXTENSION_REVIEW__USER_ID__IDX = Internal.createIndex(DSL.name("extension_review__user_id__idx"), ExtensionReview.EXTENSION_REVIEW, new OrderField[] { ExtensionReview.EXTENSION_REVIEW.USER_ID }, false);
     public static final Index EXTENSION_VERSION__EXTENSION_ID__IDX = Internal.createIndex(DSL.name("extension_version__extension_id__idx"), ExtensionVersion.EXTENSION_VERSION, new OrderField[] { ExtensionVersion.EXTENSION_VERSION.EXTENSION_ID }, false);
     public static final Index EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX = Internal.createIndex(DSL.name("extension_version__published_with_id__idx"), ExtensionVersion.EXTENSION_VERSION, new OrderField[] { ExtensionVersion.EXTENSION_VERSION.PUBLISHED_WITH_ID }, false);
     public static final Index FILE_RESOURCE_EXTENSION_IDX = Internal.createIndex(DSL.name("file_resource_extension_idx"), FileResource.FILE_RESOURCE, new OrderField[] { FileResource.FILE_RESOURCE.EXTENSION_ID }, false);
+    public static final Index FILE_RESOURCE_TYPE_IDX = Internal.createIndex(DSL.name("file_resource_type_idx"), FileResource.FILE_RESOURCE, new OrderField[] { FileResource.FILE_RESOURCE.TYPE }, false);
     public static final Index FLYWAY_SCHEMA_HISTORY_S_IDX = Internal.createIndex(DSL.name("flyway_schema_history_s_idx"), FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY, new OrderField[] { FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY.SUCCESS }, false);
+    public static final Index IDX_QRTZ_FT_INST_JOB_REQ_RCVRY = Internal.createIndex(DSL.name("idx_qrtz_ft_inst_job_req_rcvry"), QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS, new OrderField[] { QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.SCHED_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.INSTANCE_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.REQUESTS_RECOVERY }, false);
+    public static final Index IDX_QRTZ_FT_J_G = Internal.createIndex(DSL.name("idx_qrtz_ft_j_g"), QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS, new OrderField[] { QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.SCHED_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.JOB_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.JOB_GROUP }, false);
+    public static final Index IDX_QRTZ_FT_JG = Internal.createIndex(DSL.name("idx_qrtz_ft_jg"), QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS, new OrderField[] { QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.SCHED_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.JOB_GROUP }, false);
+    public static final Index IDX_QRTZ_FT_T_G = Internal.createIndex(DSL.name("idx_qrtz_ft_t_g"), QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS, new OrderField[] { QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.SCHED_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.TRIGGER_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.TRIGGER_GROUP }, false);
+    public static final Index IDX_QRTZ_FT_TG = Internal.createIndex(DSL.name("idx_qrtz_ft_tg"), QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS, new OrderField[] { QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.SCHED_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.TRIGGER_GROUP }, false);
+    public static final Index IDX_QRTZ_FT_TRIG_INST_NAME = Internal.createIndex(DSL.name("idx_qrtz_ft_trig_inst_name"), QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS, new OrderField[] { QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.SCHED_NAME, QrtzFiredTriggers.QRTZ_FIRED_TRIGGERS.INSTANCE_NAME }, false);
+    public static final Index IDX_QRTZ_J_GRP = Internal.createIndex(DSL.name("idx_qrtz_j_grp"), QrtzJobDetails.QRTZ_JOB_DETAILS, new OrderField[] { QrtzJobDetails.QRTZ_JOB_DETAILS.SCHED_NAME, QrtzJobDetails.QRTZ_JOB_DETAILS.JOB_GROUP }, false);
+    public static final Index IDX_QRTZ_J_REQ_RECOVERY = Internal.createIndex(DSL.name("idx_qrtz_j_req_recovery"), QrtzJobDetails.QRTZ_JOB_DETAILS, new OrderField[] { QrtzJobDetails.QRTZ_JOB_DETAILS.SCHED_NAME, QrtzJobDetails.QRTZ_JOB_DETAILS.REQUESTS_RECOVERY }, false);
+    public static final Index IDX_QRTZ_T_C = Internal.createIndex(DSL.name("idx_qrtz_t_c"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.CALENDAR_NAME }, false);
+    public static final Index IDX_QRTZ_T_G = Internal.createIndex(DSL.name("idx_qrtz_t_g"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_GROUP }, false);
+    public static final Index IDX_QRTZ_T_J = Internal.createIndex(DSL.name("idx_qrtz_t_j"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.JOB_NAME, QrtzTriggers.QRTZ_TRIGGERS.JOB_GROUP }, false);
+    public static final Index IDX_QRTZ_T_JG = Internal.createIndex(DSL.name("idx_qrtz_t_jg"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.JOB_GROUP }, false);
+    public static final Index IDX_QRTZ_T_N_G_STATE = Internal.createIndex(DSL.name("idx_qrtz_t_n_g_state"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_GROUP, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_STATE }, false);
+    public static final Index IDX_QRTZ_T_N_STATE = Internal.createIndex(DSL.name("idx_qrtz_t_n_state"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_NAME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_GROUP, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_STATE }, false);
+    public static final Index IDX_QRTZ_T_NEXT_FIRE_TIME = Internal.createIndex(DSL.name("idx_qrtz_t_next_fire_time"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.NEXT_FIRE_TIME }, false);
+    public static final Index IDX_QRTZ_T_NFT_MISFIRE = Internal.createIndex(DSL.name("idx_qrtz_t_nft_misfire"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.MISFIRE_INSTR, QrtzTriggers.QRTZ_TRIGGERS.NEXT_FIRE_TIME }, false);
+    public static final Index IDX_QRTZ_T_NFT_ST = Internal.createIndex(DSL.name("idx_qrtz_t_nft_st"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_STATE, QrtzTriggers.QRTZ_TRIGGERS.NEXT_FIRE_TIME }, false);
+    public static final Index IDX_QRTZ_T_NFT_ST_MISFIRE = Internal.createIndex(DSL.name("idx_qrtz_t_nft_st_misfire"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.MISFIRE_INSTR, QrtzTriggers.QRTZ_TRIGGERS.NEXT_FIRE_TIME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_STATE }, false);
+    public static final Index IDX_QRTZ_T_NFT_ST_MISFIRE_GRP = Internal.createIndex(DSL.name("idx_qrtz_t_nft_st_misfire_grp"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.MISFIRE_INSTR, QrtzTriggers.QRTZ_TRIGGERS.NEXT_FIRE_TIME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_GROUP, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_STATE }, false);
+    public static final Index IDX_QRTZ_T_STATE = Internal.createIndex(DSL.name("idx_qrtz_t_state"), QrtzTriggers.QRTZ_TRIGGERS, new OrderField[] { QrtzTriggers.QRTZ_TRIGGERS.SCHED_NAME, QrtzTriggers.QRTZ_TRIGGERS.TRIGGER_STATE }, false);
     public static final Index NAMESPACE_MEMBERSHIP__NAMESPACE__IDX = Internal.createIndex(DSL.name("namespace_membership__namespace__idx"), NamespaceMembership.NAMESPACE_MEMBERSHIP, new OrderField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.NAMESPACE }, false);
     public static final Index NAMESPACE_MEMBERSHIP__USER_DATA__IDX = Internal.createIndex(DSL.name("namespace_membership__user_data__idx"), NamespaceMembership.NAMESPACE_MEMBERSHIP, new OrderField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.USER_DATA }, false);
     public static final Index PERSISTED_LOG__USER_DATA__IDX = Internal.createIndex(DSL.name("persisted_log__user_data__idx"), PersistedLog.PERSISTED_LOG, new OrderField[] { PersistedLog.PERSISTED_LOG.USER_DATA }, false);

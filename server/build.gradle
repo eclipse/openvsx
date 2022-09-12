@@ -30,7 +30,6 @@ def versions = [
     testcontainers: '1.15.2',
     jackson: '2.12.5',
     woodstox: '6.2.4',
-    jobrunr: '5.1.2',
     bucket4j: '0.4.0',
     ehcache: '3.10.0'
 ]
@@ -66,13 +65,13 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-cache"
+    implementation "org.springframework.boot:spring-boot-starter-quartz"
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.springframework.retry:spring-retry"
     implementation "org.ehcache:ehcache:${versions.ehcache}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
-    implementation "org.jobrunr:jobrunr-spring-boot-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"

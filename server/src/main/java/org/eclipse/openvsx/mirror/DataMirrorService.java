@@ -9,19 +9,28 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror;
 
+import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.IExtensionRegistry;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.util.AbstractMap;
+import java.util.Map;
 
 @Component
+@ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
 public class DataMirrorService {
 
     @Autowired
@@ -32,6 +41,12 @@ public class DataMirrorService {
 
     @Autowired
     UserService users;
+
+    @Autowired
+    ExtensionService extensions;
+
+    @Autowired
+    IExtensionRegistry mirror;
 
     @Transactional
     public void createMirrorUser(String loginName) {
@@ -80,5 +95,61 @@ public class DataMirrorService {
                 .findFirst()
                 .map(PersonalAccessToken::getValue)
                 .orElse(users.createAccessToken(user, description).value);
+    }
+
+    @Transactional
+    public Extension getDeactivatedExtension(String extensionName, String namespaceName) {
+        var extension = repositories.findExtension(extensionName, namespaceName);
+        if(extension != null) {
+            extension.getVersions().forEach(extVersion -> extVersion.setActive(false));
+            extensions.updateExtension(extension);
+        }
+
+        return extension;
+    }
+
+    @Transactional
+    public void activateExtension(String namespaceName, String extensionName) {
+        var extension = repositories.findExtension(extensionName, namespaceName);
+        extension.getVersions().forEach(extVersion -> extVersion.setActive(true));
+        extensions.updateExtension(extension);
+    }
+
+    @Transactional
+    public void updateMetadata(String namespaceName, String extensionName) {
+        var extension = repositories.findExtension(extensionName, namespaceName);
+        if(extension == null) {
+            // extension has been deleted in the meantime
+            return;
+        }
+
+        var json = mirror.getExtension(namespaceName, extensionName, null);
+        extension.setDownloadCount(json.downloadCount);
+        extension.setAverageRating(json.averageRating);
+
+        var remoteReviews = mirror.getReviews(namespaceName, extensionName);
+        var localReviews = repositories.findAllReviews(extension)
+                .map(review -> new AbstractMap.SimpleEntry<>(review.toReviewJson(), review));
+
+        remoteReviews.reviews.stream()
+                .filter(review -> localReviews.stream().noneMatch(entry -> entry.getKey().equals(review)))
+                .forEach(review -> addReview(review, extension));
+
+        localReviews.stream()
+                .filter(entry -> remoteReviews.reviews.stream().noneMatch(review -> review.equals(entry.getKey())))
+                .map(Map.Entry::getValue)
+                .forEach(entityManager::remove);
+    }
+
+    private void addReview(ReviewJson json, Extension extension) {
+        var review = new ExtensionReview();
+        review.setExtension(extension);
+        review.setActive(true);
+        review.setTimestamp(TimeUtil.fromUTCString(json.timestamp));
+        review.setUser(getOrAddUser(json.user));
+        review.setTitle(json.title);
+        review.setComment(json.comment);
+        review.setRating(json.rating);
+        entityManager.persist(review);
     }
 }

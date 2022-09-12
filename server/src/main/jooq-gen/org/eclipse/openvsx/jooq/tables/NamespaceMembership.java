@@ -126,12 +126,21 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
         return Arrays.<ForeignKey<NamespaceMembershipRecord, ?>>asList(Keys.NAMESPACE_MEMBERSHIP__FKGFHWHKNULA6DO2N6WYVQETM3N, Keys.NAMESPACE_MEMBERSHIP__FKNSAMEKUTXYWVSB3S1MJDCJKYP);
     }
 
+    private transient Namespace _namespace;
+    private transient UserData _userData;
+
     public Namespace namespace() {
-        return new Namespace(this, Keys.NAMESPACE_MEMBERSHIP__FKGFHWHKNULA6DO2N6WYVQETM3N);
+        if (_namespace == null)
+            _namespace = new Namespace(this, Keys.NAMESPACE_MEMBERSHIP__FKGFHWHKNULA6DO2N6WYVQETM3N);
+
+        return _namespace;
     }
 
     public UserData userData() {
-        return new UserData(this, Keys.NAMESPACE_MEMBERSHIP__FKNSAMEKUTXYWVSB3S1MJDCJKYP);
+        if (_userData == null)
+            _userData = new UserData(this, Keys.NAMESPACE_MEMBERSHIP__FKNSAMEKUTXYWVSB3S1MJDCJKYP);
+
+        return _userData;
     }
 
     @Override

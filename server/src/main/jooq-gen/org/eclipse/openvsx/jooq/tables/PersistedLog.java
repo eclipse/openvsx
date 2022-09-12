@@ -127,8 +127,13 @@ public class PersistedLog extends TableImpl<PersistedLogRecord> {
         return Arrays.<ForeignKey<PersistedLogRecord, ?>>asList(Keys.PERSISTED_LOG__PERSISTED_LOG_USER_DATA_FKEY);
     }
 
+    private transient UserData _userData;
+
     public UserData userData() {
-        return new UserData(this, Keys.PERSISTED_LOG__PERSISTED_LOG_USER_DATA_FKEY);
+        if (_userData == null)
+            _userData = new UserData(this, Keys.PERSISTED_LOG__PERSISTED_LOG_USER_DATA_FKEY);
+
+        return _userData;
     }
 
     @Override

@@ -43,6 +43,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.schedule.SchedulerService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
@@ -53,7 +54,6 @@ import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
-import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,7 +75,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class,
-    LockProvider.class, CacheService.class, JobRequestScheduler.class
+    LockProvider.class, CacheService.class, SchedulerService.class
 })
 public class AdminAPITest {
     

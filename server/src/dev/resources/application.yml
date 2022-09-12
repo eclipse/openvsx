@@ -11,10 +11,6 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: gitpod
     password: gitpod
-  flyway:
-    baseline-on-migrate: true
-    baseline-version: 0.1.0
-    baseline-description: JobRunr tables
   jpa:
     open-in-view: false
     properties:
@@ -22,6 +18,32 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceId: AUTO
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 2
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+            isClustered: true
+            clusterCheckinInterval: 20000
+            dataSource: postgres
+          dataSource:
+            postgres:
+              driver: org.postgresql.Driver
+              URL: ${spring.datasource.url}
+              user: ${spring.datasource.username}
+              password: ${spring.datasource.password}
+              provider: hikaricp
+
   session:
     store-type: jdbc
     jdbc:
@@ -54,18 +76,6 @@ springdoc:
     operationsSorter: alpha
     supportedSubmitMethods:
       - get
-
-org:
-  jobrunr:
-    job-scheduler:
-      enabled: true
-    background-job-server:
-      enabled: true
-      worker-count: 2
-    dashboard:
-      enabled: false
-    miscellaneous:
-      allow-anonymous-data-usage: false
 
 bucket4j:
   enabled: true
@@ -105,6 +115,10 @@ bucket4j:
               unit: seconds
 
 ovsx:
+  webui:
+    url: https://open-vsx.org
+  upstream:
+    url: https://open-vsx.org
   data:
     mirror:
       enabled: true
@@ -112,8 +126,8 @@ ovsx:
       requests-per-second: 0.2
       user-name: mirror_user
       schedule:
-        extensions: '35 10 * * *'
-        metadata: '21 10 * * *'
+        extensions: '0 21 10 * * ?'
+        metadata: '0 21 10 * * ?'
       read-only:
         disallowed-methods: POST, PUT, PATCH, DELETE
         allowed-endpoints: /vscode/gallery/extensionquery, /admin/update-search-index, /api/-/query
