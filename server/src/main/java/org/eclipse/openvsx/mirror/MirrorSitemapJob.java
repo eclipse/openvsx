@@ -31,6 +31,7 @@ import java.io.StringReader;
 import java.net.URI;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.eclipse.openvsx.schedule.JobUtil.completed;
 import static org.eclipse.openvsx.schedule.JobUtil.starting;
@@ -48,6 +49,9 @@ public class MirrorSitemapJob implements Job {
 
     @Autowired
     SchedulerService schedulerService;
+
+    @Autowired
+    List<String> excludedExtensions;
 
     @Value("${ovsx.data.mirror.server-url}")
     String serverUrl;
@@ -68,9 +72,15 @@ public class MirrorSitemapJob implements Job {
                 var pathParams = location.getPath().split("/");
                 var namespace = pathParams[pathParams.length - 2];
                 var extension = pathParams[pathParams.length - 1];
+                var extensionId = String.join(".", namespace, extension);
+                if(excludedExtensions.contains(namespace + ".*") || excludedExtensions.contains(extensionId)) {
+                    logger.info("Excluded {} extension, skipping", extensionId);
+                    continue;
+                }
+
                 var lastModified = url.getElementsByTagName("lastmod").item(0).getTextContent();
-                schedulerService.mirrorExtension(namespace, extension, lastModified, i);
-                extensionIds.add(String.join(".", namespace, extension));
+                schedulerService.mirrorExtension(namespace, extension, lastModified);
+                extensionIds.add(extensionId);
             }
         } catch (ParserConfigurationException | IOException | SAXException | SchedulerException e) {
             throw new JobExecutionException(e);

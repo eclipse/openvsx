@@ -13,8 +13,7 @@ import org.jooq.DSLContext;
 import org.quartz.JobKey;
 
 import static org.eclipse.openvsx.jooq.Tables.QRTZ_JOB_CHAINS;
-import static org.quartz.impl.jdbcjobstore.Constants.STATE_COMPLETE;
-import static org.quartz.impl.jdbcjobstore.Constants.STATE_WAITING;
+import static org.quartz.impl.jdbcjobstore.Constants.*;
 
 public class JobChainingRepository {
 
@@ -70,5 +69,19 @@ public class JobChainingRepository {
                 .and(QRTZ_JOB_CHAINS.JOB2_NAME.eq(nextJob.getName()))
                 .and(QRTZ_JOB_CHAINS.JOB2_GROUP.eq(nextJob.getGroup()))
                 .execute();
+    }
+
+    public boolean exists(String schedulerName, String name, JobKey firstJob, JobKey nextJob) {
+        var record = dsl.selectOne()
+                .from(QRTZ_JOB_CHAINS)
+                .where(QRTZ_JOB_CHAINS.SCHED_NAME.eq(schedulerName))
+                .and(QRTZ_JOB_CHAINS.CHAIN_NAME.eq(name))
+                .and(QRTZ_JOB_CHAINS.JOB1_NAME.eq(firstJob.getName()))
+                .and(QRTZ_JOB_CHAINS.JOB1_GROUP.eq(firstJob.getGroup()))
+                .and(QRTZ_JOB_CHAINS.JOB2_NAME.eq(nextJob.getName()))
+                .and(QRTZ_JOB_CHAINS.JOB2_GROUP.eq(nextJob.getGroup()))
+                .fetchOne();
+
+        return record != null;
     }
 }

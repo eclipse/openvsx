@@ -40,12 +40,11 @@ public class MirrorMetadataJob implements Job {
         starting(context, logger);
         var now = TimeUtil.toUTCString(LocalDateTime.now());
         var extensions = repositories.findAllActiveExtensions().toList();
-        for(var i = 0; i < extensions.size(); i++) {
-            var extension = extensions.get(i);
+        for(var extension : extensions) {
             var namespaceName = extension.getNamespace().getName();
             var extensionName = extension.getName();
             try {
-                schedulerService.mirrorExtensionMetadata(namespaceName, extensionName, now, i);
+                schedulerService.mirrorExtensionMetadata(namespaceName, extensionName, now);
             } catch (SchedulerException e) {
                 throw new JobExecutionException(e);
             }

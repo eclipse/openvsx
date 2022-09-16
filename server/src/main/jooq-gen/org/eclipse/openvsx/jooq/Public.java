@@ -31,6 +31,7 @@ import org.eclipse.openvsx.jooq.tables.QrtzJobChains;
 import org.eclipse.openvsx.jooq.tables.QrtzJobDetails;
 import org.eclipse.openvsx.jooq.tables.QrtzLocks;
 import org.eclipse.openvsx.jooq.tables.QrtzPausedTriggerGrps;
+import org.eclipse.openvsx.jooq.tables.QrtzQueue;
 import org.eclipse.openvsx.jooq.tables.QrtzSchedulerState;
 import org.eclipse.openvsx.jooq.tables.QrtzSimpleTriggers;
 import org.eclipse.openvsx.jooq.tables.QrtzSimpropTriggers;
@@ -179,6 +180,11 @@ public class Public extends SchemaImpl {
     public final QrtzPausedTriggerGrps QRTZ_PAUSED_TRIGGER_GRPS = QrtzPausedTriggerGrps.QRTZ_PAUSED_TRIGGER_GRPS;
 
     /**
+     * The table <code>public.qrtz_queue</code>.
+     */
+    public final QrtzQueue QRTZ_QUEUE = QrtzQueue.QRTZ_QUEUE;
+
+    /**
      * The table <code>public.qrtz_scheduler_state</code>.
      */
     public final QrtzSchedulerState QRTZ_SCHEDULER_STATE = QrtzSchedulerState.QRTZ_SCHEDULER_STATE;
@@ -267,6 +273,7 @@ public class Public extends SchemaImpl {
             QrtzJobDetails.QRTZ_JOB_DETAILS,
             QrtzLocks.QRTZ_LOCKS,
             QrtzPausedTriggerGrps.QRTZ_PAUSED_TRIGGER_GRPS,
+            QrtzQueue.QRTZ_QUEUE,
             QrtzSchedulerState.QRTZ_SCHEDULER_STATE,
             QrtzSimpleTriggers.QRTZ_SIMPLE_TRIGGERS,
             QrtzSimpropTriggers.QRTZ_SIMPROP_TRIGGERS,

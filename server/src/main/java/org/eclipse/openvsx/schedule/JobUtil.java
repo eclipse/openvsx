@@ -24,10 +24,6 @@ public class JobUtil {
         public static final String MAX_RETRIES = "maxRetries";
     }
 
-    public static class Chaining {
-        public static final String NEXT_JOB = "nextJob";
-    }
-
     private JobUtil(){}
 
     public static void starting(JobExecutionContext context, Logger logger) {

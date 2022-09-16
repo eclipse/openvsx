@@ -17,6 +17,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.jooq.DSLContext;
 import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
+import org.quartz.listeners.BroadcastJobListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +25,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Map;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
@@ -50,28 +49,29 @@ public class SchedulerService {
     @Value("${ovsx.data.mirror.enabled:false}")
     boolean mirrorModeEnabled;
 
+    private JobQueueJobListener jobQueueJobListener;
+    private JobChainingJobListener jobChainingJobListener;
+
     @PostConstruct
     public void init() throws SchedulerException {
         scheduler.setJobFactory(jobFactory);
-        scheduler.getListenerManager().addJobListener(new RetryFailedJobListener(this, "RetryFailedJobs"));
+        var listeners = new ArrayList<JobListener>();
+        listeners.add(new RetryFailedJobListener(this, "RetryFailedJobs"));
         if(mirrorModeEnabled) {
-            var repository = new JobChainingRepository(dsl);
-            scheduler.getListenerManager().addJobListener(new JobChainingJobListener("MirrorJobChain", repository), GroupMatcher.groupEquals("Mirror"));
+            jobChainingJobListener = new JobChainingJobListener("MirrorJobChain", new JobChainingRepository(dsl));
+            listeners.add(jobChainingJobListener);
         }
+
+        jobQueueJobListener = new JobQueueJobListener("JobQueue", new JobQueueRepository(dsl));
+        listeners.add(jobQueueJobListener);
+        scheduler.getListenerManager().addJobListener(new BroadcastJobListener("Broadcaster", listeners));
     }
 
     public void tryChainMirrorJobs(JobKey firstJob, JobKey secondJob) throws SchedulerException {
         if (firstJob == null) {
-            var trigger = newTrigger()
-                    .withIdentity(new TriggerKey(secondJob.getName() + "Trigger", secondJob.getGroup()))
-                    .startAt(Date.from(LocalDateTime.now().plusSeconds(5L).atZone(ZoneId.systemDefault()).toInstant()))
-                    .forJob(secondJob)
-                    .build();
-
-            scheduler.scheduleJob(trigger);
+            enqueueJob(secondJob);
         } else {
-            var jobChain = (JobChainingJobListener) scheduler.getListenerManager().getJobListener("MirrorJobChain");
-            jobChain.addJobChainLink(scheduler.getSchedulerName(), firstJob, secondJob);
+            jobChainingJobListener.addJobChainLink(scheduler.getSchedulerName(), firstJob, secondJob);
         }
     }
 
@@ -90,13 +90,24 @@ public class SchedulerService {
 
     private void scheduleCronJob(String jobName, String schedule, Class<? extends Job> jobClass) throws SchedulerException {
         var jobId = jobName + "Job";
-        var triggerId = jobId + "Trigger";
+        var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
+        var job = scheduler.getJobDetail(jobKey);
+        if(job == null) {
+            job = newJob(jobClass)
+                    .withIdentity(jobKey)
+                    .withDescription("Mirror Metadata")
+                    .storeDurably()
+                    .build();
 
+            scheduler.addJob(job, false);
+        }
+
+        var triggerId = jobId + "Trigger";
         var triggerKey = new TriggerKey(triggerId, JobUtil.Groups.MIRROR);
         var trigger = scheduler.getTrigger(triggerKey);
-
         var cronTrigger = newTrigger()
                 .withIdentity(triggerKey)
+                .forJob(jobKey)
                 .startNow()
                 .withSchedule(cronSchedule(schedule))
                 .build();
@@ -105,17 +116,12 @@ public class SchedulerService {
             scheduler.rescheduleJob(triggerKey, cronTrigger);
             LOGGER.info("++ Rescheduled {} [{}]", jobId, schedule);
         } else {
-            var job = newJob(jobClass)
-                    .withIdentity(jobId, JobUtil.Groups.MIRROR)
-                    .withDescription("Mirror Metadata")
-                    .storeDurably()
-                    .build();
-
-            scheduler.scheduleJob(job, cronTrigger);
+            scheduler.scheduleJob(cronTrigger);
+            LOGGER.info("++ Scheduled {} [{}]", jobId, schedule);
         }
     }
 
-    public void mirrorExtension(String namespace, String extension, String lastModified, int delay) throws SchedulerException {
+    public void mirrorExtension(String namespace, String extension, String lastModified) throws SchedulerException {
         var jobId = "MirrorExtension::" + namespace + "." + extension + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         if(scheduler.getJobDetail(jobKey) != null) {
@@ -132,13 +138,7 @@ public class SchedulerService {
                 .storeDurably()
                 .build();
 
-        var trigger = newTrigger()
-                .withIdentity(jobId + "Trigger", jobKey.getGroup())
-                .startAt(Date.from(LocalDateTime.now().plusSeconds(delay * 5L).atZone(ZoneId.systemDefault()).toInstant()))
-                .build();
-
-        scheduler.scheduleJob(job, trigger);
-        LOGGER.info("++ Added {}", jobId);
+        enqueueJob(job, false);
     }
 
     public void mirrorDeleteExtension(String namespace, String extension, long timestamp) throws SchedulerException {
@@ -152,13 +152,7 @@ public class SchedulerService {
                 .storeDurably()
                 .build();
 
-        var trigger = newTrigger()
-                .withIdentity(jobId + "Trigger", jobKey.getGroup())
-                .startAt(Date.from(LocalDateTime.now().plusSeconds(5L).atZone(ZoneId.systemDefault()).toInstant()))
-                .build();
-
-        scheduler.scheduleJob(job, trigger);
-        LOGGER.info("++ Scheduled DeleteExtension::{}.{}", namespace, extension);
+        enqueueJob(job, false);
     }
 
     public JobKey generatePublishExtensionVersionJobKey(String namespace, String extension, String version) {
@@ -180,12 +174,7 @@ public class SchedulerService {
                 .storeDurably()
                 .build();
 
-        var trigger = newTrigger()
-                .withIdentity(new TriggerKey(jobKey.getName() + "Trigger", jobKey.getGroup()))
-                .startAt(Date.from(LocalDateTime.now().plusSeconds(5L).atZone(ZoneId.systemDefault()).toInstant()))
-                .build();
-
-        scheduler.scheduleJob(job, trigger);
+        enqueueJob(job);
     }
 
     public JobKey mirrorExtensionVersion(ExtensionJson json) throws SchedulerException {
@@ -220,6 +209,11 @@ public class SchedulerService {
 
     public JobKey mirrorActivateExtension(String namespace, String extension, String lastModified) throws SchedulerException {
         var jobKey = mirrorActivateExtensionJobKey(namespace, extension, lastModified);
+        if(scheduler.getJobDetail(jobKey) != null) {
+            LOGGER.info("{} already present, skipping", jobKey);
+            return jobKey;
+        }
+
         var job = setRetryData(newJob(MirrorActivateExtensionJob.class), 10)
                 .withIdentity(jobKey)
                 .withDescription("Activate Extension")
@@ -235,6 +229,11 @@ public class SchedulerService {
     public JobKey mirrorExtensionMetadata(String namespace, String extension, String lastModified) throws SchedulerException {
         var jobId = "MirrorExtensionMetadata::" + namespace + "." + extension + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
+        if(scheduler.getJobDetail(jobKey) != null) {
+            LOGGER.info("{} already present, skipping", jobKey);
+            return jobKey;
+        }
+
         var job = setRetryData(newJob(MirrorExtensionMetadataJob.class), 10)
                 .withIdentity(jobKey)
                 .withDescription("Mirror Extension Metadata")
@@ -247,20 +246,14 @@ public class SchedulerService {
         return jobKey;
     }
 
-    public void mirrorExtensionMetadata(String namespace, String extension, String timestamp, int delay) throws SchedulerException {
-        var jobKey = mirrorExtensionMetadata(namespace, extension, timestamp);
-        var trigger = newTrigger()
-                .withIdentity(new TriggerKey(jobKey.getName() + "Trigger", jobKey.getGroup()))
-                .startAt(Date.from(LocalDateTime.now().plusSeconds(delay * 5L).atZone(ZoneId.systemDefault()).toInstant()))
-                .forJob(jobKey)
-                .build();
-
-        scheduler.scheduleJob(trigger);
-    }
-
     public JobKey mirrorNamespaceVerified(String namespace, String lastModified) throws SchedulerException {
         var jobId = "MirrorNamespaceVerified::" + namespace + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
+        if(scheduler.getJobDetail(jobKey) != null) {
+            LOGGER.info("{} already present, skipping", jobKey);
+            return jobKey;
+        }
+
         var job = setRetryData(newJob(MirrorNamespaceVerifiedJob.class), 10)
                 .withIdentity(jobKey)
                 .withDescription("Mirror Namespace Verified")
@@ -272,7 +265,7 @@ public class SchedulerService {
         return jobKey;
     }
 
-    public void extractResourcesMigration(long id, int delay) throws SchedulerException {
+    public void extractResourcesMigration(long id) throws SchedulerException {
         var jobId = "ExtractResourcesMigration::itemId=" + id;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         var job = setRetryData(newJob(ExtractResourcesJob.class), 3)
@@ -282,25 +275,12 @@ public class SchedulerService {
                 .storeDurably()
                 .build();
 
-        var trigger = newTrigger()
-                .withIdentity(new TriggerKey(jobKey.getName() + "Trigger", jobKey.getGroup()))
-                .startAt(Date.from(LocalDateTime.now().plusSeconds(delay * 5L).atZone(ZoneId.systemDefault()).toInstant()))
-                .build();
-
-        scheduler.scheduleJob(job, trigger);
+        enqueueJob(job);
     }
 
     public void retry(JobDetail job, int retries, int maxRetries) throws SchedulerException {
         job = setRetryData(job.getJobBuilder(), retries, maxRetries).build();
-        var trigger = newTrigger()
-                .withIdentity(job.getKey().getName() + "RetryTrigger" + retries, job.getKey().getGroup())
-                .startAt(Date.from(LocalDateTime.now().plusSeconds(retries * retries * 5L).atZone(ZoneId.systemDefault()).toInstant()))
-                .forJob(job)
-                .build();
-
-        scheduler.addJob(job, true);
-        scheduler.scheduleJob(trigger);
-        LOGGER.info("++ Scheduled {}.{} for retry", job.getKey().getGroup(), job.getKey().getName());
+        requeueJob(job);
     }
 
     private JobBuilder setRetryData(JobBuilder jobBuilder, int maxRetries) {
@@ -311,5 +291,47 @@ public class SchedulerService {
         return jobBuilder
                 .usingJobData(JobUtil.Retry.RETRIES, retries)
                 .usingJobData(JobUtil.Retry.MAX_RETRIES, maxRetries);
+    }
+
+    private void requeueJob(JobDetail job) throws SchedulerException {
+        enqueueJob(job, true);
+    }
+
+    private void enqueueJob(JobDetail job) throws SchedulerException {
+        enqueueJob(job, false);
+    }
+
+    private void enqueueJob(JobDetail job, boolean replace) throws SchedulerException {
+        scheduler.addJob(job, replace);
+        enqueueJob(job.getKey(), getPriority(job), replace);
+    }
+
+    private void enqueueJob(JobKey jobKey) throws SchedulerException {
+        enqueueJob(jobKey, getPriority(jobKey), false);
+    }
+
+    private void enqueueJob(JobKey jobKey, int priority, boolean replace) throws SchedulerException {
+        jobQueueJobListener.queueJob(scheduler, jobKey, priority, replace);
+        LOGGER.info("Added {}", jobKey);
+    }
+
+    private int getPriority(JobKey jobKey) throws SchedulerException {
+        return getPriority(scheduler.getJobDetail(jobKey));
+    }
+
+    private int getPriority(JobDetail job) {
+        var jobPriorities = Map.of(
+                MirrorActivateExtensionJob.class, 0,
+                MirrorExtensionMetadataJob.class, 1,
+                MirrorNamespaceVerifiedJob.class, 2,
+                PublishExtensionVersionJob.class, 3,
+                MirrorExtensionVersionJob.class, 4,
+                ExtractResourcesJob.class, 5,
+                DeleteExtensionJob.class, 5,
+                MirrorSitemapJob.class, 5,
+                MirrorMetadataJob.class, 5,
+                MirrorExtensionJob.class, 5
+        );
+        return jobPriorities.get(job.getJobClass());
     }
 }

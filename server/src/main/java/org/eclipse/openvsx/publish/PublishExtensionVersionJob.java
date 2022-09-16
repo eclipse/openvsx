@@ -38,7 +38,7 @@ public class PublishExtensionVersionJob implements Job {
         try {
             service.publish(namespaceName, extensionName, targetPlatform, version);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JobExecutionException(e);
         }
 
         completed(context, logger);

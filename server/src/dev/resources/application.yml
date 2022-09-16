@@ -3,7 +3,7 @@ server:
 
 spring:
   profiles:
-    include: ovsx
+    include: ovsx,mirror
   cache:
     jcache:
       config: classpath:ehcache.xml
@@ -119,18 +119,6 @@ ovsx:
     url: https://open-vsx.org
   upstream:
     url: https://open-vsx.org
-  data:
-    mirror:
-      enabled: true
-      server-url: https://open-vsx.org
-      requests-per-second: 0.2
-      user-name: mirror_user
-      schedule:
-        extensions: '0 21 10 * * ?'
-        metadata: '0 21 10 * * ?'
-      read-only:
-        disallowed-methods: POST, PUT, PATCH, DELETE
-        allowed-endpoints: /vscode/gallery/extensionquery, /admin/update-search-index, /api/-/query
   databasesearch:
     enabled: false
   elasticsearch:

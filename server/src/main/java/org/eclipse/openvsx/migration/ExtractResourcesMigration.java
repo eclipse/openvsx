@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import org.eclipse.openvsx.mirror.MirrorSitemapJob;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.schedule.SchedulerService;
 import org.quartz.SchedulerException;
@@ -36,11 +35,9 @@ public class ExtractResourcesMigration {
     @EventListener
     @Transactional
     public void enqueueJobs(ApplicationStartedEvent event) {
-        var resources = repositories.findNotMigratedResources().toList();
-        for(var i = 0; i < resources.size(); i++) {
+        for(var resource : repositories.findNotMigratedResources().toList()) {
             try {
-                var resource = resources.get(i);
-                schedulerService.extractResourcesMigration(resource.getId(), i);
+                schedulerService.extractResourcesMigration(resource.getId());
                 resource.setMigrationScheduled(true);
             } catch (SchedulerException e) {
                 logger.error("Failed to schedule ExtractResourcesMigration", e);

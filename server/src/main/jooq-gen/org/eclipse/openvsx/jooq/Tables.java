@@ -28,6 +28,7 @@ import org.eclipse.openvsx.jooq.tables.QrtzJobChains;
 import org.eclipse.openvsx.jooq.tables.QrtzJobDetails;
 import org.eclipse.openvsx.jooq.tables.QrtzLocks;
 import org.eclipse.openvsx.jooq.tables.QrtzPausedTriggerGrps;
+import org.eclipse.openvsx.jooq.tables.QrtzQueue;
 import org.eclipse.openvsx.jooq.tables.QrtzSchedulerState;
 import org.eclipse.openvsx.jooq.tables.QrtzSimpleTriggers;
 import org.eclipse.openvsx.jooq.tables.QrtzSimpropTriggers;
@@ -163,6 +164,11 @@ public class Tables {
      * The table <code>public.qrtz_paused_trigger_grps</code>.
      */
     public static final QrtzPausedTriggerGrps QRTZ_PAUSED_TRIGGER_GRPS = QrtzPausedTriggerGrps.QRTZ_PAUSED_TRIGGER_GRPS;
+
+    /**
+     * The table <code>public.qrtz_queue</code>.
+     */
+    public static final QrtzQueue QRTZ_QUEUE = QrtzQueue.QRTZ_QUEUE;
 
     /**
      * The table <code>public.qrtz_scheduler_state</code>.
