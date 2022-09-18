@@ -37,6 +37,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.Criterion.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.Extension.FLAG_PREVIEW;
@@ -279,6 +281,7 @@ public class LocalVSCodeService implements IVSCodeService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<byte[]> getAsset(
             String namespace, String extensionName, String version, String assetType, String targetPlatform,
             String restOfTheUrl
