@@ -68,14 +68,18 @@ public class VSCodeAPI {
         while(resultItem.extensions.size() < size && services.hasNext()) {
             try {
                 var service = services.next();
+                var extensionCount = resultItem.extensions.size();
                 var subResult = service.extensionQuery(param, DEFAULT_PAGE_SIZE);
                 var subExtensions = subResult.results.get(0).extensions;
-                if (subExtensions != null && subExtensions.size() > 0) {
-                    int limit = size - resultItem.extensions.size();
+                var subExtensionsCount = subExtensions != null ? subExtensions.size() : 0;
+                if (subExtensionsCount > 0) {
+                    int limit = size - extensionCount;
                     mergeExtensionQueryResults(resultItem, subExtensions, limit);
                 }
 
-                totalCount += getTotalCount(subResult);
+                var mergedExtensionsCount = resultItem.extensions.size();
+                var subTotalCount = getTotalCount(subResult);
+                totalCount += subTotalCount - ((extensionCount + subExtensionsCount) - mergedExtensionsCount);
             } catch (NotFoundException | ResponseStatusException exc) {
                 // Try the next registry
             }
