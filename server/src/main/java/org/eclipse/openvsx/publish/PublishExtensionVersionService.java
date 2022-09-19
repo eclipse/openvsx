@@ -48,7 +48,6 @@ public class PublishExtensionVersionService {
     @Transactional
     public void publish(String namespaceName, String extensionName, String targetPlatform, String version) throws IOException {
         var extVersion = repositories.findVersion(version, targetPlatform, extensionName, namespaceName);
-
         var resources = repositories.findFiles(extVersion);
         var download = resources.stream().filter(r -> r.getType().equals(DOWNLOAD)).findFirst().get();
         try(

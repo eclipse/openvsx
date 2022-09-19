@@ -59,7 +59,7 @@ public class JobChainingJobListener extends JobListenerSupport {
         getLog().info("Job '" + context.getJobDetail().getKey() + "' will now chain to Job '" + nextJob + "'");
         try {
             var instant = LocalDateTime.now()
-                    .plus(500, ChronoUnit.MILLIS) // add slight delay so that current job closes db transactions
+                    .plusSeconds(5) // add delay so that current job closes db transactions
                     .atZone(ZoneId.systemDefault())
                     .toInstant();
             var trigger = newTrigger()

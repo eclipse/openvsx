@@ -90,7 +90,7 @@ public class JobQueueJobListener extends JobListenerSupport {
         for(var nextJob : nextJobs) {
             getLog().debug("QUEUE | nextJob: {}", nextJob);
             var instant = LocalDateTime.now()
-                    .plus(500, ChronoUnit.MILLIS) // add slight delay so that current job closes db transactions
+                    .plusSeconds(5) // add delay so that current job closes db transactions
                     .atZone(ZoneId.systemDefault())
                     .toInstant();
             var trigger = newTrigger()

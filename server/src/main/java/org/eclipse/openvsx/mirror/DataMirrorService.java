@@ -12,17 +12,22 @@ package org.eclipse.openvsx.mirror;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.IExtensionRegistry;
 import org.eclipse.openvsx.UserService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionReview;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -32,6 +37,8 @@ import java.util.Map;
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
 public class DataMirrorService {
+
+    protected final Logger logger = LoggerFactory.getLogger(DataMirrorService.class);
 
     @Autowired
     RepositoryService repositories;
@@ -44,6 +51,12 @@ public class DataMirrorService {
 
     @Autowired
     ExtensionService extensions;
+
+    @Autowired
+    StorageUtilService storageUtil;
+
+    @Autowired
+    RestTemplate restTemplate;
 
     @Autowired
     IExtensionRegistry mirror;
@@ -111,8 +124,29 @@ public class DataMirrorService {
     @Transactional
     public void activateExtension(String namespaceName, String extensionName) {
         var extension = repositories.findExtension(extensionName, namespaceName);
-        extension.getVersions().forEach(extVersion -> extVersion.setActive(true));
+        extension.getVersions().stream().filter(this::canGetIcon).forEach(extVersion -> extVersion.setActive(true));
         extensions.updateExtension(extension);
+    }
+
+    private boolean canGetIcon(ExtensionVersion extVersion) {
+        var resource = repositories.findFileByType(extVersion, FileResource.ICON);
+        if (resource == null){
+            return false;
+        }
+
+        var url = storageUtil.getLocation(resource);
+        var request = new RequestEntity<Void>(HttpMethod.HEAD, url);
+        try {
+            restTemplate.exchange(request, byte[].class);
+        } catch(HttpClientErrorException | HttpServerErrorException exc) {
+            logger.error(exc.getStatusCode().value() + " " + exc.getStatusCode().name() + " - " + url);
+            return false;
+        } catch(RestClientException exc) {
+            logger.error("HEAD " + url, exc);
+            return false;
+        }
+
+        return true;
     }
 
     @Transactional

@@ -13,7 +13,6 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.migration.ExtractResourcesJob;
 import org.eclipse.openvsx.mirror.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionJob;
-import org.eclipse.openvsx.util.TargetPlatform;
 import org.jooq.DSLContext;
 import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
@@ -35,7 +34,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 @Component
 public class SchedulerService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerService.class);
+    protected final Logger logger = LoggerFactory.getLogger(SchedulerService.class);
 
     @Autowired
     Scheduler scheduler;
@@ -114,10 +113,10 @@ public class SchedulerService {
 
         if(trigger != null) {
             scheduler.rescheduleJob(triggerKey, cronTrigger);
-            LOGGER.info("++ Rescheduled {} [{}]", jobId, schedule);
+            logger.info("++ Rescheduled {} [{}]", jobId, schedule);
         } else {
             scheduler.scheduleJob(cronTrigger);
-            LOGGER.info("++ Scheduled {} [{}]", jobId, schedule);
+            logger.info("++ Scheduled {} [{}]", jobId, schedule);
         }
     }
 
@@ -125,7 +124,7 @@ public class SchedulerService {
         var jobId = "MirrorExtension::" + namespace + "." + extension + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         if(scheduler.getJobDetail(jobKey) != null) {
-            LOGGER.info("{} already present, skipping", jobKey);
+            logger.info("{} already present, skipping", jobKey);
             return;
         }
 
@@ -191,10 +190,6 @@ public class SchedulerService {
                 .usingJobData("userAvatarUrl", json.publishedBy.avatarUrl)
                 .usingJobData("userHomepage", json.publishedBy.homepage)
                 .usingJobData("namespace", json.namespace)
-                .usingJobData("extension", json.name)
-                .usingJobData("version", json.version)
-                .usingJobData("targetPlatform", TargetPlatform.NAME_UNIVERSAL) // TODO change when mirror supports target platform
-                .usingJobData("timestamp", json.timestamp)
                 .storeDurably()
                 .build();
 
@@ -210,7 +205,7 @@ public class SchedulerService {
     public JobKey mirrorActivateExtension(String namespace, String extension, String lastModified) throws SchedulerException {
         var jobKey = mirrorActivateExtensionJobKey(namespace, extension, lastModified);
         if(scheduler.getJobDetail(jobKey) != null) {
-            LOGGER.info("{} already present, skipping", jobKey);
+            logger.info("{} already present, skipping", jobKey);
             return jobKey;
         }
 
@@ -230,7 +225,7 @@ public class SchedulerService {
         var jobId = "MirrorExtensionMetadata::" + namespace + "." + extension + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         if(scheduler.getJobDetail(jobKey) != null) {
-            LOGGER.info("{} already present, skipping", jobKey);
+            logger.info("{} already present, skipping", jobKey);
             return jobKey;
         }
 
@@ -250,7 +245,7 @@ public class SchedulerService {
         var jobId = "MirrorNamespaceVerified::" + namespace + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         if(scheduler.getJobDetail(jobKey) != null) {
-            LOGGER.info("{} already present, skipping", jobKey);
+            logger.info("{} already present, skipping", jobKey);
             return jobKey;
         }
 
@@ -312,7 +307,7 @@ public class SchedulerService {
 
     private void enqueueJob(JobKey jobKey, int priority, boolean replace) throws SchedulerException {
         jobQueueJobListener.queueJob(scheduler, jobKey, priority, replace);
-        LOGGER.info("Added {}", jobKey);
+        logger.info("Added {}", jobKey);
     }
 
     private int getPriority(JobKey jobKey) throws SchedulerException {

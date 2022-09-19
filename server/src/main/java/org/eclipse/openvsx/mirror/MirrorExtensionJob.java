@@ -87,7 +87,7 @@ public class MirrorExtensionJob implements Job {
                 VersionAlias.ALIAS_NAMES.forEach(versions::remove);
 
                 targetVersions.stream()
-                        .filter(extVersion ->  !versions.contains(extVersion.getVersion()))
+                        .filter(extVersion -> !versions.contains(extVersion.getVersion()))
                         .forEach(extVersion -> deleteExtensionVersion(extVersion, mirrorUser));
 
                 var toAdd = versions.stream()
