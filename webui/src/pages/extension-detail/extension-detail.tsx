@@ -283,6 +283,8 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                         {this.renderBanner(extension, headerTheme)}
                         <Box className={classes.iconAndInfo}>
                             <img src={icon || this.context.pageSettings.urls.extensionDefaultIcon }
+                                width={72}
+                                height={72}
                                 className={`${classes.extensionLogo} ${classes.badgePadding}`}
                                 alt={extension.displayName || extension.name} />
                             {this.renderHeaderInfo(extension, headerTheme)}
