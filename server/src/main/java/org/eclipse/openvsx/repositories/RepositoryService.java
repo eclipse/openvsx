@@ -42,6 +42,7 @@ public class RepositoryService {
     @Autowired AdminStatisticsRepository adminStatisticsRepo;
     @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
     @Autowired ExtractResourcesMigrationItemRepository extractResourcesMigrationItemRepo;
+    @Autowired SetPreReleaseMigrationItemRepository setPreReleaseMigrationItemRepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
@@ -364,6 +365,10 @@ public class RepositoryService {
 
     public Streamable<ExtractResourcesMigrationItem> findNotMigratedResources() {
         return extractResourcesMigrationItemRepo.findByMigrationScheduledFalseOrderByExtensionExtensionDownloadCountDesc();
+    }
+
+    public Streamable<SetPreReleaseMigrationItem> findNotMigratedPreReleases() {
+        return setPreReleaseMigrationItemRepo.findByMigrationScheduledFalseOrderByExtensionDownloadCountDesc();
     }
 
     public void deleteFileResources(ExtensionVersion extVersion, String type) {
