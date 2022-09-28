@@ -12,9 +12,7 @@ package org.eclipse.openvsx.adapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import org.eclipse.openvsx.dto.ExtensionDTO;
-import org.eclipse.openvsx.dto.ExtensionVersionDTO;
-import org.eclipse.openvsx.dto.FileResourceDTO;
+import org.eclipse.openvsx.dto.*;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -25,10 +23,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -161,7 +156,7 @@ public class LocalVSCodeService implements IVSCodeService {
                     .collect(Collectors.groupingBy(ev -> ev.getExtensionId() + "@" + ev.getTargetPlatform()))
                     .values()
                     .stream()
-                    .map(versions::getLatest)
+                    .map(list -> versions.getLatest(list, true))
                     .collect(Collectors.toList());
         } else if (test(flags, FLAG_INCLUDE_VERSIONS) || test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {
             extensionVersions = allActiveExtensionVersions;
@@ -170,7 +165,7 @@ public class LocalVSCodeService implements IVSCodeService {
         }
 
         // similar to ExtensionVersion.SORT_COMPARATOR, difference is that it compares by extension id first
-        var comparator = Comparator.<ExtensionVersionDTO, Long>comparing(ev -> ev.getExtension().getId())
+        var comparator = Comparator.<ExtensionVersionDTO, Long>comparing(ev -> ev.getExtensionId())
                 .thenComparing(ExtensionVersionDTO::getSemanticVersion)
                 .thenComparing(ExtensionVersionDTO::getTimestamp)
                 .reversed();
@@ -181,7 +176,7 @@ public class LocalVSCodeService implements IVSCodeService {
                     return ev;
                 })
                 .sorted(comparator)
-                .collect(Collectors.groupingBy(ExtensionVersionDTO::getExtension));
+                .collect(Collectors.groupingBy(ExtensionVersionDTO::getExtensionId));
 
         Map<Long, List<FileResourceDTO>> fileResources;
         if (test(flags, FLAG_INCLUDE_FILES) && !extensionVersionsMap.isEmpty()) {
@@ -212,14 +207,14 @@ public class LocalVSCodeService implements IVSCodeService {
                 .collect(Collectors.groupingBy(ExtensionVersionDTO::getExtensionId))
                 .values()
                 .stream()
-                .map(versions::getLatest)
+                .map(list -> versions.getLatest(list, false))
                 .collect(Collectors.toMap(ExtensionVersionDTO::getExtensionId, ev -> ev));
 
         var extensionQueryResults = new ArrayList<ExtensionQueryResult.Extension>();
         for(var extension : extensionsList) {
             var latest = latestVersions.get(extension.getId());
             var queryExt = toQueryExtension(extension, latest, activeReviewCounts, flags);
-            queryExt.versions = extensionVersionsMap.getOrDefault(extension, Collections.emptyList()).stream()
+            queryExt.versions = extensionVersionsMap.getOrDefault(extension.getId(), Collections.emptyList()).stream()
                     .map(extVer -> toQueryVersion(extVer, fileResources, flags))
                     .collect(Collectors.toList());
 

@@ -331,7 +331,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return latestStream.collect(Collectors.groupingBy(this::getLatestVersionKey))
                 .values()
                 .stream()
-                .map(list -> versions.getLatest(list))
+                .map(list -> versions.getLatest(list, true))
                 .collect(Collectors.toMap(this::getLatestVersionKey, ev -> ev));
     }
 
@@ -344,7 +344,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .collect(Collectors.groupingBy(ExtensionVersionDTO::getExtensionId))
                 .values()
                 .stream()
-                .map(versions::getLatest)
+                .map(list -> versions.getLatest(list, false))
                 .collect(Collectors.toMap(ExtensionVersionDTO::getExtensionId, ExtensionVersionDTO::isPreview));
     }
 

@@ -25,14 +25,21 @@ public class LatestExtensionVersionDTOCacheKeyGenerator implements KeyGenerator 
             var versions = (List<?>) params[0];
             if(!versions.isEmpty() && versions.get(0) instanceof ExtensionVersionDTO) {
                 var extVersion = (ExtensionVersionDTO) versions.get(0);
-                return generate(target, method, extVersion.getExtensionId(), extVersion.getType());
+                var groupedByTargetPlatform = (boolean) params[1];
+                var targetPlatform = groupedByTargetPlatform ? extVersion.getTargetPlatform() : null;
+                return generate(extVersion.getExtensionId(), extVersion.getType(), targetPlatform);
             } else {
                 return null;
             }
         } else {
             var extensionId = (long) params[0];
             var type = (ExtensionVersionDTO.Type) params[1];
-            return "extension=" + extensionId + ",type=" + type;
+            var targetPlatform = (String) params[2];
+            return generate(extensionId, type, targetPlatform);
         }
+    }
+
+    private String generate(long extensionId, ExtensionVersionDTO.Type type, String targetPlatform) {
+        return "extension=" + extensionId + "@" + targetPlatform + ",type=" + type;
     }
 }

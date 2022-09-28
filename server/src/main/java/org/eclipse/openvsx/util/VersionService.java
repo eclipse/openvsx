@@ -48,8 +48,9 @@ public class VersionService {
                 .orElse(null);
     }
 
+    // groupedByTargetPlatform is used by cache key generator, don't remove this parameter
     @Cacheable(value = CACHE_LATEST_EXTENSION_VERSION_DTO, keyGenerator = GENERATOR_LATEST_EXTENSION_VERSION_DTO)
-    public ExtensionVersionDTO getLatest(List<ExtensionVersionDTO> versions) {
+    public ExtensionVersionDTO getLatest(List<ExtensionVersionDTO> versions, boolean groupedByTargetPlatform) {
         if(versions == null || versions.isEmpty()) {
             return null;
         }

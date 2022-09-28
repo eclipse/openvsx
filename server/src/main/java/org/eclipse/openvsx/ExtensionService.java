@@ -94,7 +94,7 @@ public class ExtensionService {
 
             var extension = extVersion.getExtension();
             var namespace = extension.getNamespace();
-            var identifier = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
+            var identifier = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + "@" + extVersion.getTargetPlatform();
             var jobIdText = "PublishExtensionVersion::" + identifier;
             var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
             scheduler.enqueue(jobId, new PublishExtensionVersionJobRequest(namespace.getName(), extension.getName(),
