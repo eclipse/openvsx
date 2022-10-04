@@ -29,7 +29,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,8 +39,9 @@ import static org.eclipse.openvsx.schedule.JobUtil.completed;
 import static org.eclipse.openvsx.schedule.JobUtil.starting;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
+@PersistJobDataAfterExecution
 public class MirrorSitemapJob implements Job {
-
+    private static final String LAST_EXECUTED = "lastExecuted";
     protected final Logger logger = LoggerFactory.getLogger(MirrorSitemapJob.class);
 
     @Autowired
@@ -59,6 +62,9 @@ public class MirrorSitemapJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         starting(context, logger);
+        var lastExecuted = (LocalDate) context.getJobDetail().getJobDataMap().get(LAST_EXECUTED);
+        logger.info("LAST EXECUTED: {}", lastExecuted);
+        var dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         var timestamp = TimeUtil.getCurrentUTC().toEpochSecond(ZoneOffset.UTC);
         var extensionIds = new ArrayList<String>();
         try(var reader = new StringReader(getSitemap())) {
@@ -79,7 +85,10 @@ public class MirrorSitemapJob implements Job {
                 }
 
                 var lastModified = url.getElementsByTagName("lastmod").item(0).getTextContent();
-                schedulerService.mirrorExtension(namespace, extension, lastModified);
+                if(lastExecuted == null || !LocalDate.parse(lastModified, dateFormatter).isBefore(lastExecuted)) {
+                    schedulerService.mirrorExtension(namespace, extension, lastModified);
+                }
+
                 extensionIds.add(extensionId);
             }
         } catch (ParserConfigurationException | IOException | SAXException | SchedulerException e) {
@@ -95,6 +104,7 @@ public class MirrorSitemapJob implements Job {
             }
         }
 
+        context.getJobDetail().getJobDataMap().put(LAST_EXECUTED, LocalDate.now());
         completed(context, logger);
     }
 

@@ -124,7 +124,7 @@ public class SchedulerService {
         var jobId = "MirrorExtension::" + namespace + "." + extension + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         if(scheduler.getJobDetail(jobKey) != null) {
-            logger.info("{} already present, skipping", jobKey);
+            logger.warn("{} already present, skipping", jobKey);
             return;
         }
 
@@ -154,15 +154,14 @@ public class SchedulerService {
         enqueueJob(job, false);
     }
 
-    public JobKey generatePublishExtensionVersionJobKey(String namespace, String extension, String version) {
-        // TODO add targetPlatform to jobId when mirror supports target platform
+    public JobKey generatePublishExtensionVersionJobKey(String namespace, String extension, String targetPlatform, String version) {
         var group = mirrorModeEnabled ? JobUtil.Groups.MIRROR : JobUtil.Groups.PUBLISH;
-        var jobId = "PublishExtensionVersion::" + namespace + "." + extension + "-" + version;
+        var jobId = "PublishExtensionVersion::" + namespace + "." + extension + "-" + version + "@" + targetPlatform;
         return new JobKey(jobId, group);
     }
 
     public void publishExtensionVersion(String namespace, String extension, String targetPlatform, String version) throws SchedulerException {
-        var jobKey = generatePublishExtensionVersionJobKey(namespace, extension, version);
+        var jobKey = generatePublishExtensionVersionJobKey(namespace, extension, targetPlatform, version);
         var job = setRetryData(newJob(PublishExtensionVersionJob.class), 3)
                 .withIdentity(jobKey)
                 .withDescription("Publish Extension Version")
@@ -177,23 +176,25 @@ public class SchedulerService {
     }
 
     public JobKey mirrorExtensionVersion(ExtensionJson json) throws SchedulerException {
-        // TODO add targetPlatform to jobId when mirror supports target platform
-        var jobId = "MirrorExtensionVersion::" + json.namespace + "." + json.name + "-" + json.version;
+        var jobId = "MirrorExtensionVersion::" + json.namespace + "." + json.name + "-" + json.version + "@" + json.targetPlatform;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
-        var job = setRetryData(newJob(MirrorExtensionVersionJob.class), 10)
-                .withIdentity(jobKey)
-                .withDescription("Mirror Extension Version")
-                .usingJobData("download", json.files.get("download"))
-                .usingJobData("userProvider", json.publishedBy.provider)
-                .usingJobData("userLoginName", json.publishedBy.loginName)
-                .usingJobData("userFullName", json.publishedBy.fullName)
-                .usingJobData("userAvatarUrl", json.publishedBy.avatarUrl)
-                .usingJobData("userHomepage", json.publishedBy.homepage)
-                .usingJobData("namespace", json.namespace)
-                .storeDurably()
-                .build();
+        if (scheduler.getJobDetail(jobKey) == null) {
+            var job = setRetryData(newJob(MirrorExtensionVersionJob.class), 10)
+                    .withIdentity(jobKey)
+                    .withDescription("Mirror Extension Version")
+                    .usingJobData("download", json.files.get("download"))
+                    .usingJobData("userProvider", json.publishedBy.provider)
+                    .usingJobData("userLoginName", json.publishedBy.loginName)
+                    .usingJobData("userFullName", json.publishedBy.fullName)
+                    .usingJobData("userAvatarUrl", json.publishedBy.avatarUrl)
+                    .usingJobData("userHomepage", json.publishedBy.homepage)
+                    .usingJobData("namespace", json.namespace)
+                    .storeDurably()
+                    .build();
 
-        scheduler.addJob(job, false);
+            scheduler.addJob(job, false);
+        }
+
         return jobKey;
     }
 
@@ -205,7 +206,7 @@ public class SchedulerService {
     public JobKey mirrorActivateExtension(String namespace, String extension, String lastModified) throws SchedulerException {
         var jobKey = mirrorActivateExtensionJobKey(namespace, extension, lastModified);
         if(scheduler.getJobDetail(jobKey) != null) {
-            logger.info("{} already present, skipping", jobKey);
+            logger.warn("{} already present, skipping", jobKey);
             return jobKey;
         }
 
@@ -225,7 +226,7 @@ public class SchedulerService {
         var jobId = "MirrorExtensionMetadata::" + namespace + "." + extension + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         if(scheduler.getJobDetail(jobKey) != null) {
-            logger.info("{} already present, skipping", jobKey);
+            logger.warn("{} already present, skipping", jobKey);
             return jobKey;
         }
 
@@ -245,7 +246,7 @@ public class SchedulerService {
         var jobId = "MirrorNamespaceVerified::" + namespace + "::" + lastModified;
         var jobKey = new JobKey(jobId, JobUtil.Groups.MIRROR);
         if(scheduler.getJobDetail(jobKey) != null) {
-            logger.info("{} already present, skipping", jobKey);
+            logger.warn("{} already present, skipping", jobKey);
             return jobKey;
         }
 

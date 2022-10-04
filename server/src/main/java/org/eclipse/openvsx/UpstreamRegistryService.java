@@ -24,6 +24,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -60,7 +61,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             return restTemplate.getForObject(requestUrl, NamespaceJson.class);
         } catch (RestClientException exc) {
-            logger.error("GET " + requestUrl, exc);
+            if(!isNotFound(exc)) {
+                logger.error("GET " + requestUrl, exc);
+            }
+
             throw new NotFoundException();
         }
     }
@@ -78,7 +82,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             makeDownloadsCompatible(json);
             return json;
         } catch (RestClientException exc) {
-            logger.error("GET " + requestUrl, exc);
+            if(!isNotFound(exc)) {
+                logger.error("GET " + requestUrl, exc);
+            }
+
             throw new NotFoundException();
         }
     }
@@ -91,7 +98,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             makeDownloadsCompatible(json);
             return json;
         } catch (RestClientException exc) {
-            logger.error("GET " + requestUrl, exc);
+            if(!isNotFound(exc)) {
+                logger.error("GET " + requestUrl, exc);
+            }
+
             throw new NotFoundException();
         }
     }
@@ -108,7 +118,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             response = restTemplate.exchange(request, byte[].class);
         } catch(RestClientException exc) {
-            logger.error("HEAD " + url, exc);
+            if(!isNotFound(exc)) {
+                logger.error("HEAD " + url, exc);
+            }
+
             throw new NotFoundException();
         }
         var statusCode = response.getStatusCode();
@@ -132,7 +145,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             return restTemplate.getForObject(requestUrl, ReviewListJson.class);
         } catch (RestClientException exc) {
-            logger.error("GET " + requestUrl, exc);
+            if(!isNotFound(exc)) {
+                logger.error("GET " + requestUrl, exc);
+            }
+
             throw new NotFoundException();
         }
     }
@@ -154,7 +170,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             return restTemplate.getForObject(requestUrl, SearchResultJson.class);
         } catch (RestClientException exc) {
-            logger.error("GET " + requestUrl, exc);
+            if(!isNotFound(exc)) {
+                logger.error("GET " + requestUrl, exc);
+            }
+
             throw new NotFoundException();
         }
     }
@@ -165,7 +184,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             return restTemplate.postForObject(requestUrl, param, QueryResultJson.class);
         } catch (RestClientException exc) {
-            logger.error("POST " + requestUrl, exc);
+            if(!isNotFound(exc)) {
+                logger.error("POST " + requestUrl, exc);
+            }
+
             throw new NotFoundException();
         }
     }
@@ -175,5 +197,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             json.downloads = new HashMap<>();
             json.downloads.put(TargetPlatform.NAME_UNIVERSAL, json.files.get("download"));
         }
+    }
+
+    private boolean isNotFound(RestClientException exc) {
+        return exc instanceof HttpStatusCodeException
+                && ((HttpStatusCodeException) exc).getStatusCode() == HttpStatus.NOT_FOUND;
     }
 }

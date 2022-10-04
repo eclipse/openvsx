@@ -16,6 +16,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.schedule.SchedulerService;
 import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.quartz.*;
@@ -60,12 +61,10 @@ public class MirrorExtensionJob implements Job {
         var namespaceName = map.getString("namespace");
         var extensionName = map.getString("extension");
         var lastModified = map.getString("lastModified");
-        var namespace = repositories.findNamespace(namespaceName);
-        if(namespace == null) {
+        if(repositories.findNamespace(namespaceName) == null) {
             var json = new NamespaceJson();
             json.name = namespaceName;
             admin.createNamespace(json);
-            namespace = repositories.findNamespace(namespaceName);
         }
 
         var extension = data.getDeactivatedExtension(extensionName, namespaceName);
@@ -75,10 +74,9 @@ public class MirrorExtensionJob implements Job {
 
         JobKey prevPublishExtensionVersionJobKey = null;
         var mirrorUser = repositories.findUserByLoginName(null, userName);
-//        for(var targetPlatform : TargetPlatform.TARGET_PLATFORM_NAMES) { TODO uncomment when mirror supports target platforms
-            String targetPlatform = null;
+        for(var targetPlatform : TargetPlatform.TARGET_PLATFORM_NAMES) {
             var targetVersions = extVersions.stream()
-//                    .filter(extVersion -> extVersion.getTargetPlatform().equals(targetPlatform)) TODO uncomment when mirror supports target platforms
+                    .filter(extVersion -> extVersion.getTargetPlatform().equals(targetPlatform))
                     .collect(Collectors.toList());
 
             try {
@@ -92,7 +90,7 @@ public class MirrorExtensionJob implements Job {
 
                 var toAdd = versions.stream()
                         .filter(version -> targetVersions.stream().noneMatch(extVersion -> extVersion.getVersion().equals(version)))
-                        .map(version -> mirror.getExtension(namespaceName, extensionName, /*targetPlatform,*/ version))
+                        .map(version -> mirror.getExtension(namespaceName, extensionName, targetPlatform, version))
                         .sorted(Comparator.comparing(extensionJson -> TimeUtil.fromUTCString(extensionJson.timestamp)))
                         .collect(Collectors.toList());
 
@@ -100,26 +98,27 @@ public class MirrorExtensionJob implements Job {
                     var mirrorExtensionVersionJobKey = schedulerService.mirrorExtensionVersion(extensionJson);
                     schedulerService.tryChainMirrorJobs(prevPublishExtensionVersionJobKey, mirrorExtensionVersionJobKey);
 
-                    prevPublishExtensionVersionJobKey = schedulerService.generatePublishExtensionVersionJobKey(namespaceName, extensionName, extensionJson.version);
+                    prevPublishExtensionVersionJobKey = schedulerService.generatePublishExtensionVersionJobKey(namespaceName, extensionName, targetPlatform, extensionJson.version);
                 }
             } catch (SchedulerException e) {
                 throw new RuntimeException(e);
             } catch (NotFoundException e) {
                 // combination of extension and target platform doesn't exist, try next
             }
-//        } TODO uncomment when mirror supports target platforms
+        }
 
         try {
-            var mirrorNamespaceVerifiedJobKey = schedulerService.mirrorNamespaceVerified(namespaceName, lastModified);
-            schedulerService.tryChainMirrorJobs(prevPublishExtensionVersionJobKey, mirrorNamespaceVerifiedJobKey);
             var mirrorActivateExtensionJobKey = schedulerService.mirrorActivateExtension(namespaceName, extensionName, lastModified);
             if(extension == null) {
                 var mirrorExtensionMetadataJobKey = schedulerService.mirrorExtensionMetadata(namespaceName, extensionName, lastModified);
-                schedulerService.tryChainMirrorJobs(mirrorNamespaceVerifiedJobKey, mirrorExtensionMetadataJobKey);
+                schedulerService.tryChainMirrorJobs(prevPublishExtensionVersionJobKey, mirrorExtensionMetadataJobKey);
                 schedulerService.tryChainMirrorJobs(mirrorExtensionMetadataJobKey, mirrorActivateExtensionJobKey);
             } else {
-                schedulerService.tryChainMirrorJobs(mirrorNamespaceVerifiedJobKey, mirrorActivateExtensionJobKey);
+                schedulerService.tryChainMirrorJobs(prevPublishExtensionVersionJobKey, mirrorActivateExtensionJobKey);
             }
+
+            var mirrorNamespaceVerifiedJobKey = schedulerService.mirrorNamespaceVerified(namespaceName, lastModified);
+            schedulerService.tryChainMirrorJobs(mirrorActivateExtensionJobKey, mirrorNamespaceVerifiedJobKey);
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }

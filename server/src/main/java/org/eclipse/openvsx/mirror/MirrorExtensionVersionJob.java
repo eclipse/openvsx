@@ -17,6 +17,7 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -74,8 +75,8 @@ public class MirrorExtensionVersionJob implements Job {
         var accessTokenValue = data.getOrAddAccessTokenValue(user, description);
         try(var input = new ByteArrayInputStream(vsixPackage)) {
             extJson = local.publish(input, accessTokenValue);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException | ErrorResultException e) {
+            throw new JobExecutionException(e);
         }
 
         data.updateTimestamps(extJson.namespace, extJson.name, extJson.targetPlatform, extJson.version, extJson.timestamp);
