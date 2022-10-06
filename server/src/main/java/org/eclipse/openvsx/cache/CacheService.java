@@ -95,9 +95,13 @@ public class CacheService {
 
         cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION_DTO);
         if(cache != null) {
+            var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
+            targetPlatforms.add(null);
             for(var type : ExtensionVersionDTO.Type.values()) {
-                var key = latestExtensionVersionDTOCacheKeyGenerator.generate(null, null, extension.getId(), type);
-                cache.evictIfPresent(key);
+                for(var targetPlatform : targetPlatforms) {
+                    var key = latestExtensionVersionDTOCacheKeyGenerator.generate(null, null, extension.getId(), type, targetPlatform);
+                    cache.evictIfPresent(key);
+                }
             }
         }
     }

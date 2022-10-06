@@ -110,7 +110,7 @@ public class VersionServiceTest {
         var minor = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.0.5");
         var major = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.3.0");
 
-        var latest = new VersionService().getLatest(List.of(major, minor, release));
+        var latest = new VersionService().getLatest(List.of(major, minor, release), false);
         assertEquals(release, latest);
     }
 
@@ -121,7 +121,7 @@ public class VersionServiceTest {
         var linux = constructExtensionVersionDTO(TargetPlatform.NAME_LINUX_X64, version);
         var windows = constructExtensionVersionDTO(TargetPlatform.NAME_WIN32_ARM64, version);
 
-        var latest = new VersionService().getLatest(List.of(windows, linux, universal));
+        var latest = new VersionService().getLatest(List.of(windows, linux, universal), false);
         assertEquals(universal, latest);
     }
 
