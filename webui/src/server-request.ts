@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
+import fetchBuilder from "fetch-retry";
 
 export interface ServerAPIRequest {
     abortController: AbortController;
@@ -53,7 +54,17 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         param.credentials = 'include';
     }
 
-    const response = await fetch(req.endpoint, param);
+    const options: any = {
+        retries: 10,
+        retryDelay: (attempt: number, error: Error, response: Response) => {
+            return Math.pow(2, attempt) * 1000;
+        },
+        retryOn: (attempt: number, error: Error, response: Response) => {
+            return error !== null || response.status >= 400;
+        }
+    };
+
+    const response = await fetchBuilder(fetch, options)(req.endpoint, param);
     if (response.ok) {
         switch (req.headers!['Accept']) {
             case 'application/json':
