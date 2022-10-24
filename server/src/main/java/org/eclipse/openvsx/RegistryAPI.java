@@ -90,6 +90,23 @@ public class RegistryAPI {
             responseCode = "404",
             description = "The specified namespace could not be found",
             content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<NamespaceJson> getNamespace(
@@ -124,6 +141,23 @@ public class RegistryAPI {
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<ExtensionJson> getExtension(
@@ -160,6 +194,23 @@ public class RegistryAPI {
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<ExtensionJson> getExtension(
@@ -209,6 +260,23 @@ public class RegistryAPI {
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<ExtensionJson> getExtension(
@@ -247,6 +315,23 @@ public class RegistryAPI {
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<ExtensionJson> getExtension(
@@ -305,6 +390,23 @@ public class RegistryAPI {
             responseCode = "404",
             description = "The specified file could not be found",
             content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<byte[]> getFile(
@@ -349,6 +451,23 @@ public class RegistryAPI {
             responseCode = "404",
             description = "The specified file could not be found",
             content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<byte[]> getFile(
@@ -438,6 +557,23 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{\"error\": \"The parameter 'size' must not be negative.\"}")
             )
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<SearchResultJson> search(
@@ -545,6 +681,23 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
             )
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<QueryResultJson> getQuery(
@@ -633,6 +786,23 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
             )
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<QueryResultJson> postQuery(
@@ -687,6 +857,23 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
             )
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<ResultJson> createNamespace(
@@ -714,44 +901,61 @@ public class RegistryAPI {
     }
 
     @PostMapping(
-            path = "/api/user/namespace/create",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/api/user/namespace/create",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(
-            summary = "Create a namespace",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Describes the namespace to create",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(ref = "NamespaceJson")),
-                    required = true
-            )
+        summary = "Create a namespace",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Describes the namespace to create",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(ref = "NamespaceJson")),
+            required = true
+        )
     )
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Successfully created the namespace",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            examples = @ExampleObject(value="{ \"success\": \"Created namespace foobar\" }")
-                    ),
-                    headers = @Header(
-                            name = "Location",
-                            description = "The URL of the namespace metadata",
-                            schema = @Schema(type = "string")
-                    )
+        @ApiResponse(
+            responseCode = "201",
+            description = "Successfully created the namespace",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value="{ \"success\": \"Created namespace foobar\" }")
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "The namespace could not be created",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            examples = @ExampleObject(value="{ \"error\": \"Invalid access token.\" }")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "User is not logged in"
+            headers = @Header(
+                name = "Location",
+                description = "The URL of the namespace metadata",
+                schema = @Schema(type = "string")
             )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "The namespace could not be created",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value="{ \"error\": \"Invalid access token.\" }")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "User is not logged in"
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
+        )
     })
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody NamespaceJson namespace
@@ -809,6 +1013,23 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
             )
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
         )
     })
     public ResponseEntity<ExtensionJson> publish(
@@ -835,33 +1056,50 @@ public class RegistryAPI {
     @Operation(
             summary = "Publish an extension by uploading a vsix file",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Uploaded vsix file to publish",
-                    content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE, schema = @Schema(type = "string", format = "binary")),
-                    required = true
+                description = "Uploaded vsix file to publish",
+                content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE, schema = @Schema(type = "string", format = "binary")),
+                required = true
             )
     )
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Successfully published the extension",
-                    headers = @Header(
-                            name = "Location",
-                            description = "The URL of the extension metadata",
-                            schema = @Schema(type = "string")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "The extension could not be published",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            examples = @ExampleObject(value="{ \"error\": \"Unknown publisher: foobar\" }")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "User is not logged in"
+        @ApiResponse(
+            responseCode = "201",
+            description = "Successfully published the extension",
+            headers = @Header(
+                name = "Location",
+                description = "The URL of the extension metadata",
+                schema = @Schema(type = "string")
             )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "The extension could not be published",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value="{ \"error\": \"Unknown publisher: foobar\" }")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "User is not logged in"
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
+        )
     })
     public ResponseEntity<ExtensionJson> publish(
             InputStream content
