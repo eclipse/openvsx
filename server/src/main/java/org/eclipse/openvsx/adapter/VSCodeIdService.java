@@ -78,7 +78,7 @@ public class VSCodeIdService {
         }
 
         var existingNamespace = repositories.findNamespaceByPublicId(extension.getNamespace().getPublicId());
-        if(existingNamespace != null && !existingExtension.equals(extension.getNamespace())) {
+        if(existingNamespace != null && !existingNamespace.equals(extension.getNamespace())) {
             existingNamespace.setPublicId(createRandomId());
         }
     }
