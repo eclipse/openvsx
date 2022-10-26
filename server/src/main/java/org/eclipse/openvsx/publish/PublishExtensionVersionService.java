@@ -14,12 +14,16 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Component
 public class PublishExtensionVersionService {
@@ -35,9 +39,21 @@ public class PublishExtensionVersionService {
 
     @Transactional
     public void deleteFileResources(ExtensionVersion extVersion) {
-        repositories.findFiles(extVersion).stream()
-                .filter(fr -> !fr.getType().equals(FileResource.DOWNLOAD))
-                .forEach(entityManager::remove);
+        repositories.findFiles(extVersion).forEach(entityManager::remove);
+    }
+
+    public void storeDownload(FileResource download, Path extensionFile) {
+        if (storageUtil.shouldStoreExternally(download)) {
+            storageUtil.uploadFile(download, extensionFile);
+        } else {
+            try {
+                download.setContent(Files.readAllBytes(extensionFile));
+            } catch (IOException e) {
+                throw new ErrorResultException("Failed to read extension file", e);
+            }
+
+            download.setStorageType(FileResource.STORAGE_DB);
+        }
     }
 
     @Retryable
