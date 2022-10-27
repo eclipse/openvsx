@@ -29,6 +29,8 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler;
+import org.springframework.security.web.firewall.RequestRejectedHandler;
 import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
@@ -77,5 +79,10 @@ public class RegistryApplication {
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
 
         return registrationBean;
+    }
+
+    @Bean
+    public RequestRejectedHandler requestRejectedHandler() {
+        return new HttpStatusRequestRejectedHandler();
     }
 }
