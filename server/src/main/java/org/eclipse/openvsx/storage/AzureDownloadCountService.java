@@ -16,6 +16,7 @@ import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -35,11 +36,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Pulls logs from Azure Blob Storage, extracts downloads from the logs
@@ -113,7 +112,8 @@ public class AzureDownloadCountService {
                     try {
                         var files = processBlobItem(name);
                         if(!files.isEmpty()) {
-                            processor.processDownloadCounts(files);
+                            var extensionDownloads = processor.processDownloadCounts(files);
+                            processor.increaseDownloadCounts(extensionDownloads);
                         }
 
                         success = true;
@@ -135,35 +135,32 @@ public class AzureDownloadCountService {
     private Map<String, List<LocalDateTime>> processBlobItem(String blobName) {
         try (var outputStream = new ByteArrayOutputStream()) {
             getContainerClient().getBlobClient(blobName).download(outputStream);
-            var bytes = outputStream.toByteArray();
-
-            var files = new HashMap<String, List<LocalDateTime>>();
-            var jsonObjects = new String(bytes).split("\n");
-            for (var jsonObject : jsonObjects) {
-                var node = getObjectMapper().readTree(jsonObject);
-                var operationName = node.get("operationName").asText();
-                var statusCode = node.get("statusCode").asInt();
-
-                String[] pathParams = null;
-                if (operationName.equals("GetBlob") && statusCode == 200) {
-                    var blobUri = URI.create(node.get("uri").asText());
-                    pathParams = blobUri.getPath().split("/");
-                }
-
-                var matchesStorageBlobContainer = false;
-                if(pathParams != null) {
-                    var container = pathParams[1];
-                    matchesStorageBlobContainer = storageBlobContainer.equals(container);
-                }
-                if(matchesStorageBlobContainer) {
-                    var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
-                    var timestamps = files.getOrDefault(fileName, new ArrayList<>());
-                    timestamps.add(LocalDateTime.parse(node.get("time").asText(), DateTimeFormatter.ISO_ZONED_DATE_TIME));
-                    files.put(fileName, timestamps);
-                }
-            }
-
-            return files;
+            return List.of(outputStream.toString().split("\n")).stream()
+                    .map(line -> {
+                        try {
+                            return getObjectMapper().readTree(line);
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .filter(node -> {
+                        var operationName = node.get("operationName").asText();
+                        var statusCode = node.get("statusCode").asInt();
+                        var uri = node.get("uri").asText();
+                        return operationName.equals("GetBlob") && statusCode == 200 && uri.endsWith(".vsix");
+                    }).map(node -> {
+                        var uri = node.get("uri").asText();
+                        var pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
+                        return new AbstractMap.SimpleEntry<>(pathParams, node.get("time").asText());
+                    })
+                    .filter(entry -> storageBlobContainer.equals(entry.getKey()[1]))
+                    .map(entry -> {
+                        var pathParams = entry.getKey();
+                        var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
+                        var time = LocalDateTime.parse(entry.getValue(), DateTimeFormatter.ISO_ZONED_DATE_TIME);
+                        return new AbstractMap.SimpleEntry<>(fileName, time);
+                    })
+                    .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

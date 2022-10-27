@@ -76,6 +76,10 @@ public class RepositoryService {
         return extensionRepo.findByNamespaceAndActiveTrueOrderByNameAsc(namespace);
     }
 
+    public Streamable<Extension> findExtensions(Collection<Long> extensionIds) {
+        return extensionRepo.findByIdIn(extensionIds);
+    }
+
     public Streamable<Extension> findExtensions(Namespace namespace) {
         return extensionRepo.findByNamespace(namespace);
     }

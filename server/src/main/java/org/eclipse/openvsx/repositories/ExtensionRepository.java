@@ -17,6 +17,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 
 public interface ExtensionRepository extends Repository<Extension, Long> {
 
@@ -33,6 +34,8 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
     Extension findByPublicId(String publicId);
 
     Streamable<Extension> findByActiveTrue();
+
+    Streamable<Extension> findByIdIn(Collection<Long> extensionIds);
 
     long count();
 

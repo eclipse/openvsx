@@ -11,6 +11,8 @@ package org.eclipse.openvsx.storage;
 
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +27,8 @@ import static org.eclipse.openvsx.entities.FileResource.STORAGE_AZURE;
 @Component
 public class AzureDownloadCountProcessor {
 
+    protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountProcessor.class);
+
     @Autowired
     EntityManager entityManager;
 
@@ -32,7 +36,7 @@ public class AzureDownloadCountProcessor {
     RepositoryService repositories;
 
     @Autowired
-    DownloadCountService downloadCountService;
+    DownloadCountService downloadCounts;
 
     @Transactional
     public void persistProcessedItem(String name, LocalDateTime processedOn, int executionTime, boolean success) {
@@ -44,31 +48,33 @@ public class AzureDownloadCountProcessor {
         entityManager.persist(processedItem);
     }
 
+    public Map<Long, List<Download>> processDownloadCounts(Map<String, List<LocalDateTime>> files) {
+        return repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
+                .map(fileResource -> new AbstractMap.SimpleEntry<>(fileResource, toDownloads(fileResource, files)))
+                .collect(Collectors.groupingBy(
+                        e -> e.getKey().getExtension().getExtension().getId(),
+                        Collectors.mapping(Map.Entry::getValue, Collectors.flatMapping(List::stream, Collectors.toList()))
+                ));
+    }
+
+    private List<Download> toDownloads(FileResource fileResource, Map<String, List<LocalDateTime>> files) {
+        return files.get(fileResource.getName().toUpperCase()).stream()
+                .map(time -> {
+                    var download = new Download();
+                    download.setAmount(1);
+                    download.setTimestamp(time);
+                    download.setFileResourceId(fileResource.getId());
+                    return download;
+                }).collect(Collectors.toList());
+    }
+
     @Transactional
-    public void processDownloadCounts(Map<String, List<LocalDateTime>> files) {
-        var fileResources = repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet());
-        var extensions = fileResources.stream()
-                .map(FileResource::getExtension)
-                .map(ExtensionVersion::getExtension)
-                .collect(Collectors.toMap(e -> e.getId(), e -> e, (e1, e2) -> e1));
-
-        var extensionDownloads = extensions.keySet().stream()
-                .collect(Collectors.toMap(id -> id, id -> new ArrayList<Download>()));
-
-        for (var fileResource : fileResources) {
-            var extension = fileResource.getExtension().getExtension();
+    public void increaseDownloadCounts(Map<Long, List<Download>> extensionDownloads) {
+        repositories.findExtensions(extensionDownloads.keySet()).forEach(extension -> {
             var downloads = extensionDownloads.get(extension.getId());
-            files.get(fileResource.getName().toUpperCase()).stream()
-                    .map(time -> {
-                        var download = new Download();
-                        download.setAmount(1);
-                        download.setTimestamp(time);
-                        download.setFileResourceId(fileResource.getId());
-                        return download;
-                    }).forEach(downloads::add);
-        }
-
-        extensionDownloads.forEach((id, downloads) -> downloadCountService.increaseDownloadCount(extensions.get(id), downloads));
+            downloadCounts.increaseDownloadCount(extension, downloads);
+            logger.info("increased downloads for {}.{} by {}", extension.getNamespace().getName(), extension.getName(), downloads.size());
+        });
     }
 
     public List<String> processedItems(List<String> blobNames) {
