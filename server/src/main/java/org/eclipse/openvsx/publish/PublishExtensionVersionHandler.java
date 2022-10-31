@@ -100,7 +100,11 @@ public class PublishExtensionVersionHandler {
             extension.setNamespace(namespace);
             extension.setPublishedDate(extVersion.getTimestamp());
 
-            vsCodeIdService.createPublicId(extension);
+            var updateExistingPublicIds = vsCodeIdService.setPublicIds(extension);
+            if(updateExistingPublicIds) {
+                vsCodeIdService.updateExistingPublicIds(extension);
+            }
+
             entityManager.persist(extension);
         } else {
             var existingVersion = repositories.findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);

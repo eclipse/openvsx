@@ -18,6 +18,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,28 +41,53 @@ public class VSCodeIdService {
     @Autowired
     RestTemplate restTemplate;
 
+    @Autowired
+    RepositoryService repositories;
+
     @Value("${ovsx.vscode.upstream.gallery-url:}")
     String upstreamUrl;
 
-    public void createPublicId(Extension extension) {
-        var upstreamExtension = getUpstreamData(extension);
-        if (upstreamExtension != null) {
-            if (upstreamExtension.extensionId != null)
-                extension.setPublicId(upstreamExtension.extensionId);
-            if (upstreamExtension.publisher != null && upstreamExtension.publisher.publisherId != null)
-                extension.getNamespace().setPublicId(upstreamExtension.publisher.publisherId);
+    public boolean setPublicIds(Extension extension) {
+        var updateExistingPublicIds = false;
+        var upstream = getUpstreamExtension(extension);
+        if (upstream != null) {
+            if (upstream.extensionId != null) {
+                extension.setPublicId(upstream.extensionId);
+                updateExistingPublicIds = true;
+            }
+            if (upstream.publisher != null && upstream.publisher.publisherId != null) {
+                extension.getNamespace().setPublicId(upstream.publisher.publisherId);
+                updateExistingPublicIds = true;
+            }
         }
-        if (extension.getPublicId() == null)
+        if (extension.getPublicId() == null) {
             extension.setPublicId(createRandomId());
-        if (extension.getNamespace().getPublicId() == null)
+        }
+        if (extension.getNamespace().getPublicId() == null) {
             extension.getNamespace().setPublicId(createRandomId());
+        }
+
+        return updateExistingPublicIds;
+    }
+
+    @Transactional
+    public void updateExistingPublicIds(Extension extension) {
+        var existingExtension = repositories.findExtensionByPublicId(extension.getPublicId());
+        if(existingExtension != null && !existingExtension.equals(extension)) {
+            existingExtension.setPublicId(createRandomId());
+        }
+
+        var existingNamespace = repositories.findNamespaceByPublicId(extension.getNamespace().getPublicId());
+        if(existingNamespace != null && !existingNamespace.equals(extension.getNamespace())) {
+            existingNamespace.setPublicId(createRandomId());
+        }
     }
 
     private String createRandomId() {
         return UUID.randomUUID().toString();
     }
 
-    private ExtensionQueryResult.Extension getUpstreamData(Extension extension) {
+    private ExtensionQueryResult.Extension getUpstreamExtension(Extension extension) {
         if (Strings.isNullOrEmpty(upstreamUrl)) {
             return null;
         }
