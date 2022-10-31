@@ -53,5 +53,8 @@ public class DownloadCountService {
         extension.setDownloadCount(extension.getDownloadCount() + downloads.size());
         search.updateSearchEntry(extension);
         cache.evictExtensionJsons(extension);
+        if (extension.isActive()) {
+            search.updateSearchEntry(extension);
+        }
     }
 }
