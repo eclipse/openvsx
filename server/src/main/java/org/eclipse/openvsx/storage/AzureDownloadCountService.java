@@ -94,6 +94,8 @@ public class AzureDownloadCountService {
             return;
         }
 
+        logger.info(">> updateDownloadCounts");
+        var maxExecutionTime = LocalDateTime.now().withMinute(55);
         var blobs = listBlobs();
         var iterableByPage = blobs.iterableByPage();
 
@@ -106,6 +108,13 @@ public class AzureDownloadCountService {
                 var blobNames = getBlobNames(response.getValue());
                 blobNames.removeAll(processor.processedItems(blobNames));
                 for (var name : blobNames) {
+                    if(LocalDateTime.now().isAfter(maxExecutionTime)) {
+                        var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
+                        logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
+                        logger.info("<< updateDownloadCounts");
+                        return;
+                    }
+
                     var processedOn = LocalDateTime.now();
                     var success = false;
                     stopWatch.start();
@@ -130,6 +139,8 @@ public class AzureDownloadCountService {
             var continuationToken = response != null ? response.getContinuationToken() : "";
             iterableByPage = !Strings.isNullOrEmpty(continuationToken) ? blobs.iterableByPage(continuationToken) : null;
         }
+
+        logger.info("<< updateDownloadCounts");
     }
 
     private Map<String, List<LocalDateTime>> processBlobItem(String blobName) {
