@@ -48,7 +48,6 @@ public class FileResource {
     @Column(length = 32)
     String storageType;
 
-
     public long getId() {
         return id;
     }

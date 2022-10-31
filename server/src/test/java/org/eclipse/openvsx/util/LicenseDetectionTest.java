@@ -13,8 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 
-import com.google.common.io.ByteStreams;
-
 import org.junit.jupiter.api.Test;
 
 public class LicenseDetectionTest {
@@ -23,7 +21,7 @@ public class LicenseDetectionTest {
     public void testInvalid() throws Exception {
         var detection = new LicenseDetection();
         var result = detection.detectLicense("This is a funny license.");
-        assertThat(result).isNull();;
+        assertThat(result).isNull();
     }
 
     @Test
@@ -62,12 +60,9 @@ public class LicenseDetectionTest {
     }
 
     private String detect(String fileName) throws IOException {
-        try (
-            var stream = getClass().getResourceAsStream(fileName);
-        ) {
-            var bytes = ByteStreams.toByteArray(stream);
+        try (var stream = getClass().getResourceAsStream(fileName)) {
             var detection = new LicenseDetection();
-            return detection.detectLicense(bytes);
+            return detection.detectLicense(stream.readAllBytes());
         }
     }
 

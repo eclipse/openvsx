@@ -32,6 +32,7 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.cache.LatestExtensionVersionDTOCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.TokenService;
@@ -65,7 +66,7 @@ import org.springframework.web.client.RestTemplate;
 @MockBean({
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
     VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class, LockProvider.class,
-    CacheService.class, UserService.class, JobRequestScheduler.class
+    CacheService.class, UserService.class, PublishExtensionVersionHandler.class
 })
 public class EclipseServiceTest {
 

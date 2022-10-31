@@ -9,8 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,19 +27,21 @@ import com.google.common.base.Strings;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.publish.PublishExtensionVersionJobRequest;
+import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ExtensionService {
+
+    private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
 
     @Autowired
     EntityManager entityManager;
@@ -60,16 +65,19 @@ public class ExtensionService {
     ExtensionValidator validator;
 
     @Autowired
-    JobRequestScheduler scheduler;
+    PublishExtensionVersionHandler publishHandler;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
 
     @Transactional(TxType.REQUIRED)
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
-        try (var processor = new ExtensionProcessor(content)) {
+        FileResource download;
+        ExtensionVersion extVersion;
+        var extensionFile = createExtensionFile(content);
+        try (var processor = new ExtensionProcessor(extensionFile)) {
             // Extract extension metadata from its manifest
-            var extVersion = createExtensionVersion(processor, token.getUser(), token);
+            extVersion = createExtensionVersion(processor, token.getUser(), token);
             var dependencies = processor.getExtensionDependencies().stream()
                     .map(this::checkDependency)
                     .collect(Collectors.toList());
@@ -83,24 +91,31 @@ public class ExtensionService {
             // Check the extension's license
             var license = processor.getLicense(extVersion);
             checkLicense(extVersion, license);
-            if(license != null) {
-                license.setStorageType(FileResource.STORAGE_DB);
-                entityManager.persist(license);
+
+            download = processor.getBinary(extVersion);
+        }
+
+        publishHandler.publishAsync(download, extensionFile, this);
+        return extVersion;
+    }
+
+    private Path createExtensionFile(InputStream content) {
+        try (var input = new BufferedInputStream(content)) {
+            input.mark(0);
+            var skipped = input.skip(MAX_CONTENT_SIZE  + 1);
+            if (skipped > MAX_CONTENT_SIZE) {
+                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
             }
 
-            var binary = processor.getBinary(extVersion);
-            binary.setStorageType(FileResource.STORAGE_DB);
-            entityManager.persist(binary);
+            var extensionFile = Files.createTempFile("extension_", ".vsix");
+            try(var out = Files.newOutputStream(extensionFile)) {
+                input.reset();
+                input.transferTo(out);
+            }
 
-            var extension = extVersion.getExtension();
-            var namespace = extension.getNamespace();
-            var identifier = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion() + "@" + extVersion.getTargetPlatform();
-            var jobIdText = "PublishExtensionVersion::" + identifier;
-            var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
-            scheduler.enqueue(jobId, new PublishExtensionVersionJobRequest(namespace.getName(), extension.getName(),
-                    extVersion.getTargetPlatform(), extVersion.getVersion()));
-
-            return extVersion;
+            return extensionFile;
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
         }
     }
 

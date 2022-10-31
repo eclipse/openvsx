@@ -19,21 +19,15 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.eclipse.openvsx.entities.AzureDownloadCountProcessedItem;
-import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SearchUtilService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StopWatch;
 import org.springframework.web.util.UriUtils;
 
-import javax.persistence.EntityManager;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -44,9 +38,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import static org.eclipse.openvsx.entities.FileResource.STORAGE_AZURE;
 
 /**
  * Pulls logs from Azure Blob Storage, extracts downloads from the logs
@@ -58,19 +51,7 @@ public class AzureDownloadCountService {
     protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountService.class);
 
     @Autowired
-    TransactionTemplate transactions;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    DownloadCountService downloadCountService;
-
-    @Autowired
-    SearchUtilService search;
+    AzureDownloadCountProcessor processor;
 
     @Value("${ovsx.logs.azure.sas-token:}")
     String sasToken;
@@ -124,29 +105,25 @@ public class AzureDownloadCountService {
             if(iterator.hasNext()) {
                 response = iterator.next();
                 var blobNames = getBlobNames(response.getValue());
-                blobNames.removeAll(repositories.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(blobNames));
+                blobNames.removeAll(processor.processedItems(blobNames));
                 for (var name : blobNames) {
+                    var processedOn = LocalDateTime.now();
+                    var success = false;
+                    stopWatch.start();
                     try {
-                        transactions.executeWithoutResult(status -> {
-                            var processedItem = new AzureDownloadCountProcessedItem();
-                            processedItem.setName(name);
-                            processedItem.setProcessedOn(LocalDateTime.now());
-                            entityManager.persist(processedItem);
+                        var files = processBlobItem(name);
+                        if(!files.isEmpty()) {
+                            processor.processDownloadCounts(files);
+                        }
 
-                            stopWatch.start();
-                            try {
-                                transactions.executeWithoutResult(s -> processBlobItem(name));
-                                processedItem.setSuccess(true);
-                            } catch (Exception e) {
-                                logger.error("Failed to process BlobItem: " + name, e);
-                            }
-
-                            stopWatch.stop();
-                            processedItem.setExecutionTime((int) stopWatch.getLastTaskTimeMillis());
-                        });
-                    } catch(TransactionException e) {
-                        logger.error("Transaction failed", e);
+                        success = true;
+                    } catch (Exception e) {
+                        logger.error("Failed to process BlobItem: " + name, e);
                     }
+
+                    stopWatch.stop();
+                    var executionTime = (int) stopWatch.getLastTaskTimeMillis();
+                    processor.persistProcessedItem(name, processedOn, executionTime, success);
                 }
             }
 
@@ -155,7 +132,7 @@ public class AzureDownloadCountService {
         }
     }
 
-    private void processBlobItem(String blobName) {
+    private Map<String, List<LocalDateTime>> processBlobItem(String blobName) {
         try (var outputStream = new ByteArrayOutputStream()) {
             getContainerClient().getBlobClient(blobName).download(outputStream);
             var bytes = outputStream.toByteArray();
@@ -186,11 +163,7 @@ public class AzureDownloadCountService {
                 }
             }
 
-            var fileResources = repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet());
-            for (var fileResource : fileResources) {
-                var timestamps = files.get(fileResource.getName().toUpperCase());
-                downloadCountService.increaseDownloadCount(fileResource.getExtension(), fileResource, timestamps);
-            }
+            return files;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
