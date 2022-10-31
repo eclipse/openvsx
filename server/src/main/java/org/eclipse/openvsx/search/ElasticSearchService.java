@@ -24,7 +24,6 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
@@ -33,11 +32,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.*;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +85,7 @@ public class ElasticSearchService implements ISearchService {
      */
     @EventListener
     @Transactional(readOnly = true)
+    @Retryable(DataAccessResourceFailureException.class)
     public void initSearchIndex(ApplicationStartedEvent event) {
         if (!isEnabled() || !clearOnStart && searchOperations.indexOps(ExtensionSearch.class).exists()) {
             return;
@@ -102,6 +104,7 @@ public class ElasticSearchService implements ISearchService {
      */
     @Scheduled(cron = "0 0 4 * * *", zone = "UTC")
     @Transactional(readOnly = true)
+    @Retryable(DataAccessResourceFailureException.class)
     public void updateSearchIndex() {
         if (!isEnabled() || Math.abs(timestampRelevance) < 0.01) {
             return;
@@ -123,6 +126,7 @@ public class ElasticSearchService implements ISearchService {
      * relevant metadata.
      */
     @Transactional
+    @Retryable(DataAccessResourceFailureException.class)
     public void updateSearchIndex(boolean clear) {
         var locked = false;
         try {
@@ -167,6 +171,7 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
+    @Retryable(DataAccessResourceFailureException.class)
     public void updateSearchEntry(Extension extension) {
         if (!isEnabled()) {
             return;
@@ -184,6 +189,7 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
+    @Retryable(DataAccessResourceFailureException.class)
     public void removeSearchEntry(Extension extension) {
         if (!isEnabled()) {
             return;
