@@ -32,7 +32,6 @@ import java.util.zip.ZipOutputStream;
 
 import javax.persistence.EntityManager;
 
-import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
@@ -87,7 +86,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class,
-    LockProvider.class, CacheService.class, EclipseService.class, PublishExtensionVersionService.class
+    CacheService.class, EclipseService.class, PublishExtensionVersionService.class
 })
 public class RegistryAPITest {
 

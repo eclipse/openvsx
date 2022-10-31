@@ -19,12 +19,12 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.jobrunr.jobs.annotations.Job;
+import org.jobrunr.spring.annotations.Recurring;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.util.UriUtils;
@@ -87,8 +87,8 @@ public class AzureDownloadCountService {
     /**
      * Task scheduled once per hour to pull logs from Azure Blob Storage and update extension download counts.
      */
-    @Scheduled(cron = "0 5 * * * *", zone = "UTC")
-    @SchedulerLock(name = "updateDownloadCounts", lockAtLeastFor = "5m", lockAtMostFor = "55m")
+    @Job(name = "Update Download Counts", retries = 0)
+    @Recurring(id = "update-download-counts", cron = "0 5 * * * *", zoneId = "UTC")
     public void updateDownloadCounts() {
         if (!isEnabled()) {
             return;

@@ -21,7 +21,6 @@ def versions = [
     java: '11',
     flyway: '7.3.1',
     springdoc: '1.6.9',
-    shedlock: '4.28.0',
     spdx: '2.2.4',
     gcloud: '1.113.4',
     azure: '12.9.0',
@@ -77,8 +76,6 @@ dependencies {
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
     implementation "org.springdoc:springdoc-openapi-ui:${versions.springdoc}"
-    implementation "net.javacrumbs.shedlock:shedlock-spring:${versions.shedlock}"
-    implementation "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${versions.shedlock}"
     implementation "com.google.guava:guava:${versions.guava}"
     implementation "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"

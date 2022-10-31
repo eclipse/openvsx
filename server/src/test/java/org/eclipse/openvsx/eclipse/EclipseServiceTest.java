@@ -16,13 +16,11 @@ import static org.mockito.ArgumentMatchers.eq;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 
 import com.google.common.io.CharStreams;
 
-import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
@@ -65,8 +63,8 @@ import org.springframework.web.client.RestTemplate;
 @ExtendWith(SpringExtension.class)
 @MockBean({
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class, LockProvider.class,
-    CacheService.class, UserService.class, PublishExtensionVersionHandler.class
+    VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class, CacheService.class,
+    UserService.class, PublishExtensionVersionHandler.class
 })
 public class EclipseServiceTest {
 

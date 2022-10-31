@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
-import net.javacrumbs.shedlock.core.LockProvider;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.cache.CacheService;
@@ -71,7 +70,7 @@ import javax.persistence.EntityManager;
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    AzureDownloadCountService.class, LockProvider.class, CacheService.class, UpstreamVSCodeService.class,
+    AzureDownloadCountService.class, CacheService.class, UpstreamVSCodeService.class,
     VSCodeIdService.class, EntityManager.class, EclipseService.class
 })
 public class VSCodeAPITest {
