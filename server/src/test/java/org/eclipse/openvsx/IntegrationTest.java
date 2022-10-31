@@ -13,8 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 
-import com.google.common.io.ByteStreams;
-
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -71,10 +69,8 @@ public class IntegrationTest {
     }
 
     private void publishExtension() throws IOException {
-        try (
-            var stream = getClass().getResourceAsStream("vsc-material-theme.vsix");
-        ) {
-            var bytes = ByteStreams.toByteArray(stream);
+        try (var stream = getClass().getResourceAsStream("vsc-material-theme.vsix")) {
+            var bytes = stream.readAllBytes();
             var response = restTemplate.postForEntity(apiCall("/api/-/publish?token={token}"),
                     bytes, ExtensionJson.class, "test_token");
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);

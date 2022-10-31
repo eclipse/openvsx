@@ -21,8 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import javax.transaction.Transactional;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -92,7 +92,6 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
-    @Transactional(Transactional.TxType.MANDATORY)
     public void uploadFile(FileResource resource) {
         var storageType = getActiveStorageType();
         switch (storageType) {
@@ -101,6 +100,23 @@ public class StorageUtilService implements IStorageService {
                 break;
             case STORAGE_AZURE:
                 azureStorage.uploadFile(resource);
+                break;
+            default:
+                throw new RuntimeException("External storage is not available.");
+        }
+
+        resource.setStorageType(storageType);
+    }
+
+    @Override
+    public void uploadFile(FileResource resource, Path filePath) {
+        var storageType = getActiveStorageType();
+        switch (storageType) {
+            case STORAGE_GOOGLE:
+                googleStorage.uploadFile(resource, filePath);
+                break;
+            case STORAGE_AZURE:
+                azureStorage.uploadFile(resource, filePath);
                 break;
             default:
                 throw new RuntimeException("External storage is not available.");
@@ -161,13 +177,13 @@ public class StorageUtilService implements IStorageService {
         return type2Url;
     }
 
-    public void increaseDownloadCount(ExtensionVersion extVersion, FileResource resource) {
+    public void increaseDownloadCount(FileResource resource) {
         if(azureDownloadCountService.isEnabled()) {
             // don't count downloads twice
             return;
         }
 
-        downloadCountService.increaseDownloadCount(extVersion, resource, List.of(TimeUtil.getCurrentUTC()));
+        downloadCountService.increaseDownloadCount(resource);
     }
 
     public HttpHeaders getFileResponseHeaders(String fileName) {

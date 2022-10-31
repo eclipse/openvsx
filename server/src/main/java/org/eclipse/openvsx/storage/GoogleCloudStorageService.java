@@ -21,7 +21,11 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Component
 public class GoogleCloudStorageService implements IStorageService {
@@ -77,6 +81,41 @@ public class GoogleCloudStorageService implements IStorageService {
             blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
         }
         getStorage().create(blobInfoBuilder.build(), content);
+    }
+
+    @Override
+    public void uploadFile(FileResource resource, Path filePath) {
+        var objectId = getObjectId(resource);
+        if (Strings.isNullOrEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot upload file "
+                    + objectId + ": missing Google bucket id");
+        }
+
+        uploadFile(filePath, resource.getName(), objectId);
+    }
+
+    protected void uploadFile(Path filePath, String fileName, String objectId) {
+        var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
+                .setContentType(StorageUtil.getFileType(fileName).toString());
+        if (fileName.endsWith(".vsix")) {
+            blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
+        } else {
+            var cacheControl = StorageUtil.getCacheControl(fileName);
+            blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
+        }
+        try (
+                var in = Files.newByteChannel(filePath);
+                var out = getStorage().writer(blobInfoBuilder.build())
+        ) {
+            var buffer = ByteBuffer.allocateDirect(1024 * 1024);
+            while (in.read(buffer) > 0) {
+                buffer.flip();
+                out.write(buffer);
+                buffer.clear();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

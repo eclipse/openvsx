@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.storage;
 
 import java.net.URI;
+import java.nio.file.Path;
 
 import org.eclipse.openvsx.entities.FileResource;
 
@@ -24,6 +25,11 @@ public interface IStorageService {
      * Upload a file to the external storage.
      */
     void uploadFile(FileResource resource);
+
+    /**
+     * Upload a file to the external storage.
+     */
+    void uploadFile(FileResource resource, Path filePath);
 
     /**
      * Remove a file from the external storage.

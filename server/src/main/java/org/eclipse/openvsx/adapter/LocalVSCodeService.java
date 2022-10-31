@@ -296,7 +296,7 @@ public class LocalVSCodeService implements IVSCodeService {
             throw new NotFoundException();
         }
         if (resource.getType().equals(FileResource.DOWNLOAD)) {
-            storageUtil.increaseDownloadCount(extVersion, resource);
+            storageUtil.increaseDownloadCount(resource);
         }
         if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
             var headers = storageUtil.getFileResponseHeaders(resource.getName());
@@ -373,7 +373,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
             return apiUrl;
         } else {
-            storageUtil.increaseDownloadCount(extVersion, resource);
+            storageUtil.increaseDownloadCount(resource);
             return storageUtil.getLocation(resource).toString();
         }
     }

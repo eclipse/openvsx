@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 
 @Component
 public class AzureBlobStorageService implements IStorageService {
@@ -83,6 +84,32 @@ public class AzureBlobStorageService implements IStorageService {
         } catch (IOException exc) {
             throw new RuntimeException(exc);
         }
+    }
+
+    @Override
+    public void uploadFile(FileResource resource, Path filePath) {
+        var blobName = getBlobName(resource);
+        if (Strings.isNullOrEmpty(serviceEndpoint)) {
+            throw new IllegalStateException("Cannot upload file "
+                    + blobName + ": missing Azure blob service endpoint");
+        }
+
+        uploadFile(filePath, resource.getName(), blobName);
+    }
+
+    protected void uploadFile(Path filePath, String fileName, String blobName) {
+        var blobClient = getContainerClient().getBlobClient(blobName);
+        var headers = new BlobHttpHeaders();
+        headers.setContentType(StorageUtil.getFileType(fileName).toString());
+        if (fileName.endsWith(".vsix")) {
+            headers.setContentDisposition("attachment; filename=\"" + fileName + "\"");
+        } else {
+            var cacheControl = StorageUtil.getCacheControl(fileName);
+            headers.setCacheControl(cacheControl.getHeaderValue());
+        }
+
+        blobClient.uploadFromFile(filePath.toAbsolutePath().toString(), true);
+        blobClient.setHttpHeaders(headers);
     }
 
 	@Override
