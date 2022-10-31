@@ -26,7 +26,7 @@ public class EclipseData implements Cloneable, Serializable {
 
     public PublisherAgreement publisherAgreement;
 
-    public static class PublisherAgreement {
+    public static class PublisherAgreement implements Serializable {
 
         public boolean isActive;
 
