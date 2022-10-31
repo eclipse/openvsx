@@ -29,10 +29,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.util.UriUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -144,9 +145,16 @@ public class AzureDownloadCountService {
     }
 
     private Map<String, List<LocalDateTime>> processBlobItem(String blobName) {
-        try (var outputStream = new ByteArrayOutputStream()) {
-            getContainerClient().getBlobClient(blobName).download(outputStream);
-            return List.of(outputStream.toString().split("\n")).stream()
+        Path downloadsTempFile;
+        try {
+            downloadsTempFile = Files.createTempFile("azure-downloads-", ".json");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        getContainerClient().getBlobClient(blobName).downloadToFile(downloadsTempFile.toAbsolutePath().toString(), true);
+        try (var reader = Files.newBufferedReader(downloadsTempFile)) {
+            return reader.lines()
                     .map(line -> {
                         try {
                             return getObjectMapper().readTree(line);
