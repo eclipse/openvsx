@@ -300,7 +300,7 @@ public class ExtensionProcessor implements AutoCloseable {
                     try {
                         bytes = ArchiveUtil.readEntry(zipFile, zipEntry);
                     } catch(ErrorResultException exc) {
-                        logger.warn("Failed to read entry", exc);
+                        logger.warn(exc.getMessage());
                         bytes = null;
                     }
                     if (bytes == null) {
