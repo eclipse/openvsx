@@ -60,7 +60,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
             return Math.pow(2, attempt) * 1000;
         },
         retryOn: (attempt: number, error: Error, response: Response) => {
-            return error !== null || response.status >= 400;
+            return error !== null || response.status >= 500;
         }
     };
 

@@ -494,7 +494,9 @@ public class RegistryAPI {
             }
             try {
                 var subResult = registry.search(options);
-                if (subResult.extensions != null && subResult.extensions.size() > 0) {
+                if(result.extensions.isEmpty() && subResult.extensions != null) {
+                    result.extensions.addAll(subResult.extensions);
+                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
                     int limit = size - result.extensions.size();
                     var subResultSize = mergeSearchResults(result, subResult.extensions, limit);
                     result.offset += subResult.offset;

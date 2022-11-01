@@ -22,9 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class VSCodeAPI {
@@ -61,48 +60,56 @@ public class VSCodeAPI {
         }
 
         var totalCount = 0L;
-        var resultItem = new ExtensionQueryResult.ResultItem();
-        resultItem.extensions = new ArrayList<>(size);
+        var extensions = new HashMap<String, ExtensionQueryResult.Extension>();
 
         var services = getVSCodeServices().iterator();
-        while(resultItem.extensions.size() < size && services.hasNext()) {
+        while(extensions.size() < size && services.hasNext()) {
             try {
                 var service = services.next();
-                var extensionCount = resultItem.extensions.size();
-                var subResult = service.extensionQuery(param, DEFAULT_PAGE_SIZE);
-                var subExtensions = subResult.results.get(0).extensions;
-                var subExtensionsCount = subExtensions != null ? subExtensions.size() : 0;
-                if (subExtensionsCount > 0) {
-                    int limit = size - extensionCount;
-                    mergeExtensionQueryResults(resultItem, subExtensions, limit);
-                }
+                if(extensions.isEmpty()) {
+                    var subResult = service.extensionQuery(param, DEFAULT_PAGE_SIZE);
+                    var subExtensions = subResult.results.get(0).extensions;
+                    if(subExtensions != null) {
+                        var subExtensionsMap = subExtensions.stream()
+                                .map(extension -> {
+                                    var key = extension.publisher.publisherName + "." + extension.extensionName;
+                                    return new AbstractMap.SimpleEntry<>(key, extension);
+                                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-                var mergedExtensionsCount = resultItem.extensions.size();
-                var subTotalCount = getTotalCount(subResult);
-                totalCount += subTotalCount - ((extensionCount + subExtensionsCount) - mergedExtensionsCount);
+                        extensions.putAll(subExtensionsMap);
+                    }
+
+                    totalCount = getTotalCount(subResult);
+                } else {
+                    var extensionCount = extensions.size();
+                    var subResult = service.extensionQuery(param, DEFAULT_PAGE_SIZE);
+                    var subExtensions = subResult.results.get(0).extensions;
+                    var subExtensionsCount = subExtensions != null ? subExtensions.size() : 0;
+                    if (subExtensionsCount > 0) {
+                        int limit = size - extensionCount;
+                        mergeExtensionQueryResults(extensions, subExtensions, limit);
+                    }
+
+                    var mergedExtensionsCount = extensions.size();
+                    var subTotalCount = getTotalCount(subResult);
+                    totalCount += subTotalCount - ((extensionCount + subExtensionsCount) - mergedExtensionsCount);
+                }
             } catch (NotFoundException | ResponseStatusException exc) {
                 // Try the next registry
             }
         }
 
+        var resultItem = new ExtensionQueryResult.ResultItem();
+        resultItem.extensions = new ArrayList<>(extensions.values());
         return toExtensionQueryResult(resultItem, totalCount);
     }
 
-    private void mergeExtensionQueryResults(ExtensionQueryResult.ResultItem resultItem, List<ExtensionQueryResult.Extension> extensions, int limit) {
-        var previous = new ArrayList<>(resultItem.extensions);
+    private void mergeExtensionQueryResults(Map<String, ExtensionQueryResult.Extension> extensionsMap, List<ExtensionQueryResult.Extension> extensions, int limit) {
         var extensionsIter = extensions.iterator();
-        while (extensionsIter.hasNext() && resultItem.extensions.size() < limit) {
+        while (extensionsIter.hasNext() && extensions.size() < limit) {
             var next = extensionsIter.next();
-            var noneMatch = previous.stream()
-                    .noneMatch(prev -> {
-                        var prevPublisher = prev.publisher.publisherName;
-                        var nextPublisher = next.publisher.publisherName;
-                        return prevPublisher.equals(nextPublisher) && prev.extensionName.equals(next.extensionName);
-                    });
-
-            if (noneMatch) {
-                resultItem.extensions.add(next);
-            }
+            var key = next.publisher.publisherName + "." + next.extensionName;
+            extensionsMap.putIfAbsent(key, next);
         }
     }
 

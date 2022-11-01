@@ -72,6 +72,8 @@ public class ElasticSearchService implements ISearchService {
     double timestampRelevance;
     @Value("${ovsx.elasticsearch.relevance.unverified:0.5}")
     double unverifiedRelevance;
+
+    private Long maxResultWindow;
     
     public boolean isEnabled() {
         return enableSearch;
@@ -204,11 +206,8 @@ public class ElasticSearchService implements ISearchService {
     }
 
     public SearchHits<ExtensionSearch> search(Options options) {
-        var indexOps = searchOperations.indexOps(ExtensionSearch.class);
-        var settings = indexOps.getSettings(true);
-        var maxResultWindow = Long.parseLong(settings.get("index.max_result_window").toString());
         var resultWindow = options.requestedOffset + options.requestedSize;
-        if(resultWindow > maxResultWindow) {
+        if(resultWindow > getMaxResultWindow()) {
             return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, "", Collections.emptyList(), null, null);
         }
 
@@ -270,7 +269,7 @@ public class ElasticSearchService implements ISearchService {
             queryBuilder.withPageable(page);
             try {
                 rwLock.readLock().lock();
-                var searchHits = searchOperations.search(queryBuilder.build(), ExtensionSearch.class, indexOps.getIndexCoordinates());
+                var searchHits = searchOperations.search(queryBuilder.build(), ExtensionSearch.class, searchOperations.indexOps(ExtensionSearch.class).getIndexCoordinates());
                 searchHitsList.add(searchHits);
             } finally {
                 rwLock.readLock().unlock();
@@ -322,5 +321,14 @@ public class ElasticSearchService implements ISearchService {
             throw new ErrorResultException(
                     "sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'");
         }
+    }
+
+    private long getMaxResultWindow() {
+        if(maxResultWindow == null) {
+            var settings = searchOperations.indexOps(ExtensionSearch.class).getSettings(true);
+            maxResultWindow = Long.parseLong(settings.get("index.max_result_window").toString());
+        }
+
+        return maxResultWindow;
     }
 }
