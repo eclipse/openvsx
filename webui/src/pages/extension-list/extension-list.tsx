@@ -106,7 +106,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
             return;
         }
 
-        this.setState({loading: true});
+        this.setState({ loading: true });
         this.lastRequestedPage = p;
         const filter = copyFilter(this.state.appliedFilter);
         if (!isSameFilter(this.props.filter, filter)) {
@@ -138,7 +138,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
         } catch (err) {
             this.context.handleError(err);
         } finally {
-            this.setState({loading: false});
+            this.setState({ loading: false });
         }
     };
 
