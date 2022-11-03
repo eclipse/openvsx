@@ -102,7 +102,15 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
     };
 
     protected handleCancel = () => {
-        this.setState({ open: false });
+        if(this.state.publishing) {
+            this.abortController.abort();
+        }
+        this.setState({
+            open: false,
+            publishing: false,
+            fileToPublish: undefined,
+            oldFileToPublish: undefined
+        });
     };
 
     protected handleUndo = () => {
@@ -147,7 +155,11 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
         }
         if (published) {
             this.props.extensionPublished();
-            this.setState({ open: false });
+            this.setState({
+                open: false,
+                fileToPublish: undefined,
+                oldFileToPublish: undefined
+            });
         }
 
         this.setState({ publishing: false });
@@ -195,6 +207,7 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
     }
 
     componentWillUnmount() {
+        this.abortController.abort();
         document.removeEventListener('keydown', this.handleEnter);
     }
 

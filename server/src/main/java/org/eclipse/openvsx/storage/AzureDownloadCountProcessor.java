@@ -11,8 +11,6 @@ package org.eclipse.openvsx.storage;
 
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +24,6 @@ import static org.eclipse.openvsx.entities.FileResource.STORAGE_AZURE;
 
 @Component
 public class AzureDownloadCountProcessor {
-
-    protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountProcessor.class);
 
     @Autowired
     EntityManager entityManager;
@@ -73,7 +69,6 @@ public class AzureDownloadCountProcessor {
         repositories.findExtensions(extensionDownloads.keySet()).forEach(extension -> {
             var downloads = extensionDownloads.get(extension.getId());
             downloadCounts.increaseDownloadCount(extension, downloads);
-            logger.info("increased downloads for {}.{} by {}", extension.getNamespace().getName(), extension.getName(), downloads.size());
         });
     }
 
