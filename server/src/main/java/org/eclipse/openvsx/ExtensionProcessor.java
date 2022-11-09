@@ -11,7 +11,6 @@ package org.eclipse.openvsx;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
@@ -295,6 +294,7 @@ public class ExtensionProcessor implements AutoCloseable {
     public void processEachResource(ExtensionVersion extVersion, Consumer<FileResource> processor) {
         readInputStream();
         zipFile.stream()
+                .filter(zipEntry -> !zipEntry.isDirectory())
                 .map(zipEntry -> {
                     byte[] bytes;
                     try {

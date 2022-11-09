@@ -396,11 +396,16 @@ public class LocalVSCodeService implements IVSCodeService {
         var resources = repositories.findAllResourceFileResourceDTOs(extVersion.getId(), path);
         if(resources.isEmpty()) {
             throw new NotFoundException();
-        } else if(resources.size() == 1 && resources.get(0).getName().equals(path)) {
-            return browseFile(resources.get(0), namespaceName, extensionName, extVersion.getTargetPlatform(), version);
-        } else {
-            return browseDirectory(resources, namespaceName, extensionName, version, path);
         }
+
+        var exactMatch = resources.stream()
+                .filter(r -> r.getName().equals(path))
+                .findFirst()
+                .orElse(null);
+
+        return exactMatch != null
+                ? browseFile(exactMatch, namespaceName, extensionName, extVersion.getTargetPlatform(), version)
+                : browseDirectory(resources, namespaceName, extensionName, version, path);
     }
 
     private ResponseEntity<byte[]> browseFile(
