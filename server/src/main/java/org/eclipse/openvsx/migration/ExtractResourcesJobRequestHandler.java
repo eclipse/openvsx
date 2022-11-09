@@ -19,27 +19,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ExtractResourcesJobRequestHandler implements JobRequestHandler<ExtractResourcesJobRequest> {
+public class ExtractResourcesJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtractResourcesJobRequestHandler.class));
 
     @Autowired
     ExtractResourcesJobService service;
 
+    @Autowired
+    MigrationService migrations;
+
     @Override
     @Job(name = "Extract resources from published extension version", retries = 3)
-    public void run(ExtractResourcesJobRequest jobRequest) throws Exception {
-        var extVersion = service.getExtension(jobRequest.getItemId());
+    public void run(MigrationJobRequest jobRequest) throws Exception {
+        var extVersion = service.getExtension(jobRequest.getEntityId());
         logger.info("Extracting resources for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
 
         service.deleteResources(extVersion);
         var entry = service.getDownload(extVersion);
-        var extensionFile = service.getExtensionFile(entry);
+        var extensionFile = migrations.getExtensionFile(entry);
         var download = entry.getKey();
         try(var extProcessor = new ExtensionProcessor(extensionFile)) {
             extProcessor.processEachResource(download.getExtension(), (resource) -> {
                 resource.setStorageType(download.getStorageType());
-                service.uploadResource(resource);
+                migrations.uploadResource(resource);
                 service.persistResource(resource);
             });
         }

@@ -35,9 +35,7 @@ public class OrphanNamespaceMigration {
     @Autowired
     RepositoryService repositories;
 
-    @EventListener
-    @Transactional
-    public void fixOrphanNamespaces(ApplicationStartedEvent event) {
+    public void fixOrphanNamespaces() {
         int[] count = new int[3];
         repositories.findOrphanNamespaces().forEach(namespace -> {
             var extensions = repositories.findExtensions(namespace);
@@ -81,5 +79,4 @@ public class OrphanNamespaceMigration {
         if (count[2] > 0)
             logger.info("Found " + count[2] + " orphaned namespaces that could not be fixed.");
     }
-    
 }

@@ -40,8 +40,7 @@ public class RepositoryService {
     @Autowired NamespaceMembershipJooqRepository namespaceMembershipJooqRepo;
     @Autowired AdminStatisticsRepository adminStatisticsRepo;
     @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
-    @Autowired ExtractResourcesMigrationItemRepository extractResourcesMigrationItemRepo;
-    @Autowired SetPreReleaseMigrationItemRepository setPreReleaseMigrationItemRepo;
+    @Autowired MigrationItemRepository migrationItemRepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
@@ -383,19 +382,27 @@ public class RepositoryService {
         return extensionVersionRepo.findByPublishedWithUser(user);
     }
 
-    public Streamable<ExtractResourcesMigrationItem> findNotMigratedResources() {
-        return extractResourcesMigrationItemRepo.findByMigrationScheduledFalseOrderByExtensionExtensionDownloadCountDesc();
-    }
-
-    public Streamable<SetPreReleaseMigrationItem> findNotMigratedPreReleases() {
-        return setPreReleaseMigrationItemRepo.findByMigrationScheduledFalseOrderByExtensionDownloadCountDesc();
-    }
-
     public void deleteFileResources(ExtensionVersion extVersion, String type) {
         fileResourceRepo.deleteByExtensionAndType(extVersion, type);
     }
 
     public int countVersions(Extension extension) {
         return extensionVersionRepo.countByExtension(extension);
+    }
+
+    public Streamable<MigrationItem> findNotMigratedResources() {
+        return findNotMigratedItems("V1_23__FileResource_Extract_Resources.sql");
+    }
+
+    public Streamable<MigrationItem> findNotMigratedPreReleases() {
+        return findNotMigratedItems("V1_26__Extension_Set_PreRelease.sql");
+    }
+
+    public Streamable<MigrationItem> findNotMigratedRenamedDownloads() {
+        return findNotMigratedItems("V1_28__MigrationItem.sql");
+    }
+
+    private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
+        return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript);
     }
 }

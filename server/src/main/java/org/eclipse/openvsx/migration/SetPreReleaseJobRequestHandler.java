@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SetPreReleaseJobRequestHandler implements JobRequestHandler<SetPreReleaseJobRequest> {
+public class SetPreReleaseJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtractResourcesJobRequestHandler.class));
 
@@ -27,7 +27,7 @@ public class SetPreReleaseJobRequestHandler implements JobRequestHandler<SetPreR
 
     @Override
     @Job(name = "Set pre-release and preview for published extensions", retries = 3)
-    public void run(SetPreReleaseJobRequest jobRequest) throws Exception {
+    public void run(MigrationJobRequest jobRequest) throws Exception {
         var extVersions = service.getExtensionVersions(jobRequest, logger);
         for(var extVersion : extVersions) {
             var entry = service.getDownload(extVersion);

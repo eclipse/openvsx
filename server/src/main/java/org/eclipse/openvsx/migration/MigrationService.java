@@ -9,38 +9,23 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import org.eclipse.openvsx.ExtensionProcessor;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.IStorageService;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.AbstractMap;
-import java.util.List;
 import java.util.Map;
 
 @Component
-public class SetPreReleaseJobService {
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RepositoryService repositories;
+public class MigrationService {
 
     @Autowired
     RestTemplate restTemplate;
@@ -50,20 +35,6 @@ public class SetPreReleaseJobService {
 
     @Autowired
     GoogleCloudStorageService googleStorage;
-
-    @Transactional
-    public List<ExtensionVersion> getExtensionVersions(MigrationJobRequest jobRequest, Logger logger) {
-        var extension = entityManager.find(Extension.class, jobRequest.getEntityId());
-        logger.info("Setting pre-release for: {}.{}", extension.getNamespace().getName(), extension.getName());
-        return extension.getVersions();
-    }
-
-    @Transactional
-    public Map.Entry<FileResource, byte[]> getDownload(ExtensionVersion extVersion) {
-        var download = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-        var content = download.getStorageType().equals(FileResource.STORAGE_DB) ? download.getContent() : null;
-        return new AbstractMap.SimpleEntry<>(download, content);
-    }
 
     @Retryable
     public Path getExtensionFile(Map.Entry<FileResource, byte[]> entry) {
@@ -97,14 +68,36 @@ public class SetPreReleaseJobService {
         return extensionFile;
     }
 
-    @Transactional
-    public void updatePreviewAndPreRelease(ExtensionVersion extVersion, Path extensionFile) {
-        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
-            extVersion.setPreRelease(extProcessor.isPreRelease());
-            extVersion.setPreview(extProcessor.isPreview());
+    @Retryable
+    public void uploadResource(FileResource resource) {
+        if(resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+            return;
         }
 
-        entityManager.merge(extVersion);
+        var storage = getStorage(resource);
+        storage.uploadFile(resource);
+        resource.setContent(null);
+    }
+
+    @Retryable
+    public void uploadResource(FileResource resource, Path extensionFile) {
+        if(resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+            return;
+        }
+
+        var storage = getStorage(resource);
+        storage.uploadFile(resource, extensionFile);
+        resource.setContent(null);
+    }
+
+    @Retryable
+    public void deleteResource(FileResource resource) {
+        if(resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+            return;
+        }
+
+        var storage = getStorage(resource);
+        storage.removeFile(resource);
     }
 
     private IStorageService getStorage(FileResource resource) {
