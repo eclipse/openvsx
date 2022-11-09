@@ -165,7 +165,7 @@ public class RepositoryService {
     }
 
     public FileResource findFileByName(ExtensionVersion extVersion, String name) {
-        return fileResourceRepo.findByExtensionAndNameIgnoreCase(extVersion, name);
+        return fileResourceRepo.findFirstByExtensionAndNameIgnoreCaseOrderByType(extVersion, name);
     }
 
     public FileResource findFileByTypeAndName(ExtensionVersion extVersion, String type, String name) {
