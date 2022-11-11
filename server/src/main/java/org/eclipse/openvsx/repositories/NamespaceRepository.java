@@ -26,4 +26,8 @@ public interface NamespaceRepository extends Repository<Namespace, Long> {
     Streamable<Namespace> findOrphans();
 
     long count();
+
+    <S extends Namespace> S save(S entity);
+
+    void delete(Namespace entity);
 }

@@ -19,4 +19,8 @@ public interface AzureDownloadCountProcessedItemRepository extends Repository<Az
 
     @Query("select dc.name from AzureDownloadCountProcessedItem dc where dc.success = true and dc.name in(?1)")
     List<String> findAllSucceededAzureDownloadCountProcessedItemsByNameIn(List<String> names);
+
+    <S extends AzureDownloadCountProcessedItem> S save(S entity);
+
+    void delete(AzureDownloadCountProcessedItem entity);
 }
