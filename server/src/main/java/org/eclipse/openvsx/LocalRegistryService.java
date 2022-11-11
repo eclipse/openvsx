@@ -408,13 +408,18 @@ public class LocalRegistryService implements IExtensionRegistry {
                 && !s1.equalsIgnoreCase(s2);
     }
 
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
+    public PersonalAccessToken getAccessToken(String tokenValue) {
         var token = users.useAccessToken(tokenValue);
-        if (token == null) {
-            throw new ErrorResultException("Invalid access token.");
+        if (token == null || token.getUser() == null) {
+            throw new ErrorResultException("Invalid access token.", HttpStatus.UNAUTHORIZED);
         }
 
+        return token;
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
+        var token = getAccessToken(tokenValue);
         return createNamespace(json, token.getUser());
     }
 
@@ -465,10 +470,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        var token = users.useAccessToken(tokenValue);
-        if (token == null || token.getUser() == null) {
-            throw new ErrorResultException("Invalid access token.");
-        }
+        var token = getAccessToken(tokenValue);
 
         // Check whether the user has a valid publisher agreement
         eclipse.checkPublisherAgreement(token.getUser());

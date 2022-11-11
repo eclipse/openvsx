@@ -87,6 +87,10 @@ public class RegistryAPI {
             description = "The namespace metadata are returned in JSON format"
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
+        ),
+        @ApiResponse(
             responseCode = "404",
             description = "The specified namespace could not be found",
             content = @Content()
@@ -94,8 +98,17 @@ public class RegistryAPI {
     })
     public ResponseEntity<NamespaceJson> getNamespace(
             @PathVariable @Parameter(description = "Namespace name", example = "redhat")
-            String namespace
+            String namespace,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(NamespaceJson.class);
+            }
+        }
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -121,6 +134,10 @@ public class RegistryAPI {
             description = "The extension metadata are returned in JSON format"
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
+        ),
+        @ApiResponse(
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
@@ -130,8 +147,17 @@ public class RegistryAPI {
             @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
             String namespace,
             @PathVariable @Parameter(description = "Extension name", example = "java")
-            String extension
-        ) {
+            String extension,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
+    ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(ExtensionJson.class);
+            }
+        }
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -157,6 +183,10 @@ public class RegistryAPI {
             description = "The extension metadata are returned in JSON format"
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
+        ),
+        @ApiResponse(
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
@@ -179,8 +209,17 @@ public class RegistryAPI {
                     NAME_WEB, NAME_UNIVERSAL
                 })
             )
-            CharSequence targetPlatform
+            CharSequence targetPlatform,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(ExtensionJson.class);
+            }
+        }
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -206,6 +245,10 @@ public class RegistryAPI {
             description = "The extension metadata are returned in JSON format"
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
+        ),
+        @ApiResponse(
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
@@ -217,8 +260,17 @@ public class RegistryAPI {
             @PathVariable @Parameter(description = "Extension name", example = "java")
             String extension,
             @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
-            String version
+            String version,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(ExtensionJson.class);
+            }
+        }
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -242,6 +294,10 @@ public class RegistryAPI {
         @ApiResponse(
             responseCode = "200",
             description = "The extension metadata are returned in JSON format"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
         ),
         @ApiResponse(
             responseCode = "404",
@@ -268,8 +324,17 @@ public class RegistryAPI {
             )
             String targetPlatform,
             @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
-            String version
+            String version,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(ExtensionJson.class);
+            }
+        }
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -302,6 +367,10 @@ public class RegistryAPI {
             )
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
+        ),
+        @ApiResponse(
             responseCode = "404",
             description = "The specified file could not be found",
             content = @Content()
@@ -314,8 +383,17 @@ public class RegistryAPI {
             @PathVariable @Parameter(description = "Extension name", example = "java")
             String extension,
             @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
-            String version
+            String version,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
     ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        }
         var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{version}/file/**");
         for (var registry : getRegistries()) {
             try {
@@ -346,6 +424,10 @@ public class RegistryAPI {
             )
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
+        ),
+        @ApiResponse(
             responseCode = "404",
             description = "The specified file could not be found",
             content = @Content()
@@ -371,8 +453,17 @@ public class RegistryAPI {
             )
             String targetPlatform,
             @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
-            String version
+            String version,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        }
         var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{targetPlatform}/{version}/file/**");
         for (var registry : getRegistries()) {
             try {
@@ -396,6 +487,10 @@ public class RegistryAPI {
             description = "The reviews are returned in JSON format"
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
+        ),
+        @ApiResponse(
             responseCode = "404",
             description = "The specified extension could not be found",
             content = @Content()
@@ -405,8 +500,17 @@ public class RegistryAPI {
             @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
             String namespace,
             @PathVariable @Parameter(description = "Extension name", example = "java")
-            String extension
+            String extension,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(ReviewListJson.class);
+            }
+        }
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -438,6 +542,10 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{\"error\": \"The parameter 'size' must not be negative.\"}")
             )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
         )
     })
     public ResponseEntity<SearchResultJson> search(
@@ -474,8 +582,17 @@ public class RegistryAPI {
             String sortBy,
             @RequestParam(required = false)
             @Parameter(description = "Whether to include information on all available versions for each returned entry")
-            boolean includeAllVersions
+            boolean includeAllVersions,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(SearchResultJson.class);
+            }
+        }
         if (size < 0) {
             var json = SearchResultJson.error("The parameter 'size' must not be negative.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
@@ -547,6 +664,10 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
             )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
         )
     })
     public ResponseEntity<QueryResultJson> getQuery(
@@ -583,8 +704,18 @@ public class RegistryAPI {
                     NAME_WEB, NAME_UNIVERSAL
                 })
             )
-            String targetPlatform
+            String targetPlatform,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(QueryResultJson.class);
+            }
+        }
+
         var param = new QueryParamJson();
         param.namespaceName = namespaceName;
         param.extensionName = extensionName;
@@ -635,12 +766,26 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
             )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
         )
     })
     public ResponseEntity<QueryResultJson> postQuery(
             @RequestBody @Parameter(description = "Parameters of the metadata query")
-            QueryParamJson param
+            QueryParamJson param,
+            @RequestParam(required = false) @Parameter(description = "A personal access token")
+            String token
         ) {
+        if(token != null) {
+            try {
+                local.getAccessToken(token);
+            } catch (ErrorResultException e) {
+                return e.toResponseEntity(QueryResultJson.class);
+            }
+        }
+
         var result = new QueryResultJson();
         for (var registry : getRegistries()) {
             try {
@@ -689,12 +834,16 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
             )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
         )
     })
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody @Parameter(description = "Describes the namespace to create")
             NamespaceJson namespace,
-            @RequestParam @Parameter(description = "A personal access token")
+            @RequestParam @Parameter(description = "A personal access token", required = true)
             String token
         ) {
         if (namespace == null) {
@@ -716,51 +865,51 @@ public class RegistryAPI {
     }
 
     @PostMapping(
-            path = "/api/user/namespace/create",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/api/user/namespace/create",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(
-            summary = "Create a namespace",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Describes the namespace to create",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(ref = "NamespaceJson")),
-                    required = true
-            )
+        summary = "Create a namespace",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Describes the namespace to create",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(ref = "NamespaceJson")),
+            required = true
+        )
     )
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Successfully created the namespace",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            examples = @ExampleObject(value="{ \"success\": \"Created namespace foobar\" }")
-                    ),
-                    headers = @Header(
-                            name = "Location",
-                            description = "The URL of the namespace metadata",
-                            schema = @Schema(type = "string")
-                    )
+        @ApiResponse(
+            responseCode = "201",
+            description = "Successfully created the namespace",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value="{ \"success\": \"Created namespace foobar\" }")
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "The namespace could not be created",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            examples = @ExampleObject(value="{ \"error\": \"Invalid access token.\" }")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "User is not logged in"
+            headers = @Header(
+                name = "Location",
+                description = "The URL of the namespace metadata",
+                schema = @Schema(type = "string")
             )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "The namespace could not be created",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value="{ \"error\": \"Invalid access token.\" }")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "User is not logged in"
+        )
     })
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody NamespaceJson namespace
     ) {
         var user = users.findLoggedInUser();
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
 
         if (namespace == null) {
@@ -811,11 +960,15 @@ public class RegistryAPI {
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
             )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid access token."
         )
     })
     public ResponseEntity<ExtensionJson> publish(
             InputStream content,
-            @RequestParam @Parameter(description = "A personal access token") String token
+            @RequestParam @Parameter(description = "A personal access token", required = true) String token
         ) {
         try {
             var json = local.publish(content, token);
@@ -830,40 +983,40 @@ public class RegistryAPI {
     }
 
     @PostMapping(
-            path = "/api/user/publish",
-            consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/api/user/publish",
+        consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(
-            summary = "Publish an extension by uploading a vsix file",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Uploaded vsix file to publish",
-                    content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE, schema = @Schema(type = "string", format = "binary")),
-                    required = true
-            )
+        summary = "Publish an extension by uploading a vsix file",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Uploaded vsix file to publish",
+            content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE, schema = @Schema(type = "string", format = "binary")),
+            required = true
+        )
     )
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Successfully published the extension",
-                    headers = @Header(
-                            name = "Location",
-                            description = "The URL of the extension metadata",
-                            schema = @Schema(type = "string")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "The extension could not be published",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            examples = @ExampleObject(value="{ \"error\": \"Unknown publisher: foobar\" }")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "User is not logged in"
+        @ApiResponse(
+            responseCode = "201",
+            description = "Successfully published the extension",
+            headers = @Header(
+                name = "Location",
+                description = "The URL of the extension metadata",
+                schema = @Schema(type = "string")
             )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "The extension could not be published",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value="{ \"error\": \"Unknown publisher: foobar\" }")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "User is not logged in"
+        )
     })
     public ResponseEntity<ExtensionJson> publish(
             InputStream content
@@ -871,7 +1024,7 @@ public class RegistryAPI {
         try {
             var user = users.findLoggedInUser();
             if (user == null) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
             }
 
             var json = local.publish(content, user);
@@ -932,5 +1085,4 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
     }
-
 }
