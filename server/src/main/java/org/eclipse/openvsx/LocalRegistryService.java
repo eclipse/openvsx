@@ -36,6 +36,8 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -50,6 +52,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalRegistryService.class);
 
     @Autowired
     EntityManager entityManager;
@@ -128,9 +132,17 @@ public class LocalRegistryService implements IExtensionRegistry {
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), DOWNLOAD);
         return extVersions.stream()
                 .map(ev -> {
-                    var download = fileUrls.get(ev.getId()).get(DOWNLOAD);
-                    return new AbstractMap.SimpleEntry<>(ev.getTargetPlatform(), download);
+                    var files = fileUrls.get(ev.getId());
+                    var download = files != null ? files.get(DOWNLOAD) : null;
+                    if(download == null) {
+                        var e = ev.getExtension();
+                        LOGGER.warn("Could not find download for: {}.{}-{}@{}", e.getNamespace().getName(), e.getName(), ev.getVersion(), ev.getTargetPlatform());
+                        return null;
+                    } else {
+                        return new AbstractMap.SimpleEntry<>(ev.getTargetPlatform(), download);
+                    }
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
