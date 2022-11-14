@@ -140,12 +140,8 @@ public class RepositoryService {
         return extension.getNamespace().getName() + "." + extension.getName();
     }
 
-    public Streamable<ExtensionVersion> findVersionsByUser(UserData user) {
-        return extensionVersionRepo.findByPublishedWithUser(user);
-    }
-
-    public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith) {
-        return extensionVersionRepo.findByPublishedWith(publishedWith);
+    public Streamable<Extension> findExtensions(UserData user) {
+        return extensionRepo.findDistinctByVersionsPublishedWithUser(user);
     }
 
     public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith, boolean active) {
@@ -246,6 +242,10 @@ public class RepositoryService {
 
     public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {
         return tokenRepo.findByUser(user);
+    }
+
+    public long countActiveAccessTokens(UserData user) {
+        return tokenRepo.countByUserAndActiveTrue(user);
     }
 
     public PersonalAccessToken findAccessToken(String value) {

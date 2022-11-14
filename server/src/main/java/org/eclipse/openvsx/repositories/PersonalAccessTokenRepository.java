@@ -18,6 +18,8 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     Streamable<PersonalAccessToken> findByUser(UserData user);
 
+    long countByUserAndActiveTrue(UserData user);
+
     PersonalAccessToken findById(long id);
 
     PersonalAccessToken findByValue(String value);

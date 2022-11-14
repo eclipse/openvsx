@@ -35,8 +35,8 @@ export const UserExtensionList: FunctionComponent<UserExtensionListProps> = prop
             <DelayedLoadIndicator loading={props.loading} />
             {
                 props.extensions && props.extensions.length > 0 ?
-                props.extensions.map((extension: Extension, i: number) => <UserNamespaceExtensionListItem
-                    key={`${i}${extension.name}${extension.version}`}
+                props.extensions.map((extension: Extension) => <UserNamespaceExtensionListItem
+                    key={`${extension.namespace}.${extension.name}-${extension.version}`}
                     extension={extension}
                 />)
                 : null
