@@ -24,6 +24,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
@@ -304,23 +305,23 @@ public class ElasticSearchService implements ISearchService {
             throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
         }
 
+        var sorts = new ArrayList<SortBuilder<?>>();
         if ("relevance".equals(sortBy)) {
-            queryBuilder.withSort(SortBuilders.scoreSort());
+            sorts.add(SortBuilders.scoreSort());
         }
 
         if ("relevance".equals(sortBy) || "averageRating".equals(sortBy)) {
-            queryBuilder.withSort(
-                    SortBuilders.fieldSort(sortBy).unmappedType("float").order(SortOrder.fromString(sortOrder)));
+            sorts.add(SortBuilders.fieldSort(sortBy).unmappedType("float").order(SortOrder.fromString(sortOrder)));
         } else if ("timestamp".equals(sortBy)) {
-            queryBuilder.withSort(
-                    SortBuilders.fieldSort(sortBy).unmappedType("long").order(SortOrder.fromString(sortOrder)));
+            sorts.add(SortBuilders.fieldSort(sortBy).unmappedType("long").order(SortOrder.fromString(sortOrder)));
         } else if ("downloadCount".equals(sortBy)) {
-            queryBuilder.withSort(
-                    SortBuilders.fieldSort(sortBy).unmappedType("integer").order(SortOrder.fromString(sortOrder)));
+            sorts.add(SortBuilders.fieldSort(sortBy).unmappedType("integer").order(SortOrder.fromString(sortOrder)));
         } else {
             throw new ErrorResultException(
                     "sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'");
         }
+
+        queryBuilder.withSorts(sorts);
     }
 
     private long getMaxResultWindow() {
