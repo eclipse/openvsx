@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.search;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.eclipse.openvsx.entities.Extension;
@@ -37,6 +38,11 @@ public interface ISearchService {
      * and then recreated.
      */
     void updateSearchIndex(boolean clear);
+
+    /**
+     * The given extensions have been added to the registry, we need to refresh the search index.
+     */
+    void updateSearchEntries(List<Extension> extensions);
 
     /**
      * The given extension has been added to the registry, we need to refresh the search index.

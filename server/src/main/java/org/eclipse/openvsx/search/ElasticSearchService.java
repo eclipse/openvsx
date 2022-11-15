@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 
@@ -170,6 +171,26 @@ public class ElasticSearchService implements ISearchService {
             if (locked) {
                 rwLock.writeLock().unlock();
             }
+        }
+    }
+
+    @Retryable(DataAccessResourceFailureException.class)
+    public void updateSearchEntries(List<Extension> extensions) {
+        if (!isEnabled() || extensions.isEmpty()) {
+            return;
+        }
+        try {
+            rwLock.writeLock().lock();
+            var indexOps = searchOperations.indexOps(ExtensionSearch.class);
+            var stats = new SearchStats(repositories);
+            var indexQueries = extensions.stream().map(extension ->
+                    new IndexQueryBuilder()
+                            .withObject(relevanceService.toSearchEntry(extension, stats))
+                            .build()
+            ).collect(Collectors.toList());
+            searchOperations.bulkIndex(indexQueries, indexOps.getIndexCoordinates());
+        } finally {
+            rwLock.writeLock().unlock();
         }
     }
 

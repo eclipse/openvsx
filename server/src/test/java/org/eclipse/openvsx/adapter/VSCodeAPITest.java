@@ -758,11 +758,6 @@ public class VSCodeAPITest {
         }
 
         @Bean
-        DownloadCountService downloadCountService() {
-            return new DownloadCountService();
-        }
-
-        @Bean
         VersionService getVersionService() {
             return new VersionService();
         }

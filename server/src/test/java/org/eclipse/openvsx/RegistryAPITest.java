@@ -85,8 +85,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, VSCodeIdService.class, DownloadCountService.class, AzureDownloadCountService.class,
-    CacheService.class, EclipseService.class, PublishExtensionVersionService.class
+    AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
+    EclipseService.class, PublishExtensionVersionService.class
 })
 public class RegistryAPITest {
 
