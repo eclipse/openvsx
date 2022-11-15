@@ -120,15 +120,13 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private Map<String, String> getDownloads(Extension extension, String targetPlatform, String version) {
-        var downloadsStream = extension.getVersions().stream();
+        var downloadsStream = extension.getVersions().stream()
+                .filter(ev -> ev.getVersion().equals(version));
         if(targetPlatform != null) {
             downloadsStream = downloadsStream.filter(ev -> ev.getTargetPlatform().equals(targetPlatform));
         }
 
-        var extVersions = downloadsStream.filter(ev -> ev.getVersion().equals(version))
-                .filter(ev -> !ev.getTargetPlatform().equals(TargetPlatform.NAME_WEB))
-                .collect(Collectors.toList());
-
+        var extVersions = downloadsStream.collect(Collectors.toList());
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), DOWNLOAD);
         return extVersions.stream()
                 .map(ev -> {
