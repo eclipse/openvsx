@@ -795,7 +795,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foobar"; })))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
     
@@ -875,7 +875,7 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
     
