@@ -9,8 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +34,10 @@ public class AzureDownloadCountProcessor {
     RepositoryService repositories;
 
     @Autowired
-    DownloadCountService downloadCounts;
+    CacheService cache;
+
+    @Autowired
+    SearchUtilService search;
 
     @Transactional
     public void persistProcessedItem(String name, LocalDateTime processedOn, int executionTime, boolean success) {
@@ -65,11 +70,33 @@ public class AzureDownloadCountProcessor {
     }
 
     @Transactional
-    public void increaseDownloadCounts(Map<Long, List<Download>> extensionDownloads) {
-        repositories.findExtensions(extensionDownloads.keySet()).forEach(extension -> {
+    public List<Extension> increaseDownloadCounts(Map<Long, List<Download>> extensionDownloads) {
+        var extensions = repositories.findExtensions(extensionDownloads.keySet()).toList();
+        extensions.forEach(extension -> {
             var downloads = extensionDownloads.get(extension.getId());
-            downloadCounts.increaseDownloadCount(extension, downloads);
+            downloads.forEach(entityManager::persist);
+            extension.setDownloadCount(extension.getDownloadCount() + downloads.size());
         });
+
+        return extensions;
+    }
+
+    @Transactional //needs transaction for lazy-loading versions
+    public void evictExtensionJsons(List<Extension> extensions) {
+        extensions.forEach(extension -> {
+            extension = entityManager.merge(extension);
+            cache.evictExtensionJsons(extension);
+        });
+    }
+
+    @Transactional //needs transaction for lazy-loading versions
+    public void updateSearchEntries(List<Extension> extensions) {
+        var activeExtensions = extensions.stream()
+                .filter(Extension::isActive)
+                .map(entityManager::merge)
+                .collect(Collectors.toList());
+
+        search.updateSearchEntries(activeExtensions);
     }
 
     public List<String> processedItems(List<String> blobNames) {

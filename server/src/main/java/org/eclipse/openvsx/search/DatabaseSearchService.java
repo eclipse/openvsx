@@ -13,7 +13,6 @@ package org.eclipse.openvsx.search;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,23 +154,28 @@ public class DatabaseSearchService implements ISearchService {
      * Clear the cache when asked to update the search index. It could be done also
      * through a cron job as well
      */
-    @CacheEvict(value = CACHE_DATABASE_SEARCH)
     @Override
+    @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void updateSearchIndex(boolean clear) {
 
     }
 
     @Override
-    public void updateSearchEntry(Extension extension) {
-        // refresh the index
-        this.updateSearchIndex(true);
+    @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
+    public void updateSearchEntries(List<Extension> extensions) {
 
     }
 
     @Override
+    @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
+    public void updateSearchEntry(Extension extension) {
+
+    }
+
+    @Override
+    @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void removeSearchEntry(Extension extension) {
-        // refresh the index
-        this.updateSearchIndex(true);
+
     }
 
     /**
@@ -213,7 +217,6 @@ public class DatabaseSearchService implements ISearchService {
             // timestamp
             return Long.compare(ext1.timestamp, ext2.timestamp);
         }
-
     }
 
     /**
@@ -225,7 +228,5 @@ public class DatabaseSearchService implements ISearchService {
         public int compare(ExtensionSearch ext1, ExtensionSearch ext2) {
             return Double.compare(ext1.relevance, ext2.relevance);
         }
-
     }
-
 }
