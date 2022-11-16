@@ -293,8 +293,7 @@ public class AdminService {
         }
     }
 
-    @Transactional
-    public String getAdminStatisticsCsv(int year, int month) throws ErrorResultException {
+    public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {
         if(year < 0) {
             throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);
         }
@@ -330,6 +329,12 @@ public class AdminService {
             var extensionsByRating = repositories.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive);
             var publishersByExtensionsPublished = repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive);
 
+            var limit = 10;
+            var topMostActivePublishingUsers = repositories.topMostActivePublishingUsers(endExclusive, limit);
+            var topNamespaceExtensions = repositories.topNamespaceExtensions(endExclusive, limit);
+            var topNamespaceExtensionVersions = repositories.topNamespaceExtensionVersions(endExclusive, limit);
+            var topMostDownloadedExtensions = repositories.topMostDownloadedExtensions(endExclusive, limit);
+
             statistics = new AdminStatistics();
             statistics.setYear(year);
             statistics.setMonth(month);
@@ -341,6 +346,10 @@ public class AdminService {
             statistics.setNamespaceOwners(namespaceOwners);
             statistics.setExtensionsByRating(extensionsByRating);
             statistics.setPublishersByExtensionsPublished(publishersByExtensionsPublished);
+            statistics.setTopMostActivePublishingUsers(topMostActivePublishingUsers);
+            statistics.setTopNamespaceExtensions(topNamespaceExtensions);
+            statistics.setTopNamespaceExtensionVersions(topNamespaceExtensionVersions);
+            statistics.setTopMostDownloadedExtensions(topMostDownloadedExtensions);
 
             if(!currentYearAndMonth) {
                 // archive statistics for quicker lookup next time
@@ -348,6 +357,6 @@ public class AdminService {
             }
         }
 
-        return statistics.toCsv();
+        return statistics;
     }
 }

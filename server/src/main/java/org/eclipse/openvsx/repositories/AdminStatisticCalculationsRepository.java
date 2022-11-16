@@ -10,9 +10,7 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.jooq.DSLContext;
-import org.jooq.Record2;
-import org.jooq.SelectHavingStep;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -37,22 +35,26 @@ public class AdminStatisticCalculationsRepository {
     DSLContext dsl;
 
     public long downloadsSumByTimestampLessThan(LocalDateTime endExclusive) {
-        var sum = DSL.coalesce(DSL.sum(DOWNLOAD.AMOUNT),new BigDecimal(0));
-        return dsl.select(sum)
-                .from(DOWNLOAD)
-                .where(DOWNLOAD.TIMESTAMP.lessThan(endExclusive))
-                .fetchOne(sum)
-                .longValue();
+        return downloadsSum(null, endExclusive);
     }
 
     public long downloadsSumByTimestampGreaterThanEqualAndTimestampLessThan(LocalDateTime startInclusive, LocalDateTime endExclusive) {
+        return downloadsSum(startInclusive, endExclusive);
+    }
+
+    private long downloadsSum(LocalDateTime startInclusive, LocalDateTime endExclusive) {
         var sum = DSL.coalesce(DSL.sum(DOWNLOAD.AMOUNT),new BigDecimal(0));
-        return dsl.select(sum)
+        var startClause = startInclusive != null ? DOWNLOAD.TIMESTAMP.greaterOrEqual(startInclusive) : null;
+        var endClause = DOWNLOAD.TIMESTAMP.lessThan(endExclusive);
+        var query = dsl.select(sum)
                 .from(DOWNLOAD)
-                .where(DOWNLOAD.TIMESTAMP.greaterOrEqual(startInclusive))
-                .and(DOWNLOAD.TIMESTAMP.lessThan(endExclusive))
-                .fetchOne(sum)
-                .longValue();
+                .where(endClause);
+
+        if(startClause != null) {
+            query = query.and(startClause);
+        }
+
+        return query.fetchOne(sum).longValue();
     }
 
     public int countActiveExtensions(LocalDateTime endExclusive) {
@@ -197,6 +199,118 @@ public class AdminStatisticCalculationsRepository {
                 .and(extensionVersionState.ACTIVE.eq(true))
                 .and(NAMESPACE_MEMBERSHIP.ROLE.eq(NamespaceMembership.ROLE_OWNER))
                 .fetchOne(count);
+    }
+
+    public Map<String, Integer> topMostActivePublishingUsers(LocalDateTime endExclusive, int limit) {
+        var count = DSL.count(EXTENSION_VERSION.ID).as("extension_version_count");
+        var extensionVersionState = ENTITY_ACTIVE_STATE.as("evs");
+        var lastChangedExtensionVersionState = findLastChangedEntityStates(endExclusive, ENTITY_TYPE_EXTENSION_VERSION).asTable("aev");
+        return dsl.select(USER_DATA.ID, USER_DATA.LOGIN_NAME, count)
+                .from(EXTENSION_VERSION)
+                .join(extensionVersionState).on(extensionVersionState.ENTITY_ID.eq(EXTENSION_VERSION.ID).and(extensionVersionState.ENTITY_TYPE.eq(ENTITY_TYPE_EXTENSION_VERSION)))
+                .join(lastChangedExtensionVersionState).on(lastChangedExtensionVersionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID).eq(extensionVersionState.ENTITY_ID).and(lastChangedExtensionVersionState.field(ALIAS_LAST_CHANGE, LocalDateTime.class).eq(extensionVersionState.TIMESTAMP)))
+                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
+                .join(USER_DATA).on(USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA))
+                .where(extensionVersionState.ACTIVE.eq(true))
+                .groupBy(USER_DATA.ID)
+                .orderBy(count.desc())
+                .limit(limit)
+                .fetch()
+                .stream()
+                .map(r -> {
+                    var loginName = r.get(USER_DATA.LOGIN_NAME);
+                    var extensionVersionCount = r.get(count);
+                    return Map.entry(loginName, extensionVersionCount);
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public Map<String, Integer> topNamespaceExtensions(LocalDateTime endExclusive, int limit) {
+        var count = DSL.count(EXTENSION.ID).as("extension_count");
+        var extensionState = ENTITY_ACTIVE_STATE.as("es");
+        var lastChangedExtensionState = findLastChangedEntityStates(endExclusive, ENTITY_TYPE_EXTENSION).asTable("ae");
+        return dsl.select(NAMESPACE.ID, NAMESPACE.NAME, count)
+                .from(NAMESPACE)
+                .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
+                .join(extensionState).on(extensionState.ENTITY_ID.eq(EXTENSION.ID).and(extensionState.ENTITY_TYPE.eq(ENTITY_TYPE_EXTENSION)))
+                .join(lastChangedExtensionState).on(lastChangedExtensionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID).eq(extensionState.ENTITY_ID).and(lastChangedExtensionState.field(ALIAS_LAST_CHANGE, LocalDateTime.class).eq(extensionState.TIMESTAMP)))
+                .where(extensionState.ACTIVE.eq(true))
+                .groupBy(NAMESPACE.ID)
+                .orderBy(count.desc())
+                .limit(limit)
+                .fetch()
+                .stream()
+                .map(r -> {
+                    var namespaceName = r.get(NAMESPACE.NAME);
+                    var extensionCount = r.get(count);
+                    return Map.entry(namespaceName, extensionCount);
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public Map<String, Integer> topNamespaceExtensionVersions(LocalDateTime endExclusive, int limit) {
+        var count = DSL.count(EXTENSION_VERSION.ID).as("extension_version_count");
+        var extensionState = ENTITY_ACTIVE_STATE.as("es");
+        var lastChangedExtensionState = findLastChangedEntityStates(endExclusive, ENTITY_TYPE_EXTENSION).asTable("ae");
+        var extensionVersionState = ENTITY_ACTIVE_STATE.as("evs");
+        var lastChangedExtensionVersionState = findLastChangedEntityStates(endExclusive, ENTITY_TYPE_EXTENSION_VERSION).asTable("aev");
+        return dsl.select(NAMESPACE.ID, NAMESPACE.NAME, count)
+                .from(NAMESPACE)
+                .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
+                .join(extensionState).on(extensionState.ENTITY_ID.eq(EXTENSION.ID).and(extensionState.ENTITY_TYPE.eq(ENTITY_TYPE_EXTENSION)))
+                .join(lastChangedExtensionState).on(lastChangedExtensionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID).eq(extensionState.ENTITY_ID).and(lastChangedExtensionState.field(ALIAS_LAST_CHANGE, LocalDateTime.class).eq(extensionState.TIMESTAMP)))
+                .join(EXTENSION_VERSION).on(EXTENSION_VERSION.EXTENSION_ID.eq(lastChangedExtensionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID)))
+                .join(extensionVersionState).on(extensionVersionState.ENTITY_ID.eq(EXTENSION_VERSION.ID).and(extensionVersionState.ENTITY_TYPE.eq(ENTITY_TYPE_EXTENSION_VERSION)))
+                .join(lastChangedExtensionVersionState).on(lastChangedExtensionVersionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID).eq(extensionVersionState.ENTITY_ID).and(lastChangedExtensionVersionState.field(ALIAS_LAST_CHANGE, LocalDateTime.class).eq(extensionVersionState.TIMESTAMP)))
+                .where(extensionState.ACTIVE.eq(true))
+                .and(extensionVersionState.ACTIVE.eq(true))
+                .groupBy(NAMESPACE.ID)
+                .orderBy(count.desc())
+                .limit(limit)
+                .fetch()
+                .stream()
+                .map(r -> {
+                    var namespaceName = r.get(NAMESPACE.NAME);
+                    var extensionVersionCount = r.get(count);
+                    return Map.entry(namespaceName, extensionVersionCount);
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public Map<String, Long> topMostDownloadedExtensions(LocalDateTime endExclusive, int limit) {
+        var downloads = DSL.sum(DOWNLOAD.AMOUNT);
+        var extensionState = ENTITY_ACTIVE_STATE.as("es");
+        var lastChangedExtensionState = findLastChangedEntityStates(endExclusive, ENTITY_TYPE_EXTENSION).asTable("ae");
+        var extensionVersionState = ENTITY_ACTIVE_STATE.as("evs");
+        var lastChangedExtensionVersionState = findLastChangedEntityStates(endExclusive, ENTITY_TYPE_EXTENSION_VERSION).asTable("aev");
+        var downloadsQuery = dsl.select(EXTENSION.ID, EXTENSION.NAMESPACE_ID, EXTENSION.NAME, downloads)
+                .from(NAMESPACE)
+                .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
+                .join(extensionState).on(extensionState.ENTITY_ID.eq(EXTENSION.ID).and(extensionState.ENTITY_TYPE.eq(ENTITY_TYPE_EXTENSION)))
+                .join(lastChangedExtensionState).on(lastChangedExtensionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID).eq(extensionState.ENTITY_ID).and(lastChangedExtensionState.field(ALIAS_LAST_CHANGE, LocalDateTime.class).eq(extensionState.TIMESTAMP)))
+                .join(EXTENSION_VERSION).on(EXTENSION_VERSION.EXTENSION_ID.eq(lastChangedExtensionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID)))
+                .join(extensionVersionState).on(extensionVersionState.ENTITY_ID.eq(EXTENSION_VERSION.ID).and(extensionVersionState.ENTITY_TYPE.eq(ENTITY_TYPE_EXTENSION_VERSION)))
+                .join(lastChangedExtensionVersionState).on(lastChangedExtensionVersionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID).eq(extensionVersionState.ENTITY_ID).and(lastChangedExtensionVersionState.field(ALIAS_LAST_CHANGE, LocalDateTime.class).eq(extensionVersionState.TIMESTAMP)))
+                .join(FILE_RESOURCE).on(FILE_RESOURCE.EXTENSION_ID.eq(lastChangedExtensionVersionState.field(ENTITY_ACTIVE_STATE.ENTITY_ID)))
+                .join(DOWNLOAD).on(DOWNLOAD.FILE_RESOURCE_ID_NOT_FK.eq(FILE_RESOURCE.ID))
+                .where(extensionState.ACTIVE.eq(true))
+                .and(extensionVersionState.ACTIVE.eq(true))
+                .groupBy(EXTENSION.ID)
+                .orderBy(downloads.desc())
+                .limit(limit)
+                .asTable("ext");
+
+        var extensionId = DSL.concat(NAMESPACE.NAME, DSL.value("."), downloadsQuery.field(EXTENSION.NAME));
+        return dsl.select(extensionId, downloadsQuery.field(downloads))
+                .from(downloadsQuery)
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(downloadsQuery.field(EXTENSION.NAMESPACE_ID)))
+                .fetch()
+                .stream()
+                .map(r -> {
+                    var downloadCount = r.get(downloadsQuery.field(downloads)).longValue();
+                    return Map.entry(r.get(extensionId), downloadCount);
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private SelectHavingStep<Record2<Long, LocalDateTime>> findLastChangedEntityStates(LocalDateTime endExclusive, String entityType) {
