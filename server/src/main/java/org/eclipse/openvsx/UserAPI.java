@@ -19,21 +19,15 @@ import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 
-import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.CollectionUtil;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -68,6 +62,9 @@ public class UserAPI {
 
     @Autowired
     StorageUtilService storageUtil;
+
+    @Autowired
+    VersionService versions;
 
     /**
      * Redirect to GitHub Oauth2 login as default login provider.
@@ -208,16 +205,20 @@ public class UserAPI {
             path = "/user/extensions",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Transactional
     public List<ExtensionJson> getOwnExtensions() {
         var user = users.findLoggedInUser();
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        return repositories.findVersionsByUser(user)
-                .map(extVersion -> {
-                    var json = extVersion.toExtensionJson();
-                    json.files = storageUtil.getFileUrls(extVersion, UrlUtil.getBaseUrl(),
+        return repositories.findExtensions(user)
+                .map(e -> versions.getLatest(e, null, false, false))
+                .map(latest -> {
+                    var json = latest.toExtensionJson();
+                    json.preview = latest.isPreview();
+                    json.active = latest.getExtension().isActive();
+                    json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(),
                             DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
 
                     return json;

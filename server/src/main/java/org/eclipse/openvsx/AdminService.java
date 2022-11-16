@@ -35,6 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import static org.eclipse.openvsx.entities.FileResource.*;
+
 @Component
 public class AdminService {
 
@@ -202,37 +204,27 @@ public class AdminService {
             throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
         }
 
-        var serverUrl = UrlUtil.getBaseUrl();
-        var versionJsons = new ArrayList<ExtensionJson>();
-        var activeAccessTokenNum = 0;
-        var accessTokens = repositories.findAccessTokens(user);
-        for (var accessToken : accessTokens) {
-            if (accessToken.isActive()) {
-                activeAccessTokenNum++;
-            }
-            var versionList = repositories.findVersionsByAccessToken(accessToken).toList();
-            var fileUrls = storageUtil.getFileUrls(versionList, serverUrl, FileResource.DOWNLOAD, FileResource.MANIFEST,
-                    FileResource.ICON, FileResource.README, FileResource.LICENSE, FileResource.CHANGELOG);
-            for (var version : versionList) {
-                var latest = versions.getLatest(version.getExtension(), null, false, true);
-                var json = version.toExtensionJson();
-                json.preview = latest.isPreview();
-                json.active = version.isActive();
-                json.files = fileUrls.get(version.getId());
-                versionJsons.add(json);
-            }
-        }
-        versionJsons.sort(
-            Comparator.comparing((ExtensionJson j) -> j.namespace)
-                      .thenComparing(j -> j.name)
-                      .thenComparing(j -> j.version)
-        );
-
         var userPublishInfo = new UserPublishInfoJson();
         userPublishInfo.user = user.toUserJson();
         eclipse.enrichUserJson(userPublishInfo.user, user);
-        userPublishInfo.extensions = versionJsons;
-        userPublishInfo.activeAccessTokenNum = activeAccessTokenNum;
+        userPublishInfo.activeAccessTokenNum = (int) repositories.countActiveAccessTokens(user);
+        userPublishInfo.extensions = repositories.findExtensions(user).stream()
+                .map(e -> versions.getLatest(e, null, false, false))
+                .map(latest -> {
+                    var json = latest.toExtensionJson();
+                    json.preview = latest.isPreview();
+                    json.active = latest.getExtension().isActive();
+                    json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(),
+                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
+
+                    return json;
+                })
+                .sorted(Comparator.<ExtensionJson, String>comparing(j -> j.namespace)
+                                .thenComparing(j -> j.name)
+                                .thenComparing(j -> j.version)
+                )
+                .collect(Collectors.toList());
+
         return userPublishInfo;
     }
 
