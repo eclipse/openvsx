@@ -17,6 +17,7 @@ import java.net.URI;
 
 import com.google.common.base.Strings;
 
+import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.json.*;
@@ -59,23 +60,47 @@ public class AdminAPI {
 
     @GetMapping(
             path = "/admin/report",
-            produces = "text/csv"
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<String> getReport(
+    @Transactional
+    public ResponseEntity<AdminStatisticsJson> getReportJson(
             @RequestParam("token") String tokenValue,
             @RequestParam("year") int year,
             @RequestParam("month") int month
     ) {
         try {
-            var accessToken = repositories.findAccessToken(tokenValue);
-            if(accessToken == null || !accessToken.isActive() || accessToken.getUser() == null || !ROLE_ADMIN.equals(accessToken.getUser().getRole())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
+            var statistics = getReport(tokenValue, year, month);
+            return ResponseEntity.ok(statistics.toJson());
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(AdminStatisticsJson.class);
+        }
+    }
 
-            return ResponseEntity.ok(admins.getAdminStatisticsCsv(year, month));
+    @GetMapping(
+            path = "/admin/report",
+            produces = "text/csv"
+    )
+    @Transactional
+    public ResponseEntity<String> getReportCsv(
+            @RequestParam("token") String tokenValue,
+            @RequestParam("year") int year,
+            @RequestParam("month") int month
+    ) {
+        try {
+            var statistics = getReport(tokenValue, year, month);
+            return ResponseEntity.ok(statistics.toCsv());
         } catch (ErrorResultException exc) {
             return ResponseEntity.status(exc.getStatus()).body(exc.getMessage());
         }
+    }
+
+    private AdminStatistics getReport(String tokenValue, int year, int month) {
+        var accessToken = repositories.findAccessToken(tokenValue);
+        if(accessToken == null || !accessToken.isActive() || accessToken.getUser() == null || !ROLE_ADMIN.equals(accessToken.getUser().getRole())) {
+            throw new ErrorResultException("Invalid access token", HttpStatus.FORBIDDEN);
+        }
+
+        return admins.getAdminStatistics(year, month);
     }
 
     @GetMapping(

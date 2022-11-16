@@ -9,13 +9,14 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.entities;
 
+import org.eclipse.openvsx.json.AdminStatisticsJson;
+
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.LongStream;
 
 @Entity
 public class AdminStatistics {
@@ -50,6 +51,26 @@ public class AdminStatistics {
     @Column(name = "publishers")
     Map<Integer, Integer> publishersByExtensionsPublished;
 
+    @ElementCollection
+    @MapKeyColumn(name = "login_name")
+    @Column(name = "extension_version_count")
+    Map<String, Integer> topMostActivePublishingUsers;
+
+    @ElementCollection
+    @MapKeyColumn(name = "namespace")
+    @Column(name = "extension_count")
+    Map<String, Integer> topNamespaceExtensions;
+
+    @ElementCollection
+    @MapKeyColumn(name = "namespace")
+    @Column(name = "extension_version_count")
+    Map<String, Integer> topNamespaceExtensionVersions;
+
+    @ElementCollection
+    @MapKeyColumn(name = "extension_identifier")
+    @Column(name = "downloads")
+    Map<String, Long> topMostDownloadedExtensions;
+
     public String toCsv() {
         var ratings = 5;
         var headers = new ArrayList<>(List.of("year", "month", "extensions", "downloads", "downloads_total", "publishers", "average_reviews_per_extension", "namespace_owners"));
@@ -62,7 +83,7 @@ public class AdminStatistics {
             headers.add("publishers_published_extensions_" + amount);
         }
 
-        var values = new ArrayList<>(List.of(year, month, extensions, downloads, downloadsTotal, publishers, averageReviewsPerExtension, namespaceOwners));
+        var values = new ArrayList<Number>(List.of(year, month, extensions, downloads, downloadsTotal, publishers, averageReviewsPerExtension, namespaceOwners));
         for(int i = 0; i  < ratings; i++) {
             values.add(extensionsByRating.getOrDefault(i + 1, 0));
         }
@@ -70,8 +91,119 @@ public class AdminStatistics {
             values.add(publishersByExtensionsPublished.get(amount));
         }
 
+        topMapToCsv(headers, values, topMostActivePublishingUsers, "most_active_publishing_users_");
+        topMapToCsv(headers, values, topNamespaceExtensions, "namespace_extensions_");
+        topMapToCsv(headers, values, topNamespaceExtensionVersions, "namespace_extension_versions_");
+        topMapToCsv(headers, values, topMostDownloadedExtensions, "most_downloaded_extensions_");
+
         var valueStrings = values.stream().map(String::valueOf).collect(Collectors.joining(","));
         return String.join(",", headers) + "\n" + valueStrings;
+    }
+
+    private void topMapToCsv(List<String> headers, List<Number> values, Map<String, ? extends Number> topMap, String headerPrefix) {
+        topMap.entrySet().stream()
+                .sorted(Comparator.<Map.Entry<String, ? extends Number>>comparingLong(entry -> entry.getValue().longValue()).reversed())
+                .forEach(entry -> {
+                    headers.add(headerPrefix + entry.getKey());
+                    values.add(entry.getValue());
+                });
+    }
+
+    public AdminStatisticsJson toJson() {
+        var json = new AdminStatisticsJson();
+        json.year = year;
+        json.month = month;
+        json.extensions = extensions;
+        json.downloads = downloads;
+        json.downloadsTotal = downloadsTotal;
+        json.publishers = publishers;
+        json.averageReviewsPerExtension = averageReviewsPerExtension;
+        json.namespaceOwners = namespaceOwners;
+        json.extensionsByRating = mapExtensionsByRating();
+        json.publishersByExtensionsPublished = mapPublishersByExtensionsPublished();
+        json.topMostActivePublishingUsers = mapTopMostActivePublishingUsers();
+        json.topNamespaceExtensions = mapTopNamespaceExtensions();
+        json.topNamespaceExtensionVersions = mapTopNamespaceExtensionVersions();
+        json.topMostDownloadedExtensions = mapTopMostDownloadedExtensions();
+
+        return json;
+    }
+
+    private List<AdminStatisticsJson.ExtensionsByRating> mapExtensionsByRating() {
+        return extensionsByRating.entrySet().stream()
+                .map(entry -> {
+                    var mapping = new AdminStatisticsJson.ExtensionsByRating();
+                    mapping.rating = entry.getKey();
+                    mapping.extensions = entry.getValue();
+                    return mapping;
+                })
+                .sorted(Comparator.<AdminStatisticsJson.ExtensionsByRating>comparingInt(er -> er.rating).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<AdminStatisticsJson.PublishersByExtensionsPublished> mapPublishersByExtensionsPublished() {
+        return publishersByExtensionsPublished.entrySet().stream()
+                .map(entry -> {
+                    var mapping = new AdminStatisticsJson.PublishersByExtensionsPublished();
+                    mapping.extensionsPublished = entry.getKey();
+                    mapping.publishers = entry.getValue();
+                    return mapping;
+                })
+                .sorted(Comparator.<AdminStatisticsJson.PublishersByExtensionsPublished>comparingInt(pe -> pe.extensionsPublished).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<AdminStatisticsJson.TopMostActivePublishingUsers> mapTopMostActivePublishingUsers() {
+        return topMostActivePublishingUsers.entrySet().stream()
+                .map(entry -> {
+                    var mapping = new AdminStatisticsJson.TopMostActivePublishingUsers();
+                    mapping.userLoginName = entry.getKey();
+                    mapping.publishedExtensionVersions = entry.getValue();
+                    return mapping;
+                })
+                .sorted(Comparator.<AdminStatisticsJson.TopMostActivePublishingUsers>comparingInt(pe -> pe.publishedExtensionVersions).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<AdminStatisticsJson.TopNamespaceExtensions> mapTopNamespaceExtensions() {
+        return topNamespaceExtensions.entrySet().stream()
+                .map(entry -> {
+                    var mapping = new AdminStatisticsJson.TopNamespaceExtensions();
+                    mapping.namespace = entry.getKey();
+                    mapping.extensions = entry.getValue();
+                    return mapping;
+                })
+                .sorted(Comparator.<AdminStatisticsJson.TopNamespaceExtensions>comparingInt(pe -> pe.extensions).reversed())
+                .collect(Collectors.toList());
+    }
+
+    public static class TopNamespaceExtensionVersions {
+        public String namespace;
+
+        public int extensionVersions;
+    }
+    private List<AdminStatisticsJson.TopNamespaceExtensionVersions> mapTopNamespaceExtensionVersions() {
+        return topNamespaceExtensionVersions.entrySet().stream()
+                .map(entry -> {
+                    var mapping = new AdminStatisticsJson.TopNamespaceExtensionVersions();
+                    mapping.namespace = entry.getKey();
+                    mapping.extensionVersions = entry.getValue();
+                    return mapping;
+                })
+                .sorted(Comparator.<AdminStatisticsJson.TopNamespaceExtensionVersions>comparingInt(pe -> pe.extensionVersions).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<AdminStatisticsJson.TopMostDownloadedExtensions> mapTopMostDownloadedExtensions() {
+        return topMostDownloadedExtensions.entrySet().stream()
+                .map(entry -> {
+                    var mapping = new AdminStatisticsJson.TopMostDownloadedExtensions();
+                    mapping.extensionIdentifier = entry.getKey();
+                    mapping.downloads = entry.getValue();
+                    return mapping;
+                })
+                .sorted(Comparator.<AdminStatisticsJson.TopMostDownloadedExtensions>comparingLong(pe -> pe.downloads).reversed())
+                .collect(Collectors.toList());
     }
 
     public long getId() {
@@ -160,5 +292,37 @@ public class AdminStatistics {
 
     public void setPublishersByExtensionsPublished(Map<Integer, Integer> publishersByExtensionsPublished) {
         this.publishersByExtensionsPublished = publishersByExtensionsPublished;
+    }
+
+    public Map<String, Integer> getTopMostActivePublishingUsers() {
+        return topMostActivePublishingUsers;
+    }
+
+    public void setTopMostActivePublishingUsers(Map<String, Integer> topMostActivePublishingUsers) {
+        this.topMostActivePublishingUsers = topMostActivePublishingUsers;
+    }
+
+    public Map<String, Integer> getTopNamespaceExtensions() {
+        return topNamespaceExtensions;
+    }
+
+    public void setTopNamespaceExtensions(Map<String, Integer> topNamespaceExtensions) {
+        this.topNamespaceExtensions = topNamespaceExtensions;
+    }
+
+    public Map<String, Integer> getTopNamespaceExtensionVersions() {
+        return topNamespaceExtensionVersions;
+    }
+
+    public void setTopNamespaceExtensionVersions(Map<String, Integer> topNamespaceExtensionVersions) {
+        this.topNamespaceExtensionVersions = topNamespaceExtensionVersions;
+    }
+
+    public Map<String, Long> getTopMostDownloadedExtensions() {
+        return topMostDownloadedExtensions;
+    }
+
+    public void setTopMostDownloadedExtensions(Map<String, Long> topMostDownloadedExtensions) {
+        this.topMostDownloadedExtensions = topMostDownloadedExtensions;
     }
 }

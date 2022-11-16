@@ -359,6 +359,22 @@ public class RepositoryService {
         return adminStatisticCalculationsRepo.downloadsSumByTimestampGreaterThanEqualAndTimestampLessThan(startInclusive, endExclusive);
     }
 
+    public Map<String, Integer> topMostActivePublishingUsers(LocalDateTime endExclusive, int limit) {
+        return adminStatisticCalculationsRepo.topMostActivePublishingUsers(endExclusive, limit);
+    }
+
+    public Map<String, Integer> topNamespaceExtensions(LocalDateTime endExclusive, int limit) {
+        return adminStatisticCalculationsRepo.topNamespaceExtensions(endExclusive, limit);
+    }
+
+    public Map<String, Integer> topNamespaceExtensionVersions(LocalDateTime endExclusive, int limit) {
+        return adminStatisticCalculationsRepo.topNamespaceExtensionVersions(endExclusive, limit);
+    }
+
+    public Map<String, Long> topMostDownloadedExtensions(LocalDateTime endExclusive, int limit) {
+        return adminStatisticCalculationsRepo.topMostDownloadedExtensions(endExclusive, limit);
+    }
+
     public Streamable<ExtensionVersion> findTargetPlatformVersions(String version, String extensionName, String namespaceName) {
         return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespaceName);
     }
