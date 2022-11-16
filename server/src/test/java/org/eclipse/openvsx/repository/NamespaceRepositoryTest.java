@@ -10,8 +10,14 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.util.Streamable;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.test.context.ActiveProfiles;
 
-@DataJpaTest
+@SpringBootTest(webEnvironment = WebEnvironment.MOCK, properties = {
+    "ovsx.elasticsearch.enabled=false", //
+    "spring.datasource.username=postgres", "spring.datasource.password=postgres",})
+@ActiveProfiles("test")
 public class NamespaceRepositoryTest {
 
     @Autowired

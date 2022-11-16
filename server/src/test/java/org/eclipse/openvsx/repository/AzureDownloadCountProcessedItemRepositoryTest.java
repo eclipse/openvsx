@@ -11,9 +11,14 @@ import org.eclipse.openvsx.entities.AzureDownloadCountProcessedItem;
 import org.eclipse.openvsx.repositories.AzureDownloadCountProcessedItemRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.test.context.ActiveProfiles;
 
-@DataJpaTest
+@SpringBootTest(webEnvironment = WebEnvironment.MOCK, properties = {
+    "ovsx.elasticsearch.enabled=false", //
+    "spring.datasource.username=postgres", "spring.datasource.password=postgres",})
+@ActiveProfiles("test")
 public class AzureDownloadCountProcessedItemRepositoryTest {
 
     @Autowired
