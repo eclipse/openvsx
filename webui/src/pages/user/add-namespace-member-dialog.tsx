@@ -38,7 +38,7 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-export interface AddMemberDialoProps {
+export interface AddMemberDialogProps {
     open: boolean;
     onClose: () => void;
     filterUsers: (user: UserData) => boolean;
@@ -47,7 +47,7 @@ export interface AddMemberDialoProps {
     setLoadingState: (loading: boolean) => void;
 }
 
-export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => {
+export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props => {
     const { open } = props;
     const classes = useStyles();
     const config = useContext(NamespaceDetailConfigContext);
@@ -92,8 +92,8 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
         props.onClose();
     };
 
-    const handleUserSearch = async (ev: React.ChangeEvent<HTMLInputElement>) => {
-        const popperTarget = ev.currentTarget;
+    const handleUserSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const popperTarget = e.currentTarget;
         setPopperTarget(popperTarget);
         const val = popperTarget.value;
         let showUserPopper = false;
@@ -125,10 +125,9 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialoProps> = props => 
                     fullWidth
                     onChange={handleUserSearch}
                     onKeyPress={(e: React.KeyboardEvent) => {
-                        if (e.charCode === 13) {
-                            if (foundUsers.length === 1) {
-                                addUser(foundUsers[0]);
-                            }
+                        if (e.key === "Enter" && foundUsers.length === 1) {
+                            e.preventDefault();
+                            addUser(foundUsers[0]);
                         }
                     }}
                 />
