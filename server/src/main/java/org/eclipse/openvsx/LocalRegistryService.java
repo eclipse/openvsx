@@ -621,7 +621,10 @@ public class LocalRegistryService implements IExtensionRegistry {
             }
         }
 
-        return new ArrayList<>(searchEntries.values());
+        return extensions.stream()
+                .map(Extension::getId)
+                .map(searchEntries::get)
+                .collect(Collectors.toList());
     }
 
     private List<SearchEntryJson.VersionReference> getAllVersionReferences(
