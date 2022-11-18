@@ -32,6 +32,10 @@ const markdownStyles = (theme: Theme) => createStyles({
                 opacity: 1
             }
         },
+        '& h1, h2, h3, a.header-anchor': {
+            display: 'flex',
+            alignItems: 'center',
+        },
         '& kbd': {
             borderRadius: 3,
             backgroundColor: theme.palette.neutral.light,
@@ -94,7 +98,7 @@ export class SanitizedMarkdownComponent extends React.Component<SanitizedMarkdow
         if (props.linkify === undefined || props.linkify) {
             this.markdownIt.use(anchorPlugin, {
                 permalink: true,
-                permalinkSymbol: linkIcon({ x: 0, y: 0, width: 24, height: 10 })
+                permalinkSymbol: linkIcon({ x: 0, y: 0, width: 24, height: 24 })
             });
         }
     }
