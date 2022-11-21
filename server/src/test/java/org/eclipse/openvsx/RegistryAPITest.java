@@ -586,6 +586,21 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testGetQueryExtensionVersion() throws Exception {
+        mockExtensionVersionDTO();
+        mockMvc.perform(get("/api/-/query?extensionId={id}&extensionVersion={version}", "foo.bar", "1.0.0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(queryResultJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.verified = false;
+                    e.timestamp = "2000-01-01T10:00Z";
+                    e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
     public void testGetQueryExtensionUuid() throws Exception {
         mockExtensionVersionDTO();
         mockMvc.perform(get("/api/-/query?extensionUuid={extensionUuid}", "5678"))
