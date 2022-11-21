@@ -65,7 +65,7 @@ const overviewStyles = (theme: Theme) => createStyles({
     },
     link: {
         textDecoration: 'none',
-        color: theme.palette.primary.contrastText,
+        color: theme.palette.text.primary,
         '&:hover': {
             textDecoration: 'underline'
         }
