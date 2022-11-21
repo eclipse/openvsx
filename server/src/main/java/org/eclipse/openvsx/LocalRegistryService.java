@@ -287,7 +287,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             extensionVersions = extensionVersions.stream()
                     .filter(ev -> ev.getVersion().equals(param.extensionVersion))
                     .filter(ev -> ev.getExtension().getName().equals(param.extensionName))
-                    .filter(ev -> ev.getExtension().getNamespace().equals(param.namespaceName))
+                    .filter(ev -> ev.getExtension().getNamespace().getName().equals(param.namespaceName))
                     .collect(Collectors.toList());
         }
         // Only add latest version of an extension
