@@ -9,24 +9,25 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import org.eclipse.openvsx.UpstreamProxyService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class UpstreamVSCodeService implements IVSCodeService {
@@ -35,6 +36,9 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
     @Autowired
     RestTemplate restTemplate;
+
+    @Autowired(required = false)
+    UpstreamProxyService proxy;
 
     @Value("${ovsx.upstream.url:}")
     String upstreamUrl;
@@ -57,7 +61,8 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var statusCode = response.getStatusCode();
         if(statusCode.is2xxSuccessful()) {
-            return response.getBody();
+            var json = response.getBody();
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             logger.error("POST {}: {}", apiUrl, response);
@@ -81,6 +86,19 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var statusCode = response.getStatusCode();
         if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
+            if(proxy != null && MediaType.APPLICATION_JSON.equals(response.getHeaders().getContentType())) {
+                try {
+                    var mapper = new ObjectMapper();
+                    var json = mapper.readTree(response.getBody());
+                    json = proxy.rewriteUrls(json);
+                    response = ResponseEntity.status(statusCode)
+                            .headers(response.getHeaders())
+                            .body(mapper.writeValueAsString(json).getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    logger.error("Failed to read/write JSON", e);
+                }
+            }
+
             return response;
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
@@ -105,7 +123,12 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
-            return response.getHeaders().getLocation().toString();
+            var location = response.getHeaders().getLocation();
+            if(proxy != null) {
+                location = proxy.rewriteUrl(location);
+            }
+
+            return location.toString();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             logger.error("GET {}: {}", apiUrl, response);
@@ -129,7 +152,12 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
-            return response.getHeaders().getLocation().toString();
+            var location = response.getHeaders().getLocation();
+            if(proxy != null) {
+                location = proxy.rewriteUrl(location);
+            }
+
+            return location.toString();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             logger.error("GET {}: {}", apiUrl, response);
@@ -152,8 +180,19 @@ public class UpstreamVSCodeService implements IVSCodeService {
         }
 
         var statusCode = response.getStatusCode();
-        if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
+        if(statusCode.is2xxSuccessful()) {
             return response;
+        }
+        if(statusCode.is3xxRedirection()) {
+            var location = response.getHeaders().getLocation();
+            if(proxy != null) {
+                location = proxy.rewriteUrl(location);
+            }
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .headers(response.getHeaders())
+                    .location(location)
+                    .build();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             logger.error("GET {}: {}", apiUrl, response);

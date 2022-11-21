@@ -9,6 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.elasticsearch.common.Strings;
@@ -63,6 +67,36 @@ public class UpstreamProxyService {
         return json;
     }
 
+    public ExtensionQueryResult rewriteUrls(ExtensionQueryResult json) {
+        for(var result : json.results) {
+            for(var extension : result.extensions) {
+                for(var version : extension.versions) {
+                    version.assetUri = rewriteUrl(version.assetUri);
+                    version.fallbackAssetUri = rewriteUrl(version.fallbackAssetUri);
+                    for (var file : version.files) {
+                        file.source = rewriteUrl(file.source);
+                    }
+                }
+            }
+        }
+        return json;
+    }
+
+    public JsonNode rewriteUrls(JsonNode json) {
+        if(json.isArray()) {
+            var list = new ObjectMapper().createArrayNode();
+            var array = (ArrayNode) json;
+            array.forEach(url -> list.add(rewriteUrl(url.asText())));
+            json = list;
+        }
+
+        return json;
+    }
+
+    public URI rewriteUrl(URI location) {
+        return URI.create(rewriteUrl(location.toString()));
+    }
+
     private SearchEntryJson rewriteUrls(SearchEntryJson json) {
         json.url = rewriteUrl(json.url);
         rewriteUrlMap(json.files);
@@ -89,9 +123,7 @@ public class UpstreamProxyService {
 
     private void rewriteUrlMap(Map<String, String> map) {
         if(map != null) {
-            for (var key : map.keySet()) {
-                map.put(key, rewriteUrl(map.get(key)));
-            }
+            map.replaceAll((k, v) -> rewriteUrl(v));
         }
     }
 
