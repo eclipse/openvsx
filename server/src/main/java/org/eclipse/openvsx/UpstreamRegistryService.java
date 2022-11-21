@@ -49,6 +49,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Autowired
     RestTemplate restTemplate;
 
+    @Autowired(required = false)
+    UpstreamProxyService proxy;
+
     @Value("${ovsx.upstream.url:}")
     String upstreamUrl;
 
@@ -60,7 +63,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     public NamespaceJson getNamespace(String namespace) {
         var requestUrl = createApiUrl(upstreamUrl, "api", namespace);
         try {
-            return restTemplate.getForObject(requestUrl, NamespaceJson.class);
+            var json = restTemplate.getForObject(requestUrl, NamespaceJson.class);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             logger.error("GET " + requestUrl, exc);
             throw new NotFoundException();
@@ -78,7 +82,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             var json = restTemplate.getForObject(requestUrl, ExtensionJson.class);
             makeDownloadsCompatible(json);
-            return json;
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             logger.error("GET " + requestUrl, exc);
             throw new NotFoundException();
@@ -91,7 +95,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             var json = restTemplate.getForObject(requestUrl, ExtensionJson.class);
             makeDownloadsCompatible(json);
-            return json;
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             logger.error("GET " + requestUrl, exc);
             throw new NotFoundException();
@@ -154,7 +158,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         );
 
         try {
-            return restTemplate.getForObject(requestUrl, SearchResultJson.class);
+            var json = restTemplate.getForObject(requestUrl, SearchResultJson.class);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             logger.error("GET " + requestUrl, exc);
             throw new NotFoundException();
@@ -165,7 +170,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     public QueryResultJson query(QueryParamJson param) {
         var requestUrl = createApiUrl(upstreamUrl, "api", "-", "query");
         try {
-            return restTemplate.postForObject(requestUrl, param, QueryResultJson.class);
+            var json = restTemplate.postForObject(requestUrl, param, QueryResultJson.class);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             logger.error("POST " + requestUrl, exc);
             throw new NotFoundException();
@@ -173,7 +179,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     private void makeDownloadsCompatible(ExtensionJson json) {
-        if(json.downloads == null && json.files.containsKey("download")) {
+        if (json.downloads == null && json.files.containsKey("download")) {
             json.downloads = new HashMap<>();
             json.downloads.put(TargetPlatform.NAME_UNIVERSAL, json.files.get("download"));
         }
