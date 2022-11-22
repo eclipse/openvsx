@@ -109,7 +109,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
     private ResponseEntity<byte[]> getFile(String url) {
         var upstreamLocation = URI.create(url);
-        var request = new RequestEntity<Void>(HttpMethod.HEAD, upstreamLocation);
+        HttpMethod httpMethod;
+        if (proxy != null) {
+            httpMethod = HttpMethod.GET;
+        }
+        else {
+            httpMethod = HttpMethod.HEAD;
+        }
+        var request = new RequestEntity<Void>(httpMethod, upstreamLocation);
         ResponseEntity<byte[]> response;
         try {
             response = restTemplate.exchange(request, byte[].class);
@@ -118,16 +125,26 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         }
         var statusCode = response.getStatusCode();
-        if (statusCode.is2xxSuccessful()) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(upstreamLocation)
-                    .build();
+        if (proxy != null) {
+            if (statusCode.is2xxSuccessful()) {
+                return response;
+            }
+            else{
+                logger.error("GET {}: {}", url, response.getHeaders());
+            }
         }
-        if (statusCode.is3xxRedirection()) {
-            return response;
-        }
-        if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-            logger.error("HEAD {}: {}", url, response);
+        else {
+            if (statusCode.is2xxSuccessful()) {
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(upstreamLocation)
+                        .build();
+            }
+            if (statusCode.is3xxRedirection()) {
+                return response;
+            }
+            if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
+                logger.error("HEAD {}: {}", url, response);
+            }
         }
         throw new NotFoundException();
     }

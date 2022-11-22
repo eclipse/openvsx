@@ -205,7 +205,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
         return new RestTemplate(new SimpleClientHttpRequestFactory() {
             @Override
             protected void prepareConnection(HttpURLConnection connection, String httpMethod ) {
-                connection.setInstanceFollowRedirects(false);
+                connection.setInstanceFollowRedirects(proxy != null);
             }
         });
     }
