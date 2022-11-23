@@ -33,5 +33,7 @@ org:
       worker-count: 1
     dashboard:
       enabled: false
+    database:
+      type: sql
     miscellaneous:
       allow-anonymous-data-usage: false
