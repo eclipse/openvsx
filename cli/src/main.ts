@@ -11,6 +11,7 @@
 import * as commander from 'commander';
 import * as leven from 'leven';
 import { createNamespace } from './create-namespace';
+import { verifyPat } from './verify-pat';
 import { publish } from './publish';
 import { handleError } from './util';
 import { getExtension } from './get';
@@ -30,6 +31,14 @@ module.exports = function (argv: string[]): void {
         .action((name: string) => {
             const { registryUrl, pat } = program.opts();
             createNamespace({ name, registryUrl, pat })
+                .catch(handleError(program.debug));
+        });
+
+    const verifyTokenCmd = program.command('verify-pat [namespace]');
+    verifyTokenCmd.description('Verify that a personal access token can publish to a namespace')
+        .action((namespace?: string) => {
+            const { registryUrl, pat } = program.opts();
+            verifyPat({ namespace, registryUrl, pat })
                 .catch(handleError(program.debug));
         });
 
