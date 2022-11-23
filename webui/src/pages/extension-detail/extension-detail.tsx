@@ -502,7 +502,7 @@ export namespace ExtensionDetailComponent {
     export interface Params {
         readonly namespace: string;
         readonly name: string;
-        readonly target? : string;
+        readonly target?: string;
         readonly version?: string;
     }
 }

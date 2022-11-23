@@ -14,7 +14,7 @@ RUN yarn test
 RUN yarn build:default
 
 
-FROM node:12-alpine3.12
+FROM node:14-alpine3.16
 
 # Copy build result to runtime directory
 COPY --chown=node:node --from=builder /home/node/builder/static /home/node/webui/static/
