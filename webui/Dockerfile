@@ -1,4 +1,4 @@
-FROM node:12-alpine3.12 as builder
+FROM node:14-alpine3.16 as builder
 
 # Copy sources
 COPY --chown=node:node package.json tsconfig.json yarn.lock /home/node/builder/
