@@ -1,3 +1,12 @@
+/********************************************************************************
+ * Copyright (c) 2022 Wladimir Hofmann and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
 import static java.util.stream.Collectors.toList;
@@ -21,12 +30,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.Invocation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Run the DB queries and assert no DB error, just to ensure that the queries
  * are consistent with the schema.
  */
-class RepositoryServiceSmokeTest extends PostgresDbRepositoryIntegrationTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+class RepositoryServiceSmokeTest {
 
     private static final List<String> STRING_LIST = List.of("id1", "id2");
 
@@ -42,16 +55,15 @@ class RepositoryServiceSmokeTest extends PostgresDbRepositoryIntegrationTest {
 
     @Test
     @Transactional
-    void test_execute_queries() {
-
+    void testExecuteQueries() {
         // some queries require attached entities:
-        Extension extension = new Extension();
-        Namespace namespace = new Namespace();
+        var extension = new Extension();
+        var namespace = new Namespace();
         extension.setNamespace(namespace);
-        UserData userData = new UserData();
-        ExtensionVersion extVersion = new ExtensionVersion();
+        var userData = new UserData();
+        var extVersion = new ExtensionVersion();
         extVersion.setTargetPlatform("targetPlatform");
-        PersonalAccessToken personalAccessToken = new PersonalAccessToken();
+        var personalAccessToken = new PersonalAccessToken();
         Stream.of(extension, namespace, userData, extVersion, personalAccessToken).forEach(em::persist);
         em.flush();
 
@@ -95,7 +107,7 @@ class RepositoryServiceSmokeTest extends PostgresDbRepositoryIntegrationTest {
                 () -> repositories.findActiveReviews(extension),
                 () -> repositories.findActiveReviews(extension, userData),
                 () -> repositories.findActiveVersions(extension),
-                () -> repositories.findAdminStatisticsByYearAndMonth(1997, 01),
+                () -> repositories.findAdminStatisticsByYearAndMonth(1997, 1),
                 () -> repositories.findAllActiveExtensionDTOsById(LONG_LIST),
                 () -> repositories.findAllActiveExtensionDTOsByPublicId(STRING_LIST),
                 () -> repositories.findAllActiveExtensionVersionDTOs(LONG_LIST, "targetPlatform"),
@@ -104,8 +116,6 @@ class RepositoryServiceSmokeTest extends PostgresDbRepositoryIntegrationTest {
                 () -> repositories.findAllFileResourceDTOsByExtensionVersionIdAndType(LONG_LIST, STRING_LIST),
                 () -> repositories.findAllNamespaceMembershipDTOs(LONG_LIST),
                 () -> repositories.findAllPersistedLogs(),
-                () -> repositories.findAllResourceFileResourceDTOs("namespaceName", "extensionName", "version",
-                        "prefix"),
                 () -> repositories.findAllReviews(extension),
                 () -> repositories.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(STRING_LIST),
                 () -> repositories.findAllUsers(),
@@ -139,10 +149,25 @@ class RepositoryServiceSmokeTest extends PostgresDbRepositoryIntegrationTest {
                 () -> repositories.findVersions(extension),
                 () -> repositories.findVersions("version", extension),
                 () -> repositories.findVersions(userData),
-                () -> repositories.findVersionsByAccessToken(personalAccessToken),
                 () -> repositories.findVersionsByAccessToken(personalAccessToken, true),
                 () -> repositories.getMaxExtensionDownloadCount(),
-                () -> repositories.getOldestExtensionTimestamp());
+                () -> repositories.getOldestExtensionTimestamp(),
+                () -> repositories.findExtensions(LONG_LIST),
+                () -> repositories.findExtensions(userData),
+                () -> repositories.findFilesByType(List.of(extVersion), STRING_LIST),
+                () -> repositories.findActiveVersions(List.of(extension)),
+                () -> repositories.countVersions(extension),
+                () -> repositories.findActiveExtensionVersionDTOsByVersion("version", "extensionName", "namespaceName"),
+                () -> repositories.topMostDownloadedExtensions(NOW, 1),
+                () -> repositories.deleteFileResources(extVersion, "download"),
+                () -> repositories.countActiveAccessTokens(userData),
+                () -> repositories.findAllResourceFileResourceDTOs(extVersion.getId(), "extension"),
+                () -> repositories.findNotMigratedResources(),
+                () -> repositories.findNotMigratedPreReleases(),
+                () -> repositories.topMostActivePublishingUsers(NOW, 1),
+                () -> repositories.topNamespaceExtensions(NOW, 1),
+                () -> repositories.topNamespaceExtensionVersions(NOW, 1)
+        );
 
         // check that we did not miss anything
         // (remember to add new queries also to this test)
@@ -151,5 +176,4 @@ class RepositoryServiceSmokeTest extends PostgresDbRepositoryIntegrationTest {
                 .collect(toList());
         assertThat(invocations).containsAll(methodsToBeCalled);
     }
-
 }
