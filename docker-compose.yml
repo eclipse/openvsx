@@ -1,0 +1,73 @@
+services:
+
+  postgres:
+    image: postgres:12.12
+    restart: always
+    environment:
+      - POSTGRES_USER=openvsx
+      - POSTGRES_PASSWORD=openvsx
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - '5432:5432'
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
+    restart: always
+    environment:
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - cluster.routing.allocation.disk.threshold_enabled=false
+    ports:
+      - 9200:9200
+      - 9300:9300
+    healthcheck:
+      test: curl -s http://elasticsearch01:9200 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 50
+      start_period: 5s
+
+  server:
+    image: openjdk:11
+    working_dir: /app
+    command: sh -c 'scripts/generate-properties.sh --docker && ./gradlew assemble && ./gradlew runServer'
+    volumes:
+      - ./server:/app
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+      - elasticsearch
+    healthcheck:
+      test: "curl --fail --silent localhost:8081/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 50
+      start_period: 5s
+    
+  webui:
+    image: node:14
+    working_dir: /app
+    command: sh -c 'yarn && yarn start:default'
+    volumes:
+      - ./webui:/app
+    ports:
+      - 3000:3000
+    depends_on:
+      - server
+
+  cli:
+    image: node:14
+    working_dir: /app
+    command: sh -c 'yarn && yarn watch'
+    volumes:
+      - ./cli:/app
+    depends_on:
+      - server
+    environment:
+      - OVSX_REGISTRY_URL=http://server:8080

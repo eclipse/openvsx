@@ -62,6 +62,16 @@ After you created the GitHub OAuth app, the next step is to copy the _Client ID_
 
 With these settings in place, you should be able to log in by authorizing your OAuth app.
 
+### Docker-compose Setup
+
+If you would like to run the marketplace in docker-compose, to use it as a development environment, follow these steps:
+
+ * [Install docker-compose](https://docs.docker.com/compose/install/)
+ * In the root of the project, run `docker-compose up`
+ * After some seconds, the registry backend is available at http://localhost:8080/ and the web ui at http://localhost:3000/.
+ * To load some extensions from the main marketplace (openvsx.org), run `docker-compose exec cli yarn load-extensions <N>`, where N is the number of extensions you would like to publish in your local registry.
+ * To run CLI commands, it is available via `docker-compose exec cli lib/ovsx`.
+
 ### Google Cloud Setup
 
 If you would like to test file storage via Google Cloud, follow these steps:
