@@ -12,6 +12,7 @@ package org.eclipse.openvsx.search;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -326,23 +327,26 @@ public class ElasticSearchService implements ISearchService {
             throw new ErrorResultException("sortOrder parameter must be either 'asc' or 'desc'.");
         }
 
-        var sorts = new ArrayList<SortBuilder<?>>();
+        var types = Map.of(
+                "relevance", "float",
+                "averageRating", "float",
+                "timestamp", "long",
+                "downloadCount", "integer"
+        );
+
+        var type = types.get(sortBy);
+        if(type == null) {
+            throw new ErrorResultException("sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'.");
+        }
         if ("relevance".equals(sortBy)) {
-            sorts.add(SortBuilders.scoreSort());
-        }
-
-        if ("relevance".equals(sortBy) || "averageRating".equals(sortBy)) {
-            sorts.add(SortBuilders.fieldSort(sortBy).unmappedType("float").order(SortOrder.fromString(sortOrder)));
-        } else if ("timestamp".equals(sortBy)) {
-            sorts.add(SortBuilders.fieldSort(sortBy).unmappedType("long").order(SortOrder.fromString(sortOrder)));
-        } else if ("downloadCount".equals(sortBy)) {
-            sorts.add(SortBuilders.fieldSort(sortBy).unmappedType("integer").order(SortOrder.fromString(sortOrder)));
+            queryBuilder.withSorts(SortBuilders.scoreSort(), fieldSort(sortBy, type, sortOrder));
         } else {
-            throw new ErrorResultException(
-                    "sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'");
+            queryBuilder.withSorts(fieldSort(sortBy, type, sortOrder));
         }
+    }
 
-        queryBuilder.withSorts(sorts);
+    private SortBuilder fieldSort(String sortBy, String type, String sortOrder) {
+        return SortBuilders.fieldSort(sortBy).unmappedType(type).order(SortOrder.fromString(sortOrder));
     }
 
     private long getMaxResultWindow() {
