@@ -60,7 +60,8 @@ public class VSCodeAPI {
         }
 
         var totalCount = 0L;
-        var extensions = new HashMap<String, ExtensionQueryResult.Extension>();
+        var extensions = new ArrayList<ExtensionQueryResult.Extension>();
+        var extensionIds = new HashSet<String>();
 
         var services = getVSCodeServices().iterator();
         while(extensions.size() < size && services.hasNext()) {
@@ -70,13 +71,7 @@ public class VSCodeAPI {
                     var subResult = service.extensionQuery(param, DEFAULT_PAGE_SIZE);
                     var subExtensions = subResult.results.get(0).extensions;
                     if(subExtensions != null) {
-                        var subExtensionsMap = subExtensions.stream()
-                                .map(extension -> {
-                                    var key = extension.publisher.publisherName + "." + extension.extensionName;
-                                    return new AbstractMap.SimpleEntry<>(key, extension);
-                                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-                        extensions.putAll(subExtensionsMap);
+                        extensions.addAll(subExtensions);
                     }
 
                     totalCount = getTotalCount(subResult);
@@ -87,7 +82,7 @@ public class VSCodeAPI {
                     var subExtensionsCount = subExtensions != null ? subExtensions.size() : 0;
                     if (subExtensionsCount > 0) {
                         int limit = size - extensionCount;
-                        mergeExtensionQueryResults(extensions, subExtensions, limit);
+                        mergeExtensionQueryResults(extensions, extensionIds, subExtensions, limit);
                     }
 
                     var mergedExtensionsCount = extensions.size();
@@ -100,16 +95,27 @@ public class VSCodeAPI {
         }
 
         var resultItem = new ExtensionQueryResult.ResultItem();
-        resultItem.extensions = new ArrayList<>(extensions.values());
+        resultItem.extensions = extensions;
         return toExtensionQueryResult(resultItem, totalCount);
     }
 
-    private void mergeExtensionQueryResults(Map<String, ExtensionQueryResult.Extension> extensionsMap, List<ExtensionQueryResult.Extension> extensions, int limit) {
-        var extensionsIter = extensions.iterator();
-        while (extensionsIter.hasNext() && extensions.size() < limit) {
-            var next = extensionsIter.next();
-            var key = next.publisher.publisherName + "." + next.extensionName;
-            extensionsMap.putIfAbsent(key, next);
+    private void mergeExtensionQueryResults(List<ExtensionQueryResult.Extension> extensions, Set<String> extensionIds, List<ExtensionQueryResult.Extension> subExtensions, int limit) {
+        if(extensionIds.isEmpty() && !extensions.isEmpty()) {
+            var extensionIdSet = extensions.stream()
+                    .map(extension -> extension.publisher.publisherName + "." + extension.extensionName)
+                    .collect(Collectors.toSet());
+
+            extensionIds.addAll(extensionIdSet);
+        }
+
+        var subExtensionsIter = subExtensions.iterator();
+        while (subExtensionsIter.hasNext() && extensions.size() < limit) {
+            var subExtension = subExtensionsIter.next();
+            var key = subExtension.publisher.publisherName + "." + subExtension.extensionName;
+            if(!extensionIds.contains(key)) {
+                extensions.add(subExtension);
+                extensionIds.add(key);
+            }
         }
     }
 
