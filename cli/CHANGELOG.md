@@ -2,6 +2,10 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.6.0 (Nov. 2022)
+
+- Added verify-pat command ([#624](https://github.com/eclipse/openvsx/pull/624))
+
 ### v0.5.0 (Mar. 2022)
 
 #### New Features
