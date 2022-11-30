@@ -10,4 +10,5 @@ cd ../../..
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetFileTargetPlatformSimulation
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetQuerySimulation
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPISearchSimulation
+./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIVerifyTokenSimulation
 cd src/gatling/scripts
