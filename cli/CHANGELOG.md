@@ -4,7 +4,15 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ### v0.6.0 (Nov. 2022)
 
+#### New Features
+
 - Added verify-pat command ([#624](https://github.com/eclipse/openvsx/pull/624))
+
+#### Dependencies
+
+- Upgrade `vcse` from `2.6.3` to `2.7.0` ([#621](https://github.com/eclipse/openvsx/pull/621))
+
+---
 
 ### v0.5.0 (Mar. 2022)
 
@@ -12,11 +20,15 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 - Added CLI parameter `--target` to support target platforms ([#406](https://github.com/eclipse/openvsx/pull/406))
 
+---
+
 ### v0.4.0 (Feb. 2022)
 
 #### New Features
 
 - Added CLI parameter `--pre-release` to support pre-releases ([#410](https://github.com/eclipse/openvsx/pull/410))
+
+---
 
 ### v0.3.0 (Jan. 2022)
 
