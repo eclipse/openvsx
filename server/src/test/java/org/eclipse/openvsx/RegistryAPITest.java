@@ -59,8 +59,9 @@ import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
-import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
@@ -827,6 +828,49 @@ public class RegistryAPITest {
                 .content(namespaceJson(n -> { n.name = "foobar"; })))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Namespace already exists: foobar")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"owner", "contributor", "sole-contributor"})
+    public void testVerifyToken(String mode) throws Exception {
+        mockForPublish(mode);
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foo", "my_token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testVerifyTokenNoNamespace() throws Exception {
+        mockAccessToken();
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "unexistingnamespace", "my_token"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testVerifyTokenInvalid() throws Exception {
+        mockForPublish("invalid");
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foo", "my_token"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testVerifyTokenNoToken() throws Exception {
+        mockAccessToken();
+        mockNamespace();
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat", "foobar"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testVerifyTokenNoPermission() throws Exception {
+        mockAccessToken();
+        mockNamespace();
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foobar", "my_token"))
+                .andExpect(status().isBadRequest());
     }
     
     @Test

@@ -127,6 +127,60 @@ public class RegistryAPI {
     }
 
     @GetMapping(
+        path = "/api/{namespace}/verify-pat",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Check if a personal access token is valid and is allowed to publish in a namespace")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "The provided PAT is valid and is allowed to publish extensions in the namespace"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "The token has no publishing permission in the namespace or is not valid",
+            content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "The specified namespace could not be found",
+            content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
+        )
+    })
+    public ResponseEntity<ResultJson> verifyToken(
+            @PathVariable @Parameter(description = "Namespace", example = "redhat")
+            String namespace,
+            @RequestParam @Parameter(description = "A personal access token") String token
+        ) {
+        try {
+            return ResponseEntity.ok(local.verifyToken(namespace, token));
+        } catch (NotFoundException exc) {
+            var json = ResultJson.error("Namespace not found: " + namespace);
+            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ResultJson.class);
+        }
+    }
+
+    @GetMapping(
         path = "/api/{namespace}/{extension}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )

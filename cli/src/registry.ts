@@ -58,6 +58,15 @@ export class Registry {
         }
     }
 
+    verifyPat(namespace: string, pat: string): Promise<Response> {
+      try {
+          const query: { [key: string]: string } = { token: pat };
+          return this.getJson(this.getUrl(`api/${namespace}/verify-pat`, query));
+      } catch (err) {
+          return Promise.reject(err);
+      }
+    }
+
     publish(file: string, pat: string): Promise<Extension> {
         try {
             const query: { [key: string]: string } = { token: pat };

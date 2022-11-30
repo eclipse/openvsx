@@ -456,6 +456,25 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
+    public ResultJson verifyToken(String namespaceName, String tokenValue) {
+        var token = users.useAccessToken(tokenValue);
+        if (token == null) {
+            throw new ErrorResultException("Invalid access token.");
+        }
+
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new NotFoundException();
+        }
+
+        var user = token.getUser();
+        if (!users.hasPublishPermission(user, namespace)) {
+            throw new ErrorResultException("Insufficient access rights for namespace: " + namespaceName);
+        }
+
+        return ResultJson.success("Valid token");
+    }
+
     @Retryable(value = { DataIntegrityViolationException.class })
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
