@@ -332,6 +332,18 @@ object Scenarios {
       }
   }
 
+  def verifyTokenScenario(): ScenarioBuilder = {
+    scenario("RegistryAPI: Verify PAT")
+      .repeat(1000) {
+        feed(csv("namespaces.csv").circular)
+          .feed(csv("access-tokens.csv").circular)
+          .exec(http("RegistryAPI.verifyToken")
+            .get("""/api/${namespace}/verify-pat?token=${access_token}""")
+            .headers(headers())
+            .requestTimeout(3.minutes))
+      }
+  }
+
   def extensionQueryScenario(): ScenarioBuilder = {
     val buildRequestBody: Expression[String] = session => {
       val query = session("query").as[String]
