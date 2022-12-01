@@ -62,7 +62,10 @@ import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -1414,6 +1417,7 @@ public class RegistryAPITest {
         extVersion.setDisplayName("Foo Bar");
         extVersion.setExtension(extension);
         extension.getVersions().add(extVersion);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
         Mockito.when(repositories.findExtension("bar", "foo"))
                 .thenReturn(extension);
         Mockito.when(repositories.findVersion("1.0.0", targetPlatform, "bar", "foo"))
@@ -1440,6 +1444,7 @@ public class RegistryAPITest {
         download.setType(DOWNLOAD);
         download.setStorageType(STORAGE_DB);
         download.setName("extension-1.0.0.vsix");
+        Mockito.when(entityManager.merge(download)).thenReturn(download);
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection())).thenAnswer(invocation -> {
             Collection<ExtensionVersion> extVersions = invocation.getArgument(0);
             Collection<String> types = invocation.getArgument(1);
@@ -1478,6 +1483,7 @@ public class RegistryAPITest {
         resource.setType(FileResource.README);
         resource.setContent("Please read me".getBytes());
         resource.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "README"))
                 .thenReturn(resource);
         return resource;
@@ -1491,6 +1497,7 @@ public class RegistryAPITest {
         resource.setType(FileResource.CHANGELOG);
         resource.setContent("All notable changes is documented here".getBytes());
         resource.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "CHANGELOG"))
                 .thenReturn(resource);
         return resource;
@@ -1504,6 +1511,7 @@ public class RegistryAPITest {
         resource.setType(FileResource.LICENSE);
         resource.setContent("I never broke the Law! I am the law!".getBytes());
         resource.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "LICENSE"))
                 .thenReturn(resource);
         return resource;
@@ -1667,6 +1675,9 @@ public class RegistryAPITest {
             Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(0l);
         }
+
+        Mockito.when(entityManager.merge(any(Extension.class)))
+                .then((Answer<Extension>) invocation -> invocation.getArgument(0, Extension.class));
     }
 
     private String reviewJson(Consumer<ReviewJson> content) throws JsonProcessingException {

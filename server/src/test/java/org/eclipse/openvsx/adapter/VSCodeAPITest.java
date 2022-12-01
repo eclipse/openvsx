@@ -71,9 +71,12 @@ import javax.persistence.EntityManager;
 @MockBean({
     ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
     AzureDownloadCountService.class, CacheService.class, UpstreamVSCodeService.class,
-    VSCodeIdService.class, EntityManager.class, EclipseService.class
+    VSCodeIdService.class, EclipseService.class
 })
 public class VSCodeAPITest {
+
+    @MockBean
+    EntityManager entityManager;
 
     @MockBean
     RepositoryService repositories;
@@ -655,6 +658,7 @@ public class VSCodeAPITest {
         extensionFile.setName("redhat.vscode-yaml-0.5.2.vsix");
         extensionFile.setType(FileResource.DOWNLOAD);
         extensionFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(extensionFile)).thenReturn(extensionFile);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD))
                 .thenReturn(extensionFile);
         var manifestFile = new FileResource();
@@ -667,6 +671,7 @@ public class VSCodeAPITest {
             manifestContent.put("target", targetPlatform);
         manifestFile.setContent(new ObjectMapper().writeValueAsBytes(manifestContent));
         manifestFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(manifestFile)).thenReturn(manifestFile);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.MANIFEST))
                 .thenReturn(manifestFile);
         var readmeFile = new FileResource();
@@ -674,6 +679,7 @@ public class VSCodeAPITest {
         readmeFile.setName("README.md");
         readmeFile.setType(FileResource.README);
         readmeFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(readmeFile)).thenReturn(readmeFile);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.README))
                 .thenReturn(readmeFile);
         var changelogFile = new FileResource();
@@ -681,6 +687,7 @@ public class VSCodeAPITest {
         changelogFile.setName("CHANGELOG.md");
         changelogFile.setType(FileResource.CHANGELOG);
         changelogFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(changelogFile)).thenReturn(changelogFile);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.CHANGELOG))
                 .thenReturn(changelogFile);
         var licenseFile = new FileResource();
@@ -688,6 +695,7 @@ public class VSCodeAPITest {
         licenseFile.setName("LICENSE.txt");
         licenseFile.setType(FileResource.LICENSE);
         licenseFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(licenseFile)).thenReturn(licenseFile);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.LICENSE))
                 .thenReturn(licenseFile);
         var iconFile = new FileResource();
@@ -695,6 +703,7 @@ public class VSCodeAPITest {
         iconFile.setName("icon128.png");
         iconFile.setType(FileResource.ICON);
         iconFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(iconFile)).thenReturn(iconFile);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.ICON))
                 .thenReturn(iconFile);
         var webResourceFile = new FileResource();
@@ -703,6 +712,7 @@ public class VSCodeAPITest {
         webResourceFile.setType(FileResource.RESOURCE);
         webResourceFile.setStorageType(STORAGE_DB);
         webResourceFile.setContent("logo.png".getBytes());
+        Mockito.when(entityManager.merge(webResourceFile)).thenReturn(webResourceFile);
         Mockito.when(repositories.findFileByTypeAndName(extVersion, FileResource.RESOURCE, "extension/img/logo.png"))
                 .thenReturn(webResourceFile);
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection())).thenAnswer(invocation -> {

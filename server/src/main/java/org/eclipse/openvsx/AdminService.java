@@ -197,7 +197,6 @@ public class AdminService {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
-    @Transactional
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
@@ -209,7 +208,7 @@ public class AdminService {
         eclipse.enrichUserJson(userPublishInfo.user, user);
         userPublishInfo.activeAccessTokenNum = (int) repositories.countActiveAccessTokens(user);
         userPublishInfo.extensions = repositories.findExtensions(user).stream()
-                .map(e -> versions.getLatest(e, null, false, false))
+                .map(e -> versions.getLatestTrxn(e, null, false, false))
                 .map(latest -> {
                     var json = latest.toExtensionJson();
                     json.preview = latest.isPreview();
@@ -293,6 +292,7 @@ public class AdminService {
         }
     }
 
+    @Transactional
     public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {
         if(year < 0) {
             throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);

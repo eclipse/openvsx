@@ -61,7 +61,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
-@MockBean({ EntityManager.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class })
+@MockBean({
+        EntityManager.class, EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class,
+        CacheService.class
+})
 public class UserAPITest {
 
     @SpyBean
@@ -69,9 +72,6 @@ public class UserAPITest {
 
     @MockBean
     RepositoryService repositories;
-
-    @MockBean
-    EclipseService eclipse;
 
     @Autowired
     MockMvc mockMvc;

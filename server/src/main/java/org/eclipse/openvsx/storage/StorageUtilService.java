@@ -21,13 +21,18 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -187,6 +192,7 @@ public class StorageUtilService implements IStorageService {
         return type2Url;
     }
 
+    @Transactional
     public void increaseDownloadCount(FileResource resource) {
         if(azureDownloadCountService.isEnabled()) {
             // don't count downloads twice
@@ -199,6 +205,7 @@ public class StorageUtilService implements IStorageService {
         download.setFileResourceId(resource.getId());
         entityManager.persist(download);
 
+        resource = entityManager.merge(resource);
         var extension = resource.getExtension().getExtension();
         extension.setDownloadCount(extension.getDownloadCount() + 1);
 
@@ -217,5 +224,19 @@ public class StorageUtilService implements IStorageService {
             headers.setCacheControl(StorageUtil.getCacheControl(fileName));
         }
         return headers;
+    }
+
+    @Transactional
+    public ResponseEntity<byte[]> getFileResponse(FileResource resource) {
+        resource = entityManager.merge(resource);
+        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+            var headers = getFileResponseHeaders(resource.getName());
+            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
+        } else {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(getLocation(resource))
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .build();
+        }
     }
 }

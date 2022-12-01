@@ -1105,6 +1105,7 @@ public class AdminAPITest {
         extension.setNamespace(namespace);
         extension.setName("baz");
         extension.setActive(true);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
         Mockito.when(repositories.findExtension("baz", "foobar"))
                 .thenReturn(extension);
 

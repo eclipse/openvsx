@@ -205,7 +205,6 @@ public class UserAPI {
             path = "/user/extensions",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional
     public List<ExtensionJson> getOwnExtensions() {
         var user = users.findLoggedInUser();
         if (user == null) {
@@ -213,7 +212,7 @@ public class UserAPI {
         }
 
         return repositories.findExtensions(user)
-                .map(e -> versions.getLatest(e, null, false, false))
+                .map(e -> versions.getLatestTrxn(e, null, false, false))
                 .map(latest -> {
                     var json = latest.toExtensionJson();
                     json.preview = latest.isPreview();

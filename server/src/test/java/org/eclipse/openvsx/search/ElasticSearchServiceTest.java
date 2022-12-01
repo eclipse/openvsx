@@ -40,8 +40,13 @@ import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.persistence.EntityManager;
+
 @ExtendWith(SpringExtension.class)
 public class ElasticSearchServiceTest {
+
+    @MockBean
+    EntityManager entityManager;
 
     @MockBean
     RepositoryService repositories;
@@ -237,6 +242,7 @@ public class ElasticSearchServiceTest {
         extension.setId(name.hashCode());
         extension.setAverageRating(averageRating);
         extension.setDownloadCount(downloadCount);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
         Mockito.when(repositories.countActiveReviews(extension))
                 .thenReturn((long) ratingCount);
         var namespace = new Namespace();

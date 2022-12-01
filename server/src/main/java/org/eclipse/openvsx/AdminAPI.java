@@ -62,7 +62,6 @@ public class AdminAPI {
             path = "/admin/report",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional
     public ResponseEntity<AdminStatisticsJson> getReportJson(
             @RequestParam("token") String tokenValue,
             @RequestParam("year") int year,
@@ -80,7 +79,6 @@ public class AdminAPI {
             path = "/admin/report",
             produces = "text/csv"
     )
-    @Transactional
     public ResponseEntity<String> getReportCsv(
             @RequestParam("token") String tokenValue,
             @RequestParam("year") int year,
@@ -177,7 +175,6 @@ public class AdminAPI {
         path = "/admin/extension/{namespaceName}/{extensionName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Transactional
     public ResponseEntity<ExtensionJson> getExtension(@PathVariable String namespaceName,
                                                       @PathVariable String extensionName) {
         try {
@@ -198,8 +195,8 @@ public class AdminAPI {
                 json.allVersions = Collections.emptyMap();
                 json.allTargetPlatformVersions = Collections.emptyMap();
             } else {
-                json = local.toExtensionVersionJson(latest, null, false);
-                json.allTargetPlatformVersions = extension.getVersions().stream()
+                json = local.toExtensionVersionJson(latest, null, false, false);
+                json.allTargetPlatformVersions = versions.getVersionsTrxn(extension).stream()
                         .collect(Collectors.groupingBy(ExtensionVersion::getVersion, Collectors.mapping(ExtensionVersion::getTargetPlatform, Collectors.toList())));
             }
             json.active = extension.isActive();
