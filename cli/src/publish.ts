@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-import { createVSIX, ICreateVSIXOptions } from 'vsce';
+import { createVSIX, IPackageOptions } from 'vsce';
 import { createTempFile, addEnvOptions } from './util';
 import { Registry, RegistryOptions } from './registry';
 import { checkLicense } from './check-license';
@@ -17,7 +17,7 @@ import { checkLicense } from './check-license';
  */
 export async function publish(options: PublishOptions = {}): Promise<PromiseSettledResult<void>[]> {
         addEnvOptions(options);
-        const internalPublishOptions = [];
+        const internalPublishOptions: InternalPublishOptions[] = [];
         const packagePaths = options.packagePath || [undefined];
         const targets = options.targets || [undefined];
         for (const packagePath of packagePaths) {
@@ -102,6 +102,11 @@ export interface PublishOptions extends PublishCommonOptions {
      * with `extensionFile`.
      */
     packagePath?: string[];
+
+    /**
+     * Whether to do dependency detection via npm or yarn
+     */
+    dependencies?: boolean;
 }
 
 // Interface used internally by the doPublish method
@@ -119,6 +124,11 @@ interface InternalPublishOptions extends PublishCommonOptions {
      * with `extensionFile`.
      */
     packagePath?: string;
+
+    /**
+     * Whether to do dependency detection via npm or yarn
+     */
+     dependencies?: boolean;
 }
 
 async function packageExtension(options: InternalPublishOptions, registry: Registry): Promise<void> {
@@ -127,14 +137,15 @@ async function packageExtension(options: InternalPublishOptions, registry: Regis
     }
 
     options.extensionFile = await createTempFile({ postfix: '.vsix' });
-    const createVSIXOptions: ICreateVSIXOptions = {
+    const packageOptions: IPackageOptions = {
+        packagePath: options.extensionFile,
         target: options.target,
         cwd: options.packagePath,
-        packagePath: options.extensionFile,
         baseContentUrl: options.baseContentUrl,
         baseImagesUrl: options.baseImagesUrl,
         useYarn: options.yarn,
+        dependencies: options.dependencies,
         preRelease: options.preRelease
     };
-    await createVSIX(createVSIXOptions);
+    await createVSIX(packageOptions);
 }
