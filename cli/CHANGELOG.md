@@ -2,6 +2,18 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.7.0 (Dec. 2022)
+
+#### New Features
+
+- - Added CLI parameter `--no-dependencies` to disable dependency detection ([#635](https://github.com/eclipse/openvsx/pull/635))
+
+#### Dependencies
+
+- Upgrade `vcse` from `2.7.0` to `2.15.0` ([#635](https://github.com/eclipse/openvsx/pull/635))
+
+---
+
 ### v0.6.0 (Nov. 2022)
 
 #### New Features
