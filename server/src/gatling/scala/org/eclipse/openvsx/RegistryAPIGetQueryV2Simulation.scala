@@ -1,5 +1,5 @@
 /** ******************************************************************************
- * Copyright (c) 2021 Precies. Software and others
+ * Copyright (c) 2022 Precies. Software Ltd and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,9 +10,8 @@
 package org.eclipse.openvsx
 
 import io.gatling.core.Predef._
-
 import org.eclipse.openvsx.Scenarios._
 
-class RegistryAPIGetQuerySimulation extends Simulation {
-  setUp(getQueryScenario().inject(atOnceUsers(users))).protocols(httpProtocol)
+class RegistryAPIGetQueryV2Simulation extends Simulation {
+  setUp(getQueryV2Scenario().inject(atOnceUsers(users))).protocols(httpProtocol)
 }

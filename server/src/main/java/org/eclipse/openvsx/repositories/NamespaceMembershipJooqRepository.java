@@ -9,13 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.dto.NamespaceMembershipDTO;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.UserData;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -24,12 +23,12 @@ import java.util.List;
 import static org.eclipse.openvsx.jooq.Tables.NAMESPACE_MEMBERSHIP;
 
 @Component
-public class NamespaceMembershipDTORepository {
+public class NamespaceMembershipJooqRepository {
 
     @Autowired
     DSLContext dsl;
 
-    public List<NamespaceMembershipDTO> findAllByNamespaceId(Collection<Long> namespaceIds) {
+    public List<NamespaceMembership> findAllByNamespaceId(Collection<Long> namespaceIds) {
         return dsl.select(
                     NAMESPACE_MEMBERSHIP.ID,
                     NAMESPACE_MEMBERSHIP.ROLE,
@@ -38,6 +37,23 @@ public class NamespaceMembershipDTORepository {
                 )
                 .from(NAMESPACE_MEMBERSHIP)
                 .where(NAMESPACE_MEMBERSHIP.NAMESPACE.in(namespaceIds))
-                .fetchInto(NamespaceMembershipDTO.class);
+                .fetch()
+                .map(this::toNamespaceMembership);
+    }
+
+    private NamespaceMembership toNamespaceMembership(Record record) {
+        var namespaceMembership = new NamespaceMembership();
+        namespaceMembership.setId(record.get(NAMESPACE_MEMBERSHIP.ID));
+        namespaceMembership.setRole(record.get(NAMESPACE_MEMBERSHIP.ROLE));
+
+        var namespace = new Namespace();
+        namespace.setId(record.get(NAMESPACE_MEMBERSHIP.NAMESPACE));
+        namespaceMembership.setNamespace(namespace);
+
+        var user = new UserData();
+        user.setId(record.get(NAMESPACE_MEMBERSHIP.USER_DATA));
+        namespaceMembership.setUser(user);
+
+        return namespaceMembership;
     }
 }

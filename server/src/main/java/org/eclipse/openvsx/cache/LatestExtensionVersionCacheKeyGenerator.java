@@ -10,22 +10,43 @@
 package org.eclipse.openvsx.cache;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 @Component
 public class LatestExtensionVersionCacheKeyGenerator implements KeyGenerator {
     @Override
     public Object generate(Object target, Method method, Object... params) {
-        var extension = (Extension) params[0];
-        var targetPlatform = (String) params[1];
-        var preRelease = params[2];
-        var onlyActive = params[3];
+        Extension extension;
+        String targetPlatform;
+        var preRelease = false;
+        var onlyActive = false;
+        var type = ExtensionVersion.Type.EXTENDED;
+
+        if(params[0] instanceof Extension) {
+            extension = (Extension) params[0];
+            targetPlatform = (String) params[1];
+            preRelease = (boolean) params[2];
+            onlyActive = (boolean) params[3];
+        } else {
+            var versions = (List<ExtensionVersion>) params[0];
+            var firstVersion = versions.get(0);
+            extension = firstVersion.getExtension();
+            type = firstVersion.getType();
+            var groupedByTargetPlatform = (boolean) params[1];
+            targetPlatform = groupedByTargetPlatform ? firstVersion.getTargetPlatform() : null;
+            if(params.length == 3) {
+                preRelease = (boolean) params[2];
+            }
+        }
+
         var extensionName = extension.getName();
         var namespaceName = extension.getNamespace().getName();
         return namespaceName + "." + extensionName + "-latest@" + targetPlatform +
-                ",pre-release=" + preRelease + ",only-active=" + onlyActive;
+                ",pre-release=" + preRelease + ",only-active=" + onlyActive + ",type=" + type;
     }
 }

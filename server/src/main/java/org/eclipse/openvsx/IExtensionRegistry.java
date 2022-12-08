@@ -9,12 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.QueryParamJson;
-import org.eclipse.openvsx.json.QueryResultJson;
-import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.springframework.http.ResponseEntity;
 
@@ -37,4 +32,5 @@ public interface IExtensionRegistry {
 
     QueryResultJson query(QueryParamJson param);
 
+    QueryResultJson queryV2(QueryParamJsonV2 param);
 }
