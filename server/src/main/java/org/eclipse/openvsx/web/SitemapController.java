@@ -54,7 +54,6 @@ public class SitemapController {
     String webuiUrl;
 
     @GetMapping(path = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
-    @Transactional
     public ResponseEntity<StreamingResponseBody> getSitemap() throws ParserConfigurationException {
         var document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         document.setXmlStandalone(true);
@@ -71,7 +70,7 @@ public class SitemapController {
             entry.appendChild(loc);
 
             var lastmod = document.createElement("lastmod");
-            var latest = versions.getLatest(extension, null, false, true);
+            var latest = versions.getLatestTrxn(extension, null, false, true);
             lastmod.setTextContent(latest.getTimestamp().format(timestampFormatter));
             entry.appendChild(lastmod);
             urlset.appendChild(entry);

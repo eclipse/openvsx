@@ -13,12 +13,50 @@ import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.persistence.EntityManager;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(SpringExtension.class)
 public class VersionServiceTest {
+
+    @MockBean
+    EntityManager entityManager;
+
+    @Autowired
+    VersionService versions;
+
+    @Test
+    public void testGetVersions() {
+        var release = new ExtensionVersion();
+        release.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        release.setVersion("1.0.0");
+
+        var minor = new ExtensionVersion();
+        minor.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        minor.setVersion("0.0.5");
+
+        var major = new ExtensionVersion();
+        major.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        major.setVersion("0.3.0");
+
+        var versionList = List.of(major, minor, release);
+        var extension = new Extension();
+        extension.getVersions().addAll(versionList);
+
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
+        var actualVersionList = versions.getVersionsTrxn(extension);
+        assertEquals(versionList, actualVersionList);
+    }
 
     @Test
     public void testGetLatestVersion() {
@@ -36,7 +74,8 @@ public class VersionServiceTest {
 
         var extension = new Extension();
         extension.getVersions().addAll(List.of(major, minor, release));
-        var latest = new VersionService().getLatest(extension, null, false, false);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
+        var latest = versions.getLatest(extension, null, false, false);
         assertEquals(release, latest);
     }
 
@@ -57,7 +96,8 @@ public class VersionServiceTest {
 
         var extension = new Extension();
         extension.getVersions().addAll(List.of(windows, linux, universal));
-        var latest = new VersionService().getLatest(extension, null, false, false);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
+        var latest = versions.getLatest(extension, null, false, false);
         assertEquals(universal, latest);
     }
 
@@ -80,7 +120,8 @@ public class VersionServiceTest {
 
         var extension = new Extension();
         extension.getVersions().addAll(List.of(major, minor, release));
-        var latest = new VersionService().getLatest(extension, null, false, true);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
+        var latest = versions.getLatest(extension, null, false, true);
         assertEquals(minor, latest);
     }
 
@@ -100,7 +141,8 @@ public class VersionServiceTest {
 
         var extension = new Extension();
         extension.getVersions().addAll(List.of(major, minor, release));
-        var latest = new VersionService().getLatest(extension, TargetPlatform.NAME_LINUX_ARM64, false, false);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
+        var latest = versions.getLatest(extension, TargetPlatform.NAME_LINUX_ARM64, false, false);
         assertEquals(major, latest);
     }
 
@@ -110,7 +152,7 @@ public class VersionServiceTest {
         var minor = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.0.5");
         var major = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.3.0");
 
-        var latest = new VersionService().getLatest(List.of(major, minor, release), false);
+        var latest = versions.getLatest(List.of(major, minor, release), false);
         assertEquals(release, latest);
     }
 
@@ -121,7 +163,7 @@ public class VersionServiceTest {
         var linux = constructExtensionVersionDTO(TargetPlatform.NAME_LINUX_X64, version);
         var windows = constructExtensionVersionDTO(TargetPlatform.NAME_WIN32_ARM64, version);
 
-        var latest = new VersionService().getLatest(List.of(windows, linux, universal), false);
+        var latest = versions.getLatest(List.of(windows, linux, universal), false);
         assertEquals(universal, latest);
     }
 
@@ -129,5 +171,13 @@ public class VersionServiceTest {
         return new ExtensionVersionDTO(1, 2, version, targetPlatform, false, false,
             null, null, null, null, null, null,null,
             null, null, null, null, null);
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        VersionService versionService() {
+            return new VersionService();
+        }
     }
 }

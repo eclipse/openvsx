@@ -16,7 +16,6 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -43,7 +42,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Retryable;
@@ -104,23 +102,21 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Transactional
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform) {
         return getExtension(namespace, extensionName, targetPlatform, "latest");
     }
 
     @Override
-    @Transactional
     @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
-        var json = toExtensionVersionJson(extVersion, targetPlatform, true);
+        var json = toExtensionVersionJson(extVersion, targetPlatform, true, false);
         json.downloads = getDownloads(extVersion.getExtension(), targetPlatform, extVersion.getVersion());
         return json;
     }
 
     private Map<String, String> getDownloads(Extension extension, String targetPlatform, String version) {
-        var downloadsStream = extension.getVersions().stream()
+        var downloadsStream = versions.getVersionsTrxn(extension).stream()
                 .filter(ev -> ev.getVersion().equals(version));
         if(targetPlatform != null) {
             downloadsStream = downloadsStream.filter(ev -> ev.getTargetPlatform().equals(targetPlatform));
@@ -151,11 +147,11 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         ExtensionVersion extVersion;
         if("latest".equals(version)) {
-            extVersion = versions.getLatest(extension, targetPlatform, false, true);
+            extVersion = versions.getLatestTrxn(extension, targetPlatform, false, true);
         } else if("pre-release".equals(version)) {
-            extVersion = versions.getLatest(extension, targetPlatform, true, true);
+            extVersion = versions.getLatestTrxn(extension, targetPlatform, true, true);
         } else {
-            var stream = extension.getVersions().stream()
+            var stream = versions.getVersionsTrxn(extension).stream()
                     .filter(ev -> ev.getVersion().equals(version))
                     .filter(ExtensionVersion::isActive);
 
@@ -174,7 +170,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Transactional
     public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
         var resource = repositories.findFileByName(extVersion, fileName);
@@ -182,15 +177,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         if (resource.getType().equals(DOWNLOAD))
             storageUtil.increaseDownloadCount(resource);
-        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            var headers = storageUtil.getFileResponseHeaders(fileName);
-            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
-        } else {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(storageUtil.getLocation(resource))
-                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
-                    .build();
-        }
+
+        return storageUtil.getFileResponse(resource);
     }
 
     @Override
@@ -209,7 +197,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Transactional
     public SearchResultJson search(ISearchService.Options options) {
         var json = new SearchResultJson();
         var size = options.requestedSize;
@@ -503,7 +490,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         eclipse.checkPublisherAgreement(token.getUser());
 
         var extVersion = extensions.publishVersion(content, token);
-        var json = toExtensionVersionJson(extVersion, null, true);
+        var json = toExtensionVersionJson(extVersion, null, true, true);
         json.success = "It can take a couple minutes before the extension version is available";
 
         var sameVersions = repositories.findVersions(extVersion.getVersion(), extVersion.getExtension());
@@ -612,7 +599,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var latestVersions = extensions.stream()
                 .map(e -> {
-                    var latest = versions.getLatest(e, null, false, true);
+                    var latest = versions.getLatestTrxn(e, null, false, true);
                     return new AbstractMap.SimpleEntry<>(e.getId(), latest);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -662,10 +649,14 @@ public class LocalRegistryService implements IExtensionRegistry {
         }).collect(Collectors.toList());
     }
 
-    public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, String targetPlatform, boolean onlyActive) {
+    public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, String targetPlatform, boolean onlyActive, boolean inTransaction) {
         var extension = extVersion.getExtension();
-        var latest = versions.getLatest(extension, targetPlatform, false, onlyActive);
-        var latestPreRelease = versions.getLatest(extension, targetPlatform, true, onlyActive);
+        var latest = inTransaction
+                ? versions.getLatest(extension, targetPlatform, false, onlyActive)
+                : versions.getLatestTrxn(extension, targetPlatform, false, onlyActive);
+        var latestPreRelease = inTransaction
+                ? versions.getLatest(extension, targetPlatform, true, onlyActive)
+                : versions.getLatestTrxn(extension, targetPlatform, true, onlyActive);
 
         var json = extVersion.toExtensionJson();
         json.preview = latest != null ? latest.isPreview() : false;
@@ -689,8 +680,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (latestPreRelease != null)
             json.allVersions.put("pre-release", createApiUrl(versionBaseUrl, "pre-release"));
 
-        if(extension.getVersions() != null) {
-            var allVersionsStream = extension.getVersions().stream();
+        var extVersions = inTransaction ? extension.getVersions() : versions.getVersionsTrxn(extension);
+        if(extVersions != null) {
+            var allVersionsStream = extVersions.stream();
             if (targetPlatform != null) {
                 allVersionsStream = allVersionsStream.filter(ev -> ev.getTargetPlatform().equals(targetPlatform));
             }

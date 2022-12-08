@@ -25,6 +25,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -34,8 +35,13 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.persistence.EntityManager;
+
 @ExtendWith(SpringExtension.class)
 public class DatabaseSearchServiceTest {
+
+    @MockBean
+    EntityManager entityManager;
 
     @MockBean
     RepositoryService repositories;
@@ -311,6 +317,7 @@ public class DatabaseSearchServiceTest {
         extension.setAverageRating(averageRating);
         extension.setDownloadCount(downloadCount);
         extension.setActive(true);
+        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
         Mockito.when(repositories.countActiveReviews(extension)).thenReturn((long) ratingCount);
         var namespace = new Namespace();
         namespace.setName(namespaceName);

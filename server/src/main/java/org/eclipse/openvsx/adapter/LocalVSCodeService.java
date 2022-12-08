@@ -276,7 +276,6 @@ public class LocalVSCodeService implements IVSCodeService {
     }
 
     @Override
-    @Transactional
     public ResponseEntity<byte[]> getAsset(
             String namespace, String extensionName, String version, String assetType, String targetPlatform,
             String restOfTheUrl
@@ -298,15 +297,8 @@ public class LocalVSCodeService implements IVSCodeService {
         if (resource.getType().equals(FileResource.DOWNLOAD)) {
             storageUtil.increaseDownloadCount(resource);
         }
-        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            var headers = storageUtil.getFileResponseHeaders(resource.getName());
-            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
-        } else {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(storageUtil.getLocation(resource))
-                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
-                    .build();
-        }
+
+        return storageUtil.getFileResponse(resource);
     }
 
     private FileResource getFileFromDB(ExtensionVersion extVersion, String assetType) {
