@@ -2,12 +2,11 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
-### Unreleased
+### v0.7.1 (Dec. 2022)
 
 #### Dependencies
 
 - Migrated from deprecated `vcse` to `@vscode/vsce` ([#637](https://github.com/eclipse/openvsx/pull/637))
-
 
 ---
 
