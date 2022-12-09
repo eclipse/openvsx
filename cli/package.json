@@ -36,12 +36,12 @@
         "node": ">= 14"
     },
     "dependencies": {
+        "@vscode/vsce": "^2.15.0",
         "commander": "^6.1.0",
         "follow-redirects": "^1.14.6",
         "is-ci": "^2.0.0",
         "leven": "^3.1.0",
-        "tmp": "^0.2.1",
-        "vsce": "2.15.0"
+        "tmp": "^0.2.1"
     },
     "devDependencies": {
         "@types/follow-redirects": "^1.13.1",

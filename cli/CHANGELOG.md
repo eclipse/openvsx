@@ -2,11 +2,20 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### Unreleased
+
+#### Dependencies
+
+- Migrated from deprecated `vcse` to `@vscode/vsce` ([#637](https://github.com/eclipse/openvsx/pull/637))
+
+
+---
+
 ### v0.7.0 (Dec. 2022)
 
 #### New Features
 
-- - Added CLI parameter `--no-dependencies` to disable dependency detection ([#635](https://github.com/eclipse/openvsx/pull/635))
+- Added CLI parameter `--no-dependencies` to disable dependency detection ([#635](https://github.com/eclipse/openvsx/pull/635))
 
 #### Dependencies
 
