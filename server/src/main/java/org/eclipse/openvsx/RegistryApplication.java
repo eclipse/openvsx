@@ -9,9 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import org.eclipse.openvsx.web.LongRunningRequestFilter;
 import org.eclipse.openvsx.web.ShallowEtagHeaderFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.cache.annotation.EnableCaching;
@@ -60,6 +63,16 @@ public class RegistryApplication {
         var registrationBean = new FilterRegistrationBean<ShallowEtagHeaderFilter>();
         registrationBean.setFilter(new ShallowEtagHeaderFilter());
         registrationBean.addUrlPatterns("/api/*");
+        registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
+
+        return registrationBean;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "ovsx.request.duration.threshold")
+    public FilterRegistrationBean<LongRunningRequestFilter> longRunningRequestFilter(@Value("${ovsx.request.duration.threshold}") long threshold) {
+        var registrationBean = new FilterRegistrationBean<LongRunningRequestFilter>();
+        registrationBean.setFilter(new LongRunningRequestFilter(threshold));
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
 
         return registrationBean;
