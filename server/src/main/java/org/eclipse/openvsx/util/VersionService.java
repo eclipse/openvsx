@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
-import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +17,9 @@ import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.util.Comparator;
 import java.util.List;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
-import static org.eclipse.openvsx.cache.CacheService.GENERATOR_LATEST_EXTENSION_VERSION_DTO;
 
 @Component
 public class VersionService {
@@ -70,7 +67,22 @@ public class VersionService {
      */
     @Cacheable(value = CACHE_LATEST_EXTENSION_VERSION, keyGenerator = GENERATOR_LATEST_EXTENSION_VERSION)
     public ExtensionVersion getLatest(Extension extension, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
-        var versions = extension.getVersions();
+        return getLatest(extension.getVersions(), targetPlatform, onlyPreRelease, onlyActive);
+    }
+
+    // groupedByTargetPlatform is used by cache key generator, don't remove this parameter
+    @Cacheable(value = CACHE_LATEST_EXTENSION_VERSION, keyGenerator = GENERATOR_LATEST_EXTENSION_VERSION)
+    public ExtensionVersion getLatest(List<ExtensionVersion> versions, boolean groupedByTargetPlatform) {
+        return getLatest(versions, null, false, false);
+    }
+
+    // groupedByTargetPlatform is used by cache key generator, don't remove this parameter
+    @Cacheable(value = CACHE_LATEST_EXTENSION_VERSION, keyGenerator = GENERATOR_LATEST_EXTENSION_VERSION)
+    public ExtensionVersion getLatest(List<ExtensionVersion> versions, boolean groupedByTargetPlatform, boolean onlyPreRelease) {
+        return getLatest(versions, null, onlyPreRelease, false);
+    }
+
+    private ExtensionVersion getLatest(List<ExtensionVersion> versions, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
         if(versions == null || versions.isEmpty()) {
             return null;
         }
@@ -86,28 +98,6 @@ public class VersionService {
             stream = stream.filter(ExtensionVersion::isActive);
         }
 
-        return stream.max(Comparator.comparing(ExtensionVersion::getSemanticVersion)
-                .thenComparing(TargetPlatform::isUniversal)
-                .thenComparing(ExtensionVersion::getTargetPlatform))
-                .orElse(null);
-    }
-
-    /**
-     * Get latest extension version for DTO objects.
-     * @param versions list to find latest version in.
-     * @param groupedByTargetPlatform whether the list only contains one specific target platform.
-     * This parameter is used to generate a unique cache key, do not remove this parameter.
-     * @return the latest ExtensionVersionDTO.
-     */
-    @Cacheable(value = CACHE_LATEST_EXTENSION_VERSION_DTO, keyGenerator = GENERATOR_LATEST_EXTENSION_VERSION_DTO)
-    public ExtensionVersionDTO getLatest(List<ExtensionVersionDTO> versions, boolean groupedByTargetPlatform) {
-        if(versions == null || versions.isEmpty()) {
-            return null;
-        }
-
-        return versions.stream().max(Comparator.comparing(ExtensionVersionDTO::getSemanticVersion)
-                .thenComparing(TargetPlatform::isUniversal)
-                .thenComparing(ExtensionVersionDTO::getTargetPlatform))
-                .orElse(null);
+        return stream.min(ExtensionVersion.SORT_COMPARATOR).orElse(null);
     }
 }

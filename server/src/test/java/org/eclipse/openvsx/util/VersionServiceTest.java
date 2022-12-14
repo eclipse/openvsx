@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
-import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.junit.jupiter.api.Test;
@@ -144,33 +143,6 @@ public class VersionServiceTest {
         Mockito.when(entityManager.merge(extension)).thenReturn(extension);
         var latest = versions.getLatest(extension, TargetPlatform.NAME_LINUX_ARM64, false, false);
         assertEquals(major, latest);
-    }
-
-    @Test
-    public void testGetLatestDTOVersion() {
-        var release = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
-        var minor = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.0.5");
-        var major = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, "0.3.0");
-
-        var latest = versions.getLatest(List.of(major, minor, release), false);
-        assertEquals(release, latest);
-    }
-
-    @Test
-    public void testGetLatestDTOTargetPlatformSort() {
-        var version = "1.0.0";
-        var universal = constructExtensionVersionDTO(TargetPlatform.NAME_UNIVERSAL, version);
-        var linux = constructExtensionVersionDTO(TargetPlatform.NAME_LINUX_X64, version);
-        var windows = constructExtensionVersionDTO(TargetPlatform.NAME_WIN32_ARM64, version);
-
-        var latest = versions.getLatest(List.of(windows, linux, universal), false);
-        assertEquals(universal, latest);
-    }
-
-    private ExtensionVersionDTO constructExtensionVersionDTO(String targetPlatform, String version) {
-        return new ExtensionVersionDTO(1, 2, version, targetPlatform, false, false,
-            null, null, null, null, null, null,null,
-            null, null, null, null, null);
     }
 
     @TestConfiguration

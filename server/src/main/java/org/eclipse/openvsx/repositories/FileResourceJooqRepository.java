@@ -9,13 +9,11 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.dto.FileResourceDTO;
+import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -24,25 +22,46 @@ import java.util.List;
 import static org.eclipse.openvsx.jooq.Tables.*;
 
 @Component
-public class FileResourceDTORepository {
+public class FileResourceJooqRepository {
 
     @Autowired
     DSLContext dsl;
 
-    public List<FileResourceDTO> findAll(Collection<Long> extensionIds, Collection<String> types) {
+    public List<FileResource> findAll(Collection<Long> extensionIds, Collection<String> types) {
         return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE)
                 .from(FILE_RESOURCE)
                 .where(FILE_RESOURCE.EXTENSION_ID.in(extensionIds))
                 .and(FILE_RESOURCE.TYPE.in(types))
-                .fetchInto(FileResourceDTO.class);
+                .fetch()
+                .map(this::toFileResource);
     }
 
-    public List<FileResourceDTO> findAllResources(long extVersionId, String prefix) {
+    public List<FileResource> findAllResources(long extVersionId, String prefix) {
         return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE, FILE_RESOURCE.STORAGE_TYPE, FILE_RESOURCE.CONTENT)
                 .from(FILE_RESOURCE)
                 .where(FILE_RESOURCE.TYPE.eq(FileResource.RESOURCE))
                 .and(FILE_RESOURCE.EXTENSION_ID.eq(extVersionId))
                 .and(FILE_RESOURCE.NAME.startsWith(prefix))
-                .fetchInto(FileResourceDTO.class);
+                .fetch()
+                .map(record -> {
+                    var fileResource = toFileResource(record);
+                    fileResource.setStorageType(record.get(FILE_RESOURCE.STORAGE_TYPE));
+                    fileResource.setContent(record.get(FILE_RESOURCE.CONTENT));
+
+                    return fileResource;
+                });
+    }
+
+    private FileResource toFileResource(Record record) {
+        var fileResource = new FileResource();
+        fileResource.setId(record.get(FILE_RESOURCE.ID));
+        fileResource.setName(record.get(FILE_RESOURCE.NAME));
+        fileResource.setType(record.get(FILE_RESOURCE.TYPE));
+
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(record.get(FILE_RESOURCE.EXTENSION_ID));
+        fileResource.setExtension(extVersion);
+
+        return fileResource;
     }
 }

@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.dto.*;
 import org.eclipse.openvsx.entities.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
@@ -35,10 +34,10 @@ public class RepositoryService {
     @Autowired PersonalAccessTokenRepository tokenRepo;
     @Autowired PersistedLogRepository persistedLogRepo;
     @Autowired AzureDownloadCountProcessedItemRepository downloadCountRepo;
-    @Autowired ExtensionDTORepository extensionDTORepo;
-    @Autowired ExtensionVersionDTORepository extensionVersionDTORepo;
-    @Autowired FileResourceDTORepository fileResourceDTORepo;
-    @Autowired NamespaceMembershipDTORepository namespaceMembershipDTORepo;
+    @Autowired ExtensionJooqRepository extensionJooqRepo;
+    @Autowired ExtensionVersionJooqRepository extensionVersionJooqRepo;
+    @Autowired FileResourceJooqRepository fileResourceJooqRepo;
+    @Autowired NamespaceMembershipJooqRepository namespaceMembershipJooqRepo;
     @Autowired AdminStatisticsRepository adminStatisticsRepo;
     @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
     @Autowired ExtractResourcesMigrationItemRepository extractResourcesMigrationItemRepo;
@@ -267,60 +266,61 @@ public class RepositoryService {
     public List<String> findAllSucceededAzureDownloadCountProcessedItemsByNameIn(List<String> names) {
         return downloadCountRepo.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(names);
     }
-    public List<ExtensionDTO> findAllActiveExtensionDTOsByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
-        return extensionDTORepo.findAllActiveByPublicId(publicIds, namespacesToExclude);
+
+    public List<Extension> findActiveExtensionsByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
+        return extensionJooqRepo.findAllActiveByPublicId(publicIds, namespacesToExclude);
     }
 
-    public ExtensionDTO findActiveExtensionDTO(String name, String namespaceName) {
-        return extensionDTORepo.findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespaceName);
+    public Extension findActiveExtension(String name, String namespaceName) {
+        return extensionJooqRepo.findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespaceName);
     }
 
-    public List<ExtensionDTO> findAllActiveExtensionDTOsById(Collection<Long> ids) {
-        return extensionDTORepo.findAllActiveById(ids);
+    public List<Extension> findActiveExtensionsById(Collection<Long> ids) {
+        return extensionJooqRepo.findAllActiveById(ids);
     }
 
-    public List<ExtensionVersionDTO> findAllActiveExtensionVersionDTOs(Collection<Long> extensionIds, String targetPlatform) {
-        return extensionVersionDTORepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
+    public List<ExtensionVersion> findActiveExtensionVersions(Collection<Long> extensionIds, String targetPlatform) {
+        return extensionVersionJooqRepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionPublicId(String targetPlatform, String extensionPublicId) {
-        return extensionVersionDTORepo.findAllActiveByExtensionPublicId(targetPlatform, extensionPublicId);
+    public List<ExtensionVersion> findActiveExtensionVersionsByExtensionPublicId(String targetPlatform, String extensionPublicId) {
+        return extensionVersionJooqRepo.findAllActiveByExtensionPublicId(targetPlatform, extensionPublicId);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespacePublicId(String targetPlatform, String namespacePublicId) {
-        return extensionVersionDTORepo.findAllActiveByNamespacePublicId(targetPlatform, namespacePublicId);
+    public List<ExtensionVersion> findActiveExtensionVersionsByNamespacePublicId(String targetPlatform, String namespacePublicId) {
+        return extensionVersionJooqRepo.findAllActiveByNamespacePublicId(targetPlatform, namespacePublicId);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String targetPlatform, String extensionName, String namespaceName) {
-        return extensionVersionDTORepo.findAllActiveByExtensionNameAndNamespaceName(targetPlatform, extensionName, namespaceName);
+    public List<ExtensionVersion> findActiveExtensionVersionsByVersion(String version, String extensionName, String namespaceName) {
+        return extensionVersionJooqRepo.findAllActiveByVersionAndExtensionNameAndNamespaceName(version, extensionName, namespaceName);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByVersion(String version, String extensionName, String namespaceName) {
-        return extensionVersionDTORepo.findAllActiveExtensionsByVersionAndExtensionNameAndNamespaceName(version, extensionName, namespaceName);
+    public List<ExtensionVersion> findActiveExtensionVersionsByExtensionName(String targetPlatform, String extensionName, String namespaceName) {
+        return extensionVersionJooqRepo.findAllActiveByExtensionNameAndNamespaceName(targetPlatform, extensionName, namespaceName);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByNamespaceName(String targetPlatform, String namespaceName) {
-        return extensionVersionDTORepo.findAllActiveByNamespaceName(targetPlatform, namespaceName);
+    public List<ExtensionVersion> findActiveExtensionVersionsByNamespaceName(String targetPlatform, String namespaceName) {
+        return extensionVersionJooqRepo.findAllActiveByNamespaceName(targetPlatform, namespaceName);
     }
 
-    public List<ExtensionVersionDTO> findActiveExtensionVersionDTOsByExtensionName(String targetPlatform, String extensionName) {
-        return extensionVersionDTORepo.findAllActiveByExtensionName(targetPlatform, extensionName);
+    public List<ExtensionVersion> findActiveExtensionVersionsByExtensionName(String targetPlatform, String extensionName) {
+        return extensionVersionJooqRepo.findAllActiveByExtensionName(targetPlatform, extensionName);
     }
 
-    public List<FileResourceDTO> findAllFileResourceDTOsByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
-        return fileResourceDTORepo.findAll(extensionVersionIds, types);
+    public List<FileResource> findFileResourcesByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
+        return fileResourceJooqRepo.findAll(extensionVersionIds, types);
     }
 
-    public List<FileResourceDTO> findAllResourceFileResourceDTOs(long extVersionId, String prefix) {
-        return fileResourceDTORepo.findAllResources(extVersionId, prefix);
+    public List<FileResource> findResourceFileResources(long extVersionId, String prefix) {
+        return fileResourceJooqRepo.findAllResources(extVersionId, prefix);
     }
 
-    public Map<Long, Integer> findAllActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {
-        return extensionDTORepo.findAllActiveReviewCountsById(extensionIds);
+    public Map<Long, Integer> findActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {
+        return extensionJooqRepo.findAllActiveReviewCountsById(extensionIds);
     }
 
-    public List<NamespaceMembershipDTO> findAllNamespaceMembershipDTOs(Collection<Long> namespaceIds) {
-        return namespaceMembershipDTORepo.findAllByNamespaceId(namespaceIds);
+    public List<NamespaceMembership> findNamespaceMemberships(Collection<Long> namespaceIds) {
+        return namespaceMembershipJooqRepo.findAllByNamespaceId(namespaceIds);
     }
 
     public AdminStatistics findAdminStatisticsByYearAndMonth(int year, int month) {

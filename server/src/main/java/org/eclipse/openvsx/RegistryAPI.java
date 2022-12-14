@@ -25,15 +25,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.QueryParamJson;
-import org.eclipse.openvsx.json.QueryResultJson;
-import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.ReviewJson;
-import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.SearchEntryJson;
-import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.*;
 import org.elasticsearch.common.Strings;
@@ -717,6 +709,97 @@ public class RegistryAPI {
             }
         }
         return mergedEntries;
+    }
+
+    @GetMapping(
+        path = "/api/v2/-/query",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides metadata of extensions matching the given parameters")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Returns the (possibly empty) query results"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "The request contains an invalid parameter value"
+        )
+    })
+    public ResponseEntity<QueryResultJson> getQueryV2(
+            @RequestParam(required = false)
+            @Parameter(description = "Name of a namespace", example = "foo")
+            String namespaceName,
+            @RequestParam(required = false)
+            @Parameter(description = "Name of an extension", example = "bar")
+            String extensionName,
+            @RequestParam(required = false)
+            @Parameter(description = "Version of an extension", example = "1")
+            String extensionVersion,
+            @RequestParam(required = false)
+            @Parameter(description = "Identifier in the form {namespace}.{extension}", example = "foo.bar")
+            String extensionId,
+            @RequestParam(required = false)
+            @Parameter(description = "Universally unique identifier of an extension", example = "5678")
+            String extensionUuid,
+            @RequestParam(required = false)
+            @Parameter(description = "Universally unique identifier of a namespace", example = "1234")
+            String namespaceUuid,
+            @RequestParam(defaultValue = "links")
+            @Parameter(
+                    description = "Whether to include all versions of an extension",
+                    schema = @Schema(type = "string", allowableValues = { "true", "false", "links" }, defaultValue = "links")
+            )
+            String includeAllVersions,
+            @RequestParam(required = false)
+            @Parameter(
+                    description = "Target platform",
+                    example = TargetPlatform.NAME_LINUX_X64,
+                    schema = @Schema(type = "string", allowableValues = {
+                    NAME_WIN32_X64, NAME_WIN32_IA32, NAME_WIN32_ARM64,
+                    NAME_LINUX_X64, NAME_LINUX_ARM64, NAME_LINUX_ARMHF,
+                    NAME_ALPINE_X64, NAME_ALPINE_ARM64,
+                    NAME_DARWIN_X64, NAME_DARWIN_ARM64,
+                    NAME_WEB, NAME_UNIVERSAL
+                })
+            )
+            String targetPlatform
+    ) {
+        if(!List.of("true", "false", "links").contains(includeAllVersions)) {
+            var json = QueryResultJson.error("Invalid includeAllVersions value: " + includeAllVersions + ".");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+
+        var param = new QueryParamJsonV2();
+        param.namespaceName = namespaceName;
+        param.extensionName = extensionName;
+        param.extensionVersion = extensionVersion;
+        param.extensionId = extensionId;
+        param.extensionUuid = extensionUuid;
+        param.namespaceUuid = namespaceUuid;
+        param.includeAllVersions = includeAllVersions;
+        param.targetPlatform = targetPlatform;
+
+        var result = new QueryResultJson();
+        for (var registry : getRegistries()) {
+            try {
+                var subResult = registry.queryV2(param);
+                if (subResult.extensions != null) {
+                    if (result.extensions == null)
+                        result.extensions = subResult.extensions;
+                    else
+                        result.extensions.addAll(subResult.extensions);
+                }
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            } catch (ErrorResultException exc) {
+                return exc.toResponseEntity(QueryResultJson.class);
+            }
+        }
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(result);
     }
 
     @GetMapping(

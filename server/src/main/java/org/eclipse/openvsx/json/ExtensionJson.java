@@ -166,6 +166,9 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @Schema(description = "Map of target platforms by extension version")
     public Map<String, List<String>> allTargetPlatformVersions;
 
+    @Schema(description = "version metadata URL")
+    public String url;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -209,7 +212,8 @@ public class ExtensionJson extends ResultJson implements Serializable {
                 && Objects.equals(dependencies, that.dependencies)
                 && Objects.equals(bundledExtensions, that.bundledExtensions)
                 && Objects.equals(downloads, that.downloads)
-                && Objects.equals(allTargetPlatformVersions, that.allTargetPlatformVersions);
+                && Objects.equals(allTargetPlatformVersions, that.allTargetPlatformVersions)
+                && Objects.equals(url, that.url);
     }
 
     @Override
@@ -217,9 +221,9 @@ public class ExtensionJson extends ResultJson implements Serializable {
         return Objects.hash(
                 namespaceUrl, reviewsUrl, files, name, namespace, targetPlatform, version, preRelease, publishedBy,
                 active, verified, unrelatedPublisher, namespaceAccess, allVersions, averageRating, downloadCount,
-                reviewCount, versionAlias, timestamp, preview, displayName, description, engines, categories,
-                extensionKind, tags, license, homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna,
-                badges, dependencies, bundledExtensions, downloads, allTargetPlatformVersions
+                reviewCount, versionAlias, timestamp, preview, displayName, description, engines, categories, extensionKind,
+                tags, license, homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna, badges, dependencies,
+                bundledExtensions, downloads, allTargetPlatformVersions, url
         );
     }
 }

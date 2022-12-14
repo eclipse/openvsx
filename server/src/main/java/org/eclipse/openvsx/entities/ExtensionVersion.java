@@ -21,6 +21,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.util.SemanticVersion;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 
 @Entity
@@ -28,9 +29,17 @@ import org.eclipse.openvsx.util.TimeUtil;
 public class ExtensionVersion implements Serializable {
 
     public static final Comparator<ExtensionVersion> SORT_COMPARATOR =
-        Comparator.<ExtensionVersion, SemanticVersion>comparing(ev -> ev.getSemanticVersion())
-                .thenComparing(Comparator.comparing(ev -> ev.getTimestamp()))
+        Comparator.comparing(ExtensionVersion::getSemanticVersion)
+                .thenComparing(TargetPlatform::isUniversal)
+                .thenComparing(ExtensionVersion::getTargetPlatform)
+                .thenComparing(ExtensionVersion::getTimestamp)
                 .reversed();
+
+    public enum Type {
+        REGULAR,
+        MINIMAL,
+        EXTENDED
+    }
 
     @Id
     @GeneratedValue
@@ -105,6 +114,8 @@ public class ExtensionVersion implements Serializable {
     @Convert(converter = ListOfStringConverter.class)
     List<String> bundledExtensions;
 
+    @Transient
+    Type type;
 
     /**
      * Convert to a JSON object without URLs.
@@ -400,6 +411,14 @@ public class ExtensionVersion implements Serializable {
 	public void setBundledExtensions(List<String> bundledExtensions) {
 		this.bundledExtensions = bundledExtensions;
 	}
+
+	public void setType(ExtensionVersion.Type type) {
+        this.type = type;
+    }
+
+    public ExtensionVersion.Type getType() {
+        return type;
+    }
 
     @Override
     public boolean equals(Object o) {

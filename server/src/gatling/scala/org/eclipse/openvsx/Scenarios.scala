@@ -206,6 +206,17 @@ object Scenarios {
       }
   }
 
+  def getQueryV2Scenario(): ScenarioBuilder = {
+    scenario("RegistryAPI: Query V2")
+      .repeat(1000) {
+        feed(csv("query-v2-strings.csv").circular)
+          .exec(http("RegistryAPI.getQueryV2")
+            .get("""/api/v2/-/query?${query}""")
+            .headers(headers())
+            .check(status.is(200)))
+      }
+  }
+
   def getFileScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Manifest File")
       .repeat(1000) {

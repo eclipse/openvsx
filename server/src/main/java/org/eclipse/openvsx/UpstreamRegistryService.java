@@ -18,6 +18,7 @@ import java.util.HashMap;
 import com.google.common.base.Strings;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,19 +28,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.QueryParamJson;
-import org.eclipse.openvsx.json.QueryResultJson;
-import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.SearchResultJson;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class UpstreamRegistryService implements IExtensionRegistry {
@@ -164,11 +161,57 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public QueryResultJson query(QueryParamJson param) {
         var requestUrl = createApiUrl(upstreamUrl, "api", "-", "query");
+        requestUrl = addQuery(requestUrl,
+                "namespaceName", param.namespaceName,
+                "extensionName", param.extensionName,
+                "extensionVersion", param.extensionVersion,
+                "extensionId", param.extensionId,
+                "extensionUuid", param.extensionUuid,
+                "namespaceUuid", param.namespaceUuid,
+                "includeAllVersions", String.valueOf(param.includeAllVersions),
+                "targetPlatform", param.targetPlatform
+        );
+
         try {
-            return restTemplate.postForObject(requestUrl, param, QueryResultJson.class);
+            return restTemplate.getForObject(requestUrl, QueryResultJson.class);
         } catch (RestClientException exc) {
             logger.error("POST " + requestUrl, exc);
             throw new NotFoundException();
+        }
+    }
+
+    @Override
+    public QueryResultJson queryV2(QueryParamJsonV2 param) {
+        try {
+            String requestUrl = createApiUrl(upstreamUrl, "api", "v2", "-", "query");
+            requestUrl = addQuery(requestUrl,
+                    "namespaceName", param.namespaceName,
+                    "extensionName", param.extensionName,
+                    "extensionVersion", param.extensionVersion,
+                    "extensionId", param.extensionId,
+                    "extensionUuid", param.extensionUuid,
+                    "namespaceUuid", param.namespaceUuid,
+                    "includeAllVersions", param.includeAllVersions,
+                    "targetPlatform", param.targetPlatform
+            );
+
+            return restTemplate.getForObject(requestUrl, QueryResultJson.class);
+        } catch (RestClientException exc) {
+            handleError(exc);
+            throw exc;
+        }
+    }
+    
+    private void handleError(Throwable exc) throws RuntimeException {
+        if (exc instanceof HttpStatusCodeException) {
+            var status = ((HttpStatusCodeException) exc).getStatusCode();
+            if (status == HttpStatus.NOT_FOUND)
+                throw new NotFoundException();
+            else
+                throw new ResponseStatusException(status,
+                        "Upstream registry responded with status \"" + status.getReasonPhrase() + "\".", exc);
+        } else if (exc.getCause() != null && exc.getCause() != exc) {
+            handleError(exc.getCause());
         }
     }
 

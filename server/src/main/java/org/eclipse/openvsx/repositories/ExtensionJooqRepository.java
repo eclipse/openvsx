@@ -9,8 +9,10 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.dto.ExtensionDTO;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.Namespace;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.SelectConditionStep;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,16 +26,16 @@ import java.util.stream.Collectors;
 import static org.eclipse.openvsx.jooq.Tables.*;
 
 @Component
-public class ExtensionDTORepository {
+public class ExtensionJooqRepository {
 
     @Autowired
     DSLContext dsl;
 
-    public List<ExtensionDTO> findAllActiveById(Collection<Long> ids) {
+    public List<Extension> findAllActiveById(Collection<Long> ids) {
         return fetch(findAllActive().and(EXTENSION.ID.in(ids)));
     }
 
-    public List<ExtensionDTO> findAllActiveByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
+    public List<Extension> findAllActiveByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
         var query = findAllActive().and(EXTENSION.PUBLIC_ID.in(publicIds));
         for(var namespaceToExclude : namespacesToExclude) {
             query = query.and(NAMESPACE.NAME.notEqual(namespaceToExclude));
@@ -42,11 +44,13 @@ public class ExtensionDTORepository {
         return fetch(query);
     }
 
-    public ExtensionDTO findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespaceName) {
-        return findAllActive()
+    public Extension findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespaceName) {
+        var record = findAllActive()
                 .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(name)))
                 .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)))
-                .fetchOneInto(ExtensionDTO.class);
+                .fetchOne();
+
+        return record != null ? toExtension(record) : null;
     }
 
     public Map<Long, Integer> findAllActiveReviewCountsById(Collection<Long> ids) {
@@ -79,7 +83,26 @@ public class ExtensionDTORepository {
                 .where(EXTENSION.ACTIVE.eq(true));
     }
 
-    private List<ExtensionDTO> fetch(SelectConditionStep<?> query) {
-        return query.fetchInto(ExtensionDTO.class);
+    private List<Extension> fetch(SelectConditionStep<?> query) {
+        return query.fetch().map(this::toExtension);
+    }
+
+    private Extension toExtension(Record record) {
+        var extension = new Extension();
+        extension.setId(record.get(EXTENSION.ID));
+        extension.setPublicId(record.get(EXTENSION.PUBLIC_ID));
+        extension.setName(record.get(EXTENSION.NAME));
+        extension.setAverageRating(record.get(EXTENSION.AVERAGE_RATING));
+        extension.setDownloadCount(record.get(EXTENSION.DOWNLOAD_COUNT));
+        extension.setPublishedDate(record.get(EXTENSION.PUBLISHED_DATE));
+        extension.setLastUpdatedDate(record.get(EXTENSION.LAST_UPDATED_DATE));
+
+        var namespace = new Namespace();
+        namespace.setId(record.get(NAMESPACE.ID));
+        namespace.setPublicId(record.get(NAMESPACE.PUBLIC_ID));
+        namespace.setName(record.get(NAMESPACE.NAME));
+        extension.setNamespace(namespace);
+
+        return extension;
     }
 }

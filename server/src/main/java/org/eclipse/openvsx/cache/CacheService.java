@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import org.eclipse.openvsx.dto.ExtensionVersionDTO;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.UserData;
@@ -28,10 +27,8 @@ public class CacheService {
     public static final String CACHE_DATABASE_SEARCH = "database.search";
     public static final String CACHE_EXTENSION_JSON = "extension.json";
     public static final String CACHE_LATEST_EXTENSION_VERSION = "latest.extension.version";
-    public static final String CACHE_LATEST_EXTENSION_VERSION_DTO = "latest.extension.version.dto";
     public static final String GENERATOR_EXTENSION_JSON = "extensionJsonCacheKeyGenerator";
     public static final String GENERATOR_LATEST_EXTENSION_VERSION = "latestExtensionVersionCacheKeyGenerator";
-    public static final String GENERATOR_LATEST_EXTENSION_VERSION_DTO = "latestExtensionVersionDTOCacheKeyGenerator";
 
     @Autowired
     CacheManager cacheManager;
@@ -44,9 +41,6 @@ public class CacheService {
 
     @Autowired
     LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
-
-    @Autowired
-    LatestExtensionVersionDTOCacheKeyGenerator latestExtensionVersionDTOCacheKeyGenerator;
 
     public void evictExtensionJsons(UserData user) {
         repositoryService.findVersions(user)
@@ -89,18 +83,6 @@ public class CacheService {
                         var key = latestExtensionVersionCacheKey.generate(null, null, extension, targetPlatform, preRelease, onlyActive);
                         cache.evictIfPresent(key);
                     }
-                }
-            }
-        }
-
-        cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION_DTO);
-        if(cache != null) {
-            var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
-            targetPlatforms.add(null);
-            for(var type : ExtensionVersionDTO.Type.values()) {
-                for(var targetPlatform : targetPlatforms) {
-                    var key = latestExtensionVersionDTOCacheKeyGenerator.generate(null, null, extension.getId(), type, targetPlatform);
-                    cache.evictIfPresent(key);
                 }
             }
         }
