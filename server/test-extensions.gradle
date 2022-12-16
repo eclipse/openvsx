@@ -145,10 +145,6 @@ task downloadTestExtensions {
             dest "${buildDir}/test-extensions/ms-vscode.powershell-2019.11.0.vsix"
         }
         download {
-            src "https://github.com/material-theme/vsc-material-theme/releases/download/v30.0/vsc-material-theme-30.0.0.vsix"
-            dest "${buildDir}/test-extensions/Equinusocio.vsc-material-theme-30.0.0.vsix"
-        }
-        download {
             src "https://github.com/DotJoshJohnson/vscode-xml/releases/download/v2.5.0/xml-2.5.0.vsix"
             dest "${buildDir}/test-extensions/DotJoshJohnson.xml-2.5.0.vsix"
         }
