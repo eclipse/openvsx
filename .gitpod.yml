@@ -54,7 +54,7 @@ tasks:
     # Use the CLI to publish some test extensions to the running server
     export OVSX_REGISTRY_URL=http://localhost:8080
     export OVSX_PAT=super_token
-    export PUBLISHERS="DotJoshJohnson eamodio Equinusocio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode vscodevim Wscats"
+    export PUBLISHERS="DotJoshJohnson eamodio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode vscodevim Wscats"
     for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub; done
     find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
     find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
