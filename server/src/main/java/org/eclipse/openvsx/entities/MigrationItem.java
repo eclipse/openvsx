@@ -12,17 +12,17 @@ package org.eclipse.openvsx.entities;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToOne;
 
 @Entity
-public class SetPreReleaseMigrationItem {
+public class MigrationItem {
 
     @Id
     @GeneratedValue
     long id;
 
-    @OneToOne
-    Extension extension;
+    String migrationScript;
+
+    long entityId;
 
     boolean migrationScheduled;
 
@@ -30,12 +30,20 @@ public class SetPreReleaseMigrationItem {
         return id;
     }
 
-    public Extension getExtension() {
-        return extension;
+    public String getMigrationScript() {
+        return migrationScript;
     }
 
-    public void setExtension(Extension extension) {
-        this.extension = extension;
+    public void setMigrationScript(String migrationScript) {
+        this.migrationScript = migrationScript;
+    }
+
+    public long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(long entityId) {
+        this.entityId = entityId;
     }
 
     public boolean isMigrationScheduled() {

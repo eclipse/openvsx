@@ -76,11 +76,9 @@ class RepositoryServiceSmokeTest {
         assertAll(
                 () -> repositories.averageNumberOfActiveReviewsPerActiveExtension(NOW),
                 () -> repositories.countActiveExtensionPublishers(NOW),
-                () -> repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(
-                        NOW),
+                () -> repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(NOW),
                 () -> repositories.countActiveExtensions(NOW),
-                () -> repositories.countActiveExtensionsGroupedByExtensionReviewRating(
-                        NOW),
+                () -> repositories.countActiveExtensionsGroupedByExtensionReviewRating(NOW),
                 () -> repositories.countActiveReviews(null),
                 () -> repositories.countExtensions(),
                 () -> repositories.countExtensions("name", "namespace"),
@@ -147,6 +145,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countActiveAccessTokens(userData),
                 () -> repositories.findNotMigratedResources(),
                 () -> repositories.findNotMigratedPreReleases(),
+                () -> repositories.findNotMigratedRenamedDownloads(),
                 () -> repositories.topMostActivePublishingUsers(NOW, 1),
                 () -> repositories.topNamespaceExtensions(NOW, 1),
                 () -> repositories.topNamespaceExtensionVersions(NOW, 1),

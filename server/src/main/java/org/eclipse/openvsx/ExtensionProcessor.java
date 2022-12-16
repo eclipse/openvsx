@@ -320,17 +320,18 @@ public class ExtensionProcessor implements AutoCloseable {
     public FileResource getBinary(ExtensionVersion extVersion) {
         var binary = new FileResource();
         binary.setExtension(extVersion);
-        binary.setName(getBinaryName());
+        binary.setName(getBinaryName(extVersion));
         binary.setType(FileResource.DOWNLOAD);
         binary.setContent(null);
         return binary;
     }
 
-    private String getBinaryName() {
-        loadVsixManifest();
-        var resourceName = getNamespace() + "." + getExtensionName() + "-" + getVersion();
-        if(!TargetPlatform.isUniversal(getTargetPlatform())) {
-            resourceName += "@" + getTargetPlatform();
+    private String getBinaryName(ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        var resourceName = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
+        if(!TargetPlatform.isUniversal(extVersion.getTargetPlatform())) {
+            resourceName += "@" + extVersion.getTargetPlatform();
         }
 
         resourceName += ".vsix";

@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.ExtractResourcesMigrationItem;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
@@ -48,9 +47,8 @@ public class ExtractResourcesJobService {
     @Autowired
     GoogleCloudStorageService googleStorage;
 
-    public ExtensionVersion getExtension(long itemId) {
-        var item = entityManager.find(ExtractResourcesMigrationItem.class, itemId);
-        return item.getExtension();
+    public ExtensionVersion getExtension(long entityId) {
+        return entityManager.find(ExtensionVersion.class, entityId);
     }
 
     @Transactional
@@ -73,57 +71,5 @@ public class ExtractResourcesJobService {
     @Transactional
     public void persistResource(FileResource resource) {
         entityManager.persist(resource);
-    }
-
-    @Retryable
-    public Path getExtensionFile(Map.Entry<FileResource, byte[]> entry) {
-        Path extensionFile;
-        try {
-            extensionFile = Files.createTempFile("extension_", ".vsix");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create extension file", e);
-        }
-
-        var content = entry.getValue();
-        if(content == null) {
-            var download = entry.getKey();
-            var storage = getStorage(download);
-            var uri = storage.getLocation(download);
-            restTemplate.execute(uri, HttpMethod.GET, null, response -> {
-                try(var out = Files.newOutputStream(extensionFile)) {
-                    response.getBody().transferTo(out);
-                }
-
-                return extensionFile;
-            });
-        } else {
-            try {
-                Files.write(extensionFile, content);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to write to extension file", e);
-            }
-        }
-
-        return extensionFile;
-    }
-
-    @Retryable
-    public void uploadResource(FileResource resource) {
-        if(resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            return;
-        }
-
-        var storage = getStorage(resource);
-        storage.uploadFile(resource);
-        resource.setContent(null);
-    }
-
-    private IStorageService getStorage(FileResource resource) {
-        var storages = Map.of(
-                FileResource.STORAGE_AZURE, azureStorage,
-                FileResource.STORAGE_GOOGLE, googleStorage
-        );
-
-        return storages.get(resource.getStorageType());
     }
 }
