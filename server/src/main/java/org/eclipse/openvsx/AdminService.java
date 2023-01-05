@@ -183,10 +183,7 @@ public class AdminService {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json) {
-        var namespaceIssue = validator.validateNamespace(json.name);
-        if (namespaceIssue.isPresent()) {
-            throw new ErrorResultException(namespaceIssue.get().toString());
-        }
+        validateNamespace(json.name);
         var namespace = repositories.findNamespace(json.name);
         if (namespace != null) {
             throw new ErrorResultException("Namespace already exists: " + namespace.getName());
@@ -197,6 +194,57 @@ public class AdminService {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
+    @Transactional
+    public void changeNamespace(ChangeNamespaceJson json) {
+        if(Strings.isNullOrEmpty(json.oldNamespace)) {
+            throw new ErrorResultException("Old namespace must have a value");
+        }
+        if(Strings.isNullOrEmpty(json.newNamespace)) {
+            throw new ErrorResultException("New namespace must have a value");
+        }
+
+        var oldNamespace = repositories.findNamespace(json.oldNamespace);
+        if (oldNamespace == null) {
+            throw new ErrorResultException("Old namespace doesn't exists: " + json.oldNamespace);
+        }
+
+        var newNamespace = repositories.findNamespace(json.newNamespace);
+        if(newNamespace != null && !json.mergeIfNewNamespaceAlreadyExists) {
+            throw new ErrorResultException("New namespace already exists: " + json.newNamespace);
+        }
+        if(newNamespace == null) {
+            validateNamespace(json.newNamespace);
+            newNamespace = new Namespace();
+            newNamespace.setName(json.newNamespace);
+            entityManager.persist(newNamespace);
+        }
+
+        var extensions = repositories.findExtensions(oldNamespace);
+        for(var extension : extensions) {
+            cache.evictExtensionJsons(extension);
+            cache.evictLatestExtensionVersion(extension);
+            extension.setNamespace(newNamespace);
+        }
+
+        var memberships = repositories.findMemberships(oldNamespace);
+        for(var membership : memberships) {
+            membership.setNamespace(newNamespace);
+        }
+
+        if(json.removeOldNamespace) {
+            entityManager.remove(oldNamespace);
+        }
+
+        search.updateSearchEntries(extensions.toList());
+    }
+
+    private void validateNamespace(String namespace) {
+        var namespaceIssue = validator.validateNamespace(namespace);
+        if (namespaceIssue.isPresent()) {
+            throw new ErrorResultException(namespaceIssue.get().toString());
+        }
+    }
+    
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
