@@ -708,6 +708,7 @@ public class VSCodeAPITest {
         extVersion.setRepository("https://github.com/redhat-developer/vscode-yaml");
         extVersion.setDependencies(Collections.emptyList());
         extVersion.setBundledExtensions(Collections.emptyList());
+        extVersion.setLocalizedLanguages(Collections.emptyList());
         extVersion.setExtension(extension);
 
         mockFileResources(List.of(extVersion));

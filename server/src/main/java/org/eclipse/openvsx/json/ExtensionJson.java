@@ -148,6 +148,9 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @Schema(description = "Theme type for user interfaces", allowableValues = {"light", "dark"})
     public String galleryTheme;
 
+    @Schema(description = "Languages the extension has been translated in")
+    public List<String> localizedLanguages;
+
     @Schema(description = "URL of the extension's Q&A page")
     public String qna;
 

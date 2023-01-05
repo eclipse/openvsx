@@ -544,7 +544,9 @@ public class LocalVSCodeService implements IVSCodeService {
             var bundledExtensions = extVer.getBundledExtensions().stream()
                     .collect(Collectors.joining(","));
             queryVer.addProperty(PROP_EXTENSION_PACK, bundledExtensions);
-            queryVer.addProperty(PROP_LOCALIZED_LANGUAGES, "");
+            var localizedLanguages = extVer.getLocalizedLanguages().stream()
+                    .collect(Collectors.joining(","));
+            queryVer.addProperty(PROP_LOCALIZED_LANGUAGES, localizedLanguages);
             if (extVer.isPreRelease()) {
                 queryVer.addProperty(PROP_PRE_RELEASE, "true");
             }

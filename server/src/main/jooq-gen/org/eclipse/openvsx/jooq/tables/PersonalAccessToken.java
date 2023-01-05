@@ -135,8 +135,13 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
         return Arrays.<ForeignKey<PersonalAccessTokenRecord, ?>>asList(Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L);
     }
 
+    private transient UserData _userData;
+
     public UserData userData() {
-        return new UserData(this, Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L);
+        if (_userData == null)
+            _userData = new UserData(this, Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L);
+
+        return _userData;
     }
 
     @Override

@@ -48,6 +48,7 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.REPOSITORY,
                     EXTENSION_VERSION.GALLERY_COLOR,
                     EXTENSION_VERSION.GALLERY_THEME,
+                    EXTENSION_VERSION.LOCALIZED_LANGUAGES,
                     EXTENSION_VERSION.DEPENDENCIES,
                     EXTENSION_VERSION.BUNDLED_EXTENSIONS
                 )
@@ -159,6 +160,7 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.MARKDOWN,
                     EXTENSION_VERSION.GALLERY_COLOR,
                     EXTENSION_VERSION.GALLERY_THEME,
+                    EXTENSION_VERSION.LOCALIZED_LANGUAGES,
                     EXTENSION_VERSION.QNA,
                     EXTENSION_VERSION.DEPENDENCIES,
                     EXTENSION_VERSION.BUNDLED_EXTENSIONS
@@ -234,6 +236,7 @@ public class ExtensionVersionJooqRepository {
         extVersion.setRepository(record.get(EXTENSION_VERSION.REPOSITORY));
         extVersion.setGalleryColor(record.get(EXTENSION_VERSION.GALLERY_COLOR));
         extVersion.setGalleryTheme(record.get(EXTENSION_VERSION.GALLERY_THEME));
+        extVersion.setLocalizedLanguages(toList(record.get(EXTENSION_VERSION.LOCALIZED_LANGUAGES), converter));
         extVersion.setDependencies(toList(record.get(EXTENSION_VERSION.DEPENDENCIES), converter));
         extVersion.setBundledExtensions(toList(record.get(EXTENSION_VERSION.BUNDLED_EXTENSIONS), converter));
 

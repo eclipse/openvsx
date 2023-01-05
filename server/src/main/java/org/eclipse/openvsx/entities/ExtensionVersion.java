@@ -104,6 +104,10 @@ public class ExtensionVersion implements Serializable {
     @Column(length = 16)
     String galleryTheme;
 
+    @Column
+    @Convert(converter = ListOfStringConverter.class)
+    List<String> localizedLanguages;
+
     String qna;
 
     @Column(length = 2048)
@@ -145,6 +149,7 @@ public class ExtensionVersion implements Serializable {
         json.markdown = this.getMarkdown();
         json.galleryColor = this.getGalleryColor();
         json.galleryTheme = this.getGalleryTheme();
+        json.localizedLanguages = this.getLocalizedLanguages();
         json.qna = this.getQna();
         if (this.getPublishedWith() != null) {
             json.publishedBy = this.getPublishedWith().getUser().toUserJson();
@@ -388,6 +393,14 @@ public class ExtensionVersion implements Serializable {
 		this.galleryTheme = galleryTheme;
 	}
 
+	public List<String> getLocalizedLanguages() {
+        return localizedLanguages;
+    }
+
+    public void setLocalizedLanguages(List<String> localizedLanguages) {
+        this.localizedLanguages = localizedLanguages;
+    }
+
 	public String getQna() {
 		return qna;
 	}
@@ -433,8 +446,7 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(version, that.version)
                 && Objects.equals(targetPlatform, that.targetPlatform)
                 && Objects.equals(timestamp, that.timestamp)
-                && Objects.equals(getId(publishedWith), getId(that.publishedWith)) // use id to prevent infinite recursion
-                && Objects.equals(displayName, that.displayName)
+                && Objects.equals(getId(publishedWith), getId(that.publishedWith)) // use id to prevent infinite recursion                && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
                 && Objects.equals(engines, that.engines)
                 && Objects.equals(categories, that.categories)
@@ -447,6 +459,7 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(markdown, that.markdown)
                 && Objects.equals(galleryColor, that.galleryColor)
                 && Objects.equals(galleryTheme, that.galleryTheme)
+                && Objects.equals(localizedLanguages, that.localizedLanguages)
                 && Objects.equals(qna, that.qna)
                 && Objects.equals(dependencies, that.dependencies)
                 && Objects.equals(bundledExtensions, that.bundledExtensions);
@@ -457,7 +470,7 @@ public class ExtensionVersion implements Serializable {
         return Objects.hash(
                 id, getId(extension), version, targetPlatform, preRelease, preview, timestamp, getId(publishedWith),
                 active, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
-                bugs, markdown, galleryColor, galleryTheme, qna, dependencies, bundledExtensions
+                bugs, markdown, galleryColor, galleryTheme, localizedLanguages, qna, dependencies, bundledExtensions
         );
     }
 

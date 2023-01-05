@@ -173,6 +173,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, String> TARGET_PLATFORM = createField(DSL.name("target_platform"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
+    /**
+     * The column <code>public.extension_version.localized_languages</code>.
+     */
+    public final TableField<ExtensionVersionRecord, String> LOCALIZED_LANGUAGES = createField(DSL.name("localized_languages"), SQLDataType.VARCHAR(255), this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -231,12 +236,21 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
         return Arrays.<ForeignKey<ExtensionVersionRecord, ?>>asList(Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80);
     }
 
+    private transient Extension _extension;
+    private transient PersonalAccessToken _personalAccessToken;
+
     public Extension extension() {
-        return new Extension(this, Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT);
+        if (_extension == null)
+            _extension = new Extension(this, Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT);
+
+        return _extension;
     }
 
     public PersonalAccessToken personalAccessToken() {
-        return new PersonalAccessToken(this, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80);
+        if (_personalAccessToken == null)
+            _personalAccessToken = new PersonalAccessToken(this, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80);
+
+        return _personalAccessToken;
     }
 
     @Override

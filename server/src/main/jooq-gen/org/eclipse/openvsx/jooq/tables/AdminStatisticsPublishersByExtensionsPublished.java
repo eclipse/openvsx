@@ -103,8 +103,13 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
         return Arrays.<ForeignKey<AdminStatisticsPublishersByExtensionsPublishedRecord, ?>>asList(Keys.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY);
     }
 
+    private transient AdminStatistics _adminStatistics;
+
     public AdminStatistics adminStatistics() {
-        return new AdminStatistics(this, Keys.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY);
+        if (_adminStatistics == null)
+            _adminStatistics = new AdminStatistics(this, Keys.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY);
+
+        return _adminStatistics;
     }
 
     @Override

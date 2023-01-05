@@ -369,6 +369,20 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         return (String) get(24);
     }
 
+    /**
+     * Setter for <code>public.extension_version.localized_languages</code>.
+     */
+    public void setLocalizedLanguages(String value) {
+        set(25, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.localized_languages</code>.
+     */
+    public String getLocalizedLanguages() {
+        return (String) get(25);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -392,7 +406,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -420,5 +434,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setExtensionKind(extensionKind);
         setPreRelease(preRelease);
         setTargetPlatform(targetPlatform);
+        setLocalizedLanguages(localizedLanguages);
     }
 }
