@@ -118,7 +118,7 @@ public class FileResource extends TableImpl<FileResourceRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.FILE_RESOURCE_EXTENSION_IDX);
+        return Arrays.<Index>asList(Indexes.FILE_RESOURCE_EXTENSION_IDX, Indexes.FILE_RESOURCE_TYPE_IDX);
     }
 
     @Override
@@ -136,8 +136,13 @@ public class FileResource extends TableImpl<FileResourceRecord> {
         return Arrays.<ForeignKey<FileResourceRecord, ?>>asList(Keys.FILE_RESOURCE__FILE_RESOURCE_EXTENSION_FKEY);
     }
 
+    private transient ExtensionVersion _extensionVersion;
+
     public ExtensionVersion extensionVersion() {
-        return new ExtensionVersion(this, Keys.FILE_RESOURCE__FILE_RESOURCE_EXTENSION_FKEY);
+        if (_extensionVersion == null)
+            _extensionVersion = new ExtensionVersion(this, Keys.FILE_RESOURCE__FILE_RESOURCE_EXTENSION_FKEY);
+
+        return _extensionVersion;
     }
 
     @Override

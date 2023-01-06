@@ -199,6 +199,12 @@ public class ExtensionProcessor implements AutoCloseable {
         return themeNode.path("Value").asText();
     }
 
+    public List<String> getLocalizedLanguages() {
+        loadVsixManifest();
+        var languagesNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Code.LocalizedLanguages");
+        return asStringList(languagesNode.path("Value").asText(), ",");
+    }
+
     public boolean isPreview() {
         loadVsixManifest();
         var galleryFlags = vsixManifest.path("Metadata").path("GalleryFlags");
@@ -232,6 +238,7 @@ public class ExtensionProcessor implements AutoCloseable {
         extension.setMarkdown(packageJson.path("markdown").textValue());
         extension.setGalleryColor(getGalleryColor());
         extension.setGalleryTheme(getGalleryTheme());
+        extension.setLocalizedLanguages(getLocalizedLanguages());
         extension.setQna(packageJson.path("qna").textValue());
 
         return extension;

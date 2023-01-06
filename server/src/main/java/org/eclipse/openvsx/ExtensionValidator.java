@@ -94,6 +94,7 @@ public class ExtensionValidator {
         checkFieldSize(extVersion.getGalleryColor(), GALLERY_COLOR_SIZE, "galleryBanner.color", issues);
         checkInvalid(extVersion.getGalleryTheme(), s -> !GALLERY_THEME_VALUES.contains(s), "galleryBanner.theme", issues,
                 GALLERY_THEME_VALUES.toString());
+        checkFieldSize(extVersion.getLocalizedLanguages(), DEFAULT_STRING_SIZE, "localizedLanguages", issues);
         checkInvalid(extVersion.getQna(), s -> !QNA_VALUES.contains(s) && !isURL(s), "qna", issues,
                 QNA_VALUES.toString() + " or a URL");
         checkFieldSize(extVersion.getQna(), DEFAULT_STRING_SIZE, "qna", issues);
