@@ -9,7 +9,7 @@
  ********************************************************************************/
 import { createVSIX, IPackageOptions } from '@vscode/vsce';
 import { createTempFile, addEnvOptions } from './util';
-import { Registry, RegistryOptions } from './registry';
+import { Extension, Registry, RegistryOptions } from './registry';
 import { checkLicense } from './check-license';
 
 /**
@@ -48,7 +48,17 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
         console.warn("Ignoring option '--pre-release' for prepackaged extension.");
     }
 
-    const extension = await registry.publish(options.extensionFile!, options.pat);
+    let extension: Extension | undefined;
+    try {
+        extension = await registry.publish(options.extensionFile!, options.pat);
+    } catch (err) {
+        if (options.skipDuplicate && err.message.endsWith('is already published.')) {
+            console.log(err.message + ' Skipping publish.');
+            return;
+        } else {
+            throw err;
+        }
+    }
     if (extension.error) {
         throw new Error(extension.error);
     }
@@ -70,7 +80,6 @@ interface PublishCommonOptions extends RegistryOptions {
      * Path to the vsix file to be published. Cannot be used together with `packagePath`.
      */
     extensionFile?: string;
-
     /**
      * The base URL for links detected in Markdown files. Only valid with `packagePath`.
      */
@@ -87,6 +96,10 @@ interface PublishCommonOptions extends RegistryOptions {
      * Mark this package as a pre-release. Only valid with `packagePath`.
      */
     preRelease?: boolean;
+    /**
+     * Whether to fail silently if version already exists on the marketplace
+     */
+    skipDuplicate?: boolean;
 }
 
 // Interface used by top level CLI
