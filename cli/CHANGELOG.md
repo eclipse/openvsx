@@ -2,6 +2,14 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.8.0 (Jan. 2023)
+
+#### New Features
+
+- Added CLI parameter `--skip-duplicate` to  fail silently if version already exists on the marketplace ([#646](https://github.com/eclipse/openvsx/pull/646))
+
+---
+ 
 ### v0.7.1 (Dec. 2022)
 
 #### Dependencies
