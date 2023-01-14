@@ -102,11 +102,7 @@ export class ExtensionListComponent extends React.Component<ExtensionListCompone
     }
 
     protected loadMore = async (p: number): Promise<void> => {
-        if (this.state.loading) {
-            return;
-        }
-
-        this.setState({ loading: true });
+        this.setState({ loading: true, hasMore: false });
         this.lastRequestedPage = p;
         const filter = copyFilter(this.state.appliedFilter);
         if (!isSameFilter(this.props.filter, filter)) {
