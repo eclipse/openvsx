@@ -2,6 +2,16 @@
         xmlns="http://www.ehcache.org/v3"
         xsi:schemaLocation="http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core.xsd">
     <persistence directory="${java.io.tmpdir}"/>
+    <cache alias="namespace.details.json">
+        <expiry>
+            <ttl unit="seconds">3600</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">1024</heap>
+            <offheap unit="MB">32</offheap>
+            <disk unit="MB">128</disk>
+        </resources>
+    </cache>
     <cache alias="database.search">
         <expiry>
             <ttl unit="seconds">3600</ttl>

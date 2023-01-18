@@ -383,6 +383,20 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         return (String) get(25);
     }
 
+    /**
+     * Setter for <code>public.extension_version.sponsor_link</code>.
+     */
+    public void setSponsorLink(String value) {
+        set(26, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.sponsor_link</code>.
+     */
+    public String getSponsorLink() {
+        return (String) get(26);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -406,7 +420,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -435,5 +449,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setPreRelease(preRelease);
         setTargetPlatform(targetPlatform);
         setLocalizedLanguages(localizedLanguages);
+        setSponsorLink(sponsorLink);
     }
 }

@@ -9,12 +9,22 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import static org.eclipse.openvsx.entities.FileResource.*;
+
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -83,6 +93,16 @@ public class StorageUtilService implements IStorageService {
         return Arrays.asList(externalResourceTypes).contains(resource.getType());
     }
 
+    public boolean shouldStoreLogoExternally(Namespace namespace) {
+        if (!isEnabled()) {
+            return false;
+        }
+        if (externalResourceTypes.length == 1 && "*".equals(externalResourceTypes[0])) {
+            return true;
+        }
+        return Arrays.asList(externalResourceTypes).contains("namespace-logo");
+    }
+
     @Override
     public boolean isEnabled() {
         return googleStorage.isEnabled() || azureStorage.isEnabled();
@@ -141,6 +161,24 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
+    @Transactional(Transactional.TxType.MANDATORY)
+    public void uploadNamespaceLogo(Namespace namespace) {
+        var storageType = getActiveStorageType();
+        switch (storageType) {
+            case STORAGE_GOOGLE:
+                googleStorage.uploadNamespaceLogo(namespace);
+                break;
+            case STORAGE_AZURE:
+                azureStorage.uploadNamespaceLogo(namespace);
+                break;
+            default:
+                throw new RuntimeException("External storage is not available.");
+        }
+
+        namespace.setLogoStorageType(storageType);
+    }
+
+    @Override
     public void removeFile(FileResource resource) {
         switch (resource.getStorageType()) {
             case STORAGE_GOOGLE:
@@ -148,6 +186,18 @@ public class StorageUtilService implements IStorageService {
                 break;
             case STORAGE_AZURE:
                 azureStorage.removeFile(resource);
+                break;
+        }
+    }
+
+    @Override
+    public void removeNamespaceLogo(Namespace namespace) {
+        switch (namespace.getLogoStorageType()) {
+            case STORAGE_GOOGLE:
+                googleStorage.removeNamespaceLogo(namespace);
+                break;
+            case STORAGE_AZURE:
+                azureStorage.removeNamespaceLogo(namespace);
                 break;
         }
     }
@@ -161,6 +211,20 @@ public class StorageUtilService implements IStorageService {
                 return azureStorage.getLocation(resource);
             case STORAGE_DB:
                 return URI.create(getFileUrl(resource.getName(), resource.getExtension(), UrlUtil.getBaseUrl()));
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public URI getNamespaceLogoLocation(Namespace namespace) {
+        switch (namespace.getLogoStorageType()) {
+            case STORAGE_GOOGLE:
+                return googleStorage.getNamespaceLogoLocation(namespace);
+            case STORAGE_AZURE:
+                return azureStorage.getNamespaceLogoLocation(namespace);
+            case STORAGE_DB:
+                return URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api", namespace.getName(), "logo", namespace.getLogoName()));
             default:
                 return null;
         }
@@ -192,7 +256,7 @@ public class StorageUtilService implements IStorageService {
         return type2Url;
     }
 
-    @Transactional
+    @Transactional(Transactional.TxType.MANDATORY)
     public void increaseDownloadCount(FileResource resource) {
         if(azureDownloadCountService.isEnabled()) {
             // don't count downloads twice
@@ -209,6 +273,7 @@ public class StorageUtilService implements IStorageService {
         var extension = resource.getExtension().getExtension();
         extension.setDownloadCount(extension.getDownloadCount() + 1);
 
+        cache.evictNamespaceDetails(extension);
         cache.evictExtensionJsons(extension);
         if (extension.isActive()) {
             search.updateSearchEntry(extension);
@@ -235,6 +300,20 @@ public class StorageUtilService implements IStorageService {
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(getLocation(resource))
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .build();
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<byte[]> getNamespaceLogo(Namespace namespace) {
+        namespace = entityManager.merge(namespace);
+        if (namespace.getLogoStorageType().equals(FileResource.STORAGE_DB)) {
+            var headers = getFileResponseHeaders(namespace.getLogoName());
+            return new ResponseEntity<>(namespace.getLogoBytes(), headers, HttpStatus.OK);
+        } else {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(getNamespaceLogoLocation(namespace))
                     .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                     .build();
         }

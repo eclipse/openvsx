@@ -9,19 +9,23 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Strings;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.springframework.stereotype.Component;
 
@@ -53,6 +57,47 @@ public class ExtensionValidator {
             return Optional.of(new Issue("The namespace name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
         }
         return Optional.empty();
+    }
+
+    public List<Issue> validateNamespaceDetails(NamespaceDetailsJson json) {
+        var issues = new ArrayList<Issue>();
+        checkCharacters(json.displayName, "displayName", issues);
+        checkFieldSize(json.displayName, 32, "displayName", issues);
+        checkCharacters(json.description, "description", issues);
+        checkFieldSize(json.description, DEFAULT_STRING_SIZE, "description", issues);
+        checkURL(json.website, "website", issues);
+        checkURL(json.supportLink, "supportLink", issues);
+
+        var githubLink = json.socialLinks.get("github");
+        if(githubLink != null && !githubLink.matches("https:\\/\\/www\\.github\\.com\\/[^\\/]+")) {
+            issues.add(new Issue("Invalid GitHub URL"));
+        }
+        var linkedinLink = json.socialLinks.get("linkedin");
+        if(linkedinLink != null && !linkedinLink.matches("https:\\/\\/www\\.linkedin\\.com\\/(company|in)\\/[^\\/]+")) {
+            issues.add(new Issue("Invalid LinkedIn URL"));
+        }
+        var twitterLink = json.socialLinks.get("twitter");
+        if(twitterLink != null && !twitterLink.matches("https:\\/\\/www\\.twitter\\.com\\/[^\\/]+")) {
+            issues.add(new Issue("Invalid Twitter URL"));
+        }
+
+        if(json.logoBytes != null) {
+            try (var in = new ByteArrayInputStream(json.logoBytes)) {
+                var tika = new Tika();
+                var detectedType = tika.detect(in, json.logo);
+                var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
+                if(logoType != null) {
+                    json.logo = "logo-" + json.name + logoType.getExtension();
+                    if(!logoType.getType().equals(MediaType.image("png")) && !logoType.getType().equals(MediaType.image("jpg"))) {
+                        issues.add(new Issue("Namespace logo should be of png or jpg type"));
+                    }
+                }
+            } catch (IOException | MimeTypeException e) {
+                issues.add(new Issue("Failed to read namespace logo"));
+            }
+        }
+
+        return issues;
     }
 
     public Optional<Issue> validateExtensionName(String name) {
@@ -183,15 +228,13 @@ public class ExtensionValidator {
     }
 
     private boolean isURL(String value) {
-        if (Strings.isNullOrEmpty(value)) {
+        if (Strings.isNullOrEmpty(value))
             return false;
-        }
+        if (value.startsWith("git+") && value.length() > 4)
+            value = value.substring(4);
+        
         try {
-            if (value.startsWith("git+") && value.length() > 4)
-                new URL(value.substring(4));
-            else
-                new URL(value);
-            return true;
+            return !StringUtils.isEmpty(new URL(value).getHost());
         } catch (MalformedURLException exc) {
             return false;
         }

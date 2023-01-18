@@ -33,4 +33,8 @@ public interface IExtensionRegistry {
     QueryResultJson query(QueryParamJson param);
 
     QueryResultJson queryV2(QueryParamJsonV2 param);
+
+    NamespaceDetailsJson getNamespaceDetails(String namespace);
+
+    ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName);
 }

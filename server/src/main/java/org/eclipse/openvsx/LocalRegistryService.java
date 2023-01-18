@@ -9,8 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
-import static org.eclipse.openvsx.cache.CacheService.GENERATOR_EXTENSION_JSON;
+import static org.eclipse.openvsx.cache.CacheService.*;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 import static org.eclipse.openvsx.util.UrlUtil.createApiVersionUrl;
@@ -42,6 +41,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Retryable;
@@ -170,6 +170,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
         var resource = repositories.findFileByName(extVersion, fileName);
@@ -396,6 +397,52 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .collect(Collectors.toList());
 
         return result;
+    }
+
+    @Override
+    @Transactional
+    @Cacheable(CACHE_NAMESPACE_DETAILS_JSON)
+    public NamespaceDetailsJson getNamespaceDetails(String namespaceName) {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new NotFoundException();
+        }
+
+        var json = namespace.toNamespaceDetailsJson();
+        json.verified = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0;
+        json.logo = namespace.getLogoStorageType() != null
+                ? storageUtil.getNamespaceLogoLocation(namespace).toString()
+                : null;
+
+        json.extensions = repositories.findActiveExtensions(namespace).stream()
+                .sorted(Comparator.comparingLong(Extension::getDownloadCount).reversed())
+                .map(this::toSearchEntryJson)
+                .collect(Collectors.toList());
+
+        return json;
+    }
+
+    private SearchEntryJson toSearchEntryJson(Extension extension) {
+        var serverUrl = UrlUtil.getBaseUrl();
+        var extVersion = versions.getLatest(extension, null, false, true);
+        var entry = extVersion.toSearchEntryJson();
+        entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
+        entry.files = storageUtil.getFileUrls(extVersion, serverUrl, DOWNLOAD, ICON);
+        return entry;
+    }
+
+    @Override
+    public ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName) {
+        if(fileName == null) {
+            fileName = "";
+        }
+
+        var namespace = repositories.findNamespace(namespaceName);
+        if(namespace == null || !fileName.equals(namespace.getLogoName())) {
+            throw new NotFoundException();
+        }
+
+        return storageUtil.getNamespaceLogo(namespace);
     }
 
     private Map<Long, Integer> getReviewCounts(Collection<Long> extensionIds) {

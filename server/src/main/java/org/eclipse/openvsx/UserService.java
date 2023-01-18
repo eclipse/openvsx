@@ -9,25 +9,31 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import com.google.common.base.Joiner;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
+
+import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
 
 @Component
 public class UserService {
@@ -39,7 +45,13 @@ public class UserService {
     RepositoryService repositories;
 
     @Autowired
+    StorageUtilService storageUtil;
+
+    @Autowired
     CacheService cache;
+
+    @Autowired
+    ExtensionValidator validator;
 
     public UserData findLoggedInUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -68,38 +80,35 @@ public class UserService {
 
     @Transactional
     public UserData updateExistingUser(UserData user, OAuth2User oauth2User) {
-        switch (user.getProvider()) {
-            case "github": {
-                var updated = false;
-                String loginName = oauth2User.getAttribute("login");
-                if (loginName != null && !loginName.equals(user.getLoginName())) {
-                    user.setLoginName(loginName);
-                    updated = true;
-                }
-                String fullName = oauth2User.getAttribute("name");
-                if (fullName != null && !fullName.equals(user.getFullName())) {
-                    user.setFullName(fullName);
-                    updated = true;
-                }
-                String email = oauth2User.getAttribute("email");
-                if (email != null && !email.equals(user.getEmail())) {
-                    user.setEmail(email);
-                    updated = true;
-                }
-                String providerUrl = oauth2User.getAttribute("html_url");
-                if (providerUrl != null && !providerUrl.equals(user.getProviderUrl())) {
-                    user.setProviderUrl(providerUrl);
-                    updated = true;
-                }
-                String avatarUrl = oauth2User.getAttribute("avatar_url");
-                if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl())) {
-                    user.setAvatarUrl(avatarUrl);
-                    updated = true;
-                }
-                if (updated) {
-                    cache.evictExtensionJsons(user);
-                }
-                break;
+        if ("github".equals(user.getProvider())) {
+            var updated = false;
+            String loginName = oauth2User.getAttribute("login");
+            if (loginName != null && !loginName.equals(user.getLoginName())) {
+                user.setLoginName(loginName);
+                updated = true;
+            }
+            String fullName = oauth2User.getAttribute("name");
+            if (fullName != null && !fullName.equals(user.getFullName())) {
+                user.setFullName(fullName);
+                updated = true;
+            }
+            String email = oauth2User.getAttribute("email");
+            if (email != null && !email.equals(user.getEmail())) {
+                user.setEmail(email);
+                updated = true;
+            }
+            String providerUrl = oauth2User.getAttribute("html_url");
+            if (providerUrl != null && !providerUrl.equals(user.getProviderUrl())) {
+                user.setProviderUrl(providerUrl);
+                updated = true;
+            }
+            String avatarUrl = oauth2User.getAttribute("avatar_url");
+            if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl())) {
+                user.setAvatarUrl(avatarUrl);
+                updated = true;
+            }
+            if (updated) {
+                cache.evictExtensionJsons(user);
             }
         }
         return user;
@@ -190,4 +199,65 @@ public class UserService {
         return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName() + ".");
     }
 
+    @Transactional(rollbackOn = { ErrorResultException.class, NotFoundException.class })
+    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#details.name")
+    public ResultJson updateNamespaceDetails(NamespaceDetailsJson details) {
+        var namespace = repositories.findNamespace(details.name);
+        if (namespace == null) {
+            throw new NotFoundException();
+        }
+
+        var issues = validator.validateNamespaceDetails(details);
+        if (!issues.isEmpty()) {
+            var message = issues.size() == 1
+                    ? issues.get(0).toString()
+                    : "Multiple issues were found in the extension metadata:\n" + Joiner.on("\n").join(issues);
+
+            throw new ErrorResultException(message);
+        }
+
+        if(!Objects.equals(details.displayName, namespace.getDisplayName())) {
+            namespace.setDisplayName(details.displayName);
+        }
+        if(!Objects.equals(details.description, namespace.getDescription())) {
+            namespace.setDescription(details.description);
+        }
+        if(!Objects.equals(details.website, namespace.getWebsite())) {
+            namespace.setWebsite(details.website);
+        }
+        if(!Objects.equals(details.supportLink, namespace.getSupportLink())) {
+            namespace.setSupportLink(details.supportLink);
+        }
+        if(!Objects.equals(details.socialLinks, namespace.getSocialLinks())) {
+            namespace.setSocialLinks(details.socialLinks);
+        }
+        if(!Arrays.equals(details.logoBytes, namespace.getLogoBytes())) {
+            if (details.logoBytes != null) {
+                if (namespace.getLogoBytes() != null) {
+                    storageUtil.removeNamespaceLogo(namespace);
+                }
+
+                namespace.setLogoName(details.logo);
+                storeNamespaceLogo(namespace);
+            } else if (namespace.getLogoBytes() != null) {
+                storageUtil.removeNamespaceLogo(namespace);
+                namespace.setLogoName(null);
+                namespace.setLogoStorageType(null);
+            }
+
+            namespace.setLogoBytes(details.logoBytes);
+        }
+
+        return ResultJson.success("Updated details for namespace " + details.name);
+    }
+
+    private void storeNamespaceLogo(Namespace namespace) {
+        if (storageUtil.shouldStoreLogoExternally(namespace)) {
+            storageUtil.uploadNamespaceLogo(namespace);
+            // Don't store the binary content in the DB - it's now stored externally
+            namespace.setLogoBytes(null);
+        } else {
+            namespace.setLogoStorageType(FileResource.STORAGE_DB);
+        }
+    }
 }

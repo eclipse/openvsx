@@ -14,6 +14,7 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -35,11 +37,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -258,6 +256,23 @@ public class UserAPI {
 
             return json;
         }).toList();
+    }
+
+    @PostMapping(
+        path = "/user/namespace/{namespace}/details",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> updateNamespaceDetails(@RequestBody NamespaceDetailsJson details) {
+        try {
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                    .body(users.updateNamespaceDetails(details));
+        } catch (NotFoundException exc) {
+            var json = NamespaceDetailsJson.error("Namespace not found: " + details.name);
+            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ResultJson.class);
+        }
     }
 
     @GetMapping(

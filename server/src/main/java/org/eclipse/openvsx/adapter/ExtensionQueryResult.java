@@ -91,6 +91,7 @@ public class ExtensionQueryResult {
 
     public static class Property {
         public static final String PROP_REPOSITORY = "Microsoft.VisualStudio.Services.Links.Source";
+        public static final String PROP_SPONSOR_LINK = "Microsoft.VisualStudio.Code.SponsorLink";
         public static final String PROP_DEPENDENCY = "Microsoft.VisualStudio.Code.ExtensionDependencies";
         public static final String PROP_EXTENSION_PACK = "Microsoft.VisualStudio.Code.ExtensionPack";
         public static final String PROP_ENGINE = "Microsoft.VisualStudio.Code.Engine";

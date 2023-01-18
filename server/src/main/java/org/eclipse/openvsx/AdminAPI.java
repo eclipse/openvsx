@@ -187,7 +187,7 @@ public class AdminAPI {
             }
 
             ExtensionJson json;
-            var latest = versions.getLatest(extension, null, false, false);
+            var latest = versions.getLatestTrxn(extension, null, false, false);
             if (latest == null) {
                 json = new ExtensionJson();
                 json.namespace = extension.getNamespace().getName();

@@ -32,6 +32,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
+
 @Component
 public class ExtensionService {
 
@@ -104,6 +106,7 @@ public class ExtensionService {
      */
     @Transactional(TxType.REQUIRED)
     public void updateExtension(Extension extension) {
+        cache.evictNamespaceDetails(extension);
         cache.evictLatestExtensionVersion(extension);
         cache.evictExtensionJsons(extension);
 

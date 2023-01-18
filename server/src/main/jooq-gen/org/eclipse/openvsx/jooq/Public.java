@@ -31,6 +31,7 @@ import org.eclipse.openvsx.jooq.tables.JobrunrRecurringJobs;
 import org.eclipse.openvsx.jooq.tables.MigrationItem;
 import org.eclipse.openvsx.jooq.tables.Namespace;
 import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
+import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
 import org.eclipse.openvsx.jooq.tables.Shedlock;
@@ -177,6 +178,11 @@ public class Public extends SchemaImpl {
     public final NamespaceMembership NAMESPACE_MEMBERSHIP = NamespaceMembership.NAMESPACE_MEMBERSHIP;
 
     /**
+     * The table <code>public.namespace_social_links</code>.
+     */
+    public final NamespaceSocialLinks NAMESPACE_SOCIAL_LINKS = NamespaceSocialLinks.NAMESPACE_SOCIAL_LINKS;
+
+    /**
      * The table <code>public.persisted_log</code>.
      */
     public final PersistedLog PERSISTED_LOG = PersistedLog.PERSISTED_LOG;
@@ -255,6 +261,7 @@ public class Public extends SchemaImpl {
             MigrationItem.MIGRATION_ITEM,
             Namespace.NAMESPACE,
             NamespaceMembership.NAMESPACE_MEMBERSHIP,
+            NamespaceSocialLinks.NAMESPACE_SOCIAL_LINKS,
             PersistedLog.PERSISTED_LOG,
             PersonalAccessToken.PERSONAL_ACCESS_TOKEN,
             Shedlock.SHEDLOCK,

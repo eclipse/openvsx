@@ -14,7 +14,7 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row3;
+import org.jooq.Row10;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -60,6 +60,41 @@ public class Namespace extends TableImpl<NamespaceRecord> {
      * The column <code>public.namespace.public_id</code>.
      */
     public final TableField<NamespaceRecord, String> PUBLIC_ID = createField(DSL.name("public_id"), SQLDataType.VARCHAR(128), this, "");
+
+    /**
+     * The column <code>public.namespace.display_name</code>.
+     */
+    public final TableField<NamespaceRecord, String> DISPLAY_NAME = createField(DSL.name("display_name"), SQLDataType.VARCHAR(32), this, "");
+
+    /**
+     * The column <code>public.namespace.description</code>.
+     */
+    public final TableField<NamespaceRecord, String> DESCRIPTION = createField(DSL.name("description"), SQLDataType.VARCHAR(255), this, "");
+
+    /**
+     * The column <code>public.namespace.website</code>.
+     */
+    public final TableField<NamespaceRecord, String> WEBSITE = createField(DSL.name("website"), SQLDataType.VARCHAR(255), this, "");
+
+    /**
+     * The column <code>public.namespace.support_link</code>.
+     */
+    public final TableField<NamespaceRecord, String> SUPPORT_LINK = createField(DSL.name("support_link"), SQLDataType.VARCHAR(255), this, "");
+
+    /**
+     * The column <code>public.namespace.logo_name</code>.
+     */
+    public final TableField<NamespaceRecord, String> LOGO_NAME = createField(DSL.name("logo_name"), SQLDataType.VARCHAR(255), this, "");
+
+    /**
+     * The column <code>public.namespace.logo_bytes</code>.
+     */
+    public final TableField<NamespaceRecord, byte[]> LOGO_BYTES = createField(DSL.name("logo_bytes"), SQLDataType.BLOB, this, "");
+
+    /**
+     * The column <code>public.namespace.logo_storage_type</code>.
+     */
+    public final TableField<NamespaceRecord, String> LOGO_STORAGE_TYPE = createField(DSL.name("logo_storage_type"), SQLDataType.VARCHAR(32), this, "");
 
     private Namespace(Name alias, Table<NamespaceRecord> aliased) {
         this(alias, aliased, null);
@@ -136,11 +171,11 @@ public class Namespace extends TableImpl<NamespaceRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row3 type methods
+    // Row10 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<Long, String, String> fieldsRow() {
-        return (Row3) super.fieldsRow();
+    public Row10<Long, String, String, String, String, String, String, String, byte[], String> fieldsRow() {
+        return (Row10) super.fieldsRow();
     }
 }

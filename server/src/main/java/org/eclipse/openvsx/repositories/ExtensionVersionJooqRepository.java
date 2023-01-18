@@ -46,6 +46,7 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.TAGS,
                     EXTENSION_VERSION.EXTENSION_KIND,
                     EXTENSION_VERSION.REPOSITORY,
+                    EXTENSION_VERSION.SPONSOR_LINK,
                     EXTENSION_VERSION.GALLERY_COLOR,
                     EXTENSION_VERSION.GALLERY_THEME,
                     EXTENSION_VERSION.LOCALIZED_LANGUAGES,
@@ -156,6 +157,7 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.LICENSE,
                     EXTENSION_VERSION.HOMEPAGE,
                     EXTENSION_VERSION.REPOSITORY,
+                    EXTENSION_VERSION.SPONSOR_LINK,
                     EXTENSION_VERSION.BUGS,
                     EXTENSION_VERSION.MARKDOWN,
                     EXTENSION_VERSION.GALLERY_COLOR,
@@ -239,6 +241,7 @@ public class ExtensionVersionJooqRepository {
         extVersion.setLocalizedLanguages(toList(record.get(EXTENSION_VERSION.LOCALIZED_LANGUAGES), converter));
         extVersion.setDependencies(toList(record.get(EXTENSION_VERSION.DEPENDENCIES), converter));
         extVersion.setBundledExtensions(toList(record.get(EXTENSION_VERSION.BUNDLED_EXTENSIONS), converter));
+        extVersion.setSponsorLink(record.get(EXTENSION_VERSION.SPONSOR_LINK));
 
         var extension = new Extension();
         extension.setId(record.get(EXTENSION.ID));

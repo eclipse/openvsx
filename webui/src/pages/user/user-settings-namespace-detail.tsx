@@ -14,6 +14,7 @@ import WarningIcon from '@material-ui/icons/Warning';
 import { UserNamespaceExtensionListContainer } from './user-namespace-extension-list';
 import { Namespace, UserData } from '../../extension-registry-types';
 import { UserNamespaceMemberList } from './user-namespace-member-list';
+import { UserNamespaceDetails } from './user-namespace-details';
 
 export interface NamespaceDetailConfig {
     defaultMemberRole?: 'contributor' | 'owner';
@@ -95,6 +96,9 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetail.Props> = props =
                 </Grid>
                 : null
             }
+            <Grid item>
+                <UserNamespaceDetails namespace={props.namespace}/>
+            </Grid>
             <Grid item>
                 <UserNamespaceExtensionListContainer
                     namespace={props.namespace}
