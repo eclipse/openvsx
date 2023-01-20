@@ -83,7 +83,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     };
 
     handleEnter = (e: KeyboardEvent) => {
-        if (e.code ===  'Enter') {
+        if (e.code ===  'Enter' && this.state.open) {
             this.handleGenerate();
         }
     };
