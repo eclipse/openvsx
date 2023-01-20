@@ -17,6 +17,7 @@ import { Route, Switch } from 'react-router-dom';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { ExtensionDetailRoutes, ExtensionDetail } from './pages/extension-detail/extension-detail';
+import { NamespaceDetailRoutes, NamespaceDetail } from './pages/namespace-detail/namespace-detail';
 import { UserAvatar } from './pages/user/avatar';
 import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
 import { Banner } from './components/banner';
@@ -228,6 +229,12 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                                         <UserSettings
                                             {...routeProps}
                                             userLoading={this.state.userLoading}
+                                        />
+                                    } />
+                                <Route path={[NamespaceDetailRoutes.MAIN]}
+                                    render={routeProps =>
+                                        <NamespaceDetail
+                                            {...routeProps}
                                         />
                                     } />
                                 <Route path={[ExtensionDetailRoutes.MAIN_TARGET, ExtensionDetailRoutes.MAIN]}

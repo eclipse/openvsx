@@ -25,6 +25,7 @@ import { ExtensionDetailChanges } from './extension-detail-changes';
 import { ExtensionDetailReviews } from './extension-detail-reviews';
 import { ExtensionDetailTabs, versionPointsToTab } from './extension-detail-tabs';
 import { ExportRatingStars } from './extension-rating-stars';
+import { NamespaceDetailRoutes } from '../namespace-detail/namespace-detail';
 
 export namespace ExtensionDetailRoutes {
     export namespace Parameters {
@@ -362,11 +363,12 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             </Badge>
             <Box className={`${themeClass} ${classes.infoRowBreak} ${classes.alignVertically}`}>
                 <Box className={classes.alignVertically}>
-                    {this.renderAccessInfo(extension, themeClass)}&nbsp;<span
-                        title='Unique identifier'
-                        className={classes.code}>
-                        {extension.namespace}.{extension.name}
-                    </span>
+                    {this.renderAccessInfo(extension, themeClass)}&nbsp;
+                    <RouteLink
+                        to={createRoute([NamespaceDetailRoutes.ROOT, extension.namespace])}
+                        className={`${this.props.classes.link} ${themeClass}`}>
+                        {extension.namespaceDisplayName || extension.namespace}
+                    </RouteLink>
                 </Box>
                 <TextDivider themeType={themeType} collapseSmall={true} />
                 <Box className={classes.alignVertically}>

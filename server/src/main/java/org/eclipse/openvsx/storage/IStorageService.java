@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.file.Path;
 
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 
 public interface IStorageService {
 
@@ -40,5 +41,19 @@ public interface IStorageService {
      * Returns the public access location of a resource.
      */
     URI getLocation(FileResource resource);
-    
+
+    /**
+     * Upload a namespace logo to the external storage.
+     */
+    void uploadNamespaceLogo(Namespace namespace);
+
+    /**
+     * Remove a namespace logo from the external storage.
+     */
+    void removeNamespaceLogo(Namespace namespace);
+
+    /**
+     * Returns the public access location of a namespace logo.
+     */
+    URI getNamespaceLogoLocation(Namespace namespace);
 }

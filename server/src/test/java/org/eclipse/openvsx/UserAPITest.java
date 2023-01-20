@@ -62,7 +62,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @AutoConfigureWebClient
 @MockBean({
         EntityManager.class, EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class,
-        CacheService.class
+        CacheService.class, ExtensionValidator.class
 })
 public class UserAPITest {
 

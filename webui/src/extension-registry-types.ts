@@ -85,6 +85,7 @@ export interface Extension {
     timestamp: TimestampString;
     preview?: boolean;
     displayName?: string;
+    namespaceDisplayName?: string;
     description?: string;
 
     // key: engine, value: version constraint
@@ -207,6 +208,18 @@ export interface Namespace {
     verified: boolean;
     membersUrl: UrlString;
     roleUrl: UrlString;
+}
+
+export interface NamespaceDetails {
+    name: string;
+    displayName?: string;
+    description?: string;
+    logo?: UrlString;
+    logoBytes?: string;
+    website?: UrlString;
+    supportLink?: UrlString;
+    socialLinks: { [key: string]: UrlString | undefined };
+    extensions?: SearchEntry[];
 }
 
 export interface PublisherInfo {

@@ -16,6 +16,7 @@ import com.google.cloud.storage.StorageOptions;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,6 +72,17 @@ public class GoogleCloudStorageService implements IStorageService {
         uploadFile(resource.getContent(), resource.getName(), objectId);
     }
 
+    @Override
+    public void uploadNamespaceLogo(Namespace namespace) {
+        var objectId = getObjectId(namespace);
+        if (Strings.isNullOrEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot upload file "
+                    + objectId + ": missing Google bucket id");
+        }
+
+        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), objectId);
+    }
+
     protected void uploadFile(byte[] content, String fileName, String objectId) {
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
                 .setContentType(StorageUtil.getFileType(fileName).toString());
@@ -120,11 +132,20 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public void removeFile(FileResource resource) {
-        var objectId = getObjectId(resource);
+        removeFile(getObjectId(resource));
+    }
+
+    @Override
+    public void removeNamespaceLogo(Namespace namespace) {
+        removeFile(getObjectId(namespace));
+    }
+
+    private void removeFile(String objectId) {
         if (Strings.isNullOrEmpty(bucketId)) {
             throw new IllegalStateException("Cannot remove file "
                     + objectId + ": missing Google bucket id");
         }
+
         getStorage().delete(BlobId.of(bucketId, objectId));
     }
 
@@ -149,6 +170,19 @@ public class GoogleCloudStorageService implements IStorageService {
 		segments = ArrayUtils.add(segments, extVersion.getVersion());
         segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
         return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
+    }
+
+    @Override
+    public URI getNamespaceLogoLocation(Namespace namespace) {
+        if (Strings.isNullOrEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot determine location of file "
+                    + namespace.getLogoName() + ": missing Google bucket id");
+        }
+        return URI.create(BASE_URL + bucketId + "/" + getObjectId(namespace));
+    }
+
+    protected String getObjectId(Namespace namespace) {
+        return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
     }
 
 }

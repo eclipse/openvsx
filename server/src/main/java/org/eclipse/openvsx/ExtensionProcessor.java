@@ -217,31 +217,38 @@ public class ExtensionProcessor implements AutoCloseable {
         return preReleaseNode.path("Value").asBoolean(false);
     }
 
+    public String getSponsorLink() {
+        loadVsixManifest();
+        var sponsorLinkNode = findByIdInArray(vsixManifest.path("Metadata").path("Properties").path("Property"), "Microsoft.VisualStudio.Code.SponsorLink");
+        return sponsorLinkNode.path("Value").asText();
+    }
+
     public ExtensionVersion getMetadata() {
         loadPackageJson();
         loadVsixManifest();
-        var extension = new ExtensionVersion();
-        extension.setVersion(getVersion());
-        extension.setTargetPlatform(getTargetPlatform());
-        extension.setPreview(isPreview());
-        extension.setPreRelease(isPreRelease());
-        extension.setDisplayName(vsixManifest.path("Metadata").path("DisplayName").asText());
-        extension.setDescription(vsixManifest.path("Metadata").path("Description").path("").asText());
-        extension.setEngines(getEngines(packageJson.path("engines")));
-        extension.setCategories(asStringList(vsixManifest.path("Metadata").path("Categories").asText(), ","));
-        extension.setExtensionKind(getExtensionKinds());
-        extension.setTags(getTags());
-        extension.setLicense(packageJson.path("license").textValue());
-        extension.setHomepage(getHomepage());
-        extension.setRepository(getRepository());
-        extension.setBugs(getBugs());
-        extension.setMarkdown(packageJson.path("markdown").textValue());
-        extension.setGalleryColor(getGalleryColor());
-        extension.setGalleryTheme(getGalleryTheme());
-        extension.setLocalizedLanguages(getLocalizedLanguages());
-        extension.setQna(packageJson.path("qna").textValue());
+        var extVersion = new ExtensionVersion();
+        extVersion.setVersion(getVersion());
+        extVersion.setTargetPlatform(getTargetPlatform());
+        extVersion.setPreview(isPreview());
+        extVersion.setPreRelease(isPreRelease());
+        extVersion.setDisplayName(vsixManifest.path("Metadata").path("DisplayName").asText());
+        extVersion.setDescription(vsixManifest.path("Metadata").path("Description").path("").asText());
+        extVersion.setEngines(getEngines(packageJson.path("engines")));
+        extVersion.setCategories(asStringList(vsixManifest.path("Metadata").path("Categories").asText(), ","));
+        extVersion.setExtensionKind(getExtensionKinds());
+        extVersion.setTags(getTags());
+        extVersion.setLicense(packageJson.path("license").textValue());
+        extVersion.setHomepage(getHomepage());
+        extVersion.setRepository(getRepository());
+        extVersion.setSponsorLink(getSponsorLink());
+        extVersion.setBugs(getBugs());
+        extVersion.setMarkdown(packageJson.path("markdown").textValue());
+        extVersion.setGalleryColor(getGalleryColor());
+        extVersion.setGalleryTheme(getGalleryTheme());
+        extVersion.setLocalizedLanguages(getLocalizedLanguages());
+        extVersion.setQna(packageJson.path("qna").textValue());
 
-        return extension;
+        return extVersion;
     }
 
     private String getVersion() {

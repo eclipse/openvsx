@@ -79,7 +79,7 @@
      };
 
      handleEnter = (e: KeyboardEvent) => {
-         if (e.code ===  'Enter') {
+         if (this.state.open && e.code ===  'Enter') {
              this.handleCreateNamespace();
          }
      };

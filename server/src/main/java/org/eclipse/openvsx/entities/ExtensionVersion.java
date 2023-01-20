@@ -93,6 +93,8 @@ public class ExtensionVersion implements Serializable {
 
     String repository;
 
+    String sponsorLink;
+
     String bugs;
 
     @Column(length = 16)
@@ -128,6 +130,7 @@ public class ExtensionVersion implements Serializable {
         var json = new ExtensionJson();
         json.targetPlatform = this.getTargetPlatform();
         json.namespace = extension.getNamespace().getName();
+        json.namespaceDisplayName = extension.getNamespace().getDisplayName();
         json.name = extension.getName();
         json.averageRating = extension.getAverageRating();
         json.downloadCount = extension.getDownloadCount();
@@ -145,6 +148,7 @@ public class ExtensionVersion implements Serializable {
         json.license = this.getLicense();
         json.homepage = this.getHomepage();
         json.repository = this.getRepository();
+        json.sponsorLink = this.getSponsorLink();
         json.bugs = this.getBugs();
         json.markdown = this.getMarkdown();
         json.galleryColor = this.getGalleryColor();
@@ -361,6 +365,14 @@ public class ExtensionVersion implements Serializable {
 		this.repository = repository;
 	}
 
+	public String getSponsorLink() {
+        return sponsorLink;
+    }
+
+    public void setSponsorLink(String sponsorLink) {
+        this.sponsorLink = sponsorLink;
+    }
+
 	public String getBugs() {
 		return bugs;
 	}
@@ -455,6 +467,7 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(license, that.license)
                 && Objects.equals(homepage, that.homepage)
                 && Objects.equals(repository, that.repository)
+                && Objects.equals(sponsorLink, that.sponsorLink)
                 && Objects.equals(bugs, that.bugs)
                 && Objects.equals(markdown, that.markdown)
                 && Objects.equals(galleryColor, that.galleryColor)
@@ -462,15 +475,17 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(localizedLanguages, that.localizedLanguages)
                 && Objects.equals(qna, that.qna)
                 && Objects.equals(dependencies, that.dependencies)
-                && Objects.equals(bundledExtensions, that.bundledExtensions);
+                && Objects.equals(bundledExtensions, that.bundledExtensions)
+                && type == that.type;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-                id, getId(extension), version, targetPlatform, preRelease, preview, timestamp, getId(publishedWith),
+                id, getId(extension), version, targetPlatform, semver, preRelease, preview, timestamp, getId(publishedWith),
                 active, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
-                bugs, markdown, galleryColor, galleryTheme, localizedLanguages, qna, dependencies, bundledExtensions
+                sponsorLink, bugs, markdown, galleryColor, galleryTheme, localizedLanguages, qna, dependencies,
+                bundledExtensions, type
         );
     }
 

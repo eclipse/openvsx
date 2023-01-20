@@ -161,7 +161,7 @@ public class RegistryAPI {
             @PathVariable @Parameter(description = "Namespace", example = "redhat")
             String namespace,
             @RequestParam @Parameter(description = "A personal access token") String token
-        ) {
+    ) {
         try {
             return ResponseEntity.ok(local.verifyToken(namespace, token));
         } catch (NotFoundException exc) {
@@ -170,6 +170,63 @@ public class RegistryAPI {
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
         }
+    }
+
+    @GetMapping(
+            path = "/api/{namespace}/details",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation()
+    @ApiResponses({})
+    public ResponseEntity<NamespaceDetailsJson> getNamespaceDetails(
+            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+            String namespace
+    ) {
+        for (var registry : getRegistries()) {
+            try {
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.noCache().cachePublic())
+                        .body(registry.getNamespaceDetails(namespace));
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+        var json = NamespaceDetailsJson.error("Namespace not found: " + namespace);
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping(
+            path = "/api/{namespace}/logo/{fileName}",
+            produces = { MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE }
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides logo of a namespace")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "The namespace details are returned in JSON format"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "The specified namespace could not be found"
+        )
+    })
+    public ResponseEntity<byte[]> getNamespaceLogo(
+            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+            String namespace,
+            @PathVariable @Parameter(description = "Logo file name", example = "logo-redhat.png")
+            String fileName
+    ) {
+        for (var registry : getRegistries()) {
+            try {
+                return registry.getNamespaceLogo(namespace, fileName);
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+
+        throw new NotFoundException();
     }
 
     @GetMapping(
@@ -211,7 +268,7 @@ public class RegistryAPI {
             String namespace,
             @PathVariable @Parameter(description = "Extension name", example = "java")
             String extension
-        ) {
+    ) {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -277,7 +334,7 @@ public class RegistryAPI {
                 })
             )
             CharSequence targetPlatform
-        ) {
+    ) {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -332,7 +389,7 @@ public class RegistryAPI {
             String extension,
             @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
             String version
-        ) {
+    ) {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -400,7 +457,7 @@ public class RegistryAPI {
             String targetPlatform,
             @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
             String version
-        ) {
+    ) {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -537,7 +594,7 @@ public class RegistryAPI {
             String targetPlatform,
             @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
             String version
-        ) {
+    ) {
         var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{targetPlatform}/{version}/file/**");
         for (var registry : getRegistries()) {
             try {
@@ -571,7 +628,7 @@ public class RegistryAPI {
             String namespace,
             @PathVariable @Parameter(description = "Extension name", example = "java")
             String extension
-        ) {
+    ) {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -657,7 +714,7 @@ public class RegistryAPI {
             @RequestParam(required = false)
             @Parameter(description = "Whether to include information on all available versions for each returned entry")
             boolean includeAllVersions
-        ) {
+    ) {
         if (size < 0) {
             var json = SearchResultJson.error("The parameter 'size' must not be negative.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
@@ -874,7 +931,7 @@ public class RegistryAPI {
                 })
             )
             String targetPlatform
-        ) {
+    ) {
         var param = new QueryParamJson();
         param.namespaceName = namespaceName;
         param.extensionName = extensionName;
@@ -947,7 +1004,7 @@ public class RegistryAPI {
     public ResponseEntity<QueryResultJson> postQuery(
             @RequestBody @Parameter(description = "Parameters of the metadata query")
             QueryParamJson param
-        ) {
+    ) {
         var result = new QueryResultJson();
         for (var registry : getRegistries()) {
             try {
@@ -1020,7 +1077,7 @@ public class RegistryAPI {
             NamespaceJson namespace,
             @RequestParam @Parameter(description = "A personal access token")
             String token
-        ) {
+    ) {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error("No JSON input."));
         }
@@ -1174,7 +1231,7 @@ public class RegistryAPI {
     public ResponseEntity<ExtensionJson> publish(
             InputStream content,
             @RequestParam @Parameter(description = "A personal access token") String token
-        ) {
+    ) {
         try {
             var json = local.publish(content, token);
             var serverUrl = UrlUtil.getBaseUrl();
@@ -1188,17 +1245,17 @@ public class RegistryAPI {
     }
 
     @PostMapping(
-            path = "/api/user/publish",
-            consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/api/user/publish",
+        consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(
-            summary = "Publish an extension by uploading a vsix file",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Uploaded vsix file to publish",
-                content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE, schema = @Schema(type = "string", format = "binary")),
-                required = true
-            )
+        summary = "Publish an extension by uploading a vsix file",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Uploaded vsix file to publish",
+            content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE, schema = @Schema(type = "string", format = "binary")),
+            required = true
+        )
     )
     @ApiResponses({
         @ApiResponse(
@@ -1240,9 +1297,7 @@ public class RegistryAPI {
             }
         )
     })
-    public ResponseEntity<ExtensionJson> publish(
-            InputStream content
-    ) {
+    public ResponseEntity<ExtensionJson> publish(InputStream content) {
         try {
             var user = users.findLoggedInUser();
             if (user == null) {
@@ -1266,9 +1321,11 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(hidden = true)
-    public ResponseEntity<ResultJson> postReview(@RequestBody(required = false) ReviewJson review,
-                                                 @PathVariable String namespace,
-                                                 @PathVariable String extension) {
+    public ResponseEntity<ResultJson> postReview(
+            @RequestBody(required = false) ReviewJson review,
+            @PathVariable String namespace,
+            @PathVariable String extension
+    ) {
         if (review == null) {
             var json = ResultJson.error("No JSON input.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
@@ -1298,8 +1355,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(hidden = true)
-    public ResponseEntity<ResultJson> deleteReview(@PathVariable String namespace,
-                                                   @PathVariable String extension) {
+    public ResponseEntity<ResultJson> deleteReview(@PathVariable String namespace, @PathVariable String extension) {
         var json = local.deleteReview(namespace, extension);
         if (json.error == null) {
             return ResponseEntity.ok(json);
@@ -1307,5 +1363,4 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
     }
-
 }
