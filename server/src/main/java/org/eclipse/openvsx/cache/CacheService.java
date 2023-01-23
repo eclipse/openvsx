@@ -27,6 +27,8 @@ public class CacheService {
     public static final String CACHE_DATABASE_SEARCH = "database.search";
     public static final String CACHE_EXTENSION_JSON = "extension.json";
     public static final String CACHE_LATEST_EXTENSION_VERSION = "latest.extension.version";
+    public static final String CACHE_NAMESPACE_DETAILS_JSON = "namespace.details.json";
+
     public static final String GENERATOR_EXTENSION_JSON = "extensionJsonCacheKeyGenerator";
     public static final String GENERATOR_LATEST_EXTENSION_VERSION = "latestExtensionVersionCacheKeyGenerator";
 
@@ -41,6 +43,20 @@ public class CacheService {
 
     @Autowired
     LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
+
+    public void evictNamespaceDetails(Extension extension) {
+        var cache = cacheManager.getCache(CACHE_NAMESPACE_DETAILS_JSON);
+        if(cache == null) {
+            return; // cache is not created
+        }
+
+        var namespaceName = extension.getNamespace().getName();
+        cache.evictIfPresent(namespaceName);
+    }
+
+    public void evictExtensionJsons(String namespaceName, String extensionName) {
+        evictExtensionJsons(repositoryService.findExtension(extensionName, namespaceName));
+    }
 
     public void evictExtensionJsons(UserData user) {
         repositoryService.findVersions(user)

@@ -178,6 +178,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, String> LOCALIZED_LANGUAGES = createField(DSL.name("localized_languages"), SQLDataType.VARCHAR(255), this, "");
 
+    /**
+     * The column <code>public.extension_version.sponsor_link</code>.
+     */
+    public final TableField<ExtensionVersionRecord, String> SPONSOR_LINK = createField(DSL.name("sponsor_link"), SQLDataType.VARCHAR(255), this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, null);
     }

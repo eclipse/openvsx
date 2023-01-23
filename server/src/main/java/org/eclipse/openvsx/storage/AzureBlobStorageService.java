@@ -16,6 +16,7 @@ import com.azure.storage.blob.models.BlobStorageException;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,15 +61,21 @@ public class AzureBlobStorageService implements IStorageService {
 	@Override
     public void uploadFile(FileResource resource) {
         var blobName = getBlobName(resource);
+        uploadFile(resource.getContent(), resource.getName(), blobName);
+    }
+
+    @Override
+    public void uploadNamespaceLogo(Namespace namespace) {
+        var blobName = getBlobName(namespace);
+        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), blobName);
+    }
+    
+    protected void uploadFile(byte[] content, String fileName, String blobName) {
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
         }
 
-        uploadFile(resource.getContent(), resource.getName(), blobName);
-    }
-    
-    protected void uploadFile(byte[] content, String fileName, String blobName) {
         var blobClient = getContainerClient().getBlobClient(blobName);
         var headers = new BlobHttpHeaders();
         headers.setContentType(StorageUtil.getFileType(fileName).toString());
@@ -89,15 +96,15 @@ public class AzureBlobStorageService implements IStorageService {
     @Override
     public void uploadFile(FileResource resource, Path filePath) {
         var blobName = getBlobName(resource);
+        uploadFile(filePath, resource.getName(), blobName);
+    }
+
+    protected void uploadFile(Path filePath, String fileName, String blobName) {
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
         }
 
-        uploadFile(filePath, resource.getName(), blobName);
-    }
-
-    protected void uploadFile(Path filePath, String fileName, String blobName) {
         var blobClient = getContainerClient().getBlobClient(blobName);
         var headers = new BlobHttpHeaders();
         headers.setContentType(StorageUtil.getFileType(fileName).toString());
@@ -114,7 +121,15 @@ public class AzureBlobStorageService implements IStorageService {
 
 	@Override
 	public void removeFile(FileResource resource) {
-		var blobName = getBlobName(resource);
+		removeFile(getBlobName(resource));
+	}
+
+    @Override
+    public void removeNamespaceLogo(Namespace namespace) {
+        removeFile(getBlobName(namespace));
+    }
+
+    private void removeFile(String blobName) {
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot remove file "
                     + blobName + ": missing Azure blob service endpoint");
@@ -129,7 +144,7 @@ public class AzureBlobStorageService implements IStorageService {
                 throw e;
             }
         }
-	}
+    }
 
 	@Override
 	public URI getLocation(FileResource resource) {
@@ -157,5 +172,21 @@ public class AzureBlobStorageService implements IStorageService {
         segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
         return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
     }
-    
+
+    @Override
+    public URI getNamespaceLogoLocation(Namespace namespace) {
+        var blobName = getBlobName(namespace);
+        if (Strings.isNullOrEmpty(serviceEndpoint)) {
+            throw new IllegalStateException("Cannot determine location of file "
+                    + blobName + ": missing Azure blob service endpoint");
+        }
+        if (!serviceEndpoint.endsWith("/")) {
+            throw new IllegalStateException("The Azure blob service endpoint URL must end with a slash.");
+        }
+        return URI.create(serviceEndpoint + blobContainer + "/" + blobName);
+    }
+
+    protected String getBlobName(Namespace namespace) {
+        return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
+    }
 }

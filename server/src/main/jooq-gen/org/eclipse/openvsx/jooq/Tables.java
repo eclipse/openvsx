@@ -28,6 +28,7 @@ import org.eclipse.openvsx.jooq.tables.JobrunrRecurringJobs;
 import org.eclipse.openvsx.jooq.tables.MigrationItem;
 import org.eclipse.openvsx.jooq.tables.Namespace;
 import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
+import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
 import org.eclipse.openvsx.jooq.tables.Shedlock;
@@ -161,6 +162,11 @@ public class Tables {
      * The table <code>public.namespace_membership</code>.
      */
     public static final NamespaceMembership NAMESPACE_MEMBERSHIP = NamespaceMembership.NAMESPACE_MEMBERSHIP;
+
+    /**
+     * The table <code>public.namespace_social_links</code>.
+     */
+    public static final NamespaceSocialLinks NAMESPACE_SOCIAL_LINKS = NamespaceSocialLinks.NAMESPACE_SOCIAL_LINKS;
 
     /**
      * The table <code>public.persisted_log</code>.

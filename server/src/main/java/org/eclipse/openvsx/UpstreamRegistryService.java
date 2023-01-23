@@ -65,6 +65,22 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    public NamespaceDetailsJson getNamespaceDetails(String namespace) {
+        try {
+            String requestUrl = createApiUrl(upstreamUrl, "api", namespace, "details");
+            return restTemplate.getForObject(requestUrl, NamespaceDetailsJson.class);
+        } catch (RestClientException exc) {
+            handleError(exc);
+            throw exc;
+        }
+    }
+
+    @Override
+    public ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName) {
+        return getFile(createApiUrl(upstreamUrl, "api", namespaceName, "logo", fileName));
+    }
+
+    @Override
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform) {
         var segments = new String[]{ "api", namespace, extension };
         if(targetPlatform != null) {

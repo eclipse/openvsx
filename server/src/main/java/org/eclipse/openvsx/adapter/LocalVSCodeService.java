@@ -20,6 +20,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
+import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -30,8 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import javax.transaction.Transactional;
 
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.Criterion.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.*;
@@ -486,7 +485,7 @@ public class LocalVSCodeService implements IVSCodeService {
         queryExt.publisher = new ExtensionQueryResult.Publisher();
         queryExt.publisher.publisherId = namespace.getPublicId();
         queryExt.publisher.publisherName = namespace.getName();
-        queryExt.publisher.displayName = namespace.getName();
+        queryExt.publisher.displayName = !Strings.isNullOrEmpty(namespace.getDisplayName()) ? namespace.getDisplayName() : namespace.getName();
         queryExt.tags = latest.getTags();
         queryExt.releaseDate = TimeUtil.toUTCString(extension.getPublishedDate());
         queryExt.publishedDate = TimeUtil.toUTCString(extension.getPublishedDate());
@@ -537,6 +536,7 @@ public class LocalVSCodeService implements IVSCodeService {
             queryVer.addProperty(PROP_BRANDING_COLOR, extVer.getGalleryColor());
             queryVer.addProperty(PROP_BRANDING_THEME, extVer.getGalleryTheme());
             queryVer.addProperty(PROP_REPOSITORY, extVer.getRepository());
+            queryVer.addProperty(PROP_SPONSOR_LINK, extVer.getSponsorLink());
             queryVer.addProperty(PROP_ENGINE, getVscodeEngine(extVer));
             var dependencies = extVer.getDependencies().stream()
                     .collect(Collectors.joining(","));

@@ -115,6 +115,9 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @Schema(description = "Name to be displayed in user interfaces")
     public String displayName;
 
+    @Schema(description = "Namespace name to be displayed in user interfaces")
+    public String namespaceDisplayName;
+
     public String description;
 
     @Schema(description = "Map of engine names to the respective version constraints")
@@ -135,6 +138,9 @@ public class ExtensionJson extends ResultJson implements Serializable {
 
     @Schema(description = "URL of the extension's source repository")
     public String repository;
+
+    @Schema(description = "URL to sponsor the extension")
+    public String sponsorLink;
 
     @Schema(description = "URL of the extension's bug tracker")
     public String bugs;

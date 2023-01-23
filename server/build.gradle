@@ -10,7 +10,7 @@ plugins {
     id 'nu.studer.jooq' version '6.0.1'
     id 'de.undercouch.download' version '4.1.1'
     id 'org.springframework.boot' version '2.7.0'
-    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.6.1'
     id 'java'
 }
@@ -31,7 +31,8 @@ def versions = [
     woodstox: '6.2.4',
     jobrunr: '5.1.2',
     bucket4j: '0.4.0',
-    ehcache: '3.10.0'
+    ehcache: '3.10.0',
+    tika: '2.6.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -83,6 +84,7 @@ dependencies {
     implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${versions.jackson}"
     implementation "com.fasterxml.woodstox:woodstox-core:${versions.woodstox}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${versions.jackson}"
+    implementation "org.apache.tika:tika-core:${versions.tika}"
     implementation("org.spdx:spdx-tools:${versions.spdx}") {
         exclude group: 'net.sf.saxon'
         exclude group: 'org.antlr', module: 'antlr'
