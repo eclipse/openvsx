@@ -237,7 +237,7 @@ public class ElasticSearchService implements ISearchService {
         var queryBuilder = new NativeSearchQueryBuilder();
         var boolQuery = QueryBuilders.boolQuery();
         if (!Strings.isNullOrEmpty(options.queryString)) {
-            boolQuery.should(QueryBuilders.termQuery("extensionId.keyword", options.queryString)).boost(10);
+            boolQuery.should(QueryBuilders.termQuery("extensionId.keyword", options.queryString).caseInsensitive(true)).boost(10);
 
             // Fuzzy matching of search query in multiple fields
             var multiMatchQuery = QueryBuilders.multiMatchQuery(options.queryString)
