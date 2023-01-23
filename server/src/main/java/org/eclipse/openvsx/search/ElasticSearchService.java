@@ -235,9 +235,8 @@ public class ElasticSearchService implements ISearchService {
         }
 
         var queryBuilder = new NativeSearchQueryBuilder();
+        var boolQuery = QueryBuilders.boolQuery();
         if (!Strings.isNullOrEmpty(options.queryString)) {
-            var boolQuery = QueryBuilders.boolQuery();
-
             boolQuery.should(QueryBuilders.termQuery("extensionId.keyword", options.queryString)).boost(10);
 
             // Fuzzy matching of search query in multiple fields
@@ -257,25 +256,24 @@ public class ElasticSearchService implements ISearchService {
             boolQuery.should(namePrefixQuery).boost(2);
             var namespacePrefixQuery = QueryBuilders.prefixQuery("namespace", prefixString);
             boolQuery.should(namespacePrefixQuery);
-
-            queryBuilder.withQuery(boolQuery);
         }
 
         if (!Strings.isNullOrEmpty(options.category)) {
             // Filter by selected category
-            queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("categories", options.category));
+            boolQuery.must(QueryBuilders.matchPhraseQuery("categories", options.category));
         }
         if (TargetPlatform.isValid(options.targetPlatform)) {
             // Filter by selected target platform
-            queryBuilder.withFilter(QueryBuilders.matchPhraseQuery("targetPlatforms", options.targetPlatform));
+            boolQuery.must(QueryBuilders.matchPhraseQuery("targetPlatforms", options.targetPlatform));
         }
         if (options.namespacesToExclude != null) {
             // Exclude namespaces
             for(var namespaceToExclude : options.namespacesToExclude) {
-                queryBuilder.withFilter(QueryBuilders.boolQuery().mustNot(QueryBuilders.matchPhraseQuery("namespace", namespaceToExclude)));
+                boolQuery.mustNot(QueryBuilders.termQuery("namespace.keyword", namespaceToExclude));
             }
         }
 
+        queryBuilder.withQuery(boolQuery);
         // Sort search results according to 'sortOrder' and 'sortBy' options
         sortResults(queryBuilder, options.sortOrder, options.sortBy);
 
