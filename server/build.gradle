@@ -10,7 +10,7 @@ plugins {
     id 'nu.studer.jooq' version '6.0.1'
     id 'de.undercouch.download' version '4.1.1'
     id 'org.springframework.boot' version '2.7.0'
-    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.6.1'
     id 'java'
 }
