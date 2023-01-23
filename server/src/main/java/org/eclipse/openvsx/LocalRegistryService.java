@@ -174,7 +174,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
         var resource = isType(fileName) ? repositories.findFileByType(extVersion, fileName.toLowerCase()) : repositories.findFileByName(extVersion, fileName);
-        repositories.findFileByName(extVersion, fileName);;   
         if (resource == null)
             throw new NotFoundException();
         if (resource.getType().equals(DOWNLOAD))
