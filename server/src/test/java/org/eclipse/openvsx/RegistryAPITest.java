@@ -465,6 +465,14 @@ public class RegistryAPITest {
     }
 
     @Test
+    public void testLatestFile() throws Exception {
+        mockLatest();
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "latest", "DOWNLOAD"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("latest download"));
+    }
+
+    @Test
     public void testReviews() throws Exception {
         mockReviews();
         mockMvc.perform(get("/api/{namespace}/{extension}/reviews", "foo", "bar"))
@@ -1886,6 +1894,8 @@ public class RegistryAPITest {
         Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "README"))
                 .thenReturn(resource);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.README))
+                .thenReturn(resource);
         return resource;
     }
 
@@ -1900,6 +1910,8 @@ public class RegistryAPITest {
         Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "CHANGELOG"))
                 .thenReturn(resource);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.CHANGELOG))
+                .thenReturn(resource);
         return resource;
     }
 
@@ -1913,6 +1925,22 @@ public class RegistryAPITest {
         resource.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "LICENSE"))
+                .thenReturn(resource);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.LICENSE))
+                .thenReturn(resource);
+        return resource;
+    }
+
+    private FileResource mockLatest() {
+        var extVersion = mockExtension();
+        var resource = new FileResource();
+        resource.setExtension(extVersion);
+        resource.setName("DOWNLOAD");
+        resource.setType(FileResource.DOWNLOAD);
+        resource.setContent("latest download".getBytes());
+        resource.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(resource)).thenReturn(resource);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD))
                 .thenReturn(resource);
         return resource;
     }

@@ -173,13 +173,18 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Transactional
     public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
-        var resource = repositories.findFileByName(extVersion, fileName);
+        var resource = isType(fileName) ? repositories.findFileByType(extVersion, fileName.toLowerCase()) : repositories.findFileByName(extVersion, fileName);
         if (resource == null)
             throw new NotFoundException();
         if (resource.getType().equals(DOWNLOAD))
             storageUtil.increaseDownloadCount(resource);
 
         return storageUtil.getFileResponse(resource);
+    }
+
+    public boolean isType (String fileName){
+        var expectedTypes = Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD, FileResource.CHANGELOG);
+        return expectedTypes.stream().anyMatch(fileName::equalsIgnoreCase);
     }
 
     @Override
