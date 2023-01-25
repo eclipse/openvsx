@@ -2,27 +2,30 @@ image:
   file: .gitpod.dockerfile
 
 ports:
-# Web UI (static resources)
 - port: 3000
-# Server (API, must be public for CORS)
+  name: Web UI
+  description: static resources
 - port: 8080
   visibility: public
   onOpen: ignore
-# Test report
+  name: Server
+  description: API, must be public for CORS
 - port: 8081
-# Java debugging
+  name: Test report
 - port: 5005
+  name: Java debugging
   onOpen: ignore
-# PostgreSQL
 - port: 5432
+  name: PostgreSQL
   onOpen: ignore
-# Elasticsearch
 - port: 9200
+  name: Elasticsearch
   onOpen: ignore
 - port: 9300
+  name: Elasticsearch
   onOpen: ignore
-# NodeJS debugging
 - port: 9229
+  name: NodeJS debugging
   onOpen: ignore
 
 tasks:

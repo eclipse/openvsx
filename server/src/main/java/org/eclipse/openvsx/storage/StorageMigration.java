@@ -9,13 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import static org.eclipse.openvsx.entities.FileResource.*;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledFuture;
-
-import javax.persistence.EntityManager;
-
 import org.apache.jena.ext.com.google.common.collect.Lists;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -23,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
@@ -30,7 +24,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestTemplate;
 
+import javax.persistence.EntityManager;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledFuture;
+
+import static org.eclipse.openvsx.entities.FileResource.*;
+
 @Component
+@ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class StorageMigration {
 
     protected final Logger logger = LoggerFactory.getLogger(StorageMigration.class);
@@ -51,7 +53,7 @@ public class StorageMigration {
     StorageUtilService storageUtil;
 
     @Autowired
-    RestTemplate restTemplate;
+    RestTemplate backgroundRestTemplate;
 
     @Value("${ovsx.storage.migration-delay:500}")
     long migrationDelay;
@@ -121,7 +123,7 @@ public class StorageMigration {
 
     private byte[] downloadFile(FileResource resource) {
         var location = storageUtil.getLocation(resource);
-        return restTemplate.getForObject(location, byte[].class);
+        return backgroundRestTemplate.getForObject("{extensionLocation}", byte[].class, Map.of("extensionLocation", location));
     }
 
 }

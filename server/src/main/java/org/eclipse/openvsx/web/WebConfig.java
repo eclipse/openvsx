@@ -11,15 +11,21 @@ package org.eclipse.openvsx.web;
 
 import java.net.URI;
 
+import org.eclipse.openvsx.mirror.MirrorExtensionHandlerInterceptor;
 import org.elasticsearch.common.Strings;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    @Autowired(required = false)
+    MirrorExtensionHandlerInterceptor mirrorInterceptor;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
@@ -60,4 +66,16 @@ public class WebConfig implements WebMvcConfigurer {
         }
     }
 
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        if(mirrorInterceptor != null) {
+            registry.addInterceptor(mirrorInterceptor)
+                    .addPathPatterns(
+                            "/vscode/asset/**",
+                            "/vscode/item",
+                            "/vscode/gallery/publishers/**",
+                            "/vscode/unpkg/**"
+                    );
+        }
+    }
 }

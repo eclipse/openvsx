@@ -9,6 +9,13 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -18,12 +25,6 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 @Component
 public class PublishExtensionVersionService {
@@ -66,6 +67,14 @@ public class PublishExtensionVersionService {
         } else {
             resource.setStorageType(FileResource.STORAGE_DB);
         }
+    }
+
+    @Transactional
+    public void mirrorResource(FileResource resource) {
+        resource.setStorageType(storageUtil.getActiveStorageType());
+        // Don't store the binary content in the DB - it's now stored externally
+        resource.setContent(null);
+        entityManager.persist(resource);
     }
 
     @Transactional

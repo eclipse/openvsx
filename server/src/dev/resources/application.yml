@@ -47,6 +47,21 @@ management:
   health:
     probes:
       enabled: true
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - metrics
+          - prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+          client:
+            requests: true
 
 springdoc:
   swagger-ui:

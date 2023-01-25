@@ -12,5 +12,6 @@
         "tasks": [
             "runServer"
         ]
-    }
+    },
+    "java.saveActions.organizeImports": true
 }

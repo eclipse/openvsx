@@ -90,6 +90,10 @@ public class RepositoryService {
         return extensionRepo.findByActiveTrue();
     }
 
+    public Streamable<Extension> findAllNotMatchingByExtensionId(List<String> extensionIds) {
+        return extensionRepo.findAllNotMatchingByExtensionId(extensionIds);
+    }
+
     public long countExtensions() {
         return extensionRepo.count();
     }

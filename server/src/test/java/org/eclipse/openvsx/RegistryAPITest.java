@@ -10,17 +10,12 @@
 package org.eclipse.openvsx;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
-import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,20 +29,16 @@ import java.util.zip.ZipOutputStream;
 
 import javax.persistence.EntityManager;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.ExtensionJson;
-import org.eclipse.openvsx.json.NamespaceJson;
-import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.ReviewJson;
-import org.eclipse.openvsx.json.ReviewListJson;
-import org.eclipse.openvsx.json.SearchEntryJson;
-import org.eclipse.openvsx.json.SearchResultJson;
-import org.eclipse.openvsx.json.UserJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -56,7 +47,10 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
-import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.storage.AzureBlobStorageService;
+import org.eclipse.openvsx.storage.AzureDownloadCountService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
@@ -80,15 +74,12 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 @WebMvcTest(RegistryAPI.class)
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
-    EclipseService.class, PublishExtensionVersionService.class
+    EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class
 })
 public class RegistryAPITest {
 
@@ -117,7 +108,7 @@ public class RegistryAPITest {
     public void testPublicNamespace() throws Exception {
         var namespace = mockNamespace();
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(0l);
+                .thenReturn(0L);
         
         mockMvc.perform(get("/api/{namespace}", "foobar"))
                 .andExpect(status().isOk())
@@ -133,7 +124,7 @@ public class RegistryAPITest {
         var user = new UserData();
         user.setLoginName("test_user");
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(1l);
+                .thenReturn(1L);
 
         mockMvc.perform(get("/api/{namespace}", "foobar"))
                 .andExpect(status().isOk())
@@ -1835,9 +1826,9 @@ public class RegistryAPITest {
         Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(0l);
+                .thenReturn(0L);
         Mockito.when(repositories.countActiveReviews(extension))
-                .thenReturn(0l);
+                .thenReturn(0L);
         Mockito.when(repositories.findNamespace("foo"))
                 .thenReturn(namespace);
         Mockito.when(repositories.findExtensions("bar"))
@@ -1980,7 +1971,7 @@ public class RegistryAPITest {
     private List<Extension> mockSearch() {
         var extVersion = mockExtension();
         var extension = extVersion.getExtension();
-        extension.setId(1l);
+        extension.setId(1L);
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
         var searchHit = new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1);
@@ -1990,7 +1981,7 @@ public class RegistryAPITest {
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
-        Mockito.when(entityManager.find(Extension.class, 1l))
+        Mockito.when(entityManager.find(Extension.class, 1L))
                 .thenReturn(extension);
         return Arrays.asList(extension);
     }
@@ -2037,7 +2028,7 @@ public class RegistryAPITest {
                     .thenReturn(extVersion);
         }
         Mockito.when(repositories.countActiveReviews(any(Extension.class)))
-                .thenReturn(0l);
+                .thenReturn(0L);
         Mockito.when(repositories.findVersions(any(Extension.class)))
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection()))
@@ -2052,11 +2043,11 @@ public class RegistryAPITest {
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.of(ownerMem));
             Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                    .thenReturn(1l);
+                    .thenReturn(1L);
             Mockito.when(repositories.findMembership(token.getUser(), namespace))
                     .thenReturn(ownerMem);
             Mockito.when(repositories.countMemberships(token.getUser(), namespace))
-                    .thenReturn(1l);
+                    .thenReturn(1L);
         } else if (mode.equals("contributor") || mode.equals("sole-contributor") || mode.equals("existing")) {
             var contribMem = new NamespaceMembership();
             contribMem.setUser(token.getUser());
@@ -2065,7 +2056,7 @@ public class RegistryAPITest {
             Mockito.when(repositories.findMembership(token.getUser(), namespace))
                     .thenReturn(contribMem);
             Mockito.when(repositories.countMemberships(token.getUser(), namespace))
-                    .thenReturn(1l);
+                    .thenReturn(1L);
             if (mode.equals("contributor")) {
                 var otherUser = new UserData();
                 otherUser.setLoginName("other_user");
@@ -2076,12 +2067,12 @@ public class RegistryAPITest {
                 Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                         .thenReturn(Streamable.of(ownerMem));
                 Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                        .thenReturn(1l);
+                        .thenReturn(1L);
             } else {
                 Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.empty());
                 Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                        .thenReturn(0l);
+                        .thenReturn(0L);
             }
         } else if (mode.equals("privileged") || mode.equals("unrelated")) {
             var otherUser = new UserData();
@@ -2093,7 +2084,7 @@ public class RegistryAPITest {
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.of(ownerMem));
             Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                    .thenReturn(1l);
+                    .thenReturn(1L);
             if (mode.equals("privileged")) {
                 token.getUser().setRole(UserData.ROLE_PRIVILEGED);
             }
@@ -2101,7 +2092,7 @@ public class RegistryAPITest {
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.empty());
             Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                    .thenReturn(0l);
+                    .thenReturn(0L);
         }
 
         Mockito.when(entityManager.merge(any(Extension.class)))

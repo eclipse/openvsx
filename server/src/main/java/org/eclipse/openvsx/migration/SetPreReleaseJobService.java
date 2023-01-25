@@ -79,13 +79,13 @@ public class SetPreReleaseJobService {
             var download = entry.getKey();
             var storage = getStorage(download);
             var uri = storage.getLocation(download);
-            restTemplate.execute(uri, HttpMethod.GET, null, response -> {
+            restTemplate.execute("{extensionLocation}", HttpMethod.GET, null, response -> {
                 try(var out = Files.newOutputStream(extensionFile)) {
                     response.getBody().transferTo(out);
                 }
 
                 return extensionFile;
-            });
+            }, Map.of("extensionLocation", uri.toString()));
         } else {
             try {
                 Files.write(extensionFile, content);

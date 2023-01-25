@@ -20,6 +20,7 @@ import com.google.common.base.Joiner;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
+import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
@@ -27,6 +28,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,6 +36,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
+import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Component
 public class UserService {
@@ -259,5 +262,32 @@ public class UserService {
         } else {
             namespace.setLogoStorageType(FileResource.STORAGE_DB);
         }
+    }
+    @Transactional
+    public AccessTokenJson createAccessToken(UserData user, String description) {
+        var token = new PersonalAccessToken();
+        token.setUser(user);
+        token.setValue(generateTokenValue());
+        token.setActive(true);
+        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
+        token.setDescription(description);
+        entityManager.persist(token);
+        var json = token.toAccessTokenJson();
+        // Include the token value after creation so the user can copy it
+        json.value = token.getValue();
+        json.deleteTokenUrl = createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId()));
+
+        return json;
+    }
+
+    @Transactional
+    public ResultJson deleteAccessToken(UserData user, long id) {
+        var token = repositories.findAccessToken(id);
+        if (token == null || !token.isActive() || !token.getUser().equals(user)) {
+            throw new NotFoundException();
+        }
+
+        token.setActive(false);
+        return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
     }
 }

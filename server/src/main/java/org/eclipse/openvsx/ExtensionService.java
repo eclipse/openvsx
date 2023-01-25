@@ -14,7 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 
 import javax.transaction.Transactional;
 import javax.transaction.Transactional.TxType;
@@ -27,12 +28,11 @@ import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-
-import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
 
 @Component
 public class ExtensionService {
@@ -54,22 +54,32 @@ public class ExtensionService {
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
 
+    @Transactional
+    public ExtensionVersion mirrorVersion(Path extensionFile, PersonalAccessToken token, String binaryName, String timestamp) {
+        var download = doPublish(extensionFile, token, TimeUtil.fromUTCString(timestamp), false);
+        publishHandler.mirror(download, extensionFile);
+        download.setName(binaryName);
+        return download.getExtension();
+    }
+
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
-        FileResource download;
-        ExtensionVersion extVersion;
         var extensionFile = createExtensionFile(content);
-        try (var processor = new ExtensionProcessor(extensionFile)) {
-            extVersion = publishHandler.createExtensionVersion(processor, token);
-
-            // Check the extension's license
-            var license = processor.getLicense(extVersion);
-            checkLicense(extVersion, license);
-
-            download = processor.getBinary(extVersion);
-        }
-
+        var download = doPublish(extensionFile, token, TimeUtil.getCurrentUTC(), true);
         publishHandler.publishAsync(download, extensionFile, this);
-        return extVersion;
+        return download.getExtension();
+    }
+
+    private FileResource doPublish(Path extensionFile, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
+        try (var processor = new ExtensionProcessor(extensionFile)) {
+            var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
+            if (requireLicense) {
+                // Check the extension's license
+                var license = processor.getLicense(extVersion);
+                checkLicense(extVersion, license);
+            }
+
+            return processor.getBinary(extVersion);
+        }
     }
 
     private Path createExtensionFile(InputStream content) {
@@ -93,9 +103,7 @@ public class ExtensionService {
     }
 
     private void checkLicense(ExtensionVersion extVersion, FileResource license) {
-        if (requireLicense
-                && Strings.isNullOrEmpty(extVersion.getLicense())
-                && (license == null || !license.getType().equals(FileResource.LICENSE))) {
+        if (Strings.isNullOrEmpty(extVersion.getLicense()) && (license == null || !license.getType().equals(FileResource.LICENSE))) {
             throw new ErrorResultException("This extension cannot be accepted because it has no license.");
         }
     }

@@ -19,7 +19,8 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.TimeUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
@@ -27,12 +28,17 @@ import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
 public class PublishExtensionVersionHandler {
+
+    protected final Logger logger = LoggerFactory.getLogger(PublishExtensionVersionHandler.class);
 
     @Autowired
     PublishExtensionVersionService service;
@@ -53,22 +59,26 @@ public class PublishExtensionVersionHandler {
     ExtensionValidator validator;
 
     @Transactional
-    public ExtensionVersion createExtensionVersion(ExtensionProcessor processor, PersonalAccessToken token) {
+    public ExtensionVersion createExtensionVersion(ExtensionProcessor processor, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         // Extract extension metadata from its manifest
-        var extVersion = createExtensionVersion(processor, token.getUser(), token);
-        var dependencies = processor.getExtensionDependencies().stream()
-                .map(this::checkDependency)
-                .collect(Collectors.toList());
-        var bundledExtensions = processor.getBundledExtensions().stream()
-                .map(this::checkBundledExtension)
-                .collect(Collectors.toList());
+        var extVersion = createExtensionVersion(processor, token.getUser(), token, timestamp);
+        var dependencies = processor.getExtensionDependencies();
+        var bundledExtensions = processor.getBundledExtensions();
+        if (checkDependencies) {
+            dependencies = dependencies.stream()
+                    .map(this::checkDependency)
+                    .collect(Collectors.toList());
+            bundledExtensions = bundledExtensions.stream()
+                    .map(this::checkBundledExtension)
+                    .collect(Collectors.toList());
+        }
 
         extVersion.setDependencies(dependencies);
         extVersion.setBundledExtensions(bundledExtensions);
         return extVersion;
     }
 
-    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token) {
+    private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token, LocalDateTime timestamp) {
         var namespaceName = processor.getNamespace();
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
@@ -88,7 +98,7 @@ public class PublishExtensionVersionHandler {
         if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
             extVersion.setDisplayName(null);
         }
-        extVersion.setTimestamp(TimeUtil.getCurrentUTC());
+        extVersion.setTimestamp(timestamp);
         extVersion.setPublishedWith(token);
         extVersion.setActive(false);
 
@@ -117,6 +127,7 @@ public class PublishExtensionVersionHandler {
                                 + (existingVersion.isActive() ? "." : ", but is currently inactive and therefore not visible."));
             }
         }
+
         extension.setLastUpdatedDate(extVersion.getTimestamp());
         extension.getVersions().add(extVersion);
         extVersion.setExtension(extension);
@@ -178,5 +189,19 @@ public class PublishExtensionVersionHandler {
 
         // Update whether extension is active, the search index and evict cache
         service.activateExtension(extVersion, extensionService);
+        try {
+            Files.delete(extensionFile);
+        } catch (IOException e) {
+            logger.error("failed to delete temp file", e);
+        }
+    }
+
+    public void mirror(FileResource download, Path extensionFile) {
+        var extVersion = download.getExtension();
+        service.mirrorResource(download);
+        try(var processor = new ExtensionProcessor(extensionFile)) {
+            processor.getFileResources(extVersion).forEach(resource -> service.mirrorResource(resource));
+            // don't store file resources, they can be generated on the fly to avoid traversing entire zip file
+        }
     }
 }

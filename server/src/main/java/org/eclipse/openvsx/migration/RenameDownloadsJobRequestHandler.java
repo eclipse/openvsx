@@ -13,14 +13,16 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.AbstractMap;
 
 @Component
+@ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<MigrationJobRequest> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RenameDownloadsJobRequestHandler.class);
+    protected final Logger logger = LoggerFactory.getLogger(RenameDownloadsJobRequestHandler.class);
 
     @Autowired
     MigrationService migrations;
@@ -37,7 +39,7 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
             return;
         }
 
-        LOGGER.info("Renaming download {}", download.getName());
+        logger.info("Renaming download {}", download.getName());
         var content = service.getContent(download);
         var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
         var newDownload = service.cloneResource(download, name);
@@ -46,6 +48,6 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
 
         download.setName(name);
         service.updateResource(download);
-        LOGGER.info("Updated download name to: {}", name);
+        logger.info("Updated download name to: {}", name);
     }
 }

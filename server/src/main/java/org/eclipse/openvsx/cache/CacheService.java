@@ -14,6 +14,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
@@ -74,7 +75,7 @@ public class CacheService {
             return;
         }
 
-        var versions = new ArrayList<>(List.of("latest", "pre-release"));
+        var versions = new ArrayList<>(VersionAlias.ALIAS_NAMES);
         extension.getVersions().stream()
                 .map(ExtensionVersion::getVersion)
                 .forEach(versions::add);

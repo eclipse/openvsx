@@ -9,7 +9,7 @@ buildscript {
 plugins {
     id 'nu.studer.jooq' version '6.0.1'
     id 'de.undercouch.download' version '4.1.1'
-    id 'org.springframework.boot' version '2.7.0'
+    id 'org.springframework.boot' version '2.7.1'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.6.1'
     id 'java'
@@ -66,6 +66,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-cache"
+    implementation "org.springframework.boot:spring-boot-starter-aop"
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
@@ -90,6 +91,7 @@ dependencies {
         exclude group: 'org.antlr', module: 'antlr'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
+    runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
     jooqGenerator "org.postgresql:postgresql"
 

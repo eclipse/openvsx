@@ -23,9 +23,6 @@ import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -58,11 +55,16 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
 @MockBean({
         EntityManager.class, EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class,
-        CacheService.class, ExtensionValidator.class
+        CacheService.class, ExtensionValidator.class, SimpleMeterRegistry.class
 })
 public class UserAPITest {
 
