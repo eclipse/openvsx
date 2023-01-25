@@ -29,5 +29,9 @@ public final class TimeUtil {
         var offset = ZoneId.of(zone).getRules().getOffset(LocalDateTime.now());
         return dateTime.minusSeconds(offset.getTotalSeconds());
     }
-    
+
+    public static LocalDateTime fromUTCString(String timestamp) {
+        timestamp = timestamp.substring(0, timestamp.length() - 1); // Strip 'Z'
+        return LocalDateTime.parse(timestamp);
+    }
 }

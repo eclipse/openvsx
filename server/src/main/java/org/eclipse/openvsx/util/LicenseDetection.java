@@ -15,10 +15,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import com.google.common.io.CharStreams;
-
-import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spdx.compare.LicenseCompareHelper;
@@ -26,6 +24,8 @@ import org.spdx.compare.SpdxCompareException;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.license.LicenseInfoFactory;
 import org.spdx.rdfparser.license.SpdxListedLicense;
+
+import com.google.common.io.CharStreams;
 
 public class LicenseDetection {
 
@@ -46,7 +46,7 @@ public class LicenseDetection {
 
     public LicenseDetection(List<String> licenseIds) {
         this.licenseIds = licenseIds;
-        this.resolvedLicenses = Maps.newHashMapWithExpectedSize(licenseIds.size());
+        this.resolvedLicenses = new ConcurrentHashMap<>(licenseIds.size());
     }
 
     public String detectLicense(byte[] content) {
@@ -75,18 +75,16 @@ public class LicenseDetection {
     }
 
     protected SpdxListedLicense getLicense(String licenseId) {
-        if (resolvedLicenses.containsKey(licenseId)) {
-            return resolvedLicenses.get(licenseId);
-        }
-        SpdxListedLicense license = null;
-        try {
-            license = LicenseInfoFactory.getListedLicenseById(licenseId);
-            loadTemplate(license);
-        } catch (InvalidSPDXAnalysisException exc) {
-            logger.error("Failed to load listed licence: " + licenseId, exc);
-        }
-        resolvedLicenses.put(licenseId, license);
-        return license;
+        return resolvedLicenses.computeIfAbsent(licenseId, id -> {
+            SpdxListedLicense license = null;
+            try {
+                license = LicenseInfoFactory.getListedLicenseById(id);
+                loadTemplate(license);
+            } catch (InvalidSPDXAnalysisException exc) {
+                logger.error("Failed to load listed licence: " + id, exc);
+            }
+            return license;
+        });
     }
 
     private void loadTemplate(SpdxListedLicense license) {

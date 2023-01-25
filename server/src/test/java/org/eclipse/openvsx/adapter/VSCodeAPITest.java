@@ -23,11 +23,13 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityManager;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
-
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
@@ -41,7 +43,10 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.TokenService;
-import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.storage.AzureBlobStorageService;
+import org.eclipse.openvsx.storage.AzureDownloadCountService;
+import org.eclipse.openvsx.storage.GoogleCloudStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
@@ -61,14 +66,13 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.persistence.EntityManager;
-
 @WebMvcTest(VSCodeAPI.class)
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
     AzureDownloadCountService.class, CacheService.class, UpstreamVSCodeService.class,
-    VSCodeIdService.class, EclipseService.class, ExtensionValidator.class
+    VSCodeIdService.class, EntityManager.class, EclipseService.class, ExtensionValidator.class,
+    SimpleMeterRegistry.class
 })
 public class VSCodeAPITest {
 
@@ -794,9 +798,9 @@ public class VSCodeAPITest {
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(0l);
+                .thenReturn(0L);
         Mockito.when(repositories.countActiveReviews(extension))
-                .thenReturn(10l);
+                .thenReturn(10L);
         var extensionFile = new FileResource();
         extensionFile.setExtension(extVersion);
         extensionFile.setName("redhat.vscode-yaml-0.5.2.vsix");
@@ -872,15 +876,18 @@ public class VSCodeAPITest {
     }
 
     private String file(String name) throws UnsupportedEncodingException, IOException {
-        try (
-            var stream = getClass().getResourceAsStream(name);
-        ) {
+        try (var stream = getClass().getResourceAsStream(name)) {
             return CharStreams.toString(new InputStreamReader(stream, "UTF-8"));
         }
     }
-    
+
     @TestConfiguration
     static class TestConfig {
+        @Bean
+        IExtensionQueryRequestHandler extensionQueryRequestHandler(LocalVSCodeService local, UpstreamVSCodeService upstream) {
+            return new DefaultExtensionQueryRequestHandler(local, upstream);
+        }
+
         @Bean
         TransactionTemplate transactionTemplate() {
             return new MockTransactionTemplate();

@@ -231,7 +231,11 @@ public class LocalVSCodeService implements IVSCodeService {
         return resource != null ? UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName()) : null;
     }
 
-    private ExtensionQueryResult toQueryResult(List<ExtensionQueryResult.Extension> extensions, long totalCount) {
+    public ExtensionQueryResult toQueryResult(List<ExtensionQueryResult.Extension> extensions) {
+        return toQueryResult(extensions, extensions.size());
+    }
+
+    public ExtensionQueryResult toQueryResult(List<ExtensionQueryResult.Extension> extensions, long totalCount) {
         var resultItem = new ExtensionQueryResult.ResultItem();
         resultItem.extensions = extensions;
 
@@ -377,7 +381,7 @@ public class LocalVSCodeService implements IVSCodeService {
                 .orElse(null);
 
         if (extVersion == null) {
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException();
         }
 
         var resources = repositories.findResourceFileResources(extVersion.getId(), path);

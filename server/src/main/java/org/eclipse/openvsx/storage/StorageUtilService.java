@@ -9,15 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import static org.eclipse.openvsx.entities.FileResource.*;
-
-import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.*;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.eclipse.openvsx.cache.CacheService;
@@ -294,7 +285,7 @@ public class StorageUtilService implements IStorageService {
     @Transactional
     public ResponseEntity<byte[]> getFileResponse(FileResource resource) {
         resource = entityManager.merge(resource);
-        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
+        if (resource.getStorageType().equals(STORAGE_DB)) {
             var headers = getFileResponseHeaders(resource.getName());
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
         } else {
@@ -308,7 +299,7 @@ public class StorageUtilService implements IStorageService {
     @Transactional
     public ResponseEntity<byte[]> getNamespaceLogo(Namespace namespace) {
         namespace = entityManager.merge(namespace);
-        if (namespace.getLogoStorageType().equals(FileResource.STORAGE_DB)) {
+        if (namespace.getLogoStorageType().equals(STORAGE_DB)) {
             var headers = getFileResponseHeaders(namespace.getLogoName());
             return new ResponseEntity<>(namespace.getLogoBytes(), headers, HttpStatus.OK);
         } else {

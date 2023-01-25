@@ -1,0 +1,31 @@
+# --spring.profiles.include=ovsx,mirror
+ovsx:
+  data:
+    mirror:
+      enabled: true
+      server-url: https://open-vsx.org
+      requests-per-second: 5
+      user-name: mirror_user
+      schedule: '0/1 * * * *'
+      read-only:
+        disallowed-methods: POST, PUT, PATCH, DELETE
+        allowed-endpoints: /vscode/gallery/extensionquery, /admin/update-search-index, /api/-/query
+      exclude-extensions:
+        - vscode.*
+  storage:
+    primary-service: azure-blob
+    azure:
+      service-endpoint: https://openvsxorg.blob.core.windows.net/
+      blob-container: resources
+  webui:
+    url: https://open-vsx.org
+  upstream:
+    url: https://open-vsx.org
+  foregroundHttpConnPool:
+    maxTotal: 20
+    defaultMaxPerRoute: 20
+    # aggressive to improve search responsiveness when upstream is slow
+    # and interrupt such heavy requests
+    connectionRequestTimeout: 2000
+    connectTimeout: 2000
+    socketTimeout: 2000

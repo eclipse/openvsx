@@ -51,7 +51,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocalRegistryService.class);
+    protected final Logger logger = LoggerFactory.getLogger(LocalRegistryService.class);
 
     @Autowired
     EntityManager entityManager;
@@ -130,7 +130,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                     var download = files != null ? files.get(DOWNLOAD) : null;
                     if(download == null) {
                         var e = ev.getExtension();
-                        LOGGER.warn("Could not find download for: {}.{}-{}@{}", e.getNamespace().getName(), e.getName(), ev.getVersion(), ev.getTargetPlatform());
+                        logger.warn("Could not find download for: {}.{}-{}@{}", e.getNamespace().getName(), e.getName(), ev.getVersion(), ev.getTargetPlatform());
                         return null;
                     } else {
                         return new AbstractMap.SimpleEntry<>(ev.getTargetPlatform(), download);
@@ -733,17 +733,16 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private Double computeAverageRating(Extension extension) {
-        var activeReviews = repositories.findActiveReviews(extension);
+        var activeReviews = repositories.findActiveReviews(extension).toList();
         if (activeReviews.isEmpty()) {
             return null;
         }
-        long sum = 0;
-        long count = 0;
-        for (var review : activeReviews) {
-            sum += review.getRating();
-            count++;
-        }
-        return (double) sum / count;
+
+        var sum = activeReviews.stream()
+                .mapToLong(ExtensionReview::getRating)
+                .sum();
+
+        return (double) sum / activeReviews.size();
     }
 
     private Extension getExtension(SearchHit<ExtensionSearch> searchHit) {

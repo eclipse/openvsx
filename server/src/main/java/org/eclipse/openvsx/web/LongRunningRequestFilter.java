@@ -9,8 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.web;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.StopWatch;
@@ -26,8 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class LongRunningRequestFilter extends OncePerRequestFilter {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LongRunningRequestFilter.class);
 
     private final long threshold;
     private final StringBuilder builder;
@@ -101,7 +97,7 @@ public class LongRunningRequestFilter extends OncePerRequestFilter {
         builder.append("\n\tResponse: ")
                 .append(response.getStatus());
         
-        LOGGER.warn(builder.toString());
+        logger.warn(builder.toString());
         builder.setLength(0);
     }
 }

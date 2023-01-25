@@ -162,7 +162,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveExtensionVersionsByExtensionPublicId("targetPlatform", "extensionPublicId"),
                 () -> repositories.findActiveExtensionVersionsByExtensionName("targetPlatform", "extensionName", "namespaceName"),
                 () -> repositories.findActiveExtensionVersionsByExtensionName("targetPlatform", "extensionName"),
-                () -> repositories.findActiveExtensionVersionsByNamespacePublicId("targetPlatform", "namespacePublicId")
+                () -> repositories.findActiveExtensionVersionsByNamespacePublicId("targetPlatform", "namespacePublicId"),
+                () -> repositories.findAllNotMatchingByExtensionId(STRING_LIST)
         );
 
         // check that we did not miss anything

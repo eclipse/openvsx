@@ -16,19 +16,13 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.AuthToken;
@@ -56,6 +50,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
 @Component
 public class EclipseService {
@@ -122,7 +124,7 @@ public class EclipseService {
 
     /**
      * Check whether the given user has an active publisher agreement.
-     * @throws ErrorResultException if the user has no active agreeement
+     * @throws ErrorResultException if the user has no active agreement
      */
     public void checkPublisherAgreement(UserData user) {
         if (!isActive()) {
@@ -238,13 +240,14 @@ public class EclipseService {
      */
     public EclipseProfile getPublicProfile(String personId) {
         checkApiUrl();
+        var urlTemplate = eclipseApiUrl + "account/profile/{personId}";
+        var uriVariables = Map.of("personId", personId);
         var headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        var requestUrl = UrlUtil.createApiUrl(eclipseApiUrl, "account", "profile", personId);
-        var request = new RequestEntity<>(headers, HttpMethod.GET, URI.create(requestUrl));
+        var request = new HttpEntity<Void>(headers);
 
         try {
-            var response = restTemplate.exchange(request, String.class);
+            var response = restTemplate.exchange(urlTemplate, HttpMethod.GET, request, String.class, uriVariables);
             return parseEclipseProfile(response);
         } catch (RestClientException exc) {
             if (exc instanceof HttpStatusCodeException) {
@@ -252,7 +255,9 @@ public class EclipseService {
                 if (status == HttpStatus.NOT_FOUND)
                     throw new ErrorResultException("No Eclipse profile data available for user: " + personId);
             }
-            logger.error("Get request failed with URL: " + requestUrl, exc);
+
+            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+            logger.error("Get request failed with URL: " + url, exc);
             throw new ErrorResultException("Request for retrieving user profile failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -320,14 +325,15 @@ public class EclipseService {
             return null;
         }
         checkApiUrl();
+        var urlTemplate = eclipseApiUrl + "openvsx/publisher_agreement/{personId}";
+        var uriVariables = Map.of("personId", eclipseData.personId);
         var headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        var requestUrl = UrlUtil.createApiUrl(eclipseApiUrl, "openvsx", "publisher_agreement", eclipseData.personId);
-        var request = new RequestEntity<>(headers, HttpMethod.GET, URI.create(requestUrl));
+        var request = new HttpEntity<>(headers);
 
         try {
-            var json = restTemplate.exchange(request, String.class);
+            var json = restTemplate.exchange(urlTemplate, HttpMethod.GET, request, String.class, uriVariables);
             var response = parseAgreementResponse(json);
 
             return updateEclipseData(user, ed -> {
@@ -343,7 +349,9 @@ public class EclipseService {
                 if (status == HttpStatus.NOT_FOUND)
                     return null;
             }
-            logger.error("Get request failed with URL: " + requestUrl, exc);
+
+            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+            logger.error("Get request failed with URL: " + url, exc);
             throw new ErrorResultException("Request for retrieving publisher agreement failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -450,13 +458,14 @@ public class EclipseService {
             eclipseToken = checkEclipseToken(admin);
         var headers = new HttpHeaders();
         headers.setBearerAuth(eclipseToken.accessToken);
-        var request = new HttpEntity<Void>(headers);
+        var request = new HttpEntity<>(headers);
         var eclipseData = checkEclipseData(user);
-        var requestUrl = UrlUtil.createApiUrl(eclipseApiUrl, "openvsx", "publisher_agreement", eclipseData.personId);
+        var urlTemplate = eclipseApiUrl + "openvsx/publisher_agreement/{personId}";
+        var uriVariables = Map.of("personId", eclipseData.personId);
 
         try {
             var requestCallback = restTemplate.httpEntityCallback(request);
-            restTemplate.execute(requestUrl, HttpMethod.DELETE, requestCallback, null);
+            restTemplate.execute(urlTemplate, HttpMethod.DELETE, requestCallback, null, uriVariables);
 
             if (eclipseData.publisherAgreement != null) {
                 updateEclipseData(user, ed -> {
@@ -465,7 +474,8 @@ public class EclipseService {
                 }, NOP_INIT);
             }
         } catch (RestClientException exc) {
-            logger.error("Delete request failed with URL: " + requestUrl, exc);
+            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+            logger.error("Delete request failed with URL: " + url, exc);
             throw new ErrorResultException("Request for revoking publisher agreement failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }

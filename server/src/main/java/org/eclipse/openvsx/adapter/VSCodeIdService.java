@@ -11,24 +11,22 @@ package org.eclipse.openvsx.adapter;
 
 import java.util.UUID;
 
-import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
+import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Component
@@ -39,13 +37,13 @@ public class VSCodeIdService {
     protected final Logger logger = LoggerFactory.getLogger(VSCodeIdService.class);
 
     @Autowired
-    RestTemplate restTemplate;
+    RestTemplate vsCodeIdRestTemplate;
 
     @Autowired
     RepositoryService repositories;
 
-    @Value("${ovsx.vscode.upstream.gallery-url:}")
-    String upstreamUrl;
+    @Autowired
+    UrlConfigService urlConfigService;
 
     public boolean setPublicIds(Extension extension) {
         var updateExistingPublicIds = false;
@@ -88,26 +86,25 @@ public class VSCodeIdService {
     }
 
     private ExtensionQueryResult.Extension getUpstreamExtension(Extension extension) {
-        if (Strings.isNullOrEmpty(upstreamUrl)) {
+        var galleryUrl = urlConfigService.getUpstreamGalleryUrl();
+        if (Strings.isNullOrEmpty(galleryUrl)) {
             return null;
         }
-        try {
-            var requestUrl = UrlUtil.createApiUrl(upstreamUrl, "extensionquery");
-            var requestData = createRequestData(extension);
-            var headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + API_VERSION);
-            var result = restTemplate.postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
 
-            if (result.results != null && result.results.size() > 0) {
-                var item = result.results.get(0);
-                if (item.extensions != null && item.extensions.size() > 0) {
-                    return item.extensions.get(0);
-                }
+        var requestUrl = UrlUtil.createApiUrl(galleryUrl, "extensionquery");
+        var requestData = createRequestData(extension);
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + API_VERSION);
+        var result = vsCodeIdRestTemplate.postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
+
+        if (result.results != null && result.results.size() > 0) {
+            var item = result.results.get(0);
+            if (item.extensions != null && item.extensions.size() > 0) {
+                return item.extensions.get(0);
             }
-        } catch (RestClientException exc) {
-            logger.error("Failed to query extension id from upstream URL", exc);
         }
+
         return null;
     }
 
@@ -128,5 +125,4 @@ public class VSCodeIdService {
         request.filters = Lists.newArrayList(filter);
         return request;
     }
-    
 }

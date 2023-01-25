@@ -9,25 +9,20 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import java.util.AbstractMap;
+import java.util.Map;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
-import org.eclipse.openvsx.storage.IStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.AbstractMap;
-import java.util.Map;
 
 @Component
 public class ExtractResourcesJobService {
@@ -36,7 +31,7 @@ public class ExtractResourcesJobService {
     RepositoryService repositories;
 
     @Autowired
-    RestTemplate restTemplate;
+    RestTemplate backgroundRestTemplate;
 
     @Autowired
     EntityManager entityManager;
