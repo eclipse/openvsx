@@ -175,7 +175,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
         Map<Long, List<FileResource>> fileResources;
         if (test(flags, FLAG_INCLUDE_FILES) && !extensionVersionsMap.isEmpty()) {
-            var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG);
+            var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST);
             var idsMap = extensionVersionsMap.values().stream()
                     .flatMap(Collection::stream)
                     .collect(Collectors.toMap(ev -> ev.getId(), ev -> ev));
@@ -301,28 +301,27 @@ public class LocalVSCodeService implements IVSCodeService {
     }
 
     private FileResource getFileFromDB(ExtensionVersion extVersion, String assetType) {
-        switch (assetType) {
-            case FILE_VSIX:
-                return repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-            case FILE_MANIFEST:
-                return repositories.findFileByType(extVersion, FileResource.MANIFEST);
-            case FILE_DETAILS:
-                return repositories.findFileByType(extVersion, FileResource.README);
-            case FILE_CHANGELOG:
-                return repositories.findFileByType(extVersion, FileResource.CHANGELOG);
-            case FILE_LICENSE:
-                return repositories.findFileByType(extVersion, FileResource.LICENSE);
-            case FILE_ICON:
-                return repositories.findFileByType(extVersion, FileResource.ICON);
-            default: {
-                var name = assetType.startsWith(FILE_WEB_RESOURCES)
-                        ? assetType.substring((FILE_WEB_RESOURCES.length()))
-                        : null;
+        var assets = Map.of(
+                FILE_VSIX, DOWNLOAD,
+                FILE_MANIFEST, MANIFEST,
+                FILE_DETAILS, README,
+                FILE_CHANGELOG, CHANGELOG,
+                FILE_LICENSE, LICENSE,
+                FILE_ICON, ICON,
+                FILE_VSIXMANIFEST, VSIXMANIFEST
+        );
 
-                return name != null && name.startsWith("extension/") // is web resource
-                        ? repositories.findFileByTypeAndName(extVersion, FileResource.RESOURCE, name)
-                        : null;
-            }
+        var type = assets.get(assetType);
+        if(type != null) {
+            return repositories.findFileByType(extVersion, type);
+        } else {
+            var name = assetType.startsWith(FILE_WEB_RESOURCES)
+                    ? assetType.substring((FILE_WEB_RESOURCES.length()))
+                    : null;
+
+            return name != null && name.startsWith("extension/") // is web resource
+                    ? repositories.findFileByTypeAndName(extVersion, FileResource.RESOURCE, name)
+                    : null;
         }
     }
 
@@ -572,6 +571,7 @@ public class LocalVSCodeService implements IVSCodeService {
             queryVer.addFile(FILE_ICON, createFileUrl(resourcesByType.get(ICON), fileBaseUrl));
             queryVer.addFile(FILE_VSIX, createFileUrl(resourcesByType.get(DOWNLOAD), fileBaseUrl));
             queryVer.addFile(FILE_CHANGELOG, createFileUrl(resourcesByType.get(CHANGELOG), fileBaseUrl));
+            queryVer.addFile(FILE_VSIXMANIFEST, createFileUrl(resourcesByType.get(VSIXMANIFEST), fileBaseUrl));
         }
 
         return queryVer;

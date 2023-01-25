@@ -41,6 +41,7 @@ public class MigrationRunner {
         extractResourcesMigration();
         setPreReleaseMigration();
         renameDownloadsMigration();
+        extractVsixManifestMigration();
     }
 
     private void extractResourcesMigration() {
@@ -59,6 +60,12 @@ public class MigrationRunner {
         var jobName = "RenameDownloadsMigration";
         var handler = RenameDownloadsJobRequestHandler.class;
         repositories.findNotMigratedRenamedDownloads().forEach(item -> enqueueJob(jobName, handler, item));
+    }
+
+    private void extractVsixManifestMigration() {
+        var jobName = "ExtractVsixManifestMigration";
+        var handler = ExtractVsixManifestsJobRequestHandler.class;
+        repositories.findNotMigratedVsixManifests().forEach(item -> enqueueJob(jobName, handler, item));
     }
 
     private void enqueueJob(String jobName, Class<? extends JobRequestHandler<MigrationJobRequest>> handler, MigrationItem item) {

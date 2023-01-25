@@ -34,18 +34,18 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
     @Override
     @Job(name = "Extract resources from published extension version", retries = 3)
     public void run(MigrationJobRequest jobRequest) throws Exception {
-        var extVersion = service.getExtension(jobRequest.getEntityId());
+        var extVersion = migrations.getExtension(jobRequest.getEntityId());
         logger.info("Extracting resources for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
 
         service.deleteResources(extVersion);
-        var entry = service.getDownload(extVersion);
+        var entry = migrations.getDownload(extVersion);
         var extensionFile = migrations.getExtensionFile(entry);
         var download = entry.getKey();
         try(var extProcessor = new ExtensionProcessor(extensionFile)) {
             extProcessor.processEachResource(download.getExtension(), (resource) -> {
                 resource.setStorageType(download.getStorageType());
-                migrations.uploadResource(resource);
-                service.persistResource(resource);
+                migrations.uploadFileResource(resource);
+                migrations.persistFileResource(resource);
             });
         }
 

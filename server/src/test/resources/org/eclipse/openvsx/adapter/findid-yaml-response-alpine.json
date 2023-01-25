@@ -45,6 +45,10 @@
                                 {
                                     "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
                                     "source": "http://localhost/api/redhat/vscode-yaml/alpine-arm64/0.5.2/file/CHANGELOG.md"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.VsixManifest",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/alpine-arm64/0.5.2/file/extension.vsixmanifest"
                                 }
                             ],
                             "properties": [

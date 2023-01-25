@@ -9,42 +9,18 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import java.util.AbstractMap;
-import java.util.Map;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.storage.AzureBlobStorageService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+
+import javax.transaction.Transactional;
 
 @Component
 public class ExtractResourcesJobService {
 
     @Autowired
     RepositoryService repositories;
-
-    @Autowired
-    RestTemplate backgroundRestTemplate;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    AzureBlobStorageService azureStorage;
-
-    @Autowired
-    GoogleCloudStorageService googleStorage;
-
-    public ExtensionVersion getExtension(long entityId) {
-        return entityManager.find(ExtensionVersion.class, entityId);
-    }
 
     @Transactional
     public void deleteResources(ExtensionVersion extVersion) {
@@ -54,17 +30,5 @@ public class ExtractResourcesJobService {
     @Transactional
     public void deleteWebResources(ExtensionVersion extVersion) {
         repositories.deleteFileResources(extVersion, "web-resource");
-    }
-
-    @Transactional
-    public Map.Entry<FileResource, byte[]> getDownload(ExtensionVersion extVersion) {
-        var download = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-        var content = download.getStorageType().equals(FileResource.STORAGE_DB) ? download.getContent() : null;
-        return new AbstractMap.SimpleEntry<>(download, content);
-    }
-
-    @Transactional
-    public void persistResource(FileResource resource) {
-        entityManager.persist(resource);
     }
 }

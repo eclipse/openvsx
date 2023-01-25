@@ -183,7 +183,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public boolean isType (String fileName){
-        var expectedTypes = Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD, FileResource.CHANGELOG);
+        var expectedTypes = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST);
         return expectedTypes.stream().anyMatch(fileName::equalsIgnoreCase);
     }
 
@@ -511,7 +511,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return Collections.emptyMap();
         }
 
-        var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
+        var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
         var extensionVersionIds = extensionVersions.stream()
                 .map(ExtensionVersion::getId)
                 .collect(Collectors.toSet());
@@ -871,7 +871,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                     .forEach(e -> json.allVersions.put(e.getKey(), e.getValue()));
         }
 
-        var fileUrls = storageUtil.getFileUrls(List.of(extVersion), serverUrl, DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
+        var fileUrls = storageUtil.getFileUrls(List.of(extVersion), serverUrl, DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
         json.files = fileUrls.get(extVersion.getId());
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {

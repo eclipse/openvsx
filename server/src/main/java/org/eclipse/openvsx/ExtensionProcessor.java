@@ -298,7 +298,7 @@ public class ExtensionProcessor implements AutoCloseable {
     public List<FileResource> getFileResources(ExtensionVersion extVersion) {
         var resources = new ArrayList<FileResource>();
         var mappers = List.<Function<ExtensionVersion, FileResource>>of(
-                this::getManifest, this::getReadme, this::getChangelog, this::getLicense, this::getIcon
+                this::getManifest, this::getReadme, this::getChangelog, this::getLicense, this::getIcon, this::getVsixManifest
         );
 
         mappers.forEach(mapper -> Optional.of(extVersion).map(mapper).ifPresent(resources::add));
@@ -468,4 +468,12 @@ public class ExtensionProcessor implements AutoCloseable {
         return icon;
     }
 
+    public FileResource getVsixManifest(ExtensionVersion extVersion) {
+        var vsixManifest = new FileResource();
+        vsixManifest.setExtension(extVersion);
+        vsixManifest.setName(VSIX_MANIFEST);
+        vsixManifest.setType(FileResource.VSIXMANIFEST);
+        vsixManifest.setContent(ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST));
+        return vsixManifest;
+    }
 }
