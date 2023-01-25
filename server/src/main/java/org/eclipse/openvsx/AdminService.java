@@ -214,7 +214,7 @@ public class AdminService {
                     json.preview = latest.isPreview();
                     json.active = latest.getExtension().isActive();
                     json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(),
-                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
+                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
 
                     return json;
                 })

@@ -1,0 +1,54 @@
+/** ******************************************************************************
+ * Copyright (c) 2023 Precies. Software Ltd and others
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ * ****************************************************************************** */
+package org.eclipse.openvsx.migration;
+
+import org.eclipse.openvsx.ExtensionProcessor;
+import org.eclipse.openvsx.entities.FileResource;
+import org.jobrunr.jobs.annotations.Job;
+import org.jobrunr.jobs.context.JobRunrDashboardLogger;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.AbstractMap;
+
+@Component
+public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+
+    protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtractVsixManifestsJobRequestHandler.class));
+
+    @Autowired
+    MigrationService migrations;
+
+    @Override
+    @Job(name = "Extract VSIX manifests from published extension version", retries = 3)
+    public void run(MigrationJobRequest jobRequest) throws Exception {
+        var download = migrations.getResource(jobRequest);
+        var extVersion = download.getExtension();
+        logger.info("Extracting VSIX manifests for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
+
+        var existingVsixManifest = migrations.getFileResource(extVersion, FileResource.VSIXMANIFEST);
+        if(existingVsixManifest != null) {
+            migrations.removeFile(existingVsixManifest);
+            migrations.deleteFileResource(existingVsixManifest);
+        }
+
+        var content = migrations.getContent(download);
+        var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
+        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
+            var vsixManifest = extProcessor.getVsixManifest(extVersion);
+            vsixManifest.setStorageType(download.getStorageType());
+            migrations.uploadFileResource(vsixManifest);
+            migrations.persistFileResource(vsixManifest);
+        }
+    }
+}

@@ -32,7 +32,7 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
 
     @Override
     public void run(MigrationJobRequest jobRequest) throws Exception {
-        var download = service.getResource(jobRequest);
+        var download = migrations.getResource(jobRequest);
         var name = service.getNewBinaryName(download);
         if(download.getName().equals(name)) {
             // names are the same, nothing to do
@@ -40,11 +40,11 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
         }
 
         logger.info("Renaming download {}", download.getName());
-        var content = service.getContent(download);
+        var content = migrations.getContent(download);
         var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
         var newDownload = service.cloneResource(download, name);
-        migrations.uploadResource(newDownload, extensionFile);
-        migrations.deleteResource(download);
+        migrations.uploadFileResource(newDownload, extensionFile);
+        migrations.removeFile(download);
 
         download.setName(name);
         service.updateResource(download);

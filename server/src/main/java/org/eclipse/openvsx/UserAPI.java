@@ -9,12 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
-import static org.eclipse.openvsx.entities.FileResource.ICON;
-import static org.eclipse.openvsx.entities.FileResource.LICENSE;
-import static org.eclipse.openvsx.entities.FileResource.MANIFEST;
-import static org.eclipse.openvsx.entities.FileResource.README;
+import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.util.LinkedHashMap;
@@ -201,7 +196,7 @@ public class UserAPI {
                     json.preview = latest.isPreview();
                     json.active = latest.getExtension().isActive();
                     json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(),
-                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
+                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
 
                     return json;
                 })

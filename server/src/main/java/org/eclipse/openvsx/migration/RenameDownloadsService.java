@@ -37,12 +37,6 @@ public class RenameDownloadsService {
     }
 
     @Transactional
-    public byte[] getContent(FileResource download) {
-        download = entityManager.merge(download);
-        return download.getStorageType().equals(FileResource.STORAGE_DB) ? download.getContent() : null;
-    }
-
-    @Transactional
     public FileResource cloneResource(FileResource resource, String name) {
         resource = entityManager.merge(resource);
         var clone = new FileResource();
@@ -52,10 +46,6 @@ public class RenameDownloadsService {
         clone.setExtension(resource.getExtension());
         clone.setContent(resource.getContent());
         return clone;
-    }
-
-    public FileResource getResource(MigrationJobRequest jobRequest) {
-        return entityManager.find(FileResource.class, jobRequest.getEntityId());
     }
 
     @Transactional

@@ -24,6 +24,7 @@ public class FileResource {
     public static final String LICENSE = "license";
     public static final String CHANGELOG = "changelog";
     public static final String RESOURCE = "resource";
+    public static final String VSIXMANIFEST = "vsixmanifest";
 
     // Storage types
     public static final String STORAGE_DB = "database";
