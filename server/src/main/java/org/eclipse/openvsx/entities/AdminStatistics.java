@@ -41,32 +41,32 @@ public class AdminStatistics {
 
     long namespaceOwners;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "rating")
     @Column(name = "extensions")
     Map<Integer, Integer> extensionsByRating;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "extensions_published")
     @Column(name = "publishers")
     Map<Integer, Integer> publishersByExtensionsPublished;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "login_name")
     @Column(name = "extension_version_count")
     Map<String, Integer> topMostActivePublishingUsers;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "namespace")
     @Column(name = "extension_count")
     Map<String, Integer> topNamespaceExtensions;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "namespace")
     @Column(name = "extension_version_count")
     Map<String, Integer> topNamespaceExtensionVersions;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "extension_identifier")
     @Column(name = "downloads")
     Map<String, Long> topMostDownloadedExtensions;
