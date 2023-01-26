@@ -154,6 +154,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
         // filter internal tags
         const tags = extension.tags?.filter(t => !t.startsWith('__'));
+        const DownloadTerms = this.context.pageSettings.elements.downloadTerms;
         return <React.Fragment>
             <Box className={classes.overview}>
                 <Box flex={5} overflow='auto'>
@@ -210,6 +211,11 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                                     className={classes.downloadButton}>
                                     Download
                                 </Button>
+                                : null
+                            }
+                            {
+                                DownloadTerms && extension.downloads && Object.keys(extension.downloads).length > 0
+                                ? <DownloadTerms/>
                                 : null
                             }
                         </Box>
