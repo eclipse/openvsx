@@ -14,3 +14,14 @@ RUN curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.11
     && tar -xzf elasticsearch-linux-x86_64.tar.gz \
     && rm elasticsearch-linux-x86_64.tar.gz
 ENV ES_HOME="$HOME/elasticsearch-7.11.0"
+
+RUN curl -L https://github.com/prometheus/prometheus/releases/download/v2.38.0/prometheus-2.38.0.linux-amd64.tar.gz --output prometheus-linux-amd64.tar.gz \
+    && tar -xzf prometheus-linux-amd64.tar.gz \
+    && rm prometheus-linux-amd64.tar.gz
+ENV PROMETHEUS_HOME="$HOME/prometheus-2.38.0.linux-amd64"
+ENV PROMETHEUS_PORT="9090"
+
+RUN curl https://dl.grafana.com/enterprise/release/grafana-enterprise-9.1.1.linux-amd64.tar.gz --output grafana-enterprise-linux-amd64.tar.gz \
+    && tar -xzf grafana-enterprise-linux-amd64.tar.gz \
+    && rm grafana-enterprise-linux-amd64.tar.gz
+ENV GRAFANA_HOME="$HOME/grafana-9.1.1"

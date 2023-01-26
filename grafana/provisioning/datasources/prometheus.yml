@@ -1,0 +1,11 @@
+apiVersion: 1
+datasources:
+  - id: 1
+    uid: UIdwBsZ4z
+    orgId: 1
+    name: Prometheus
+    type: prometheus
+    typeName: Prometheus
+    typeLogoUrl: public/app/plugins/datasource/prometheus/img/prometheus_logo.svg
+    access: proxy
+    url: https://$PROMETHEUS_PORT-$GITPOD_WORKSPACE_ID.$GITPOD_WORKSPACE_CLUSTER_HOST
