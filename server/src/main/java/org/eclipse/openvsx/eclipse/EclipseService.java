@@ -69,9 +69,9 @@ public class EclipseService {
             .append(DateTimeFormatter.ISO_LOCAL_TIME)
             .toFormatter();
     
-    private static final TypeReference<List<String>> TYPE_LIST_STRING = new TypeReference<List<String>>() {};
-    private static final TypeReference<List<EclipseProfile>> TYPE_LIST_PROFILE = new TypeReference<List<EclipseProfile>>() {};
-    private static final TypeReference<List<PublisherAgreementResponse>> TYPE_LIST_AGREEMENT = new TypeReference<List<PublisherAgreementResponse>>() {};
+    private static final TypeReference<List<String>> TYPE_LIST_STRING = new TypeReference<>() {};
+    private static final TypeReference<List<EclipseProfile>> TYPE_LIST_PROFILE = new TypeReference<>() {};
+    private static final TypeReference<List<PublisherAgreementResponse>> TYPE_LIST_AGREEMENT = new TypeReference<>() {};
 
     protected final Logger logger = LoggerFactory.getLogger(EclipseService.class);
 
@@ -339,9 +339,7 @@ public class EclipseService {
             return updateEclipseData(user, ed -> {
                 ed.publisherAgreement = response.createEntityData(parseDate);
                 return ed.publisherAgreement;
-            }, ed -> {
-                ed.personId = response.personID;
-            });
+            }, ed -> ed.personId = response.personID);
         } catch (RestClientException exc) {
             if (exc instanceof HttpStatusCodeException) {
                 var status = ((HttpStatusCodeException) exc).getStatusCode();

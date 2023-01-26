@@ -15,13 +15,10 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;

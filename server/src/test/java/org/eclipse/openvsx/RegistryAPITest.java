@@ -73,6 +73,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.RestTemplate;
 
 @WebMvcTest(RegistryAPI.class)
 @AutoConfigureWebClient
@@ -2196,6 +2197,9 @@ public class RegistryAPITest {
         TokenService tokenService() {
             return new TokenService();
         }
+
+        @Bean
+        RestTemplate restTemplate() { return new RestTemplate(); }
 
         @Bean
         LocalRegistryService localRegistryService() {

@@ -59,6 +59,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.springframework.web.client.RestTemplate;
 
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
@@ -557,6 +558,9 @@ public class UserAPITest {
         TokenService tokenService() {
             return new TokenService();
         }
+
+        @Bean
+        RestTemplate restTemplate() { return new RestTemplate(); }
 
         @Bean
         VersionService versionService() {

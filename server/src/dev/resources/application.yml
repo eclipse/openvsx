@@ -122,6 +122,8 @@ bucket4j:
               unit: seconds
 
 ovsx:
+  upstream:
+    url: https://open-vsx.org
   databasesearch:
     enabled: false
   elasticsearch:

@@ -48,6 +48,9 @@ public class TokenService {
     EntityManager entityManager;
 
     @Autowired
+    RestTemplate restTemplate;
+
+    @Autowired
     ClientRegistrationRepository clientRegistrationRepository;
 
     public AuthToken updateTokens(long userId, String registrationId, OAuth2AccessToken accessToken,
@@ -149,9 +152,7 @@ public class TokenService {
             return false;
         if (token.accessToken != null && !isExpired(token.expiresAt))
             return true;
-        if (token.refreshToken != null && !isExpired(token.refreshExpiresAt))
-            return true;
-        return false;
+        return token.refreshToken != null && !isExpired(token.refreshExpiresAt);
     }
 
     private boolean isExpired(Instant instant) {
@@ -172,8 +173,7 @@ public class TokenService {
         data.put("client_secret", reg.getClientSecret());
         data.put("refresh_token", token.refreshToken != null ? token.refreshToken : token.accessToken);
 
-        var request = new HttpEntity<String>(data.toJson(), headers);
-        var restTemplate = new RestTemplate();
+        var request = new HttpEntity<>(data.toJson(), headers);
         var objectMapper = new ObjectMapper();
         try {
             var response = restTemplate.postForObject(tokenUri, request, String.class);
@@ -188,12 +188,12 @@ public class TokenService {
             var newToken = new OAuth2AccessToken(TokenType.BEARER, newTokenValue, issuedAt, expiresAt);
             var newRefreshToken = new OAuth2RefreshToken(newRefreshTokenValue, issuedAt);
             return Pair.of(newToken, newRefreshToken);
-
         } catch (RestClientException exc) {
             logger.error("Post request failed with URL: " + tokenUri, exc);
         } catch (JsonProcessingException exc) {
             logger.error("Invalid JSON data received from URL: " + tokenUri, exc);
         }
+
         return null;
     }
 
