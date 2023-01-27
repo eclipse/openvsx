@@ -90,7 +90,7 @@
               "options": {
                 "mode": "exclude",
                 "names": [
-                  "{application=\"Open VSX Registry\", exception=\"None\", instance=\"localhost:8080\", job=\"Open VSX Registry input\", method=\"GET\", uri=\"/login\"}"
+                  "{application=\"Open VSX Registry\", instance=\"localhost:8080\", job=\"Open VSX Registry input\", method=\"POST\", uri=\"/api/-/namespace/create\"}"
                 ],
                 "prefix": "All except:",
                 "readOnly": true
@@ -338,12 +338,13 @@
     "list": [
       {
         "current": {
-          "selected": true,
-          "text": "Other",
-          "value": "(?!/(sitemap.xml|login|((api|vscode|user|admin)/.*))).*"
+          "selected": false,
+          "text": "SitemapController",
+          "value": "/sitemap.xml"
         },
         "hide": 0,
         "includeAll": false,
+        "label": "API",
         "multi": false,
         "name": "uri_prefix",
         "options": [
@@ -368,17 +369,12 @@
             "value": "/admin/.*"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "SitemapController",
             "value": "/sitemap.xml"
-          },
-          {
-            "selected": true,
-            "text": "Other",
-            "value": "(?!/(sitemap.xml|login|((api|vscode|user|admin)/.*))).*"
           }
         ],
-        "query": "RegistryAPI : /api/.*, VSCodeAdapter : /vscode/.*, UserAPI : /login|/user/.*, AdminAPI : /admin/.*, SitemapController : /sitemap.xml, Other : (?!/(sitemap.xml|login|((api|vscode|user|admin)/.*))).*",
+        "query": "RegistryAPI : /api/.*, VSCodeAdapter : /vscode/.*, UserAPI : /login|/user/.*, AdminAPI : /admin/.*, SitemapController : /sitemap.xml",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
