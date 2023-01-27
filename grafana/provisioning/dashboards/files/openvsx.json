@@ -82,32 +82,7 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "{application=\"Open VSX Registry\", instance=\"localhost:8080\", job=\"Open VSX Registry input\", method=\"POST\", uri=\"/api/-/namespace/create\"}"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -135,7 +110,7 @@
             "uid": "UIdwBsZ4z"
           },
           "editorMode": "code",
-          "expr": "label_replace(label_replace(label_replace(rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval]), \"exception\", \"\", \"exception\", \"(.*)\"), \"outcome\", \"\", \"outcome\", \"(.*)\"), \"status\", \"\", \"status\", \"(.*)\")",
+          "expr": "sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -200,7 +175,32 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "{application=\"Open VSX Registry\", instance=\"localhost:8080\", job=\"Open VSX Registry input\", method=\"POST\", uri=\"/api/-/namespace/create\"}"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -228,7 +228,7 @@
             "uid": "UIdwBsZ4z"
           },
           "editorMode": "code",
-          "expr": "label_replace(label_replace(label_replace(rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\", status=~\"(4|5)..\"}[$__rate_interval]), \"exception\", \"\", \"exception\", \"(.*)\"), \"outcome\", \"\", \"outcome\", \"(.*)\"), \"status\", \"\", \"status\", \"(.*)\")",
+          "expr": "sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\", status=~\"(4|5)..\"}[$__rate_interval]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -293,7 +293,32 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "{application=\"Open VSX Registry\", instance=\"localhost:8080\", job=\"Open VSX Registry input\", method=\"POST\", uri=\"/api/-/namespace/create\"}"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -321,7 +346,7 @@
             "uid": "UIdwBsZ4z"
           },
           "editorMode": "code",
-          "expr": "label_replace(label_replace(label_replace(rate(http_server_requests_seconds_sum{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval]), \"exception\", \"\", \"exception\", \"(.*)\"), \"outcome\", \"\", \"outcome\", \"(.*)\"), \"status\", \"\", \"status\", \"(.*)\") / label_replace(label_replace(label_replace(rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval]), \"exception\", \"\", \"exception\", \"(.*)\"), \"outcome\", \"\", \"outcome\", \"(.*)\"), \"status\", \"\", \"status\", \"(.*)\")",
+          "expr": "(sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_sum{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval]))) / (sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval])))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -338,7 +363,7 @@
     "list": [
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "SitemapController",
           "value": "/sitemap.xml"
         },
