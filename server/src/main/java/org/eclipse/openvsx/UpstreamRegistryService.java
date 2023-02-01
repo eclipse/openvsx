@@ -163,7 +163,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
                 logger.error("HEAD " + url, exc);
             }
-            
+
             throw new NotFoundException();
         }
         var statusCode = response.getStatusCode();
@@ -196,7 +196,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
                 logger.error("GET " + url, exc);
             }
-            
+
             throw new NotFoundException();
         }
     }
@@ -204,16 +204,15 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 	@Override
 	public SearchResultJson search(ISearchService.Options options) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/search";
-        var uriVariables = Map.of(
-                "size", Integer.toString(options.requestedSize),
-                "offset", Integer.toString(options.requestedOffset),
-                "includeAllVersions", Boolean.toString(options.includeAllVersions),
-                "query", options.queryString,
-                "category", options.category,
-                "sortOrder", options.sortOrder,
-                "sortBy", options.sortBy,
-                "targetPlatform", options.targetPlatform
-        );
+        var uriVariables = new HashMap<String,String>();
+        uriVariables.put("size", Integer.toString(options.requestedSize));
+        uriVariables.put("offset", Integer.toString(options.requestedOffset));
+        uriVariables.put("includeAllVersions", Boolean.toString(options.includeAllVersions));
+        uriVariables.put("query", options.queryString);
+        uriVariables.put("category", options.category);
+        uriVariables.put("sortOrder", options.sortOrder);
+        uriVariables.put("sortBy", options.sortBy);
+        uriVariables.put("targetPlatform", options.targetPlatform);
 
         var queryString = uriVariables.entrySet().stream()
                 .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
@@ -238,16 +237,16 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public QueryResultJson query(QueryParamJson param) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/query";
-        var queryParams = Map.of(
-                "namespaceName", param.namespaceName,
-                "extensionName", param.extensionName,
-                "extensionVersion", param.extensionVersion,
-                "extensionId", param.extensionId,
-                "extensionUuid", param.extensionUuid,
-                "namespaceUuid", param.namespaceUuid,
-                "includeAllVersions", String.valueOf(param.includeAllVersions),
-                "targetPlatform", param.targetPlatform
-        );
+        var queryParams = new HashMap<String,String>();
+        queryParams.put("namespaceName", param.namespaceName);
+        queryParams.put("extensionName", param.extensionName);
+        queryParams.put("extensionVersion", param.extensionVersion);
+        queryParams.put("extensionId", param.extensionId);
+        queryParams.put("extensionUuid", param.extensionUuid);
+        queryParams.put("namespaceUuid", param.namespaceUuid);
+        queryParams.put("includeAllVersions", String.valueOf(param.includeAllVersions));
+        queryParams.put("targetPlatform", param.targetPlatform);
+
 
         var queryString = queryParams.entrySet().stream()
             .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
@@ -272,16 +271,15 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public QueryResultJson queryV2(QueryParamJsonV2 param) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/v2/-/query";
-        var queryParams = Map.of(
-                "namespaceName", param.namespaceName,
-                "extensionName", param.extensionName,
-                "extensionVersion", param.extensionVersion,
-                "extensionId", param.extensionId,
-                "extensionUuid", param.extensionUuid,
-                "namespaceUuid", param.namespaceUuid,
-                "includeAllVersions", String.valueOf(param.includeAllVersions),
-                "targetPlatform", param.targetPlatform
-        );
+        var queryParams = new HashMap<String,String>();
+        queryParams.put("namespaceName", param.namespaceName);
+        queryParams.put("extensionName", param.extensionName);
+        queryParams.put("extensionVersion", param.extensionVersion);
+        queryParams.put("extensionId", param.extensionId);
+        queryParams.put("extensionUuid", param.extensionUuid);
+        queryParams.put("namespaceUuid", param.namespaceUuid);
+        queryParams.put("includeAllVersions", String.valueOf(param.includeAllVersions));
+        queryParams.put("targetPlatform", param.targetPlatform);
 
         var queryString = queryParams.entrySet().stream()
                 .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
@@ -302,7 +300,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         }
     }
-    
+
     private void handleError(Throwable exc) throws RuntimeException {
         if (exc instanceof HttpStatusCodeException) {
             var status = ((HttpStatusCodeException) exc).getStatusCode();
