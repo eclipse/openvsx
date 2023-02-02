@@ -12,13 +12,12 @@ package org.eclipse.openvsx.search;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.util.Optional;
 import javax.annotation.PostConstruct;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -86,23 +85,38 @@ public class RelevanceService {
     protected ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
         var latest = versions.getLatest(extension, null, false, true);
         var entry = extension.toSearch(latest);
+        entry.rating = calculateRating(extension, stats);
+        entry.relevance = calculateRelevance(extension, latest, stats, entry);
 
+        return entry;
+    }
+
+    private double calculateRating(Extension extension, SearchStats stats) {
+        // IMDB rating formula, source: https://stackoverflow.com/a/1411268
+        var padding = 100;
+        var reviews = Optional.ofNullable(extension.getReviewCount()).orElse(0L);
+        var averageRating = Optional.ofNullable(extension.getAverageRating()).orElse(0.0);
+        // The amount of "smoothing" applied to the rating is based on reviews in relation to padding.
+        return (averageRating * reviews + stats.averageReviewRating * padding) / (reviews + padding);
+    }
+
+    private double calculateRelevance(Extension extension, ExtensionVersion latest, SearchStats stats, ExtensionSearch entry) {
         var ratingValue = 0.0;
-        if (entry.averageRating != null) {
-            var reviewCount = repositories.countActiveReviews(extension);
+        if (extension.getAverageRating() != null) {
+            var reviewCount = extension.getReviewCount();
             // Reduce the rating relevance if there are only few reviews
             var countRelevance = saturate(reviewCount, 0.25);
-            ratingValue = (entry.averageRating / 5.0) * countRelevance;
+            ratingValue = (extension.getAverageRating() / 5.0) * countRelevance;
         }
         var downloadsValue = entry.downloadCount / stats.downloadRef;
         var timestamp = latest.getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
-        entry.relevance = ratingRelevance * limit(ratingValue) + downloadsRelevance * limit(downloadsValue)
+        var relevance = ratingRelevance * limit(ratingValue) + downloadsRelevance * limit(downloadsValue)
                 + timestampRelevance * limit(timestampValue);
 
         // Reduce the relevance value of unverified extensions
         if (!isVerified(latest)) {
-            entry.relevance *= unverifiedRelevance;
+            relevance *= unverifiedRelevance;
         }
 
         if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
@@ -113,9 +127,10 @@ public class RelevanceService {
                 // Ignore exception
             }
             logger.error(message);
-            entry.relevance = 0.0;
+            relevance = 0.0;
         }
-        return entry;
+
+        return relevance;
     }
 
     private double limit(double value) {
@@ -144,6 +159,7 @@ public class RelevanceService {
         protected final double downloadRef;
         protected final double timestampRef;
         protected final LocalDateTime oldest;
+        protected final double averageReviewRating;
 
         public SearchStats(RepositoryService repositories) {
             var now = TimeUtil.getCurrentUTC();
@@ -152,6 +168,7 @@ public class RelevanceService {
             this.downloadRef = maxDownloads * 1.5 + 100;
             this.oldest = oldestTimestamp == null ? now : oldestTimestamp;
             this.timestampRef = Duration.between(this.oldest, now).toSeconds() + 60;
+            this.averageReviewRating = repositories.getAverageReviewRating();
         }
     }
 }

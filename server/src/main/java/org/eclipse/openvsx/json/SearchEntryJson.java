@@ -61,6 +61,10 @@ public class SearchEntryJson implements Serializable {
     @Max(5)
     public Double averageRating;
 
+    @Schema(description = "Number of reviews")
+    @Min(0)
+    public Long reviewCount;
+
     @Schema(description = "Number of downloads of the extension package")
     @Min(0)
     public int downloadCount;

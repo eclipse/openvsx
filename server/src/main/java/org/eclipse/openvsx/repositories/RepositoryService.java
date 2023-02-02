@@ -318,10 +318,6 @@ public class RepositoryService {
         return fileResourceJooqRepo.findAllResources(extVersionId, prefix);
     }
 
-    public Map<Long, Integer> findActiveReviewCountsByExtensionId(Collection<Long> extensionIds) {
-        return extensionJooqRepo.findAllActiveReviewCountsById(extensionIds);
-    }
-
     public List<NamespaceMembership> findNamespaceMemberships(Collection<Long> namespaceIds) {
         return namespaceMembershipJooqRepo.findAllByNamespaceId(namespaceIds);
     }
@@ -412,5 +408,13 @@ public class RepositoryService {
 
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
         return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript);
+    }
+
+    public double getAverageReviewRating() {
+        return extensionReviewRepo.averageRatingAndActiveTrue();
+    }
+
+    public Double getAverageReviewRating(Extension extension) {
+        return extensionReviewRepo.averageRatingAndActiveTrue(extension);
     }
 }

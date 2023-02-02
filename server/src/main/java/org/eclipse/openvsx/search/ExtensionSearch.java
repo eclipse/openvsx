@@ -46,7 +46,7 @@ public class ExtensionSearch implements Serializable {
 
     @Nullable
     @Field(index = false, type = FieldType.Float)
-    public Double averageRating;
+    public Double rating;
 
     @Field(index = false)
     public int downloadCount;
@@ -71,7 +71,7 @@ public class ExtensionSearch implements Serializable {
                 && Objects.equals(targetPlatforms, that.targetPlatforms)
                 && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
-                && Objects.equals(averageRating, that.averageRating)
+                && Objects.equals(rating, that.rating)
                 && Objects.equals(categories, that.categories)
                 && Objects.equals(tags, that.tags);
     }
@@ -80,7 +80,7 @@ public class ExtensionSearch implements Serializable {
     public int hashCode() {
         return Objects.hash(
                 id, relevance, name, namespace, extensionId, targetPlatforms, displayName, description, timestamp,
-                averageRating, downloadCount, categories, tags
+                rating, downloadCount, categories, tags
         );
     }
 }

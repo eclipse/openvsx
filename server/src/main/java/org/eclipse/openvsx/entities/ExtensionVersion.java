@@ -190,6 +190,7 @@ public class ExtensionVersion implements Serializable {
         entry.name = extension.getName();
         entry.namespace = extension.getNamespace().getName();
         entry.averageRating = extension.getAverageRating();
+        entry.reviewCount = extension.getReviewCount();
         entry.downloadCount = extension.getDownloadCount();
         entry.version = this.getVersion();
         entry.timestamp = TimeUtil.toUTCString(this.getTimestamp());

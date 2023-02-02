@@ -232,16 +232,16 @@ public class ElasticSearchServiceTest {
         return index;
     }
 
-    private Extension mockExtension(String name, String namespaceName, String userName, double averageRating, int ratingCount, int downloadCount,
+    private Extension mockExtension(String name, String namespaceName, String userName, double averageRating, long ratingCount, int downloadCount,
             LocalDateTime timestamp, boolean isUnverified, boolean isUnrelated) {
         var extension = new Extension();
         extension.setName(name);
         extension.setId(name.hashCode());
         extension.setAverageRating(averageRating);
+        extension.setReviewCount(ratingCount);
         extension.setDownloadCount(downloadCount);
         Mockito.when(entityManager.merge(extension)).thenReturn(extension);
-        Mockito.when(repositories.countActiveReviews(extension))
-                .thenReturn((long) ratingCount);
+
         var namespace = new Namespace();
         namespace.setName(namespaceName);
         extension.setNamespace(namespace);

@@ -82,10 +82,11 @@ public class AzureDownloadCountProcessor {
     }
 
     @Transactional //needs transaction for lazy-loading versions
-    public void evictExtensionJsons(List<Extension> extensions) {
+    public void evictCaches(List<Extension> extensions) {
         extensions.forEach(extension -> {
             extension = entityManager.merge(extension);
             cache.evictExtensionJsons(extension);
+            cache.evictLatestExtensionVersion(extension);
         });
     }
 

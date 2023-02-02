@@ -132,6 +132,7 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION.PUBLIC_ID,
                     EXTENSION.NAME,
                     EXTENSION.AVERAGE_RATING,
+                    EXTENSION.REVIEW_COUNT,
                     EXTENSION.DOWNLOAD_COUNT,
                     EXTENSION.PUBLISHED_DATE,
                     EXTENSION.LAST_UPDATED_DATE,
@@ -190,6 +191,7 @@ public class ExtensionVersionJooqRepository {
         var extension = extVersion.getExtension();
         extension.setPublicId(record.get(EXTENSION.PUBLIC_ID));
         extension.setAverageRating(record.get(EXTENSION.AVERAGE_RATING));
+        extension.setReviewCount(record.get(EXTENSION.REVIEW_COUNT));
         extension.setDownloadCount(record.get(EXTENSION.DOWNLOAD_COUNT));
         extension.setPublishedDate(record.get(EXTENSION.PUBLISHED_DATE));
         extension.setLastUpdatedDate(record.get(EXTENSION.LAST_UPDATED_DATE));
