@@ -211,7 +211,7 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                                         <MenuItem value={'relevance'}>Relevance</MenuItem>
                                         <MenuItem value={'timestamp'}>Date</MenuItem>
                                         <MenuItem value={'downloadCount'}>Downloads</MenuItem>
-                                        <MenuItem value={'averageRating'}>Rating</MenuItem>
+                                        <MenuItem value={'rating'}>Rating</MenuItem>
                                     </Select>
                                 </Box>
                                 <Box

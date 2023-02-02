@@ -41,7 +41,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Retryable;
@@ -102,6 +101,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform) {
         return getExtension(namespace, extensionName, targetPlatform, "latest");
     }
@@ -172,7 +172,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Transactional
     public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
         var resource = isType(fileName) ? repositories.findFileByType(extVersion, fileName.toLowerCase()) : repositories.findFileByName(extVersion, fileName);
@@ -269,7 +268,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(Extension::getId)
                 .collect(Collectors.toSet());
 
-        var reviewCounts = getReviewCounts(extensionIds);
+        var reviewCounts = getReviewCounts(extensionVersions);
         var versionStrings = getVersionStrings(extensionVersions);
         var latestVersions = getLatestVersions(extensionVersions);
         var latestPreReleases = getLatestVersions(extensionVersions, true);
@@ -298,7 +297,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(ev -> {
                     var latest = latestVersions.get(getLatestVersionKey(ev));
                     var latestPreRelease = latestPreReleases.get(getLatestVersionKey(ev));
-                    var reviewCount = reviewCounts.getOrDefault(ev.getExtension().getId(), 0);
+                    var reviewCount = reviewCounts.getOrDefault(ev.getExtension().getId(), 0L);
                     var preview = previewsByExtensionId.get(ev.getExtension().getId());
                     var versions = versionStrings.get(ev.getExtension().getId());
                     var fileResources = fileResourcesByExtensionVersionId.getOrDefault(ev.getId(), Collections.emptyList());
@@ -357,7 +356,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(ev -> ev.getExtension().getId())
                 .collect(Collectors.toSet());
 
-        var reviewCounts = getReviewCounts(extensionIds);
+        var reviewCounts = getReviewCounts(extensionVersions);
         var versionStrings = getVersionStrings(extensionVersions);
         var latestVersions = getLatestVersions(extensionVersions);
         var latestPreReleases = getLatestVersions(extensionVersions, true);
@@ -393,7 +392,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(ev -> {
                     var latest = latestVersions.get(getLatestVersionKey(ev));
                     var latestPreRelease = latestPreReleases.get(getLatestVersionKey(ev));
-                    var reviewCount = reviewCounts.getOrDefault(ev.getExtension().getId(), 0);
+                    var reviewCount = reviewCounts.getOrDefault(ev.getExtension().getId(), 0L);
                     var preview = previewsByExtensionId.get(ev.getExtension().getId());
                     var globalLatest = addAllVersions ? latestGlobalVersions.get(ev.getExtension().getId()) : null;
                     var globalLatestPreRelease = addAllVersions ? latestGlobalPreReleases.get(ev.getExtension().getId()) : null;
@@ -452,10 +451,15 @@ public class LocalRegistryService implements IExtensionRegistry {
         return storageUtil.getNamespaceLogo(namespace);
     }
 
-    private Map<Long, Integer> getReviewCounts(Collection<Long> extensionIds) {
-        return !extensionIds.isEmpty()
-                ? repositories.findActiveReviewCountsByExtensionId(extensionIds)
-                : Collections.emptyMap();
+    private Map<Long, Long> getReviewCounts(List<ExtensionVersion> extensionVersions) {
+        if(extensionVersions.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return extensionVersions.stream()
+                .map(ExtensionVersion::getExtension)
+                .filter(e -> e.getReviewCount() != null)
+                .collect(Collectors.toMap(Extension::getId, Extension::getReviewCount, (reviews1, reviews2) -> reviews1));
     }
 
     private Map<Long, Set<String>> getVersionStrings(List<ExtensionVersion> extensionVersions) {
@@ -704,9 +708,11 @@ public class LocalRegistryService implements IExtensionRegistry {
         extReview.setComment(review.comment);
         extReview.setRating(review.rating);
         entityManager.persist(extReview);
-        extension.setAverageRating(computeAverageRating(extension));
+        extension.setAverageRating(repositories.getAverageReviewRating(extension));
+        extension.setReviewCount(repositories.countActiveReviews(extension));
         search.updateSearchEntry(extension);
         cache.evictExtensionJsons(extension);
+        cache.evictLatestExtensionVersion(extension);
         return ResultJson.success("Added review for " + extension.getNamespace().getName() + "." + extension.getName());
     }
 
@@ -728,23 +734,13 @@ public class LocalRegistryService implements IExtensionRegistry {
         for (var extReview : activeReviews) {
             extReview.setActive(false);
         }
-        extension.setAverageRating(computeAverageRating(extension));
+
+        extension.setAverageRating(repositories.getAverageReviewRating(extension));
+        extension.setReviewCount(repositories.countActiveReviews(extension));
         search.updateSearchEntry(extension);
         cache.evictExtensionJsons(extension);
+        cache.evictLatestExtensionVersion(extension);
         return ResultJson.success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
-    }
-
-    private Double computeAverageRating(Extension extension) {
-        var activeReviews = repositories.findActiveReviews(extension).toList();
-        if (activeReviews.isEmpty()) {
-            return null;
-        }
-
-        var sum = activeReviews.stream()
-                .mapToLong(ExtensionReview::getRating)
-                .sum();
-
-        return (double) sum / activeReviews.size();
     }
 
     private Extension getExtension(SearchHit<ExtensionSearch> searchHit) {
@@ -842,7 +838,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.verified = isVerified(extVersion);
         json.namespaceAccess = "restricted";
         json.unrelatedPublisher = !json.verified;
-        json.reviewCount = repositories.countActiveReviews(extension);
+        json.reviewCount = Optional.ofNullable(extension.getReviewCount()).orElse(0L);
         var serverUrl = UrlUtil.getBaseUrl();
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");

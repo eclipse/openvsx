@@ -18,7 +18,8 @@ import java.lang.reflect.Method;
 public class ExtensionJsonCacheKeyGenerator implements KeyGenerator {
     @Override
     public Object generate(Object target, Method method, Object... params) {
-        return generate((String) params[0], (String) params[1], (String) params[2], (String) params[3]);
+        var version = params.length == 4 ? (String) params[3] : "latest";
+        return generate((String) params[0], (String) params[1], (String) params[2], version);
     }
 
     public String generate(String namespaceName, String extensionName, String targetPlatform, String version) {

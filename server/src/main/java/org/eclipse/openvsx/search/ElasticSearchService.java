@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +47,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StopWatch;
+
+import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
 
 @Component
 public class ElasticSearchService implements ISearchService {
@@ -91,6 +94,7 @@ public class ElasticSearchService implements ISearchService {
     @EventListener
     @Transactional(readOnly = true)
     @Retryable(DataAccessResourceFailureException.class)
+    @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void initSearchIndex(ApplicationStartedEvent event) {
         if (!isEnabled() || !clearOnStart && searchOperations.indexOps(ExtensionSearch.class).exists()) {
             return;
@@ -105,13 +109,14 @@ public class ElasticSearchService implements ISearchService {
     /**
      * Task scheduled once per day to soft-update the search index. This is necessary
      * because the relevance of index entries might consider the extension publishing
-     * timestamps in relation to the current time.
+     * timestamps in relation to the current time or the extension rating.
      */
     @Scheduled(cron = "0 0 4 * * *", zone = "UTC")
     @Transactional(readOnly = true)
     @Retryable(DataAccessResourceFailureException.class)
+    @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void updateSearchIndex() {
-        if (!isEnabled() || Math.abs(timestampRelevance) < 0.01) {
+        if (!isEnabled()) {
             return;
         }
         var stopWatch = new StopWatch();
@@ -327,7 +332,7 @@ public class ElasticSearchService implements ISearchService {
 
         var types = Map.of(
                 "relevance", "float",
-                "averageRating", "float",
+                "rating", "float",
                 "timestamp", "long",
                 "downloadCount", "integer"
         );

@@ -1741,8 +1741,6 @@ public class RegistryAPITest {
         Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), null))
                 .thenReturn(versions);
 
-        Mockito.when(repositories.findActiveReviewCountsByExtensionId(Set.of(extension.getId())))
-                .thenReturn(Collections.emptyMap());
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
         Mockito.when(repositories.findFileResourcesByExtensionVersionIdAndType(List.of(3L), fileTypes))
                 .thenReturn(Collections.emptyList());
@@ -1783,8 +1781,6 @@ public class RegistryAPITest {
         Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), null))
                 .thenReturn(List.of(extVersion));
 
-        Mockito.when(repositories.findActiveReviewCountsByExtensionId(Set.of(extension.getId())))
-                .thenReturn(Collections.emptyMap());
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);
         Mockito.when(repositories.findFileResourcesByExtensionVersionIdAndType(Set.of(extVersion.getId()), fileTypes))
                 .thenReturn(Collections.emptyList());

@@ -127,7 +127,7 @@ public class AzureDownloadCountService {
                         if(!files.isEmpty()) {
                             var extensionDownloads = processor.processDownloadCounts(files);
                             var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                            processor.evictExtensionJsons(updatedExtensions);
+                            processor.evictCaches(updatedExtensions);
                             processor.updateSearchEntries(updatedExtensions);
                         }
 

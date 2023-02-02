@@ -247,7 +247,7 @@ public class StorageUtilService implements IStorageService {
         return type2Url;
     }
 
-    @Transactional(Transactional.TxType.MANDATORY)
+    @Transactional
     public void increaseDownloadCount(FileResource resource) {
         if(azureDownloadCountService.isEnabled()) {
             // don't count downloads twice
