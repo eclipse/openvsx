@@ -208,7 +208,7 @@
         "x": 12,
         "y": 0
       },
-      "id": 4,
+      "id": 6,
       "options": {
         "legend": {
           "calcs": [],
@@ -228,13 +228,13 @@
             "uid": "UIdwBsZ4z"
           },
           "editorMode": "code",
-          "expr": "sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\", status=~\"(4|5)..\"}[$__rate_interval]))",
+          "expr": "(sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_sum{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval]))) / (sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval])))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "${uri_prefix} Errors",
+      "title": "${uri_prefix} Duration",
       "type": "timeseries"
     },
     {
@@ -321,12 +321,12 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 6,
+        "x": 0,
         "y": 9
       },
-      "id": 6,
+      "id": 4,
       "options": {
         "legend": {
           "calcs": [],
@@ -346,13 +346,105 @@
             "uid": "UIdwBsZ4z"
           },
           "editorMode": "code",
-          "expr": "(sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_sum{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval]))) / (sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\"}[$__rate_interval])))",
+          "expr": "sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\", status=~\"5..\"}[$__rate_interval]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "${uri_prefix} Duration",
+      "title": "${uri_prefix} Server Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "UIdwBsZ4z"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "UIdwBsZ4z"
+          },
+          "editorMode": "code",
+          "expr": "sum by(application,instance,job,method,uri) (rate(http_server_requests_seconds_count{job=\"Open VSX Registry input\", uri=~\"${uri_prefix:value}\", status=~\"4..\"}[$__rate_interval]))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "${uri_prefix} Client Errors",
       "type": "timeseries"
     }
   ],
@@ -364,8 +456,8 @@
       {
         "current": {
           "selected": true,
-          "text": "SitemapController",
-          "value": "/sitemap.xml"
+          "text": "RegistryAPI",
+          "value": "/api/.*"
         },
         "hide": 0,
         "includeAll": false,
@@ -374,7 +466,7 @@
         "name": "uri_prefix",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "RegistryAPI",
             "value": "/api/.*"
           },
@@ -394,7 +486,7 @@
             "value": "/admin/.*"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "SitemapController",
             "value": "/sitemap.xml"
           }
