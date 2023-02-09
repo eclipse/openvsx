@@ -3,7 +3,6 @@ import * as fs from "fs";
 import * as crypto from "crypto";
 import { exec } from "./utils/exec";
 import { downloadPublicKey } from "./utils/downloadPublicKey";
-import * as cp from "child_process";
 
 const SIGNED_ARCHIVE_NAME = "extension.sigzip";
 const HASHED_PACKAGE_NAME = "extension.vsix.hash";
