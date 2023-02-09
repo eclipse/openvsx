@@ -1,0 +1,27 @@
+{
+  "name": "ovsx-sign",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "EPL-2.0",
+  "scripts": {
+    "clean": "rimraf lib",
+    "build": "tsc -p ./tsconfig.json && yarn run lint && cp src/node-ovsx-sign lib/node-ovsx-sign",
+    "watch": "tsc -w -p ./tsconfig.json",
+    "lint": "eslint -c ../configs/eslintrc.json --ext .ts src",
+    "prepare": "yarn run clean && yarn run build",
+    "publish:next": "yarn publish --new-version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" --tag next --no-git-tag-version",
+    "publish:latest": "yarn publish --tag latest"
+  },
+  "dependencies": {
+    "commander": "^10.0.0",
+    "openssl-smime": "^1.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.28.0",
+    "rimraf": "^3.0.2",
+    "typescript": "3.8.3"
+  }
+}
