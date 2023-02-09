@@ -16,8 +16,7 @@
     "publish:latest": "yarn publish --tag latest"
   },
   "dependencies": {
-    "commander": "^10.0.0",
-    "openssl-smime": "^1.0.1"
+    "commander": "^10.0.0"
   },
   "devDependencies": {
     "eslint": "^8.28.0",

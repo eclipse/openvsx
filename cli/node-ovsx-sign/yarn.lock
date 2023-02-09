@@ -488,11 +488,6 @@ once@^1.3.0:
   dependencies:
     wrappy "1"
 
-openssl-smime@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/openssl-smime/-/openssl-smime-1.0.1.tgz#85cfe194508275e66e4a81eeab5b65fbc134e4af"
-  integrity sha512-iJthlrRdRu+Ix3d2C4tXFGeeB4HkFec5H2KNgQmo4lc3NhxZuP/BZziKginK/hyan80dgQmy2vqocsfRDvGJZQ==
-
 optionator@^0.9.1:
   version "0.9.1"
   resolved "https://registry.yarnpkg.com/optionator/-/optionator-0.9.1.tgz#4f236a6373dae0566a6d43e1326674f50c291499"

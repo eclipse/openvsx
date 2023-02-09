@@ -1,6 +1,11 @@
 import * as commander from "commander";
 import * as fs from "fs";
-import smime = require("openssl-smime");
+import * as crypto from "crypto";
+import { execSync } from "child_process";
+import { downloadPublicKey } from "./lib/downloadPublicKey";
+
+const SIGNED_ARCHIVE_NAME = "extension.sigzip";
+const HASHED_PACKAGE_NAME = "extension.vsix.hash";
 
 module.exports = function (argv: string[]): void {
   const program = new commander.Command();
@@ -9,40 +14,41 @@ module.exports = function (argv: string[]): void {
   const verifyCmd = program.command("verify");
   verifyCmd
     .description("Verify an extension package")
-    .option("-p, --extensionpackage <file>", "The extension file path.")
-    .option("-a, --signaturearchive <file>", "The signature archive file path.")
-    .action(async (options) => {
-      const { extensionpackage, signaturearchive } = options;
-      const extensionFile = await fs.promises.readFile(extensionpackage);
-      // openssl smime -verify -in signedfile.sigzip -CAfile public.pem
-      smime.smime(
-        "verify",
-        {
-          in: signaturearchive,
-          CAfile: "keys/public.pem",
-        },
-        extensionFile
-      );
+    .arguments("<extensionpackage> <signaturearchive>")
+    .action(async (extensionPackage, signatureArchive) => {
+      const extensionFile = await fs.promises.readFile(extensionPackage);
+
+      const publicKeyLocation = await downloadPublicKey();
+
+      const hashOfExtensionFile = crypto.createHash("sha256").update(extensionFile).digest("hex");
+      await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, hashOfExtensionFile);
+
+      const signatureHash = execSync(`openssl pkeyutl -verify -pubin -inkey ${publicKeyLocation} -sigfile ${signatureArchive} -in ./${HASHED_PACKAGE_NAME}`);
+
+      // Cleanup
+      await fs.promises.unlink(`./${HASHED_PACKAGE_NAME}`);
+
+      console.info(signatureHash.toString("utf8"));
     });
 
-    const signCmd = program.command("sign");
-    signCmd
-      .description("Sign an extension package")
-      .option("-p, --extensionpackage <file>", "The extension file path.")
-      .option("-k, --privatekey <file>", "The private key to sign the file with.")
-      .action(async (options) => {
-        const { extensionpackage, privatekey } = options;
-        const extensionFile = await fs.promises.readFile(extensionpackage);
-        const signature = await smime.smime(
-          "sign",
-          {
-            in: extensionpackage,
-            signer: "keys/public.pem",
-            inkey: privatekey,
-          },
-          extensionFile
-        );
-         await fs.promises.writeFile("./extension.sigzip", signature);
+  const signCmd = program.command("sign");
+  signCmd
+    .description("Sign an extension package")
+    .arguments("<extensionpackage> <privatekey>")
+    .action(async (extensionPackage, privateKey) => {
+      const extensionFile = await fs.promises.readFile(extensionPackage);
+
+      const extensionPackageHash = crypto.createHash("sha256").update(extensionFile).digest("hex");
+      await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, extensionPackageHash);
+
+      const signature = execSync(`openssl pkeyutl -sign -inkey ${privateKey} -in ./${HASHED_PACKAGE_NAME}`);
+
+      // Cleanup
+      await fs.promises.unlink(`./${HASHED_PACKAGE_NAME}`);
+
+      await fs.promises.writeFile(`./${SIGNED_ARCHIVE_NAME}`, signature);
+
+      console.info(`Signature file created at ./${SIGNED_ARCHIVE_NAME}`);
     });
 
   program.parse(argv);
