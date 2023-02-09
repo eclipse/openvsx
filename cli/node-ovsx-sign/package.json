@@ -2,7 +2,7 @@
   "name": "ovsx-sign",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "keywords": [],
   "author": "",
   "license": "EPL-2.0",
