@@ -1,8 +1,9 @@
 import * as commander from "commander";
 import * as fs from "fs";
 import * as crypto from "crypto";
-import { execSync } from "child_process";
-import { downloadPublicKey } from "./lib/downloadPublicKey";
+import { exec } from "./utils/exec";
+import { downloadPublicKey } from "./utils/downloadPublicKey";
+import * as cp from "child_process";
 
 const SIGNED_ARCHIVE_NAME = "extension.sigzip";
 const HASHED_PACKAGE_NAME = "extension.vsix.hash";
@@ -23,12 +24,15 @@ module.exports = function (argv: string[]): void {
       const hashOfExtensionFile = crypto.createHash("sha256").update(extensionFile).digest("hex");
       await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, hashOfExtensionFile);
 
-      const signatureHash = execSync(`openssl pkeyutl -verify -pubin -inkey ${publicKeyLocation} -sigfile ${signatureArchive} -in ./${HASHED_PACKAGE_NAME}`);
+      const signatureHash = await exec(`openssl pkeyutl -verify -pubin -inkey ${publicKeyLocation} -sigfile ${signatureArchive} -in ./${HASHED_PACKAGE_NAME}`, {}).catch((err) => {
+        console.error(err);
+        process.exit(err.code || 1);
+      });
 
       // Cleanup
       await fs.promises.unlink(`./${HASHED_PACKAGE_NAME}`);
 
-      console.info(signatureHash.toString("utf8"));
+      console.info(signatureHash);
     });
 
   const signCmd = program.command("sign");
@@ -41,7 +45,7 @@ module.exports = function (argv: string[]): void {
       const extensionPackageHash = crypto.createHash("sha256").update(extensionFile).digest("hex");
       await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, extensionPackageHash);
 
-      const signature = execSync(`openssl pkeyutl -sign -inkey ${privateKey} -in ./${HASHED_PACKAGE_NAME}`);
+      const signature = await exec(`openssl pkeyutl -sign -inkey ${privateKey} -in ./${HASHED_PACKAGE_NAME}`, {});
 
       // Cleanup
       await fs.promises.unlink(`./${HASHED_PACKAGE_NAME}`);
