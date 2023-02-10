@@ -11,7 +11,7 @@
     "src"
   ],
   "bin": {
-      "ovsx": "lib/node-ovsx-sign"
+      "node-ovsx-sign": "lib/node-ovsx-sign"
   },
   "engines": {
       "node": ">= 14"
