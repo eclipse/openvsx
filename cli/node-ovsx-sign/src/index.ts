@@ -11,9 +11,9 @@ export class ExtensionSignatureVerificationError extends Error {
   code: number;
   didExecute: boolean;
   constructor(code: number, didExecute: boolean) {
-      super();
-      this.code = code;
-      this.didExecute = didExecute;
+    super();
+    this.code = code;
+    this.didExecute = didExecute;
   }
 }
 
@@ -22,11 +22,22 @@ export class ExtensionSignatureVerificationError extends Error {
  * @param vsixFilePath The extension file path.
  * @param signatureArchiveFilePath The signature archive file path.
  * @throws { ExtensionSignatureVerificationError } An error with a code indicating the validity, integrity, or trust issue
-	 * found during verification or a more fundamental issue (e.g.:  a required dependency was not found).
+   * found during verification or a more fundamental issue (e.g.:  a required dependency was not found).
  */
-export const verify = async (vsixFilePath: string, signatureArchiveFilePath: string): Promise<boolean> => {
+export const verify = async (vsixFilePath: string, signatureArchiveFilePath: string, options?: {
+  publicKey?: string;
+}): Promise<boolean> => {
+
+  if (!fs.existsSync(vsixFilePath)) {
+    throw new ExtensionSignatureVerificationError(3, false);
+  }
+
+  if (!fs.existsSync(signatureArchiveFilePath)) {
+    throw new ExtensionSignatureVerificationError(6, false);
+  }
+
   const extensionFile = await fs.promises.readFile(vsixFilePath);
-  const publicKeyLocation = await downloadPublicKey();
+  const publicKeyLocation = options?.publicKey || await downloadPublicKey();
 
   const hashOfExtensionFile = crypto.createHash("sha256").update(extensionFile).digest("hex");
   await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, hashOfExtensionFile);
@@ -74,15 +85,15 @@ export default function (argv: string[]): void {
   verifyCmd
     .description("Verify an extension package")
     .arguments("<extension-package> <signature-archive>")
-    // todo: add argument for a custom public key
-    .action((vsixFilePath: string, signatureArchiveFilePath: string) => {
-      verify(vsixFilePath, signatureArchiveFilePath);
+    .option("-p, --public-key <public-key>", "The path to the public key to use for verification")
+    .action((vsixFilePath: string, signatureArchiveFilePath: string, { publicKey }) => {
+      verify(vsixFilePath, signatureArchiveFilePath, { publicKey });
     });
 
   const signCmd = program.command("sign");
   signCmd
     .description("Sign an extension package")
-    .arguments("<extensionpackage> <privatekey>")
+    .arguments("<extension-package> <private-key>")
     .action(sign);
 
   program.parse(argv);
