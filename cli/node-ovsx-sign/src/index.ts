@@ -31,15 +31,18 @@ export const verify = async (vsixFilePath: string, signatureArchiveFilePath: str
   const hashOfExtensionFile = crypto.createHash("sha256").update(extensionFile).digest("hex");
   await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, hashOfExtensionFile);
 
-  const signatureHash = await exec(`openssl pkeyutl -verify -pubin -inkey ${publicKeyLocation} -sigfile ${signatureArchiveFilePath} -in ./${HASHED_PACKAGE_NAME}`, {}).catch((err) => {
+  await exec(`openssl pkeyutl -verify -pubin -inkey ${publicKeyLocation} -sigfile ${signatureArchiveFilePath} -in ./${HASHED_PACKAGE_NAME}`, {}).catch((err) => {
     console.error(err);
-    throw new ExtensionSignatureVerificationError(1, true);
+    if (err.message.includes("Can't open signature file")) {
+      throw new ExtensionSignatureVerificationError(7, true);
+    } else if (err.message.includes("Signature Verification Failure")) {
+      throw new ExtensionSignatureVerificationError(102, true);
+    }
+    throw new ExtensionSignatureVerificationError(110, true);
   });
 
   // Cleanup
   await fs.promises.unlink(`./${HASHED_PACKAGE_NAME}`);
-
-  console.info(signatureHash.stdout);
 
   return true;
 };
@@ -70,7 +73,7 @@ export default function (argv: string[]): void {
   const verifyCmd = program.command("verify");
   verifyCmd
     .description("Verify an extension package")
-    .arguments("<extension package> <signature archive>")
+    .arguments("<extension-package> <signature-archive>")
     .action((vsixFilePath: string, signatureArchiveFilePath: string) => {
       verify(vsixFilePath, signatureArchiveFilePath);
     });
