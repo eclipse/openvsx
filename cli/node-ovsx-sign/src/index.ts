@@ -7,49 +7,58 @@ import { downloadPublicKey } from "./utils/downloadPublicKey";
 const SIGNED_ARCHIVE_NAME = "extension.sigzip";
 const HASHED_PACKAGE_NAME = "extension.vsix.hash";
 
+class ExtensionSignatureVerificationError extends Error {
+  code: number;
+  didExecute: boolean;
+  constructor(code: number, didExecute: boolean) {
+      super();
+      this.code = code;
+      this.didExecute = didExecute;
+  }
+}
+
 /**
  * Verify an extension package against a signature archive
- * @param extensionPackage the path to the `.vsix` file of the extension
- * @param signatureArchive a `.sigzip` file containing the signature of the extension
+ * @param vsixFilePath The extension file path.
+ * @param signatureArchiveFilePath The signature archive file path.
+ * @throws { ExtensionSignatureVerificationError } An error with a code indicating the validity, integrity, or trust issue
+	 * found during verification or a more fundamental issue (e.g.:  a required dependency was not found).
  */
-export const verify = async (extensionPackage: string, signatureArchive: string): Promise<boolean> => {
-  const extensionFile = await fs.promises.readFile(extensionPackage);
-  let didSucceed = true;
+export const verify = async (vsixFilePath: string, signatureArchiveFilePath: string): Promise<boolean> => {
+  const extensionFile = await fs.promises.readFile(vsixFilePath);
   const publicKeyLocation = await downloadPublicKey();
 
   const hashOfExtensionFile = crypto.createHash("sha256").update(extensionFile).digest("hex");
   await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, hashOfExtensionFile);
 
-  const signatureHash = await exec(`openssl pkeyutl -verify -pubin -inkey ${publicKeyLocation} -sigfile ${signatureArchive} -in ./${HASHED_PACKAGE_NAME}`, {}).catch((err) => {
+  const signatureHash = await exec(`openssl pkeyutl -verify -pubin -inkey ${publicKeyLocation} -sigfile ${signatureArchiveFilePath} -in ./${HASHED_PACKAGE_NAME}`, {}).catch((err) => {
     console.error(err);
-    didSucceed = false;
+    throw new ExtensionSignatureVerificationError(1, true);
   });
 
   // Cleanup
   await fs.promises.unlink(`./${HASHED_PACKAGE_NAME}`);
 
-  console.info(signatureHash);
+  console.info(signatureHash.stdout);
 
-  return didSucceed;
+  return true;
 };
 
 /**
  * Sign an extension package. The signature is saved to `extension.sigzip`
- * @param extensionPackage the path to the `.vsix` file of the extension
- * @param privateKey the path to the private key used to sign the extension
+ * @param vsixFilePath the path to the `.vsix` file of the extension
+ * @param privateKeyFilePath the path to the private key used to sign the extension
  */
-export const sign = async (extensionPackage: string, privateKey: string): Promise<void> => {
-  const extensionFile = await fs.promises.readFile(extensionPackage);
+export const sign = async (vsixFilePath: string, privateKeyFilePath: string): Promise<void> => {
+  const extensionFile = await fs.promises.readFile(vsixFilePath);
 
   const extensionPackageHash = crypto.createHash("sha256").update(extensionFile).digest("hex");
   await fs.promises.writeFile(`./${HASHED_PACKAGE_NAME}`, extensionPackageHash);
 
-  const signature = await exec(`openssl pkeyutl -sign -inkey ${privateKey} -in ./${HASHED_PACKAGE_NAME}`, {});
+  await exec(`openssl pkeyutl -sign -inkey ${privateKeyFilePath} -in ./${HASHED_PACKAGE_NAME} -out ${SIGNED_ARCHIVE_NAME}`, {});
 
   // Cleanup
   await fs.promises.unlink(`./${HASHED_PACKAGE_NAME}`);
-
-  await fs.promises.writeFile(`./${SIGNED_ARCHIVE_NAME}`, signature);
 
   console.info(`Signature file created at ./${SIGNED_ARCHIVE_NAME}`);
 };
@@ -61,8 +70,10 @@ export default function (argv: string[]): void {
   const verifyCmd = program.command("verify");
   verifyCmd
     .description("Verify an extension package")
-    .arguments("<extensionpackage> <signaturearchive>")
-    .action((extensionPackage: string, signatureArchive: string) => { verify(extensionPackage, signatureArchive) });
+    .arguments("<extension package> <signature archive>")
+    .action((vsixFilePath: string, signatureArchiveFilePath: string) => {
+      verify(vsixFilePath, signatureArchiveFilePath);
+    });
 
   const signCmd = program.command("sign");
   signCmd
@@ -75,5 +86,5 @@ export default function (argv: string[]): void {
   if (process.argv.length <= 2) {
     program.help();
   }
-};
+}
 
