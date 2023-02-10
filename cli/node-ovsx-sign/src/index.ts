@@ -7,7 +7,7 @@ import { downloadPublicKey } from "./utils/downloadPublicKey";
 const SIGNED_ARCHIVE_NAME = "extension.sigzip";
 const HASHED_PACKAGE_NAME = "extension.vsix.hash";
 
-class ExtensionSignatureVerificationError extends Error {
+export class ExtensionSignatureVerificationError extends Error {
   code: number;
   didExecute: boolean;
   constructor(code: number, didExecute: boolean) {
