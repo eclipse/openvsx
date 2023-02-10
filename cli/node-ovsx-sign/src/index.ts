@@ -62,7 +62,9 @@ export default function (argv: string[]): void {
   verifyCmd
     .description("Verify an extension package")
     .arguments("<extensionpackage> <signaturearchive>")
-    .action((extensionPackage: string, signatureArchive: string) => { verify(extensionPackage, signatureArchive) });
+    .action((extensionPackage: string, signatureArchive: string) => {
+      verify(extensionPackage, signatureArchive);
+    });
 
   const signCmd = program.command("sign");
   signCmd
@@ -75,5 +77,5 @@ export default function (argv: string[]): void {
   if (process.argv.length <= 2) {
     program.help();
   }
-};
+}
 
