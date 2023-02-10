@@ -19,6 +19,7 @@
     "commander": "^10.0.0"
   },
   "devDependencies": {
+    "@types/node": "^10.17.60",
     "eslint": "^8.28.0",
     "rimraf": "^3.0.2",
     "typescript": "3.8.3"
