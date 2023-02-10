@@ -74,6 +74,7 @@ export default function (argv: string[]): void {
   verifyCmd
     .description("Verify an extension package")
     .arguments("<extension-package> <signature-archive>")
+    // todo: add argument for a custom public key
     .action((vsixFilePath: string, signatureArchiveFilePath: string) => {
       verify(vsixFilePath, signatureArchiveFilePath);
     });
