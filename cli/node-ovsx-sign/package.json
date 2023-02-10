@@ -1,11 +1,21 @@
 {
-  "name": "ovsx-sign",
-  "version": "1.0.0",
-  "description": "",
-  "main": "lib/index.js",
+  "name": "node-ovsx-sign",
+  "version": "0.1.0",
+  "description": "A package for signing and verifying VS Code extensions",
+  "main": "lib/index",
+  "types": "lib/index",
   "keywords": [],
-  "author": "",
   "license": "EPL-2.0",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "bin": {
+      "ovsx": "lib/node-ovsx-sign"
+  },
+  "engines": {
+      "node": ">= 14"
+  },
   "scripts": {
     "clean": "rimraf lib",
     "build": "tsc -p ./tsconfig.json && yarn run lint && cp src/node-ovsx-sign lib/node-ovsx-sign",
