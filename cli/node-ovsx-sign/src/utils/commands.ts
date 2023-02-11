@@ -15,7 +15,7 @@ export const sign = async (vsixFilePath: string, privateKeyFilePath: string, opt
 }): Promise<void> => {
     const extensionFile = await fs.promises.readFile(vsixFilePath);
     const privateKey = await loadPrivateKey(privateKeyFilePath);
-    const outputPath = options?.output ?? `./${SIGNED_ARCHIVE_NAME}`
+    const outputPath = options?.output ?? `./${SIGNED_ARCHIVE_NAME}`;
 
     const signature = await signFile(extensionFile, privateKey);
     await fs.promises.writeFile(outputPath, signature);

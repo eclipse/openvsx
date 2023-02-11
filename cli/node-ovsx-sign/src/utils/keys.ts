@@ -5,11 +5,11 @@ import * as path from "path";
 
 export const loadPrivateKey = (keyPath: string): Promise<string> => {
   return fs.promises.readFile(keyPath, 'utf8');
-}
+};
 
 export const loadPublicKey = (keyPath: string): Promise<string> => {
   return fs.promises.readFile(keyPath, 'utf8');
-}
+};
 
 export const downloadPublicKey = async (): Promise<string> => {
     // Todo: Replace this with the real URL
