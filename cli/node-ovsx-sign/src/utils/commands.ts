@@ -1,20 +1,9 @@
 import * as fs from "fs";
+import { ExtensionSignatureVerificationError } from "./errors";
 import { downloadPublicKey, loadPrivateKey, loadPublicKey } from './keys';
 import { signFile } from './sign';
+import { SIGNED_ARCHIVE_NAME } from "./constants";
 import { verifySignature } from "./verify";
-
-export const SIGNED_ARCHIVE_NAME = "extension.sigzip";
-export const HASHED_PACKAGE_NAME = "extension.vsix.hash";
-
-export class ExtensionSignatureVerificationError extends Error {
-    code: number;
-    didExecute: boolean;
-    constructor(code: number, didExecute: boolean) {
-        super();
-        this.code = code;
-        this.didExecute = didExecute;
-    }
-}
 
 /**
  * Sign an extension package. The signature is saved to `extension.sigzip`
