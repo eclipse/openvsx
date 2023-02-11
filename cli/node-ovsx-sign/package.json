@@ -1,6 +1,6 @@
 {
   "name": "node-ovsx-sign",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "A package for signing and verifying VS Code extensions",
   "main": "lib/index",
   "types": "lib/index",
@@ -11,10 +11,10 @@
     "src"
   ],
   "bin": {
-      "node-ovsx-sign": "lib/node-ovsx-sign"
+    "node-ovsx-sign": "lib/node-ovsx-sign"
   },
   "engines": {
-      "node": ">= 14"
+    "node": ">= 14"
   },
   "scripts": {
     "clean": "rimraf lib",
