@@ -37,3 +37,4 @@ export default function (argv: string[]): void {
   }
 }
 
+export { sign, verify };
