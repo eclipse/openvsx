@@ -20,8 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
 
@@ -53,24 +51,13 @@ public class ExtensionJooqRepository {
         return record != null ? toExtension(record) : null;
     }
 
-    public Map<Long, Integer> findAllActiveReviewCountsById(Collection<Long> ids) {
-        var count = DSL.count(EXTENSION_REVIEW.ID).as("count");
-        return dsl.select(EXTENSION_REVIEW.EXTENSION_ID, count)
-                .from(EXTENSION_REVIEW)
-                .where(EXTENSION_REVIEW.ACTIVE.eq(true))
-                .and(EXTENSION_REVIEW.EXTENSION_ID.in(ids))
-                .groupBy(EXTENSION_REVIEW.EXTENSION_ID)
-                .fetch()
-                .stream()
-                .collect(Collectors.toMap(r -> r.get(EXTENSION_REVIEW.EXTENSION_ID), r -> r.get(count)));
-    }
-
     private SelectConditionStep<?> findAllActive() {
         return dsl.select(
                     EXTENSION.ID,
                     EXTENSION.PUBLIC_ID,
                     EXTENSION.NAME,
                     EXTENSION.AVERAGE_RATING,
+                    EXTENSION.REVIEW_COUNT,
                     EXTENSION.DOWNLOAD_COUNT,
                     EXTENSION.PUBLISHED_DATE,
                     EXTENSION.LAST_UPDATED_DATE,
@@ -93,6 +80,7 @@ public class ExtensionJooqRepository {
         extension.setPublicId(record.get(EXTENSION.PUBLIC_ID));
         extension.setName(record.get(EXTENSION.NAME));
         extension.setAverageRating(record.get(EXTENSION.AVERAGE_RATING));
+        extension.setReviewCount(record.get(EXTENSION.REVIEW_COUNT));
         extension.setDownloadCount(record.get(EXTENSION.DOWNLOAD_COUNT));
         extension.setPublishedDate(record.get(EXTENSION.PUBLISHED_DATE));
         extension.setLastUpdatedDate(record.get(EXTENSION.LAST_UPDATED_DATE));

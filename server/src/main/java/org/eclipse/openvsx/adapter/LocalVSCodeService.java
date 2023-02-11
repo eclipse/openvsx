@@ -190,14 +190,6 @@ public class LocalVSCodeService implements IVSCodeService {
             fileResources = Collections.emptyMap();
         }
 
-        Map<Long, Integer> activeReviewCounts;
-        if(test(flags, FLAG_INCLUDE_STATISTICS) && !extensionsList.isEmpty()) {
-            var ids = extensionsList.stream().map(Extension::getId).collect(Collectors.toList());
-            activeReviewCounts = repositories.findActiveReviewCountsByExtensionId(ids);
-        } else {
-            activeReviewCounts = Collections.emptyMap();
-        }
-
         var latestVersions = allActiveExtensionVersions.stream()
                 .collect(Collectors.groupingBy(ev -> ev.getExtension().getId()))
                 .values()
@@ -208,7 +200,7 @@ public class LocalVSCodeService implements IVSCodeService {
         var extensionQueryResults = new ArrayList<ExtensionQueryResult.Extension>();
         for(var extension : extensionsList) {
             var latest = latestVersions.get(extension.getId());
-            var queryExt = toQueryExtension(extension, latest, activeReviewCounts, flags);
+            var queryExt = toQueryExtension(extension, latest, flags);
             queryExt.versions = extensionVersionsMap.getOrDefault(extension.getId(), Collections.emptyList()).stream()
                     .map(extVer -> toQueryVersion(extVer, fileResources, flags))
                     .collect(Collectors.toList());
@@ -477,7 +469,7 @@ public class LocalVSCodeService implements IVSCodeService {
                 .body(json.getBytes(StandardCharsets.UTF_8));
     }
 
-    private ExtensionQueryResult.Extension toQueryExtension(Extension extension, ExtensionVersion latest, Map<Long, Integer> activeReviewCounts, int flags) {
+    private ExtensionQueryResult.Extension toQueryExtension(Extension extension, ExtensionVersion latest, int flags) {
         var namespace = extension.getNamespace();
 
         var queryExt = new ExtensionQueryResult.Extension();
@@ -510,7 +502,7 @@ public class LocalVSCodeService implements IVSCodeService {
             }
             var ratingCountStat = new ExtensionQueryResult.Statistic();
             ratingCountStat.statisticName = STAT_RATING_COUNT;
-            ratingCountStat.value = activeReviewCounts.getOrDefault(extension.getId(), 0);
+            ratingCountStat.value = Optional.ofNullable(extension.getReviewCount()).orElse(0L);
             queryExt.statistics.add(ratingCountStat);
         }
 

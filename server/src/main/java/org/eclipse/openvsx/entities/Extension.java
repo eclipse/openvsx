@@ -16,7 +16,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.persistence.*;
-import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.search.ExtensionSearch;
 
@@ -46,6 +45,8 @@ public class Extension implements Serializable {
 
     Double averageRating;
 
+    Long reviewCount;
+
     int downloadCount;
 
     LocalDateTime publishedDate;
@@ -61,7 +62,6 @@ public class Extension implements Serializable {
         search.name = this.getName();
         search.namespace = this.getNamespace().getName();
         search.extensionId = search.namespace + "." + search.name;
-        search.averageRating = this.getAverageRating();
         search.downloadCount = this.getDownloadCount();
         search.targetPlatforms = this.getVersions().stream()
                 .map(ExtensionVersion::getTargetPlatform)
@@ -125,6 +125,14 @@ public class Extension implements Serializable {
 		this.averageRating = averageRating;
     }
 
+    public Long getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(Long reviewCount) {
+        this.reviewCount = reviewCount;
+    }
+
     public int getDownloadCount() {
         return downloadCount;
     }
@@ -170,12 +178,13 @@ public class Extension implements Serializable {
                 && Objects.equals(namespace, extension.namespace)
                 && Objects.equals(versions, extension.versions)
                 && Objects.equals(averageRating, extension.averageRating)
+                && Objects.equals(reviewCount, extension.reviewCount)
                 && Objects.equals(publishedDate, extension.publishedDate)
                 && Objects.equals(lastUpdatedDate, extension.lastUpdatedDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, publicId, name, namespace, versions, active, averageRating, downloadCount, publishedDate, lastUpdatedDate);
+        return Objects.hash(id, publicId, name, namespace, versions, active, averageRating, reviewCount, downloadCount, publishedDate, lastUpdatedDate);
     }
 }

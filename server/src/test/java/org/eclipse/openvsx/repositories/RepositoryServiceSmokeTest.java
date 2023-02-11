@@ -151,7 +151,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.topNamespaceExtensions(NOW, 1),
                 () -> repositories.topNamespaceExtensionVersions(NOW, 1),
                 () -> repositories.findFileResourcesByExtensionVersionIdAndType(LONG_LIST, STRING_LIST),
-                () -> repositories.findActiveReviewCountsByExtensionId(LONG_LIST),
                 () -> repositories.findActiveExtensionVersionsByVersion("version", "extensionName", "namespaceName"),
                 () -> repositories.findResourceFileResources(1L, "prefix"),
                 () -> repositories.findActiveExtensionVersions(LONG_LIST, "targetPlatform"),
@@ -164,7 +163,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveExtensionVersionsByExtensionName("targetPlatform", "extensionName", "namespaceName"),
                 () -> repositories.findActiveExtensionVersionsByExtensionName("targetPlatform", "extensionName"),
                 () -> repositories.findActiveExtensionVersionsByNamespacePublicId("targetPlatform", "namespacePublicId"),
-                () -> repositories.findAllNotMatchingByExtensionId(STRING_LIST)
+                () -> repositories.findAllNotMatchingByExtensionId(STRING_LIST),
+                () -> repositories.getAverageReviewRating(null),
+                () -> repositories.getAverageReviewRating()
         );
 
         // check that we did not miss anything

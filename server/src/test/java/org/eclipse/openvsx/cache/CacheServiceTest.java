@@ -16,8 +16,10 @@ import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ReviewJson;
+import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,8 +45,7 @@ import java.util.List;
 import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 import static org.eclipse.openvsx.entities.FileResource.STORAGE_DB;
-import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -67,6 +68,9 @@ public class CacheServiceTest {
 
     @Autowired
     EntityManager entityManager;
+
+    @Autowired
+    RepositoryService repositories;
 
     @Test
     @Transactional
@@ -270,6 +274,31 @@ public class CacheServiceTest {
 
         var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
         assertEquals(json, cachedJson);
+    }
+
+    @Test
+    @Transactional
+    public void testAverageReviewRating() {
+        var user = insertAdmin();
+        var extVersion = insertExtensionVersion();
+        // no reviews in database
+        assertEquals(0L, repositories.getAverageReviewRating());
+
+        var review = new ExtensionReview();
+        review.setRating(3);
+        review.setActive(true);
+        review.setExtension(extVersion.getExtension());
+        review.setTimestamp(LocalDateTime.now());
+        review.setUser(user);
+        entityManager.persist(review);
+
+        // returns cached value
+        assertEquals(0L, repositories.getAverageReviewRating());
+
+        cache.getCache(CacheService.CACHE_AVERAGE_REVIEW_RATING).clear();
+
+        // returns new value from database
+        assertEquals(3L, repositories.getAverageReviewRating());
     }
 
     private void setLoggedInUser(UserData user) {

@@ -29,6 +29,7 @@ public class CacheService {
     public static final String CACHE_EXTENSION_JSON = "extension.json";
     public static final String CACHE_LATEST_EXTENSION_VERSION = "latest.extension.version";
     public static final String CACHE_NAMESPACE_DETAILS_JSON = "namespace.details.json";
+    public static final String CACHE_AVERAGE_REVIEW_RATING = "average.review.rating";
 
     public static final String GENERATOR_EXTENSION_JSON = "extensionJsonCacheKeyGenerator";
     public static final String GENERATOR_LATEST_EXTENSION_VERSION = "latestExtensionVersionCacheKeyGenerator";
@@ -82,8 +83,10 @@ public class CacheService {
 
         var namespaceName = extension.getNamespace().getName();
         var extensionName = extension.getName();
+        var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
+        targetPlatforms.add("null");
         for(var version : versions) {
-            for(var targetPlatform : TargetPlatform.TARGET_PLATFORM_NAMES) {
+            for(var targetPlatform : targetPlatforms) {
                 cache.evictIfPresent(extensionJsonCacheKey.generate(namespaceName, extensionName, targetPlatform, version));
             }
         }

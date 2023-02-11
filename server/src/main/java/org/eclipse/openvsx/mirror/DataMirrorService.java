@@ -208,6 +208,7 @@ public class DataMirrorService {
         var extension = repositories.findExtension(extensionName, namespaceName);
         extension.setDownloadCount(latest.downloadCount);
         extension.setAverageRating(latest.averageRating);
+        extension.setReviewCount(latest.reviewCount);
 
         var remoteReviews = upstream.getReviews(namespaceName, extensionName);
         var localReviews = repositories.findAllReviews(extension)

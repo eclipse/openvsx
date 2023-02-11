@@ -16,7 +16,6 @@ import io.gatling.core.structure.ScenarioBuilder
 import io.gatling.http.Predef._
 
 import java.nio.file.Files
-import scala.::
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
 import scala.reflect.io.File
@@ -31,7 +30,7 @@ object Scenarios {
   private def headers(): Map[String,String] = {
     var headers: Map[String,String] = Map()
     if(conf.hasPath("auth")) {
-      headers += "Authorization" -> conf.getString("auth");
+      headers += "Authorization" -> conf.getString("auth")
     }
 
     headers
@@ -190,6 +189,17 @@ object Scenarios {
         feed(csv("namespaces.csv").circular)
           .exec(http("RegistryAPI.getNamespace")
             .get("""/api/${namespace}""")
+            .headers(headers())
+            .check(status.is(200)))
+      }
+  }
+
+  def getNamespaceDetailsScenario(): ScenarioBuilder = {
+    scenario("RegistryAPI: Get Namespace Details")
+      .repeat(1000) {
+        feed(csv("namespaces.csv").circular)
+          .exec(http("RegistryAPI.getNamespaceDetails")
+            .get("""/api/${namespace}/details""")
             .headers(headers())
             .check(status.is(200)))
       }

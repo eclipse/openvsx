@@ -658,8 +658,6 @@ public class VSCodeAPITest {
                 .thenReturn(results);
 
         var ids = List.of(extension.getId());
-        Mockito.when(repositories.findActiveReviewCountsByExtensionId(ids))
-                .thenReturn(Map.of(extension.getId(), 10));
         Mockito.when(repositories.findActiveExtension(extension.getName(), extension.getNamespace().getName()))
                 .thenReturn(extension);
 
@@ -678,6 +676,7 @@ public class VSCodeAPITest {
             extension.setPublicId("test-1");
             extension.setName("vscode-yaml");
             extension.setAverageRating(3.0);
+            extension.setReviewCount(10L);
             extension.setDownloadCount(100);
             extension.setPublishedDate(LocalDateTime.parse("1999-12-01T09:00"));
             extension.setLastUpdatedDate(LocalDateTime.parse("2000-01-01T10:00"));
@@ -800,8 +799,6 @@ public class VSCodeAPITest {
                 .thenReturn(Streamable.of(extVersion));
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0L);
-        Mockito.when(repositories.countActiveReviews(extension))
-                .thenReturn(10L);
         var extensionFile = new FileResource();
         extensionFile.setExtension(extVersion);
         extensionFile.setName("redhat.vscode-yaml-0.5.2.vsix");

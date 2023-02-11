@@ -53,6 +53,7 @@ export interface SearchEntry {
         engines?: { [engine: string]: string };
     }[];
     averageRating?: number;
+    reviewCount?: number;
     downloadCount?: number;
     displayName?: string;
     description?: string;
@@ -235,5 +236,5 @@ export interface TargetPlatformVersion {
 }
 
 export type MembershipRole = 'contributor' | 'owner';
-export type SortBy = 'relevance' | 'timestamp' | 'averageRating' | 'downloadCount';
+export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';
