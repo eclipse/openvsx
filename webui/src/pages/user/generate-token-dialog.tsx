@@ -45,15 +45,16 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     }
 
     protected handleOpenDialog = () => {
-        this.setState({ open: true, posted: false });
-    };
-
-    protected handleCancel = () => {
-        this.setState({
-            open: false,
+        this.setState({ 
+            open: true, 
+            posted: false,
             description: '',
             token: undefined
         });
+    };
+
+    protected handleClose = () => {
+        this.setState({ open: false });
     };
 
     protected handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +84,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     };
 
     handleEnter = (e: KeyboardEvent) => {
-        if (e.code ===  'Enter' && this.state.open) {
+        if (e.code === 'Enter' && this.state.open && !this.state.token) {
             this.handleGenerate();
         }
     };
@@ -100,7 +101,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     render() {
         return <React.Fragment>
             <Button variant='outlined' onClick={this.handleOpenDialog}>Generate new token</Button>
-            <Dialog open={this.state.open} onClose={this.handleCancel}>
+            <Dialog open={this.state.open} onClose={this.handleClose}>
                 <DialogTitle>Generate new token</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
@@ -140,10 +141,12 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                         <CopyToClipboard tooltipProps={{ placement: 'left' }}>
                             {({ copy }) => (
                                 <Button
+                                    autoFocus
                                     variant='contained'
                                     color='secondary'
                                     onClick={() => {
                                         copy(this.state.token!.value);
+                                        setTimeout(this.handleClose, 700);
                                     }}
                                 >
                                     Copy
@@ -151,7 +154,7 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
                             )}
                         </CopyToClipboard> : null
                     }
-                    <Button onClick={this.handleCancel} color='secondary'>
+                    <Button onClick={this.handleClose} color='secondary'>
                         {this.state.token ? 'Close' : 'Cancel'}
                     </Button>
                     {
