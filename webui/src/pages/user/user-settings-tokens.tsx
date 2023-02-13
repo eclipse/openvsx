@@ -144,7 +144,8 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                         <Button
                             variant='outlined'
                             onClick={this.handleDeleteAll}
-                            classes={{ root: this.props.classes.deleteBtn }}>
+                            classes={{ root: this.props.classes.deleteBtn }}
+                            disabled={this.state.loading}>
                             Delete all
                         </Button>
                     </Box>
@@ -178,7 +179,8 @@ class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComp
                 <Button
                     variant='outlined'
                     onClick={() => this.handleDelete(token)}
-                    classes={{ root: this.props.classes.deleteBtn }}>
+                    classes={{ root: this.props.classes.deleteBtn }}
+                    disabled={this.state.loading}>
                     Delete
                 </Button>
             </Box>
