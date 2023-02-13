@@ -71,7 +71,7 @@ export const StyledInput: FunctionComponent<InputProps> = props => {
             placeholder={props.placeholder}
             onChange={onChangeInputValue}
             onKeyPress={(e: React.KeyboardEvent) => {
-                if (e.charCode === 13 && props.onSubmit) {
+                if (e.key === 'Enter' && props.onSubmit) {
                     props.onSubmit(inputValue);
                 }
             }}
