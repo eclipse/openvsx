@@ -72,8 +72,10 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
                 className={classes.input}
                 placeholder={props.placeholder}
                 id='search-input'
+                type='search'
+                inputMode='search'
                 onKeyPress={(e: React.KeyboardEvent) => {
-                    if (e.charCode === 13 && props.onSearchSubmit) {
+                    if (e.key === 'Enter' && props.onSearchSubmit) {
                         props.onSearchSubmit(props.searchQuery || '');
                     }
                 }}

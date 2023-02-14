@@ -217,6 +217,13 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
                                 <Box
                                     className={classes.resultSortOrder}
                                     title={this.state.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            this.handleSortOrderChange();
+                                        }
+                                    }}
                                     onClick={this.handleSortOrderChange}>
                                     {
                                         this.state.sortOrder === 'asc' ?
