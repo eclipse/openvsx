@@ -9,7 +9,9 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import org.eclipse.openvsx.UpstreamProxyService;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -23,7 +25,9 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +38,9 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
     @Autowired
     RestTemplate restTemplate;
+
+    @Autowired(required = false)
+    UpstreamProxyService proxy;
 
     @Autowired
     RestTemplate nonRedirectingRestTemplate;
@@ -58,7 +65,8 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var statusCode = response.getStatusCode();
         if(statusCode.is2xxSuccessful()) {
-            return response.getBody();
+            var json = response.getBody();
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             logger.error("POST {}: {}", urlTemplate, response);
@@ -99,7 +107,23 @@ public class UpstreamVSCodeService implements IVSCodeService {
             headers.addAll(response.getHeaders());
             headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
             headers.remove(HttpHeaders.VARY);
-            return new ResponseEntity<>(response.getBody(), headers, response.getStatusCode());
+
+            if(proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
+                try {
+                    var mapper = new ObjectMapper();
+                    var json = mapper.readTree(response.getBody());
+                    json = proxy.rewriteUrls(json);
+                    response = ResponseEntity.status(statusCode)
+                            .headers(headers)
+                            .body(mapper.writeValueAsString(json).getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    logger.error("Failed to read/write JSON", e);
+                }
+            } else {
+                response = new ResponseEntity<>(response.getBody(), headers, response.getStatusCode());
+            }
+
+            return response;
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -129,7 +153,12 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
-            return response.getHeaders().getLocation().toString();
+            var location = response.getHeaders().getLocation();
+            if(proxy != null) {
+                location = proxy.rewriteUrl(location);
+            }
+
+            return location.toString();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -154,7 +183,12 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
-            return response.getHeaders().getLocation().toString();
+            var location = response.getHeaders().getLocation();
+            if(proxy != null) {
+                location = proxy.rewriteUrl(location);
+            }
+
+            return location.toString();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -194,12 +228,23 @@ public class UpstreamVSCodeService implements IVSCodeService {
         }
 
         var statusCode = response.getStatusCode();
-        if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
+        if(statusCode.is2xxSuccessful()) {
             var headers = new HttpHeaders();
             headers.addAll(response.getHeaders());
             headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
             headers.remove(HttpHeaders.VARY);
             return new ResponseEntity<>(response.getBody(), headers, response.getStatusCode());
+        }
+        if(statusCode.is3xxRedirection()) {
+            var location = response.getHeaders().getLocation();
+            if(proxy != null) {
+                location = proxy.rewriteUrl(location);
+            }
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .headers(response.getHeaders())
+                    .location(location)
+                    .build();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
