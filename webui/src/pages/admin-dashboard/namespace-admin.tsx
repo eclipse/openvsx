@@ -89,6 +89,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
                             setLoadingState={setLoading}
                             namespace={currentNamespace}
                             filterUsers={() => true}
+                            onNamespaceChange={fetchNamespace}
                             fixSelf={false}
                         />
                     </NamespaceDetailConfigContext.Provider>

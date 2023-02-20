@@ -1023,6 +1023,275 @@ public class AdminAPITest {
                 })));
     }
 
+    @Test
+    public void testChangeNamespace() throws Exception {
+        mockAdminUser();
+        var foo = new Namespace();
+        foo.setName("foo");
+        Mockito.when(repositories.findNamespace(foo.getName())).thenReturn(foo);
+
+        var bar = new Namespace();
+        bar.setName("bar");
+        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(null);
+
+        var extension = Mockito.mock(Extension.class);
+        Mockito.when(repositories.findExtensions(foo)).thenReturn(Streamable.of(extension));
+
+        var membership = Mockito.mock(NamespaceMembership.class);
+        Mockito.when(repositories.findMemberships(foo)).thenReturn(Streamable.of(membership));
+
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+            "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Changed namespace foo to bar")))
+                .andExpect(result -> Mockito.verify(extension).setNamespace(bar))
+                .andExpect(result -> Mockito.verify(membership).setNamespace(bar));
+    }
+
+    @Test
+    public void testChangeNamespaceOldNamespaceNull() throws Exception {
+        mockAdminUser();
+        var content = "{" +
+                "\"oldNamespace\": null, " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Old namespace must have a value")));
+    }
+
+    @Test
+    public void testChangeNamespaceOldNamespaceEmpty() throws Exception {
+        mockAdminUser();
+        var content = "{" +
+                "\"oldNamespace\": \"\", " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Old namespace must have a value")));
+    }
+
+    @Test
+    public void testChangeNamespaceOldNamespaceDoesNotExist() throws Exception {
+        mockAdminUser();
+        Mockito.when(repositories.findNamespace("foo")).thenReturn(null);
+
+        var bar = new Namespace();
+        bar.setName("bar");
+        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(bar);
+
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Old namespace doesn't exists: foo")));
+    }
+
+    @Test
+    public void testChangeNamespaceNewNamespaceNull() throws Exception {
+        mockAdminUser();
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": null, " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("New namespace must have a value")));
+    }
+
+    @Test
+    public void testChangeNamespaceNewNamespaceEmpty() throws Exception {
+        mockAdminUser();
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": \"\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("New namespace must have a value")));
+    }
+
+    @Test
+    public void testChangeNamespaceNewNamespaceAlreadyExists() throws Exception {
+        mockAdminUser();
+        var foo = new Namespace();
+        foo.setName("foo");
+        Mockito.when(repositories.findNamespace(foo.getName())).thenReturn(foo);
+
+        var bar = new Namespace();
+        bar.setName("bar");
+        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(bar);
+
+        var extension = Mockito.mock(Extension.class);
+        Mockito.when(repositories.findExtensions(foo)).thenReturn(Streamable.of(extension));
+
+        var membership = Mockito.mock(NamespaceMembership.class);
+        Mockito.when(repositories.findMemberships(foo)).thenReturn(Streamable.of(membership));
+
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Changed namespace foo to bar")))
+                .andExpect(result -> Mockito.verify(extension).setNamespace(bar))
+                .andExpect(result -> Mockito.verify(membership).setNamespace(bar));
+    }
+
+    @Test
+    public void testChangeNamespaceRemoveOldNamespace() throws Exception {
+        mockAdminUser();
+        var foo = new Namespace();
+        foo.setName("foo");
+        Mockito.when(repositories.findNamespace(foo.getName())).thenReturn(foo);
+
+        var bar = new Namespace();
+        bar.setName("bar");
+        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(bar);
+
+        var extension = Mockito.mock(Extension.class);
+        Mockito.when(repositories.findExtensions(foo)).thenReturn(Streamable.of(extension));
+
+        var membership = Mockito.mock(NamespaceMembership.class);
+        Mockito.when(repositories.findMemberships(foo)).thenReturn(Streamable.of(membership));
+
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": true, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": true" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Changed namespace foo to bar")))
+                .andExpect(result -> Mockito.verify(extension).setNamespace(bar))
+                .andExpect(result -> Mockito.verify(membership).setNamespace(bar))
+                .andExpect(result -> Mockito.verify(entityManager).remove(foo));
+    }
+
+    @Test
+    public void testChangeNamespaceAbortOnNewNamespaceExists() throws Exception {
+        mockAdminUser();
+        var foo = new Namespace();
+        foo.setName("foo");
+        Mockito.when(repositories.findNamespace(foo.getName())).thenReturn(foo);
+
+        var bar = new Namespace();
+        bar.setName("bar");
+        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(bar);
+
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": false" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("New namespace already exists: bar")));
+    }
+
+    @Test
+    public void testChangeNamespaceAbortNewNamespaceDoesNotExist() throws Exception {
+        mockAdminUser();
+        var foo = new Namespace();
+        foo.setName("foo");
+        Mockito.when(repositories.findNamespace(foo.getName())).thenReturn(foo);
+
+        var bar = new Namespace();
+        bar.setName("bar");
+        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(null);
+
+        var extension = Mockito.mock(Extension.class);
+        Mockito.when(repositories.findExtensions(foo)).thenReturn(Streamable.of(extension));
+
+        var membership = Mockito.mock(NamespaceMembership.class);
+        Mockito.when(repositories.findMemberships(foo)).thenReturn(Streamable.of(membership));
+
+        var content = "{" +
+                "\"oldNamespace\": \"foo\", " +
+                "\"newNamespace\": \"bar\", " +
+                "\"removeOldNamespace\": false, " +
+                "\"mergeIfNewNamespaceAlreadyExists\": false" +
+                "}";
+
+        mockMvc.perform(post("/admin/change-namespace")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader())
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Changed namespace foo to bar")))
+                .andExpect(result -> Mockito.verify(extension).setNamespace(bar))
+                .andExpect(result -> Mockito.verify(membership).setNamespace(bar));
+    }
+
     //---------- UTILITY ----------//
 
     private PersonalAccessToken mockAdminToken() {

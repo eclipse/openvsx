@@ -8,11 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
-import { makeStyles, Grid, Link, Paper, Box } from '@material-ui/core';
+import React, { useState, FunctionComponent } from 'react';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { makeStyles, Box, Button, Link, Paper, Grid, Typography } from '@material-ui/core';
 import WarningIcon from '@material-ui/icons/Warning';
 import { UserNamespaceExtensionListContainer } from './user-namespace-extension-list';
+import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
 import { Namespace, UserData } from '../../extension-registry-types';
+import { NamespaceChangeDialog } from '../admin-dashboard/namespace-change-dialog';
 import { UserNamespaceMemberList } from './user-namespace-member-list';
 import { UserNamespaceDetails } from './user-namespace-details';
 
@@ -62,11 +65,37 @@ const useStyles = makeStyles((theme) => ({
             color: '#fff',
             textDecoration: 'underline'
         }
+    },
+    changeButton: {
+        [theme.breakpoints.down('md')]: {
+            marginLeft: theme.spacing(2)
+        }
+    },
+    namespaceHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing(1),
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column',
+            alignItems: 'center'
+        }
     }
 }));
 
-export const NamespaceDetail: FunctionComponent<NamespaceDetail.Props> = props => {
+export const NamespaceDetailComponent: FunctionComponent<NamespaceDetailComponent.Props> = props => {
     const classes = useStyles();
+    const [changeDialogIsOpen, setChangeDialogIsOpen] = useState(false);
+    const handleCloseChangeDialog = async (newNamespaceName?: string) => {
+        setChangeDialogIsOpen(false);
+        if (newNamespaceName && props.onNamespaceChange) {
+            props.onNamespaceChange(newNamespaceName);
+        }
+    };
+    const handleOpenChangeDialog = () => {
+        setChangeDialogIsOpen(true);
+    };
+
     return <>
         <Grid container direction='column' spacing={4} className={classes.namespaceDetailContainer}>
             {
@@ -85,6 +114,17 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetail.Props> = props =
                 </Grid>
                 : null
             }
+            <Grid item>
+                <Box className={classes.namespaceHeader}>
+                    <Typography variant='h4'>{props.namespace.name}</Typography>
+                    { props.location.pathname.startsWith(AdminDashboardRoutes.NAMESPACE_ADMIN)
+                        ? <Button className={classes.changeButton} variant='outlined' onClick={handleOpenChangeDialog}>
+                            Change Namespace
+                        </Button>
+                        : null
+                    }
+                </Box>
+            </Grid>
             {
                 props.namespace.membersUrl
                 ? <Grid item>
@@ -105,16 +145,24 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetail.Props> = props =
                 />
             </Grid>
         </Grid>
+        <NamespaceChangeDialog
+            open={changeDialogIsOpen}
+            onClose={handleCloseChangeDialog}
+            namespace={props.namespace}
+            setLoadingState={props.setLoadingState} />
     </>;
 };
 
-export namespace NamespaceDetail {
-    export interface Props {
+export namespace NamespaceDetailComponent {
+    export interface Props extends RouteComponentProps {
         namespace: Namespace;
         filterUsers: (user: UserData) => boolean;
+        onNamespaceChange?: (newNamespaceName: string) => void;
         fixSelf: boolean;
         setLoadingState: (loading: boolean) => void;
         namespaceAccessUrl?: string;
         theme?: string;
     }
 }
+
+export const NamespaceDetail = withRouter(NamespaceDetailComponent);

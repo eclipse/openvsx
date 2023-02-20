@@ -273,6 +273,21 @@ public class AdminAPI {
         }
     }
 
+    @PostMapping(
+            path = "/admin/change-namespace",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> changeNamespace(@RequestBody ChangeNamespaceJson json) {
+        try {
+            admins.checkAdminUser();
+            admins.changeNamespace(json);
+            return ResponseEntity.ok(ResultJson.success("Changed namespace " + json.oldNamespace + " to " + json.newNamespace));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
     @GetMapping(
         path = "/admin/namespace/{namespaceName}/members",
         produces = MediaType.APPLICATION_JSON_VALUE

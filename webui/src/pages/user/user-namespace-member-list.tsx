@@ -88,7 +88,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberList.
     }
     return <>
         <Box className={classes.memberListHeader}>
-            <Typography variant='h5'>Members in {props.namespace.name}</Typography>
+            <Typography variant='h5'>Members</Typography>
             <Button className={classes.addButton} variant='outlined' onClick={handleOpenAddDialog}>
                 Add Namespace Member
             </Button>
