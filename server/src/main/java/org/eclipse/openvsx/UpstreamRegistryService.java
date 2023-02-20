@@ -41,6 +41,9 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Autowired
     RestTemplate restTemplate;
 
+    @Autowired(required = false)
+    UpstreamProxyService proxy;
+
     @Autowired
     UrlConfigService urlConfigService;
 
@@ -53,7 +56,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}";
         var uriVariables = Map.of("namespace", namespace);
         try {
-            return restTemplate.getForObject(urlTemplate, NamespaceJson.class, uriVariables);
+            var json = restTemplate.getForObject(urlTemplate, NamespaceJson.class, uriVariables);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -96,7 +100,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             var json = restTemplate.getForObject(urlTemplate, ExtensionJson.class, uriVariables);
             makeDownloadsCompatible(json);
-            return json;
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -124,7 +128,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         try {
             var json = restTemplate.getForObject(urlTemplate, ExtensionJson.class, uriVariables);
             makeDownloadsCompatible(json);
-            return json;
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -224,7 +228,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         }
 
         try {
-            return restTemplate.getForObject(urlTemplate, SearchResultJson.class, uriVariables);
+            var json = restTemplate.getForObject(urlTemplate, SearchResultJson.class, uriVariables);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -258,7 +263,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         }
 
         try {
-            return restTemplate.getForObject(urlTemplate, QueryResultJson.class, queryParams);
+            var json = restTemplate.getForObject(urlTemplate, QueryResultJson.class, queryParams);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(queryParams);
@@ -315,7 +321,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     private void makeDownloadsCompatible(ExtensionJson json) {
-        if(json.downloads == null && json.files.containsKey("download")) {
+        if (json.downloads == null && json.files.containsKey("download")) {
             json.downloads = new HashMap<>();
             json.downloads.put(TargetPlatform.NAME_UNIVERSAL, json.files.get("download"));
         }
