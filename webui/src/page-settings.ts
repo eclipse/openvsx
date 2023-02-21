@@ -9,7 +9,9 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Extension } from './extension-registry-types';
+import { Extension, NamespaceDetails } from './extension-registry-types';
+import { ExtensionDetailComponent } from './pages/extension-detail/extension-detail';
+import { NamespaceDetailComponent } from './pages/namespace-detail/namespace-detail';
 import { Cookie } from './utils';
 
 export interface PageSettings {
@@ -41,13 +43,16 @@ export interface PageSettings {
                 color?: 'info' | 'warning'
             },
             cookie?: Cookie
-        }
+        };
+        mainHeadTags?: React.ComponentType<{ pageSettings: PageSettings }>;
+        extensionHeadTags?: React.ComponentType<{ extension?: Extension, params: ExtensionDetailComponent.Params, pageSettings: PageSettings }>;
+        namespaceHeadTags?: React.ComponentType<{ namespaceDetails?: NamespaceDetails, params: NamespaceDetailComponent.Params, pageSettings: PageSettings }>;
     };
     urls: {
         extensionDefaultIcon: string;
         namespaceAccessInfo: string;
         publisherAgreement?: string;
-    }
+    };
 }
 
 export interface Styleable {
