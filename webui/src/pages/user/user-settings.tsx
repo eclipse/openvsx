@@ -9,6 +9,7 @@
  ********************************************************************************/
 
 import * as React from 'react';
+import { Helmet } from 'react-helmet';
 import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography, Link } from '@material-ui/core';
 import { RouteComponentProps, Route } from 'react-router-dom';
 import { createRoute } from '../../utils';
@@ -57,14 +58,11 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
     static contextType = MainContext;
     declare context: MainContext;
 
-    componentDidMount() {
-        document.title = `Settings – ${this.context.pageSettings.pageTitle}`;
-    }
-
-    render() {
+    protected renderContent(): React.ReactNode {
         if (this.props.userLoading) {
             return <DelayedLoadIndicator loading={true} />;
         }
+
         const user = this.context.user;
         if (!user) {
             return <Container>
@@ -79,32 +77,40 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
                 </Box>
             </Container>;
         }
-        return <React.Fragment>
-            <Container>
-                <Box mt={6}>
-                    <Grid container className={this.props.classes.container}>
-                        <Grid item className={this.props.classes.tabs}>
-                            <UserSettingTabs {...this.props} />
-                        </Grid>
-                        <Grid item className={this.props.classes.info}>
-                            <Box>
-                                <Route path={UserSettingsRoutes.PROFILE}>
-                                    <UserSettingsProfile user={user} />
-                                </Route>
-                                <Route path={UserSettingsRoutes.TOKENS}>
-                                    <UserSettingsTokens />
-                                </Route>
-                                <Route path={UserSettingsRoutes.NAMESPACES}>
-                                    <UserSettingsNamespaces />
-                                </Route>
-                                <Route path={UserSettingsRoutes.EXTENSIONS}>
-                                    <UserSettingsExtensions />
-                                </Route>
-                            </Box>
-                        </Grid>
+
+        return <Container>
+            <Box mt={6}>
+                <Grid container className={this.props.classes.container}>
+                    <Grid item className={this.props.classes.tabs}>
+                        <UserSettingTabs {...this.props} />
                     </Grid>
-                </Box>
-            </Container>
+                    <Grid item className={this.props.classes.info}>
+                        <Box>
+                            <Route path={UserSettingsRoutes.PROFILE}>
+                                <UserSettingsProfile user={user} />
+                            </Route>
+                            <Route path={UserSettingsRoutes.TOKENS}>
+                                <UserSettingsTokens />
+                            </Route>
+                            <Route path={UserSettingsRoutes.NAMESPACES}>
+                                <UserSettingsNamespaces />
+                            </Route>
+                            <Route path={UserSettingsRoutes.EXTENSIONS}>
+                                <UserSettingsExtensions />
+                            </Route>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Box>
+        </Container>;
+    }
+
+    render() {
+        return <React.Fragment>
+            <Helmet>
+                <title>Settings – {this.context.pageSettings.pageTitle}</title>
+            </Helmet>
+            { this.renderContent() }
         </React.Fragment>;
     }
 }
