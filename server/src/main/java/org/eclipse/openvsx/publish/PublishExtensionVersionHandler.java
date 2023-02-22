@@ -32,6 +32,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -112,7 +115,7 @@ public class PublishExtensionVersionHandler {
 
             var updateExistingPublicIds = vsCodeIdService.setPublicIds(extension);
             if(updateExistingPublicIds) {
-                vsCodeIdService.updateExistingPublicIds(extension);
+                updateExistingPublicIds(extension).forEach(service::updateExtensionPublicId);
             }
 
             entityManager.persist(extension);
@@ -165,6 +168,27 @@ public class PublishExtensionVersionHandler {
         }
 
         return bundledExtension;
+    }
+
+    private List<Extension> updateExistingPublicIds(Extension extension) {
+        var updated = true;
+        var updatedExtensions = new ArrayList<Extension>();
+        var newExtension = extension;
+        while(updated) {
+            updated = false;
+            var oldExtension = repositories.findExtensionByPublicId(newExtension.getPublicId());
+            if (oldExtension != null && !oldExtension.equals(newExtension)) {
+                entityManager.detach(oldExtension);
+                updated = vsCodeIdService.setPublicIds(oldExtension);
+            }
+            if(updated) {
+                updatedExtensions.add(oldExtension);
+                newExtension = oldExtension;
+            }
+        }
+
+        Collections.reverse(updatedExtensions);
+        return updatedExtensions;
     }
 
     @Async
