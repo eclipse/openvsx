@@ -9,13 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import java.util.UUID;
-
-import javax.transaction.Transactional;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -28,6 +23,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.UUID;
 
 @Component
 public class VSCodeIdService {
@@ -55,7 +52,6 @@ public class VSCodeIdService {
             }
             if (upstream.publisher != null && upstream.publisher.publisherId != null) {
                 extension.getNamespace().setPublicId(upstream.publisher.publisherId);
-                updateExistingPublicIds = true;
             }
         }
         if (extension.getPublicId() == null) {
@@ -66,19 +62,6 @@ public class VSCodeIdService {
         }
 
         return updateExistingPublicIds;
-    }
-
-    @Transactional
-    public void updateExistingPublicIds(Extension extension) {
-        var existingExtension = repositories.findExtensionByPublicId(extension.getPublicId());
-        if(existingExtension != null && !existingExtension.equals(extension)) {
-            existingExtension.setPublicId(createRandomId());
-        }
-
-        var existingNamespace = repositories.findNamespaceByPublicId(extension.getNamespace().getPublicId());
-        if(existingNamespace != null && !existingNamespace.equals(extension.getNamespace())) {
-            existingNamespace.setPublicId(createRandomId());
-        }
     }
 
     private String createRandomId() {
