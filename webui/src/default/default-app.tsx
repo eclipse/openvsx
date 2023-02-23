@@ -40,15 +40,16 @@ const App = () => {
     );
 
     const pageSettings = createPageSettings(theme, prefersDarkMode, service.serverUrl);
-
-    return (
+    const { mainHeadTags: MainHeadTagsComponent } = pageSettings.elements;
+    return (<>
+        { MainHeadTagsComponent ? <MainHeadTagsComponent pageSettings={pageSettings}/> : null}
         <ThemeProvider theme={theme}>
             <Main
                 service={service}
                 pageSettings={pageSettings}
             />
         </ThemeProvider>
-    );
+    </>);
 };
 
 const node = document.getElementById('main');

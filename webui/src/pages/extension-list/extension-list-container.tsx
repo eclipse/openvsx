@@ -39,7 +39,6 @@ export class ExtensionListContainer extends React.Component<ExtensionListContain
     }
 
     componentDidMount(): void {
-        document.title = this.context.pageSettings.pageTitle;
         const searchParams = new URLSearchParams(this.props.location.search);
         const search = searchParams.get('search');
         const category = searchParams.get('category') as ExtensionCategory;

@@ -86,7 +86,6 @@ export class NamespaceDetailComponent extends React.Component<NamespaceDetailCom
 
     componentDidMount(): void {
         const params = this.props.match.params as NamespaceDetailComponent.Params;
-        document.title = `${params.name} – ${this.context.pageSettings.pageTitle}`;
         this.updateNamespaceDetails(params);
     }
 
@@ -105,7 +104,6 @@ export class NamespaceDetailComponent extends React.Component<NamespaceDetailCom
             if (isError(namespaceDetails)) {
                 throw namespaceDetails;
             }
-            document.title = `${namespaceDetails.displayName || namespaceDetails.name} – ${this.context.pageSettings.pageTitle}`;
             this.setState({ namespaceDetails, loading: false, truncateReadMore: true });
         } catch (err) {
             if (err && err.status === 404) {
@@ -130,24 +128,46 @@ export class NamespaceDetailComponent extends React.Component<NamespaceDetailCom
 
     render(): React.ReactNode {
         const { namespaceDetails, truncateReadMore } = this.state;
-        if (!namespaceDetails) {
-            return <>
-                <DelayedLoadIndicator loading={this.state.loading} />
-                {
-                    this.state.notFoundError ?
-                    <Box p={4}>
-                        <Typography variant='h5'>
-                            {this.state.notFoundError}
-                        </Typography>
-                    </Box>
-                    : null
-                }
-            </>;
-        }
+        const params = this.props.match.params as NamespaceDetailComponent.Params;
+        return <>
+            { this.renderHeaderTags(params, namespaceDetails) }
+            <DelayedLoadIndicator loading={this.state.loading} />
+            {
+                namespaceDetails
+                    ? this.renderNamespaceDetails(namespaceDetails, truncateReadMore)
+                    : this.renderNotFound()
+            }
+        </>;
+    }
 
+    protected renderHeaderTags(params: NamespaceDetailComponent.Params, namespaceDetails?: NamespaceDetails): React.ReactNode {
+        const pageSettings = this.context.pageSettings;
+        const { namespaceHeadTags: NamespaceHeadTagsComponent } = pageSettings.elements;
+        return <React.Fragment>
+            { NamespaceHeadTagsComponent
+                ? <NamespaceHeadTagsComponent namespaceDetails={namespaceDetails} params={params} pageSettings={pageSettings}/>
+                : null
+            }
+        </React.Fragment>;
+    }
+
+    protected renderNotFound(): React.ReactNode {
+        return <>
+            {
+                this.state.notFoundError ?
+                <Box p={4}>
+                    <Typography variant='h5'>
+                        {this.state.notFoundError}
+                    </Typography>
+                </Box>
+                : null
+            }
+        </>;
+    }
+
+    protected renderNamespaceDetails(namespaceDetails: NamespaceDetails, truncateReadMore: boolean): React.ReactNode {
         const classes = this.props.classes;
         return <>
-            <DelayedLoadIndicator loading={this.state.loading} />
             <Box className={classes.head}>
                 <Container maxWidth='xl'>
                     <Box className={classes.header}>

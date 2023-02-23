@@ -45,8 +45,8 @@ class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogCo
     }
 
     protected handleOpenDialog = () => {
-        this.setState({ 
-            open: true, 
+        this.setState({
+            open: true,
             posted: false,
             description: '',
             token: undefined

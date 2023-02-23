@@ -9,12 +9,16 @@
  ********************************************************************************/
 
 import * as React from 'react';
+import { Helmet } from 'react-helmet';
 import { makeStyles } from '@material-ui/styles';
 import { Link, Typography, Theme, Box } from '@material-ui/core';
 import { Link as RouteLink, Route } from 'react-router-dom';
 import GitHubIcon from '@material-ui/icons/GitHub';
+import { Extension, NamespaceDetails } from '../extension-registry-types';
 import { PageSettings } from '../page-settings';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-container';
+import { ExtensionDetailComponent } from '../pages/extension-detail/extension-detail';
+import { NamespaceDetailComponent } from '../pages/namespace-detail/namespace-detail';
 import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
@@ -89,6 +93,32 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
     const additionalRoutes: React.FunctionComponent = () =>
         <Route path='/about' render={() => <About />} />;
 
+    const headTags: React.FunctionComponent<{title: string}> = (props) => {
+        return <Helmet>
+            <title>{props.title}</title>
+        </Helmet>;
+    };
+
+    const mainHeadTags: React.FunctionComponent<{pageSettings: PageSettings}> = (props) => {
+        return headTags({ title: props.pageSettings.pageTitle });
+    };
+
+    const extensionHeadTags: React.FunctionComponent<{extension?: Extension, params: ExtensionDetailComponent.Params, pageSettings: PageSettings}> = (props) => {
+        const name = props.extension
+            ? props.extension.displayName || props.extension.name
+            : props.params.name;
+
+        return headTags({ title: `${name} – ${props.pageSettings.pageTitle}` });
+    };
+
+    const namespaceHeadTags: React.FunctionComponent<{namespaceDetails?: NamespaceDetails, params: NamespaceDetailComponent.Params, pageSettings: PageSettings}> = (props) => {
+        const name = props.namespaceDetails
+            ? props.namespaceDetails.displayName || props.namespaceDetails.name
+            : props.params.name;
+
+        return headTags({ title: `${name} – ${props.pageSettings.pageTitle}` });
+    };
+
     return {
         pageTitle: 'Open VSX Registry',
         themeType: prefersDarkMode ? 'dark' : 'light',
@@ -103,7 +133,10 @@ export default function createPageSettings(theme: Theme, prefersDarkMode: boolea
                 }
             },
             searchHeader,
-            additionalRoutes
+            additionalRoutes,
+            mainHeadTags,
+            extensionHeadTags,
+            namespaceHeadTags
         },
         urls: {
             extensionDefaultIcon: '/default-icon.png',
