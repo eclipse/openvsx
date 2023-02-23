@@ -171,10 +171,12 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
             toolbarContent: ToolbarContent,
             footer: FooterComponent,
             additionalRoutes: AdditionalRoutes,
-            banner: BannerComponent
+            banner: BannerComponent,
+            mainHeadTags: MainHeadTagsComponent
         } = this.props.pageSettings.elements;
         const classes = this.props.classes;
         return <React.Fragment>
+            { MainHeadTagsComponent ? <MainHeadTagsComponent pageSettings={this.props.pageSettings}/> : null }
             <Switch>
                 <Route path={AdminDashboardRoutes.MAIN}>
                     <AdminDashboard userLoading={this.state.userLoading} />
