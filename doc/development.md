@@ -56,41 +56,41 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 ### Setup locally on MacOS
 
-- Set up postgresql using homebrew
+- Set up postgreSQL using Homebrew
 
   - brew install postgresql@12
 
-  - Use "postgres –V" to check if it is the correct version
+  - Use `postgres –V` to check if it is the correct version
 
   - brew services start postgresql@12
 
-  - From the terminal, run the command "createdb postgres" (NOT inside psql)
+  - From the terminal, run the command `createdb postgres` (NOT inside `psql`)
 
-  - "psql –d postgres" to enter the database
+  - `psql –d postgres` to enter the database
 
   - CREATE ROLE gitpod with LOGIN PASSWORD 'gitpod';
 
   - Using \d to display all tables and relations, now empty
 
-- Make sure using the correct java version
+- Make sure the correct Java version is being used
 
-  -Download java 11 if not yet downloaded yet
+  -Download Java 11 if you don't have it already
 
-  - Run the command "/usr/libexec/java_home –V" to see your matching java virtual machines
+  - Run the command `/usr/libexec/java_home –V` to see your matching Java virtual machines
 
-  - Pick java 11 accordingly
+  - Pick Java 11 accordingly
 
   - export JAVA_HOME='/usr/libexec/java_home –v 11.0.18'
 
-  - Run "java –version" to check if it's now running java 11
+  - Run `java –version` to check if Java 11 is indeed being used
 
   - https://stackoverflow.com/questions/21964709/how-to-set-or-change-the-default-java-jdk-version-on-macos
 
-- Set up elasticsearch using docker
+- Set up Elasticsearch using Docker
 
-- Download docker desktop from https://www.docker.com/
+- Download Docker Desktop from https://www.docker.com/
 
-- Download the elasticsearch image from docker hub and enable it in the docker desktop
+- Download the Elasticsearch image from Docker Hub and enable it in the Docker Desktop
 
 ### Run the application
 
