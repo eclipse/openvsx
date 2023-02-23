@@ -40,9 +40,7 @@ const App = () => {
     );
 
     const pageSettings = createPageSettings(theme, prefersDarkMode, service.serverUrl);
-    const { mainHeadTags: MainHeadTagsComponent } = pageSettings.elements;
     return (<>
-        { MainHeadTagsComponent ? <MainHeadTagsComponent pageSettings={pageSettings}/> : null}
         <ThemeProvider theme={theme}>
             <Main
                 service={service}
