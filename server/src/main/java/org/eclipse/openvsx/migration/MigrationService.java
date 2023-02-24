@@ -124,6 +124,7 @@ public class MigrationService {
 
     @Transactional
     public void deleteFileResource(FileResource resource) {
+        resource = entityManager.merge(resource);
         entityManager.remove(resource);
     }
 
