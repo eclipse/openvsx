@@ -469,6 +469,7 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     public FileResource getVsixManifest(ExtensionVersion extVersion) {
+        readInputStream();
         var vsixManifest = new FileResource();
         vsixManifest.setExtension(extVersion);
         vsixManifest.setName(VSIX_MANIFEST);
