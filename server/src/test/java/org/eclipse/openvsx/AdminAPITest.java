@@ -48,10 +48,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -1383,7 +1380,7 @@ public class AdminAPITest {
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
             Mockito.when(repositories.findFilesByType(anyCollection(), any()))
-                    .thenReturn(Streamable.empty());
+                    .thenReturn(Collections.emptyList());
             Mockito.when(repositories.findVersion(extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
             Mockito.when(repositories.findTargetPlatformVersions(extVersion.getVersion(), "baz", "foobar"))
