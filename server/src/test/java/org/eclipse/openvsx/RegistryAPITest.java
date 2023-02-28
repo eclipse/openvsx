@@ -1844,8 +1844,8 @@ public class RegistryAPITest {
             Collection<ExtensionVersion> extVersions = invocation.getArgument(0);
             Collection<String> types = invocation.getArgument(1);
             return types.contains(DOWNLOAD) && extVersions.iterator().hasNext() && download.getExtension().equals(extVersions.iterator().next())
-                    ? Streamable.of(download)
-                    : Streamable.empty();
+                    ? List.of(download)
+                    : Collections.emptyList();
         });
 
         return extVersion;
@@ -2028,7 +2028,7 @@ public class RegistryAPITest {
         Mockito.when(repositories.findVersions(any(Extension.class)))
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection()))
-                .thenReturn(Streamable.empty());
+                .thenReturn(Collections.emptyList());
         Mockito.when(repositories.findVersions(eq("1.0.0"), any(Extension.class)))
                 .thenReturn(Streamable.empty());
         if (mode.equals("owner")) {
