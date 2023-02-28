@@ -22,10 +22,6 @@ public class ShallowEtagHeaderFilter extends org.springframework.web.filter.Shal
         if(applyFilter) {
             applyFilter = path[0].equals("api") && !path[1].equals("-");
         }
-        if(applyFilter && path.length == 4) {
-            applyFilter = !(path[3].equals("review") || path[3].equals("reviews"));
-        }
-
         return !applyFilter;
     }
 }

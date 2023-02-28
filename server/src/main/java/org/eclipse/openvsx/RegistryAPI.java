@@ -632,6 +632,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
+                        .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getReviews(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
