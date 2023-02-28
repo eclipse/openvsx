@@ -182,8 +182,8 @@ public class RepositoryService {
         return fileResourceRepo.findByExtensionAndTypeIn(extVersion, types);
     }
 
-    public Streamable<FileResource> findFilesByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
-        return fileResourceRepo.findByExtensionInAndTypeIn(extVersions, types);
+    public List<FileResource> findFilesByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
+        return fileResourceJooqRepo.findByType(extVersions, types);
     }
 
     public Streamable<ExtensionReview> findActiveReviews(Extension extension) {
