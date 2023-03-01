@@ -9,8 +9,10 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import org.eclipse.openvsx.AdminService;
 import org.eclipse.openvsx.ExtensionProcessor;
-import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -25,35 +27,52 @@ import java.util.AbstractMap;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
-public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
 
-    protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtractVsixManifestsJobRequestHandler.class));
+    protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(FixTargetPlatformsJobRequestHandler.class));
+
+    @Autowired
+    ExtensionService extensions;
+
+    @Autowired
+    AdminService admins;
 
     @Autowired
     MigrationService migrations;
 
+    @Autowired
+    FixTargetPlatformsService service;
+
     @Override
-    @Job(name = "Extract VSIX manifests from published extension version", retries = 3)
+    @Job(name = "Fix target platform for published extension version", retries = 3)
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        logger.info("Extracting VSIX manifests for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
-
-        var existingVsixManifest = migrations.getFileResource(extVersion, FileResource.VSIXMANIFEST);
-        if(existingVsixManifest != null) {
-            migrations.removeFile(existingVsixManifest);
-            migrations.deleteFileResource(existingVsixManifest);
-        }
-
         var content = migrations.getContent(download);
         var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
         try(var extProcessor = new ExtensionProcessor(extensionFile)) {
-            var vsixManifest = extProcessor.getVsixManifest(extVersion);
-            vsixManifest.setStorageType(download.getStorageType());
-            migrations.uploadFileResource(vsixManifest);
-            migrations.persistFileResource(vsixManifest);
+            if(extProcessor.getMetadata().getTargetPlatform().equals(extVersion.getTargetPlatform())) {
+                return;
+            }
+        }
+
+        logger.info("Fixing target platform for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
+        deleteExtension(extVersion);
+        try (var input = Files.newInputStream(extensionFile)) {
+            extensions.publishVersion(input, extVersion.getPublishedWith());
         }
 
         Files.delete(extensionFile);
+    }
+
+    private void deleteExtension(ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        admins.deleteExtension(
+                extension.getNamespace().getName(),
+                extension.getName(),
+                extVersion.getTargetPlatform(),
+                extVersion.getVersion(),
+                service.getUser()
+        );
     }
 }

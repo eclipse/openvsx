@@ -406,6 +406,10 @@ public class RepositoryService {
         return findNotMigratedItems("V1_32__FileResource_Extract_VsixManifest.sql");
     }
 
+    public Streamable<MigrationItem> findNotMigratedTargetPlatforms() {
+        return findNotMigratedItems("V1_34__ExtensionVersion_Fix_TargetPlatform.sql");
+    }
+
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
         return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript);
     }
