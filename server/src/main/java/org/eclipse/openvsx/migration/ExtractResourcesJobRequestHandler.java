@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
+
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class ExtractResourcesJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
@@ -50,5 +52,6 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
         }
 
         service.deleteWebResources(extVersion);
+        Files.delete(extensionFile);
     }
 }

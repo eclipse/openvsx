@@ -35,6 +35,7 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         setPreReleaseMigration();
         renameDownloadsMigration();
         extractVsixManifestMigration();
+        fixTargetPlatformMigration();
     }
 
     private void extractResourcesMigration() {
@@ -59,5 +60,11 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         var jobName = "ExtractVsixManifestMigration";
         var handler = ExtractVsixManifestsJobRequestHandler.class;
         repositories.findNotMigratedVsixManifests().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+    }
+
+    private void fixTargetPlatformMigration() {
+        var jobName = "FixTargetPlatformMigration";
+        var handler = FixTargetPlatformsJobRequestHandler.class;
+        repositories.findNotMigratedTargetPlatforms().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
     }
 }

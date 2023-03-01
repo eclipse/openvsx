@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
 import java.util.AbstractMap;
 
 @Component
@@ -48,6 +49,7 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
 
         download.setName(name);
         service.updateResource(download);
+        Files.delete(extensionFile);
         logger.info("Updated download name to: {}", name);
     }
 }
