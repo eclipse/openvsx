@@ -11,10 +11,13 @@ package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.MigrationItem;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.IStorageService;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.retry.annotation.Retryable;
@@ -24,10 +27,12 @@ import org.springframework.web.client.RestTemplate;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class MigrationService {
@@ -46,6 +51,18 @@ public class MigrationService {
 
     @Autowired
     GoogleCloudStorageService googleStorage;
+
+    @Autowired
+    JobRequestScheduler scheduler;
+
+    @Transactional
+    public void enqueueMigration(String jobName, Class<? extends JobRequestHandler<MigrationJobRequest>> handler, MigrationItem item) {
+        item = entityManager.merge(item);
+        var jobIdText = jobName + "::itemId=" + item.getId();
+        var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+        scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId()));
+        item.setMigrationScheduled(true);
+    }
 
     public ExtensionVersion getExtension(long entityId) {
         return entityManager.find(ExtensionVersion.class, entityId);
