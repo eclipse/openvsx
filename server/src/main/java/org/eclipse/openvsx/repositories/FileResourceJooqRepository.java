@@ -31,23 +31,17 @@ public class FileResourceJooqRepository {
 
     public List<FileResource> findByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
         var extVersionsById = extVersions.stream().collect(Collectors.toMap(ExtensionVersion::getId, ev -> ev));
-        var frExt = FILE_RESOURCE.as("fr_ext");
-        var frType = FILE_RESOURCE.as("fr_type");
         return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE)
                 .from(FILE_RESOURCE)
-                .join(frExt).on(frExt.EXTENSION_ID.in(extVersionsById.keySet()).and(frExt.ID.eq(FILE_RESOURCE.ID)))
-                .join(frType).on(frType.ID.eq(frExt.ID).and(frType.TYPE.in(types)))
+                .where(FILE_RESOURCE.EXTENSION_ID.in(extVersionsById.keySet())).and(FILE_RESOURCE.TYPE.in(types))
                 .fetch()
                 .map(record -> toFileResource(record, extVersionsById));
     }
 
     public List<FileResource> findAll(Collection<Long> extensionIds, Collection<String> types) {
-        var frExt = FILE_RESOURCE.as("fr_ext");
-        var frType = FILE_RESOURCE.as("fr_type");
         return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE)
                 .from(FILE_RESOURCE)
-                .join(frExt).on(frExt.EXTENSION_ID.in(extensionIds).and(frExt.ID.eq(FILE_RESOURCE.ID)))
-                .join(frType).on(frType.ID.eq(frExt.ID).and(frType.TYPE.in(types)))
+                .where(FILE_RESOURCE.EXTENSION_ID.in(extensionIds).and(FILE_RESOURCE.TYPE.in(types)))
                 .fetch()
                 .map(this::toFileResource);
     }
