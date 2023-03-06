@@ -28,7 +28,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     OAuth2UserServices userServices;
 
-    @Value("${ovsx.webui.frontendRoutes:/extension/**,/user-settings/**,/admin-dashboard/**}")
+    @Value("${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/user-settings/**,/admin-dashboard/**}")
     String[] frontendRoutes;
 
     @Override

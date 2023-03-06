@@ -30,7 +30,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
-    @Value("${ovsx.webui.frontendRoutes:/extension/**,/user-settings/**,/admin-dashboard/**}")
+    @Value("${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/user-settings/**,/admin-dashboard/**}")
     String[] frontendRoutes;
 
     @Override
