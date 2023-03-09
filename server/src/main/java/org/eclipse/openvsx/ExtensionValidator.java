@@ -70,7 +70,7 @@ public class ExtensionValidator {
         checkURL(json.supportLink, "supportLink", issues);
 
         var githubLink = json.socialLinks.get("github");
-        if(githubLink != null && !githubLink.matches("https:\\/\\/www\\.github\\.com\\/[^\\/]+")) {
+        if(githubLink != null && !githubLink.matches("https:\\/\\/github\\.com\\/[^\\/]+")) {
             issues.add(new Issue("Invalid GitHub URL"));
         }
         var linkedinLink = json.socialLinks.get("linkedin");
@@ -78,7 +78,7 @@ public class ExtensionValidator {
             issues.add(new Issue("Invalid LinkedIn URL"));
         }
         var twitterLink = json.socialLinks.get("twitter");
-        if(twitterLink != null && !twitterLink.matches("https:\\/\\/www\\.twitter\\.com\\/[^\\/]+")) {
+        if(twitterLink != null && !twitterLink.matches("https:\\/\\/twitter\\.com\\/[^\\/]+")) {
             issues.add(new Issue("Invalid Twitter URL"));
         }
 
