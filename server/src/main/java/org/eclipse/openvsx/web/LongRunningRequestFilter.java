@@ -61,8 +61,13 @@ public class LongRunningRequestFilter extends OncePerRequestFilter {
         builder.append("\n\t")
                 .append(request.getMethod())
                 .append(" | ")
-                .append(request.getRequestURI())
-                .append(" took ")
+                .append(request.getRequestURI());
+
+        if(request.getQueryString() != null) {
+            builder.append('?').append(request.getQueryString());
+        }
+
+        builder.append(" took ")
                 .append(millis)
                 .append(" ms.\n\t");
 
