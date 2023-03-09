@@ -26,11 +26,9 @@ import java.util.ArrayList;
 public class LongRunningRequestFilter extends OncePerRequestFilter {
 
     private final long threshold;
-    private final StringBuilder builder;
 
     public LongRunningRequestFilter(long threshold) {
         this.threshold = threshold;
-        this.builder = new StringBuilder();
     }
 
     @Override
@@ -59,6 +57,7 @@ public class LongRunningRequestFilter extends OncePerRequestFilter {
     }
 
     private void logWarning(HttpServletRequest request, HttpServletResponse response, long millis, long maxBytes, boolean hasJsonBody, boolean jsonBodyTooLong) throws IOException {
+        var builder = new StringBuilder();
         builder.append("\n\t")
                 .append(request.getMethod())
                 .append(" | ")
@@ -98,6 +97,5 @@ public class LongRunningRequestFilter extends OncePerRequestFilter {
                 .append(response.getStatus());
         
         logger.warn(builder.toString());
-        builder.setLength(0);
     }
 }
