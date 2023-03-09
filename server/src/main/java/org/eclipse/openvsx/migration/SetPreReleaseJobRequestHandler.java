@@ -15,9 +15,13 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
+
 @Component
+@ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class SetPreReleaseJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtractResourcesJobRequestHandler.class));
@@ -33,6 +37,7 @@ public class SetPreReleaseJobRequestHandler implements JobRequestHandler<Migrati
             var entry = service.getDownload(extVersion);
             var extensionFile = service.getExtensionFile(entry);
             service.updatePreviewAndPreRelease(extVersion, extensionFile);
+            Files.delete(extensionFile);
         }
     }
 }
