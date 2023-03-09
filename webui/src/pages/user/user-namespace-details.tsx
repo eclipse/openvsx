@@ -216,11 +216,11 @@ class UserNamespaceDetailsComponent extends React.Component<UserNamespaceDetails
                 : undefined;
 
             details.socialLinks.github = details.socialLinks.github
-                ? 'https://www.github.com/' + details.socialLinks.github
+                ? 'https://github.com/' + details.socialLinks.github
                 : undefined;
 
             details.socialLinks.twitter = details.socialLinks.twitter
-                ? 'https://www.twitter.com/' + details.socialLinks.twitter
+                ? 'https://twitter.com/' + details.socialLinks.twitter
                 : undefined;
 
             const result = await this.context.service.setNamespaceDetails(this.abortController, details);
@@ -261,13 +261,40 @@ class UserNamespaceDetailsComponent extends React.Component<UserNamespaceDetails
                 details.supportLink = input.value;
                 break;
             case UserNamespaceDetailsComponent.INPUT_LINKEDIN:
-                details.socialLinks.linkedin = input.value;
+                if (input.value.startsWith('https://www.linkedin.com/')) {
+                    if (input.value.lastIndexOf('/') === input.value.length - 1) {
+                        input.value = input.value.substring(0, input.value.length - 1);
+                    }
+
+                    const linkedinPath = input.value.split('/');
+                    details.socialLinks.linkedin = linkedinPath[linkedinPath.length - 1];
+                    const linkedInAccountType = linkedinPath[linkedinPath.length - 2];
+                    this.setState({ linkedInAccountType });
+                } else {
+                    details.socialLinks.linkedin = input.value;
+                }
                 break;
             case UserNamespaceDetailsComponent.INPUT_GITHUB:
-                details.socialLinks.github = input.value;
+                if (input.value.startsWith('https://github.com/')) {
+                    if (input.value.lastIndexOf('/') === input.value.length - 1) {
+                        input.value = input.value.substring(0, input.value.length - 1);
+                    }
+
+                    details.socialLinks.github = input.value.substring(input.value.lastIndexOf('/') + 1);
+                } else {
+                    details.socialLinks.github = input.value;
+                }
                 break;
             case UserNamespaceDetailsComponent.INPUT_TWITTER:
-                details.socialLinks.twitter = input.value;
+                if (input.value.startsWith('https://twitter.com/')) {
+                    if (input.value.lastIndexOf('/') === input.value.length - 1) {
+                        input.value = input.value.substring(0, input.value.length - 1);
+                    }
+
+                    details.socialLinks.twitter = input.value.substring(input.value.lastIndexOf('/') + 1);
+                } else {
+                    details.socialLinks.twitter = input.value;
+                }
                 break;
         }
 

@@ -241,14 +241,14 @@ public class UserService {
                 }
 
                 namespace.setLogoName(details.logo);
+                namespace.setLogoBytes(details.logoBytes);
                 storeNamespaceLogo(namespace);
             } else if (namespace.getLogoBytes() != null) {
                 storageUtil.removeNamespaceLogo(namespace);
                 namespace.setLogoName(null);
+                namespace.setLogoBytes(null);
                 namespace.setLogoStorageType(null);
             }
-
-            namespace.setLogoBytes(details.logoBytes);
         }
 
         return ResultJson.success("Updated details for namespace " + details.name);
