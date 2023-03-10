@@ -56,4 +56,6 @@ public interface IStorageService {
      * Returns the public access location of a namespace logo.
      */
     URI getNamespaceLogoLocation(Namespace namespace);
+
+    Path downloadNamespaceLogo(Namespace namespace);
 }

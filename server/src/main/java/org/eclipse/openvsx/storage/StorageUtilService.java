@@ -30,7 +30,9 @@ import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -218,6 +220,37 @@ public class StorageUtilService implements IStorageService {
                 return URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api", namespace.getName(), "logo", namespace.getLogoName()));
             default:
                 return null;
+        }
+    }
+
+    public Path downloadNamespaceLogo(Namespace namespace) {
+        if(namespace.getLogoStorageType() == null) {
+            return createNamespaceLogoFile();
+        }
+
+        switch (namespace.getLogoStorageType()) {
+            case STORAGE_GOOGLE:
+                return googleStorage.downloadNamespaceLogo(namespace);
+            case STORAGE_AZURE:
+                return azureStorage.downloadNamespaceLogo(namespace);
+            case STORAGE_DB:
+                try {
+                    var logoFile = createNamespaceLogoFile();
+                    Files.write(logoFile, namespace.getLogoBytes());
+                    return logoFile;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            default:
+                return createNamespaceLogoFile();
+        }
+    }
+
+    private Path createNamespaceLogoFile() {
+        try {
+            return Files.createTempFile("namespace-logo", ".png");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

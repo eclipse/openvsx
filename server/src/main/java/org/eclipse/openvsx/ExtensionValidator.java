@@ -27,6 +27,7 @@ import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.stereotype.Component;
 
@@ -88,7 +89,7 @@ public class ExtensionValidator {
                 var detectedType = tika.detect(in, json.logo);
                 var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
                 if(logoType != null) {
-                    json.logo = "logo-" + json.name + logoType.getExtension();
+                    json.logo = "logo-" + json.name + "-" + System.currentTimeMillis() + logoType.getExtension();
                     if(!logoType.getType().equals(MediaType.image("png")) && !logoType.getType().equals(MediaType.image("jpg"))) {
                         issues.add(new Issue("Namespace logo should be of png or jpg type"));
                     }
