@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Component
@@ -188,5 +189,16 @@ public class AzureBlobStorageService implements IStorageService {
 
     protected String getBlobName(Namespace namespace) {
         return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
+    }
+
+    @Override
+    public Path downloadNamespaceLogo(Namespace namespace) {
+        try {
+            var logoFile = Files.createTempFile("namespace-logo", ".png");
+            getContainerClient().getBlobClient(getBlobName(namespace)).downloadToFile(logoFile.toString(), true);
+            return logoFile;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
