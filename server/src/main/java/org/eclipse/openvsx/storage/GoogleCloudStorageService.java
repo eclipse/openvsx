@@ -22,6 +22,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -185,4 +186,24 @@ public class GoogleCloudStorageService implements IStorageService {
         return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
     }
 
+    @Override
+    public Path downloadNamespaceLogo(Namespace namespace) {
+        Path logoFile;
+        try {
+            logoFile = Files.createTempFile("namespace-logo", ".png");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (
+                var reader = getStorage().reader(BlobId.of(bucketId, getObjectId(namespace)));
+                var output = new FileOutputStream(logoFile.toFile());
+        ) {
+            output.getChannel().transferFrom(reader, 0, Long.MAX_VALUE);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return logoFile;
+    }
 }

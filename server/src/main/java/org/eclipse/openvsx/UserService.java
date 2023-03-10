@@ -9,18 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.UUID;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import com.google.common.base.Joiner;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.AccessTokenJson;
+import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
@@ -34,6 +28,14 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Objects;
+import java.util.UUID;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
@@ -234,21 +236,42 @@ public class UserService {
         if(!Objects.equals(details.socialLinks, namespace.getSocialLinks())) {
             namespace.setSocialLinks(details.socialLinks);
         }
-        if(!Arrays.equals(details.logoBytes, namespace.getLogoBytes())) {
-            if (details.logoBytes != null) {
-                if (namespace.getLogoBytes() != null) {
+        if(details.logoBytes == null) {
+            details.logoBytes = new byte[0];
+        }
+
+        boolean contentEquals;
+        var oldLogo = storageUtil.downloadNamespaceLogo(namespace);
+        try (
+                var newLogoInput = new ByteArrayInputStream(details.logoBytes);
+                var oldLogoInput = Files.newInputStream(oldLogo)
+        ) {
+            contentEquals = IOUtils.contentEquals(newLogoInput, oldLogoInput);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        if(!contentEquals) {
+            if (details.logoBytes.length > 0) {
+                if (namespace.getLogoStorageType() != null) {
                     storageUtil.removeNamespaceLogo(namespace);
                 }
 
                 namespace.setLogoName(details.logo);
                 namespace.setLogoBytes(details.logoBytes);
                 storeNamespaceLogo(namespace);
-            } else if (namespace.getLogoBytes() != null) {
+            } else if (namespace.getLogoStorageType() != null) {
                 storageUtil.removeNamespaceLogo(namespace);
                 namespace.setLogoName(null);
                 namespace.setLogoBytes(null);
                 namespace.setLogoStorageType(null);
             }
+        }
+
+        try {
+            Files.delete(oldLogo);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         return ResultJson.success("Updated details for namespace " + details.name);
