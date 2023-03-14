@@ -111,7 +111,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
         var json = toExtensionVersionJson(extVersion, targetPlatform, true, false);
+        var extension = repositories.findExtension(extensionName, namespace);
         json.downloads = getDownloads(extVersion.getExtension(), targetPlatform, extVersion.getVersion());
+        json.averageRating = extension.getAverageRating();
         return json;
     }
 
