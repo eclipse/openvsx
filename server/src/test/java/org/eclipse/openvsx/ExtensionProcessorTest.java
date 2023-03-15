@@ -42,6 +42,8 @@ class ExtensionProcessorTest {
             checkResource(processor, FileResource.README, "README.md");
             checkResource(processor, FileResource.ICON, "todo-tree.png");
             checkResource(processor, FileResource.LICENSE, "License.txt");
+        } finally {
+            Files.delete(path);
         }
     }
 
@@ -50,6 +52,8 @@ class ExtensionProcessorTest {
         var path = writeToTempFile("util/changelog.zip");
         try (var processor = new ExtensionProcessor(path)) {
             checkResource(processor, FileResource.CHANGELOG, "CHANGELOG.md");
+        } finally {
+            Files.delete(path);
         }
     }
 
@@ -60,6 +64,8 @@ class ExtensionProcessorTest {
             checkResource(processor, FileResource.CHANGELOG, "Changelog.md");
             checkResource(processor, FileResource.README, "Readme.md");
             checkResource(processor, FileResource.LICENSE, "License.txt");
+        } finally {
+            Files.delete(path);
         }
     }
 
@@ -70,6 +76,8 @@ class ExtensionProcessorTest {
             checkResource(processor, FileResource.CHANGELOG, "changelog.md");
             checkResource(processor, FileResource.README, "readme.md");
             checkResource(processor, FileResource.LICENSE, "license.txt");
+        } finally {
+            Files.delete(path);
         }
     }
 
