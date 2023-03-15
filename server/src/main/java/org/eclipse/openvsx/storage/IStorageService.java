@@ -11,9 +11,11 @@ package org.eclipse.openvsx.storage;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.springframework.data.util.Pair;
 
 public interface IStorageService {
 
@@ -58,4 +60,6 @@ public interface IStorageService {
     URI getNamespaceLogoLocation(Namespace namespace);
 
     Path downloadNamespaceLogo(Namespace namespace);
+
+    void copyFiles(List<Pair<FileResource, FileResource>> pairs);
 }

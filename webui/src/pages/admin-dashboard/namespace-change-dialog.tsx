@@ -15,10 +15,11 @@
  import { ButtonWithProgress } from '../../components/button-with-progress';
  import { Namespace, isError } from '../../extension-registry-types';
  import { MainContext } from '../../context';
+ import { InfoDialog } from '../../components/info-dialog';
 
  export interface NamespaceChangeDialogProps {
      open: boolean;
-     onClose: (newNamespaceName?: string) => void;
+     onClose: () => void;
      namespace: Namespace;
      setLoadingState: (loading: boolean) => void;
  }
@@ -30,6 +31,8 @@
      const [newNamespace, setNewNamespace] = useState('');
      const [removeOldNamespace, setRemoveOldNamespace] = useState(false);
      const [mergeIfNewNamespaceAlreadyExists, setMergeIfNewNamespaceAlreadyExists] = useState(false);
+     const [infoDialogIsOpen, setInfoDialogIsOpen] = useState(false);
+     const [infoDialogMessage, setInfoDialogMessage] = useState('');
 
      const abortController = new AbortController();
      useEffect(() => {
@@ -69,7 +72,8 @@
             }
             props.setLoadingState(false);
             setWorking(false);
-            props.onClose(newNamespace);
+            setInfoDialogIsOpen(true);
+            setInfoDialogMessage(result.success);
         } catch (err) {
             props.setLoadingState(false);
             setWorking(false);
@@ -116,5 +120,6 @@
                 </ButtonWithProgress>
              </DialogActions>
          </Dialog>
+         <InfoDialog infoMessage={infoDialogMessage} isInfoDialogOpen={infoDialogIsOpen} handleCloseDialog={() => {props.onClose(); setInfoDialogIsOpen(false);}}/>
      </>;
  };

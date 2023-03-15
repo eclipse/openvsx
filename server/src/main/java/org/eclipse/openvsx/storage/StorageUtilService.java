@@ -22,6 +22,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.util.Pair;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -340,6 +341,18 @@ public class StorageUtilService implements IStorageService {
                     .location(getNamespaceLogoLocation(namespace))
                     .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                     .build();
+        }
+    }
+
+    @Override
+    public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
+        switch (pairs.get(0).getFirst().getStorageType()) {
+            case STORAGE_GOOGLE:
+                googleStorage.copyFiles(pairs);
+                break;
+            case STORAGE_AZURE:
+                azureStorage.copyFiles(pairs);
+                break;
         }
     }
 }

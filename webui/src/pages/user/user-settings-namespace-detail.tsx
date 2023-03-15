@@ -86,11 +86,8 @@ const useStyles = makeStyles((theme) => ({
 export const NamespaceDetailComponent: FunctionComponent<NamespaceDetailComponent.Props> = props => {
     const classes = useStyles();
     const [changeDialogIsOpen, setChangeDialogIsOpen] = useState(false);
-    const handleCloseChangeDialog = async (newNamespaceName?: string) => {
+    const handleCloseChangeDialog = async () => {
         setChangeDialogIsOpen(false);
-        if (newNamespaceName && props.onNamespaceChange) {
-            props.onNamespaceChange(newNamespaceName);
-        }
     };
     const handleOpenChangeDialog = () => {
         setChangeDialogIsOpen(true);
@@ -157,7 +154,6 @@ export namespace NamespaceDetailComponent {
     export interface Props extends RouteComponentProps {
         namespace: Namespace;
         filterUsers: (user: UserData) => boolean;
-        onNamespaceChange?: (newNamespaceName: string) => void;
         fixSelf: boolean;
         setLoadingState: (loading: boolean) => void;
         namespaceAccessUrl?: string;
