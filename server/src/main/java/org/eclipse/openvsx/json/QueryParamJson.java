@@ -11,8 +11,11 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
+import com.google.common.base.Strings;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.LinkedHashMap;
+import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 
@@ -52,4 +55,21 @@ public class QueryParamJson {
         NAME_WEB, NAME_UNIVERSAL
     })
     public String targetPlatform;
+
+    public String[] toQueryParams() {
+        var queryParams = new LinkedHashMap<String,String>();
+        queryParams.put("namespaceName", namespaceName);
+        queryParams.put("extensionName", extensionName);
+        queryParams.put("extensionVersion", extensionVersion);
+        queryParams.put("extensionId", extensionId);
+        queryParams.put("extensionUuid", extensionUuid);
+        queryParams.put("namespaceUuid", namespaceUuid);
+        queryParams.put("targetPlatform", targetPlatform);
+        queryParams.put("includeAllVersions", String.valueOf(includeAllVersions));
+
+        return queryParams.entrySet().stream()
+                .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
+                .flatMap(entry -> Stream.of(entry.getKey(), entry.getValue()))
+                .toArray(String[]::new);
+    }
 }

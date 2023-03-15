@@ -220,40 +220,40 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public QueryResultJson query(QueryParamJson param) {
-        if (!Strings.isNullOrEmpty(param.extensionId)) {
-            var split = param.extensionId.split("\\.");
+    public QueryResultJson query(QueryRequest request) {
+        if (!Strings.isNullOrEmpty(request.extensionId)) {
+            var split = request.extensionId.split("\\.");
             if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty())
                 throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
-            if (!Strings.isNullOrEmpty(param.namespaceName) && !param.namespaceName.equals(split[0]))
+            if (!Strings.isNullOrEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
-            if (!Strings.isNullOrEmpty(param.extensionName) && !param.extensionName.equals(split[1]))
+            if (!Strings.isNullOrEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
-            param.namespaceName = split[0];
-            param.extensionName = split[1];
+            request.namespaceName = split[0];
+            request.extensionName = split[1];
         }
 
         List<ExtensionVersion> extensionVersions = new ArrayList<>();
-        var targetPlatform = TargetPlatform.isValid(param.targetPlatform) ? param.targetPlatform : null;
+        var targetPlatform = TargetPlatform.isValid(request.targetPlatform) ? request.targetPlatform : null;
 
         // Add extension by UUID (public_id)
-        if (!Strings.isNullOrEmpty(param.extensionUuid)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionPublicId(targetPlatform, param.extensionUuid));
+        if (!Strings.isNullOrEmpty(request.extensionUuid)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionPublicId(targetPlatform, request.extensionUuid));
         }
         // Add extensions by namespace UUID (public_id)
-        if (!Strings.isNullOrEmpty(param.namespaceUuid)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespacePublicId(targetPlatform, param.namespaceUuid));
+        if (!Strings.isNullOrEmpty(request.namespaceUuid)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespacePublicId(targetPlatform, request.namespaceUuid));
         }
 
         // Add extension by namespace and name
-        if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, param.extensionName, param.namespaceName));
+        if (!Strings.isNullOrEmpty(request.namespaceName) && !Strings.isNullOrEmpty(request.extensionName)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, request.extensionName, request.namespaceName));
         // Add extensions by namespace
-        } else if (!Strings.isNullOrEmpty(param.namespaceName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespaceName(targetPlatform, param.namespaceName));
+        } else if (!Strings.isNullOrEmpty(request.namespaceName)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespaceName(targetPlatform, request.namespaceName));
         // Add extensions by name
-        } else if (!Strings.isNullOrEmpty(param.extensionName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, param.extensionName));
+        } else if (!Strings.isNullOrEmpty(request.extensionName)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, request.extensionName));
         }
 
         extensionVersions = extensionVersions.stream()
@@ -277,22 +277,22 @@ public class LocalRegistryService implements IExtensionRegistry {
         var membershipsByNamespaceId = getMemberships(extensionVersions);
 
         // Add a specific version of an extension
-        if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)
-                && !Strings.isNullOrEmpty(param.extensionVersion) && !param.includeAllVersions) {
+        if (!Strings.isNullOrEmpty(request.namespaceName) && !Strings.isNullOrEmpty(request.extensionName)
+                && !Strings.isNullOrEmpty(request.extensionVersion) && !request.includeAllVersions) {
             extensionVersions = extensionVersions.stream()
-                    .filter(ev -> ev.getVersion().equals(param.extensionVersion))
-                    .filter(ev -> ev.getExtension().getName().equals(param.extensionName))
-                    .filter(ev -> ev.getExtension().getNamespace().getName().equals(param.namespaceName))
+                    .filter(ev -> ev.getVersion().equals(request.extensionVersion))
+                    .filter(ev -> ev.getExtension().getName().equals(request.extensionName))
+                    .filter(ev -> ev.getExtension().getNamespace().getName().equals(request.namespaceName))
                     .collect(Collectors.toList());
         }
         // Only add latest version of an extension
-        if(Strings.isNullOrEmpty(param.extensionVersion) && !param.includeAllVersions) {
+        if(Strings.isNullOrEmpty(request.extensionVersion) && !request.includeAllVersions) {
             extensionVersions = new ArrayList<>(latestVersions.values());
         }
 
         var result = new QueryResultJson();
         result.extensions = extensionVersions.stream()
-                .filter(ev -> addToResult(ev, param))
+                .filter(ev -> addToResult(ev, request))
                 .sorted(getExtensionVersionComparator())
                 .map(ev -> {
                     var latest = latestVersions.get(getLatestVersionKey(ev));
@@ -309,40 +309,40 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public QueryResultJson queryV2(QueryParamJsonV2 param) {
-        if (!Strings.isNullOrEmpty(param.extensionId)) {
-            var split = param.extensionId.split("\\.");
+    public QueryResultJson queryV2(QueryRequestV2 request) {
+        if (!Strings.isNullOrEmpty(request.extensionId)) {
+            var split = request.extensionId.split("\\.");
             if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty())
                 throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
-            if (!Strings.isNullOrEmpty(param.namespaceName) && !param.namespaceName.equals(split[0]))
+            if (!Strings.isNullOrEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
-            if (!Strings.isNullOrEmpty(param.extensionName) && !param.extensionName.equals(split[1]))
+            if (!Strings.isNullOrEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
-            param.namespaceName = split[0];
-            param.extensionName = split[1];
+            request.namespaceName = split[0];
+            request.extensionName = split[1];
         }
 
         List<ExtensionVersion> extensionVersions = new ArrayList<>();
-        var targetPlatform = TargetPlatform.isValid(param.targetPlatform) ? param.targetPlatform : null;
+        var targetPlatform = TargetPlatform.isValid(request.targetPlatform) ? request.targetPlatform : null;
 
         // Add extension by UUID (public_id)
-        if (!Strings.isNullOrEmpty(param.extensionUuid)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionPublicId(targetPlatform, param.extensionUuid));
+        if (!Strings.isNullOrEmpty(request.extensionUuid)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionPublicId(targetPlatform, request.extensionUuid));
         }
         // Add extensions by namespace UUID (public_id)
-        if (!Strings.isNullOrEmpty(param.namespaceUuid)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespacePublicId(targetPlatform, param.namespaceUuid));
+        if (!Strings.isNullOrEmpty(request.namespaceUuid)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespacePublicId(targetPlatform, request.namespaceUuid));
         }
 
         // Add extension by namespace and name
-        if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, param.extensionName, param.namespaceName));
+        if (!Strings.isNullOrEmpty(request.namespaceName) && !Strings.isNullOrEmpty(request.extensionName)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, request.extensionName, request.namespaceName));
         // Add extensions by namespace
-        } else if (!Strings.isNullOrEmpty(param.namespaceName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespaceName(targetPlatform, param.namespaceName));
+        } else if (!Strings.isNullOrEmpty(request.namespaceName)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByNamespaceName(targetPlatform, request.namespaceName));
         // Add extensions by name
-        } else if (!Strings.isNullOrEmpty(param.extensionName)) {
-            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, param.extensionName));
+        } else if (!Strings.isNullOrEmpty(request.extensionName)) {
+            extensionVersions.addAll(repositories.findActiveExtensionVersionsByExtensionName(targetPlatform, request.extensionName));
         }
 
         extensionVersions = extensionVersions.stream()
@@ -367,27 +367,27 @@ public class LocalRegistryService implements IExtensionRegistry {
         var membershipsByNamespaceId = getMemberships(extensionVersions);
 
         // Add a specific version of an extension
-        if (!Strings.isNullOrEmpty(param.namespaceName) && !Strings.isNullOrEmpty(param.extensionName)
-                && !Strings.isNullOrEmpty(param.extensionVersion) && !param.includeAllVersions.equals("true")) {
+        if (!Strings.isNullOrEmpty(request.namespaceName) && !Strings.isNullOrEmpty(request.extensionName)
+                && !Strings.isNullOrEmpty(request.extensionVersion) && !request.includeAllVersions.equals("true")) {
             extensionVersions = extensionVersions.stream()
-                    .filter(ev -> ev.getVersion().equals(param.extensionVersion))
-                    .filter(ev -> ev.getExtension().getName().equals(param.extensionName))
-                    .filter(ev -> ev.getExtension().getNamespace().getName().equals(param.namespaceName))
+                    .filter(ev -> ev.getVersion().equals(request.extensionVersion))
+                    .filter(ev -> ev.getExtension().getName().equals(request.extensionName))
+                    .filter(ev -> ev.getExtension().getNamespace().getName().equals(request.namespaceName))
                     .collect(Collectors.toList());
         }
         // Only add latest version of an extension
-        if(Strings.isNullOrEmpty(param.extensionVersion) && !param.includeAllVersions.equals("true")) {
+        if(Strings.isNullOrEmpty(request.extensionVersion) && !request.includeAllVersions.equals("true")) {
             extensionVersions = new ArrayList<>(latestVersions.values());
         }
         // Revert to default includeAllVersions value when extensionVersion is set
-        if(!Strings.isNullOrEmpty(param.extensionVersion) && param.includeAllVersions.equals("true")) {
-            param.includeAllVersions = "links";
+        if(!Strings.isNullOrEmpty(request.extensionVersion) && request.includeAllVersions.equals("true")) {
+            request.includeAllVersions = "links";
         }
 
-        var addAllVersions = param.includeAllVersions.equals("links");
+        var addAllVersions = request.includeAllVersions.equals("links");
         var result = new QueryResultJson();
         result.extensions = extensionVersions.stream()
-                .filter(ev -> addToResultV2(ev, param))
+                .filter(ev -> addToResultV2(ev, request))
                 .sorted(getExtensionVersionComparator())
                 .map(ev -> {
                     var latest = latestVersions.get(getLatestVersionKey(ev));
@@ -546,12 +546,12 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .thenComparing(ExtensionVersion.SORT_COMPARATOR);
     }
 
-    private boolean addToResult(ExtensionVersion extVersion, QueryParamJson param) {
-        return addToResult(extVersion, param.extensionVersion, param.extensionName, param.namespaceName, param.extensionUuid, param.namespaceUuid);
+    private boolean addToResult(ExtensionVersion extVersion, QueryRequest request) {
+        return addToResult(extVersion, request.extensionVersion, request.extensionName, request.namespaceName, request.extensionUuid, request.namespaceUuid);
     }
 
-    private boolean addToResultV2(ExtensionVersion extVersion, QueryParamJsonV2 param) {
-        return addToResult(extVersion, param.extensionVersion, param.extensionName, param.namespaceName, param.extensionUuid, param.namespaceUuid);
+    private boolean addToResultV2(ExtensionVersion extVersion, QueryRequestV2 request) {
+        return addToResult(extVersion, request.extensionVersion, request.extensionName, request.namespaceName, request.extensionUuid, request.namespaceUuid);
     }
 
     private boolean addToResult(

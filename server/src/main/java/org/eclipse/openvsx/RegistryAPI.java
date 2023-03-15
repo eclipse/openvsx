@@ -828,7 +828,7 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var param = new QueryParamJsonV2();
+        var param = new QueryRequestV2();
         param.namespaceName = namespaceName;
         param.extensionName = extensionName;
         param.extensionVersion = extensionVersion;
@@ -932,20 +932,20 @@ public class RegistryAPI {
             )
             String targetPlatform
     ) {
-        var param = new QueryParamJson();
-        param.namespaceName = namespaceName;
-        param.extensionName = extensionName;
-        param.extensionVersion = extensionVersion;
-        param.extensionId = extensionId;
-        param.extensionUuid = extensionUuid;
-        param.namespaceUuid = namespaceUuid;
-        param.includeAllVersions = includeAllVersions;
-        param.targetPlatform = targetPlatform;
+        var request = new QueryRequest();
+        request.namespaceName = namespaceName;
+        request.extensionName = extensionName;
+        request.extensionVersion = extensionVersion;
+        request.extensionId = extensionId;
+        request.extensionUuid = extensionUuid;
+        request.namespaceUuid = namespaceUuid;
+        request.includeAllVersions = includeAllVersions;
+        request.targetPlatform = targetPlatform;
 
         var result = new QueryResultJson();
         for (var registry : getRegistries()) {
             try {
-                var subResult = registry.query(param);
+                var subResult = registry.query(request);
                 if (subResult.extensions != null) {
                     if (result.extensions == null)
                         result.extensions = subResult.extensions;
@@ -969,19 +969,11 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    @Operation(summary = "Provides metadata of extensions matching the given parameters")
+    @Operation(summary = "Provides metadata of extensions matching the given parameters. Deprecated: use GET /api/-/query instead.", deprecated = true)
     @ApiResponses({
         @ApiResponse(
-            responseCode = "200",
-            description = "Returns the (possibly empty) query results"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The request contains an invalid parameter value",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
-            )
+            responseCode = "301",
+            description = "Returns redirect to GET /api/-/query."
         ),
         @ApiResponse(
             responseCode = "429",
@@ -1005,25 +997,12 @@ public class RegistryAPI {
             @RequestBody @Parameter(description = "Parameters of the metadata query")
             QueryParamJson param
     ) {
-        var result = new QueryResultJson();
-        for (var registry : getRegistries()) {
-            try {
-                var subResult = registry.query(param);
-                if (subResult.extensions != null) {
-                    if (result.extensions == null)
-                        result.extensions = subResult.extensions;
-                    else
-                        result.extensions.addAll(subResult.extensions);
-                }
-            } catch (NotFoundException exc) {
-                // Try the next registry
-            } catch (ErrorResultException exc) {
-                return exc.toResponseEntity(QueryResultJson.class);
-            }
-        }
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                .body(result);
+        var location = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api", "-", "query");
+        location = UrlUtil.addQuery(location, param.toQueryParams());
+        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                .location(URI.create(location))
+                .build();
     }
 
     @PostMapping(
