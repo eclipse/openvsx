@@ -421,4 +421,8 @@ public class RepositoryService {
     public Double getAverageReviewRating(Extension extension) {
         return extensionReviewRepo.averageRatingAndActiveTrue(extension);
     }
+
+    public Streamable<FileResource> findFileResources(Namespace namespace) {
+        return fileResourceRepo.findByExtensionExtensionNamespace(namespace);
+    }
 }

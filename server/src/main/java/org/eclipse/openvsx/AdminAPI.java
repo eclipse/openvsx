@@ -282,7 +282,7 @@ public class AdminAPI {
         try {
             admins.checkAdminUser();
             admins.changeNamespace(json);
-            return ResponseEntity.ok(ResultJson.success("Changed namespace " + json.oldNamespace + " to " + json.newNamespace));
+            return ResponseEntity.ok(ResultJson.success("Scheduled namespace change from '" + json.oldNamespace + "' to '" + json.newNamespace + "'.\nIt can take 15 minutes to a couple hours for the change to become visible."));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

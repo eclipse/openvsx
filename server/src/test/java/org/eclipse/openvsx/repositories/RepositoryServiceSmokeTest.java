@@ -166,7 +166,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveExtensionVersionsByNamespacePublicId("targetPlatform", "namespacePublicId"),
                 () -> repositories.findAllNotMatchingByExtensionId(STRING_LIST),
                 () -> repositories.getAverageReviewRating(null),
-                () -> repositories.getAverageReviewRating()
+                () -> repositories.getAverageReviewRating(),
+                () -> repositories.findFileResources(null)
         );
 
         // check that we did not miss anything

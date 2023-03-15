@@ -20,6 +20,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
 import java.io.FileOutputStream;
@@ -28,6 +29,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @Component
 public class GoogleCloudStorageService implements IStorageService {
@@ -205,5 +207,19 @@ public class GoogleCloudStorageService implements IStorageService {
         }
 
         return logoFile;
+    }
+
+    @Override
+    public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
+        for(var pair : pairs) {
+            var source = getObjectId(pair.getFirst());
+            var target = getObjectId(pair.getSecond());
+            var request = new Storage.CopyRequest.Builder()
+                    .setSource(BlobId.of(bucketId, source))
+                    .setTarget(BlobId.of(bucketId, target))
+                    .build();
+
+            getStorage().copy(request).getResult();
+        }
     }
 }

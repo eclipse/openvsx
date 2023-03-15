@@ -340,7 +340,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return binary;
     }
 
-    private String getBinaryName(ExtensionVersion extVersion) {
+    public String getBinaryName(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
         var resourceName = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
