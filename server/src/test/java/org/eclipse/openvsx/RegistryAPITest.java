@@ -1030,15 +1030,8 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{ \"extensionName\": \"bar\" }"))
-                .andExpect(status().isOk())
-                .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                })));
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", "http://localhost/api/-/query?extensionName=bar&includeAllVersions=false"));
     }
 
     @Test
@@ -1047,38 +1040,8 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{ \"namespaceName\": \"foo\" }"))
-                .andExpect(status().isOk())
-                .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                })));
-    }
-
-    @Test
-    public void testPostQueryUnknownExtension() throws Exception {
-        mockExtensionVersion();
-        Mockito.when(repositories.findActiveExtensionVersionsByExtensionName(null, "baz"))
-                .thenReturn(Collections.emptyList());
-
-        mockMvc.perform(post("/api/-/query")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{ \"extensionName\": \"baz\" }"))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{ \"extensions\": [] }"));
-    }
-
-    @Test
-    public void testPostQueryInactiveExtension() throws Exception {
-        mockInactiveExtensionVersion("foo", "bar");
-        mockMvc.perform(post("/api/-/query")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{ \"extensionId\": \"foo.bar\" }"))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{ \"extensions\": [] }"));
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", "http://localhost/api/-/query?namespaceName=foo&includeAllVersions=false"));
     }
 
     @Test
@@ -1087,15 +1050,8 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{ \"extensionId\": \"foo.bar\" }"))
-                .andExpect(status().isOk())
-                .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                })));
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", "http://localhost/api/-/query?extensionId=foo.bar&includeAllVersions=false"));
     }
 
     @Test
@@ -1104,15 +1060,8 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{ \"extensionUuid\": \"5678\" }"))
-                .andExpect(status().isOk())
-                .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                })));
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", "http://localhost/api/-/query?extensionUuid=5678&includeAllVersions=false"));
     }
 
     @Test
@@ -1121,15 +1070,8 @@ public class RegistryAPITest {
         mockMvc.perform(post("/api/-/query")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{ \"namespaceUuid\": \"1234\" }"))
-                .andExpect(status().isOk())
-                .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                })));
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", "http://localhost/api/-/query?namespaceUuid=1234&includeAllVersions=false"));
     }
 
     @Test

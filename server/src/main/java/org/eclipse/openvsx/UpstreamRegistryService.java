@@ -240,17 +240,17 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public QueryResultJson query(QueryParamJson param) {
+    public QueryResultJson query(QueryRequest request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/query";
         var queryParams = new HashMap<String,String>();
-        queryParams.put("namespaceName", param.namespaceName);
-        queryParams.put("extensionName", param.extensionName);
-        queryParams.put("extensionVersion", param.extensionVersion);
-        queryParams.put("extensionId", param.extensionId);
-        queryParams.put("extensionUuid", param.extensionUuid);
-        queryParams.put("namespaceUuid", param.namespaceUuid);
-        queryParams.put("includeAllVersions", String.valueOf(param.includeAllVersions));
-        queryParams.put("targetPlatform", param.targetPlatform);
+        queryParams.put("namespaceName", request.namespaceName);
+        queryParams.put("extensionName", request.extensionName);
+        queryParams.put("extensionVersion", request.extensionVersion);
+        queryParams.put("extensionId", request.extensionId);
+        queryParams.put("extensionUuid", request.extensionUuid);
+        queryParams.put("namespaceUuid", request.namespaceUuid);
+        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
+        queryParams.put("targetPlatform", request.targetPlatform);
 
 
         var queryString = queryParams.entrySet().stream()
@@ -275,17 +275,17 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public QueryResultJson queryV2(QueryParamJsonV2 param) {
+    public QueryResultJson queryV2(QueryRequestV2 request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/v2/-/query";
         var queryParams = new HashMap<String,String>();
-        queryParams.put("namespaceName", param.namespaceName);
-        queryParams.put("extensionName", param.extensionName);
-        queryParams.put("extensionVersion", param.extensionVersion);
-        queryParams.put("extensionId", param.extensionId);
-        queryParams.put("extensionUuid", param.extensionUuid);
-        queryParams.put("namespaceUuid", param.namespaceUuid);
-        queryParams.put("includeAllVersions", String.valueOf(param.includeAllVersions));
-        queryParams.put("targetPlatform", param.targetPlatform);
+        queryParams.put("namespaceName", request.namespaceName);
+        queryParams.put("extensionName", request.extensionName);
+        queryParams.put("extensionVersion", request.extensionVersion);
+        queryParams.put("extensionId", request.extensionId);
+        queryParams.put("extensionUuid", request.extensionUuid);
+        queryParams.put("namespaceUuid", request.namespaceUuid);
+        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
+        queryParams.put("targetPlatform", request.targetPlatform);
 
         var queryString = queryParams.entrySet().stream()
                 .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
