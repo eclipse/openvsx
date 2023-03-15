@@ -30,9 +30,9 @@ public interface IExtensionRegistry {
 
     SearchResultJson search(ISearchService.Options options);
 
-    QueryResultJson query(QueryParamJson param);
+    QueryResultJson query(QueryRequest request);
 
-    QueryResultJson queryV2(QueryParamJsonV2 param);
+    QueryResultJson queryV2(QueryRequestV2 request);
 
     NamespaceDetailsJson getNamespaceDetails(String namespace);
 
