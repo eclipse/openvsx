@@ -187,6 +187,12 @@ public class AzureDownloadCountService {
                     .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            try {
+                Files.delete(downloadsTempFile);
+            } catch (IOException e) {
+                logger.error("Failed to delete downloads file", e);
+            }
         }
     }
 
