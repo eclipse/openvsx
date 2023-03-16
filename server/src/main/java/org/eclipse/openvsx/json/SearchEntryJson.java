@@ -78,7 +78,7 @@ public class SearchEntryJson implements Serializable {
         name = "VersionReference",
         description = "Essential metadata of an extension version"
     )
-    public static class VersionReference {
+    public static class VersionReference implements Serializable {
 
         @Schema(description = "URL to get the full metadata of this version")
         public String url;
