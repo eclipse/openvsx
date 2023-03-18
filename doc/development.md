@@ -14,12 +14,12 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 - Make sure the firewall is not blocking internet access on WSL2 - need to check every time before running the application or installing new tools.
 
-  - Try to ping a random website, for example, “ping -c 3 [www.google.ca](http://www.google.ca)”, if fails, proceed below
+  - Try to ping a random website, for example, "ping -c 3 [www.google.ca](http://www.google.ca)", if fails, proceed below
   - sudo vi /etc/resolv.conf
   - Change nameserver to 8.8.8.8
   - Ping google again to see if it works this time
   - Related issue: [https://github.com/microsoft/WSL/issues/3669](https://github.com/microsoft/WSL/issues/3669)
-  - Solution that I’m following: [https://stackoverflow.com/questions/60269422/windows10-wsl2-ubuntu-debian-no-network](https://stackoverflow.com/questions/60269422/windows10-wsl2-ubuntu-debian-no-network)
+  - Solution that I'm following: [https://stackoverflow.com/questions/60269422/windows10-wsl2-ubuntu-debian-no-network](https://stackoverflow.com/questions/60269422/windows10-wsl2-ubuntu-debian-no-network)
 
 - clone the repository from github
 - set up vscode on WSL
@@ -33,7 +33,7 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
   - sudo service postgresql start
   - sudo service postgresql status (this is to check if the service is really on)
   - sudo -u postgres psql (connect to the postgres service)
-    - CREATE ROLE gitpod with LOGIN PASSWORD ‘gitpod’;
+    - CREATE ROLE gitpod with LOGIN PASSWORD 'gitpod';
   - [https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-database](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-database)
 
 - Install node.js using nvm
@@ -52,7 +52,7 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 - Instal Elasticsearch with Docker
 
   - sudo docker pull elasticsearch:7.9.3
-  - sudo docker run -d -name elasticsearch -p 9200:9200 -p 9300:9300 -e “discovery.type=single-node” elasticsearch:7.9.3
+  - sudo docker run -d -name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.9.3
 
 - cd cli
 
