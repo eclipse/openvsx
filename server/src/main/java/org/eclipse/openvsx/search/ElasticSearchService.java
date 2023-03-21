@@ -43,9 +43,9 @@ import org.springframework.data.elasticsearch.core.*;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StopWatch;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
@@ -92,7 +92,6 @@ public class ElasticSearchService implements ISearchService {
      * not exist yet, it is created and initialized. Otherwise nothing happens.
      */
     @EventListener
-    @Transactional(readOnly = true)
     @Retryable(DataAccessResourceFailureException.class)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void initSearchIndex(ApplicationStartedEvent event) {
@@ -112,7 +111,6 @@ public class ElasticSearchService implements ISearchService {
      * timestamps in relation to the current time or the extension rating.
      */
     @Scheduled(cron = "0 0 4 * * *", zone = "UTC")
-    @Transactional(readOnly = true)
     @Retryable(DataAccessResourceFailureException.class)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void updateSearchIndex() {
@@ -135,7 +133,6 @@ public class ElasticSearchService implements ISearchService {
      * In any case, this method scans all extensions in the database and indexes their
      * relevant metadata.
      */
-    @Transactional
     @Retryable(DataAccessResourceFailureException.class)
     public void updateSearchIndex(boolean clear) {
         var locked = false;
@@ -164,7 +161,7 @@ public class ElasticSearchService implements ISearchService {
             var stats = new SearchStats(repositories);
             var indexQueries = allExtensions.map(extension ->
                 new IndexQueryBuilder()
-                    .withObject(relevanceService.toSearchEntry(extension, stats))
+                    .withObject(relevanceService.toSearchEntryTrxn(extension, stats))
                     .build()
             ).toList();
 
@@ -181,6 +178,12 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
+    @Async
+    @Retryable(DataAccessResourceFailureException.class)
+    public void updateSearchEntriesAsync(List<Extension> extensions) {
+        updateSearchEntries(extensions);
+    }
+
     @Retryable(DataAccessResourceFailureException.class)
     public void updateSearchEntries(List<Extension> extensions) {
         if (!isEnabled() || extensions.isEmpty()) {
@@ -192,7 +195,7 @@ public class ElasticSearchService implements ISearchService {
             var stats = new SearchStats(repositories);
             var indexQueries = extensions.stream().map(extension ->
                     new IndexQueryBuilder()
-                            .withObject(relevanceService.toSearchEntry(extension, stats))
+                            .withObject(relevanceService.toSearchEntryTrxn(extension, stats))
                             .build()
             ).collect(Collectors.toList());
             searchOperations.bulkIndex(indexQueries, indexOps.getIndexCoordinates());

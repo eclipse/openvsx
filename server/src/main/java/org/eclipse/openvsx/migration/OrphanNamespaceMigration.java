@@ -9,20 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx.migration;
 
-import java.util.LinkedHashSet;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.util.LinkedHashSet;
 
 @Component
 public class OrphanNamespaceMigration {
@@ -35,6 +32,7 @@ public class OrphanNamespaceMigration {
     @Autowired
     RepositoryService repositories;
 
+    @Transactional
     public void fixOrphanNamespaces() {
         int[] count = new int[3];
         repositories.findOrphanNamespaces().forEach(namespace -> {

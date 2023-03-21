@@ -44,6 +44,8 @@ public interface ISearchService {
      */
     void updateSearchEntries(List<Extension> extensions);
 
+    void updateSearchEntriesAsync(List<Extension> extensions);
+
     /**
      * The given extension has been added to the registry, we need to refresh the search index.
      */
