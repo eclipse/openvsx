@@ -9,10 +9,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import com.azure.core.util.polling.SyncPoller;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
+import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobHttpHeaders;
 import com.azure.storage.blob.models.BlobStorageException;
+import com.azure.storage.blob.models.CopyStatusType;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
@@ -20,6 +23,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +32,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class AzureBlobStorageService implements IStorageService {
@@ -199,6 +207,25 @@ public class AzureBlobStorageService implements IStorageService {
             return logoFile;
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
+        var copyOperations = new ArrayList<SyncPoller<BlobCopyInfo, Void>>();
+        for(var pair : pairs) {
+            var oldLocation = getLocation(pair.getFirst()).toString();
+            var newBlobName = getBlobName(pair.getSecond());
+            var poller = getContainerClient().getBlobClient(newBlobName)
+                    .beginCopy(oldLocation, Duration.of(1, ChronoUnit.SECONDS));
+
+            copyOperations.add(poller);
+        }
+        for(var poller : copyOperations) {
+            var response = poller.waitForCompletion();
+            if(response.getValue().getCopyStatus() != CopyStatusType.SUCCESS) {
+                throw new RuntimeException(response.getValue().getError());
+            }
         }
     }
 }

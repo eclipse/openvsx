@@ -11,6 +11,8 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Objects;
+
 /**
  * Used to change a namespace
  */
@@ -20,4 +22,17 @@ public class ChangeNamespaceJson {
     public String newNamespace;
     public boolean removeOldNamespace;
     public boolean mergeIfNewNamespaceAlreadyExists;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ChangeNamespaceJson that = (ChangeNamespaceJson) o;
+        return removeOldNamespace == that.removeOldNamespace && mergeIfNewNamespaceAlreadyExists == that.mergeIfNewNamespaceAlreadyExists && Objects.equals(oldNamespace, that.oldNamespace) && Objects.equals(newNamespace, that.newNamespace);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(oldNamespace, newNamespace, removeOldNamespace, mergeIfNewNamespaceAlreadyExists);
+    }
 }

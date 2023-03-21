@@ -9,17 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.time.DateTimeException;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import com.google.common.base.Strings;
-
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -31,9 +21,19 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.VersionService;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 
@@ -69,6 +69,9 @@ public class AdminService {
 
     @Autowired
     CacheService cache;
+
+    @Autowired
+    JobRequestScheduler scheduler;
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, UserData admin)
@@ -183,7 +186,11 @@ public class AdminService {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json) {
-        validateNamespace(json.name);
+        var namespaceIssue = validator.validateNamespace(json.name);
+        if (namespaceIssue.isPresent()) {
+            throw new ErrorResultException(namespaceIssue.get().toString());
+        }
+
         var namespace = repositories.findNamespace(json.name);
         if (namespace != null) {
             throw new ErrorResultException("Namespace already exists: " + namespace.getName());
@@ -194,12 +201,11 @@ public class AdminService {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
-    @Transactional
     public void changeNamespace(ChangeNamespaceJson json) {
-        if(Strings.isNullOrEmpty(json.oldNamespace)) {
+        if (Strings.isNullOrEmpty(json.oldNamespace)) {
             throw new ErrorResultException("Old namespace must have a value");
         }
-        if(Strings.isNullOrEmpty(json.newNamespace)) {
+        if (Strings.isNullOrEmpty(json.newNamespace)) {
             throw new ErrorResultException("New namespace must have a value");
         }
 
@@ -209,40 +215,11 @@ public class AdminService {
         }
 
         var newNamespace = repositories.findNamespace(json.newNamespace);
-        if(newNamespace != null && !json.mergeIfNewNamespaceAlreadyExists) {
+        if (newNamespace != null && !json.mergeIfNewNamespaceAlreadyExists) {
             throw new ErrorResultException("New namespace already exists: " + json.newNamespace);
         }
-        if(newNamespace == null) {
-            validateNamespace(json.newNamespace);
-            newNamespace = new Namespace();
-            newNamespace.setName(json.newNamespace);
-            entityManager.persist(newNamespace);
-        }
 
-        var extensions = repositories.findExtensions(oldNamespace);
-        for(var extension : extensions) {
-            cache.evictExtensionJsons(extension);
-            cache.evictLatestExtensionVersion(extension);
-            extension.setNamespace(newNamespace);
-        }
-
-        var memberships = repositories.findMemberships(oldNamespace);
-        for(var membership : memberships) {
-            membership.setNamespace(newNamespace);
-        }
-
-        if(json.removeOldNamespace) {
-            entityManager.remove(oldNamespace);
-        }
-
-        search.updateSearchEntries(extensions.toList());
-    }
-
-    private void validateNamespace(String namespace) {
-        var namespaceIssue = validator.validateNamespace(namespace);
-        if (namespaceIssue.isPresent()) {
-            throw new ErrorResultException(namespaceIssue.get().toString());
-        }
+        scheduler.enqueue(new ChangeNamespaceJobRequest(json));
     }
     
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
