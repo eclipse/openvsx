@@ -53,7 +53,7 @@
         props.onClose();
     };
     const onInfoDialogClose = () => {
-        onClose(); 
+        onClose();
         setInfoDialogIsOpen(false);
     };
     const onRemoveOldNamespaceChange = (event: React.ChangeEvent, checked: boolean) => {
