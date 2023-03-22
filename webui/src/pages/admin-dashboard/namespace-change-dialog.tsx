@@ -52,6 +52,10 @@
     const onClose = () => {
         props.onClose();
     };
+    const onInfoDialogClose = () => {
+        onClose(); 
+        setInfoDialogIsOpen(false);
+    };
     const onRemoveOldNamespaceChange = (event: React.ChangeEvent, checked: boolean) => {
         setRemoveOldNamespace(checked);
     };
@@ -120,6 +124,6 @@
                 </ButtonWithProgress>
              </DialogActions>
          </Dialog>
-         <InfoDialog infoMessage={infoDialogMessage} isInfoDialogOpen={infoDialogIsOpen} handleCloseDialog={() => {props.onClose(); setInfoDialogIsOpen(false);}}/>
+         <InfoDialog infoMessage={infoDialogMessage} isInfoDialogOpen={infoDialogIsOpen} handleCloseDialog={onInfoDialogClose}/>
      </>;
  };
