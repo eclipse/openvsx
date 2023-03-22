@@ -63,14 +63,17 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 @WebMvcTest(UserAPI.class)
 @AutoConfigureWebClient
 @MockBean({
-        EntityManager.class, EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class,
-        CacheService.class, ExtensionValidator.class, SimpleMeterRegistry.class
+        EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
+        ExtensionValidator.class, SimpleMeterRegistry.class
 })
 public class UserAPITest {
 
     @SpyBean
     UserService users;
 
+    @MockBean
+    EntityManager entityManager;
+    
     @MockBean
     RepositoryService repositories;
 
@@ -153,6 +156,8 @@ public class UserAPITest {
         token.setActive(true);
         Mockito.when(repositories.findAccessToken(100))
                 .thenReturn(token);
+        Mockito.when(entityManager.merge(userData))
+                .thenReturn(userData);
 
         mockMvc.perform(post("/user/token/delete/{id}", 100)
                 .with(user("test_user"))
