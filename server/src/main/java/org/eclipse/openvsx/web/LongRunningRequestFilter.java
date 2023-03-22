@@ -21,7 +21,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 public class LongRunningRequestFilter extends OncePerRequestFilter {
 
@@ -80,22 +79,6 @@ public class LongRunningRequestFilter extends OncePerRequestFilter {
                         .append(maxBytes)
                         .append(" bytes\n\t");
             }
-        }
-
-        builder.append("Headers:");
-        var headerNames = request.getHeaderNames().asIterator();
-        while(headerNames.hasNext()) {
-            var headerName = headerNames.next();
-            var headerValues = new ArrayList<String>();
-            var headers = request.getHeaders(headerName).asIterator();
-            while(headers.hasNext()) {
-                headerValues.add(headers.next());
-            }
-
-            builder.append("\n\t\t")
-                    .append(headerName)
-                    .append(": ")
-                    .append(String.join(", ", headerValues));
         }
 
         builder.append("\n\tResponse: ")
