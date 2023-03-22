@@ -19,6 +19,7 @@ import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.core.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -157,6 +158,13 @@ public class DatabaseSearchService implements ISearchService {
     @Override
     @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void updateSearchIndex(boolean clear) {
+
+    }
+
+    @Override
+    @Async
+    @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
+    public void updateSearchEntriesAsync(List<Extension> extensions) {
 
     }
 

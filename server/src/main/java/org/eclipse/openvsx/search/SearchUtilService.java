@@ -68,6 +68,11 @@ public class SearchUtilService implements ISearchService {
     }
 
     @Override
+    public void updateSearchEntriesAsync(List<Extension> extensions) {
+        getImplementation().updateSearchEntriesAsync(extensions);
+    }
+
+    @Override
     public void updateSearchEntry(Extension extension) {
         getImplementation().updateSearchEntry(extension);
     }

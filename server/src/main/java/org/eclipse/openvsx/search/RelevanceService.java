@@ -10,14 +10,8 @@
 
 package org.eclipse.openvsx.search;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import javax.annotation.PostConstruct;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -27,8 +21,15 @@ import org.eclipse.openvsx.util.VersionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * Provides relevance for a given extension
@@ -57,6 +58,9 @@ public class RelevanceService {
     double deprecatedElasticSearchUnverifiedRelevance;
 
     @Autowired
+    EntityManager entityManager;
+
+    @Autowired
     RepositoryService repositories;
 
     @Autowired
@@ -82,7 +86,13 @@ public class RelevanceService {
         }
     }
 
-    protected ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
+    @Transactional
+    public ExtensionSearch toSearchEntryTrxn(Extension extension, SearchStats stats) {
+        extension = entityManager.merge(extension);
+        return toSearchEntry(extension, stats);
+    }
+
+    public ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
         var latest = versions.getLatest(extension, null, false, true);
         var entry = extension.toSearch(latest);
         entry.rating = calculateRating(extension, stats);
