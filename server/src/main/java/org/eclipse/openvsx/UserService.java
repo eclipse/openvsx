@@ -306,7 +306,12 @@ public class UserService {
     @Transactional
     public ResultJson deleteAccessToken(UserData user, long id) {
         var token = repositories.findAccessToken(id);
-        if (token == null || !token.isActive() || !token.getUser().equals(user)) {
+        if (token == null || !token.isActive()) {
+            throw new NotFoundException();
+        }
+
+        user = entityManager.merge(user);
+        if(!token.getUser().equals(user)) {
             throw new NotFoundException();
         }
 
