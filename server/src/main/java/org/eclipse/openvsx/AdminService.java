@@ -31,6 +31,7 @@ import javax.transaction.Transactional;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
@@ -217,6 +218,31 @@ public class AdminService {
         var newNamespace = repositories.findNamespace(json.newNamespace);
         if (newNamespace != null && !json.mergeIfNewNamespaceAlreadyExists) {
             throw new ErrorResultException("New namespace already exists: " + json.newNamespace);
+        }
+        if (newNamespace != null) {
+            var newExtensions = repositories.findExtensions(newNamespace).stream()
+                    .collect(Collectors.toMap(Extension::getName, e -> e));
+            var oldExtensions = repositories.findExtensions(oldNamespace).stream()
+                    .collect(Collectors.toMap(Extension::getName, e -> e));
+
+            var duplicateExtensions = oldExtensions.keySet().stream()
+                    .filter(newExtensions::containsKey)
+                    .collect(Collectors.joining("','"));
+            if(!duplicateExtensions.isEmpty()) {
+                var message = "Can't merge namespaces, because new namespace '" +
+                        json.newNamespace +
+                        "' and old namespace '" +
+                        json.oldNamespace +
+                        "' have " +
+                        (duplicateExtensions.indexOf(',') == -1 ? "a " : "") +
+                        "duplicate extension" +
+                        (duplicateExtensions.indexOf(',') == -1 ? "" : "s") +
+                        ": '" +
+                        duplicateExtensions +
+                        "'.";
+
+                throw new ErrorResultException(message);
+            }
         }
 
         scheduler.enqueue(new ChangeNamespaceJobRequest(json));
