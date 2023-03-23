@@ -778,6 +778,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .map(e -> {
                     var entry = e.getValue().toSearchEntryJson();
                     entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
+                    entry.averageRating = repositories.findExtension(entry.name, entry.namespace).getAverageRating();
                     return new AbstractMap.SimpleEntry<>(e.getKey(), entry);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

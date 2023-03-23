@@ -16,11 +16,11 @@ public class ShallowEtagHeaderFilter extends org.springframework.web.filter.Shal
 
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         // limit the filter to /api/{namespace}/{extension}, /api/{namespace}/details
-        // and /api/{namespace}/{extension}/{version} endpoints
+        // and /api/{namespace}/{extension}/{version}, and /api/-/search endpoints
         var path = request.getRequestURI().substring(1).split("/");
-        var applyFilter = path.length == 3 || path.length == 4;
-        if(applyFilter) {
-            applyFilter = path[0].equals("api") && !path[1].equals("-");
+        var applyFilter = (path.length == 3 || path.length == 4) && path[0].equals("api");
+        if(applyFilter && path[1].equals("-")) {
+            applyFilter = path[2].contains("search");
         }
         return !applyFilter;
     }
