@@ -54,7 +54,7 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
   - sudo docker pull elasticsearch:7.9.3
   - sudo docker run -d -name elasticsearch -p 9200:9200 -p 9300:9300 -e “discovery.type=single-node” elasticsearch:7.9.3
 
-### Setup locally on MacOS
+### Setup locally on macOS
 
 - Set up postgreSQL using Homebrew
 
@@ -74,7 +74,7 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 - Make sure the correct Java version is being used
 
-  -Download Java 11 if you don't have it already
+  - Download Java 11 if you don't have it already
 
   - Run the command `/usr/libexec/java_home –V` to see your matching Java virtual machines
 
