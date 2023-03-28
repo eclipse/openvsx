@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class ChangeNamespaceService {
@@ -59,7 +60,7 @@ public class ChangeNamespaceService {
         }
 
         changeExtensionNamespace(extensions, newNamespace);
-        changeMembershipNamespace(oldNamespace, newNamespace);
+        changeMembershipNamespace(oldNamespace, newNamespace, removeOldNamespace);
         updatedResources.forEach(entityManager::merge);
 
         if(removeOldNamespace) {
@@ -77,10 +78,18 @@ public class ChangeNamespaceService {
         }
     }
 
-    private void changeMembershipNamespace(Namespace oldNamespace, Namespace newNamespace) {
-        var memberships = repositories.findMemberships(oldNamespace);
-        for(var membership : memberships) {
-            membership.setNamespace(newNamespace);
+    private void changeMembershipNamespace(Namespace oldNamespace, Namespace newNamespace, boolean removeOldNamespace) {
+        var oldMemberships = repositories.findMemberships(oldNamespace).stream()
+                .collect(Collectors.toMap(m -> m.getUser().getId(), m -> m));
+        var newMemberships = repositories.findMemberships(newNamespace).stream()
+                .collect(Collectors.toMap(m -> m.getUser().getId(), m -> m));
+
+        for(var entry : oldMemberships.entrySet()) {
+            if(!newMemberships.containsKey(entry.getKey())) {
+                entry.getValue().setNamespace(newNamespace);
+            } else if (removeOldNamespace) {
+                entityManager.remove(entry.getValue());
+            }
         }
     }
 }
