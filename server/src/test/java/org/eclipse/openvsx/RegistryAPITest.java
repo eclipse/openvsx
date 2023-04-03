@@ -36,6 +36,7 @@ import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
+import org.eclipse.openvsx.cache.SearchEntryJsonCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
@@ -2171,6 +2172,16 @@ public class RegistryAPITest {
         @Bean
         PublishExtensionVersionHandler publishExtensionVersionHandler() {
             return new PublishExtensionVersionHandler();
+        }
+
+        @Bean
+        SearchEntryService searchEntryService() {
+            return new SearchEntryService();
+        }
+
+        @Bean
+        SearchEntryJsonCacheKeyGenerator searchEntryJsonCacheKeyGenerator() {
+            return new SearchEntryJsonCacheKeyGenerator();
         }
     }
 }

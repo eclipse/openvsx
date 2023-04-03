@@ -46,6 +46,14 @@ public class ExtensionSearch implements Serializable {
 
     @Nullable
     @Field(index = false, type = FieldType.Float)
+    public Double averageRating;
+
+    @Nullable
+    @Field(index = false, type = FieldType.Float)
+    public Long reviewCount;
+
+    @Nullable
+    @Field(index = false, type = FieldType.Float)
     public Double rating;
 
     @Field(index = false)

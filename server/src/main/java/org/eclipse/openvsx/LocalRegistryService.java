@@ -29,7 +29,6 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -39,8 +38,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Retryable;
@@ -81,6 +78,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     CacheService cache;
+
+    @Autowired
+    SearchEntryService searchEntries;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -211,7 +211,22 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var searchHits = search.search(options);
-        json.extensions = toSearchEntries(searchHits, options);
+        var extensions = new ArrayList<SearchEntryJson>();
+        for (var searchHit : searchHits) {
+            var searchEntry = searchEntries.toJson(searchHit, options.includeAllVersions);
+            if(searchEntry != null) {
+                // use averageRating, reviewCount and downloadCount from ElasticSearch response,
+                // so that cached SearchEntryJson doesn't have to be evicted every time
+                // averageRating, reviewCount or downloadCount are updated.
+                var extensionSearch = searchHit.getContent();
+                searchEntry.averageRating = extensionSearch.averageRating;
+                searchEntry.reviewCount = extensionSearch.reviewCount;
+                searchEntry.downloadCount = extensionSearch.downloadCount;
+                extensions.add(searchEntry);
+            }
+        }
+
+        json.extensions = extensions;
         json.offset = options.requestedOffset;
         json.totalSize = (int) searchHits.getTotalHits();
         return json;
@@ -739,81 +754,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         cache.evictExtensionJsons(extension);
         cache.evictLatestExtensionVersion(extension);
         return ResultJson.success("Deleted review for " + extension.getNamespace().getName() + "." + extension.getName());
-    }
-
-    private Extension getExtension(SearchHit<ExtensionSearch> searchHit) {
-        var searchItem = searchHit.getContent();
-        var extension = entityManager.find(Extension.class, searchItem.id);
-        if (extension == null || !extension.isActive()) {
-            extension = new Extension();
-            extension.setId(searchItem.id);
-            search.removeSearchEntry(extension);
-            return null;
-        }
-
-        return extension;
-    }
-
-    private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> searchHits, ISearchService.Options options) {
-        var serverUrl = UrlUtil.getBaseUrl();
-        var extensions = searchHits.stream()
-                .map(this::getExtension)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        var latestVersions = extensions.stream()
-                .map(e -> {
-                    var latest = versions.getLatestTrxn(e, null, false, true);
-                    return new AbstractMap.SimpleEntry<>(e.getId(), latest);
-                })
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        var searchEntries = latestVersions.entrySet().stream()
-                .map(e -> {
-                    var entry = e.getValue().toSearchEntryJson();
-                    entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
-                    return new AbstractMap.SimpleEntry<>(e.getKey(), entry);
-                })
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        var fileUrls = storageUtil.getFileUrls(latestVersions.values(), serverUrl, DOWNLOAD, ICON);
-        searchEntries.forEach((extensionId, searchEntry) -> searchEntry.files = fileUrls.get(latestVersions.get(extensionId).getId()));
-        if (options.includeAllVersions) {
-            var allActiveVersions = repositories.findActiveVersions(extensions).stream()
-                    .sorted(ExtensionVersion.SORT_COMPARATOR)
-                    .collect(Collectors.toList());
-
-            var activeVersionsByExtensionId = allActiveVersions.stream()
-                    .collect(Collectors.groupingBy(ev -> ev.getExtension().getId()));
-
-            var versionUrls = storageUtil.getFileUrls(allActiveVersions, serverUrl, DOWNLOAD);
-            for(var extension : extensions) {
-                var activeVersions = activeVersionsByExtensionId.get(extension.getId());
-                var searchEntry = searchEntries.get(extension.getId());
-                searchEntry.allVersions = getAllVersionReferences(activeVersions, versionUrls, serverUrl);
-            }
-        }
-
-        return extensions.stream()
-                .map(Extension::getId)
-                .map(searchEntries::get)
-                .collect(Collectors.toList());
-    }
-
-    private List<SearchEntryJson.VersionReference> getAllVersionReferences(
-            List<ExtensionVersion> extVersions,
-            Map<Long, Map<String, String>> versionUrls,
-            String serverUrl
-    ) {
-        Collections.sort(extVersions, ExtensionVersion.SORT_COMPARATOR);
-        return extVersions.stream().map(extVersion -> {
-            var ref = new SearchEntryJson.VersionReference();
-            ref.version = extVersion.getVersion();
-            ref.engines = extVersion.getEnginesMap();
-            ref.url = UrlUtil.createApiVersionUrl(serverUrl, extVersion);
-            ref.files = versionUrls.get(extVersion.getId());
-            return ref;
-        }).collect(Collectors.toList());
     }
 
     public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, String targetPlatform, boolean onlyActive, boolean inTransaction) {
