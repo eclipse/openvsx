@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -29,6 +31,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +68,9 @@ public class ElasticSearchService implements ISearchService {
     @Autowired
     RelevanceService relevanceService;
 
+    @Autowired
+    JobRequestScheduler scheduler;
+
     @Value("${ovsx.elasticsearch.enabled:true}")
     boolean enableSearch;
     @Value("${ovsx.elasticsearch.clear-on-start:false}")
@@ -95,6 +101,7 @@ public class ElasticSearchService implements ISearchService {
     @Retryable(DataAccessResourceFailureException.class)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void initSearchIndex(ApplicationStartedEvent event) {
+        scheduler.scheduleRecurrently("ElasticSearchUpdateIndex", "0 0 4 * * *", ZoneId.of("UTC"), new HandlerJobRequest<>(ElasticSearchUpdateIndexJobRequestHandler.class));
         if (!isEnabled() || !clearOnStart && searchOperations.indexOps(ExtensionSearch.class).exists()) {
             return;
         }
@@ -106,11 +113,10 @@ public class ElasticSearchService implements ISearchService {
     }
 
     /**
-     * Task scheduled once per day to soft-update the search index. This is necessary
-     * because the relevance of index entries might consider the extension publishing
-     * timestamps in relation to the current time or the extension rating.
+     * Soft-update the search index, because the relevance of index entries
+     * consider the extension publishing timestamps in relation to the current
+     * time or the extension rating.
      */
-    @Scheduled(cron = "0 0 4 * * *", zone = "UTC")
     @Retryable(DataAccessResourceFailureException.class)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void updateSearchIndex() {
