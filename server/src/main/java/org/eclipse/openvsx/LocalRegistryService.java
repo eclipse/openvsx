@@ -182,7 +182,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public boolean isType (String fileName){
-        var expectedTypes = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST);
+        var expectedTypes = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, DOWNLOAD_SHA256, CHANGELOG, VSIXMANIFEST);
         return expectedTypes.stream().anyMatch(fileName::equalsIgnoreCase);
     }
 
@@ -431,7 +431,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var extVersion = versions.getLatest(extension, null, false, true);
         var entry = extVersion.toSearchEntryJson();
         entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
-        entry.files = storageUtil.getFileUrls(extVersion, serverUrl, DOWNLOAD, ICON);
+        entry.files = storageUtil.getFileUrls(extVersion, serverUrl, DOWNLOAD, DOWNLOAD_SHA256, ICON);
         return entry;
     }
 
@@ -515,7 +515,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return Collections.emptyMap();
         }
 
-        var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
+        var fileTypes = List.of(DOWNLOAD, DOWNLOAD_SHA256, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
         var extensionVersionIds = extensionVersions.stream()
                 .map(ExtensionVersion::getId)
                 .collect(Collectors.toSet());
@@ -776,7 +776,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        var fileUrls = storageUtil.getFileUrls(latestVersions.values(), serverUrl, DOWNLOAD, ICON);
+        var fileUrls = storageUtil.getFileUrls(latestVersions.values(), serverUrl, DOWNLOAD, DOWNLOAD_SHA256, ICON);
         searchEntries.forEach((extensionId, searchEntry) -> searchEntry.files = fileUrls.get(latestVersions.get(extensionId).getId()));
         if (options.includeAllVersions) {
             var allActiveVersions = repositories.findActiveVersions(extensions).stream()
@@ -867,7 +867,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                     .forEach(e -> json.allVersions.put(e.getKey(), e.getValue()));
         }
 
-        var fileUrls = storageUtil.getFileUrls(List.of(extVersion), serverUrl, DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
+        var fileUrls = storageUtil.getFileUrls(List.of(extVersion), serverUrl, DOWNLOAD, DOWNLOAD_SHA256, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
         json.files = fileUrls.get(extVersion.getId());
         if (json.dependencies != null) {
             json.dependencies.forEach(ref -> {

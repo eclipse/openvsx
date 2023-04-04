@@ -11,6 +11,8 @@ package org.eclipse.openvsx;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
@@ -26,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.ArchiveUtil;
@@ -350,6 +353,26 @@ public class ExtensionProcessor implements AutoCloseable {
 
         resourceName += ".vsix";
         return resourceName;
+    }
+
+    public FileResource generateSha256Checksum(ExtensionVersion extVersion) {
+        String hash = null;
+        try(var input = Files.newInputStream(extensionFile)) {
+            hash = DigestUtils.sha256Hex(input);
+        } catch (IOException e) {
+            logger.error("Failed to read extensionFile", e);
+        }
+
+        if(hash == null) {
+            return null;
+        }
+
+        var sha256 = new FileResource();
+        sha256.setExtension(extVersion);
+        sha256.setName(getBinaryName(extVersion).replace(".vsix", ".sha256"));
+        sha256.setType(FileResource.DOWNLOAD_SHA256);
+        sha256.setContent(hash.getBytes(StandardCharsets.UTF_8));
+        return sha256;
     }
 
     protected FileResource getManifest(ExtensionVersion extVersion) {

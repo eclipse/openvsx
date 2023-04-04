@@ -410,6 +410,10 @@ public class RepositoryService {
         return findNotMigratedItems("V1_34__ExtensionVersion_Fix_TargetPlatform.sql");
     }
 
+    public Streamable<MigrationItem> findNotMigratedSha256Checksums() {
+        return findNotMigratedItems("V1_35__FileResource_Generate_Sha256_Checksum.sql");
+    }
+
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
         return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript);
     }

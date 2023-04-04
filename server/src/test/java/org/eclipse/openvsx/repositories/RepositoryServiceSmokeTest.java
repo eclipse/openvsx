@@ -148,6 +148,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findNotMigratedRenamedDownloads(),
                 () -> repositories.findNotMigratedVsixManifests(),
                 () -> repositories.findNotMigratedTargetPlatforms(),
+                () -> repositories.findNotMigratedSha256Checksums(),
                 () -> repositories.topMostActivePublishingUsers(NOW, 1),
                 () -> repositories.topNamespaceExtensions(NOW, 1),
                 () -> repositories.topNamespaceExtensionVersions(NOW, 1),
