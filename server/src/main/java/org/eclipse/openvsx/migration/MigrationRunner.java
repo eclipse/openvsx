@@ -12,6 +12,7 @@ package org.eclipse.openvsx.migration;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,9 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
     @Autowired
     MigrationService migrations;
 
+    @Autowired
+    JobRequestScheduler scheduler;
+
     @Override
     @Job(name = "Run migrations", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
@@ -36,6 +40,7 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         renameDownloadsMigration();
         extractVsixManifestMigration();
         fixTargetPlatformMigration();
+        generateSha256ChecksumMigration();
     }
 
     private void extractResourcesMigration() {
@@ -66,5 +71,11 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         var jobName = "FixTargetPlatformMigration";
         var handler = FixTargetPlatformsJobRequestHandler.class;
         repositories.findNotMigratedTargetPlatforms().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+    }
+
+    private void generateSha256ChecksumMigration() {
+        var jobName = "GenerateSha256ChecksumMigration";
+        var handler = GenerateSha256ChecksumJobRequestHandler.class;
+        repositories.findNotMigratedSha256Checksums().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
     }
 }

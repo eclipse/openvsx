@@ -209,6 +209,7 @@ public class PublishExtensionVersionHandler {
 
             processor.processEachResource(extVersion, consumer);
             processor.getFileResources(extVersion).forEach(consumer);
+            consumer.accept(processor.generateSha256Checksum(extVersion));
         }
 
         // Update whether extension is active, the search index and evict cache
@@ -225,6 +226,7 @@ public class PublishExtensionVersionHandler {
         service.mirrorResource(download);
         try(var processor = new ExtensionProcessor(extensionFile)) {
             processor.getFileResources(extVersion).forEach(resource -> service.mirrorResource(resource));
+            service.mirrorResource(processor.generateSha256Checksum(extVersion));
             // don't store file resources, they can be generated on the fly to avoid traversing entire zip file
         }
     }

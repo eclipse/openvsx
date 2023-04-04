@@ -196,7 +196,7 @@ public class UserAPI {
                     json.preview = latest.isPreview();
                     json.active = latest.getExtension().isActive();
                     json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(),
-                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
+                            DOWNLOAD, DOWNLOAD_SHA256, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
 
                     return json;
                 })
