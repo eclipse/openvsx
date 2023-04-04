@@ -9,19 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -38,8 +31,16 @@ import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.persistence.EntityManager;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(SpringExtension.class)
+@MockBean({JobRequestScheduler.class})
 public class ElasticSearchServiceTest {
 
     @MockBean
