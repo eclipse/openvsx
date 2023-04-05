@@ -19,8 +19,8 @@ import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.eclipse.openvsx.AdminService;
 import org.eclipse.openvsx.UrlConfigService;
+import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.jobrunr.jobs.annotations.Job;

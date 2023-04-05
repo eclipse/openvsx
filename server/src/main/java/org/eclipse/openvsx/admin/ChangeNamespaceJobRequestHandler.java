@@ -7,8 +7,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx;
+package org.eclipse.openvsx.admin;
 
+import org.eclipse.openvsx.ExtensionProcessor;
+import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;

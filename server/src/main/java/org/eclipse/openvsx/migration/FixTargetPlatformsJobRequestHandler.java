@@ -9,9 +9,9 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import org.eclipse.openvsx.AdminService;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;

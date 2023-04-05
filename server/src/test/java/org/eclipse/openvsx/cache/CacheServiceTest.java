@@ -9,17 +9,16 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import org.eclipse.openvsx.AdminService;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +34,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;

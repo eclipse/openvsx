@@ -7,9 +7,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx;
+package org.eclipse.openvsx.admin;
 
 import com.google.common.base.Strings;
+import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.ExtensionValidator;
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -145,7 +148,6 @@ public class AdminService {
             return deleteExtension(extension, admin);
         }
 
-        cache.evictExtensionJsons(extension);
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
@@ -158,10 +160,16 @@ public class AdminService {
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
         repositories.findFiles(extVersion).forEach(file -> {
-            storageUtil.removeFile(file);
+            enqueueRemoveFileJob(file);
             entityManager.remove(file);
         });
         entityManager.remove(extVersion);
+    }
+
+    private void enqueueRemoveFileJob(FileResource resource) {
+        if(!resource.getStorageType().equals(STORAGE_DB)) {
+            scheduler.enqueue(new RemoveFileJobRequest(resource));
+        }
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)

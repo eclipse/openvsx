@@ -20,6 +20,7 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import org.eclipse.openvsx.*;
+import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;

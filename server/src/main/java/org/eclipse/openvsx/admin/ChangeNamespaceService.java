@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx;
+package org.eclipse.openvsx.admin;
 
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
