@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx;
+package org.eclipse.openvsx.admin;
 
 import java.time.Period;
 import java.time.format.DateTimeParseException;
@@ -17,6 +17,7 @@ import java.net.URI;
 
 import com.google.common.base.Strings;
 
+import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.PersistedLog;
