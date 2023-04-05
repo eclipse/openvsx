@@ -29,11 +29,15 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SHA256;
+
 @Component
 public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<ChangeNamespaceJobRequest> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeNamespaceJobRequestHandler.class);
 
+    private static final List<String> RENAME_TYPES = List.of(DOWNLOAD, DOWNLOAD_SHA256);
     private static final Map<String, Object> LOCKS;
 
     static {
@@ -94,7 +98,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
             pairs = copyResources(oldResources, newNamespace);
             storageUtil.copyFiles(pairs);
             updatedResources = pairs.stream()
-                    .filter(pair -> pair.getFirst().getType().equals(FileResource.DOWNLOAD))
+                    .filter(pair -> RENAME_TYPES.contains(pair.getFirst().getType()))
                     .map(pair -> {
                         var oldResource = pair.getFirst();
                         var newResource = pair.getSecond();
@@ -103,10 +107,20 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                     })
                     .collect(Collectors.toList());
         } else {
+            var newBinaryNames = oldResources.stream()
+                    .map(FileResource::getExtension)
+                    .collect(Collectors.groupingBy(ExtensionVersion::getId))
+                    .entrySet().stream()
+                    .map(entry -> {
+                        var newBinaryName = newBinaryName(newNamespace, entry.getValue().get(0));
+                        return new AbstractMap.SimpleEntry<>(entry.getKey(), newBinaryName);
+                    })
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             updatedResources = oldResources
-                    .filter(resource -> resource.getType().equals(FileResource.DOWNLOAD))
+                    .filter(resource -> RENAME_TYPES.contains(resource.getType()))
                     .map(resource -> {
-                        resource.setName(newResourceName(newNamespace, resource));
+                        resource.setName(getNewResourceName(resource, newBinaryNames));
                         return resource;
                     })
                     .toList();
@@ -158,6 +172,12 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
             extVersions.put(key, newExtVersion);
         }
 
+        var newBinaryNames = extVersions.values().stream()
+                .map(extVersion -> {
+                    return new AbstractMap.SimpleEntry<>(extVersion.getId(), newBinaryName(newNamespace, extVersion));
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         return resources.stream()
                 .map(resource -> {
                     var newExtVersion = extVersions.get(resource.getExtension().getId());
@@ -166,32 +186,36 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                     newResource.setExtension(newExtVersion);
                     newResource.setType(resource.getType());
                     newResource.setStorageType(resource.getStorageType());
-                    var newResourceName = resource.getType().equals(FileResource.DOWNLOAD)
-                            ? newResourceName(newNamespace, resource)
-                            : resource.getName();
-
-                    newResource.setName(newResourceName);
+                    newResource.setName(getNewResourceName(resource, newBinaryNames));
                     return Pair.of(resource, newResource);
                 })
                 .collect(Collectors.toList());
     }
 
-    private String newResourceName(Namespace newNamespace, FileResource resource) {
-        var extVersion = resource.getExtension();
-        var extension = extVersion.getExtension();
+    private String getNewResourceName(FileResource resource, Map<Long, String> newBinaryNames) {
+        var name = RENAME_TYPES.contains(resource.getType())
+                ? newBinaryNames.get(resource.getExtension().getId())
+                : resource.getName();
 
+        if(resource.getType().equals(DOWNLOAD_SHA256)) {
+            name = name.replace(".vsix", ".sha256");
+        }
+
+        LOGGER.info("New resource name: {}", name);
+        return name;
+    }
+
+    private String newBinaryName(Namespace newNamespace, ExtensionVersion extVersion) {
         var newExtension = new Extension();
         newExtension.setNamespace(newNamespace);
-        newExtension.setName(extension.getName());
+        newExtension.setName(extVersion.getExtension().getName());
 
         var newExtVersion = new ExtensionVersion();
         newExtVersion.setVersion(extVersion.getVersion());
         newExtVersion.setTargetPlatform(extVersion.getTargetPlatform());
         newExtVersion.setExtension(newExtension);
         try(var processor = new ExtensionProcessor(null)) {
-            var newResourceName = processor.getBinaryName(newExtVersion);
-            LOGGER.info("newResourceName: {}", newResourceName);
-            return newResourceName;
+            return processor.getBinaryName(newExtVersion);
         }
     }
 }
