@@ -41,9 +41,11 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
 
         service.deleteResources(extVersion);
         var entry = migrations.getDownload(extVersion);
-        var extensionFile = migrations.getExtensionFile(entry);
         var download = entry.getKey();
-        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
+        try(
+                var extensionFile = migrations.getExtensionFile(entry);
+                var extProcessor = new ExtensionProcessor(extensionFile);
+        ) {
             extProcessor.processEachResource(download.getExtension(), (resource) -> {
                 resource.setStorageType(download.getStorageType());
                 migrations.uploadFileResource(resource);
@@ -52,6 +54,5 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
         }
 
         service.deleteWebResources(extVersion);
-        Files.delete(extensionFile);
     }
 }

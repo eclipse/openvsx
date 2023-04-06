@@ -9,28 +9,14 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.eclipse.openvsx.ExtensionService;
-import org.eclipse.openvsx.IExtensionRegistry;
 import org.eclipse.openvsx.UpstreamRegistryService;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.VersionAlias;
+import org.eclipse.openvsx.util.*;
 import org.jobrunr.jobs.context.JobContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +24,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class MirrorExtensionService {
@@ -165,22 +160,15 @@ public class MirrorExtensionService {
             throw new RuntimeException("Invalid vsix filename from redirected vsix url");
         }
 
-        Path extensionFile;
-        try {
-            extensionFile = Files.createTempFile("extension_", ".vsix");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create extension file", e);
-        }
+        try (var extensionFile = new TempFile("extension_", ".vsix")) {
+            backgroundRestTemplate.execute("{vsixLocation}", HttpMethod.GET, null, response -> {
+                try(var out = Files.newOutputStream(extensionFile.getPath())) {
+                    response.getBody().transferTo(out);
+                }
 
-        backgroundRestTemplate.execute("{vsixLocation}", HttpMethod.GET, null, response -> {
-            try(var out = Files.newOutputStream(extensionFile)) {
-                response.getBody().transferTo(out);
-            }
+                return extensionFile;
+            }, Map.of("vsixLocation", download));
 
-            return extensionFile;
-        }, Map.of("vsixLocation", download));
-
-        try {
             var user = data.getOrAddUser(userJson);
             var namespace = repositories.findNamespace(namespaceName);
             data.ensureNamespaceMembership(user, namespace);
@@ -191,12 +179,8 @@ public class MirrorExtensionService {
             var token = users.useAccessToken(accessTokenValue);
             extensions.mirrorVersion(extensionFile, token, filename, json.timestamp);
             logger.debug("completed mirroring of extension version: {}", json.namespace + "." + json.name + "-" + json.version + "@" + json.targetPlatform);
-        } finally {
-            try {
-                Files.delete(extensionFile);
-            } catch (IOException e) {
-                logger.error("failed to delete temp file", e);
-            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

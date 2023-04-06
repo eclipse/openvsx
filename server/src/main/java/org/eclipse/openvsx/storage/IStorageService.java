@@ -9,13 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.List;
-
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.util.TempFile;
 import org.springframework.data.util.Pair;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 public interface IStorageService {
 
@@ -32,7 +33,7 @@ public interface IStorageService {
     /**
      * Upload a file to the external storage.
      */
-    void uploadFile(FileResource resource, Path filePath);
+    void uploadFile(FileResource resource, TempFile file);
 
     /**
      * Remove a file from the external storage.
@@ -59,7 +60,7 @@ public interface IStorageService {
      */
     URI getNamespaceLogoLocation(Namespace namespace);
 
-    Path downloadNamespaceLogo(Namespace namespace);
+    TempFile downloadNamespaceLogo(Namespace namespace) throws IOException;
 
     void copyFiles(List<Pair<FileResource, FileResource>> pairs);
 }

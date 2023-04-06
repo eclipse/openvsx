@@ -9,23 +9,24 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.TempFile;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 
-import org.eclipse.openvsx.entities.FileResource;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ExtensionProcessorTest {
 
     @Test
     void testTodoTree() throws Exception {
-        var path = writeToTempFile("util/todo-tree.zip");
-        try (var processor = new ExtensionProcessor(path)) {
+        try (
+                var file = writeToTempFile("util/todo-tree.zip");
+                var processor = new ExtensionProcessor(file)
+        ) {
             assertThat(processor.getNamespace()).isEqualTo("Gruntfuggly");
             assertThat(processor.getExtensionName()).isEqualTo("todo-tree");
 
@@ -42,55 +43,53 @@ class ExtensionProcessorTest {
             checkResource(processor, FileResource.README, "README.md");
             checkResource(processor, FileResource.ICON, "todo-tree.png");
             checkResource(processor, FileResource.LICENSE, "License.txt");
-        } finally {
-            Files.delete(path);
         }
     }
 
     @Test
     void testChangelog() throws Exception {
-        var path = writeToTempFile("util/changelog.zip");
-        try (var processor = new ExtensionProcessor(path)) {
+        try (
+                var file = writeToTempFile("util/changelog.zip");
+                var processor = new ExtensionProcessor(file)
+        ) {
             checkResource(processor, FileResource.CHANGELOG, "CHANGELOG.md");
-        } finally {
-            Files.delete(path);
         }
     }
 
     @Test
     void testCapitalizedCaseForResources() throws Exception {
-        var path = writeToTempFile("util/with-capitalized-case.zip");
-        try (var processor = new ExtensionProcessor(path)) {
+        try (
+                var file = writeToTempFile("util/with-capitalized-case.zip");
+                var processor = new ExtensionProcessor(file)
+        ) {
             checkResource(processor, FileResource.CHANGELOG, "Changelog.md");
             checkResource(processor, FileResource.README, "Readme.md");
             checkResource(processor, FileResource.LICENSE, "License.txt");
-        } finally {
-            Files.delete(path);
         }
     }
 
     @Test
     void testMinorCaseForResources() throws Exception {
-        var path = writeToTempFile("util/with-minor-case.zip");
-        try (var processor = new ExtensionProcessor(path)) {
+        try (
+                var file = writeToTempFile("util/with-minor-case.zip");
+                var processor = new ExtensionProcessor(file)
+        ) {
             checkResource(processor, FileResource.CHANGELOG, "changelog.md");
             checkResource(processor, FileResource.README, "readme.md");
             checkResource(processor, FileResource.LICENSE, "license.txt");
-        } finally {
-            Files.delete(path);
         }
     }
 
-    private Path writeToTempFile(String resource) throws IOException {
-        var path = Files.createTempFile("test", ".zip");
+    private TempFile writeToTempFile(String resource) throws IOException {
+        var file = new TempFile("test", ".zip");
         try(
                 var in = getClass().getResourceAsStream(resource);
-                var out = Files.newOutputStream(path);
+                var out = Files.newOutputStream(file.getPath());
         ) {
             in.transferTo(out);
         }
 
-        return path;
+        return file;
     }
 
     private void checkResource(ExtensionProcessor processor, String type, String expectedName) {

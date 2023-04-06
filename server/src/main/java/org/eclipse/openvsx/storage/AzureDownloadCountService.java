@@ -19,6 +19,7 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.spring.annotations.Recurring;
 import org.slf4j.Logger;
@@ -33,7 +34,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -150,15 +150,10 @@ public class AzureDownloadCountService {
     }
 
     private Map<String, List<LocalDateTime>> processBlobItem(String blobName) {
-        Path downloadsTempFile;
-        try {
-            downloadsTempFile = Files.createTempFile("azure-downloads-", ".json");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        getContainerClient().getBlobClient(blobName).downloadToFile(downloadsTempFile.toAbsolutePath().toString(), true);
-        try (var reader = Files.newBufferedReader(downloadsTempFile)) {
+        try (
+                var downloadsTempFile = downloadBlobItem(blobName);
+                var reader = Files.newBufferedReader(downloadsTempFile.getPath())
+        ) {
             return reader.lines()
                     .map(line -> {
                         try {
@@ -187,13 +182,13 @@ public class AzureDownloadCountService {
                     .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            try {
-                Files.delete(downloadsTempFile);
-            } catch (IOException e) {
-                logger.error("Failed to delete downloads file", e);
-            }
         }
+    }
+
+    private TempFile downloadBlobItem(String blobName) throws IOException {
+        var downloadsTempFile = new TempFile("azure-downloads-", ".json");
+        getContainerClient().getBlobClient(blobName).downloadToFile(downloadsTempFile.getPath().toAbsolutePath().toString(), true);
+        return downloadsTempFile;
     }
 
     private List<String> getBlobNames(List<BlobItem> items) {

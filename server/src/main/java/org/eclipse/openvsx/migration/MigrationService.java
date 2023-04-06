@@ -16,6 +16,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.IStorageService;
+import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,6 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.UUID;
@@ -73,13 +73,8 @@ public class MigrationService {
     }
 
     @Retryable
-    public Path getExtensionFile(Map.Entry<FileResource, byte[]> entry) {
-        Path extensionFile;
-        try {
-            extensionFile = Files.createTempFile("extension_", ".vsix");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create extension file", e);
-        }
+    public TempFile getExtensionFile(Map.Entry<FileResource, byte[]> entry) throws IOException {
+        var extensionFile = new TempFile("migration-extension_", ".vsix");
 
         var content = entry.getValue();
         if(content == null) {
@@ -87,18 +82,14 @@ public class MigrationService {
             var storage = getStorage(download);
             var uri = storage.getLocation(download);
             backgroundRestTemplate.execute("{extensionLocation}", HttpMethod.GET, null, response -> {
-                try(var out = Files.newOutputStream(extensionFile)) {
+                try(var out = Files.newOutputStream(extensionFile.getPath())) {
                     response.getBody().transferTo(out);
                 }
 
                 return extensionFile;
             }, Map.of("extensionLocation", uri.toString()));
         } else {
-            try {
-                Files.write(extensionFile, content);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to write to extension file", e);
-            }
+            Files.write(extensionFile.getPath(), content);
         }
 
         return extensionFile;
@@ -116,7 +107,7 @@ public class MigrationService {
     }
 
     @Retryable
-    public void uploadFileResource(FileResource resource, Path extensionFile) {
+    public void uploadFileResource(FileResource resource, TempFile extensionFile) {
         if(resource.getStorageType().equals(FileResource.STORAGE_DB)) {
             return;
         }

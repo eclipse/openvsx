@@ -49,22 +49,20 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
         var content = migrations.getContent(download);
-        var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
+        try (var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content))) {
+            boolean fixTargetPlatform;
+            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
+                fixTargetPlatform = !extProcessor.getMetadata().getTargetPlatform().equals(extVersion.getTargetPlatform());
+            }
 
-        boolean fixTargetPlatform;
-        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
-            fixTargetPlatform = !extProcessor.getMetadata().getTargetPlatform().equals(extVersion.getTargetPlatform());
-        }
-
-        if(fixTargetPlatform) {
-            logger.info("Fixing target platform for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
-            deleteExtension(extVersion);
-            try (var input = Files.newInputStream(extensionFile)) {
-                extensions.publishVersion(input, extVersion.getPublishedWith());
+            if (fixTargetPlatform) {
+                logger.info("Fixing target platform for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
+                deleteExtension(extVersion);
+                try (var input = Files.newInputStream(extensionFile.getPath())) {
+                    extensions.publishVersion(input, extVersion.getPublishedWith());
+                }
             }
         }
-
-        Files.delete(extensionFile);
     }
 
     private void deleteExtension(ExtensionVersion extVersion) {

@@ -9,11 +9,24 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.MissingNode;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.*;
+import org.elasticsearch.common.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Pair;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,24 +34,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.MissingNode;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-
-import org.apache.commons.codec.digest.DigestUtils;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.util.ArchiveUtil;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.LicenseDetection;
-import org.eclipse.openvsx.util.TargetPlatform;
-import org.elasticsearch.common.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.util.Pair;
 
 /**
  * Processes uploaded extension files and extracts their metadata.
@@ -55,12 +50,12 @@ public class ExtensionProcessor implements AutoCloseable {
 
     protected final Logger logger = LoggerFactory.getLogger(ExtensionProcessor.class);
 
-    private final Path extensionFile;
+    private final TempFile extensionFile;
     private ZipFile zipFile;
     private JsonNode packageJson;
     private JsonNode vsixManifest;
 
-    public ExtensionProcessor(Path extensionFile) {
+    public ExtensionProcessor(TempFile extensionFile) {
         this.extensionFile = extensionFile;
     }
 
@@ -80,7 +75,7 @@ public class ExtensionProcessor implements AutoCloseable {
             return;
         }
         try {
-            zipFile = new ZipFile(extensionFile.toFile());
+            zipFile = new ZipFile(extensionFile.getPath().toFile());
         } catch (ZipException exc) {
             throw new ErrorResultException("Could not read zip file: " + exc.getMessage());
         } catch (EOFException exc) {
@@ -357,7 +352,7 @@ public class ExtensionProcessor implements AutoCloseable {
 
     public FileResource generateSha256Checksum(ExtensionVersion extVersion) {
         String hash = null;
-        try(var input = Files.newInputStream(extensionFile)) {
+        try(var input = Files.newInputStream(extensionFile.getPath())) {
             hash = DigestUtils.sha256Hex(input);
         } catch (IOException e) {
             logger.error("Failed to read extensionFile", e);
