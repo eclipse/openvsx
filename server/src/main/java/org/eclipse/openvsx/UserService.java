@@ -241,10 +241,10 @@ public class UserService {
         }
 
         boolean contentEquals;
-        var oldLogo = storageUtil.downloadNamespaceLogo(namespace);
         try (
+                var oldLogo = storageUtil.downloadNamespaceLogo(namespace);
                 var newLogoInput = new ByteArrayInputStream(details.logoBytes);
-                var oldLogoInput = Files.newInputStream(oldLogo)
+                var oldLogoInput = Files.newInputStream(oldLogo.getPath())
         ) {
             contentEquals = IOUtils.contentEquals(newLogoInput, oldLogoInput);
         } catch (IOException e) {
@@ -266,12 +266,6 @@ public class UserService {
                 namespace.setLogoBytes(null);
                 namespace.setLogoStorageType(null);
             }
-        }
-
-        try {
-            Files.delete(oldLogo);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
 
         return ResultJson.success("Updated details for namespace " + details.name);

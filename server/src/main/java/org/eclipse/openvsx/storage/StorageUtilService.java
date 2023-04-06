@@ -18,6 +18,7 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,6 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -138,14 +138,14 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
-    public void uploadFile(FileResource resource, Path filePath) {
+    public void uploadFile(FileResource resource, TempFile file) {
         var storageType = getActiveStorageType();
         switch (storageType) {
             case STORAGE_GOOGLE:
-                googleStorage.uploadFile(resource, filePath);
+                googleStorage.uploadFile(resource, file);
                 break;
             case STORAGE_AZURE:
-                azureStorage.uploadFile(resource, filePath);
+                azureStorage.uploadFile(resource, file);
                 break;
             default:
                 throw new RuntimeException("External storage is not available.");
@@ -224,7 +224,7 @@ public class StorageUtilService implements IStorageService {
         }
     }
 
-    public Path downloadNamespaceLogo(Namespace namespace) {
+    public TempFile downloadNamespaceLogo(Namespace namespace) throws IOException {
         if(namespace.getLogoStorageType() == null) {
             return createNamespaceLogoFile();
         }
@@ -235,24 +235,16 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_AZURE:
                 return azureStorage.downloadNamespaceLogo(namespace);
             case STORAGE_DB:
-                try {
-                    var logoFile = createNamespaceLogoFile();
-                    Files.write(logoFile, namespace.getLogoBytes());
-                    return logoFile;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                var logoFile = createNamespaceLogoFile();
+                Files.write(logoFile.getPath(), namespace.getLogoBytes());
+                return logoFile;
             default:
                 return createNamespaceLogoFile();
         }
     }
 
-    private Path createNamespaceLogoFile() {
-        try {
-            return Files.createTempFile("namespace-logo", ".png");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    private TempFile createNamespaceLogoFile() throws IOException {
+        return new TempFile("namespace-logo", ".png");
     }
 
     private String getFileUrl(String name, ExtensionVersion extVersion, String serverUrl) {

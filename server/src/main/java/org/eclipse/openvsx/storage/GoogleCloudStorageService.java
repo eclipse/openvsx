@@ -18,6 +18,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
@@ -28,7 +29,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 @Component
@@ -99,17 +99,17 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    public void uploadFile(FileResource resource, Path filePath) {
+    public void uploadFile(FileResource resource, TempFile file) {
         var objectId = getObjectId(resource);
         if (Strings.isNullOrEmpty(bucketId)) {
             throw new IllegalStateException("Cannot upload file "
                     + objectId + ": missing Google bucket id");
         }
 
-        uploadFile(filePath, resource.getName(), objectId);
+        uploadFile(file, resource.getName(), objectId);
     }
 
-    protected void uploadFile(Path filePath, String fileName, String objectId) {
+    protected void uploadFile(TempFile file, String fileName, String objectId) {
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
                 .setContentType(StorageUtil.getFileType(fileName).toString());
         if (fileName.endsWith(".vsix")) {
@@ -119,7 +119,7 @@ public class GoogleCloudStorageService implements IStorageService {
             blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
         }
         try (
-                var in = Files.newByteChannel(filePath);
+                var in = Files.newByteChannel(file.getPath());
                 var out = getStorage().writer(blobInfoBuilder.build())
         ) {
             var buffer = ByteBuffer.allocateDirect(1024 * 1024);
@@ -189,21 +189,13 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    public Path downloadNamespaceLogo(Namespace namespace) {
-        Path logoFile;
-        try {
-            logoFile = Files.createTempFile("namespace-logo", ".png");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+    public TempFile downloadNamespaceLogo(Namespace namespace) throws IOException {
+        var logoFile = new TempFile("namespace-logo", ".png");
         try (
                 var reader = getStorage().reader(BlobId.of(bucketId, getObjectId(namespace)));
-                var output = new FileOutputStream(logoFile.toFile());
+                var output = new FileOutputStream(logoFile.getPath().toFile())
         ) {
             output.getChannel().transferFrom(reader, 0, Long.MAX_VALUE);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
 
         return logoFile;

@@ -21,6 +21,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
@@ -30,8 +31,6 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -103,12 +102,12 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     @Override
-    public void uploadFile(FileResource resource, Path filePath) {
+    public void uploadFile(FileResource resource, TempFile file) {
         var blobName = getBlobName(resource);
-        uploadFile(filePath, resource.getName(), blobName);
+        uploadFile(file, resource.getName(), blobName);
     }
 
-    protected void uploadFile(Path filePath, String fileName, String blobName) {
+    protected void uploadFile(TempFile file, String fileName, String blobName) {
         if (Strings.isNullOrEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
@@ -124,7 +123,7 @@ public class AzureBlobStorageService implements IStorageService {
             headers.setCacheControl(cacheControl.getHeaderValue());
         }
 
-        blobClient.uploadFromFile(filePath.toAbsolutePath().toString(), true);
+        blobClient.uploadFromFile(file.getPath().toAbsolutePath().toString(), true);
         blobClient.setHttpHeaders(headers);
     }
 
@@ -200,14 +199,10 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     @Override
-    public Path downloadNamespaceLogo(Namespace namespace) {
-        try {
-            var logoFile = Files.createTempFile("namespace-logo", ".png");
-            getContainerClient().getBlobClient(getBlobName(namespace)).downloadToFile(logoFile.toString(), true);
-            return logoFile;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public TempFile downloadNamespaceLogo(Namespace namespace) throws IOException {
+        var logoFile = new TempFile("namespace-logo", ".png");
+        getContainerClient().getBlobClient(getBlobName(namespace)).downloadToFile(logoFile.getPath().toString(), true);
+        return logoFile;
     }
 
     @Override

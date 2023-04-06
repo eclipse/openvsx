@@ -9,13 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -23,9 +16,15 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TempFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.io.IOException;
+import java.nio.file.Files;
 
 @Component
 public class PublishExtensionVersionService {
@@ -44,12 +43,12 @@ public class PublishExtensionVersionService {
         repositories.findFiles(extVersion).forEach(entityManager::remove);
     }
 
-    public void storeDownload(FileResource download, Path extensionFile) {
+    public void storeDownload(FileResource download, TempFile extensionFile) {
         if (storageUtil.shouldStoreExternally(download)) {
             storageUtil.uploadFile(download, extensionFile);
         } else {
             try {
-                download.setContent(Files.readAllBytes(extensionFile));
+                download.setContent(Files.readAllBytes(extensionFile.getPath()));
             } catch (IOException e) {
                 throw new ErrorResultException("Failed to read extension file", e);
             }

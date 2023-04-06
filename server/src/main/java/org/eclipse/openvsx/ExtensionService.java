@@ -13,7 +13,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 
@@ -28,6 +27,7 @@ import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,7 +55,7 @@ public class ExtensionService {
     boolean requireLicense;
 
     @Transactional
-    public ExtensionVersion mirrorVersion(Path extensionFile, PersonalAccessToken token, String binaryName, String timestamp) {
+    public ExtensionVersion mirrorVersion(TempFile extensionFile, PersonalAccessToken token, String binaryName, String timestamp) {
         var download = doPublish(extensionFile, token, TimeUtil.fromUTCString(timestamp), false);
         publishHandler.mirror(download, extensionFile);
         download.setName(binaryName);
@@ -69,7 +69,7 @@ public class ExtensionService {
         return download.getExtension();
     }
 
-    private FileResource doPublish(Path extensionFile, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
+    private FileResource doPublish(TempFile extensionFile, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         try (var processor = new ExtensionProcessor(extensionFile)) {
             var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
             if (requireLicense) {
@@ -82,7 +82,7 @@ public class ExtensionService {
         }
     }
 
-    private Path createExtensionFile(InputStream content) {
+    private TempFile createExtensionFile(InputStream content) {
         try (var input = new BufferedInputStream(content)) {
             input.mark(0);
             var skipped = input.skip(MAX_CONTENT_SIZE  + 1);
@@ -90,8 +90,8 @@ public class ExtensionService {
                 throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
             }
 
-            var extensionFile = Files.createTempFile("extension_", ".vsix");
-            try(var out = Files.newOutputStream(extensionFile)) {
+            var extensionFile = new TempFile("extension_", ".vsix");
+            try(var out = Files.newOutputStream(extensionFile.getPath())) {
                 input.reset();
                 input.transferTo(out);
             }

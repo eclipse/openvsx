@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.nio.file.Files;
 import java.util.AbstractMap;
 
 @Component
@@ -46,14 +45,14 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
         }
 
         var content = migrations.getContent(download);
-        var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
-        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
+        try(
+                var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
+                var extProcessor = new ExtensionProcessor(extensionFile)
+        ) {
             var vsixManifest = extProcessor.getVsixManifest(extVersion);
             vsixManifest.setStorageType(download.getStorageType());
             migrations.uploadFileResource(vsixManifest);
             migrations.persistFileResource(vsixManifest);
         }
-
-        Files.delete(extensionFile);
     }
 }

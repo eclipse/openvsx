@@ -43,8 +43,10 @@ public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandle
         }
 
         var content = migrations.getContent(download);
-        var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
-        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
+        try(
+                var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
+                var extProcessor = new ExtensionProcessor(extensionFile)
+        ) {
             var checksum = extProcessor.generateSha256Checksum(extVersion);
             checksum.setStorageType(download.getStorageType());
             migrations.uploadFileResource(checksum);

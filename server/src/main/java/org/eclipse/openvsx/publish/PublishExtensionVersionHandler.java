@@ -19,6 +19,7 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,6 @@ import org.springframework.stereotype.Component;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -193,7 +192,7 @@ public class PublishExtensionVersionHandler {
 
     @Async
     @Retryable
-    public void publishAsync(FileResource download, Path extensionFile, ExtensionService extensionService) {
+    public void publishAsync(FileResource download, TempFile extensionFile, ExtensionService extensionService) {
         var extVersion = download.getExtension();
         // Delete file resources in case publishAsync is retried
         service.deleteFileResources(extVersion);
@@ -215,13 +214,13 @@ public class PublishExtensionVersionHandler {
         // Update whether extension is active, the search index and evict cache
         service.activateExtension(extVersion, extensionService);
         try {
-            Files.delete(extensionFile);
+            extensionFile.close();
         } catch (IOException e) {
             logger.error("failed to delete temp file", e);
         }
     }
 
-    public void mirror(FileResource download, Path extensionFile) {
+    public void mirror(FileResource download, TempFile extensionFile) {
         var extVersion = download.getExtension();
         service.mirrorResource(download);
         try(var processor = new ExtensionProcessor(extensionFile)) {
