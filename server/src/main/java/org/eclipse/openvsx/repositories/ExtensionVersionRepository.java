@@ -9,17 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
@@ -43,6 +40,10 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
 
+    Streamable<ExtensionVersion> findAll();
+
+    Streamable<ExtensionVersion> findBySignatureKeyPairNotOrSignatureKeyPairIsNull(SignatureKeyPair keyPair);
+
     @Query("select ev from ExtensionVersion ev where concat(',', ev.bundledExtensions, ',') like concat('%,', ?1, ',%')")
     Streamable<ExtensionVersion> findByBundledExtensions(String extensionId);
 
@@ -53,4 +54,8 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     LocalDateTime getOldestTimestamp();
 
     int countByExtension(Extension extension);
+
+    @Modifying
+    @Query("update ExtensionVersion ev set ev.signatureKeyPair = null")
+    void setKeyPairsNull();
 }

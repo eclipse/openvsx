@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -76,7 +77,7 @@ public class DefaultExtensionQueryRequestHandler implements IExtensionQueryReque
     private void mergeExtensionQueryResults(List<ExtensionQueryResult.Extension> extensions, Set<String> extensionIds, List<ExtensionQueryResult.Extension> subExtensions, int limit) {
         if(extensionIds.isEmpty() && !extensions.isEmpty()) {
             var extensionIdSet = extensions.stream()
-                    .map(extension -> extension.publisher.publisherName + "." + extension.extensionName)
+                    .map(extension -> NamingUtil.toExtensionId(extension))
                     .collect(Collectors.toSet());
 
             extensionIds.addAll(extensionIdSet);
@@ -85,7 +86,7 @@ public class DefaultExtensionQueryRequestHandler implements IExtensionQueryReque
         var subExtensionsIter = subExtensions.iterator();
         while (subExtensionsIter.hasNext() && extensions.size() < limit) {
             var subExtension = subExtensionsIter.next();
-            var key = subExtension.publisher.publisherName + "." + subExtension.extensionName;
+            var key = NamingUtil.toExtensionId(subExtension);
             if(!extensionIds.contains(key)) {
                 extensions.add(subExtension);
                 extensionIds.add(key);

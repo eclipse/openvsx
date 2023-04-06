@@ -16,6 +16,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -27,6 +28,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +58,9 @@ public class LocalVSCodeService implements IVSCodeService {
 
     @Autowired
     StorageUtilService storageUtil;
+
+    @Autowired
+    ExtensionVersionIntegrityService integrityService;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
@@ -175,7 +180,11 @@ public class LocalVSCodeService implements IVSCodeService {
 
         Map<Long, List<FileResource>> fileResources;
         if (test(flags, FLAG_INCLUDE_FILES) && !extensionVersionsMap.isEmpty()) {
-            var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST);
+            var types = new ArrayList<>(List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST));
+            if(integrityService.isEnabled()) {
+                types.add(DOWNLOAD_SIG);
+            }
+
             var idsMap = extensionVersionsMap.values().stream()
                     .flatMap(Collection::stream)
                     .collect(Collectors.toMap(ev -> ev.getId(), ev -> ev));
@@ -281,6 +290,21 @@ public class LocalVSCodeService implements IVSCodeService {
         }
 
         var asset = (restOfTheUrl != null && restOfTheUrl.length() > 0) ? (assetType + "/" + restOfTheUrl) : assetType;
+        if((asset.equals(FILE_PUBLIC_KEY) || asset.equals(FILE_SIGNATURE)) && !integrityService.isEnabled()) {
+            throw new NotFoundException();
+        }
+
+        if(asset.equals(FILE_PUBLIC_KEY)) {
+            if(extVersion.getSignatureKeyPair() == null) {
+                throw new NotFoundException();
+            } else {
+                return ResponseEntity
+                        .status(HttpStatus.FOUND)
+                        .location(URI.create(UrlUtil.getPublicKeyUrl(extVersion)))
+                        .build();
+            }
+        }
+
         var resource = getFileFromDB(extVersion, asset);
         if (resource == null) {
             throw new NotFoundException();
@@ -300,7 +324,8 @@ public class LocalVSCodeService implements IVSCodeService {
                 FILE_CHANGELOG, CHANGELOG,
                 FILE_LICENSE, LICENSE,
                 FILE_ICON, ICON,
-                FILE_VSIXMANIFEST, VSIXMANIFEST
+                FILE_VSIXMANIFEST, VSIXMANIFEST,
+                FILE_SIGNATURE, DOWNLOAD_SIG
         );
 
         var type = assets.get(assetType);
@@ -564,6 +589,10 @@ public class LocalVSCodeService implements IVSCodeService {
             queryVer.addFile(FILE_VSIX, createFileUrl(resourcesByType.get(DOWNLOAD), fileBaseUrl));
             queryVer.addFile(FILE_CHANGELOG, createFileUrl(resourcesByType.get(CHANGELOG), fileBaseUrl));
             queryVer.addFile(FILE_VSIXMANIFEST, createFileUrl(resourcesByType.get(VSIXMANIFEST), fileBaseUrl));
+            queryVer.addFile(FILE_SIGNATURE, createFileUrl(resourcesByType.get(DOWNLOAD_SIG), fileBaseUrl));
+            if(resourcesByType.containsKey(DOWNLOAD_SIG)) {
+                queryVer.addFile(FILE_PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVer));
+            }
         }
 
         return queryVer;

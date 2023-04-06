@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
 
 @Component
 public class RepositoryService {
@@ -41,6 +43,7 @@ public class RepositoryService {
     @Autowired AdminStatisticsRepository adminStatisticsRepo;
     @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
     @Autowired MigrationItemRepository migrationItemRepo;
+    @Autowired SignatureKeyPairRepository signatureKeyPairRepo;
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
@@ -131,15 +134,11 @@ public class RepositoryService {
     }
 
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
-        return extensionVersionRepo.findByBundledExtensions(extensionId(extension));
+        return extensionVersionRepo.findByBundledExtensions(NamingUtil.toExtensionId(extension));
     }
 
     public Streamable<ExtensionVersion> findDependenciesReference(Extension extension) {
-        return extensionVersionRepo.findByDependencies(extensionId(extension));
-    }
-
-    private String extensionId(Extension extension) {
-        return extension.getNamespace().getName() + "." + extension.getName();
+        return extensionVersionRepo.findByDependencies(NamingUtil.toExtensionId(extension));
     }
 
     public Streamable<Extension> findExtensions(UserData user) {
@@ -172,6 +171,10 @@ public class RepositoryService {
 
     public Streamable<FileResource> findDownloadsByStorageTypeAndName(String storageType, Collection<String> names) {
         return fileResourceRepo.findByTypeAndStorageTypeAndNameIgnoreCaseIn(DOWNLOAD, storageType, names);
+    }
+
+    public Streamable<FileResource> findFilesByType(String type) {
+        return fileResourceRepo.findByType(type);
     }
 
     public FileResource findFileByType(ExtensionVersion extVersion, String type) {
@@ -428,5 +431,30 @@ public class RepositoryService {
 
     public Streamable<FileResource> findFileResources(Namespace namespace) {
         return fileResourceRepo.findByExtensionExtensionNamespace(namespace);
+    }
+
+    public SignatureKeyPair findActiveKeyPair() {
+        return signatureKeyPairRepo.findByActiveTrue();
+    }
+
+    public Streamable<ExtensionVersion> findVersions() {
+        return extensionVersionRepo.findAll();
+    }
+
+    public Streamable<ExtensionVersion> findVersionsWithout(SignatureKeyPair keyPair) {
+        return extensionVersionRepo.findBySignatureKeyPairNotOrSignatureKeyPairIsNull(keyPair);
+    }
+
+    public void deleteDownloadSigFiles() {
+        fileResourceRepo.deleteByType(DOWNLOAD_SIG);
+    }
+
+    public void deleteAllKeyPairs() {
+        extensionVersionRepo.setKeyPairsNull();
+        signatureKeyPairRepo.deleteAll();
+    }
+
+    public SignatureKeyPair findKeyPair(String publicId) {
+        return signatureKeyPairRepo.findByPublicId(publicId);
     }
 }

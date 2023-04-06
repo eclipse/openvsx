@@ -11,6 +11,7 @@ package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -34,7 +35,7 @@ public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandle
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        logger.info("Generate sha256 checksum for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
+        logger.info("Generate sha256 checksum for: {}", NamingUtil.toLogFormat(extVersion));
 
         var existingChecksum = migrations.getFileResource(extVersion, FileResource.DOWNLOAD_SHA256);
         if(existingChecksum != null) {

@@ -20,10 +20,7 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
-import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +34,6 @@ import javax.transaction.Transactional;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
@@ -86,8 +82,8 @@ public class AdminService {
             throws ErrorResultException {
         var extension = repositories.findExtension(extensionName, namespaceName);
         if (extension == null) {
-            throw new ErrorResultException("Extension not found: " + namespaceName + "." + extensionName,
-                    HttpStatus.NOT_FOUND);
+            var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
+            throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
         }
         return deleteExtension(extension, admin);
     }
@@ -97,9 +93,7 @@ public class AdminService {
             throws ErrorResultException {
         var extVersion = repositories.findVersion(version, targetPlatform, extensionName, namespaceName);
         if (extVersion == null) {
-            var message = "Extension not found: " + namespaceName + "." + extensionName +
-                    " " + version +
-                    (Strings.isNullOrEmpty(targetPlatform) ? "" : " (" + targetPlatform + ")");
+            var message = "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, targetPlatform, version);
 
             throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
         }
@@ -111,18 +105,17 @@ public class AdminService {
         var namespace = extension.getNamespace();
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
         if (!bundledRefs.isEmpty()) {
-            throw new ErrorResultException("Extension " + namespace.getName() + "." + extension.getName()
+            throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
                     + " is bundled by the following extension packs: "
                     + bundledRefs.stream()
-                        .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
+                        .map(NamingUtil::toFileFormat)
                         .collect(Collectors.joining(", ")));
         }
         var dependRefs = repositories.findDependenciesReference(extension);
         if (!dependRefs.isEmpty()) {
-            throw new ErrorResultException("The following extensions have a dependency on " + namespace.getName() + "."
-                    + extension.getName() + ": "
+            throw new ErrorResultException("The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
                     + dependRefs.stream()
-                        .map(ev -> ev.getExtension().getNamespace().getName() + "." + ev.getExtension().getName() + "@" + ev.getVersion())
+                        .map(NamingUtil::toFileFormat)
                         .collect(Collectors.joining(", ")));
         }
 
@@ -137,7 +130,7 @@ public class AdminService {
         entityManager.remove(extension);
         search.removeSearchEntry(extension);
 
-        var result = ResultJson.success("Deleted " + namespace.getName() + "." + extension.getName());
+        var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
         logAdminAction(admin, result);
         return result;
     }
@@ -152,8 +145,7 @@ public class AdminService {
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
 
-        var result = ResultJson.success("Deleted " + extension.getNamespace().getName() + "." + extension.getName()
-                + " " + extVersion.getVersion());
+        var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
         logAdminAction(admin, result);
         return result;
     }
@@ -277,7 +269,7 @@ public class AdminService {
                     json.preview = latest.isPreview();
                     json.active = latest.getExtension().isActive();
                     json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(),
-                            DOWNLOAD, DOWNLOAD_SHA256, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
+                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
 
                     return json;
                 })

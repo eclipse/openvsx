@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.admin;
 
-import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -18,6 +17,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,15 +29,14 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SHA256;
+import static org.eclipse.openvsx.entities.FileResource.*;
 
 @Component
 public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<ChangeNamespaceJobRequest> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeNamespaceJobRequestHandler.class);
 
-    private static final List<String> RENAME_TYPES = List.of(DOWNLOAD, DOWNLOAD_SHA256);
+    private static final List<String> RENAME_TYPES = List.of(DOWNLOAD, DOWNLOAD_SHA256, DOWNLOAD_SIG);
     private static final Map<String, Object> LOCKS;
 
     static {
@@ -173,9 +172,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
         }
 
         var newBinaryNames = extVersions.values().stream()
-                .map(extVersion -> {
-                    return new AbstractMap.SimpleEntry<>(extVersion.getId(), newBinaryName(newNamespace, extVersion));
-                })
+                .map(extVersion -> new AbstractMap.SimpleEntry<>(extVersion.getId(), newBinaryName(newNamespace, extVersion)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return resources.stream()
@@ -200,22 +197,21 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
         if(resource.getType().equals(DOWNLOAD_SHA256)) {
             name = name.replace(".vsix", ".sha256");
         }
+        if(resource.getType().equals(DOWNLOAD_SIG)) {
+            name = name.replace(".vsix", ".sigzip");
+        }
 
         LOGGER.info("New resource name: {}", name);
         return name;
     }
 
     private String newBinaryName(Namespace newNamespace, ExtensionVersion extVersion) {
-        var newExtension = new Extension();
-        newExtension.setNamespace(newNamespace);
-        newExtension.setName(extVersion.getExtension().getName());
-
-        var newExtVersion = new ExtensionVersion();
-        newExtVersion.setVersion(extVersion.getVersion());
-        newExtVersion.setTargetPlatform(extVersion.getTargetPlatform());
-        newExtVersion.setExtension(newExtension);
-        try(var processor = new ExtensionProcessor(null)) {
-            return processor.getBinaryName(newExtVersion);
-        }
+        return NamingUtil.toFileFormat(
+                newNamespace.getName(),
+                extVersion.getExtension().getName(),
+                extVersion.getTargetPlatform(),
+                extVersion.getVersion(),
+                ".vsix"
+        );
     }
 }

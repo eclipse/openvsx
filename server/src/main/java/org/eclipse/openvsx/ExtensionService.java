@@ -55,21 +55,20 @@ public class ExtensionService {
     boolean requireLicense;
 
     @Transactional
-    public ExtensionVersion mirrorVersion(TempFile extensionFile, PersonalAccessToken token, String binaryName, String timestamp) {
-        var download = doPublish(extensionFile, token, TimeUtil.fromUTCString(timestamp), false);
-        publishHandler.mirror(download, extensionFile);
-        download.setName(binaryName);
+    public ExtensionVersion mirrorVersion(TempFile extensionFile, String signatureName, PersonalAccessToken token, String binaryName, String timestamp) {
+        var download = doPublish(extensionFile, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
+        publishHandler.mirror(download, extensionFile, signatureName);
         return download.getExtension();
     }
 
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
         var extensionFile = createExtensionFile(content);
-        var download = doPublish(extensionFile, token, TimeUtil.getCurrentUTC(), true);
+        var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
         publishHandler.publishAsync(download, extensionFile, this);
         return download.getExtension();
     }
 
-    private FileResource doPublish(TempFile extensionFile, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
+    private FileResource doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         try (var processor = new ExtensionProcessor(extensionFile)) {
             var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
             if (requireLicense) {
@@ -78,7 +77,7 @@ public class ExtensionService {
                 checkLicense(extVersion, license);
             }
 
-            return processor.getBinary(extVersion);
+            return processor.getBinary(extVersion, binaryName);
         }
     }
 

@@ -307,6 +307,23 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         }
     }
 
+    public String getPublicKey(String publicId) {
+        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/public-key/{publicId}";
+        var uriVariables = new HashMap<String, String>();
+        uriVariables.put("publicId", publicId);
+
+        try {
+            return restTemplate.getForObject(urlTemplate, String.class, uriVariables);
+        } catch (RestClientException exc) {
+            if(!isNotFound(exc)) {
+                var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+                logger.error("GET " + url, exc);
+            }
+
+            throw new NotFoundException();
+        }
+    }
+
     private void handleError(Throwable exc) throws RuntimeException {
         if (exc instanceof HttpStatusCodeException) {
             var status = ((HttpStatusCodeException) exc).getStatusCode();

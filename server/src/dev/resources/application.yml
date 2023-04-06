@@ -130,3 +130,5 @@ ovsx:
     base-url: https://api.eclipse.org
     publisher-agreement:
       timezone: US/Eastern
+  integrity:
+    key-pair: create # create, renew, delete, 'undefined'

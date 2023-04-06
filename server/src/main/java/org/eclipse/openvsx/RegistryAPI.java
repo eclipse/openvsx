@@ -273,7 +273,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension);
+        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toExtensionId(namespace, extension));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -339,7 +339,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " (" + targetPlatform + ")");
+        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform.toString(), null));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -394,7 +394,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " " + version);
+        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, version));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -462,7 +462,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + namespace + "." + extension + " " + version + " (" + targetPlatform + ")");
+        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -633,7 +633,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ReviewListJson.error("Extension not found: " + namespace + "." + extension);
+        var json = ReviewListJson.error("Extension not found: " + NamingUtil.toExtensionId(namespace, extension));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -1336,5 +1336,57 @@ public class RegistryAPI {
         } else {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @GetMapping(
+        path = "/api/-/public-key/{publicId}",
+        produces = MediaType.TEXT_PLAIN_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Access a public key file")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "The file content is returned"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "The specified public key file could not be found",
+            content = @Content()
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            content = @Content(),
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
+        )
+    })
+    public ResponseEntity<String> getPublicKey(
+            @PathVariable @Parameter(description = "Public ID of a public key file", example = "92dea4de-80b5-4577-b27d-44cdcda82c63")
+            String publicId
+    ) {
+        for (var registry : getRegistries()) {
+            try {
+                var publicKeyText = registry.getPublicKey(publicId);
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                        .body(publicKeyText);
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+
+        return ResponseEntity.notFound().build();
     }
 }

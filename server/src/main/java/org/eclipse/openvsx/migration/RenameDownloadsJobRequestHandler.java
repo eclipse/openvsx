@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.nio.file.Files;
 import java.util.AbstractMap;
 
 @Component
@@ -34,7 +34,7 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
     @Override
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
-        var name = service.getNewBinaryName(download);
+        var name = NamingUtil.toFileFormat(download.getExtension(), ".vsix");
         if(download.getName().equals(name)) {
             // names are the same, nothing to do
             return;

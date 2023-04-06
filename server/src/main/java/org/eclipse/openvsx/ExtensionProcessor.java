@@ -329,25 +329,17 @@ public class ExtensionProcessor implements AutoCloseable {
                 .forEach(processor);
     }
 
-    public FileResource getBinary(ExtensionVersion extVersion) {
+    public FileResource getBinary(ExtensionVersion extVersion, String binaryName) {
+        if(binaryName == null) {
+            binaryName = NamingUtil.toFileFormat(extVersion, ".vsix");
+        }
+
         var binary = new FileResource();
         binary.setExtension(extVersion);
-        binary.setName(getBinaryName(extVersion));
+        binary.setName(binaryName);
         binary.setType(FileResource.DOWNLOAD);
         binary.setContent(null);
         return binary;
-    }
-
-    public String getBinaryName(ExtensionVersion extVersion) {
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var resourceName = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
-        if(!TargetPlatform.isUniversal(extVersion.getTargetPlatform())) {
-            resourceName += "@" + extVersion.getTargetPlatform();
-        }
-
-        resourceName += ".vsix";
-        return resourceName;
     }
 
     public FileResource generateSha256Checksum(ExtensionVersion extVersion) {
@@ -364,7 +356,7 @@ public class ExtensionProcessor implements AutoCloseable {
 
         var sha256 = new FileResource();
         sha256.setExtension(extVersion);
-        sha256.setName(getBinaryName(extVersion).replace(".vsix", ".sha256"));
+        sha256.setName(NamingUtil.toFileFormat(extVersion, ".sha256"));
         sha256.setType(FileResource.DOWNLOAD_SHA256);
         sha256.setContent(hash.getBytes(StandardCharsets.UTF_8));
         return sha256;

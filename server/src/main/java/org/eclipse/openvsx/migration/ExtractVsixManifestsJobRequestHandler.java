@@ -11,6 +11,7 @@ package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -36,7 +37,7 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        logger.info("Extracting VSIX manifests for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
+        logger.info("Extracting VSIX manifests for: {}", NamingUtil.toLogFormat(extVersion));
 
         var existingVsixManifest = migrations.getFileResource(extVersion, FileResource.VSIXMANIFEST);
         if(existingVsixManifest != null) {

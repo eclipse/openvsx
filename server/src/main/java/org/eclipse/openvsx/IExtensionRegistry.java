@@ -37,4 +37,6 @@ public interface IExtensionRegistry {
     NamespaceDetailsJson getNamespaceDetails(String namespace);
 
     ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName);
+
+    String getPublicKey(String publicId);
 }

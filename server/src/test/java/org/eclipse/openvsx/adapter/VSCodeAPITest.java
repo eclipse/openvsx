@@ -37,6 +37,7 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
@@ -84,6 +85,9 @@ public class VSCodeAPITest {
 
     @MockBean
     SearchUtilService search;
+
+    @MockBean
+    ExtensionVersionIntegrityService integrityService;
 
     @Autowired
     MockMvc mockMvc;
@@ -642,6 +646,8 @@ public class VSCodeAPITest {
         var searchHits = new SearchHitsImpl<>(searchResults.size(), TotalHitsRelation.EQUAL_TO, 1.0f, "1",
                 searchResults, null, null);
 
+        Mockito.when(integrityService.isEnabled())
+                .thenReturn(true);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new ISearchService.Options("yaml", null, targetPlatform, 50, 0, "desc", "relevance", false, builtInExtensionNamespace);
@@ -715,12 +721,16 @@ public class VSCodeAPITest {
         extVersion.setLocalizedLanguages(Collections.emptyList());
         extVersion.setExtension(extension);
 
+        var keyPair = new SignatureKeyPair();
+        keyPair.setPublicId("123-456-789");
+        extVersion.setSignatureKeyPair(keyPair);
+
         mockFileResources(List.of(extVersion));
         return extVersion;
     }
 
     private void mockFileResources(List<ExtensionVersion> extensionVersions) {
-        var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST);
+        var types = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST, DOWNLOAD_SIG);
 
         var files = new ArrayList<FileResource>();
         for(var extVersion : extensionVersions) {
@@ -732,8 +742,9 @@ public class VSCodeAPITest {
             files.add(mockFileResource(id * 100 + 9, extVersion, "LICENSE.txt", LICENSE));
             files.add(mockFileResource(id * 100 + 10, extVersion, "icon128.png", ICON));
             files.add(mockFileResource(id * 100 + 11, extVersion, "extension.vsixmanifest", VSIXMANIFEST));
-            files.add(mockFileResource(id * 100 + 12, extVersion, "extension/themes/dark.json", RESOURCE));
-            files.add(mockFileResource(id * 100 + 13, extVersion, "extension/img/logo.png", RESOURCE));
+            files.add(mockFileResource(id * 100 + 12, extVersion, "redhat.vscode-yaml-0.5.2.sigzip", DOWNLOAD_SIG));
+            files.add(mockFileResource(id * 100 + 13, extVersion, "extension/themes/dark.json", RESOURCE));
+            files.add(mockFileResource(id * 100 + 14, extVersion, "extension/img/logo.png", RESOURCE));
         }
 
         var ids = extensionVersions.stream().map(ExtensionVersion::getId).collect(Collectors.toSet());
@@ -860,6 +871,14 @@ public class VSCodeAPITest {
         Mockito.when(entityManager.merge(vsixManifestFile)).thenReturn(vsixManifestFile);
         Mockito.when(repositories.findFileByType(extVersion, VSIXMANIFEST))
                 .thenReturn(vsixManifestFile);
+        var signatureFile = new FileResource();
+        signatureFile.setExtension(extVersion);
+        signatureFile.setName("redhat.vscode-yaml-0.5.2.sigzip");
+        signatureFile.setType(FileResource.DOWNLOAD_SIG);
+        signatureFile.setStorageType(FileResource.STORAGE_DB);
+        Mockito.when(entityManager.merge(signatureFile)).thenReturn(signatureFile);
+        Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD_SIG))
+                .thenReturn(signatureFile);
         var webResourceFile = new FileResource();
         webResourceFile.setExtension(extVersion);
         webResourceFile.setName("extension/img/logo.png");
@@ -872,9 +891,9 @@ public class VSCodeAPITest {
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection())).thenAnswer(invocation -> {
             Collection<ExtensionVersion> extVersions = invocation.getArgument(0);
             var types = invocation.getArgument(1);
-            var expectedTypes = Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD, FileResource.CHANGELOG, VSIXMANIFEST);
+            var expectedTypes = Arrays.asList(FileResource.MANIFEST, FileResource.README, FileResource.LICENSE, FileResource.ICON, FileResource.DOWNLOAD, FileResource.CHANGELOG, VSIXMANIFEST, DOWNLOAD_SIG);
             return types.equals(expectedTypes) && extVersions.iterator().hasNext() && extVersion.equals(extVersions.iterator().next())
-                    ? Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile, vsixManifestFile)
+                    ? Streamable.of(manifestFile, readmeFile, licenseFile, iconFile, extensionFile, changelogFile, vsixManifestFile, signatureFile)
                     : Streamable.empty();
         });
 
