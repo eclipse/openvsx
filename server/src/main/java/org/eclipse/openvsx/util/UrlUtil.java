@@ -231,4 +231,9 @@ public final class UrlUtil {
                 ? new AntPathMatcher().extractPathWithinPattern(pattern, path)
                 : "";
     }
+
+    public static String getPublicKeyUrl(ExtensionVersion extVersion) {
+        var publicId = extVersion.getSignatureKeyPair().getPublicId();
+        return createApiUrl(getBaseUrl(), "api", "-", "public-key", publicId);
+    }
 }

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import javax.persistence.*;
 
 import org.eclipse.openvsx.search.ExtensionSearch;
+import org.eclipse.openvsx.util.NamingUtil;
 
 @Entity
 @Table(uniqueConstraints = {
@@ -61,7 +62,7 @@ public class Extension implements Serializable {
         search.id = this.getId();
         search.name = this.getName();
         search.namespace = this.getNamespace().getName();
-        search.extensionId = search.namespace + "." + search.name;
+        search.extensionId = NamingUtil.toExtensionId(search);
         search.downloadCount = this.getDownloadCount();
         search.targetPlatforms = this.getVersions().stream()
                 .map(ExtensionVersion::getTargetPlatform)

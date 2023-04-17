@@ -397,6 +397,20 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         return (String) get(26);
     }
 
+    /**
+     * Setter for <code>public.extension_version.signature_key_pair_id</code>.
+     */
+    public void setSignatureKeyPairId(Long value) {
+        set(27, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.signature_key_pair_id</code>.
+     */
+    public Long getSignatureKeyPairId() {
+        return (Long) get(27);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -420,7 +434,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink, Long signatureKeyPairId) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -450,5 +464,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setTargetPlatform(targetPlatform);
         setLocalizedLanguages(localizedLanguages);
         setSponsorLink(sponsorLink);
+        setSignatureKeyPairId(signatureKeyPairId);
     }
 }

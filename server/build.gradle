@@ -32,7 +32,8 @@ def versions = [
     jobrunr: '5.1.2',
     bucket4j: '0.4.0',
     ehcache: '3.10.0',
-    tika: '2.6.0'
+    tika: '2.6.0',
+    bouncycastle: '1.69'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -71,6 +72,7 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.springframework.retry:spring-retry"
+    implementation "org.bouncycastle:bcpkix-jdk15on:${versions.bouncycastle}"
     implementation "org.ehcache:ehcache:${versions.ehcache}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
     implementation "org.jobrunr:jobrunr-spring-boot-starter:${versions.jobrunr}"

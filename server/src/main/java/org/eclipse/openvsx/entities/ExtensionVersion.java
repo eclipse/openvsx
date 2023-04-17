@@ -120,6 +120,9 @@ public class ExtensionVersion implements Serializable {
     @Convert(converter = ListOfStringConverter.class)
     List<String> bundledExtensions;
 
+    @ManyToOne
+    SignatureKeyPair signatureKeyPair;
+
     @Transient
     Type type;
 
@@ -438,6 +441,14 @@ public class ExtensionVersion implements Serializable {
 		this.bundledExtensions = bundledExtensions;
 	}
 
+    public SignatureKeyPair getSignatureKeyPair() {
+        return signatureKeyPair;
+    }
+
+    public void setSignatureKeyPair(SignatureKeyPair signatureKeyPair) {
+        this.signatureKeyPair = signatureKeyPair;
+    }
+
 	public void setType(ExtensionVersion.Type type) {
         this.type = type;
     }
@@ -477,6 +488,7 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(qna, that.qna)
                 && Objects.equals(dependencies, that.dependencies)
                 && Objects.equals(bundledExtensions, that.bundledExtensions)
+                && Objects.equals(signatureKeyPair, that.signatureKeyPair)
                 && type == that.type;
     }
 
@@ -486,7 +498,7 @@ public class ExtensionVersion implements Serializable {
                 id, getId(extension), version, targetPlatform, semver, preRelease, preview, timestamp, getId(publishedWith),
                 active, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
                 sponsorLink, bugs, markdown, galleryColor, galleryTheme, localizedLanguages, qna, dependencies,
-                bundledExtensions, type
+                bundledExtensions, signatureKeyPair, type
         );
     }
 

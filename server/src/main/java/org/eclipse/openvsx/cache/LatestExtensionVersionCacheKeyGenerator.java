@@ -11,6 +11,7 @@ package org.eclipse.openvsx.cache;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +47,7 @@ public class LatestExtensionVersionCacheKeyGenerator implements KeyGenerator {
 
         var extensionName = extension.getName();
         var namespaceName = extension.getNamespace().getName();
-        return namespaceName + "." + extensionName + "-latest@" + targetPlatform +
+        return NamingUtil.toFileFormat(namespaceName, extensionName, targetPlatform, "latest") +
                 ",pre-release=" + preRelease + ",only-active=" + onlyActive + ",type=" + type;
     }
 }

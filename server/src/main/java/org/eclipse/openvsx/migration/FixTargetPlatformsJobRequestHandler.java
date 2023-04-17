@@ -13,6 +13,7 @@ import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -56,7 +57,7 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
             }
 
             if (fixTargetPlatform) {
-                logger.info("Fixing target platform for: {}.{}-{}@{}", extVersion.getExtension().getNamespace().getName(), extVersion.getExtension().getName(), extVersion.getVersion(), extVersion.getTargetPlatform());
+                logger.info("Fixing target platform for: {}", NamingUtil.toLogFormat(extVersion));
                 deleteExtension(extVersion);
                 try (var input = Files.newInputStream(extensionFile.getPath())) {
                     extensions.publishVersion(input, extVersion.getPublishedWith());

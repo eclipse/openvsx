@@ -51,11 +51,13 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.GALLERY_THEME,
                     EXTENSION_VERSION.LOCALIZED_LANGUAGES,
                     EXTENSION_VERSION.DEPENDENCIES,
-                    EXTENSION_VERSION.BUNDLED_EXTENSIONS
+                    EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                    SIGNATURE_KEY_PAIR.PUBLIC_ID
                 )
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
 
@@ -166,13 +168,15 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.LOCALIZED_LANGUAGES,
                     EXTENSION_VERSION.QNA,
                     EXTENSION_VERSION.DEPENDENCIES,
-                    EXTENSION_VERSION.BUNDLED_EXTENSIONS
+                    EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                    SIGNATURE_KEY_PAIR.PUBLIC_ID
                 )
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
                 .leftJoin(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .join(USER_DATA).on(USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA))
+                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
                 .where(EXTENSION_VERSION.ACTIVE.eq(true));
     }
 
@@ -255,6 +259,9 @@ public class ExtensionVersionJooqRepository {
         namespace.setName(record.get(NAMESPACE.NAME));
         extension.setNamespace(namespace);
 
+        var keyPair = new SignatureKeyPair();
+        keyPair.setPublicId(record.get(SIGNATURE_KEY_PAIR.PUBLIC_ID));
+        extVersion.setSignatureKeyPair(keyPair);
         return extVersion;
     }
 

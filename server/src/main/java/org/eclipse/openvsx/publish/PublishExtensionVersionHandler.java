@@ -18,7 +18,7 @@ import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +44,9 @@ public class PublishExtensionVersionHandler {
 
     @Autowired
     PublishExtensionVersionService service;
+
+    @Autowired
+    ExtensionVersionIntegrityService integrityService;
 
     @Autowired
     EntityManager entityManager;
@@ -77,6 +80,10 @@ public class PublishExtensionVersionHandler {
 
         extVersion.setDependencies(dependencies);
         extVersion.setBundledExtensions(bundledExtensions);
+        if(integrityService.isEnabled()) {
+            extVersion.setSignatureKeyPair(repositories.findActiveKeyPair());
+        }
+
         return extVersion;
     }
 
@@ -121,12 +128,10 @@ public class PublishExtensionVersionHandler {
         } else {
             var existingVersion = repositories.findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
             if (existingVersion != null) {
-                throw new ErrorResultException(
-                        "Extension " + namespace.getName() + "." + extension.getName()
-                                + " " + extVersion.getVersion()
-                                + (TargetPlatform.isUniversal(extVersion) ? "" : " (" + extVersion.getTargetPlatform() + ")")
-                                + " is already published"
-                                + (existingVersion.isActive() ? "." : ", but is currently inactive and therefore not visible."));
+                var extVersionId = NamingUtil.toLogFormat(namespaceName, extensionName, extVersion.getTargetPlatform(), extVersion.getVersion());
+                var message = "Extension " + extVersionId + " is already published";
+                message += existingVersion.isActive() ? "." : ", but currently isn't active and therefore not visible.";
+                throw new ErrorResultException(message);
             }
         }
 
@@ -194,6 +199,7 @@ public class PublishExtensionVersionHandler {
     @Retryable
     public void publishAsync(FileResource download, TempFile extensionFile, ExtensionService extensionService) {
         var extVersion = download.getExtension();
+
         // Delete file resources in case publishAsync is retried
         service.deleteFileResources(extVersion);
         download.setId(0L);
@@ -205,6 +211,19 @@ public class PublishExtensionVersionHandler {
                 service.storeResource(resource);
                 service.persistResource(resource);
             };
+
+            if(integrityService.isEnabled()) {
+                var keyPair = extVersion.getSignatureKeyPair();
+                if(keyPair != null) {
+                    var signature = integrityService.generateSignature(download, extensionFile, keyPair);
+                    consumer.accept(signature);
+                } else {
+                    // Can happen when GenerateKeyPairJobRequestHandler hasn't run yet and there is no active SignatureKeyPair.
+                    // This extension version should be assigned a SignatureKeyPair and a signature FileResource should be created
+                    // by the ExtensionVersionSignatureJobRequestHandler migration.
+                    logger.warn("Integrity service is enabled, but {} did not have an active key pair", NamingUtil.toLogFormat(extVersion));
+                }
+            }
 
             processor.processEachResource(extVersion, consumer);
             processor.getFileResources(extVersion).forEach(consumer);
@@ -220,13 +239,24 @@ public class PublishExtensionVersionHandler {
         }
     }
 
-    public void mirror(FileResource download, TempFile extensionFile) {
+    public void mirror(FileResource download, TempFile extensionFile, String signatureName) {
         var extVersion = download.getExtension();
         service.mirrorResource(download);
+        if(signatureName != null) {
+            service.mirrorResource(getSignatureResource(signatureName, extVersion));
+        }
         try(var processor = new ExtensionProcessor(extensionFile)) {
             processor.getFileResources(extVersion).forEach(resource -> service.mirrorResource(resource));
             service.mirrorResource(processor.generateSha256Checksum(extVersion));
             // don't store file resources, they can be generated on the fly to avoid traversing entire zip file
         }
+    }
+
+    private FileResource getSignatureResource(String signatureName, ExtensionVersion extVersion) {
+        var resource = new FileResource();
+        resource.setExtension(extVersion);
+        resource.setName(signatureName);
+        resource.setType(FileResource.DOWNLOAD_SIG);
+        return resource;
     }
 }

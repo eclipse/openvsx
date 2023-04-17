@@ -12,6 +12,7 @@ package org.eclipse.openvsx.migration;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ public class SetPreReleaseJobService {
     @Transactional
     public List<ExtensionVersion> getExtensionVersions(MigrationJobRequest jobRequest, Logger logger) {
         var extension = entityManager.find(Extension.class, jobRequest.getEntityId());
-        logger.info("Setting pre-release for: {}.{}", extension.getNamespace().getName(), extension.getName());
+        logger.info("Setting pre-release for: {}", NamingUtil.toExtensionId(extension));
         return extension.getVersions();
     }
 

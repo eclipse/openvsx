@@ -181,7 +181,7 @@ public class AdminAPI {
 
             var extension = repositories.findExtension(extensionName, namespaceName);
             if (extension == null) {
-                var json = ExtensionJson.error("Extension not found: " + namespaceName + "." + extensionName);
+                var json = ExtensionJson.error("Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName));
                 return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
             }
 

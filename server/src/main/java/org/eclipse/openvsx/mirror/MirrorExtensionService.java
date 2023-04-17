@@ -15,6 +15,7 @@ import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.UserJson;
+import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.jobs.context.JobContext;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -33,6 +35,9 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
+import static org.eclipse.openvsx.entities.FileResource.PUBLIC_KEY;
 
 @Component
 public class MirrorExtensionService {
@@ -60,6 +65,9 @@ public class MirrorExtensionService {
     @Autowired
     ExtensionService extensions;
 
+    @Autowired
+    ExtensionVersionIntegrityService integrityService;
+
     /**
      * It applies delta from previous execution.
      */
@@ -68,12 +76,14 @@ public class MirrorExtensionService {
         if (shouldMirrorExtensionVersions(namespaceName, extensionName, lastModified, latest)) {
             mirrorExtensionVersions(namespaceName, extensionName, mirrorUser, jobContext);
         } else {
-            jobContext.logger().info("all versions are up to date " + namespaceName + "." + extensionName);
+            jobContext.logger().info("all versions are up to date " + NamingUtil.toExtensionId(namespaceName, extensionName));
         }
-        logger.debug("activating extension: {}", namespaceName + "." + extensionName);
+
+        var extensionId = logger.isDebugEnabled() ? NamingUtil.toExtensionId(namespaceName, extensionName) : null;
+        logger.debug("activating extension: {}", extensionId);
         data.activateExtension(namespaceName, extensionName);
 
-        logger.debug("updating extension metadata: {}", namespaceName + "." + extensionName);
+        logger.debug("updating extension metadata: {}", extensionId);
         data.updateMetadata(namespaceName, extensionName, latest);
         
         logger.debug("updating namespace metadata: {}", namespaceName);
@@ -126,7 +136,7 @@ public class MirrorExtensionService {
         
         for(var i = 0; i < toAdd.size(); i++) {
             var json = toAdd.get(i);
-            jobContext.logger().info("mirroring " + json.namespace + "." + json.name + "-" + json.version + "@" + json.targetPlatform + " (" + (i+1) + "/" +  toAdd.size() + ")");
+            jobContext.logger().info("mirroring " + NamingUtil.toLogFormat(json) + " (" + (i+1) + "/" +  toAdd.size() + ")");
             try {
                 mirrorExtensionVersion(json);
                 data.getMirroredVersions().increment();
@@ -138,7 +148,6 @@ public class MirrorExtensionService {
     }
 
     private void mirrorExtensionVersion(ExtensionJson json) throws RuntimeException {
-        logger.debug("mirroring: {}", json.namespace + "." + json.name + "-" + json.version + "@" + json.targetPlatform);
         var download = json.files.get("download");
         var userJson = new UserJson();
         userJson.provider = json.publishedBy.provider;
@@ -160,14 +169,22 @@ public class MirrorExtensionService {
             throw new RuntimeException("Invalid vsix filename from redirected vsix url");
         }
 
-        try (var extensionFile = new TempFile("extension_", ".vsix")) {
-            backgroundRestTemplate.execute("{vsixLocation}", HttpMethod.GET, null, response -> {
-                try(var out = Files.newOutputStream(extensionFile.getPath())) {
-                    response.getBody().transferTo(out);
+        String signatureName = null;
+        try (var extensionFile = downloadToFile(download, "extension_", ".vsix")) {
+            if(json.files.containsKey(DOWNLOAD_SIG)) {
+                try(
+                        var signatureFile = downloadToFile(json.files.get(DOWNLOAD_SIG), "extension_", ".sigzip");
+                        var publicKeyFile = downloadToFile(json.files.get(PUBLIC_KEY), "public_", ".pem")
+                ) {
+                    var verified = integrityService.verifyExtensionVersion(extensionFile, signatureFile, publicKeyFile);
+                    if (!verified) {
+                        throw new RuntimeException("Unverified vsix package");
+                    }
                 }
 
-                return extensionFile;
-            }, Map.of("vsixLocation", download));
+                var signaturePathParams = URI.create(json.files.get("signature")).getPath().split("/");
+                signatureName = signaturePathParams[signaturePathParams.length - 1];
+            }
 
             var user = data.getOrAddUser(userJson);
             var namespace = repositories.findNamespace(namespaceName);
@@ -177,11 +194,23 @@ public class MirrorExtensionService {
             var accessTokenValue = data.getOrAddAccessTokenValue(user, description);
 
             var token = users.useAccessToken(accessTokenValue);
-            extensions.mirrorVersion(extensionFile, token, filename, json.timestamp);
-            logger.debug("completed mirroring of extension version: {}", json.namespace + "." + json.name + "-" + json.version + "@" + json.targetPlatform);
+            extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.timestamp);
+            logger.debug("completed mirroring of extension version: {}", NamingUtil.toLogFormat(json));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private TempFile downloadToFile(String url, String prefix, String suffix) throws IOException {
+        var file = new TempFile(prefix, suffix);
+        backgroundRestTemplate.execute("{url}", HttpMethod.GET, null, response -> {
+            try(var out = Files.newOutputStream(file.getPath())) {
+                response.getBody().transferTo(out);
+            }
+
+            return file;
+        }, Map.of("url", url));
+
+        return file;
+    }
 }

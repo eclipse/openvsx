@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,19 +23,6 @@ public class RenameDownloadsService {
 
     @Autowired
     EntityManager entityManager;
-
-    public String getNewBinaryName(FileResource resource) {
-        var extVersion = resource.getExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var resourceName = namespace.getName() + "." + extension.getName() + "-" + extVersion.getVersion();
-        if(!TargetPlatform.isUniversal(extVersion.getTargetPlatform())) {
-            resourceName += "@" + extVersion.getTargetPlatform();
-        }
-
-        resourceName += ".vsix";
-        return resourceName;
-    }
 
     @Transactional
     public FileResource cloneResource(FileResource resource, String name) {

@@ -35,6 +35,7 @@ import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,12 +122,12 @@ public class DataMirrorService {
     public boolean match(String namespaceName, String extensionName) {
         if (!excludeExtensions.isEmpty() &&
             (excludeExtensions.contains(namespaceName + ".*") ||
-            excludeExtensions.contains(namespaceName + "." + extensionName))) {
+            excludeExtensions.contains(NamingUtil.toExtensionId(namespaceName, extensionName)))) {
             return false;
         }
         return includeExtensions.isEmpty() ||
             includeExtensions.contains(namespaceName + ".*") ||
-            includeExtensions.contains(namespaceName + "." + extensionName);
+            includeExtensions.contains(NamingUtil.toExtensionId(namespaceName, extensionName));
     }
 
     @Transactional

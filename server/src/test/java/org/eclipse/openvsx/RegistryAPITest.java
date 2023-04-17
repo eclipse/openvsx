@@ -9,26 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import static org.eclipse.openvsx.entities.FileResource.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import javax.persistence.EntityManager;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -39,6 +19,7 @@ import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -74,6 +55,25 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static org.eclipse.openvsx.entities.FileResource.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 @WebMvcTest(RegistryAPI.class)
 @AutoConfigureWebClient
 @MockBean({
@@ -91,6 +91,9 @@ public class RegistryAPITest {
 
     @MockBean
     SearchUtilService search;
+
+    @MockBean
+    ExtensionVersionIntegrityService integrityService;
 
     @MockBean
     EntityManager entityManager;
@@ -154,6 +157,23 @@ public class RegistryAPITest {
                     e.verified = false;
                     e.timestamp = "2000-01-01T10:00Z";
                     e.displayName = "Foo Bar";
+                })));
+    }
+
+    @Test
+    public void testExtensionWithPublicKey() throws Exception {
+        Mockito.when(integrityService.isEnabled()).thenReturn(true);
+        var extVersion = mockExtensionWithSignature();
+        var keyPair = new SignatureKeyPair();
+        keyPair.setPublicId("123-456-7890");
+        extVersion.setSignatureKeyPair(keyPair);
+        mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.namespace = "foo";
+                    e.name = "bar";
+                    e.version = "1.0.0";
+                    e.files = Map.of("publicKey", "http://localhost/api/-/public-key/" + keyPair.getPublicId());
                 })));
     }
 
@@ -1368,7 +1388,7 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
                 .andExpect(status().isCreated())
-                .andExpect(content().json(warningJson("A stable release already exists for foo.bar-1.0.0.\n" +
+                .andExpect(content().json(warningJson("A stable release already exists for foo.bar 1.0.0.\n" +
                         "To prevent update conflicts, we recommend that this pre-release uses 1.1.0 as its version instead.")));
     }
 
@@ -1387,7 +1407,7 @@ public class RegistryAPITest {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(bytes))
                 .andExpect(status().isCreated())
-                .andExpect(content().json(warningJson("A pre-release already exists for foo.bar-1.5.0.\n" +
+                .andExpect(content().json(warningJson("A pre-release already exists for foo.bar 1.5.0.\n" +
                         "To prevent update conflicts, we recommend that this stable release uses 1.6.0 as its version instead.")));
     }
 
@@ -1732,11 +1752,19 @@ public class RegistryAPITest {
         return extVersion;
     }
 
+    private ExtensionVersion mockExtensionWithSignature() {
+        return mockExtension(TargetPlatform.NAME_UNIVERSAL, true);
+    }
+
     private ExtensionVersion mockExtension() {
         return mockExtension(TargetPlatform.NAME_UNIVERSAL);
     }
 
     private ExtensionVersion mockExtension(String targetPlatform) {
+        return mockExtension(targetPlatform, false);
+    }
+
+    private ExtensionVersion mockExtension(String targetPlatform, boolean withSignature) {
         var namespace = new Namespace();
         namespace.setName("foo");
         namespace.setPublicId("1234");
@@ -1781,13 +1809,30 @@ public class RegistryAPITest {
         download.setType(DOWNLOAD);
         download.setStorageType(STORAGE_DB);
         download.setName("extension-1.0.0.vsix");
+        var signature = new FileResource();
+        if(withSignature) {
+            signature.setExtension(extVersion);
+            signature.setType(DOWNLOAD_SIG);
+            signature.setStorageType(STORAGE_DB);
+            signature.setName("extension-1.0.0.sigzip");
+        }
         Mockito.when(entityManager.merge(download)).thenReturn(download);
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection())).thenAnswer(invocation -> {
             Collection<ExtensionVersion> extVersions = invocation.getArgument(0);
             Collection<String> types = invocation.getArgument(1);
-            return types.contains(DOWNLOAD) && extVersions.iterator().hasNext() && download.getExtension().equals(extVersions.iterator().next())
-                    ? List.of(download)
-                    : Collections.emptyList();
+            var extensionVersion = extVersions.iterator().hasNext()
+                    ? extVersions.iterator().next()
+                    : null;
+
+            var files = new ArrayList<>();
+            if(types.contains(DOWNLOAD) && download.getExtension().equals(extensionVersion)) {
+                files.add(download);
+            }
+            if(withSignature && types.contains(DOWNLOAD_SIG) && signature.getExtension().equals(extensionVersion)) {
+                files.add(signature);
+            }
+
+            return files;
         });
 
         return extVersion;

@@ -23,6 +23,7 @@ import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
@@ -89,7 +90,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
                     var pathParams = location.getPath().split("/");
                     var namespace = pathParams[pathParams.length - 2];
                     var extension = pathParams[pathParams.length - 1];
-                    var extensionId = namespace + "." + extension;
+                    var extensionId = NamingUtil.toExtensionId(namespace, extension);
                     if (!data.match(namespace, extension)) {
                         jobContext().logger().info("excluded, skipping " + extensionId + " (" + (i+1) + "/" +  urls.getLength() + ")");
                         continue;
@@ -116,17 +117,17 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
             var notMatchingExtensions = repositories.findAllNotMatchingByExtensionId(extensionIds);
             if (!notMatchingExtensions.isEmpty()) {
                 for(var extension : notMatchingExtensions) {
-                    var namespace = extension.getNamespace().getName();
-                    var extensionName = extension.getName();
-                    jobContext().logger().info("deleting " + namespace + "." + extensionName);
+                    var extensionId = NamingUtil.toExtensionId(extension);
+                    jobContext().logger().info("deleting " + extensionId);
                     try {
-                        admin.deleteExtension(namespace, extensionName, mirrorUser);
+                        var namespace = extension.getNamespace();
+                        admin.deleteExtension(namespace.getName(), extension.getName(), mirrorUser);
                     } catch (ErrorResultException t) { 
                         if (t.getStatus() != HttpStatus.NOT_FOUND) {
-                            logger.warn("mirror: failed to delete extension " + namespace + "." + extensionName, t);
+                            logger.warn("mirror: failed to delete extension " + extensionId, t);
                         }
                     } catch (Throwable t) {
-                        logger.error("mirror: failed to delete extension " + namespace + "." + extensionName, t);
+                        logger.error("mirror: failed to delete extension " + extensionId,  t);
                     }
                 }
             }

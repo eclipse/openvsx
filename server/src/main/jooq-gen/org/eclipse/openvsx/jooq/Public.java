@@ -35,6 +35,7 @@ import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
 import org.eclipse.openvsx.jooq.tables.Shedlock;
+import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
 import org.eclipse.openvsx.jooq.tables.UserData;
@@ -198,6 +199,11 @@ public class Public extends SchemaImpl {
     public final Shedlock SHEDLOCK = Shedlock.SHEDLOCK;
 
     /**
+     * The table <code>public.signature_key_pair</code>.
+     */
+    public final SignatureKeyPair SIGNATURE_KEY_PAIR = SignatureKeyPair.SIGNATURE_KEY_PAIR;
+
+    /**
      * The table <code>public.spring_session</code>.
      */
     public final SpringSession SPRING_SESSION = SpringSession.SPRING_SESSION;
@@ -265,6 +271,7 @@ public class Public extends SchemaImpl {
             PersistedLog.PERSISTED_LOG,
             PersonalAccessToken.PERSONAL_ACCESS_TOKEN,
             Shedlock.SHEDLOCK,
+            SignatureKeyPair.SIGNATURE_KEY_PAIR,
             SpringSession.SPRING_SESSION,
             SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES,
             UserData.USER_DATA);

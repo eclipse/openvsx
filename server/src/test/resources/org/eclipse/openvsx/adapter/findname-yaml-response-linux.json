@@ -49,6 +49,14 @@
                                 {
                                     "assetType": "Microsoft.VisualStudio.Services.VsixManifest",
                                     "source": "http://localhost/api/redhat/vscode-yaml/linux-x64/0.5.2/file/extension.vsixmanifest"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.VsixSignature",
+                                    "source": "http://localhost/api/redhat/vscode-yaml/linux-x64/0.5.2/file/redhat.vscode-yaml-0.5.2.sigzip"
+                                },
+                                {
+                                    "assetType": "Microsoft.VisualStudio.Services.PublicKey",
+                                    "source": "http://localhost/api/-/public-key/123-456-789"
                                 }
                             ],
                             "properties": [

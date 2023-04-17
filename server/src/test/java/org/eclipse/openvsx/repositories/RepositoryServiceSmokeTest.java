@@ -21,11 +21,7 @@ import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.Invocation;
@@ -64,7 +60,10 @@ class RepositoryServiceSmokeTest {
         var extVersion = new ExtensionVersion();
         extVersion.setTargetPlatform("targetPlatform");
         var personalAccessToken = new PersonalAccessToken();
-        Stream.of(extension, namespace, userData, extVersion, personalAccessToken).forEach(em::persist);
+        var keyPair = new SignatureKeyPair();
+        keyPair.setPrivateKey(new byte[0]);
+        keyPair.setPublicKeyText("");
+        Stream.of(extension, namespace, userData, extVersion, personalAccessToken, keyPair).forEach(em::persist);
         em.flush();
 
         // record executed queries
@@ -168,7 +167,14 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findAllNotMatchingByExtensionId(STRING_LIST),
                 () -> repositories.getAverageReviewRating(null),
                 () -> repositories.getAverageReviewRating(),
-                () -> repositories.findFileResources(null)
+                () -> repositories.findFileResources(null),
+                () -> repositories.findKeyPair(null),
+                () -> repositories.findActiveKeyPair(),
+                () -> repositories.findFilesByType(null),
+                () -> repositories.findVersions(),
+                () -> repositories.findVersionsWithout(keyPair),
+                () -> repositories.deleteDownloadSigFiles(),
+                () -> repositories.deleteAllKeyPairs()
         );
 
         // check that we did not miss anything

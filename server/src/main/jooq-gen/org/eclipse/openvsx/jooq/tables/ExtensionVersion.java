@@ -183,6 +183,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, String> SPONSOR_LINK = createField(DSL.name("sponsor_link"), SQLDataType.VARCHAR(255), this, "");
 
+    /**
+     * The column <code>public.extension_version.signature_key_pair_id</code>.
+     */
+    public final TableField<ExtensionVersionRecord, Long> SIGNATURE_KEY_PAIR_ID = createField(DSL.name("signature_key_pair_id"), SQLDataType.BIGINT, this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -238,11 +243,12 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public List<ForeignKey<ExtensionVersionRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<ExtensionVersionRecord, ?>>asList(Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80);
+        return Arrays.<ForeignKey<ExtensionVersionRecord, ?>>asList(Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY);
     }
 
     private transient Extension _extension;
     private transient PersonalAccessToken _personalAccessToken;
+    private transient SignatureKeyPair _signatureKeyPair;
 
     public Extension extension() {
         if (_extension == null)
@@ -256,6 +262,13 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
             _personalAccessToken = new PersonalAccessToken(this, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80);
 
         return _personalAccessToken;
+    }
+
+    public SignatureKeyPair signatureKeyPair() {
+        if (_signatureKeyPair == null)
+            _signatureKeyPair = new SignatureKeyPair(this, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY);
+
+        return _signatureKeyPair;
     }
 
     @Override

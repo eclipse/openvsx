@@ -18,7 +18,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,9 +100,7 @@ public class PublisherComplianceChecker {
                 entityManager.merge(version);
                 var extension = version.getExtension();
                 affectedExtensions.add(extension);
-                logger.info("Deactivated: " + accessToken.getUser().getLoginName() + " - "
-                        + extension.getNamespace().getName() + "." + extension.getName() + " " + version.getVersion()
-                        + (TargetPlatform.isUniversal(version) ? "" : " (" + version.getTargetPlatform() + ")"));
+                logger.info("Deactivated: " + accessToken.getUser().getLoginName() + " - " + NamingUtil.toLogFormat(version));
             }
         }
         

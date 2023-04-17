@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,7 +102,7 @@ public class VSCodeIdService {
         filter.criteria.add(targetCriterion);
         var nameCriterion = new ExtensionQueryParam.Criterion();
         nameCriterion.filterType = ExtensionQueryParam.Criterion.FILTER_EXTENSION_NAME;
-        nameCriterion.value = extension.getNamespace().getName() + "." + extension.getName();
+        nameCriterion.value = NamingUtil.toExtensionId(extension);
         filter.criteria.add(nameCriterion);
         filter.pageNumber = 1;
         filter.pageSize = 1;

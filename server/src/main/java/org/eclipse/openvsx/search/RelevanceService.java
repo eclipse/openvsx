@@ -16,6 +16,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.VersionService;
 import org.slf4j.Logger;
@@ -130,7 +131,7 @@ public class RelevanceService {
         }
 
         if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
-            var message = "Invalid relevance for entry " + entry.namespace + "." + entry.name;
+            var message = "Invalid relevance for entry " + NamingUtil.toExtensionId(entry);
             try {
                 message += " " + new ObjectMapper().writeValueAsString(stats);
             } catch (JsonProcessingException exc) {

@@ -14,6 +14,7 @@ import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -31,6 +32,9 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
     @Autowired
     JobRequestScheduler scheduler;
 
+    @Value("${ovsx.data.mirror.enabled:false}")
+    boolean mirrorEnabled;
+
     @Override
     @Job(name = "Run migrations", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
@@ -41,6 +45,7 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         extractVsixManifestMigration();
         fixTargetPlatformMigration();
         generateSha256ChecksumMigration();
+        extensionVersionSignatureMigration();
     }
 
     private void extractResourcesMigration() {
@@ -77,5 +82,11 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         var jobName = "GenerateSha256ChecksumMigration";
         var handler = GenerateSha256ChecksumJobRequestHandler.class;
         repositories.findNotMigratedSha256Checksums().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+    }
+
+    private void extensionVersionSignatureMigration() {
+        if(!mirrorEnabled) {
+            scheduler.enqueue(new HandlerJobRequest<>(GenerateKeyPairJobRequestHandler.class));
+        }
     }
 }

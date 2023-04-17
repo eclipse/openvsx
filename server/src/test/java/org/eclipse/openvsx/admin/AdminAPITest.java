@@ -19,6 +19,7 @@ import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -84,6 +85,9 @@ public class AdminAPITest {
 
     @MockBean
     EntityManager entityManager;
+
+    @MockBean
+    ExtensionVersionIntegrityService integrityService;
 
     @Autowired
     MockMvc mockMvc;
@@ -305,7 +309,7 @@ public class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(errorJson("Extension foobar.baz is bundled by the following extension packs: foobar.bundle@1")));
+                .andExpect(content().json(errorJson("Extension foobar.baz is bundled by the following extension packs: foobar.bundle-1")));
     }
 
     @Test
@@ -316,7 +320,7 @@ public class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(errorJson("The following extensions have a dependency on foobar.baz: foobar.dependant@1")));
+                .andExpect(content().json(errorJson("The following extensions have a dependency on foobar.baz: foobar.dependant-1")));
     }
 
     @Test
