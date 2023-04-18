@@ -60,13 +60,14 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
             var signature = integrityService.generateSignature(download, extensionFile, keyPair);
             signature.setStorageType(download.getStorageType());
             integrityService.setSignatureKeyPair(extVersion, keyPair);
+
+            var extension = extVersion.getExtension();
+            cache.evictExtensionJsons(extVersion);
+            cache.evictLatestExtensionVersion(extension);
+            cache.evictNamespaceDetails(extension);
+
             migrations.uploadFileResource(signature);
             migrations.persistFileResource(signature);
         }
-
-        var extension = extVersion.getExtension();
-        cache.evictExtensionJsons(extVersion);
-        cache.evictLatestExtensionVersion(extension);
-        cache.evictNamespaceDetails(extension);
     }
 }
