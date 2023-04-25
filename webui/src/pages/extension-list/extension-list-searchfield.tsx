@@ -8,9 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, useContext } from 'react';
 import SearchIcon from '@material-ui/icons/Search';
 import { Paper, IconButton, makeStyles, InputBase } from '@material-ui/core';
+import { MainContext } from '../../context';
 
 const useStyles = makeStyles((theme) => ({
     search: {
@@ -35,6 +36,12 @@ const useStyles = makeStyles((theme) => ({
             filter: 'invert(100%)',
         }
     },
+    searchIconLight: {
+        color: '#ffffff',
+    },
+    searchIconDark: {
+        color: '#111111',
+    },
     error: {
         border: `2px solid ${theme.palette.error.main}`
     }
@@ -53,6 +60,8 @@ interface ExtensionListSearchfieldProps {
 export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfieldProps> = props => {
     const classes = useStyles();
 
+    const { pageSettings } = useContext(MainContext);
+
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         props.onSearchChanged(event.target.value);
     };
@@ -62,6 +71,8 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
             props.onSearchSubmit(props.searchQuery || '');
         }
     };
+
+    const searchIconClass = pageSettings?.themeType === 'dark' ? classes.searchIconDark : classes.searchIconLight;
 
     return (<>
         <Paper className={classes.search} classes={{ root: props.error ? classes.error : '' }}>
@@ -88,7 +99,7 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
             {
                 props.hideIconButton ? '' :
                     <IconButton color='primary' aria-label='Search' classes={{ root: classes.iconButton }} onClick={handleSearchButtonClick}>
-                        <SearchIcon />
+                        <SearchIcon classes={{ root: searchIconClass }} />
                     </IconButton>
             }
         </Paper>
