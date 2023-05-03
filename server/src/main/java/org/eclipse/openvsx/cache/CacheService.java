@@ -135,8 +135,10 @@ public class CacheService {
         for (var targetPlatform : targetPlatforms) {
             for (var preRelease : List.of(true, false)) {
                 for (var onlyActive : List.of(true, false)) {
-                    var key = latestExtensionVersionCacheKey.generate(null, null, extension, targetPlatform, preRelease, onlyActive);
-                    cache.evictIfPresent(key);
+                    for(var type : ExtensionVersion.Type.values()) {
+                        var key = latestExtensionVersionCacheKey.generate(extension, targetPlatform, preRelease, onlyActive, type);
+                        cache.evictIfPresent(key);
+                    }
                 }
             }
         }
