@@ -45,6 +45,10 @@ public class LatestExtensionVersionCacheKeyGenerator implements KeyGenerator {
             }
         }
 
+        return generate(extension, targetPlatform, preRelease, onlyActive, type);
+    }
+
+    public String generate(Extension extension, String targetPlatform, boolean preRelease, boolean onlyActive, ExtensionVersion.Type type) {
         var extensionName = extension.getName();
         var namespaceName = extension.getNamespace().getName();
         return NamingUtil.toFileFormat(namespaceName, extensionName, targetPlatform, "latest") +
