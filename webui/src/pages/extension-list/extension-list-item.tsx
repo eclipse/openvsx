@@ -90,7 +90,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
         const { icon } = this.state;
         const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
         const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
-        const reviewCountFormatted = numberFormat.format(extension.reviewCount || 0);
+        const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
         return <React.Fragment>
             <Fade in={true} timeout={{ enter: ((this.props.filterSize + this.props.idx) % this.props.filterSize) * 200 }}>
                 <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name} className={classes.extensionCard}>
@@ -116,7 +116,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                             </Box>
                             <Box display='flex' justifyContent='center'>
                                 <ExportRatingStars number={extension.averageRating || 0} fontSize='small'/>
-                                ({reviewCountFormatted})
+                                ({downloadCountFormatted})
                             </Box>
                         </Paper>
                     </RouteLink>

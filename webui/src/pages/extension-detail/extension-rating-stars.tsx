@@ -34,6 +34,6 @@ export class ExportRatingStars extends React.Component<ExportRatingStarsProps> {
         if (i > starsNumber && i - 1 < starsNumber) {
             return <StarHalfIcon fontSize={fontSize}/>;
         }
-        return <StarBorderIcon fontSize={fontSize}/>;
+        return <StarBorderIcon style={{ color: 'grey' }} fontSize={fontSize}/>;
     }
 }
