@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Strings;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
@@ -27,7 +26,6 @@ import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.stereotype.Component;
 
@@ -142,7 +140,7 @@ public class ExtensionValidator {
         checkInvalid(extVersion.getGalleryTheme(), s -> !GALLERY_THEME_VALUES.contains(s), "galleryBanner.theme", issues,
                 GALLERY_THEME_VALUES.toString());
         checkFieldSize(extVersion.getLocalizedLanguages(), DEFAULT_STRING_SIZE, "localizedLanguages", issues);
-        checkInvalid(extVersion.getQna(), s -> !QNA_VALUES.contains(s) && !isURL(s), "qna", issues,
+        checkInvalid(extVersion.getQna(), s -> !QNA_VALUES.contains(s) && isInvalidURL(s), "qna", issues,
                 QNA_VALUES.toString() + " or a URL");
         checkFieldSize(extVersion.getQna(), DEFAULT_STRING_SIZE, "qna", issues);
         return issues;
@@ -224,21 +222,22 @@ public class ExtensionValidator {
         if (Strings.isNullOrEmpty(value)) {
             return;
         }
-        if (!isURL(value)) {
+        if (isInvalidURL(value)) {
             issues.add(new Issue("Invalid URL in field '" + field + "': " + value));
         }
     }
 
-    private boolean isURL(String value) {
+    private boolean isInvalidURL(String value) {
         if (Strings.isNullOrEmpty(value))
-            return false;
+            return true;
         if (value.startsWith("git+") && value.length() > 4)
             value = value.substring(4);
         
         try {
-            return !StringUtils.isEmpty(new URL(value).getHost());
+            var url = new URL(value);
+            return url.getProtocol().matches("http(s)?") && Strings.isNullOrEmpty(url.getHost());
         } catch (MalformedURLException exc) {
-            return false;
+            return true;
         }
     }
 

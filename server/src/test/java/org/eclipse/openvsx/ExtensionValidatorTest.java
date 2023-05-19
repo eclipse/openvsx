@@ -67,6 +67,43 @@ public class ExtensionValidatorTest {
     }
 
     @Test
+    public void testInvalidURL2() {
+        var validator = new ExtensionValidator();
+        var extension = new ExtensionVersion();
+        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extension.setVersion("1");
+        extension.setRepository("https://");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).hasSize(1);
+        assertThat(issues.get(0))
+                .isEqualTo(new ExtensionValidator.Issue("Invalid URL in field 'repository': https://"));
+    }
+
+    @Test
+    public void testInvalidURL3() {
+        var validator = new ExtensionValidator();
+        var extension = new ExtensionVersion();
+        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extension.setVersion("1");
+        extension.setRepository("http://");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).hasSize(1);
+        assertThat(issues.get(0))
+                .isEqualTo(new ExtensionValidator.Issue("Invalid URL in field 'repository': http://"));
+    }
+
+    @Test
+    public void testMailtoURL() {
+        var validator = new ExtensionValidator();
+        var extension = new ExtensionVersion();
+        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extension.setVersion("1");
+        extension.setRepository("mailto:foo@bar.net");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     public void testGitProtocol() {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
