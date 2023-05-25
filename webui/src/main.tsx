@@ -222,9 +222,7 @@ class MainComponent extends React.Component<MainComponent.Props, MainComponent.S
                             <Switch>
                                 <Route exact path={[ExtensionListRoutes.MAIN]}
                                     render={routeProps =>
-                                        <ExtensionListContainer
-                                            {...routeProps}
-                                        />
+                                        <ExtensionListContainer {...routeProps} />
                                     } />
                                 <Route path={UserSettingsRoutes.MAIN}
                                     render={routeProps =>
