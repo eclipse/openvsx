@@ -10,7 +10,6 @@
 
 import * as React from 'react';
 import StarIcon from '@material-ui/icons/Star';
-import StarBorderIcon from '@material-ui/icons/StarBorder';
 import StarHalfIcon from '@material-ui/icons/StarHalf';
 
 interface ExportRatingStarsProps {
@@ -34,6 +33,6 @@ export class ExportRatingStars extends React.Component<ExportRatingStarsProps> {
         if (i > starsNumber && i - 1 < starsNumber) {
             return <StarHalfIcon fontSize={fontSize}/>;
         }
-        return <StarBorderIcon style={{ color: 'grey' }} fontSize={fontSize}/>;
+        return <StarIcon style={{ color: '#bcbcbc' }} fontSize={fontSize}/>;
     }
 }

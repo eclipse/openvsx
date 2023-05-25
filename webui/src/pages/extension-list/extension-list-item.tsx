@@ -12,6 +12,7 @@ import * as React from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Grid, Fade } from '@material-ui/core';
 import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
+import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import { MainContext } from '../../context';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 import { SearchEntry } from '../../extension-registry-types';
@@ -116,7 +117,8 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                             </Box>
                             <Box display='flex' justifyContent='center'>
                                 <ExportRatingStars number={extension.averageRating || 0} fontSize='small'/>
-                                ({downloadCountFormatted})
+                                &nbsp;
+                                {downloadCountFormatted != "0" && <><SaveAltIcon/> ({downloadCountFormatted})</>}
                             </Box>
                         </Paper>
                     </RouteLink>
