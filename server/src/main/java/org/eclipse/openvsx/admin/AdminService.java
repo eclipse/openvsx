@@ -17,25 +17,26 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.eclipse.openvsx.migration.MigrationRunner;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jobrunr.scheduling.cron.Cron;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.time.DateTimeException;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -43,7 +44,6 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class AdminService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminService.class);
     @Autowired
     RepositoryService repositories;
 
@@ -76,6 +76,12 @@ public class AdminService {
 
     @Autowired
     JobRequestScheduler scheduler;
+
+    @EventListener
+    public void applicationStarted(ApplicationStartedEvent event) {
+        var jobRequest = new HandlerJobRequest<>(MonthlyAdminStatisticsJobRequestHandler.class);
+        scheduler.scheduleRecurrently("MonthlyAdminStatistics", Cron.monthly(1, 0, 3), ZoneId.of("UTC"), jobRequest);
+    }
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, UserData admin)
@@ -347,8 +353,28 @@ public class AdminService {
         }
     }
 
-    @Transactional
     public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {
+        validateYearAndMonth(year, month);
+        var statistics = repositories.findAdminStatisticsByYearAndMonth(year, month);
+        if(statistics == null) {
+            throw new NotFoundException();
+        }
+
+        return statistics;
+    }
+
+    public void scheduleReport(int year, int month) {
+        validateYearAndMonth(year, month);
+        if(repositories.findAdminStatisticsByYearAndMonth(year, month) != null) {
+            throw new ErrorResultException("Report for " + year + "/" + month + " already exists");
+        }
+
+        var jobIdText = "AdminStatistics::year=" + year + ",month=" + month;
+        var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+        scheduler.enqueue(jobId, new AdminStatisticsJobRequest(year, month));
+    }
+
+    private void validateYearAndMonth(int year, int month) {
         if(year < 0) {
             throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);
         }
@@ -356,112 +382,20 @@ public class AdminService {
             throw new ErrorResultException("Month must be a value between 1 and 12", HttpStatus.BAD_REQUEST);
         }
 
-        var now = LocalDateTime.now();
-        if(year > now.getYear() || (year == now.getYear() && month > now.getMonthValue())) {
+        var now = TimeUtil.getCurrentUTC();
+        if(year > now.getYear() || (year == now.getYear() && month >= now.getMonthValue())) {
             throw new ErrorResultException("Combination of year and month lies in the future", HttpStatus.BAD_REQUEST);
         }
+    }
 
-        var statistics = repositories.findAdminStatisticsByYearAndMonth(year, month);
-        if(statistics == null) {
-            LocalDateTime startInclusive;
-            try {
-                startInclusive = LocalDateTime.of(year, month, 1, 0, 0);
-            } catch(DateTimeException e) {
-                throw new ErrorResultException("Invalid month or year", HttpStatus.BAD_REQUEST);
-            }
-
-            var currentYearAndMonth = now.getYear() == year && now.getMonthValue() == month;
-            var endExclusive = currentYearAndMonth
-                    ? now.truncatedTo(ChronoUnit.MINUTES)
-                    : startInclusive.plusMonths(1);
-
-            LOGGER.info(">> ADMIN REPORT STATS");
-            var stopwatch = new StopWatch();
-            stopwatch.start("repositories.countActiveExtensions");
-            var extensions = repositories.countActiveExtensions(endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.downloadsBetween");
-            var downloads = repositories.downloadsBetween(startInclusive, endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.downloadsUntil");
-            var downloadsTotal = repositories.downloadsUntil(endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.countActiveExtensionPublishers");
-            var publishers = repositories.countActiveExtensionPublishers(endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.averageNumberOfActiveReviewsPerActiveExtension");
-            var averageReviewsPerExtension = repositories.averageNumberOfActiveReviewsPerActiveExtension(endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.countPublishersThatClaimedNamespaceOwnership");
-            var namespaceOwners = repositories.countPublishersThatClaimedNamespaceOwnership(endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.countActiveExtensionsGroupedByExtensionReviewRating");
-            var extensionsByRating = repositories.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.countActiveExtensionPublishersGroupedByExtensionsPublished");
-            var publishersByExtensionsPublished = repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            var limit = 10;
-
-            stopwatch.start("repositories.topMostActivePublishingUsers");
-            var topMostActivePublishingUsers = repositories.topMostActivePublishingUsers(endExclusive, limit);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.topNamespaceExtensions");
-            var topNamespaceExtensions = repositories.topNamespaceExtensions(endExclusive, limit);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.topNamespaceExtensionVersions");
-            var topNamespaceExtensionVersions = repositories.topNamespaceExtensionVersions(endExclusive, limit);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-            stopwatch.start("repositories.topMostDownloadedExtensions");
-            var topMostDownloadedExtensions = repositories.topMostDownloadedExtensions(endExclusive, limit);
-            stopwatch.stop();
-            LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-            LOGGER.info("<< ADMIN REPORT STATS");
-
-            statistics = new AdminStatistics();
-            statistics.setYear(year);
-            statistics.setMonth(month);
-            statistics.setExtensions(extensions);
-            statistics.setDownloads(downloads);
-            statistics.setDownloadsTotal(downloadsTotal);
-            statistics.setPublishers(publishers);
-            statistics.setAverageReviewsPerExtension(averageReviewsPerExtension);
-            statistics.setNamespaceOwners(namespaceOwners);
-            statistics.setExtensionsByRating(extensionsByRating);
-            statistics.setPublishersByExtensionsPublished(publishersByExtensionsPublished);
-            statistics.setTopMostActivePublishingUsers(topMostActivePublishingUsers);
-            statistics.setTopNamespaceExtensions(topNamespaceExtensions);
-            statistics.setTopNamespaceExtensionVersions(topNamespaceExtensionVersions);
-            statistics.setTopMostDownloadedExtensions(topMostDownloadedExtensions);
-
-            if(!currentYearAndMonth) {
-                // archive statistics for quicker lookup next time
-                entityManager.persist(statistics);
-            }
-        }
-
-        return statistics;
+    public Map<String, List<String>> getReports() {
+        return repositories.findAllAdminStatistics().stream()
+                .sorted(Comparator.comparingInt(AdminStatistics::getYear).thenComparing(AdminStatistics::getMonth))
+                .map(stat -> {
+                    var yearText = String.valueOf(stat.getYear());
+                    var monthText = String.valueOf(stat.getMonth());
+                    return new AbstractMap.SimpleEntry<>(yearText, monthText);
+                })
+                .collect(Collectors.groupingBy(Map.Entry::getKey, () -> new LinkedHashMap<>(), Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 }

@@ -45,6 +45,10 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
     @Job(name = "Generate signature for extension version", retries = 3)
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var extVersion = migrations.getExtension(jobRequest.getEntityId());
+        if(extVersion == null) {
+            return;
+        }
+
         logger.info("Generating signature for: {}", NamingUtil.toLogFormat(extVersion));
 
         var existingSignature = migrations.getFileResource(extVersion, FileResource.DOWNLOAD_SIG);

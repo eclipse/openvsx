@@ -41,7 +41,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     .permitAll()
                 .antMatchers("/api/*/*/review", "/api/*/*/review/delete", "/api/user/publish", "/api/user/namespace/create")
                     .authenticated()
-                .antMatchers("/api/**", "/vscode/**", "/documents/**", "/admin/report")
+                .antMatchers("/api/**", "/vscode/**", "/documents/**", "/admin/report", "/admin/reports", "/admin/report/schedule")
                     .permitAll()
                 .antMatchers("/admin/**")
                     .hasAuthority("ROLE_ADMIN")
@@ -53,7 +53,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .cors()
                 .and()
             .csrf()
-                .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**")
+                .ignoringAntMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/admin/report/schedule", "/vscode/**")
                 .and()
             .exceptionHandling()
                 // Respond with 403 status when the user is not logged in

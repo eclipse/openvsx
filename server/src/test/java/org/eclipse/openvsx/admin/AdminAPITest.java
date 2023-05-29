@@ -836,197 +836,23 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testAdminOnTheFlyReportCsv() throws Exception {
+    public void testCurrentMonthAdminReportCsv() throws Exception {
         var token = mockAdminToken();
-        var year = 2021;
-        var month = 7;
-        var extensions = 9123L;
-        var downloads = 2145L;
-        var downloadsTotal = 57199L;
-        var publishers = 846L;
-        var averageReviewsPerExtension = 8.75;
-        var namespaceOwners = 623L;
-        var extensionsByRating = Map.of(3, 8000, 5, 1123);
-        var publishersByExtensionsPublished = Map.of(1, 6590, 3, 815);
-        var topMostActivePublishingUsers = Map.of("u_foo", 93, "u_bar", 543, "u_baz", 82);
-        var topNamespaceExtensions = Map.of("n_foo", 9, "n_bar", 48, "n_baz", 1239);
-        var topNamespaceExtensionVersions = Map.of("nv_foo", 234, "nv_bar", 67, "nv_baz", 932);
-        var topMostDownloadedExtensions = Map.of("foo.bar", 3847L, "bar.foo", 1237L, "foo.baz", 4378L);
-
-        var stats = new AdminStatistics();
-        stats.setYear(year);
-        stats.setMonth(month);
-        stats.setExtensions(extensions);
-        stats.setDownloads(downloads);
-        stats.setDownloadsTotal(downloadsTotal);
-        stats.setPublishers(publishers);
-        stats.setAverageReviewsPerExtension(averageReviewsPerExtension);
-        stats.setNamespaceOwners(namespaceOwners);
-        stats.setExtensionsByRating(extensionsByRating);
-        stats.setPublishersByExtensionsPublished(publishersByExtensionsPublished);
-        stats.setTopMostActivePublishingUsers(topMostActivePublishingUsers);
-        stats.setTopNamespaceExtensions(topNamespaceExtensions);
-        stats.setTopNamespaceExtensionVersions(topNamespaceExtensionVersions);
-        stats.setTopMostDownloadedExtensions(topMostDownloadedExtensions);
-
-        Mockito.when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(null);
-
-        var startInclusive = LocalDateTime.of(year, month, 1, 0, 0);
-        var endExclusive = startInclusive.plusMonths(1);
-        Mockito.when(repositories.countActiveExtensions(endExclusive)).thenReturn(extensions);
-        Mockito.when(repositories.downloadsBetween(startInclusive, endExclusive)).thenReturn(downloads);
-        Mockito.when(repositories.downloadsUntil(endExclusive)).thenReturn(downloadsTotal);
-        Mockito.when(repositories.countActiveExtensionPublishers(endExclusive)).thenReturn(publishers);
-        Mockito.when(repositories.averageNumberOfActiveReviewsPerActiveExtension(endExclusive)).thenReturn(averageReviewsPerExtension);
-        Mockito.when(repositories.countPublishersThatClaimedNamespaceOwnership(endExclusive)).thenReturn(namespaceOwners);
-        Mockito.when(repositories.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive)).thenReturn(extensionsByRating);
-        Mockito.when(repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive)).thenReturn(publishersByExtensionsPublished);
-        Mockito.when(repositories.topMostActivePublishingUsers(endExclusive, 10)).thenReturn(topMostActivePublishingUsers);
-        Mockito.when(repositories.topNamespaceExtensions(endExclusive, 10)).thenReturn(topNamespaceExtensions);
-        Mockito.when(repositories.topNamespaceExtensionVersions(endExclusive, 10)).thenReturn(topNamespaceExtensionVersions);
-        Mockito.when(repositories.topMostDownloadedExtensions(endExclusive, 10)).thenReturn(topMostDownloadedExtensions);
-
-        var values = List.<Object>of(year, month, extensions, downloads, downloadsTotal, publishers,
-                averageReviewsPerExtension, namespaceOwners, 0, 0, 8000, 0, 1123, 6590, 815, 543, 93, 82,
-                1239, 48, 9, 932, 234, 67, 4378, 3847, 1237);
-        mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), year, month)
+        var now = LocalDateTime.now();
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), now.getYear(), now.getMonthValue())
                 .header(HttpHeaders.ACCEPT, "text/csv"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("year,month,extensions,downloads,downloads_total,publishers," +
-                        "average_reviews_per_extension,namespace_owners,extensions_by_rating_1,extensions_by_rating_2," +
-                        "extensions_by_rating_3,extensions_by_rating_4,extensions_by_rating_5," +
-                        "publishers_published_extensions_1,publishers_published_extensions_3," +
-                        "most_active_publishing_users_u_bar,most_active_publishing_users_u_foo,most_active_publishing_users_u_baz," +
-                        "namespace_extensions_n_baz,namespace_extensions_n_bar,namespace_extensions_n_foo," +
-                        "namespace_extension_versions_nv_baz,namespace_extension_versions_nv_foo,namespace_extension_versions_nv_bar," +
-                        "most_downloaded_extensions_foo.baz,most_downloaded_extensions_foo.bar,most_downloaded_extensions_bar.foo\n" +
-                        values.stream().map(Object::toString).collect(Collectors.joining(","))));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Combination of year and month lies in the future"));
     }
 
     @Test
-    public void testAdminOnTheFlyReportJson() throws Exception {
+    public void testCurrentMonthAdminReportJson() throws Exception {
         var token = mockAdminToken();
-        var year = 2021;
-        var month = 7;
-        var extensions = 9123L;
-        var downloads = 2145L;
-        var downloadsTotal = 57199L;
-        var publishers = 846L;
-        var averageReviewsPerExtension = 8.75;
-        var namespaceOwners = 623L;
-        var extensionsByRating = Map.of(3, 8000, 5, 1123);
-        var publishersByExtensionsPublished = Map.of(1, 6590, 3, 815);
-        var topMostActivePublishingUsers = Map.of("u_foo", 93, "u_bar", 543, "u_baz", 82);
-        var topNamespaceExtensions = Map.of("n_foo", 9, "n_bar", 48, "n_baz", 1239);
-        var topNamespaceExtensionVersions = Map.of("nv_foo", 234, "nv_bar", 67, "nv_baz", 932);
-        var topMostDownloadedExtensions = Map.of("foo.bar", 3847L, "bar.foo", 1237L, "foo.baz", 4378L);
-
-        var stats = new AdminStatistics();
-        stats.setYear(year);
-        stats.setMonth(month);
-        stats.setExtensions(extensions);
-        stats.setDownloads(downloads);
-        stats.setDownloadsTotal(downloadsTotal);
-        stats.setPublishers(publishers);
-        stats.setAverageReviewsPerExtension(averageReviewsPerExtension);
-        stats.setNamespaceOwners(namespaceOwners);
-        stats.setExtensionsByRating(extensionsByRating);
-        stats.setPublishersByExtensionsPublished(publishersByExtensionsPublished);
-        stats.setTopMostActivePublishingUsers(topMostActivePublishingUsers);
-        stats.setTopNamespaceExtensions(topNamespaceExtensions);
-        stats.setTopNamespaceExtensionVersions(topNamespaceExtensionVersions);
-        stats.setTopMostDownloadedExtensions(topMostDownloadedExtensions);
-
-        Mockito.when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(null);
-
-        var startInclusive = LocalDateTime.of(year, month, 1, 0, 0);
-        var endExclusive = startInclusive.plusMonths(1);
-        Mockito.when(repositories.countActiveExtensions(endExclusive)).thenReturn(extensions);
-        Mockito.when(repositories.downloadsBetween(startInclusive, endExclusive)).thenReturn(downloads);
-        Mockito.when(repositories.downloadsUntil(endExclusive)).thenReturn(downloadsTotal);
-        Mockito.when(repositories.countActiveExtensionPublishers(endExclusive)).thenReturn(publishers);
-        Mockito.when(repositories.averageNumberOfActiveReviewsPerActiveExtension(endExclusive)).thenReturn(averageReviewsPerExtension);
-        Mockito.when(repositories.countPublishersThatClaimedNamespaceOwnership(endExclusive)).thenReturn(namespaceOwners);
-        Mockito.when(repositories.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive)).thenReturn(extensionsByRating);
-        Mockito.when(repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive)).thenReturn(publishersByExtensionsPublished);
-        Mockito.when(repositories.topMostActivePublishingUsers(endExclusive, 10)).thenReturn(topMostActivePublishingUsers);
-        Mockito.when(repositories.topNamespaceExtensions(endExclusive, 10)).thenReturn(topNamespaceExtensions);
-        Mockito.when(repositories.topNamespaceExtensionVersions(endExclusive, 10)).thenReturn(topNamespaceExtensionVersions);
-        Mockito.when(repositories.topMostDownloadedExtensions(endExclusive, 10)).thenReturn(topMostDownloadedExtensions);
-
-        mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), year, month)
+        var now = LocalDateTime.now();
+        mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), now.getYear(), now.getMonthValue())
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk())
-                .andExpect(content().json(adminStatisticsJson(s -> {
-                    s.year = year;
-                    s.month = month;
-                    s.extensions = extensions;
-                    s.downloads = downloads;
-                    s.downloadsTotal = downloadsTotal;
-                    s.publishers = publishers;
-                    s.averageReviewsPerExtension = averageReviewsPerExtension;
-                    s.namespaceOwners = namespaceOwners;
-
-                    var rating5 = new AdminStatisticsJson.ExtensionsByRating();
-                    rating5.rating = 5;
-                    rating5.extensions = 1123;
-                    var rating3 = new AdminStatisticsJson.ExtensionsByRating();
-                    rating3.rating = 3;
-                    rating3.extensions = 8000;
-                    s.extensionsByRating = List.of(rating5, rating3);
-
-                    var publishers3 = new AdminStatisticsJson.PublishersByExtensionsPublished();
-                    publishers3.extensionsPublished = 3;
-                    publishers3.publishers = 815;
-                    var publishers1 = new AdminStatisticsJson.PublishersByExtensionsPublished();
-                    publishers1.extensionsPublished = 1;
-                    publishers1.publishers = 6590;
-                    s.publishersByExtensionsPublished = List.of(publishers3, publishers1);
-
-                    var activePublisher1 = new AdminStatisticsJson.TopMostActivePublishingUsers();
-                    activePublisher1.userLoginName = "u_bar";
-                    activePublisher1.publishedExtensionVersions = 543;
-                    var activePublisher2 = new AdminStatisticsJson.TopMostActivePublishingUsers();
-                    activePublisher2.userLoginName = "u_foo";
-                    activePublisher2.publishedExtensionVersions = 93;
-                    var activePublisher3 = new AdminStatisticsJson.TopMostActivePublishingUsers();
-                    activePublisher3.userLoginName = "u_baz";
-                    activePublisher3.publishedExtensionVersions = 82;
-                    s.topMostActivePublishingUsers = List.of(activePublisher1, activePublisher2, activePublisher3);
-
-                    var namespaceExtensions1 = new AdminStatisticsJson.TopNamespaceExtensions();
-                    namespaceExtensions1.namespace = "n_baz";
-                    namespaceExtensions1.extensions = 1239;
-                    var namespaceExtensions2 = new AdminStatisticsJson.TopNamespaceExtensions();
-                    namespaceExtensions2.namespace = "n_bar";
-                    namespaceExtensions2.extensions = 48;
-                    var namespaceExtensions3 = new AdminStatisticsJson.TopNamespaceExtensions();
-                    namespaceExtensions3.namespace = "n_foo";
-                    namespaceExtensions3.extensions = 9;
-                    s.topNamespaceExtensions = List.of(namespaceExtensions1, namespaceExtensions2, namespaceExtensions3);
-
-                    var namespaceExtensionVersions1 = new AdminStatisticsJson.TopNamespaceExtensionVersions();
-                    namespaceExtensionVersions1.namespace = "nv_baz";
-                    namespaceExtensionVersions1.extensionVersions = 932;
-                    var namespaceExtensionVersions2 = new AdminStatisticsJson.TopNamespaceExtensionVersions();
-                    namespaceExtensionVersions2.namespace = "nv_foo";
-                    namespaceExtensionVersions2.extensionVersions = 234;
-                    var namespaceExtensionVersions3 = new AdminStatisticsJson.TopNamespaceExtensionVersions();
-                    namespaceExtensionVersions3.namespace = "nv_bar";
-                    namespaceExtensionVersions3.extensionVersions = 67;
-                    s.topNamespaceExtensionVersions = List.of(namespaceExtensionVersions1, namespaceExtensionVersions2, namespaceExtensionVersions3);
-
-                    var mostDownloadedExtensions1 = new AdminStatisticsJson.TopMostDownloadedExtensions();
-                    mostDownloadedExtensions1.extensionIdentifier = "foo.baz";
-                    mostDownloadedExtensions1.downloads = 4378L;
-                    var mostDownloadedExtensions2 = new AdminStatisticsJson.TopMostDownloadedExtensions();
-                    mostDownloadedExtensions2.extensionIdentifier = "foo.bar";
-                    mostDownloadedExtensions2.downloads = 3847L;
-                    var mostDownloadedExtensions3 = new AdminStatisticsJson.TopMostDownloadedExtensions();
-                    mostDownloadedExtensions3.extensionIdentifier = "bar.foo";
-                    mostDownloadedExtensions3.downloads = 1237L;
-                    s.topMostDownloadedExtensions = List.of(mostDownloadedExtensions1, mostDownloadedExtensions2, mostDownloadedExtensions3);
-                })));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Combination of year and month lies in the future")));
     }
 
     @Test

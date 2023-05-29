@@ -182,7 +182,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findActiveVersions(new QueryRequest()),
                 () -> repositories.findActiveVersionStringsSorted(LONG_LIST,"targetPlatform"),
-                () -> repositories.findActiveVersionReferencesSorted(List.of(extension))
+                () -> repositories.findActiveVersionReferencesSorted(List.of(extension)),
+                () -> repositories.findAllAdminStatistics()
         );
 
         // check that we did not miss anything

@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Entity
+@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "year", "month"})})
 public class AdminStatistics {
 
     @Id
