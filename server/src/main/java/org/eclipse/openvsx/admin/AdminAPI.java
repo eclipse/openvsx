@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.net.URI;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
 import org.eclipse.openvsx.LocalRegistryService;
@@ -42,6 +43,7 @@ import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
 
 @RestController
 public class AdminAPI {
+
     @Autowired
     RepositoryService repositories;
 
@@ -56,6 +58,41 @@ public class AdminAPI {
 
     @Autowired
     SearchUtilService search;
+
+    @GetMapping(
+            path = "/admin/reports",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Map<String, List<String>>> getReports(
+            @RequestParam("token") String tokenValue
+    ) {
+        try {
+            validateToken(tokenValue);
+            return ResponseEntity.ok(admins.getReports());
+        } catch (ErrorResultException exc) {
+            return ResponseEntity.status(exc.getStatus()).build();
+        }
+    }
+
+    @PostMapping(
+            path = "/admin/report/schedule",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> scheduleReport(
+            @RequestParam String token,
+            @RequestBody JsonNode json
+    ) {
+        try {
+            validateToken(token);
+            var year = json.get("year").asInt();
+            var month = json.get("month").asInt();
+            admins.scheduleReport(year, month);
+            return ResponseEntity.accepted().build();
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ResultJson.class);
+        }
+    }
 
     @GetMapping(
             path = "/admin/report",
@@ -91,12 +128,15 @@ public class AdminAPI {
         }
     }
 
-    private AdminStatistics getReport(String tokenValue, int year, int month) {
+    private void validateToken(String tokenValue) {
         var accessToken = repositories.findAccessToken(tokenValue);
         if(accessToken == null || !accessToken.isActive() || accessToken.getUser() == null || !ROLE_ADMIN.equals(accessToken.getUser().getRole())) {
             throw new ErrorResultException("Invalid access token", HttpStatus.FORBIDDEN);
         }
+    }
 
+    private AdminStatistics getReport(String tokenValue, int year, int month) {
+        validateToken(tokenValue);
         return admins.getAdminStatistics(year, month);
     }
 
