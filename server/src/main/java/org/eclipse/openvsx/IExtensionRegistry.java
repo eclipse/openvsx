@@ -24,6 +24,10 @@ public interface IExtensionRegistry {
 
     ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version);
 
+    VersionsJson getVersions(String namespace, String extension, String targetPlatform, int size, int offset);
+
+    VersionReferencesJson getVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset);
+
     ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName);
 
     ReviewListJson getReviews(String namespace, String extension);

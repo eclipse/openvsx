@@ -20,7 +20,6 @@ import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
-import org.eclipse.openvsx.util.SemanticVersion;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 
@@ -30,7 +29,7 @@ public class ExtensionVersion implements Serializable {
 
     public static final Comparator<ExtensionVersion> SORT_COMPARATOR =
         Comparator.comparing(ExtensionVersion::getSemanticVersion)
-                .thenComparing(TargetPlatform::isUniversal)
+                .thenComparing(ExtensionVersion::isUniversalTargetPlatform)
                 .thenComparing(ExtensionVersion::getTargetPlatform)
                 .thenComparing(ExtensionVersion::getTimestamp)
                 .reversed();
@@ -52,7 +51,17 @@ public class ExtensionVersion implements Serializable {
 
     String targetPlatform;
 
-    @Transient
+    boolean universalTargetPlatform;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "major", column = @Column(name = "semver_major")),
+            @AttributeOverride(name = "minor", column = @Column(name = "semver_minor")),
+            @AttributeOverride(name = "patch", column = @Column(name = "semver_patch")),
+            @AttributeOverride(name = "preRelease", column = @Column(name = "semver_pre_release")),
+            @AttributeOverride(name = "isPreRelease", column = @Column(name = "semver_is_pre_release")),
+            @AttributeOverride(name = "buildMetadata", column = @Column(name = "semver_build_metadata"))
+    })
     SemanticVersion semver;
 
     boolean preRelease;
@@ -237,7 +246,8 @@ public class ExtensionVersion implements Serializable {
 	}
 
 	public void setVersion(String version) {
-		this.version = version;
+        this.version = version;
+        this.semver = SemanticVersion.parse(version);
     }
 
     public String getTargetPlatform() {
@@ -246,15 +256,23 @@ public class ExtensionVersion implements Serializable {
 
     public void setTargetPlatform(String targetPlatform) {
         this.targetPlatform = targetPlatform;
+        this.universalTargetPlatform = TargetPlatform.isUniversal(targetPlatform);
+    }
+
+    public boolean isUniversalTargetPlatform() {
+        return universalTargetPlatform;
+    }
+
+    public void setUniversalTargetPlatform(boolean universalTargetPlatform) {
+        // do nothing, universalTargetPlatform is derived from targetPlatform
     }
 
     public SemanticVersion getSemanticVersion() {
-        if (semver == null) {
-            var version = getVersion();
-            if (version != null)
-                semver = new SemanticVersion(version);
-        }
         return semver;
+    }
+
+    public void setSemanticVersion(SemanticVersion semver) {
+        // do nothing, semver is derived from version
     }
 
 	public boolean isPreRelease() {

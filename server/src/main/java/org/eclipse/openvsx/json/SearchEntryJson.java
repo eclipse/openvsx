@@ -53,8 +53,12 @@ public class SearchEntryJson implements Serializable {
     @NotNull
     public String timestamp;
 
-    @Schema(description = "Essential metadata of all available versions")
-    public List<VersionReference> allVersions;
+    @Schema(description = "Essential metadata of all available versions. Deprecated: only returns the last 200 versions. Use allVersionsUrl instead.")
+    @Deprecated
+    public List<VersionReferenceJson> allVersions;
+
+    @Schema(description = "URL to get essential metadata of all available versions.")
+    public String allVersionsUrl;
 
     @Schema(description = "Average rating")
     @Min(0)
@@ -73,24 +77,4 @@ public class SearchEntryJson implements Serializable {
     public String displayName;
 
     public String description;
-
-    @Schema(
-        name = "VersionReference",
-        description = "Essential metadata of an extension version"
-    )
-    public static class VersionReference {
-
-        @Schema(description = "URL to get the full metadata of this version")
-        public String url;
-
-        @Schema(description = "Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
-        public Map<String, String> files;
-
-        public String version;
-
-        @Schema(description = "Map of engine names to the respective version constraints")
-        public Map<String, String> engines;
-
-    }
-
 }

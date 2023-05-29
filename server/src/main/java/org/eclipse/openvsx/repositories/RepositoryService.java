@@ -10,8 +10,12 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +29,13 @@ import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
 
 @Component
 public class RepositoryService {
+
+    private static final int MAX_VERSIONS = 200;
+    private static final Sort VERSIONS_SORT = Sort.by(Sort.Direction.DESC, "semver.major", "semver.minor", "semver.patch")
+            .and(Sort.by(Sort.Direction.ASC, "semver.isPreRelease"))
+            .and(Sort.by(Sort.Direction.DESC, "universalTargetPlatform"))
+            .and(Sort.by(Sort.Direction.ASC, "targetPlatform"))
+            .and(Sort.by(Sort.Direction.DESC, "timestamp"));
 
     @Autowired NamespaceRepository namespaceRepo;
     @Autowired ExtensionRepository extensionRepo;
@@ -129,8 +140,37 @@ public class RepositoryService {
          return extensionVersionRepo.findByExtensionAndActiveTrue(extension);
     }
 
-    public Streamable<ExtensionVersion> findActiveVersions(Collection<Extension> extensions) {
-        return extensionVersionRepo.findByExtensionInAndActiveTrue(extensions);
+    public List<ExtensionVersion> findActiveVersionsSorted(Extension extension) {
+        var page = PageRequest.ofSize(MAX_VERSIONS).withSort(VERSIONS_SORT);
+        return extensionVersionRepo.findByExtensionAndActiveTrue(extension, page);
+    }
+
+    public Page<ExtensionVersion> findActiveVersionsSorted(String namespace, String extension, PageRequest page) {
+        return extensionVersionRepo.findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(extension, namespace, page.withSort(VERSIONS_SORT));
+    }
+
+    public Page<ExtensionVersion> findActiveVersionsSorted(String namespace, String extension, String targetPlatform, PageRequest page) {
+        return extensionVersionRepo.findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(targetPlatform, extension, namespace, page.withSort(VERSIONS_SORT));
+    }
+
+    public Page<String> findActiveVersionStringsSorted(String namespace, String extension, PageRequest page) {
+        return extensionVersionJooqRepo.findActiveVersionStringsSorted(namespace, extension, null, page);
+    }
+
+    public Page<String> findActiveVersionStringsSorted(String namespace, String extension, String targetPlatform, PageRequest page) {
+        return extensionVersionJooqRepo.findActiveVersionStringsSorted(namespace, extension, targetPlatform, page);
+    }
+
+    public List<String> findVersionStringsSorted(Extension extension, String targetPlatform, boolean onlyActive) {
+        return extensionVersionJooqRepo.findVersionStringsSorted(extension.getId(), targetPlatform, onlyActive, MAX_VERSIONS);
+    }
+
+    public Map<Long, List<String>> findActiveVersionStringsSorted(Collection<Long> extensionIds, String targetPlatform) {
+        return extensionVersionJooqRepo.findActiveVersionStringsSorted(extensionIds, targetPlatform, MAX_VERSIONS);
+    }
+
+    public List<ExtensionVersion> findActiveVersionReferencesSorted(Collection<Extension> extensions) {
+        return extensionVersionJooqRepo.findActiveVersionReferencesSorted(extensions, MAX_VERSIONS);
     }
 
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
@@ -179,10 +219,6 @@ public class RepositoryService {
 
     public FileResource findFileByType(ExtensionVersion extVersion, String type) {
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
-    }
-
-    public Streamable<FileResource> findFilesByType(ExtensionVersion extVersion, Collection<String> types) {
-        return fileResourceRepo.findByExtensionAndTypeIn(extVersion, types);
     }
 
     public List<FileResource> findFilesByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
@@ -285,16 +321,12 @@ public class RepositoryService {
         return extensionJooqRepo.findAllActiveById(ids);
     }
 
+    public List<ExtensionVersion> findActiveVersions(QueryRequest request) {
+        return extensionVersionJooqRepo.findActiveVersions(request);
+    }
+
     public List<ExtensionVersion> findActiveExtensionVersions(Collection<Long> extensionIds, String targetPlatform) {
         return extensionVersionJooqRepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
-    }
-
-    public List<ExtensionVersion> findActiveExtensionVersionsByExtensionPublicId(String targetPlatform, String extensionPublicId) {
-        return extensionVersionJooqRepo.findAllActiveByExtensionPublicId(targetPlatform, extensionPublicId);
-    }
-
-    public List<ExtensionVersion> findActiveExtensionVersionsByNamespacePublicId(String targetPlatform, String namespacePublicId) {
-        return extensionVersionJooqRepo.findAllActiveByNamespacePublicId(targetPlatform, namespacePublicId);
     }
 
     public List<ExtensionVersion> findActiveExtensionVersionsByVersion(String version, String extensionName, String namespaceName) {

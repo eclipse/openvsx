@@ -20,25 +20,19 @@ public class ExtensionValidatorTest {
     @Test
     public void testInvalidVersion1() {
         var validator = new ExtensionValidator();
-        var extension = new ExtensionVersion();
-        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extension.setVersion("latest");
-        var issues = validator.validateMetadata(extension);
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0))
+        var issue = validator.validateExtensionVersion("latest");
+        assertThat(issue).isPresent();
+        assertThat(issue.get())
                 .isEqualTo(new ExtensionValidator.Issue("The version string 'latest' is reserved."));
     }
 
     @Test
     public void testInvalidVersion2() {
         var validator = new ExtensionValidator();
-        var extension = new ExtensionVersion();
-        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extension.setVersion("1/2");
-        var issues = validator.validateMetadata(extension);
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0))
-                .isEqualTo(new ExtensionValidator.Issue("Invalid character '/' found in version (index 1)."));
+        var issue = validator.validateExtensionVersion("1/2");
+        assertThat(issue).isPresent();
+        assertThat(issue.get())
+                .isEqualTo(new ExtensionValidator.Issue("Invalid semantic version. See https://semver.org/."));
     }
 
     @Test
@@ -46,7 +40,7 @@ public class ExtensionValidatorTest {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform("debian-x64");
-        extension.setVersion("1");
+        extension.setVersion("1.0.0");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
         assertThat(issues.get(0))
@@ -58,7 +52,7 @@ public class ExtensionValidatorTest {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extension.setVersion("1");
+        extension.setVersion("1.0.0");
         extension.setRepository("Foo and bar!");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
@@ -71,7 +65,7 @@ public class ExtensionValidatorTest {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extension.setVersion("1");
+        extension.setVersion("1.0.0");
         extension.setRepository("https://");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
@@ -84,7 +78,7 @@ public class ExtensionValidatorTest {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extension.setVersion("1");
+        extension.setVersion("1.0.0");
         extension.setRepository("http://");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
@@ -97,7 +91,7 @@ public class ExtensionValidatorTest {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extension.setVersion("1");
+        extension.setVersion("1.0.0");
         extension.setRepository("mailto:foo@bar.net");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).isEmpty();
@@ -108,7 +102,7 @@ public class ExtensionValidatorTest {
         var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extension.setVersion("1");
+        extension.setVersion("1.0.0");
         extension.setRepository("git+https://github.com/Foo/Bar.git");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).isEmpty();

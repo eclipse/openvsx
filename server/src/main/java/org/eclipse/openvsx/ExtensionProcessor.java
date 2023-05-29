@@ -249,7 +249,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return extVersion;
     }
 
-    private String getVersion() {
+    public String getVersion() {
         return vsixManifest.path("Metadata").path("Identity").path("Version").asText();
     }
 

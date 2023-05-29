@@ -9,25 +9,26 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.lang.reflect.Modifier;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Stream;
-
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.json.QueryRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.Invocation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.lang.reflect.Modifier;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
  * Run the DB queries and assert no DB error, just to ensure that the queries
@@ -58,6 +59,7 @@ class RepositoryServiceSmokeTest {
         extension.setNamespace(namespace);
         var userData = new UserData();
         var extVersion = new ExtensionVersion();
+        extVersion.setVersion("3.1.2-rc1+armhf");
         extVersion.setTargetPlatform("targetPlatform");
         var personalAccessToken = new PersonalAccessToken();
         var keyPair = new SignatureKeyPair();
@@ -114,7 +116,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findFileByTypeAndName(extVersion, "type", "name"),
                 () -> repositories.findFiles(extVersion),
                 () -> repositories.findFilesByStorageType("storageType"),
-                () -> repositories.findFilesByType(extVersion, STRING_LIST),
                 () -> repositories.findMembership(userData, namespace),
                 () -> repositories.findMemberships(namespace),
                 () -> repositories.findMemberships(namespace, "role"),
@@ -137,7 +138,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findExtensions(LONG_LIST),
                 () -> repositories.findExtensions(userData),
                 () -> repositories.findFilesByType(List.of(extVersion), STRING_LIST),
-                () -> repositories.findActiveVersions(List.of(extension)),
                 () -> repositories.countVersions(extension),
                 () -> repositories.topMostDownloadedExtensions(NOW, 1),
                 () -> repositories.deleteFileResources(extVersion, "download"),
@@ -160,10 +160,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveExtensionsByPublicId(STRING_LIST, "namespaceName"),
                 () -> repositories.findNamespaceMemberships(LONG_LIST),
                 () -> repositories.findActiveExtensionVersionsByNamespaceName("targetPlatform", "namespaceName"),
-                () -> repositories.findActiveExtensionVersionsByExtensionPublicId("targetPlatform", "extensionPublicId"),
                 () -> repositories.findActiveExtensionVersionsByExtensionName("targetPlatform", "extensionName", "namespaceName"),
                 () -> repositories.findActiveExtensionVersionsByExtensionName("targetPlatform", "extensionName"),
-                () -> repositories.findActiveExtensionVersionsByNamespacePublicId("targetPlatform", "namespacePublicId"),
                 () -> repositories.findAllNotMatchingByExtensionId(STRING_LIST),
                 () -> repositories.getAverageReviewRating(null),
                 () -> repositories.getAverageReviewRating(),
@@ -174,7 +172,17 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findVersions(),
                 () -> repositories.findVersionsWithout(keyPair),
                 () -> repositories.deleteDownloadSigFiles(),
-                () -> repositories.deleteAllKeyPairs()
+                () -> repositories.deleteAllKeyPairs(),
+                () -> repositories.findActiveVersionsSorted(extension),
+                () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", PageRequest.ofSize(1)),
+                () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", "targetPlatform", PageRequest.ofSize(1)),
+                () -> repositories.findActiveVersionStringsSorted("namespaceName", "extensionName", PageRequest.ofSize(1)),
+                () -> repositories.findActiveVersionStringsSorted("namespaceName", "extensionName", "targetPlatform", PageRequest.ofSize(1)),
+                () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
+                () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
+                () -> repositories.findActiveVersions(new QueryRequest()),
+                () -> repositories.findActiveVersionStringsSorted(LONG_LIST,"targetPlatform"),
+                () -> repositories.findActiveVersionReferencesSorted(List.of(extension))
         );
 
         // check that we did not miss anything

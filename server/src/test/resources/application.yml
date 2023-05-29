@@ -4,7 +4,7 @@ spring:
       config: classpath:ehcache.xml
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:postgresql:9.6.8:///test
+    url: jdbc:tc:postgresql:12.7:///test
   jpa:
     properties:
       hibernate:

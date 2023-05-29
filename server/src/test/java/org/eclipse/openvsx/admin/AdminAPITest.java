@@ -121,7 +121,7 @@ public class AdminAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foobar";
                     e.name = "baz";
-                    e.version = "2";
+                    e.version = "2.0.0";
                     e.active = true;
                 })));
     }
@@ -141,7 +141,7 @@ public class AdminAPITest {
                 .andExpect(content().json(extensionJson(e -> {
                     e.namespace = "foobar";
                     e.name = "baz";
-                    e.version = "2";
+                    e.version = "2.0.0";
                     e.active = false;
                 })));
     }
@@ -280,12 +280,12 @@ public class AdminAPITest {
         mockAdminUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
-                .content("[{\"targetPlatform\":\"universal\",\"version\":\"2\"}]")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
                 .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz 2")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 2.0.0")));
     }
 
     @Test
@@ -293,7 +293,7 @@ public class AdminAPITest {
         mockAdminUser();
         mockExtension(1, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
-                .content("[{\"targetPlatform\":\"universal\",\"version\":\"1\"}]")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"}]")
                 .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
@@ -309,7 +309,7 @@ public class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(errorJson("Extension foobar.baz is bundled by the following extension packs: foobar.bundle-1")));
+                .andExpect(content().json(errorJson("Extension foobar.baz is bundled by the following extension packs: foobar.bundle-1.0.0")));
     }
 
     @Test
@@ -320,7 +320,7 @@ public class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(errorJson("The following extensions have a dependency on foobar.baz: foobar.dependant-1")));
+                .andExpect(content().json(errorJson("The following extensions have a dependency on foobar.baz: foobar.dependant-1.0.0")));
     }
 
     @Test
@@ -495,7 +495,7 @@ public class AdminAPITest {
                     var ext1 = new ExtensionJson();
                     ext1.namespace = "foobar";
                     ext1.name = "baz";
-                    ext1.version = "1";
+                    ext1.version = "1.0.0";
                     upi.extensions = Arrays.asList(ext1);
                 })));
     }
@@ -1277,7 +1277,7 @@ public class AdminAPITest {
             var extVersion = new ExtensionVersion();
             extVersion.setExtension(extension);
             extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-            extVersion.setVersion(Integer.toString(i + 1));
+            extVersion.setVersion(createVersion(i + 1));
             extVersion.setActive(true);
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
@@ -1305,7 +1305,7 @@ public class AdminAPITest {
             var bundle = new ExtensionVersion();
             bundle.setExtension(bundleExt);
             bundle.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-            bundle.setVersion(Integer.toString(i + 1));
+            bundle.setVersion(createVersion(i + 1));
             bundles.add(bundle);
         }
         Mockito.when(repositories.findBundledExtensionsReference(extension))
@@ -1320,7 +1320,7 @@ public class AdminAPITest {
             var dependant = new ExtensionVersion();
             dependant.setExtension(dependantExt);
             dependant.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-            dependant.setVersion(Integer.toString(i + 1));
+            dependant.setVersion(createVersion(i + 1));
             dependants.add(dependant);
         }
         Mockito.when(repositories.findDependenciesReference(extension))
@@ -1329,6 +1329,10 @@ public class AdminAPITest {
         Mockito.when(repositories.findAllReviews(extension))
                 .thenReturn(Streamable.empty());
         return versions;
+    }
+
+    private String createVersion(int major) {
+        return Integer.toString(major) + ".0.0";
     }
 
     private String adminStatisticsJson(Consumer<AdminStatisticsJson> content) throws JsonProcessingException {
