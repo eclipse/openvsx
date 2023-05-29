@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.cache;
 
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +20,7 @@ import java.lang.reflect.Method;
 public class ExtensionJsonCacheKeyGenerator implements KeyGenerator {
     @Override
     public Object generate(Object target, Method method, Object... params) {
-        var version = params.length == 4 ? (String) params[3] : "latest";
+        var version = params.length == 4 ? (String) params[3] : VersionAlias.LATEST;
         return generate((String) params[0], (String) params[1], (String) params[2], version);
     }
 

@@ -103,6 +103,12 @@ public class PublishExtensionVersionHandler {
         if (nameIssue.isPresent()) {
             throw new ErrorResultException(nameIssue.get().toString());
         }
+
+        var versionIssue = validator.validateExtensionVersion(processor.getVersion());
+        if (versionIssue.isPresent()) {
+            throw new ErrorResultException(versionIssue.get().toString());
+        }
+
         var extVersion = processor.getMetadata();
         if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
             extVersion.setDisplayName(null);

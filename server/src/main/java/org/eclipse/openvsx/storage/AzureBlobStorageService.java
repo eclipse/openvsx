@@ -172,7 +172,7 @@ public class AzureBlobStorageService implements IStorageService {
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
         var segments = new String[]{namespace.getName(), extension.getName()};
-		if(!TargetPlatform.isUniversal(extVersion)) {
+		if(!extVersion.isUniversalTargetPlatform()) {
 		    segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
         }
 

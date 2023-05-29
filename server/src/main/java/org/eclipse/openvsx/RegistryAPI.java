@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.*;
@@ -456,13 +457,279 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                         .body(registry.getExtension(namespace, extension, targetPlatform, version));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version));
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping(
+            path = "/api/{namespace}/{extension}/versions",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides a map of versions matching an extension")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "The extension versions are returned in JSON format"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "The specified extension could not be found",
+                    content = @Content()
+            ),
+            @ApiResponse(
+                    responseCode = "429",
+                    description = "A client has sent too many requests in a given amount of time",
+                    content = @Content(),
+                    headers = {
+                            @Header(
+                                    name = "X-Rate-Limit-Retry-After-Seconds",
+                                    description = "Number of seconds to wait after receiving a 429 response",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            ),
+                            @Header(
+                                    name = "X-Rate-Limit-Remaining",
+                                    description = "Remaining number of requests left",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            )
+                    }
+            )
+    })
+    public ResponseEntity<VersionsJson> getVersions(
+            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @Parameter(description = "Extension name", example = "java")
+            String extension,
+            @RequestParam(defaultValue = "18")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            int size,
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
+            int offset
+    ) {
+        return handleGetVersions(namespace, extension, null, size, offset);
+    }
+
+    @GetMapping(
+            path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/versions",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides a map of versions matching an extension")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "The extension versions are returned in JSON format"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "The specified extension could not be found",
+                    content = @Content()
+            ),
+            @ApiResponse(
+                    responseCode = "429",
+                    description = "A client has sent too many requests in a given amount of time",
+                    content = @Content(),
+                    headers = {
+                            @Header(
+                                    name = "X-Rate-Limit-Retry-After-Seconds",
+                                    description = "Number of seconds to wait after receiving a 429 response",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            ),
+                            @Header(
+                                    name = "X-Rate-Limit-Remaining",
+                                    description = "Remaining number of requests left",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            )
+                    }
+            )
+    })
+    public ResponseEntity<VersionsJson> getVersions(
+            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @Parameter(description = "Extension name", example = "java")
+            String extension,
+            @PathVariable
+            @Parameter(
+                    description = "Target platform",
+                    example = TargetPlatform.NAME_LINUX_ARM64,
+                    schema = @Schema(type = "string", allowableValues = {
+                            NAME_WIN32_X64, NAME_WIN32_IA32, NAME_WIN32_ARM64,
+                            NAME_LINUX_X64, NAME_LINUX_ARM64, NAME_LINUX_ARMHF,
+                            NAME_ALPINE_X64, NAME_ALPINE_ARM64,
+                            NAME_DARWIN_X64, NAME_DARWIN_ARM64,
+                            NAME_WEB, NAME_UNIVERSAL
+                    })
+            )
+            String targetPlatform,
+            @RequestParam(defaultValue = "18")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            int size,
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
+            int offset
+    ) {
+        return handleGetVersions(namespace, extension, targetPlatform, size, offset);
+    }
+
+    private ResponseEntity<VersionsJson> handleGetVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
+        if (size < 0) {
+            var json = VersionsJson.error("The parameter 'size' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        if (offset < 0) {
+            var json = VersionsJson.error("The parameter 'offset' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        for (var registry : getRegistries()) {
+            try {
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(registry.getVersions(namespace, extension, targetPlatform, size, offset));
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+        var json = VersionsJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform));
+        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping(
+            path = "/api/{namespace}/{extension}/version-references",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides a list of version references matching an extension")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "The extension version references are returned in JSON format"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "The specified extension could not be found",
+                    content = @Content()
+            ),
+            @ApiResponse(
+                    responseCode = "429",
+                    description = "A client has sent too many requests in a given amount of time",
+                    content = @Content(),
+                    headers = {
+                            @Header(
+                                    name = "X-Rate-Limit-Retry-After-Seconds",
+                                    description = "Number of seconds to wait after receiving a 429 response",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            ),
+                            @Header(
+                                    name = "X-Rate-Limit-Remaining",
+                                    description = "Remaining number of requests left",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            )
+                    }
+            )
+    })
+    public ResponseEntity<VersionReferencesJson> getVersionReferences(
+            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @Parameter(description = "Extension name", example = "java")
+            String extension,
+            @RequestParam(defaultValue = "18")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            int size,
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
+            int offset
+    ) {
+        return handleGetVersionReferences(namespace, extension, null, size, offset);
+    }
+
+    @GetMapping(
+            path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/version-references",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides a list of version references matching an extension")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "The extension version references are returned in JSON format"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "The specified extension could not be found",
+                    content = @Content()
+            ),
+            @ApiResponse(
+                    responseCode = "429",
+                    description = "A client has sent too many requests in a given amount of time",
+                    content = @Content(),
+                    headers = {
+                            @Header(
+                                    name = "X-Rate-Limit-Retry-After-Seconds",
+                                    description = "Number of seconds to wait after receiving a 429 response",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            ),
+                            @Header(
+                                    name = "X-Rate-Limit-Remaining",
+                                    description = "Remaining number of requests left",
+                                    schema = @Schema(type = "integer", format = "int32")
+                            )
+                    }
+            )
+    })
+    public ResponseEntity<VersionReferencesJson> getVersionReferences(
+            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            String namespace,
+            @PathVariable @Parameter(description = "Extension name", example = "java")
+            String extension,
+            @PathVariable
+            @Parameter(
+                    description = "Target platform",
+                    example = TargetPlatform.NAME_LINUX_ARM64,
+                    schema = @Schema(type = "string", allowableValues = {
+                            NAME_WIN32_X64, NAME_WIN32_IA32, NAME_WIN32_ARM64,
+                            NAME_LINUX_X64, NAME_LINUX_ARM64, NAME_LINUX_ARMHF,
+                            NAME_ALPINE_X64, NAME_ALPINE_ARM64,
+                            NAME_DARWIN_X64, NAME_DARWIN_ARM64,
+                            NAME_WEB, NAME_UNIVERSAL
+                    })
+            )
+            String targetPlatform,
+            @RequestParam(defaultValue = "18")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            int size,
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
+            int offset
+    ) {
+        return handleGetVersionReferences(namespace, extension, targetPlatform, size, offset);
+    }
+
+    private ResponseEntity<VersionReferencesJson> handleGetVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset) {
+        if (size < 0) {
+            var json = VersionReferencesJson.error("The parameter 'size' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        if (offset < 0) {
+            var json = VersionReferencesJson.error("The parameter 'offset' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        for (var registry : getRegistries()) {
+            try {
+                return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(registry.getVersionReferences(namespace, extension, targetPlatform, size, offset));
+            } catch (NotFoundException exc) {
+                // Try the next registry
+            }
+        }
+        var json = VersionReferencesJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 

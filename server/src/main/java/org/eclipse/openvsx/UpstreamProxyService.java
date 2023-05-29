@@ -82,6 +82,19 @@ public class UpstreamProxyService {
         return json;
     }
 
+    public VersionsJson rewriteUrls(VersionsJson json) {
+        rewriteUrlMap(json.versions);
+        return json;
+    }
+
+    public VersionReferencesJson rewriteUrls(VersionReferencesJson json) {
+        json.versions = json.versions.stream()
+                .map(this::rewriteUrls)
+                .collect(Collectors.toList());
+
+        return json;
+    }
+
     public JsonNode rewriteUrls(JsonNode json) {
         if(json.isArray()) {
             var list = new ObjectMapper().createArrayNode();
@@ -105,7 +118,7 @@ public class UpstreamProxyService {
         return json;
     }
 
-    private SearchEntryJson.VersionReference rewriteUrls(SearchEntryJson.VersionReference json) {
+    private VersionReferenceJson rewriteUrls(VersionReferenceJson json) {
         json.url = rewriteUrl(json.url);
         rewriteUrlMap(json.files);
 

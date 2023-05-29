@@ -9,15 +9,20 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
+import com.google.common.base.Strings;
 import org.eclipse.openvsx.entities.*;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.SelectConditionStep;
+import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
 
@@ -68,119 +73,364 @@ public class ExtensionVersionJooqRepository {
         return query.fetch().map(this::toExtensionVersion);
     }
 
-    public List<ExtensionVersion> findAllActiveByExtensionPublicId(String targetPlatform, String extensionPublicId) {
-        var query = findAllActive().and(EXTENSION.PUBLIC_ID.eq(extensionPublicId));
+    public Page<String> findActiveVersionStringsSorted(String namespace, String extension, String targetPlatform, Pageable page) {
+        var count = DSL.countDistinct(EXTENSION_VERSION.VERSION);
+        var totalQuery = dsl.select(count)
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                .and(NAMESPACE.NAME.eq(namespace))
+                .and(EXTENSION.NAME.eq(extension));
+
         if(targetPlatform != null) {
-            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+            totalQuery = totalQuery.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
-        return fetch(query);
+        var conditions = new ArrayList<Condition>();
+        conditions.add(EXTENSION_VERSION.ACTIVE.eq(true));
+        conditions.add(NAMESPACE.NAME.eq(namespace));
+        conditions.add(EXTENSION.NAME.eq(extension));
+        if(targetPlatform != null) {
+            conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
+
+        var versions = findVersionStringsSorted(conditions, page);
+        var total = totalQuery.fetchOne(count);
+        return new PageImpl<>(versions, page, total);
     }
 
-    public List<ExtensionVersion> findAllActiveByNamespacePublicId(String targetPlatform, String namespacePublicId) {
-        var query = findAllActive().and(NAMESPACE.PUBLIC_ID.eq(namespacePublicId));
-        if(targetPlatform != null) {
-            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+    public Map<Long, List<String>> findActiveVersionStringsSorted(Collection<Long> extensionIds, String targetPlatform, int numberOfRows) {
+        if(extensionIds.isEmpty()) {
+            return Collections.emptyMap();
         }
 
-        return fetch(query);
+        var ids = DSL.values(extensionIds.stream().map(DSL::row).toArray(Row1[]::new)).as("ids", "id");
+        var topQuery = dsl.selectQuery();
+        topQuery.addSelect(
+                EXTENSION_VERSION.EXTENSION_ID,
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.SEMVER_MAJOR,
+                EXTENSION_VERSION.SEMVER_MINOR,
+                EXTENSION_VERSION.SEMVER_PATCH,
+                EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE
+        );
+        topQuery.setDistinct(true);
+        topQuery.addFrom(EXTENSION_VERSION);
+        var conditions = new ArrayList<Condition>();
+        conditions.add(EXTENSION_VERSION.EXTENSION_ID.eq(ids.field("id", Long.class)));
+        conditions.add(EXTENSION_VERSION.ACTIVE.eq(true));
+        if(targetPlatform != null) {
+            conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
+
+        topQuery.addConditions(conditions);
+        topQuery.addLimit(numberOfRows);
+        topQuery.addOrderBy(
+                EXTENSION_VERSION.EXTENSION_ID.asc(),
+                EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                EXTENSION_VERSION.VERSION.asc()
+        );
+
+        var top = topQuery.asTable("ev_top");
+        return dsl.select(
+                        top.field(EXTENSION_VERSION.EXTENSION_ID),
+                        top.field(EXTENSION_VERSION.VERSION)
+                )
+                .from(ids, DSL.lateral(top))
+                .stream()
+                .map(record -> {
+                    var extensionId = record.get(top.field(EXTENSION_VERSION.EXTENSION_ID));
+                    var version = record.get(top.field(EXTENSION_VERSION.VERSION));
+                    return new AbstractMap.SimpleEntry<>(extensionId, version);
+                })
+                .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+    }
+
+    public List<ExtensionVersion> findActiveVersionReferencesSorted(Collection<Extension> extensions, int numberOfRows) {
+        if(extensions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        var ids = DSL.values(extensions.stream().map(Extension::getId).map(DSL::row).toArray(Row1[]::new)).as("ids", "id");
+        var namespaceCol = NAMESPACE.NAME.as("namespace");
+        var extensionCol = EXTENSION.NAME.as("extension");
+        var top = dsl.select(
+                    namespaceCol,
+                    extensionCol,
+                    EXTENSION_VERSION.ID,
+                    EXTENSION_VERSION.EXTENSION_ID,
+                    EXTENSION_VERSION.TARGET_PLATFORM,
+                    EXTENSION_VERSION.VERSION,
+                    EXTENSION_VERSION.ENGINES,
+                    SIGNATURE_KEY_PAIR.PUBLIC_ID
+                )
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
+                .where(EXTENSION_VERSION.EXTENSION_ID.eq(ids.field("id", Long.class)))
+                .and(EXTENSION_VERSION.ACTIVE.eq(true))
+                .orderBy(
+                        EXTENSION_VERSION.EXTENSION_ID.asc(),
+                        EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                        EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                        EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc(),
+                        EXTENSION_VERSION.TIMESTAMP.desc()
+                )
+                .limit(numberOfRows)
+                .asTable("ev_top");
+
+        var converter = new ListOfStringConverter();
+        return dsl.select(
+                        top.field(namespaceCol),
+                        top.field(extensionCol),
+                        top.field(EXTENSION_VERSION.ID),
+                        top.field(EXTENSION_VERSION.EXTENSION_ID),
+                        top.field(EXTENSION_VERSION.TARGET_PLATFORM),
+                        top.field(EXTENSION_VERSION.VERSION),
+                        top.field(EXTENSION_VERSION.ENGINES),
+                        top.field(SIGNATURE_KEY_PAIR.PUBLIC_ID)
+                )
+                .from(ids, DSL.lateral(top))
+                .stream()
+                .map(record -> {
+                    var namespace = new Namespace();
+                    namespace.setName(record.get(top.field(namespaceCol)));
+
+                    var extension = new Extension();
+                    extension.setId(record.get(top.field(EXTENSION_VERSION.EXTENSION_ID)));
+                    extension.setName(record.get(top.field(extensionCol)));
+                    extension.setNamespace(namespace);
+
+                    var signatureKeyPair = new SignatureKeyPair();
+                    signatureKeyPair.setPublicId(record.get(top.field(SIGNATURE_KEY_PAIR.PUBLIC_ID)));
+
+                    var extVersion = new ExtensionVersion();
+                    extVersion.setId(record.get(top.field(EXTENSION_VERSION.ID)));
+                    extVersion.setTargetPlatform(record.get(top.field(EXTENSION_VERSION.TARGET_PLATFORM)));
+                    extVersion.setVersion(record.get(top.field(EXTENSION_VERSION.VERSION)));
+                    extVersion.setEngines(toList(record.get(top.field(EXTENSION_VERSION.ENGINES)), converter));
+                    extVersion.setExtension(extension);
+                    extVersion.setSignatureKeyPair(signatureKeyPair);
+                    return extVersion;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<String> findVersionStringsSorted(Long extensionId, String targetPlatform, boolean onlyActive, int numberOfRows) {
+        var conditions = new ArrayList<Condition>();
+        conditions.add(EXTENSION_VERSION.EXTENSION_ID.eq(extensionId));
+        if (targetPlatform != null) {
+            conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+        }
+        if (onlyActive) {
+            conditions.add(EXTENSION_VERSION.ACTIVE.eq(true));
+        }
+
+        return findVersionStringsSorted(conditions, Pageable.ofSize(numberOfRows));
+    }
+
+    private List<String> findVersionStringsSorted(List<Condition> conditions, Pageable page) {
+        var versionsQuery = dsl.selectQuery();
+        versionsQuery.setDistinct(true);
+        versionsQuery.addSelect(
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.SEMVER_MAJOR,
+                EXTENSION_VERSION.SEMVER_MINOR,
+                EXTENSION_VERSION.SEMVER_PATCH,
+                EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE
+        );
+
+        versionsQuery.addFrom(EXTENSION_VERSION);
+        versionsQuery.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
+        versionsQuery.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+        versionsQuery.addConditions(conditions);
+
+        versionsQuery.addOrderBy(
+                EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                EXTENSION_VERSION.VERSION.asc()
+        );
+
+        versionsQuery.addLimit(page.getPageSize());
+        versionsQuery.addOffset(page.getOffset());
+        return versionsQuery.fetch(record -> record.get(EXTENSION_VERSION.VERSION));
+    }
+
+    public List<ExtensionVersion> findActiveVersions(QueryRequest request) {
+        var conditions = new ArrayList<Condition>();
+        if (!Strings.isNullOrEmpty(request.namespaceUuid)) {
+            conditions.add(NAMESPACE.PUBLIC_ID.eq(request.namespaceUuid));
+        }
+        if (!Strings.isNullOrEmpty(request.namespaceName)) {
+            conditions.add(NAMESPACE.NAME.eq(request.namespaceName));
+        }
+        if (!Strings.isNullOrEmpty(request.extensionUuid)) {
+            conditions.add(EXTENSION.PUBLIC_ID.eq(request.extensionUuid));
+        }
+        if (!Strings.isNullOrEmpty(request.extensionName)) {
+            conditions.add(EXTENSION.NAME.eq(request.extensionName));
+        }
+        if(request.targetPlatform != null) {
+            conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(request.targetPlatform));
+        }
+        if (!Strings.isNullOrEmpty(request.extensionVersion)) {
+            conditions.add(EXTENSION_VERSION.VERSION.eq(request.extensionVersion));
+        }
+
+        var query = findAllActive();
+        if(!request.includeAllVersions) {
+            query.addDistinctOn(
+                    EXTENSION_VERSION.EXTENSION_ID,
+                    EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM,
+                    EXTENSION_VERSION.TARGET_PLATFORM
+            );
+            query.addOrderBy(
+                    EXTENSION_VERSION.EXTENSION_ID.asc(),
+                    EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                    EXTENSION_VERSION.TARGET_PLATFORM.asc(),
+                    EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                    EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                    EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                    EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                    EXTENSION_VERSION.TIMESTAMP.desc()
+            );
+        } else {
+            query.addOrderBy(
+                    EXTENSION_VERSION.EXTENSION_ID.asc(),
+                    EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                    EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                    EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                    EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                    EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                    EXTENSION_VERSION.TARGET_PLATFORM.asc(),
+                    EXTENSION_VERSION.TIMESTAMP.desc()
+            );
+        }
+
+        query.addConditions(conditions);
+        var map = fetch(query).stream()
+                .collect(Collectors.groupingBy(ev -> NamingUtil.toExtensionId(ev.getExtension())));
+
+        return map.keySet().stream()
+                .sorted()
+                .map(map::get)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
     public List<ExtensionVersion> findAllActiveByVersionAndExtensionNameAndNamespaceName(String version, String extensionName, String namespaceName) {
-        var query = findAllActive()
-                .and(EXTENSION_VERSION.VERSION.eq(version))
-                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)))
-                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)));
+        var query = findAllActive();
+        query.addConditions(
+                EXTENSION_VERSION.VERSION.eq(version),
+                DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)),
+                DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName))
+        );
 
         return fetch(query);
     }
 
     public List<ExtensionVersion> findAllActiveByExtensionNameAndNamespaceName(String targetPlatform, String extensionName, String namespaceName) {
-        var query = findAllActive()
-                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)))
-                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)));
+        var query = findAllActive();
+        query.addConditions(
+                DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)),
+                DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName))
+        );
 
         if(targetPlatform != null) {
-            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+            query.addConditions(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
         return fetch(query);
     }
 
     public List<ExtensionVersion> findAllActiveByNamespaceName(String targetPlatform, String namespaceName) {
-        var query = findAllActive().and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)));
+        var query = findAllActive();
+        query.addConditions(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)));
         if(targetPlatform != null) {
-            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+            query.addConditions(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
         return fetch(query);
     }
 
-    List<ExtensionVersion> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
-        var query = findAllActive().and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)));
+    public List<ExtensionVersion> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
+        var query = findAllActive();
+        query.addConditions(DSL.upper(EXTENSION.NAME).eq(DSL.upper(extensionName)));
         if(targetPlatform != null) {
-            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
+            query.addConditions(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
         return fetch(query);
     }
 
-    private SelectConditionStep<Record> findAllActive() {
-        return dsl.select(
-                    NAMESPACE.ID,
-                    NAMESPACE.PUBLIC_ID,
-                    NAMESPACE.NAME,
-                    EXTENSION.ID,
-                    EXTENSION.PUBLIC_ID,
-                    EXTENSION.NAME,
-                    EXTENSION.AVERAGE_RATING,
-                    EXTENSION.REVIEW_COUNT,
-                    EXTENSION.DOWNLOAD_COUNT,
-                    EXTENSION.PUBLISHED_DATE,
-                    EXTENSION.LAST_UPDATED_DATE,
-                    USER_DATA.ID,
-                    USER_DATA.ROLE,
-                    USER_DATA.LOGIN_NAME,
-                    USER_DATA.FULL_NAME,
-                    USER_DATA.AVATAR_URL,
-                    USER_DATA.PROVIDER_URL,
-                    USER_DATA.PROVIDER,
-                    EXTENSION_VERSION.ID,
-                    EXTENSION_VERSION.VERSION,
-                    EXTENSION_VERSION.TARGET_PLATFORM,
-                    EXTENSION_VERSION.PREVIEW,
-                    EXTENSION_VERSION.PRE_RELEASE,
-                    EXTENSION_VERSION.TIMESTAMP,
-                    EXTENSION_VERSION.DISPLAY_NAME,
-                    EXTENSION_VERSION.DESCRIPTION,
-                    EXTENSION_VERSION.ENGINES,
-                    EXTENSION_VERSION.CATEGORIES,
-                    EXTENSION_VERSION.TAGS,
-                    EXTENSION_VERSION.EXTENSION_KIND,
-                    EXTENSION_VERSION.LICENSE,
-                    EXTENSION_VERSION.HOMEPAGE,
-                    EXTENSION_VERSION.REPOSITORY,
-                    EXTENSION_VERSION.SPONSOR_LINK,
-                    EXTENSION_VERSION.BUGS,
-                    EXTENSION_VERSION.MARKDOWN,
-                    EXTENSION_VERSION.GALLERY_COLOR,
-                    EXTENSION_VERSION.GALLERY_THEME,
-                    EXTENSION_VERSION.LOCALIZED_LANGUAGES,
-                    EXTENSION_VERSION.QNA,
-                    EXTENSION_VERSION.DEPENDENCIES,
-                    EXTENSION_VERSION.BUNDLED_EXTENSIONS,
-                    SIGNATURE_KEY_PAIR.PUBLIC_ID
-                )
-                .from(EXTENSION_VERSION)
-                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .leftJoin(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
-                .join(USER_DATA).on(USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA))
-                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
-                .where(EXTENSION_VERSION.ACTIVE.eq(true));
+    private SelectQuery<Record> findAllActive() {
+        var query = dsl.selectQuery();
+        query.addSelect(
+                NAMESPACE.ID,
+                NAMESPACE.PUBLIC_ID,
+                NAMESPACE.NAME,
+                EXTENSION.ID,
+                EXTENSION.PUBLIC_ID,
+                EXTENSION.NAME,
+                EXTENSION.AVERAGE_RATING,
+                EXTENSION.REVIEW_COUNT,
+                EXTENSION.DOWNLOAD_COUNT,
+                EXTENSION.PUBLISHED_DATE,
+                EXTENSION.LAST_UPDATED_DATE,
+                USER_DATA.ID,
+                USER_DATA.ROLE,
+                USER_DATA.LOGIN_NAME,
+                USER_DATA.FULL_NAME,
+                USER_DATA.AVATAR_URL,
+                USER_DATA.PROVIDER_URL,
+                USER_DATA.PROVIDER,
+                EXTENSION_VERSION.ID,
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.PREVIEW,
+                EXTENSION_VERSION.PRE_RELEASE,
+                EXTENSION_VERSION.TIMESTAMP,
+                EXTENSION_VERSION.DISPLAY_NAME,
+                EXTENSION_VERSION.DESCRIPTION,
+                EXTENSION_VERSION.ENGINES,
+                EXTENSION_VERSION.CATEGORIES,
+                EXTENSION_VERSION.TAGS,
+                EXTENSION_VERSION.EXTENSION_KIND,
+                EXTENSION_VERSION.LICENSE,
+                EXTENSION_VERSION.HOMEPAGE,
+                EXTENSION_VERSION.REPOSITORY,
+                EXTENSION_VERSION.SPONSOR_LINK,
+                EXTENSION_VERSION.BUGS,
+                EXTENSION_VERSION.MARKDOWN,
+                EXTENSION_VERSION.GALLERY_COLOR,
+                EXTENSION_VERSION.GALLERY_THEME,
+                EXTENSION_VERSION.LOCALIZED_LANGUAGES,
+                EXTENSION_VERSION.QNA,
+                EXTENSION_VERSION.DEPENDENCIES,
+                EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                SIGNATURE_KEY_PAIR.PUBLIC_ID
+        );
+        query.addFrom(EXTENSION_VERSION);
+        query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
+        query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+        query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(SIGNATURE_KEY_PAIR, JoinType.LEFT_OUTER_JOIN, SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID));
+        query.addConditions(EXTENSION_VERSION.ACTIVE.eq(true));
+        return query;
     }
 
-    private List<ExtensionVersion> fetch(SelectConditionStep<Record> query) {
+    private List<ExtensionVersion> fetch(SelectQuery<Record> query) {
         return query.fetch().map(this::toExtensionVersionFull);
     }
 

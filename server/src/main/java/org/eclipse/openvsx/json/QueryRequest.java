@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.util.Objects;
+
 public class QueryRequest {
 
     public String namespaceName;
@@ -26,4 +28,24 @@ public class QueryRequest {
     public boolean includeAllVersions;
 
     public String targetPlatform;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        QueryRequest that = (QueryRequest) o;
+        return includeAllVersions == that.includeAllVersions
+                && Objects.equals(namespaceName, that.namespaceName)
+                && Objects.equals(extensionName, that.extensionName)
+                && Objects.equals(extensionVersion, that.extensionVersion)
+                && Objects.equals(extensionId, that.extensionId)
+                && Objects.equals(extensionUuid, that.extensionUuid)
+                && Objects.equals(namespaceUuid, that.namespaceUuid)
+                && Objects.equals(targetPlatform, that.targetPlatform);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(namespaceName, extensionName, extensionVersion, extensionId, extensionUuid, namespaceUuid, includeAllVersions, targetPlatform);
+    }
 }

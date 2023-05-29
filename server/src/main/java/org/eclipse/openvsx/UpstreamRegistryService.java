@@ -139,6 +139,60 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    public VersionsJson getVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
+        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
+        var uriVariables = new HashMap<String, String>();
+        uriVariables.put("namespace", namespace);
+        uriVariables.put("extension", extension);
+        if(targetPlatform != null) {
+            urlTemplate += "/{targetPlatform}";
+            uriVariables.put("targetPlatform", targetPlatform);
+        }
+
+        urlTemplate = "/versions?offset={offset}&size={size}";
+        uriVariables.put("offset", String.valueOf(offset));
+        uriVariables.put("size", String.valueOf(size));
+
+        try {
+            var json = restTemplate.getForObject(urlTemplate, VersionsJson.class, uriVariables);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
+        } catch (RestClientException exc) {
+            if(!isNotFound(exc)) {
+                var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+                logger.error("GET " + url, exc);
+            }
+            throw new NotFoundException();
+        }
+    }
+
+    @Override
+    public VersionReferencesJson getVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset) {
+        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
+        var uriVariables = new HashMap<String, String>();
+        uriVariables.put("namespace", namespace);
+        uriVariables.put("extension", extension);
+        if(targetPlatform != null) {
+            urlTemplate += "/{targetPlatform}";
+            uriVariables.put("targetPlatform", targetPlatform);
+        }
+
+        urlTemplate = "/version-references?offset={offset}&size={size}";
+        uriVariables.put("offset", String.valueOf(offset));
+        uriVariables.put("size", String.valueOf(size));
+
+        try {
+            var json = restTemplate.getForObject(urlTemplate, VersionReferencesJson.class, uriVariables);
+            return proxy != null ? proxy.rewriteUrls(json) : json;
+        } catch (RestClientException exc) {
+            if(!isNotFound(exc)) {
+                var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+                logger.error("GET " + url, exc);
+            }
+            throw new NotFoundException();
+        }
+    }
+
+    @Override
     public ResponseEntity<byte[]> getFile(String namespace, String extension, String targetPlatform, String version, String fileName) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
         var uriVariables = new HashMap<String, String>();

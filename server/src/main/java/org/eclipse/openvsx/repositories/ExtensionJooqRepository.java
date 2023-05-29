@@ -11,13 +11,15 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.SelectConditionStep;
+import org.jooq.SelectQuery;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -30,47 +32,57 @@ public class ExtensionJooqRepository {
     DSLContext dsl;
 
     public List<Extension> findAllActiveById(Collection<Long> ids) {
-        return fetch(findAllActive().and(EXTENSION.ID.in(ids)));
+        var query = findAllActive();
+        query.addConditions(EXTENSION.ID.in(ids));
+        return fetch(query);
     }
 
     public List<Extension> findAllActiveByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
-        var query = findAllActive().and(EXTENSION.PUBLIC_ID.in(publicIds));
+        var conditions = new ArrayList<Condition>();
+        conditions.add(EXTENSION.PUBLIC_ID.in(publicIds));
         for(var namespaceToExclude : namespacesToExclude) {
-            query = query.and(NAMESPACE.NAME.notEqual(namespaceToExclude));
+            conditions.add(NAMESPACE.NAME.notEqual(namespaceToExclude));
         }
 
+        var query = findAllActive();
+        query.addConditions(conditions);
         return fetch(query);
     }
 
     public Extension findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespaceName) {
-        var record = findAllActive()
-                .and(DSL.upper(EXTENSION.NAME).eq(DSL.upper(name)))
-                .and(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName)))
-                .fetchOne();
+        var query = findAllActive();
+        query.addConditions(
+                DSL.upper(EXTENSION.NAME).eq(DSL.upper(name)),
+                DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName))
+        );
 
+        var record = query.fetchOne();
         return record != null ? toExtension(record) : null;
     }
 
-    private SelectConditionStep<?> findAllActive() {
-        return dsl.select(
-                    EXTENSION.ID,
-                    EXTENSION.PUBLIC_ID,
-                    EXTENSION.NAME,
-                    EXTENSION.AVERAGE_RATING,
-                    EXTENSION.REVIEW_COUNT,
-                    EXTENSION.DOWNLOAD_COUNT,
-                    EXTENSION.PUBLISHED_DATE,
-                    EXTENSION.LAST_UPDATED_DATE,
-                    NAMESPACE.ID,
-                    NAMESPACE.PUBLIC_ID,
-                    NAMESPACE.NAME
-                )
-                .from(EXTENSION)
-                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .where(EXTENSION.ACTIVE.eq(true));
+    private SelectQuery<Record> findAllActive() {
+        var query = dsl.selectQuery();
+        query.addSelect(
+                EXTENSION.ID,
+                EXTENSION.PUBLIC_ID,
+                EXTENSION.NAME,
+                EXTENSION.AVERAGE_RATING,
+                EXTENSION.REVIEW_COUNT,
+                EXTENSION.DOWNLOAD_COUNT,
+                EXTENSION.PUBLISHED_DATE,
+                EXTENSION.LAST_UPDATED_DATE,
+                NAMESPACE.ID,
+                NAMESPACE.PUBLIC_ID,
+                NAMESPACE.NAME
+        );
+
+        query.addFrom(EXTENSION);
+        query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+        query.addConditions(EXTENSION.ACTIVE.eq(true));
+        return query;
     }
 
-    private List<Extension> fetch(SelectConditionStep<?> query) {
+    private List<Extension> fetch(SelectQuery<Record> query) {
         return query.fetch().map(this::toExtension);
     }
 

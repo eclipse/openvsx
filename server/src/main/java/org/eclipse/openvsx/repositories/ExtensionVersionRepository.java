@@ -10,13 +10,15 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
+import java.util.List;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
@@ -24,7 +26,7 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
 
-    Streamable<ExtensionVersion> findByExtensionInAndActiveTrue(Collection<Extension> extensions);
+    List<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension, Pageable page);
 
     Streamable<ExtensionVersion> findByVersionAndExtension(String version, Extension extension);
 
@@ -58,4 +60,8 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     @Modifying
     @Query("update ExtensionVersion ev set ev.signatureKeyPair = null")
     void setKeyPairsNull();
+
+    Page<ExtensionVersion> findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String extension, String namespace, Pageable page);
+
+    Page<ExtensionVersion> findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String targetPlatform, String extension, String namespace, Pageable page);
 }

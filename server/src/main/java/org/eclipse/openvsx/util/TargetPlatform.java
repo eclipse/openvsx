@@ -9,8 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
-import org.eclipse.openvsx.entities.ExtensionVersion;
-
 import java.util.List;
 
 public class TargetPlatform {
@@ -47,10 +45,6 @@ public class TargetPlatform {
 
     public static boolean isValid(String targetPlatform) {
         return targetPlatform != null && TARGET_PLATFORM_NAMES.contains(targetPlatform);
-    }
-
-    public static boolean isUniversal(ExtensionVersion extVersion) {
-        return isUniversal(extVersion.getTargetPlatform());
     }
 
     public static boolean isUniversal(String targetPlatform) {

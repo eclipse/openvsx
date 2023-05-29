@@ -9,25 +9,28 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.*;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-
 import com.google.common.base.Strings;
-
 import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.stereotype.Component;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 @Component
 public class ExtensionValidator {
@@ -37,8 +40,6 @@ public class ExtensionValidator {
     private final static List<String> GALLERY_THEME_VALUES = List.of("dark", "light");
 
     private final static List<String> QNA_VALUES = List.of("marketplace", "false");
-
-    private final static List<Character> VERSION_CHARS = List.of('$', '+', '-', ',', '.', ':', ';', '_');
 
     private final static int DEFAULT_STRING_SIZE = 255;
     private final static int DESCRIPTION_SIZE = 2048;
@@ -113,6 +114,14 @@ public class ExtensionValidator {
         return Optional.empty();
     }
 
+    public Optional<Issue> validateExtensionVersion(String version) {
+        var issues = new ArrayList<Issue>();
+        checkVersion(version, issues);
+        return issues.isEmpty()
+                ? Optional.empty()
+                : Optional.of(issues.get(0));
+    }
+
     public List<Issue> validateMetadata(ExtensionVersion extVersion) {
         var issues = new ArrayList<Issue>();
         checkVersion(extVersion.getVersion(), issues);
@@ -154,12 +163,10 @@ public class ExtensionValidator {
         if (version.equals(VersionAlias.LATEST) || version.equals(VersionAlias.PRE_RELEASE) || version.equals("reviews")) {
             issues.add(new Issue("The version string '" + version + "' is reserved."));
         }
-        for (var i = 0; i < version.length(); i++) {
-            var c = version.charAt(i);
-            if (!(Character.isLetterOrDigit(c) || VERSION_CHARS.contains(c))) {
-                issues.add(new Issue("Invalid character '" + c + "' found in version (index " + i + ")."));
-                return;
-            }
+        try {
+            SemanticVersion.parse(version);
+        } catch (RuntimeException e) {
+            issues.add(new Issue(e.getMessage()));
         }
     }
 
@@ -240,7 +247,6 @@ public class ExtensionValidator {
             return true;
         }
     }
-
 
     public static class Issue {
 

@@ -152,7 +152,7 @@ jooq {
 task runServer(type: JavaExec) {
 //    jvmArgs = ['-Xverify:none']
     classpath = sourceSets.dev.runtimeClasspath
-    main = 'org.eclipse.openvsx.RegistryApplication'
+    mainClass = 'org.eclipse.openvsx.RegistryApplication'
 }
 
 test {

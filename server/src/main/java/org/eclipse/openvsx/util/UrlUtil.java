@@ -236,4 +236,14 @@ public final class UrlUtil {
         var publicId = extVersion.getSignatureKeyPair().getPublicId();
         return createApiUrl(getBaseUrl(), "api", "-", "public-key", publicId);
     }
+
+    public static String createAllVersionsUrl(String namespaceName, String extensionName, String targetPlatform, String versionsSegment) {
+        var segments = new String[]{ "api", namespaceName, extensionName };
+        if(targetPlatform != null) {
+            segments = ArrayUtils.add(segments, targetPlatform);
+        }
+
+        segments = ArrayUtils.add(segments, versionsSegment);
+        return createApiUrl(getBaseUrl(), segments);
+    }
 }
