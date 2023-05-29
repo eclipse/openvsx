@@ -7,11 +7,13 @@ package org.eclipse.openvsx.jooq.tables;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Row9;
@@ -127,6 +129,11 @@ public class AdminStatistics extends TableImpl<AdminStatisticsRecord> {
     @Override
     public Schema getSchema() {
         return Public.PUBLIC;
+    }
+
+    @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.UNIQUE_ADMIN_STATISTICS);
     }
 
     @Override
