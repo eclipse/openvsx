@@ -118,7 +118,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                             <Box display='flex' justifyContent='center'>
                                 <ExportRatingStars number={extension.averageRating || 0} fontSize='small'/>
                                 &nbsp;
-                                {downloadCountFormatted != "0" && <><SaveAltIcon/> ({downloadCountFormatted})</>}
+                                {downloadCountFormatted != "0" && <><SaveAltIcon/> {downloadCountFormatted}</>}
                             </Box>
                         </Paper>
                     </RouteLink>
