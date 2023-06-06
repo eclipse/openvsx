@@ -16,6 +16,9 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
 @Schema(
     name = "QueryResult",
     description = "Metadata query result"
@@ -28,6 +31,16 @@ public class QueryResultJson extends ResultJson {
         result.error = message;
         return result;
     }
+
+    @Schema(description = "Number of skipped entries according to the query")
+    @NotNull
+    @Min(0)
+    public int offset;
+
+    @Schema(description = "Total number of entries that match the query")
+    @NotNull
+    @Min(0)
+    public int totalSize;
 
     @Schema(description = "Extensions that match the given query (may be empty)")
     public List<ExtensionJson> extensions;

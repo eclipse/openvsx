@@ -68,6 +68,9 @@ class RepositoryServiceSmokeTest {
         Stream.of(extension, namespace, userData, extVersion, personalAccessToken, keyPair).forEach(em::persist);
         em.flush();
 
+        var queryRequest = new QueryRequest();
+        queryRequest.size = 1;
+
         // record executed queries
         var methodsToBeCalled = Stream.of(repositories.getClass().getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
@@ -180,7 +183,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveVersionStringsSorted("namespaceName", "extensionName", "targetPlatform", PageRequest.ofSize(1)),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
-                () -> repositories.findActiveVersions(new QueryRequest()),
+                () -> repositories.findActiveVersions(queryRequest),
                 () -> repositories.findActiveVersionStringsSorted(LONG_LIST,"targetPlatform"),
                 () -> repositories.findActiveVersionReferencesSorted(List.of(extension)),
                 () -> repositories.findAllAdminStatistics()

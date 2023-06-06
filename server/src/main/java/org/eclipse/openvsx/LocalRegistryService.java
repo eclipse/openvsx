@@ -30,7 +30,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Retryable;
@@ -294,7 +293,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             request.targetPlatform = null;
         }
 
-        var extensionVersions = repositories.findActiveVersions(request);
+        var extensionVersionsPage = repositories.findActiveVersions(request);
+        var extensionVersions = extensionVersionsPage.getContent();
         var extensionIds = extensionVersions.stream()
                 .map(ev -> ev.getExtension().getId())
                 .collect(Collectors.toSet());
@@ -308,6 +308,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         var membershipsByNamespaceId = getMemberships(extensionVersions);
 
         var result = new QueryResultJson();
+        result.offset = (int) extensionVersionsPage.getPageable().getOffset();
+        result.totalSize = (int) extensionVersionsPage.getTotalElements();
         result.extensions = extensionVersions.stream()
                 .map(ev -> {
                     var latest = latestVersions.get(getLatestVersionKey(ev));
@@ -354,8 +356,11 @@ public class LocalRegistryService implements IExtensionRegistry {
         queryRequest.namespaceUuid = request.namespaceUuid;
         queryRequest.includeAllVersions = request.includeAllVersions.equals("true");
         queryRequest.targetPlatform = request.targetPlatform;
+        queryRequest.size = request.size;
+        queryRequest.offset = request.offset;
 
-        var extensionVersions = repositories.findActiveVersions(queryRequest);
+        var extensionVersionsPage = repositories.findActiveVersions(queryRequest);
+        var extensionVersions = extensionVersionsPage.getContent();
         var extensionIds = extensionVersions.stream()
                 .map(ev -> ev.getExtension().getId())
                 .collect(Collectors.toSet());
@@ -373,6 +378,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         var membershipsByNamespaceId = getMemberships(extensionVersions);
 
         var result = new QueryResultJson();
+        result.offset = (int) extensionVersionsPage.getPageable().getOffset();
+        result.totalSize = (int) extensionVersionsPage.getTotalElements();
         result.extensions = extensionVersions.stream()
                 .map(ev -> {
                     var latest = latestVersions.get(getLatestVersionKey(ev));

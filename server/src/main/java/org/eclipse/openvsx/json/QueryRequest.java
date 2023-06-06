@@ -29,12 +29,18 @@ public class QueryRequest {
 
     public String targetPlatform;
 
+    public int size;
+
+    public int offset;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         QueryRequest that = (QueryRequest) o;
         return includeAllVersions == that.includeAllVersions
+                && size == that.size
+                && offset == that.offset
                 && Objects.equals(namespaceName, that.namespaceName)
                 && Objects.equals(extensionName, that.extensionName)
                 && Objects.equals(extensionVersion, that.extensionVersion)
@@ -46,6 +52,7 @@ public class QueryRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceName, extensionName, extensionVersion, extensionId, extensionUuid, namespaceUuid, includeAllVersions, targetPlatform);
+        return Objects.hash(namespaceName, extensionName, extensionVersion, extensionId, extensionUuid, namespaceUuid,
+                includeAllVersions, targetPlatform, size, offset);
     }
 }

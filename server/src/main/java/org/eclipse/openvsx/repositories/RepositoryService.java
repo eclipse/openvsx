@@ -321,7 +321,7 @@ public class RepositoryService {
         return extensionJooqRepo.findAllActiveById(ids);
     }
 
-    public List<ExtensionVersion> findActiveVersions(QueryRequest request) {
+    public Page<ExtensionVersion> findActiveVersions(QueryRequest request) {
         return extensionVersionJooqRepo.findActiveVersions(request);
     }
 

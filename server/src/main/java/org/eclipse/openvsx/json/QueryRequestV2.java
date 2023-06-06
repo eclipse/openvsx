@@ -26,4 +26,8 @@ public class QueryRequestV2 {
     public String includeAllVersions;
 
     public String targetPlatform;
+
+    public int size;
+
+    public int offset;
 }

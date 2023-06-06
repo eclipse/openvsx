@@ -12,12 +12,12 @@ package org.eclipse.openvsx.repositories;
 import com.google.common.base.Strings;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
-import org.eclipse.openvsx.util.NamingUtil;
 import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -266,7 +266,7 @@ public class ExtensionVersionJooqRepository {
         return versionsQuery.fetch(record -> record.get(EXTENSION_VERSION.VERSION));
     }
 
-    public List<ExtensionVersion> findActiveVersions(QueryRequest request) {
+    public Page<ExtensionVersion> findActiveVersions(QueryRequest request) {
         var conditions = new ArrayList<Condition>();
         if (!Strings.isNullOrEmpty(request.namespaceUuid)) {
             conditions.add(NAMESPACE.PUBLIC_ID.eq(request.namespaceUuid));
@@ -287,13 +287,23 @@ public class ExtensionVersionJooqRepository {
             conditions.add(EXTENSION_VERSION.VERSION.eq(request.extensionVersion));
         }
 
+        var totalCol = "total";
+        var totalQuery = dsl.selectQuery();
+        totalQuery.addFrom(EXTENSION_VERSION);
+        totalQuery.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
+        totalQuery.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+        totalQuery.addConditions(EXTENSION_VERSION.ACTIVE.eq(true));
+
         var query = findAllActive();
         if(!request.includeAllVersions) {
-            query.addDistinctOn(
+            var distinctOn = new Field[] {
                     EXTENSION_VERSION.EXTENSION_ID,
                     EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM,
                     EXTENSION_VERSION.TARGET_PLATFORM
-            );
+            };
+
+            totalQuery.addSelect(DSL.countDistinct(distinctOn).as(totalCol));
+            query.addDistinctOn(distinctOn);
             query.addOrderBy(
                     EXTENSION_VERSION.EXTENSION_ID.asc(),
                     EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
@@ -305,6 +315,7 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.TIMESTAMP.desc()
             );
         } else {
+            totalQuery.addSelect(DSL.count().as(totalCol));
             query.addOrderBy(
                     EXTENSION_VERSION.EXTENSION_ID.asc(),
                     EXTENSION_VERSION.SEMVER_MAJOR.desc(),
@@ -317,15 +328,13 @@ public class ExtensionVersionJooqRepository {
             );
         }
 
+        totalQuery.addConditions(conditions);
         query.addConditions(conditions);
-        var map = fetch(query).stream()
-                .collect(Collectors.groupingBy(ev -> NamingUtil.toExtensionId(ev.getExtension())));
+        query.addOffset(request.offset);
+        query.addLimit(request.size);
 
-        return map.keySet().stream()
-                .sorted()
-                .map(map::get)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+        var total = totalQuery.fetchOne(totalCol, Integer.class);
+        return new PageImpl<>(fetch(query), PageRequest.of(request.offset / request.size, request.size), total);
     }
 
     public List<ExtensionVersion> findAllActiveByVersionAndExtensionNameAndNamespaceName(String version, String extensionName, String namespaceName) {
