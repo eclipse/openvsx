@@ -1083,33 +1083,54 @@ public class RegistryAPI {
                     NAME_WEB, NAME_UNIVERSAL
                 })
             )
-            String targetPlatform
+            String targetPlatform,
+            @RequestParam(defaultValue = "200")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "200"))
+            int size,
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
+            int offset
     ) {
+        if (size < 0) {
+            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        if (offset < 0) {
+            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
         if(!List.of("true", "false", "links").contains(includeAllVersions)) {
             var json = QueryResultJson.error("Invalid includeAllVersions value: " + includeAllVersions + ".");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var param = new QueryRequestV2();
-        param.namespaceName = namespaceName;
-        param.extensionName = extensionName;
-        param.extensionVersion = extensionVersion;
-        param.extensionId = extensionId;
-        param.extensionUuid = extensionUuid;
-        param.namespaceUuid = namespaceUuid;
-        param.includeAllVersions = includeAllVersions;
-        param.targetPlatform = targetPlatform;
+        var request = new QueryRequestV2();
+        request.namespaceName = namespaceName;
+        request.extensionName = extensionName;
+        request.extensionVersion = extensionVersion;
+        request.extensionId = extensionId;
+        request.extensionUuid = extensionUuid;
+        request.namespaceUuid = namespaceUuid;
+        request.includeAllVersions = includeAllVersions;
+        request.targetPlatform = targetPlatform;
+        request.size = size;
+        request.offset = offset;
 
         var result = new QueryResultJson();
+        result.offset = request.offset;
+        result.extensions = new ArrayList<>(size);
         for (var registry : getRegistries()) {
             try {
-                var subResult = registry.queryV2(param);
-                if (subResult.extensions != null) {
-                    if (result.extensions == null)
-                        result.extensions = subResult.extensions;
-                    else
-                        result.extensions.addAll(subResult.extensions);
+                var subResult = registry.queryV2(request);
+                if(result.extensions.isEmpty() && subResult.extensions != null) {
+                    result.extensions.addAll(subResult.extensions);
+                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
+                    int limit = size - result.extensions.size();
+                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
+                    result.offset += subResult.offset;
+                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
                 }
+                result.totalSize += subResult.totalSize;
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
@@ -1192,8 +1213,23 @@ public class RegistryAPI {
                     NAME_WEB, NAME_UNIVERSAL
                 })
             )
-            String targetPlatform
+            String targetPlatform,
+            @RequestParam(defaultValue = "200")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "200"))
+            int size,
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
+            int offset
     ) {
+        if (size < 0) {
+            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        if (offset < 0) {
+            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        
         var request = new QueryRequest();
         request.namespaceName = namespaceName;
         request.extensionName = extensionName;
@@ -1203,17 +1239,24 @@ public class RegistryAPI {
         request.namespaceUuid = namespaceUuid;
         request.includeAllVersions = includeAllVersions;
         request.targetPlatform = targetPlatform;
+        request.size = size;
+        request.offset = offset;
 
         var result = new QueryResultJson();
+        result.offset = request.offset;
+        result.extensions = new ArrayList<>(size);
         for (var registry : getRegistries()) {
             try {
                 var subResult = registry.query(request);
-                if (subResult.extensions != null) {
-                    if (result.extensions == null)
-                        result.extensions = subResult.extensions;
-                    else
-                        result.extensions.addAll(subResult.extensions);
+                if(result.extensions.isEmpty() && subResult.extensions != null) {
+                    result.extensions.addAll(subResult.extensions);
+                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
+                    int limit = size - result.extensions.size();
+                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
+                    result.offset += subResult.offset;
+                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
                 }
+                result.totalSize += subResult.totalSize;
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
@@ -1223,6 +1266,20 @@ public class RegistryAPI {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                 .body(result);
+    }
+
+    private int mergeQueryResults(QueryResultJson result, List<ExtensionJson> entries, int limit) {
+        var previousResult = Iterables.limit(result.extensions, result.extensions.size());
+        var entriesIter = entries.iterator();
+        int mergedEntries = 0;
+        while (entriesIter.hasNext() && result.extensions.size() < limit) {
+            var next = entriesIter.next();
+            if (!Iterables.any(previousResult, ext -> ext.namespace.equals(next.namespace) && ext.name.equals(next.name))) {
+                result.extensions.add(next);
+                mergedEntries++;
+            }
+        }
+        return mergedEntries;
     }
 
     @PostMapping(

@@ -305,6 +305,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         queryParams.put("namespaceUuid", request.namespaceUuid);
         queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
         queryParams.put("targetPlatform", request.targetPlatform);
+        queryParams.put("size", String.valueOf(request.size));
+        queryParams.put("offset", String.valueOf(request.offset));
 
 
         var queryString = queryParams.entrySet().stream()
@@ -340,6 +342,8 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         queryParams.put("namespaceUuid", request.namespaceUuid);
         queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
         queryParams.put("targetPlatform", request.targetPlatform);
+        queryParams.put("size", String.valueOf(request.size));
+        queryParams.put("offset", String.valueOf(request.offset));
 
         var queryString = queryParams.entrySet().stream()
                 .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))

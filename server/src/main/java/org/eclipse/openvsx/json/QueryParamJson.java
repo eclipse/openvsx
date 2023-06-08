@@ -56,6 +56,12 @@ public class QueryParamJson {
     })
     public String targetPlatform;
 
+    @Schema(description = "Maximal number of entries to return", minimum = "0", defaultValue = "200")
+    public Integer size;
+
+    @Schema(description = "Number of entries to skip (usually a multiple of the page size)", minimum = "0", defaultValue = "0")
+    public Integer offset;
+
     public String[] toQueryParams() {
         var queryParams = new LinkedHashMap<String,String>();
         queryParams.put("namespaceName", namespaceName);
@@ -66,6 +72,12 @@ public class QueryParamJson {
         queryParams.put("namespaceUuid", namespaceUuid);
         queryParams.put("targetPlatform", targetPlatform);
         queryParams.put("includeAllVersions", String.valueOf(includeAllVersions));
+        if(offset != null) {
+            queryParams.put("offset", String.valueOf(offset));
+        }
+        if(size != null) {
+            queryParams.put("size", String.valueOf(size));
+        }
 
         return queryParams.entrySet().stream()
                 .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
