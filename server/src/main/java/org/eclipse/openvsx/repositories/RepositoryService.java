@@ -218,6 +218,10 @@ public class RepositoryService {
     }
 
     public FileResource findFileByType(ExtensionVersion extVersion, String type) {
+        if(FileResource.RESOURCE.equals(type)) {
+            throw new IllegalArgumentException("There are multiple files of type: " + FileResource.RESOURCE);
+        }
+
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }
 
