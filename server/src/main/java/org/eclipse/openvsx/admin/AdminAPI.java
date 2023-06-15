@@ -60,41 +60,6 @@ public class AdminAPI {
     SearchUtilService search;
 
     @GetMapping(
-            path = "/admin/reports",
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<Map<String, List<String>>> getReports(
-            @RequestParam("token") String tokenValue
-    ) {
-        try {
-            validateToken(tokenValue);
-            return ResponseEntity.ok(admins.getReports());
-        } catch (ErrorResultException exc) {
-            return ResponseEntity.status(exc.getStatus()).build();
-        }
-    }
-
-    @PostMapping(
-            path = "/admin/report/schedule",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<ResultJson> scheduleReport(
-            @RequestParam String token,
-            @RequestBody JsonNode json
-    ) {
-        try {
-            validateToken(token);
-            var year = json.get("year").asInt();
-            var month = json.get("month").asInt();
-            admins.scheduleReport(year, month);
-            return ResponseEntity.accepted().build();
-        } catch (ErrorResultException exc) {
-            return exc.toResponseEntity(ResultJson.class);
-        }
-    }
-
-    @GetMapping(
             path = "/admin/report",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -144,7 +109,7 @@ public class AdminAPI {
         path = "/admin/stats",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<StatsJson> getStats(@RequestParam("token") String tokenValue) {
+    public ResponseEntity<StatsJson> getStats() {
         try {
             admins.checkAdminUser();
 

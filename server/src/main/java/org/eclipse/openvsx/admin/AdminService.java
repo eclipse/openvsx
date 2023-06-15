@@ -363,17 +363,6 @@ public class AdminService {
         return statistics;
     }
 
-    public void scheduleReport(int year, int month) {
-        validateYearAndMonth(year, month);
-        if(repositories.findAdminStatisticsByYearAndMonth(year, month) != null) {
-            throw new ErrorResultException("Report for " + year + "/" + month + " already exists");
-        }
-
-        var jobIdText = "AdminStatistics::year=" + year + ",month=" + month;
-        var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
-        scheduler.enqueue(jobId, new AdminStatisticsJobRequest(year, month));
-    }
-
     private void validateYearAndMonth(int year, int month) {
         if(year < 0) {
             throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);
@@ -386,16 +375,5 @@ public class AdminService {
         if(year > now.getYear() || (year == now.getYear() && month >= now.getMonthValue())) {
             throw new ErrorResultException("Combination of year and month lies in the future", HttpStatus.BAD_REQUEST);
         }
-    }
-
-    public Map<String, List<String>> getReports() {
-        return repositories.findAllAdminStatistics().stream()
-                .sorted(Comparator.comparingInt(AdminStatistics::getYear).thenComparing(AdminStatistics::getMonth))
-                .map(stat -> {
-                    var yearText = String.valueOf(stat.getYear());
-                    var monthText = String.valueOf(stat.getMonth());
-                    return new AbstractMap.SimpleEntry<>(yearText, monthText);
-                })
-                .collect(Collectors.groupingBy(Map.Entry::getKey, () -> new LinkedHashMap<>(), Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 }

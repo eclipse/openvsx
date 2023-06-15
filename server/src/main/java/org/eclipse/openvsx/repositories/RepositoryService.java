@@ -493,8 +493,4 @@ public class RepositoryService {
     public SignatureKeyPair findKeyPair(String publicId) {
         return signatureKeyPairRepo.findByPublicId(publicId);
     }
-
-    public Streamable<AdminStatistics> findAllAdminStatistics() {
-        return adminStatisticsRepo.findAll();
-    }
 }
