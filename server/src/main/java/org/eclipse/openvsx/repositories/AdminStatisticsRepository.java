@@ -15,7 +15,5 @@ import org.springframework.data.util.Streamable;
 
 public interface AdminStatisticsRepository extends Repository<AdminStatistics, Long> {
 
-    Streamable<AdminStatistics> findAll();
-
     AdminStatistics findByYearAndMonth(int year, int month);
 }
