@@ -10,8 +10,12 @@
 package org.eclipse.openvsx.util;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.springframework.util.AntPathMatcher;
@@ -20,7 +24,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public final class UrlUtil {
 
@@ -89,22 +93,20 @@ public final class UrlUtil {
      * Create a URL pointing to an API path.
      */
     public static String createApiUrl(String baseUrl, String... segments) {
-        var initialCapacity = baseUrl.length() + 8;
-        for (var segment : segments) {
-            initialCapacity += segment.length() + 1;
+        if(Arrays.stream(segments).anyMatch(Objects::isNull)) {
+            return null;
         }
-        var result = new StringBuilder(initialCapacity);
-        result.append(baseUrl);
-        for (var segment : segments) {
-            if (segment == null)
-                return null;
-            if (segment.isEmpty())
-                continue;
-            if (result.length() == 0 || result.charAt(result.length() - 1) != '/')
-                result.append('/');
-            result.append(UriUtils.encodePathSegment(segment, StandardCharsets.UTF_8));
+
+        var path = Arrays.stream(segments)
+                .filter(StringUtils::isNotEmpty)
+                .map(segment -> UriUtils.encodePathSegment(segment, StandardCharsets.UTF_8))
+                .collect(Collectors.joining("/"));
+
+        if (baseUrl.isEmpty() || baseUrl.charAt(baseUrl.length() - 1) != '/') {
+            baseUrl += '/';
         }
-        return result.toString();
+
+        return baseUrl + path;
     }
 
     /**

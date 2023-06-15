@@ -9,7 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -59,10 +59,10 @@ public class NamingUtil {
 
     public static String toLogFormat(String namespace, String extension, String targetPlatform, String version) {
         var name = toExtensionId(namespace, extension);
-        if(!Strings.isNullOrEmpty(version)) {
+        if(!StringUtils.isEmpty(version)) {
             name += " " + version;
         }
-        if(!Strings.isNullOrEmpty(targetPlatform) && !TargetPlatform.isUniversal(targetPlatform)) {
+        if(!StringUtils.isEmpty(targetPlatform) && !TargetPlatform.isUniversal(targetPlatform)) {
             name += " (" + targetPlatform + ")";
         }
 

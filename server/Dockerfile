@@ -1,4 +1,4 @@
-FROM gradle:jdk11 as builder
+FROM gradle:jdk17 as builder
 
 # Copy sources
 WORKDIR /home/gradle
@@ -10,7 +10,7 @@ COPY --chown=gradle:gradle src ./src/
 RUN ./gradlew --no-daemon assemble
 
 
-FROM openjdk:11.0.7-jdk
+FROM eclipse-temurin:17.0.7_7-jdk
 
 # Create user openvsx and set up home directory
 RUN groupadd -r openvsx && useradd --no-log-init -r -g openvsx openvsx

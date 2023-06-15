@@ -12,6 +12,7 @@ package org.eclipse.openvsx;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
@@ -27,6 +28,7 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
+import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.AzureDownloadCountService;
@@ -46,6 +48,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -58,7 +61,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.persistence.EntityManager;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -2055,14 +2057,14 @@ public class RegistryAPITest {
         var entry1 = new ExtensionSearch();
         entry1.id = 1;
         var searchHit = new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1);
-        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1", List.of(searchHit), null, null);
+        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1", null, List.of(searchHit), null, null);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
-        Mockito.when(entityManager.find(Extension.class, 1L))
-                .thenReturn(extension);
+        Mockito.when(repositories.findExtensions(Set.of(extension.getId())))
+                .thenReturn(Streamable.of(extension));
         return Arrays.asList(extension);
     }
 
@@ -2126,8 +2128,8 @@ public class RegistryAPITest {
                     .thenReturn(1L);
             Mockito.when(repositories.findMembership(token.getUser(), namespace))
                     .thenReturn(ownerMem);
-            Mockito.when(repositories.countMemberships(token.getUser(), namespace))
-                    .thenReturn(1L);
+            Mockito.when(repositories.isVerified(namespace, token.getUser()))
+                    .thenReturn(true);
         } else if (mode.equals("contributor") || mode.equals("sole-contributor") || mode.equals("existing")) {
             var contribMem = new NamespaceMembership();
             contribMem.setUser(token.getUser());
@@ -2135,8 +2137,8 @@ public class RegistryAPITest {
             contribMem.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
             Mockito.when(repositories.findMembership(token.getUser(), namespace))
                     .thenReturn(contribMem);
-            Mockito.when(repositories.countMemberships(token.getUser(), namespace))
-                    .thenReturn(1L);
+            Mockito.when(repositories.isVerified(namespace, token.getUser()))
+                    .thenReturn(true);
             if (mode.equals("contributor")) {
                 var otherUser = new UserData();
                 otherUser.setLoginName("other_user");
@@ -2146,13 +2148,13 @@ public class RegistryAPITest {
                 ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
                 Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                         .thenReturn(Streamable.of(ownerMem));
-                Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                        .thenReturn(1L);
+                Mockito.when(repositories.isVerified(namespace, token.getUser()))
+                        .thenReturn(true);
             } else {
                 Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.empty());
-                Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                        .thenReturn(0L);
+                Mockito.when(repositories.isVerified(namespace, token.getUser()))
+                        .thenReturn(false);
             }
         } else if (mode.equals("privileged") || mode.equals("unrelated")) {
             var otherUser = new UserData();
@@ -2261,6 +2263,7 @@ public class RegistryAPITest {
     }
     
     @TestConfiguration
+    @Import(SecurityConfig.class)
     static class TestConfig {
         @Bean
         TransactionTemplate transactionTemplate() {

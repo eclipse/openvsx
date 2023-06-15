@@ -56,4 +56,18 @@ public class NamespaceMembershipJooqRepository {
 
         return namespaceMembership;
     }
+
+    public boolean isVerified(Namespace namespace, UserData user) {
+        var nm = NAMESPACE_MEMBERSHIP.as("nm");
+        var onm = NAMESPACE_MEMBERSHIP.as("onm");
+        var result = dsl.selectOne()
+                .from(nm)
+                .join(onm).on(onm.NAMESPACE.eq(nm.NAMESPACE))
+                .where(onm.NAMESPACE.eq(namespace.getId()))
+                .and(onm.ROLE.eq(NamespaceMembership.ROLE_OWNER))
+                .and(nm.USER_DATA.eq(user.getId()))
+                .fetch();
+
+        return result.isNotEmpty();
+    }
 }

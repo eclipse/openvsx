@@ -11,7 +11,7 @@ package org.eclipse.openvsx.eclipse;
 
 import java.util.LinkedHashSet;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;

@@ -18,11 +18,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.*;
-import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -31,7 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
@@ -1379,7 +1379,7 @@ public class RegistryAPI {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error("No JSON input."));
         }
-        if (Strings.isNullOrEmpty(namespace.name)) {
+        if (StringUtils.isEmpty(namespace.name)) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
         }
         try {
@@ -1462,7 +1462,7 @@ public class RegistryAPI {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error("No JSON input."));
         }
-        if (Strings.isNullOrEmpty(namespace.name)) {
+        if (StringUtils.isEmpty(namespace.name)) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
         }
         try {

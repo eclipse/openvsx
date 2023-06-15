@@ -9,8 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -71,7 +71,7 @@ public class VSCodeIdService {
 
     private ExtensionQueryResult.Extension getUpstreamExtension(Extension extension) {
         var galleryUrl = urlConfigService.getUpstreamGalleryUrl();
-        if (Strings.isNullOrEmpty(galleryUrl)) {
+        if (StringUtils.isEmpty(galleryUrl)) {
             return null;
         }
 

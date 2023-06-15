@@ -30,7 +30,7 @@ import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -246,8 +246,6 @@ public class ElasticSearchServiceTest {
         var namespace = new Namespace();
         namespace.setName(namespaceName);
         extension.setNamespace(namespace);
-        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(isUnverified ? 0L : 1L);
         var extVer = new ExtensionVersion();
         extVer.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVer.setTimestamp(timestamp);
@@ -259,8 +257,8 @@ public class ElasticSearchServiceTest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         extVer.setPublishedWith(token);
-        Mockito.when(repositories.countMemberships(user, namespace))
-                .thenReturn(isUnrelated ? 0L : 1L);
+        Mockito.when(repositories.isVerified(namespace, user))
+                .thenReturn(!isUnverified && !isUnrelated);
         return extension;
     }
 

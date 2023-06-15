@@ -14,7 +14,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 
 @Component
 public class ExtractResourcesJobService {

@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 import java.net.URI;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -132,7 +132,7 @@ public class AdminAPI {
             admins.checkAdminUser();
 
             Streamable<PersistedLog> logs;
-            if (Strings.isNullOrEmpty(periodString)) {
+            if (StringUtils.isEmpty(periodString)) {
                 logs = repositories.findAllPersistedLogs();
             } else {
                 try {

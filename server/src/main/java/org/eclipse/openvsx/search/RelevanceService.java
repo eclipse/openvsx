@@ -26,8 +26,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -162,8 +162,7 @@ public class RelevanceService {
             return false;
         var user = extVersion.getPublishedWith().getUser();
         var namespace = extVersion.getExtension().getNamespace();
-        return repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0
-                && repositories.countMemberships(user, namespace) > 0;
+        return repositories.isVerified(namespace, user);
     }
 
     public static class SearchStats {

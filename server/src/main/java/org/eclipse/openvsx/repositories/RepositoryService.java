@@ -50,7 +50,7 @@ public class RepositoryService {
     @Autowired ExtensionJooqRepository extensionJooqRepo;
     @Autowired ExtensionVersionJooqRepository extensionVersionJooqRepo;
     @Autowired FileResourceJooqRepository fileResourceJooqRepo;
-    @Autowired NamespaceMembershipJooqRepository namespaceMembershipJooqRepo;
+    @Autowired NamespaceMembershipJooqRepository membershipJooqRepo;
     @Autowired AdminStatisticsRepository adminStatisticsRepo;
     @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
     @Autowired MigrationItemRepository migrationItemRepo;
@@ -265,8 +265,8 @@ public class RepositoryService {
         return membershipRepo.findByUserAndNamespace(user, namespace);
     }
 
-    public long countMemberships(UserData user, Namespace namespace) {
-        return membershipRepo.countByUserAndNamespace(user, namespace);
+    public boolean isVerified(Namespace namespace, UserData user) {
+        return membershipJooqRepo.isVerified(namespace, user);
     }
 
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace, String role) {
@@ -358,7 +358,7 @@ public class RepositoryService {
     }
 
     public List<NamespaceMembership> findNamespaceMemberships(Collection<Long> namespaceIds) {
-        return namespaceMembershipJooqRepo.findAllByNamespaceId(namespaceIds);
+        return membershipJooqRepo.findAllByNamespaceId(namespaceIds);
     }
 
     public AdminStatistics findAdminStatisticsByYearAndMonth(int year, int month) {

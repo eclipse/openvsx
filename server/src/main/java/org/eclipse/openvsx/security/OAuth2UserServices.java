@@ -14,10 +14,9 @@ import static org.eclipse.openvsx.security.CodedAuthException.*;
 import java.util.Collection;
 import java.util.Collections;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
-import com.google.common.base.Strings;
-
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.UserData;
@@ -115,7 +114,7 @@ public class OAuth2UserServices {
     private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
         var authUser = delegate.loadUser(userRequest);
         String loginName = authUser.getAttribute("login");
-        if (Strings.isNullOrEmpty(loginName))
+        if (StringUtils.isEmpty(loginName))
             throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
         var userData = repositories.findUserByLoginName("github", loginName);
         if (userData == null)
@@ -139,7 +138,7 @@ public class OAuth2UserServices {
         try {
             var accessToken = userRequest.getAccessToken().getTokenValue();
             var profile = eclipse.getUserProfile(accessToken);
-            if (Strings.isNullOrEmpty(profile.githubHandle))
+            if (StringUtils.isEmpty(profile.githubHandle))
                 throw new CodedAuthException("Your Eclipse profile is missing a GitHub username.",
                         ECLIPSE_MISSING_GITHUB_ID);
             if (!profile.githubHandle.equalsIgnoreCase(userData.getLoginName()))

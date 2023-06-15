@@ -16,11 +16,10 @@ import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobHttpHeaders;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
-import com.google.common.base.Strings;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +51,7 @@ public class AzureBlobStorageService implements IStorageService {
 
 	@Override
 	public boolean isEnabled() {
-		return !Strings.isNullOrEmpty(serviceEndpoint);
+		return !StringUtils.isEmpty(serviceEndpoint);
     }
     
     protected BlobContainerClient getContainerClient() {
@@ -79,7 +78,7 @@ public class AzureBlobStorageService implements IStorageService {
     }
     
     protected void uploadFile(byte[] content, String fileName, String blobName) {
-        if (Strings.isNullOrEmpty(serviceEndpoint)) {
+        if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
         }
@@ -108,7 +107,7 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     protected void uploadFile(TempFile file, String fileName, String blobName) {
-        if (Strings.isNullOrEmpty(serviceEndpoint)) {
+        if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
         }
@@ -138,7 +137,7 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     private void removeFile(String blobName) {
-        if (Strings.isNullOrEmpty(serviceEndpoint)) {
+        if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot remove file "
                     + blobName + ": missing Azure blob service endpoint");
         }
@@ -157,7 +156,7 @@ public class AzureBlobStorageService implements IStorageService {
 	@Override
 	public URI getLocation(FileResource resource) {
         var blobName = getBlobName(resource);
-        if (Strings.isNullOrEmpty(serviceEndpoint)) {
+        if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot determine location of file "
                     + blobName + ": missing Azure blob service endpoint");
         }
@@ -184,7 +183,7 @@ public class AzureBlobStorageService implements IStorageService {
     @Override
     public URI getNamespaceLogoLocation(Namespace namespace) {
         var blobName = getBlobName(namespace);
-        if (Strings.isNullOrEmpty(serviceEndpoint)) {
+        if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot determine location of file "
                     + blobName + ": missing Azure blob service endpoint");
         }

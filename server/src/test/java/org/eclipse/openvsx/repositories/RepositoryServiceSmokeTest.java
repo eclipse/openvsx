@@ -19,8 +19,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -87,7 +87,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countExtensions(),
                 () -> repositories.countExtensions("name", "namespace"),
                 () -> repositories.countMemberships(namespace, "role"),
-                () -> repositories.countMemberships(userData, namespace),
+                () -> repositories.isVerified(namespace, userData),
                 () -> repositories.countNamespaces(),
                 () -> repositories.countPublishersThatClaimedNamespaceOwnership(NOW),
                 () -> repositories.countUsers(),

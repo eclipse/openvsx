@@ -39,7 +39,7 @@ tasks:
   command: |
     if [[ $NPM_TOKEN ]]; then echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc; fi
     # Start Elasticsearch as background process
-    $ES_HOME/bin/elasticsearch -d -p $ES_HOME/pid -Ediscovery.type=single-node -Expack.ml.enabled=false
+    $ES_HOME/bin/elasticsearch -d -p $ES_HOME/pid -Ediscovery.type=single-node -Expack.ml.enabled=false -Expack.security.enabled=false
     gp ports await 9200
     # Start the server application
     cd server

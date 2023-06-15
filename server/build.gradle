@@ -3,13 +3,13 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.hibernate:hibernate-gradle-plugin:5.4.22.Final"
+        classpath "org.hibernate.orm:hibernate-gradle-plugin:6.2.2.Final"
     }
 }
 plugins {
     id 'nu.studer.jooq' version '6.0.1'
     id 'de.undercouch.download' version '4.1.1'
-    id 'org.springframework.boot' version '2.7.1'
+    id 'org.springframework.boot' version '3.1.0'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.6.1'
     id 'java'
@@ -18,22 +18,26 @@ apply plugin: 'org.hibernate.orm'
 
 def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [
-    java: '11',
-    flyway: '7.3.1',
-    springdoc: '1.6.9',
-    spdx: '2.2.4',
-    gcloud: '1.113.4',
-    azure: '12.9.0',
-    guava: '28.2-jre',
+    java: '17',
+    flyway: '9.19.1',
+    springdoc: '2.1.0',
+    spdx: '2.2.8',
+    gcloud: '2.22.3',
+    azure: '12.18.0',
+    guava: '30.0-jre',
     junit: '5.7.1',
     testcontainers: '1.15.2',
-    jackson: '2.12.5',
-    woodstox: '6.2.4',
-    jobrunr: '5.1.2',
-    bucket4j: '0.4.0',
-    ehcache: '3.10.0',
+    jackson: '2.15.2',
+    woodstox: '6.4.0',
+    jobrunr: '6.2.0',
+    bucket4j: '0.9.0',
+    ehcache: '3.10.8',
     tika: '2.6.0',
-    bouncycastle: '1.69'
+    bouncycastle: '1.69',
+    commons_lang3: '3.12.0',
+    httpclient5: '5.2.1',
+    jaxb_api: '2.3.1',
+    jaxb_impl: '2.3.8'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -75,11 +79,11 @@ dependencies {
     implementation "org.bouncycastle:bcpkix-jdk15on:${versions.bouncycastle}"
     implementation "org.ehcache:ehcache:${versions.ehcache}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
-    implementation "org.jobrunr:jobrunr-spring-boot-starter:${versions.jobrunr}"
+    implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
-    implementation "org.springdoc:springdoc-openapi-ui:${versions.springdoc}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${versions.springdoc}"
     implementation "com.google.guava:guava:${versions.guava}"
     implementation "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
@@ -87,6 +91,10 @@ dependencies {
     implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${versions.jackson}"
     implementation "com.fasterxml.woodstox:woodstox-core:${versions.woodstox}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${versions.jackson}"
+    implementation "javax.xml.bind:jaxb-api:${versions.jaxb_api}"
+    implementation "com.sun.xml.bind:jaxb-impl:${versions.jaxb_impl}"
+    implementation "org.apache.commons:commons-lang3:${versions.commons_lang3}"
+    implementation "org.apache.httpcomponents.client5:httpclient5:${versions.httpclient5}"
     implementation "org.apache.tika:tika-core:${versions.tika}"
     implementation("org.spdx:spdx-tools:${versions.spdx}") {
         exclude group: 'net.sf.saxon'
@@ -107,13 +115,6 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
     testRuntimeOnly "org.testcontainers:postgresql:${versions.testcontainers}"
-}
-
-hibernate {
-    enhance {
-        enableLazyInitialization = true
-        enableDirtyTracking = true
-    }
 }
 
 jooq {

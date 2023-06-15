@@ -9,7 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.json;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 public class TargetPlatformVersionJson {
     /***

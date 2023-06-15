@@ -9,6 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.data.elasticsearch.client.ClientConfiguration;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
+
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -16,25 +27,9 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 
-import javax.net.ssl.SSLContext;
-
-import org.apache.http.ssl.SSLContextBuilder;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.data.elasticsearch.client.ClientConfiguration;
-import org.springframework.data.elasticsearch.client.RestClients;
-import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfiguration;
-
 @Configuration
 @Profile("!test")
-public class SearchConfig extends AbstractElasticsearchConfiguration {
+public class SearchConfig extends ElasticsearchConfiguration {
 
     protected final Logger logger = LoggerFactory.getLogger(SearchConfig.class);
 
@@ -54,7 +49,7 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
     String trustStore;
 
     /**
-     * Name from https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#sslcontext-algorithms
+     * Name from https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms
      */
     @Value("${ovsx.elasticsearch.truststoreProtocol:TLSv1.2}")
     String trustStoreProtocol;
@@ -63,21 +58,17 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
     String trustStorePassword;
 
     @Override
-    public RestHighLevelClient elasticsearchClient() {
+    public ClientConfiguration clientConfiguration() {
         var builder = ClientConfiguration.builder();
-        var connected = Strings.isNullOrEmpty(searchHost)
+        var connected = StringUtils.isEmpty(searchHost)
                 ? builder.connectedToLocalhost()
                 : builder.connectedTo(searchHost);
         var secure = useSsl ? connected.usingSsl(sslContext()) : connected;
-        var authenticated = Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)
+        var authenticated = StringUtils.isEmpty(username) || StringUtils.isEmpty(password)
                 ? secure
                 : secure.withBasicAuth(username, password);
-        return RestClients.create(authenticated.build()).rest();
-    }
 
-    @Bean(destroyMethod = "close")
-    public RestClient restClient() {
-        return elasticsearchClient().getLowLevelClient();
+        return authenticated.build();
     }
 
     /**
@@ -85,9 +76,9 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
      * are non empty. Returns {@link SSLContext#getDefault() default} SSLContext otherwise.
      */
     private SSLContext sslContext() {
-        if (!Strings.isNullOrEmpty(trustStore)) {
+        if (!StringUtils.isEmpty(trustStore)) {
             var sslContextBuilder = SSLContextBuilder.create().setProtocol(trustStoreProtocol);
-            if (!Strings.isNullOrEmpty(trustStorePassword)) {
+            if (!StringUtils.isEmpty(trustStorePassword)) {
                 try {
                     sslContextBuilder.loadTrustMaterial(new File(trustStore), trustStorePassword.toCharArray());
                 } catch(NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
@@ -112,5 +103,4 @@ public class SearchConfig extends AbstractElasticsearchConfiguration {
             throw new RuntimeException("Error while getting default SSLContext", e);
         }
     }
-
 }

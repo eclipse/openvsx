@@ -9,25 +9,23 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
-import org.springframework.data.elasticsearch.client.RestClients;
-import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfiguration;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 @Configuration
 @Profile("test")
-public class TestSearchConfig extends AbstractElasticsearchConfiguration {
+public class TestSearchConfig extends ElasticsearchConfiguration {
 
     @Override
-    @SuppressWarnings("resource")
-    public RestHighLevelClient elasticsearchClient() {
-        var container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.11.0");
+    public ClientConfiguration clientConfiguration() {
+        var container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:8.7.1")
+                .withEnv("discovery.type", "single-node")
+                .withEnv("xpack.security.enabled", "false");
+
         container.start();
-        var config = ClientConfiguration.create(container.getHttpHostAddress());
-        return RestClients.create(config).rest();
+        return ClientConfiguration.create(container.getHttpHostAddress());
     }
-    
 }

@@ -15,7 +15,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.util.NamingUtil;

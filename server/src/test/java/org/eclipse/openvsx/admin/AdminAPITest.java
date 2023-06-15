@@ -24,6 +24,7 @@ import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
+import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.AzureDownloadCountService;
@@ -41,6 +42,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -49,7 +51,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
@@ -1190,6 +1192,7 @@ public class AdminAPITest {
     }
     
     @TestConfiguration
+    @Import(SecurityConfig.class)
     static class TestConfig {
         @Bean
         TransactionTemplate transactionTemplate() {

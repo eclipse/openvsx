@@ -9,9 +9,10 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.jooq.Record;
 import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -268,22 +269,22 @@ public class ExtensionVersionJooqRepository {
 
     public Page<ExtensionVersion> findActiveVersions(QueryRequest request) {
         var conditions = new ArrayList<Condition>();
-        if (!Strings.isNullOrEmpty(request.namespaceUuid)) {
+        if (!StringUtils.isEmpty(request.namespaceUuid)) {
             conditions.add(NAMESPACE.PUBLIC_ID.eq(request.namespaceUuid));
         }
-        if (!Strings.isNullOrEmpty(request.namespaceName)) {
+        if (!StringUtils.isEmpty(request.namespaceName)) {
             conditions.add(NAMESPACE.NAME.eq(request.namespaceName));
         }
-        if (!Strings.isNullOrEmpty(request.extensionUuid)) {
+        if (!StringUtils.isEmpty(request.extensionUuid)) {
             conditions.add(EXTENSION.PUBLIC_ID.eq(request.extensionUuid));
         }
-        if (!Strings.isNullOrEmpty(request.extensionName)) {
+        if (!StringUtils.isEmpty(request.extensionName)) {
             conditions.add(EXTENSION.NAME.eq(request.extensionName));
         }
         if(request.targetPlatform != null) {
             conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(request.targetPlatform));
         }
-        if (!Strings.isNullOrEmpty(request.extensionVersion)) {
+        if (!StringUtils.isEmpty(request.extensionVersion)) {
             conditions.add(EXTENSION_VERSION.VERSION.eq(request.extensionVersion));
         }
 

@@ -9,8 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -36,8 +36,8 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -268,21 +268,26 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var searchHits = search.search(options);
-        json.extensions = toSearchEntries(searchHits, options);
-        json.offset = options.requestedOffset;
-        json.totalSize = (int) searchHits.getTotalHits();
+        if(searchHits.hasSearchHits()) {
+            json.extensions = toSearchEntries(searchHits, options);
+            json.offset = options.requestedOffset;
+            json.totalSize = (int) searchHits.getTotalHits();
+        } else {
+            json.extensions = Collections.emptyList();
+        }
+
         return json;
     }
 
     @Override
     public QueryResultJson query(QueryRequest request) {
-        if (!Strings.isNullOrEmpty(request.extensionId)) {
+        if (!StringUtils.isEmpty(request.extensionId)) {
             var split = request.extensionId.split("\\.");
             if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty())
                 throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
-            if (!Strings.isNullOrEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
+            if (!StringUtils.isEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
-            if (!Strings.isNullOrEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
+            if (!StringUtils.isEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
             request.namespaceName = split[0];
             request.extensionName = split[1];
@@ -327,13 +332,13 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Override
     public QueryResultJson queryV2(QueryRequestV2 request) {
-        if (!Strings.isNullOrEmpty(request.extensionId)) {
+        if (!StringUtils.isEmpty(request.extensionId)) {
             var split = request.extensionId.split("\\.");
             if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty())
                 throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
-            if (!Strings.isNullOrEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
+            if (!StringUtils.isEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
-            if (!Strings.isNullOrEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
+            if (!StringUtils.isEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
             request.namespaceName = split[0];
             request.extensionName = split[1];
@@ -344,7 +349,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             request.targetPlatform = null;
         }
         // Revert to default includeAllVersions value when extensionVersion is set
-        if(!Strings.isNullOrEmpty(request.extensionVersion) && request.includeAllVersions.equals("true")) {
+        if(!StringUtils.isEmpty(request.extensionVersion) && request.includeAllVersions.equals("true")) {
             request.includeAllVersions = "links";
         }
 
@@ -712,26 +717,40 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Deleted review for " + NamingUtil.toExtensionId(extension));
     }
 
-    private Extension getExtension(SearchHit<ExtensionSearch> searchHit) {
-        var searchItem = searchHit.getContent();
-        var extension = entityManager.find(Extension.class, searchItem.id);
-        if (extension == null || !extension.isActive()) {
-            extension = new Extension();
-            extension.setId(searchItem.id);
-            search.removeSearchEntry(extension);
-            return null;
+    private List<Extension> getExtensions(SearchHits<ExtensionSearch> searchHits) {
+        var ids = searchHits.stream()
+                .map(searchHit -> searchHit.getContent().id)
+                .collect(Collectors.toSet());
+
+        var extensions = new ArrayList<>(repositories.findExtensions(ids).toList());
+        var extensionIds = extensions.stream()
+                .map(Extension::getId)
+                .collect(Collectors.toSet());
+
+        ids.removeAll(extensionIds);
+        if(!ids.isEmpty()) {
+            search.removeSearchEntries(ids);
         }
 
-        return extension;
+        var inactiveExtensions = extensions.stream()
+                .filter(extension -> !extension.isActive())
+                .collect(Collectors.toList());
+
+        if(!inactiveExtensions.isEmpty()) {
+            var inactiveIds = inactiveExtensions.stream()
+                    .map(Extension::getId)
+                    .collect(Collectors.toList());
+
+            search.removeSearchEntries(inactiveIds);
+            extensions.removeAll(inactiveExtensions);
+        }
+
+        return extensions;
     }
 
     private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> searchHits, ISearchService.Options options) {
         var serverUrl = UrlUtil.getBaseUrl();
-        var extensions = searchHits.stream()
-                .map(this::getExtension)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
+        var extensions = getExtensions(searchHits);
         var latestVersions = extensions.stream()
                 .map(e -> {
                     var latest = versions.getLatestTrxn(e, null, false, true);
@@ -1005,8 +1024,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var namespace = extVersion.getExtension().getNamespace();
-        return repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0
-                && repositories.countMemberships(user, namespace) > 0;
+        return repositories.isVerified(namespace, user);
     }
 
     private boolean isVerified(ExtensionVersion extVersion, Map<Long, List<NamespaceMembership>> membershipsByNamespaceId) {

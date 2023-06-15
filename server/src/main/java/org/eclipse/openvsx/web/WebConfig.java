@@ -11,8 +11,8 @@ package org.eclipse.openvsx.web;
 
 import java.net.URI;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.mirror.MirrorExtensionHandlerInterceptor;
-import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -35,7 +35,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if (!Strings.isNullOrEmpty(webuiUrl) && URI.create(webuiUrl).isAbsolute()) {
+        if (!StringUtils.isEmpty(webuiUrl) && URI.create(webuiUrl).isAbsolute()) {
             // The Web UI is given with an absolute URL, so we need to enable CORS with credentials.
             var authorizedEndpoints = new String[] {
                 "/user/**",

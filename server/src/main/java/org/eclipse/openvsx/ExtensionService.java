@@ -16,11 +16,10 @@ import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 
-import javax.transaction.Transactional;
-import javax.transaction.Transactional.TxType;
+import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
 
-import com.google.common.base.Strings;
-
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
@@ -102,7 +101,7 @@ public class ExtensionService {
     }
 
     private void checkLicense(ExtensionVersion extVersion, FileResource license) {
-        if (Strings.isNullOrEmpty(extVersion.getLicense()) && (license == null || !license.getType().equals(FileResource.LICENSE))) {
+        if (StringUtils.isEmpty(extVersion.getLicense()) && (license == null || !license.getType().equals(FileResource.LICENSE))) {
             throw new ErrorResultException("This extension cannot be accepted because it has no license.");
         }
     }

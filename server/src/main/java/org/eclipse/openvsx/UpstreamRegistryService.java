@@ -9,8 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.google.common.base.Strings;
-
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -48,7 +47,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     UrlConfigService urlConfigService;
 
     public boolean isValid() {
-        return !Strings.isNullOrEmpty(urlConfigService.getUpstreamUrl());
+        return !StringUtils.isEmpty(urlConfigService.getUpstreamUrl());
     }
 
     @Override
@@ -273,7 +272,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         uriVariables.put("targetPlatform", options.targetPlatform);
 
         var queryString = uriVariables.entrySet().stream()
-                .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
+                .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
                 .map(Map.Entry::getKey)
                 .map(key -> key + "={" + key + "}")
                 .collect(Collectors.joining("&"));
@@ -310,7 +309,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
 
         var queryString = queryParams.entrySet().stream()
-            .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
+            .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
             .map(Map.Entry::getKey)
             .map(key -> key + "={" + key + "}")
             .collect(Collectors.joining("&"));
@@ -346,7 +345,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         queryParams.put("offset", String.valueOf(request.offset));
 
         var queryString = queryParams.entrySet().stream()
-                .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
+                .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
                 .map(Map.Entry::getKey)
                 .map(key -> key + "={" + key + "}")
                 .collect(Collectors.joining("&"));
@@ -389,7 +388,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
                 throw new NotFoundException();
             else
                 throw new ResponseStatusException(status,
-                        "Upstream registry responded with status \"" + status.getReasonPhrase() + "\".", exc);
+                        "Upstream registry responded with status \"" + exc.getMessage() + "\".", exc);
         } else if (exc.getCause() != null && exc.getCause() != exc) {
             handleError(exc.getCause());
         }

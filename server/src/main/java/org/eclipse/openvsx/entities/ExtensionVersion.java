@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import org.apache.jena.ext.com.google.common.collect.Maps;
 import org.eclipse.openvsx.json.ExtensionJson;

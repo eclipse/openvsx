@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +43,7 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
+import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.AzureDownloadCountService;
@@ -58,6 +59,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHitsImpl;
 import org.springframework.data.elasticsearch.core.TotalHitsRelation;
@@ -643,7 +645,7 @@ public class VSCodeAPITest {
         List<SearchHit<ExtensionSearch>> searchResults = !builtInExtensionNamespace.equals(namespaceName)
                 ? Collections.singletonList(new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1))
                 : Collections.emptyList();
-        var searchHits = new SearchHitsImpl<>(searchResults.size(), TotalHitsRelation.EQUAL_TO, 1.0f, "1",
+        var searchHits = new SearchHitsImpl<>(searchResults.size(), TotalHitsRelation.EQUAL_TO, 1.0f, "1", null,
                 searchResults, null, null);
 
         Mockito.when(integrityService.isEnabled())
@@ -907,6 +909,7 @@ public class VSCodeAPITest {
     }
 
     @TestConfiguration
+    @Import(SecurityConfig.class)
     static class TestConfig {
         @Bean
         IExtensionQueryRequestHandler extensionQueryRequestHandler(LocalVSCodeService local, UpstreamVSCodeService upstream) {

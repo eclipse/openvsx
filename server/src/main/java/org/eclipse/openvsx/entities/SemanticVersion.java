@@ -9,9 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import org.jooq.tools.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
