@@ -46,15 +46,6 @@ WHERE u.id = tu.other_id;
 DROP TABLE tmp_user_data;
 ALTER TABLE user_data ADD CONSTRAINT unique_user_data UNIQUE (provider, login_name);
 
--- unique extension review
-DELETE FROM extension_review r
-USING extension_review ur
-WHERE r.id > ur.id
-AND r.extension_id = ur.extension_id
-AND r.user_id = ur.user_id;
-
-ALTER TABLE extension_review ADD CONSTRAINT unique_extension_review UNIQUE (extension_id, user_id);
-
 -- unique namespace membership
 DELETE FROM namespace_membership nm
 USING namespace_membership onm
