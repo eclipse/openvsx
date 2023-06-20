@@ -13,7 +13,6 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import com.google.common.base.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
@@ -23,6 +22,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -46,13 +46,13 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public boolean isEnabled() {
-        return !Strings.isNullOrEmpty(bucketId);
+        return !StringUtils.isEmpty(bucketId);
     }
 
     protected Storage getStorage() {
         if (storage == null) {
             StorageOptions options;
-            if (Strings.isNullOrEmpty(projectId)) {
+            if (StringUtils.isEmpty(projectId)) {
                 options = StorageOptions.getDefaultInstance();
             } else {
                 options = StorageOptions.newBuilder()
@@ -67,7 +67,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public void uploadFile(FileResource resource) {
         var objectId = getObjectId(resource);
-        if (Strings.isNullOrEmpty(bucketId)) {
+        if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot upload file "
                     + objectId + ": missing Google bucket id");
         }
@@ -78,7 +78,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public void uploadNamespaceLogo(Namespace namespace) {
         var objectId = getObjectId(namespace);
-        if (Strings.isNullOrEmpty(bucketId)) {
+        if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot upload file "
                     + objectId + ": missing Google bucket id");
         }
@@ -101,7 +101,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public void uploadFile(FileResource resource, TempFile file) {
         var objectId = getObjectId(resource);
-        if (Strings.isNullOrEmpty(bucketId)) {
+        if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot upload file "
                     + objectId + ": missing Google bucket id");
         }
@@ -144,7 +144,7 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     private void removeFile(String objectId) {
-        if (Strings.isNullOrEmpty(bucketId)) {
+        if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot remove file "
                     + objectId + ": missing Google bucket id");
         }
@@ -154,7 +154,7 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public URI getLocation(FileResource resource) {
-        if (Strings.isNullOrEmpty(bucketId)) {
+        if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot determine location of file "
                     + resource.getName() + ": missing Google bucket id");
         }
@@ -177,7 +177,7 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public URI getNamespaceLogoLocation(Namespace namespace) {
-        if (Strings.isNullOrEmpty(bucketId)) {
+        if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot determine location of file "
                     + namespace.getLogoName() + ": missing Google bucket id");
         }

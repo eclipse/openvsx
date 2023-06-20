@@ -11,8 +11,8 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.google.common.base.Strings;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.LinkedHashMap;
 import java.util.stream.Stream;
@@ -80,7 +80,7 @@ public class QueryParamJson {
         }
 
         return queryParams.entrySet().stream()
-                .filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))
+                .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
                 .flatMap(entry -> Stream.of(entry.getKey(), entry.getValue()))
                 .toArray(String[]::new);
     }

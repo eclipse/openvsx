@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.search;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -55,6 +56,11 @@ public interface ISearchService {
      * The given extension has been removed from the registry, we need to refresh the search index.
      */
     void removeSearchEntry(Extension extension);
+
+    /**
+     * The given extensions have been removed from the registry, we need to refresh the search index.
+     */
+    void removeSearchEntries(Collection<Long> ids);
 
     public static class Options {
         public final String queryString;

@@ -18,7 +18,7 @@ import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.spring.annotations.Recurring;
@@ -79,8 +79,8 @@ public class AzureDownloadCountService {
      * Indicates whether the download service is enabled by application config.
      */
     public boolean isEnabled() {
-        var logsEnabled = !Strings.isNullOrEmpty(logsServiceEndpoint);
-        var storageEnabled = !Strings.isNullOrEmpty(storageServiceEndpoint);
+        var logsEnabled = !StringUtils.isEmpty(logsServiceEndpoint);
+        var storageEnabled = !StringUtils.isEmpty(storageServiceEndpoint);
         if(logsEnabled && !storageEnabled) {
             logger.warn("The ovsx.storage.azure.service-endpoint value must be set to enable AzureDownloadCountService");
         }
@@ -143,7 +143,7 @@ public class AzureDownloadCountService {
             }
 
             var continuationToken = response != null ? response.getContinuationToken() : "";
-            iterableByPage = !Strings.isNullOrEmpty(continuationToken) ? blobs.iterableByPage(continuationToken) : null;
+            iterableByPage = !StringUtils.isEmpty(continuationToken) ? blobs.iterableByPage(continuationToken) : null;
         }
 
         logger.info("<< updateDownloadCounts");

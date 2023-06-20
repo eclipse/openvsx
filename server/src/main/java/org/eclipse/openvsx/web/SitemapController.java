@@ -9,12 +9,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx.web;
 
-import java.net.URI;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.VersionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import javax.transaction.Transactional;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
@@ -22,22 +30,9 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import com.google.common.base.Strings;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.eclipse.openvsx.ExtensionService;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.UrlUtil;
-import org.eclipse.openvsx.util.VersionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import java.net.URI;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 public class SitemapController {
@@ -94,7 +89,7 @@ public class SitemapController {
     }
 
     private String getBaseUrl() {
-        if (Strings.isNullOrEmpty(webuiUrl))
+        if (StringUtils.isEmpty(webuiUrl))
             return UrlUtil.getBaseUrl();
         else if (URI.create(webuiUrl).isAbsolute())
             return webuiUrl;

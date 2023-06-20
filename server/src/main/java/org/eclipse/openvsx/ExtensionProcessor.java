@@ -15,10 +15,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.*;
-import org.elasticsearch.common.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
@@ -273,7 +273,7 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     private List<String> asStringList(String value, String sep){
-        if (Strings.isNullOrEmpty(value)){
+        if (StringUtils.isEmpty(value)){
             return new ArrayList<>();
         }
 
@@ -410,7 +410,7 @@ public class ExtensionProcessor implements AutoCloseable {
         license.setExtension(extVersion);
         license.setType(FileResource.LICENSE);
         // Parse specifications in the form "SEE MIT LICENSE IN LICENSE.txt"
-        if (!Strings.isNullOrEmpty(extVersion.getLicense())) {
+        if (!StringUtils.isEmpty(extVersion.getLicense())) {
             var matcher = LICENSE_PATTERN.matcher(extVersion.getLicense());
             if (matcher.find()) {
                 extVersion.setLicense(matcher.group("license"));
@@ -438,7 +438,7 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     private void detectLicense(byte[] content, ExtensionVersion extVersion) {
-        if (Strings.isNullOrEmpty(extVersion.getLicense())) {
+        if (StringUtils.isEmpty(extVersion.getLicense())) {
             var detection = new LicenseDetection();
             extVersion.setLicense(detection.detectLicense(content));
         }

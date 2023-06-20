@@ -32,7 +32,7 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 @ExtendWith(SpringExtension.class)
 public class DatabaseSearchServiceTest {
@@ -333,8 +333,7 @@ public class DatabaseSearchServiceTest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         extVer.setPublishedWith(token);
-        var isUnrelated = false;
-        Mockito.when(repositories.countMemberships(user, namespace)).thenReturn(isUnrelated ? 0l : 1l);
+        Mockito.when(repositories.isVerified(namespace, user)).thenReturn(false);
         return extension;
     }
 

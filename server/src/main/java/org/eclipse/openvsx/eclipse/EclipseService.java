@@ -21,9 +21,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.EclipseData;
@@ -56,7 +57,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 @Component
@@ -108,7 +108,7 @@ public class EclipseService {
     private final Function<String, LocalDateTime> parseDate = dateString -> {
         try {
             var local = LocalDateTime.parse(dateString, CUSTOM_DATE_TIME);
-            if (Strings.isNullOrEmpty(publisherAgreementTimeZone)) {
+            if (StringUtils.isEmpty(publisherAgreementTimeZone)) {
                 return local;
             }
             return TimeUtil.convertToUTC(local, publisherAgreementTimeZone);
@@ -119,7 +119,7 @@ public class EclipseService {
     };
 
     public boolean isActive() {
-        return !Strings.isNullOrEmpty(publisherAgreementVersion);
+        return !StringUtils.isEmpty(publisherAgreementVersion);
     }
 
     /**
@@ -164,7 +164,7 @@ public class EclipseService {
             eclipseData = user.getEclipseData().clone();
         }
 
-        if (Strings.isNullOrEmpty(eclipseData.personId)) {
+        if (StringUtils.isEmpty(eclipseData.personId)) {
             eclipseData.personId = profile.name;
         }
         if (profile.publisherAgreements != null) {
@@ -172,7 +172,7 @@ public class EclipseService {
                 if (eclipseData.publisherAgreement != null) {
                     eclipseData.publisherAgreement.isActive = false;
                 }
-            } else if (!Strings.isNullOrEmpty(profile.publisherAgreements.openVsx.version)) {
+            } else if (!StringUtils.isEmpty(profile.publisherAgreements.openVsx.version)) {
                 if (eclipseData.publisherAgreement == null) {
                     eclipseData.publisherAgreement = new EclipseData.PublisherAgreement();
                 }
@@ -321,7 +321,7 @@ public class EclipseService {
      */
     public EclipseData.PublisherAgreement getPublisherAgreement(UserData user, String accessToken) {
         var eclipseData = user.getEclipseData();
-        if (eclipseData == null || Strings.isNullOrEmpty(eclipseData.personId)) {
+        if (eclipseData == null || StringUtils.isEmpty(eclipseData.personId)) {
             return null;
         }
         checkApiUrl();
@@ -482,14 +482,14 @@ public class EclipseService {
     }
 
     private void checkApiUrl() {
-        if (Strings.isNullOrEmpty(eclipseApiUrl)) {
+        if (StringUtils.isEmpty(eclipseApiUrl)) {
             throw new ErrorResultException("Missing URL for Eclipse API.");
         }
     }
 
     private AuthToken checkEclipseToken(UserData user) {
         var eclipseToken = tokens.getActiveToken(user, "eclipse");
-        if (eclipseToken == null || Strings.isNullOrEmpty(eclipseToken.accessToken)) {
+        if (eclipseToken == null || StringUtils.isEmpty(eclipseToken.accessToken)) {
             throw new ErrorResultException("Authorization by Eclipse required.", HttpStatus.FORBIDDEN);
         }
         return eclipseToken;
@@ -497,7 +497,7 @@ public class EclipseService {
 
     private EclipseData checkEclipseData(UserData user) {
         var eclipseData = user.getEclipseData();
-        if (eclipseData == null || Strings.isNullOrEmpty(eclipseData.personId)) {
+        if (eclipseData == null || StringUtils.isEmpty(eclipseData.personId)) {
             throw new ErrorResultException("Eclipse person ID is unavailable for user: "
                     + user.getProvider() + "/" + user.getLoginName());
         }

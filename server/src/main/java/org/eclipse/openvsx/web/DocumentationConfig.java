@@ -13,8 +13,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.media.Schema;
-import org.springdoc.core.GroupedOpenApi;
-import org.springdoc.core.customizers.OpenApiCustomiser;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,16 +25,16 @@ import java.util.TreeMap;
 public class DocumentationConfig {
 
     @Bean
-    public GroupedOpenApi api(OpenApiCustomiser sortSchemasAlphabetically) {
+    public GroupedOpenApi api(OpenApiCustomizer sortSchemasAlphabetically) {
         return GroupedOpenApi.builder()
                 .group("default")
                 .pathsToMatch("/api/**")
-                .addOpenApiCustomiser(sortSchemasAlphabetically)
+                .addOpenApiCustomizer(sortSchemasAlphabetically)
                 .build();
     }
 
     @Bean
-    public OpenApiCustomiser sortSchemasAlphabetically() {
+    public OpenApiCustomizer sortSchemasAlphabetically() {
         return openApi -> {
             Map<String, Schema> schemas = openApi.getComponents().getSchemas();
             openApi.getComponents().setSchemas(new TreeMap<>(schemas));

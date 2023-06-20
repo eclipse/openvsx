@@ -10,7 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UpstreamProxyService;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.util.HttpHeadersUtil;
@@ -49,7 +49,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
     UrlConfigService urlConfigService;
 
     public boolean isValid() {
-        return !Strings.isNullOrEmpty(urlConfigService.getUpstreamUrl());
+        return !StringUtils.isEmpty(urlConfigService.getUpstreamUrl());
     }
 
     @Override

@@ -9,8 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -30,8 +30,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -108,7 +108,7 @@ public class StorageUtilService implements IStorageService {
             storageTypes.add(STORAGE_GOOGLE);
         if (azureStorage.isEnabled())
             storageTypes.add(STORAGE_AZURE);
-        if (!Strings.isNullOrEmpty(primaryService)) {
+        if (!StringUtils.isEmpty(primaryService)) {
             if (!storageTypes.contains(primaryService))
                 throw new RuntimeException("The selected primary storage service is not available.");
             return primaryService;

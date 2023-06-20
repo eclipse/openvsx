@@ -9,7 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
@@ -48,7 +48,7 @@ public class ExtensionValidator {
     private final Pattern namePattern = Pattern.compile("[\\w\\-\\+\\$~]+");
 
     public Optional<Issue> validateNamespace(String namespace) {
-        if (Strings.isNullOrEmpty(namespace) || namespace.equals("-")) {
+        if (StringUtils.isEmpty(namespace) || namespace.equals("-")) {
             return Optional.of(new Issue("Namespace name must not be empty."));
         }
         if (!namePattern.matcher(namespace).matches()) {
@@ -102,7 +102,7 @@ public class ExtensionValidator {
     }
 
     public Optional<Issue> validateExtensionName(String name) {
-        if (Strings.isNullOrEmpty(name)) {
+        if (StringUtils.isEmpty(name)) {
             return Optional.of(new Issue("Name must not be empty."));
         }
         if (!namePattern.matcher(name).matches()) {
@@ -156,7 +156,7 @@ public class ExtensionValidator {
     }
 
     private void checkVersion(String version, List<Issue> issues) {
-        if (Strings.isNullOrEmpty(version)) {
+        if (StringUtils.isEmpty(version)) {
             issues.add(new Issue("Version must not be empty."));
             return;
         }
@@ -216,7 +216,7 @@ public class ExtensionValidator {
     }
 
     private void checkInvalid(String value, Predicate<String> isInvalid, String field, List<Issue> issues, String allowedValues) {
-        if (Strings.isNullOrEmpty(value)) {
+        if (StringUtils.isEmpty(value)) {
             return;
         }
         if (isInvalid.test(value)) {
@@ -226,7 +226,7 @@ public class ExtensionValidator {
     }
 
     private void checkURL(String value, String field, List<Issue> issues) {
-        if (Strings.isNullOrEmpty(value)) {
+        if (StringUtils.isEmpty(value)) {
             return;
         }
         if (isInvalidURL(value)) {
@@ -235,14 +235,14 @@ public class ExtensionValidator {
     }
 
     private boolean isInvalidURL(String value) {
-        if (Strings.isNullOrEmpty(value))
+        if (StringUtils.isEmpty(value))
             return true;
         if (value.startsWith("git+") && value.length() > 4)
             value = value.substring(4);
         
         try {
             var url = new URL(value);
-            return url.getProtocol().matches("http(s)?") && Strings.isNullOrEmpty(url.getHost());
+            return url.getProtocol().matches("http(s)?") && StringUtils.isEmpty(url.getHost());
         } catch (MalformedURLException exc) {
             return true;
         }

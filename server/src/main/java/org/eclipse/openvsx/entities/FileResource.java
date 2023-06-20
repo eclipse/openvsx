@@ -9,7 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 public class FileResource {

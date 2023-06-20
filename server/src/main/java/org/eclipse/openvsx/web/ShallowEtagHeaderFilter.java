@@ -9,8 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.web;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class ShallowEtagHeaderFilter extends org.springframework.web.filter.ShallowEtagHeaderFilter {
 

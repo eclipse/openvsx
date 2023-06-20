@@ -40,9 +40,13 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
   - [https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl)
 
-- Set up JDK 11
-
-  - sudo apt install onpenjdk-11-jdk
+- Set up JDK 17
+  - sudo apt install -y wget apt-transport-https
+  - mkdir -p /etc/apt/keyrings
+  - wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
+  - echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+  - sudo apt update
+  - sudo apt install temurin-17-jdk
 
 - Install docker
 
@@ -74,15 +78,15 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 - Make sure the correct Java version is being used
 
-  - Download Java 11 if you don't have it already
+  - Download Java 17 if you don't have it already: https://adoptium.net/temurin/releases/
 
   - Run the command `/usr/libexec/java_home –V` to see your matching Java virtual machines
 
-  - Pick Java 11 accordingly
+  - Pick Java 17 accordingly
 
-  - export JAVA_HOME='/usr/libexec/java_home –v 11.0.18'
+  - export JAVA_HOME='/usr/libexec/java_home –v 17.0.7+7'
 
-  - Run `java –version` to check if Java 11 is indeed being used
+  - Run `java –version` to check if Java 17 is indeed being used
 
   - https://stackoverflow.com/questions/21964709/how-to-set-or-change-the-default-java-jdk-version-on-macos
 

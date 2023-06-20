@@ -12,7 +12,7 @@ package org.eclipse.openvsx.security;
 import java.time.Instant;
 import java.util.Arrays;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

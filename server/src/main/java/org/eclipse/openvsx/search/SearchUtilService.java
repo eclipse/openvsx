@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.eclipse.openvsx.entities.Extension;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -76,6 +77,9 @@ public class SearchUtilService implements ISearchService {
     public void updateSearchEntry(Extension extension) {
         getImplementation().updateSearchEntry(extension);
     }
+
+    @Override
+    public void removeSearchEntries(Collection<Long> ids) { getImplementation().removeSearchEntries(ids); }
 
     @Override
     public void removeSearchEntry(Extension extension) {

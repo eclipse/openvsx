@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,6 +31,10 @@ public class FileResourceJooqRepository {
     DSLContext dsl;
 
     public List<FileResource> findByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
+        if(extVersions.isEmpty() || types.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         var extVersionsById = extVersions.stream().collect(Collectors.toMap(ExtensionVersion::getId, ev -> ev));
         return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE)
                 .from(FILE_RESOURCE)

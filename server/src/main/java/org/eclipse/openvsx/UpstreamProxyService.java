@@ -12,10 +12,10 @@ package org.eclipse.openvsx;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.elasticsearch.common.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,10 +36,10 @@ public class UpstreamProxyService {
 
     public NamespaceJson rewriteUrls(NamespaceJson json) {
         rewriteUrlMap(json.extensions);
-        if(!Strings.isNullOrEmpty(json.membersUrl)) {
+        if(!StringUtils.isEmpty(json.membersUrl)) {
             json.membersUrl = rewriteUrl(json.membersUrl);
         }
-        if(!Strings.isNullOrEmpty(json.roleUrl)) {
+        if(!StringUtils.isEmpty(json.roleUrl)) {
             json.roleUrl = rewriteUrl(json.roleUrl);
         }
 

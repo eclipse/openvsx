@@ -9,7 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
-import com.google.common.base.Strings;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
@@ -18,7 +20,6 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
-import org.eclipse.openvsx.migration.MigrationRunner;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -31,10 +32,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -213,10 +211,10 @@ public class AdminService {
     }
 
     public void changeNamespace(ChangeNamespaceJson json) {
-        if (Strings.isNullOrEmpty(json.oldNamespace)) {
+        if (StringUtils.isEmpty(json.oldNamespace)) {
             throw new ErrorResultException("Old namespace must have a value");
         }
-        if (Strings.isNullOrEmpty(json.newNamespace)) {
+        if (StringUtils.isEmpty(json.newNamespace)) {
             throw new ErrorResultException("New namespace must have a value");
         }
 

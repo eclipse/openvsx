@@ -9,9 +9,10 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,8 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
+
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class RestTemplateConfig {
@@ -141,9 +144,8 @@ public class RestTemplateConfig {
 
     private HttpClientBuilder createHttpClientBuilder(HttpConnPoolConfig httpConnPoolConfig) {
         var requestConfig = RequestConfig.custom()
-                .setConnectionRequestTimeout(httpConnPoolConfig.getConnectionRequestTimeout())
-                .setConnectTimeout(httpConnPoolConfig.getConnectTimeout())
-                .setSocketTimeout(httpConnPoolConfig.getSocketTimeout())
+                .setConnectionRequestTimeout(Timeout.of(httpConnPoolConfig.getConnectionRequestTimeout(), TimeUnit.MILLISECONDS))
+                .setConnectTimeout(Timeout.of(httpConnPoolConfig.getConnectTimeout(), TimeUnit.MILLISECONDS))
                 .build();
         return HttpClientBuilder
                 .create()
