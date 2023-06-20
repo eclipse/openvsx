@@ -894,7 +894,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getReviews(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
@@ -1012,7 +1012,7 @@ public class RegistryAPI {
         }
 
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .cacheControl(CacheControl.noCache().cachePublic())
                 .body(result);
     }
 

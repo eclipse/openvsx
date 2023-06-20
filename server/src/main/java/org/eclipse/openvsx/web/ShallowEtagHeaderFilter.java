@@ -15,15 +15,12 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ShallowEtagHeaderFilter extends org.springframework.web.filter.ShallowEtagHeaderFilter {
 
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        // limit the filter to /api/{namespace}/{extension}, /api/{namespace}/details
-        // and /api/{namespace}/{extension}/{version} endpoints
+        // limit the filter to /api/{namespace}/{extension}, /api/{namespace}/details,
+        // /api/{namespace}/{extension}/{version}, and /api/-/search endpoints
         var path = request.getRequestURI().substring(1).split("/");
-        var applyFilter = path.length == 3 || path.length == 4;
-        if(applyFilter) {
-            applyFilter = path[0].equals("api") && !path[1].equals("-");
-        }
-        if(applyFilter && path.length == 4) {
-            applyFilter = !(path[3].equals("review") || path[3].equals("reviews"));
+        var applyFilter = (path.length == 3 || path.length == 4) && path[0].equals("api");
+        if(applyFilter && path[1].equals("-")) {
+            applyFilter = path[2].contains("search");
         }
 
         return !applyFilter;

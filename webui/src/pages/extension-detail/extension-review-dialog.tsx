@@ -109,9 +109,9 @@ class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDial
             return null;
         }
         return <React.Fragment>
-            <Button variant='contained' color='secondary' onClick={this.handleOpenButton}>
+            {!this.state.posted && (<Button variant='contained' color='secondary' onClick={this.handleOpenButton}>
                 Write a Review
-            </Button>
+            </Button>)}
             <Dialog open={this.state.open} onClose={this.handleCancel}>
                 <DialogTitle>{this.props.extension.displayName || this.props.extension.name} Review</DialogTitle>
                 <DialogContent>
