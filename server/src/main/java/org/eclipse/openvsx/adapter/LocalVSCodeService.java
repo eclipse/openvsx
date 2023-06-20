@@ -12,6 +12,7 @@ package org.eclipse.openvsx.adapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -386,15 +387,20 @@ public class LocalVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path) {
+    public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String targetPlatform, String path) {
         if(isBuiltInExtensionNamespace(namespaceName)) {
             return new ResponseEntity<>(("Built-in extension namespace '" + namespaceName + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
         }
 
-        var extVersions = repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName);
-        var extVersion = extVersions.stream().max(Comparator.<ExtensionVersion, Boolean>comparing(ExtensionVersion::isUniversalTargetPlatform)
-                .thenComparing(ExtensionVersion::getTargetPlatform))
-                .orElse(null);
+        ExtensionVersion extVersion;
+        if(StringUtils.isEmpty(targetPlatform)) {
+            var extVersions = repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName);
+            extVersion = extVersions.stream().max(Comparator.<ExtensionVersion, Boolean>comparing(ExtensionVersion::isUniversalTargetPlatform)
+                            .thenComparing(ExtensionVersion::getTargetPlatform))
+                            .orElse(null);
+        } else {
+            extVersion = repositories.findActiveExtensionVersionByVersion(version, targetPlatform, extensionName, namespaceName);
+        }
 
         if (extVersion == null) {
             throw new NotFoundException();
@@ -412,7 +418,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
         return exactMatch != null
                 ? browseFile(exactMatch, namespaceName, extensionName, extVersion.getTargetPlatform(), version)
-                : browseDirectory(resources, namespaceName, extensionName, version, path);
+                : browseDirectory(resources, namespaceName, extensionName, targetPlatform, version, path);
     }
 
     private ResponseEntity<byte[]> browseFile(
@@ -454,11 +460,15 @@ public class LocalVSCodeService implements IVSCodeService {
             List<FileResource> resources,
             String namespaceName,
             String extensionName,
+            String targetPlatform,
             String version,
             String path
     ) {
         if(!path.isEmpty() && !path.endsWith("/")) {
             path += "/";
+        }
+        if(StringUtils.isNotEmpty(targetPlatform)) {
+            version += "+" + targetPlatform;
         }
 
         var urls = new HashSet<String>();

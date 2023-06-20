@@ -11,6 +11,7 @@ package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UpstreamProxyService;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.util.HttpHeadersUtil;
@@ -76,7 +77,11 @@ public class UpstreamVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path) {
+    public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String targetPlatform, String path) {
+        if(StringUtils.isNotEmpty(targetPlatform)) {
+            version += "+" + targetPlatform;
+        }
+
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/vscode/unpkg/{namespace}/{extension}/{version}";
         var uriVariables = new HashMap<>(Map.of(
             "namespace", namespaceName,
