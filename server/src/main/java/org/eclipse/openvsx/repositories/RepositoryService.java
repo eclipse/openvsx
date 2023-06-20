@@ -337,6 +337,10 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findAllActiveByVersionAndExtensionNameAndNamespaceName(version, extensionName, namespaceName);
     }
 
+    public ExtensionVersion findActiveExtensionVersionByVersion(String version, String targetPlatform, String extensionName, String namespaceName) {
+        return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndActiveTrue(version, targetPlatform, extensionName, namespaceName);
+    }
+
     public List<ExtensionVersion> findActiveExtensionVersionsByExtensionName(String targetPlatform, String extensionName, String namespaceName) {
         return extensionVersionJooqRepo.findAllActiveByExtensionNameAndNamespaceName(targetPlatform, extensionName, namespaceName);
     }

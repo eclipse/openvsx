@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
@@ -129,12 +130,26 @@ public class VSCodeAPI {
             HttpServletRequest request,
             @PathVariable String namespaceName,
             @PathVariable String extensionName,
-            @PathVariable String version
+            @PathVariable String version,
+            @RequestParam(required = false) String target
     ) {
+        if(StringUtils.isEmpty(target)) {
+            var index = version.lastIndexOf('+');
+            if(index >= 0 && index + 1 < version.length()) {
+                target = version.substring(index + 1);
+                if(TargetPlatform.isValid(target)) {
+                    version = version.substring(0, index);
+                }
+            }
+        }
+        if(StringUtils.isNotEmpty(target) && !TargetPlatform.isValid(target)) {
+            target = null;
+        }
+
         var path = UrlUtil.extractWildcardPath(request);
         for (var service : getVSCodeServices()) {
             try {
-                return service.browse(namespaceName, extensionName, version, path);
+                return service.browse(namespaceName, extensionName, version, target, path);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }

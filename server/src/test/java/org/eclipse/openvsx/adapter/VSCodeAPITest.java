@@ -374,6 +374,80 @@ public class VSCodeAPITest {
     }
 
     @Test
+    public void testBrowseTopDirTargetPlatform() throws Exception {
+        var version = "1.3.4";
+        var targetPlatform = "linux-x64";
+        var extensionName = "bar";
+        var namespaceName = "foo";
+        var namespace = new Namespace();
+        namespace.setName(namespaceName);
+        var extension = new Extension();
+        extension.setId(0L);
+        extension.setName(extensionName);
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(targetPlatform);
+        extVersion.setExtension(extension);
+
+        Mockito.when(repositories.findActiveExtensionVersionByVersion(version, targetPlatform, extensionName, namespaceName))
+                .thenReturn(extVersion);
+
+        var vsixResource = mockFileResource(15, extVersion, "extension.vsixmanifest", RESOURCE, STORAGE_DB, "<xml></xml>".getBytes(StandardCharsets.UTF_8));
+        var manifestResource = mockFileResource(16, extVersion, "extension/package.json", RESOURCE, STORAGE_DB, "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8));
+        var readmeResource = mockFileResource(17, extVersion, "extension/README.md", RESOURCE, STORAGE_DB, "README".getBytes(StandardCharsets.UTF_8));
+        var changelogResource = mockFileResource(18, extVersion, "extension/CHANGELOG.md", RESOURCE, STORAGE_DB, "CHANGELOG".getBytes(StandardCharsets.UTF_8));
+        var licenseResource = mockFileResource(19, extVersion, "extension/LICENSE.txt", RESOURCE, STORAGE_DB, "LICENSE".getBytes(StandardCharsets.UTF_8));
+        var iconResource = mockFileResource(20, extVersion, "extension/images/icon128.png", RESOURCE, STORAGE_DB, "ICON128".getBytes(StandardCharsets.UTF_8));
+
+        Mockito.when(repositories.findResourceFileResources(1L, ""))
+                .thenReturn(List.of(vsixResource, manifestResource, readmeResource, changelogResource, licenseResource, iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}?target={targetPlatform}", namespaceName, extensionName, version, targetPlatform))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("[\"http://localhost/vscode/unpkg/foo/bar/1.3.4+linux-x64/extension.vsixmanifest\",\"http://localhost/vscode/unpkg/foo/bar/1.3.4+linux-x64/extension/\"]"));
+    }
+
+    @Test
+    public void testBrowseTopDirVersionTargetPlatform() throws Exception {
+        var version = "1.3.4-rc-1+armhf";
+        var targetPlatform = "darwin-x64";
+        var extensionName = "bar";
+        var namespaceName = "foo";
+        var namespace = new Namespace();
+        namespace.setName(namespaceName);
+        var extension = new Extension();
+        extension.setId(0L);
+        extension.setName(extensionName);
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(targetPlatform);
+        extVersion.setExtension(extension);
+
+        Mockito.when(repositories.findActiveExtensionVersionByVersion(version, targetPlatform, extensionName, namespaceName))
+                .thenReturn(extVersion);
+
+        var vsixResource = mockFileResource(15, extVersion, "extension.vsixmanifest", RESOURCE, STORAGE_DB, "<xml></xml>".getBytes(StandardCharsets.UTF_8));
+        var manifestResource = mockFileResource(16, extVersion, "extension/package.json", RESOURCE, STORAGE_DB, "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8));
+        var readmeResource = mockFileResource(17, extVersion, "extension/README.md", RESOURCE, STORAGE_DB, "README".getBytes(StandardCharsets.UTF_8));
+        var changelogResource = mockFileResource(18, extVersion, "extension/CHANGELOG.md", RESOURCE, STORAGE_DB, "CHANGELOG".getBytes(StandardCharsets.UTF_8));
+        var licenseResource = mockFileResource(19, extVersion, "extension/LICENSE.txt", RESOURCE, STORAGE_DB, "LICENSE".getBytes(StandardCharsets.UTF_8));
+        var iconResource = mockFileResource(20, extVersion, "extension/images/icon128.png", RESOURCE, STORAGE_DB, "ICON128".getBytes(StandardCharsets.UTF_8));
+
+        Mockito.when(repositories.findResourceFileResources(1L, ""))
+                .thenReturn(List.of(vsixResource, manifestResource, readmeResource, changelogResource, licenseResource, iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}+{targetPlatform}", namespaceName, extensionName, version, targetPlatform))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("[\"http://localhost/vscode/unpkg/foo/bar/1.3.4-rc-1+armhf+darwin-x64/extension.vsixmanifest\",\"http://localhost/vscode/unpkg/foo/bar/1.3.4-rc-1+armhf+darwin-x64/extension/\"]"));
+    }
+
+    @Test
     public void testBrowseVsixManifest() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
@@ -575,6 +649,95 @@ public class VSCodeAPITest {
     @Test
     public void testBrowseIcon() throws Exception {
         var version = "1.3.4";
+        var extensionName = "bar";
+        var namespaceName = "foo";
+        var namespace = new Namespace();
+        namespace.setName(namespaceName);
+        var extension = new Extension();
+        extension.setId(0L);
+        extension.setName(extensionName);
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extVersion.setExtension(extension);
+        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
+                .thenReturn(List.of(extVersion));
+
+        var content = "ICON128".getBytes(StandardCharsets.UTF_8);
+        var iconResource = mockFileResource(20, extVersion, "extension/images/icon128.png", RESOURCE, STORAGE_DB, content);
+        Mockito.when(repositories.findResourceFileResources(1L, "extension/images/icon128.png"))
+                .thenReturn(List.of(iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/images/icon128.png"))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(content));
+    }
+
+    @Test
+    public void testBrowseIconTargetPlatform() throws Exception {
+        var version = "1.3.4";
+        var targetPlatform = "win32-x64";
+        var extensionName = "bar";
+        var namespaceName = "foo";
+        var namespace = new Namespace();
+        namespace.setName(namespaceName);
+        var extension = new Extension();
+        extension.setId(0L);
+        extension.setName(extensionName);
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(targetPlatform);
+        extVersion.setExtension(extension);
+        Mockito.when(repositories.findActiveExtensionVersionByVersion(version, targetPlatform, extensionName, namespaceName))
+                .thenReturn(extVersion);
+
+        var content = "ICON128".getBytes(StandardCharsets.UTF_8);
+        var iconResource = mockFileResource(20, extVersion, "extension/images/icon128.png", RESOURCE, STORAGE_DB, content);
+        Mockito.when(repositories.findResourceFileResources(1L, "extension/images/icon128.png"))
+                .thenReturn(List.of(iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}?target={targetPlatform}", namespaceName, extensionName, version, "extension/images/icon128.png", targetPlatform))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(content));
+    }
+
+    @Test
+    public void testBrowseIconVersionTargetPlatform() throws Exception {
+        var version = "1.3.4-ga+armhf";
+        var targetPlatform = "alpine-x64";
+        var extensionName = "bar";
+        var namespaceName = "foo";
+        var namespace = new Namespace();
+        namespace.setName(namespaceName);
+        var extension = new Extension();
+        extension.setId(0L);
+        extension.setName(extensionName);
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(targetPlatform);
+        extVersion.setExtension(extension);
+        Mockito.when(repositories.findActiveExtensionVersionByVersion(version, targetPlatform, extensionName, namespaceName))
+                .thenReturn(extVersion);
+
+        var content = "ICON128".getBytes(StandardCharsets.UTF_8);
+        var iconResource = mockFileResource(20, extVersion, "extension/images/icon128.png", RESOURCE, STORAGE_DB, content);
+        Mockito.when(repositories.findResourceFileResources(1L, "extension/images/icon128.png"))
+                .thenReturn(List.of(iconResource));
+
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}+{targetPlatform}/{path}", namespaceName, extensionName, version, targetPlatform, "extension/images/icon128.png"))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(content));
+    }
+
+    @Test
+    public void testBrowseIconVersionInvalidTargetPlatform() throws Exception {
+        var version = "1.3.4-ga+armhf";
         var extensionName = "bar";
         var namespaceName = "foo";
         var namespace = new Namespace();

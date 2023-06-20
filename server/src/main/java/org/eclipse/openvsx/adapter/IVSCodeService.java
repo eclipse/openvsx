@@ -15,7 +15,7 @@ public interface IVSCodeService {
 
     ExtensionQueryResult extensionQuery(ExtensionQueryParam param, int defaultPageSize);
 
-    ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path);
+    ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String targetPlatform, String path);
 
     String download(String namespace, String extension, String version, String targetPlatform);
 

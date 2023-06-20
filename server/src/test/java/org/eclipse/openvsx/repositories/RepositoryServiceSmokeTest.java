@@ -156,6 +156,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.topNamespaceExtensionVersions(NOW, 1),
                 () -> repositories.findFileResourcesByExtensionVersionIdAndType(LONG_LIST, STRING_LIST),
                 () -> repositories.findActiveExtensionVersionsByVersion("version", "extensionName", "namespaceName"),
+                () -> repositories.findActiveExtensionVersionByVersion("version", "targetPlatform", "extensionName", "namespaceName"),
                 () -> repositories.findResourceFileResources(1L, "prefix"),
                 () -> repositories.findActiveExtensionVersions(LONG_LIST, "targetPlatform"),
                 () -> repositories.findActiveExtension("name", "namespaceName"),
