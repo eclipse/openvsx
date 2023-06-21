@@ -12,6 +12,7 @@ import * as React from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Grid, Fade } from '@material-ui/core';
 import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
+import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import { MainContext } from '../../context';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 import { SearchEntry } from '../../extension-registry-types';
@@ -90,7 +91,7 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
         const { icon } = this.state;
         const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
         const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
-        const reviewCountFormatted = numberFormat.format(extension.reviewCount || 0);
+        const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
         return <React.Fragment>
             <Fade in={true} timeout={{ enter: ((this.props.filterSize + this.props.idx) % this.props.filterSize) * 200 }}>
                 <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name} className={classes.extensionCard}>
@@ -116,7 +117,8 @@ class ExtensionListItemComponent extends React.Component<ExtensionListItemCompon
                             </Box>
                             <Box display='flex' justifyContent='center'>
                                 <ExportRatingStars number={extension.averageRating || 0} fontSize='small'/>
-                                ({reviewCountFormatted})
+                                &nbsp;
+                                {downloadCountFormatted != "0" && <><SaveAltIcon/> {downloadCountFormatted}</>}
                             </Box>
                         </Paper>
                     </RouteLink>
