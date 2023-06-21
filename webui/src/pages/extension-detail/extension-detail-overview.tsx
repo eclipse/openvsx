@@ -32,7 +32,13 @@ const overviewStyles = (theme: Theme) => createStyles({
         marginTop: theme.spacing(2),
         [theme.breakpoints.down('lg')]: {
             flexDirection: 'column-reverse',
-        }
+        },
+        'h1': {
+            margin: '4.5rem 0 3rem'
+        },
+        'h2': {
+            marginBottom: '3.5rem 0 2.5rem'
+        },
     },
     resourcesWrapper: {
         flex: 1,
