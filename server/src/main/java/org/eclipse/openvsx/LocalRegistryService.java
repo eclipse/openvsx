@@ -640,7 +640,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var extVersion = extensions.publishVersion(content, token);
         var json = toExtensionVersionJson(extVersion, null, true, true);
-        json.success = "It can take a couple minutes before the extension version is available";
+        json.success = "It can take a couple minutes before the extension version becomes active";
 
         var sameVersions = repositories.findVersions(extVersion.getVersion(), extVersion.getExtension());
         if(sameVersions.stream().anyMatch(ev -> ev.isPreRelease() != extVersion.isPreRelease())) {

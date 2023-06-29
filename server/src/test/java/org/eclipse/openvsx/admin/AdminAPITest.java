@@ -20,7 +20,7 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
-import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
+import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
@@ -71,7 +71,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
-    CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class,
+    CacheService.class, PublishExtensionVersionService.class, SearchUtilService.class,
     EclipseService.class, SimpleMeterRegistry.class
 })
 public class AdminAPITest {

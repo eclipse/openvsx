@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.adapter;
 
 import com.google.common.collect.Lists;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
@@ -42,6 +44,14 @@ public class VSCodeIdService {
 
     @Autowired
     UrlConfigService urlConfigService;
+
+    @Autowired
+    EntityManager entityManager;
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public void updateExtensionPublicId(Extension extension) {
+        entityManager.merge(extension);
+    }
 
     public boolean setPublicIds(Extension extension) {
         var updateExistingPublicIds = false;

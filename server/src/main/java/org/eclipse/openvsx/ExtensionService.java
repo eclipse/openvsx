@@ -22,12 +22,14 @@ import jakarta.transaction.Transactional.TxType;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
+import org.eclipse.openvsx.publish.PublishExtensionVersionJobRequest;
+import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -48,7 +50,10 @@ public class ExtensionService {
     CacheService cache;
 
     @Autowired
-    PublishExtensionVersionHandler publishHandler;
+    PublishExtensionVersionService publishService;
+
+    @Autowired
+    JobRequestScheduler scheduler;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
@@ -56,20 +61,29 @@ public class ExtensionService {
     @Transactional
     public ExtensionVersion mirrorVersion(TempFile extensionFile, String signatureName, PersonalAccessToken token, String binaryName, String timestamp) {
         var download = doPublish(extensionFile, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
-        publishHandler.mirror(download, extensionFile, signatureName);
+        publishService.mirror(download, extensionFile, signatureName);
         return download.getExtension();
     }
 
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
-        var extensionFile = createExtensionFile(content);
-        var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-        publishHandler.publishAsync(download, extensionFile, this);
-        return download.getExtension();
+        try(var extensionFile = createExtensionFile(content)) {
+            var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+            download.setContent(Files.readAllBytes(extensionFile.getPath()));
+            download.setStorageType(FileResource.STORAGE_DB);
+            publishService.persistDownload(download);
+
+            var jobRequest = new PublishExtensionVersionJobRequest(download.getId());
+            scheduler.enqueue(jobRequest);
+
+            return download.getExtension();
+        } catch (IOException e) {
+            throw new ErrorResultException("failed to read extension VSIX package", e);
+        }
     }
 
     private FileResource doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         try (var processor = new ExtensionProcessor(extensionFile)) {
-            var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
+            var extVersion = publishService.createExtensionVersion(processor, token, timestamp, checkDependencies);
             if (requireLicense) {
                 // Check the extension's license
                 var license = processor.getLicense(extVersion);

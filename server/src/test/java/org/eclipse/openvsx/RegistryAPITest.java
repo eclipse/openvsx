@@ -21,7 +21,6 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
-import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
@@ -36,6 +35,7 @@ import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -84,7 +84,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
-    EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class
+    EclipseService.class, SimpleMeterRegistry.class, JobRequestScheduler.class
 })
 public class RegistryAPITest {
 
@@ -2314,8 +2314,8 @@ public class RegistryAPITest {
         }
 
         @Bean
-        PublishExtensionVersionHandler publishExtensionVersionHandler() {
-            return new PublishExtensionVersionHandler();
+        PublishExtensionVersionService publishExtensionVersionService() {
+            return new PublishExtensionVersionService();
         }
     }
 }
