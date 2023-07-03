@@ -84,6 +84,7 @@ public class PublishExtensionVersionHandler {
             extVersion.setSignatureKeyPair(repositories.findActiveKeyPair());
         }
 
+        entityManager.flush();
         return extVersion;
     }
 

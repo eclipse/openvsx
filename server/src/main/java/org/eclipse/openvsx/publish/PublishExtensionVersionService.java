@@ -79,7 +79,6 @@ public class PublishExtensionVersionService {
 
     @Transactional
     public void persistResource(FileResource resource) {
-        resource.setExtension(entityManager.merge(resource.getExtension()));
         entityManager.persist(resource);
     }
 
