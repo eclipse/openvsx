@@ -273,13 +273,13 @@ public class ExtensionVersionJooqRepository {
             conditions.add(NAMESPACE.PUBLIC_ID.eq(request.namespaceUuid));
         }
         if (!StringUtils.isEmpty(request.namespaceName)) {
-            conditions.add(NAMESPACE.NAME.eq(request.namespaceName));
+            conditions.add(DSL.upper(NAMESPACE.NAME).eq(DSL.upper(request.namespaceName)));
         }
         if (!StringUtils.isEmpty(request.extensionUuid)) {
             conditions.add(EXTENSION.PUBLIC_ID.eq(request.extensionUuid));
         }
         if (!StringUtils.isEmpty(request.extensionName)) {
-            conditions.add(EXTENSION.NAME.eq(request.extensionName));
+            conditions.add(DSL.upper(EXTENSION.NAME).eq(DSL.upper(request.extensionName)));
         }
         if(request.targetPlatform != null) {
             conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(request.targetPlatform));
