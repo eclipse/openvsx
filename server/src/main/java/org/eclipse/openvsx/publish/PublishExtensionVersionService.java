@@ -43,6 +43,7 @@ public class PublishExtensionVersionService {
         repositories.findFiles(extVersion).forEach(entityManager::remove);
     }
 
+    @Retryable
     public void storeDownload(FileResource download, TempFile extensionFile) {
         if (storageUtil.shouldStoreExternally(download)) {
             storageUtil.uploadFile(download, extensionFile);
@@ -78,8 +79,7 @@ public class PublishExtensionVersionService {
     }
 
     @Transactional
-    public void persistResource(FileResource resource) {
-        resource.setExtension(entityManager.merge(resource.getExtension()));
+    public synchronized void persistResource(FileResource resource) {
         entityManager.persist(resource);
     }
 

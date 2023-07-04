@@ -23,7 +23,7 @@ def versions = [
     springdoc: '2.1.0',
     spdx: '2.2.8',
     gcloud: '2.22.3',
-    azure: '12.18.0',
+    azure: '12.23.0',
     guava: '30.0-jre',
     junit: '5.7.1',
     testcontainers: '1.15.2',

@@ -63,7 +63,7 @@ public class PublishExtensionVersionHandler {
     @Autowired
     ExtensionValidator validator;
 
-    @Transactional
+    @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionVersion createExtensionVersion(ExtensionProcessor processor, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         // Extract extension metadata from its manifest
         var extVersion = createExtensionVersion(processor, token.getUser(), token, timestamp);
