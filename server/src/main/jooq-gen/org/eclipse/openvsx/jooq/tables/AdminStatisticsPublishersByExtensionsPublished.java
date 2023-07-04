@@ -6,16 +6,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsPublishersByExtensionsPublishedRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function3;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row3;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -33,7 +37,8 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>public.admin_statistics_publishers_by_extensions_published</code>
+     * The reference instance of
+     * <code>public.admin_statistics_publishers_by_extensions_published</code>
      */
     public static final AdminStatisticsPublishersByExtensionsPublished ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED = new AdminStatisticsPublishersByExtensionsPublished();
 
@@ -46,17 +51,20 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
     }
 
     /**
-     * The column <code>public.admin_statistics_publishers_by_extensions_published.admin_statistics_id</code>.
+     * The column
+     * <code>public.admin_statistics_publishers_by_extensions_published.admin_statistics_id</code>.
      */
     public final TableField<AdminStatisticsPublishersByExtensionsPublishedRecord, Long> ADMIN_STATISTICS_ID = createField(DSL.name("admin_statistics_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_publishers_by_extensions_published.extensions_published</code>.
+     * The column
+     * <code>public.admin_statistics_publishers_by_extensions_published.extensions_published</code>.
      */
     public final TableField<AdminStatisticsPublishersByExtensionsPublishedRecord, Integer> EXTENSIONS_PUBLISHED = createField(DSL.name("extensions_published"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_publishers_by_extensions_published.publishers</code>.
+     * The column
+     * <code>public.admin_statistics_publishers_by_extensions_published.publishers</code>.
      */
     public final TableField<AdminStatisticsPublishersByExtensionsPublishedRecord, Integer> PUBLISHERS = createField(DSL.name("publishers"), SQLDataType.INTEGER.nullable(false), this, "");
 
@@ -69,21 +77,27 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_publishers_by_extensions_published</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_publishers_by_extensions_published</code>
+     * table reference
      */
     public AdminStatisticsPublishersByExtensionsPublished(String alias) {
         this(DSL.name(alias), ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED);
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_publishers_by_extensions_published</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_publishers_by_extensions_published</code>
+     * table reference
      */
     public AdminStatisticsPublishersByExtensionsPublished(Name alias) {
         this(alias, ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED);
     }
 
     /**
-     * Create a <code>public.admin_statistics_publishers_by_extensions_published</code> table reference
+     * Create a
+     * <code>public.admin_statistics_publishers_by_extensions_published</code>
+     * table reference
      */
     public AdminStatisticsPublishersByExtensionsPublished() {
         this(DSL.name("admin_statistics_publishers_by_extensions_published"), null);
@@ -95,16 +109,20 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<ForeignKey<AdminStatisticsPublishersByExtensionsPublishedRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<AdminStatisticsPublishersByExtensionsPublishedRecord, ?>>asList(Keys.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY);
+        return Arrays.asList(Keys.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY);
     }
 
     private transient AdminStatistics _adminStatistics;
 
+    /**
+     * Get the implicit join path to the <code>public.admin_statistics</code>
+     * table.
+     */
     public AdminStatistics adminStatistics() {
         if (_adminStatistics == null)
             _adminStatistics = new AdminStatistics(this, Keys.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY);
@@ -120,6 +138,11 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
     @Override
     public AdminStatisticsPublishersByExtensionsPublished as(Name alias) {
         return new AdminStatisticsPublishersByExtensionsPublished(alias, this);
+    }
+
+    @Override
+    public AdminStatisticsPublishersByExtensionsPublished as(Table<?> alias) {
+        return new AdminStatisticsPublishersByExtensionsPublished(alias.getQualifiedName(), this);
     }
 
     /**
@@ -138,6 +161,14 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
         return new AdminStatisticsPublishersByExtensionsPublished(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public AdminStatisticsPublishersByExtensionsPublished rename(Table<?> name) {
+        return new AdminStatisticsPublishersByExtensionsPublished(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row3 type methods
     // -------------------------------------------------------------------------
@@ -145,5 +176,20 @@ public class AdminStatisticsPublishersByExtensionsPublished extends TableImpl<Ad
     @Override
     public Row3<Long, Integer, Integer> fieldsRow() {
         return (Row3) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function3<? super Long, ? super Integer, ? super Integer, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function3<? super Long, ? super Integer, ? super Integer, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

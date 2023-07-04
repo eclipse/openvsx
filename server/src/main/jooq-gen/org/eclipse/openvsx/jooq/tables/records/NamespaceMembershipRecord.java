@@ -213,5 +213,6 @@ public class NamespaceMembershipRecord extends UpdatableRecordImpl<NamespaceMemb
         setRole(role);
         setNamespace(namespace);
         setUserData(userData);
+        resetChangedOnNotNull();
     }
 }

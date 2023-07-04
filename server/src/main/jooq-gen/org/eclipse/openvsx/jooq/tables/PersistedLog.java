@@ -7,6 +7,7 @@ package org.eclipse.openvsx.jooq.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -14,11 +15,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.PersistedLogRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function4;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row4;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -104,12 +108,12 @@ public class PersistedLog extends TableImpl<PersistedLogRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.PERSISTED_LOG__USER_DATA__IDX);
+        return Arrays.asList(Indexes.PERSISTED_LOG__USER_DATA__IDX);
     }
 
     @Override
@@ -118,17 +122,15 @@ public class PersistedLog extends TableImpl<PersistedLogRecord> {
     }
 
     @Override
-    public List<UniqueKey<PersistedLogRecord>> getKeys() {
-        return Arrays.<UniqueKey<PersistedLogRecord>>asList(Keys.PERSISTED_LOG_PKEY);
-    }
-
-    @Override
     public List<ForeignKey<PersistedLogRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<PersistedLogRecord, ?>>asList(Keys.PERSISTED_LOG__PERSISTED_LOG_USER_DATA_FKEY);
+        return Arrays.asList(Keys.PERSISTED_LOG__PERSISTED_LOG_USER_DATA_FKEY);
     }
 
     private transient UserData _userData;
 
+    /**
+     * Get the implicit join path to the <code>public.user_data</code> table.
+     */
     public UserData userData() {
         if (_userData == null)
             _userData = new UserData(this, Keys.PERSISTED_LOG__PERSISTED_LOG_USER_DATA_FKEY);
@@ -144,6 +146,11 @@ public class PersistedLog extends TableImpl<PersistedLogRecord> {
     @Override
     public PersistedLog as(Name alias) {
         return new PersistedLog(alias, this);
+    }
+
+    @Override
+    public PersistedLog as(Table<?> alias) {
+        return new PersistedLog(alias.getQualifiedName(), this);
     }
 
     /**
@@ -162,6 +169,14 @@ public class PersistedLog extends TableImpl<PersistedLogRecord> {
         return new PersistedLog(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public PersistedLog rename(Table<?> name) {
+        return new PersistedLog(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row4 type methods
     // -------------------------------------------------------------------------
@@ -169,5 +184,20 @@ public class PersistedLog extends TableImpl<PersistedLogRecord> {
     @Override
     public Row4<Long, LocalDateTime, Long, String> fieldsRow() {
         return (Row4) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function4<? super Long, ? super LocalDateTime, ? super Long, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super Long, ? super LocalDateTime, ? super Long, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

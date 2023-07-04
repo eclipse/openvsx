@@ -6,6 +6,7 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -13,11 +14,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function9;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row9;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -84,7 +88,8 @@ public class AdminStatistics extends TableImpl<AdminStatisticsRecord> {
     public final TableField<AdminStatisticsRecord, Long> PUBLISHERS = createField(DSL.name("publishers"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics.average_reviews_per_extension</code>.
+     * The column
+     * <code>public.admin_statistics.average_reviews_per_extension</code>.
      */
     public final TableField<AdminStatisticsRecord, Double> AVERAGE_REVIEWS_PER_EXTENSION = createField(DSL.name("average_reviews_per_extension"), SQLDataType.DOUBLE.nullable(false), this, "");
 
@@ -128,22 +133,17 @@ public class AdminStatistics extends TableImpl<AdminStatisticsRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.UNIQUE_ADMIN_STATISTICS);
+        return Arrays.asList(Indexes.UNIQUE_ADMIN_STATISTICS);
     }
 
     @Override
     public UniqueKey<AdminStatisticsRecord> getPrimaryKey() {
         return Keys.ADMIN_STATISTICS_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<AdminStatisticsRecord>> getKeys() {
-        return Arrays.<UniqueKey<AdminStatisticsRecord>>asList(Keys.ADMIN_STATISTICS_PKEY);
     }
 
     @Override
@@ -154,6 +154,11 @@ public class AdminStatistics extends TableImpl<AdminStatisticsRecord> {
     @Override
     public AdminStatistics as(Name alias) {
         return new AdminStatistics(alias, this);
+    }
+
+    @Override
+    public AdminStatistics as(Table<?> alias) {
+        return new AdminStatistics(alias.getQualifiedName(), this);
     }
 
     /**
@@ -172,6 +177,14 @@ public class AdminStatistics extends TableImpl<AdminStatisticsRecord> {
         return new AdminStatistics(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public AdminStatistics rename(Table<?> name) {
+        return new AdminStatistics(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row9 type methods
     // -------------------------------------------------------------------------
@@ -179,5 +192,20 @@ public class AdminStatistics extends TableImpl<AdminStatisticsRecord> {
     @Override
     public Row9<Long, Integer, Integer, Long, Long, Long, Long, Double, Long> fieldsRow() {
         return (Row9) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function9<? super Long, ? super Integer, ? super Integer, ? super Long, ? super Long, ? super Long, ? super Long, ? super Double, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function9<? super Long, ? super Integer, ? super Integer, ? super Long, ? super Long, ? super Long, ? super Long, ? super Double, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

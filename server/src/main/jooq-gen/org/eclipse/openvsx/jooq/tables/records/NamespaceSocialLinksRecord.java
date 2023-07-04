@@ -166,5 +166,6 @@ public class NamespaceSocialLinksRecord extends TableRecordImpl<NamespaceSocialL
         setNamespaceId(namespaceId);
         setProvider(provider);
         setSocialLink(socialLink);
+        resetChangedOnNotNull();
     }
 }

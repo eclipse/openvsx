@@ -324,5 +324,6 @@ public class SpringSessionRecord extends UpdatableRecordImpl<SpringSessionRecord
         setMaxInactiveInterval(maxInactiveInterval);
         setExpiryTime(expiryTime);
         setPrincipalName(principalName);
+        resetChangedOnNotNull();
     }
 }

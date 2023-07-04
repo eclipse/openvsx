@@ -74,7 +74,7 @@ import org.jooq.impl.Internal;
 
 
 /**
- * A class modelling foreign key relationships and constraints of tables in 
+ * A class modelling foreign key relationships and constraints of tables in
  * public.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
@@ -104,13 +104,16 @@ public class Keys {
     public static final UniqueKey<NamespaceRecord> NAMESPACE_PKEY = Internal.createUniqueKey(Namespace.NAMESPACE, DSL.name("namespace_pkey"), new TableField[] { Namespace.NAMESPACE.ID }, true);
     public static final UniqueKey<NamespaceRecord> UNIQUE_NAMESPACE_PUBLIC_ID = Internal.createUniqueKey(Namespace.NAMESPACE, DSL.name("unique_namespace_public_id"), new TableField[] { Namespace.NAMESPACE.PUBLIC_ID }, true);
     public static final UniqueKey<NamespaceMembershipRecord> NAMESPACE_MEMBERSHIP_PKEY = Internal.createUniqueKey(NamespaceMembership.NAMESPACE_MEMBERSHIP, DSL.name("namespace_membership_pkey"), new TableField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.ID }, true);
+    public static final UniqueKey<NamespaceMembershipRecord> UNIQUE_NAMESPACE_MEMBERSHIP = Internal.createUniqueKey(NamespaceMembership.NAMESPACE_MEMBERSHIP, DSL.name("unique_namespace_membership"), new TableField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.USER_DATA, NamespaceMembership.NAMESPACE_MEMBERSHIP.NAMESPACE }, true);
     public static final UniqueKey<PersistedLogRecord> PERSISTED_LOG_PKEY = Internal.createUniqueKey(PersistedLog.PERSISTED_LOG, DSL.name("persisted_log_pkey"), new TableField[] { PersistedLog.PERSISTED_LOG.ID }, true);
     public static final UniqueKey<PersonalAccessTokenRecord> PERSONAL_ACCESS_TOKEN_PKEY = Internal.createUniqueKey(PersonalAccessToken.PERSONAL_ACCESS_TOKEN, DSL.name("personal_access_token_pkey"), new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.ID }, true);
     public static final UniqueKey<PersonalAccessTokenRecord> UKJEUD5MSSQBQKID58RD2K1INOF = Internal.createUniqueKey(PersonalAccessToken.PERSONAL_ACCESS_TOKEN, DSL.name("ukjeud5mssqbqkid58rd2k1inof"), new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.VALUE }, true);
     public static final UniqueKey<ShedlockRecord> SHEDLOCK_PKEY = Internal.createUniqueKey(Shedlock.SHEDLOCK, DSL.name("shedlock_pkey"), new TableField[] { Shedlock.SHEDLOCK.NAME }, true);
     public static final UniqueKey<SignatureKeyPairRecord> SIGNATURE_KEY_PAIR_PKEY = Internal.createUniqueKey(SignatureKeyPair.SIGNATURE_KEY_PAIR, DSL.name("signature_key_pair_pkey"), new TableField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.ID }, true);
+    public static final UniqueKey<SignatureKeyPairRecord> SIGNATURE_KEY_PAIR_UNIQUE_PUBLIC_ID = Internal.createUniqueKey(SignatureKeyPair.SIGNATURE_KEY_PAIR, DSL.name("signature_key_pair_unique_public_id"), new TableField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.PUBLIC_ID }, true);
     public static final UniqueKey<SpringSessionRecord> SPRING_SESSION_PK = Internal.createUniqueKey(SpringSession.SPRING_SESSION, DSL.name("spring_session_pk"), new TableField[] { SpringSession.SPRING_SESSION.PRIMARY_ID }, true);
     public static final UniqueKey<SpringSessionAttributesRecord> SPRING_SESSION_ATTRIBUTES_PK = Internal.createUniqueKey(SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES, DSL.name("spring_session_attributes_pk"), new TableField[] { SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.SESSION_PRIMARY_ID, SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.ATTRIBUTE_NAME }, true);
+    public static final UniqueKey<UserDataRecord> UNIQUE_USER_DATA = Internal.createUniqueKey(UserData.USER_DATA, DSL.name("unique_user_data"), new TableField[] { UserData.USER_DATA.PROVIDER, UserData.USER_DATA.LOGIN_NAME }, true);
     public static final UniqueKey<UserDataRecord> USER_DATA_PKEY = Internal.createUniqueKey(UserData.USER_DATA, DSL.name("user_data_pkey"), new TableField[] { UserData.USER_DATA.ID }, true);
 
     // -------------------------------------------------------------------------

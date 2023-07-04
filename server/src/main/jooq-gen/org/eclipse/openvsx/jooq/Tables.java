@@ -55,22 +55,26 @@ public class Tables {
     public static final AdminStatisticsExtensionsByRating ADMIN_STATISTICS_EXTENSIONS_BY_RATING = AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING;
 
     /**
-     * The table <code>public.admin_statistics_publishers_by_extensions_published</code>.
+     * The table
+     * <code>public.admin_statistics_publishers_by_extensions_published</code>.
      */
     public static final AdminStatisticsPublishersByExtensionsPublished ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED = AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED;
 
     /**
-     * The table <code>public.admin_statistics_top_most_active_publishing_users</code>.
+     * The table
+     * <code>public.admin_statistics_top_most_active_publishing_users</code>.
      */
     public static final AdminStatisticsTopMostActivePublishingUsers ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS = AdminStatisticsTopMostActivePublishingUsers.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS;
 
     /**
-     * The table <code>public.admin_statistics_top_most_downloaded_extensions</code>.
+     * The table
+     * <code>public.admin_statistics_top_most_downloaded_extensions</code>.
      */
     public static final AdminStatisticsTopMostDownloadedExtensions ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS = AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS;
 
     /**
-     * The table <code>public.admin_statistics_top_namespace_extension_versions</code>.
+     * The table
+     * <code>public.admin_statistics_top_namespace_extension_versions</code>.
      */
     public static final AdminStatisticsTopNamespaceExtensionVersions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS = AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS;
 

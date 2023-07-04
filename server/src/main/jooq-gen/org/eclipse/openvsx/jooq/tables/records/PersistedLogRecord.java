@@ -215,5 +215,6 @@ public class PersistedLogRecord extends UpdatableRecordImpl<PersistedLogRecord> 
         setTimestamp(timestamp);
         setUserData(userData);
         setMessage(message);
+        resetChangedOnNotNull();
     }
 }

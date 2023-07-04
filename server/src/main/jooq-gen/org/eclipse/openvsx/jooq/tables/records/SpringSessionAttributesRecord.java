@@ -21,14 +21,16 @@ public class SpringSessionAttributesRecord extends UpdatableRecordImpl<SpringSes
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>public.spring_session_attributes.session_primary_id</code>.
+     * Setter for
+     * <code>public.spring_session_attributes.session_primary_id</code>.
      */
     public void setSessionPrimaryId(String value) {
         set(0, value);
     }
 
     /**
-     * Getter for <code>public.spring_session_attributes.session_primary_id</code>.
+     * Getter for
+     * <code>public.spring_session_attributes.session_primary_id</code>.
      */
     public String getSessionPrimaryId() {
         return (String) get(0);
@@ -176,5 +178,6 @@ public class SpringSessionAttributesRecord extends UpdatableRecordImpl<SpringSes
         setSessionPrimaryId(sessionPrimaryId);
         setAttributeName(attributeName);
         setAttributeBytes(attributeBytes);
+        resetChangedOnNotNull();
     }
 }

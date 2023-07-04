@@ -1908,12 +1908,14 @@ public class RegistryAPITest {
         download.setType(DOWNLOAD);
         download.setStorageType(STORAGE_DB);
         download.setName("extension-1.0.0.vsix");
+        download.setContentType("application/zip");
         var signature = new FileResource();
         if(withSignature) {
             signature.setExtension(extVersion);
             signature.setType(DOWNLOAD_SIG);
             signature.setStorageType(STORAGE_DB);
             signature.setName("extension-1.0.0.sigzip");
+            signature.setContentType("application/sigzip");
         }
         Mockito.when(entityManager.merge(download)).thenReturn(download);
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection())).thenAnswer(invocation -> {
@@ -1963,6 +1965,7 @@ public class RegistryAPITest {
         resource.setName("README");
         resource.setType(FileResource.README);
         resource.setContent("Please read me".getBytes());
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
         resource.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "README"))
@@ -1979,6 +1982,7 @@ public class RegistryAPITest {
         resource.setName("CHANGELOG");
         resource.setType(FileResource.CHANGELOG);
         resource.setContent("All notable changes is documented here".getBytes());
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
         resource.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "CHANGELOG"))
@@ -1995,6 +1999,7 @@ public class RegistryAPITest {
         resource.setName("LICENSE");
         resource.setType(FileResource.LICENSE);
         resource.setContent("I never broke the Law! I am the law!".getBytes());
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
         resource.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByName(extVersion, "LICENSE"))
@@ -2008,9 +2013,10 @@ public class RegistryAPITest {
         var extVersion = mockExtension();
         var resource = new FileResource();
         resource.setExtension(extVersion);
-        resource.setName("DOWNLOAD");
+        resource.setName("package.vsix");
         resource.setType(FileResource.DOWNLOAD);
         resource.setContent("latest download".getBytes());
+        resource.setContentType("application/zip");
         resource.setStorageType(FileResource.STORAGE_DB);
         Mockito.when(entityManager.merge(resource)).thenReturn(resource);
         Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD))
@@ -2257,6 +2263,13 @@ public class RegistryAPITest {
                 (license == null ? "" : ",\"license\": \"" + license + "\"" ) +
             "}";
         archive.write(packageJson.getBytes());
+        archive.putNextEntry(new ZipEntry("[Content_Types].xml"));
+        var contentTypesXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">" +
+                    "<Default Extension=\".json\" ContentType=\"application/json\"/>" +
+                    "<Default Extension=\".vsixmanifest\" ContentType=\"text/xml\"/>" +
+                "</Types>";
+        archive.write(contentTypesXml.getBytes());
         archive.closeEntry();
         archive.finish();
         return bytes.toByteArray();

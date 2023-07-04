@@ -7,6 +7,7 @@ package org.eclipse.openvsx.jooq.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -14,11 +15,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionReviewRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function8;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row8;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -124,12 +128,12 @@ public class ExtensionReview extends TableImpl<ExtensionReviewRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.EXTENSION_REVIEW__EXTENSION_ID__IDX, Indexes.EXTENSION_REVIEW__USER_ID__IDX);
+        return Arrays.asList(Indexes.EXTENSION_REVIEW__EXTENSION_ID__IDX, Indexes.EXTENSION_REVIEW__USER_ID__IDX);
     }
 
     @Override
@@ -138,18 +142,16 @@ public class ExtensionReview extends TableImpl<ExtensionReviewRecord> {
     }
 
     @Override
-    public List<UniqueKey<ExtensionReviewRecord>> getKeys() {
-        return Arrays.<UniqueKey<ExtensionReviewRecord>>asList(Keys.EXTENSION_REVIEW_PKEY);
-    }
-
-    @Override
     public List<ForeignKey<ExtensionReviewRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<ExtensionReviewRecord, ?>>asList(Keys.EXTENSION_REVIEW__FKGD2DQDC23OGBNOBX8AFJFPNKP, Keys.EXTENSION_REVIEW__FKINJBN9GRK135Y6IK0UT4UJP0W);
+        return Arrays.asList(Keys.EXTENSION_REVIEW__FKGD2DQDC23OGBNOBX8AFJFPNKP, Keys.EXTENSION_REVIEW__FKINJBN9GRK135Y6IK0UT4UJP0W);
     }
 
     private transient Extension _extension;
     private transient UserData _userData;
 
+    /**
+     * Get the implicit join path to the <code>public.extension</code> table.
+     */
     public Extension extension() {
         if (_extension == null)
             _extension = new Extension(this, Keys.EXTENSION_REVIEW__FKGD2DQDC23OGBNOBX8AFJFPNKP);
@@ -157,6 +159,9 @@ public class ExtensionReview extends TableImpl<ExtensionReviewRecord> {
         return _extension;
     }
 
+    /**
+     * Get the implicit join path to the <code>public.user_data</code> table.
+     */
     public UserData userData() {
         if (_userData == null)
             _userData = new UserData(this, Keys.EXTENSION_REVIEW__FKINJBN9GRK135Y6IK0UT4UJP0W);
@@ -172,6 +177,11 @@ public class ExtensionReview extends TableImpl<ExtensionReviewRecord> {
     @Override
     public ExtensionReview as(Name alias) {
         return new ExtensionReview(alias, this);
+    }
+
+    @Override
+    public ExtensionReview as(Table<?> alias) {
+        return new ExtensionReview(alias.getQualifiedName(), this);
     }
 
     /**
@@ -190,6 +200,14 @@ public class ExtensionReview extends TableImpl<ExtensionReviewRecord> {
         return new ExtensionReview(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public ExtensionReview rename(Table<?> name) {
+        return new ExtensionReview(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row8 type methods
     // -------------------------------------------------------------------------
@@ -197,5 +215,20 @@ public class ExtensionReview extends TableImpl<ExtensionReviewRecord> {
     @Override
     public Row8<Long, Boolean, String, Integer, LocalDateTime, String, Long, Long> fieldsRow() {
         return (Row8) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function8<? super Long, ? super Boolean, ? super String, ? super Integer, ? super LocalDateTime, ? super String, ? super Long, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function8<? super Long, ? super Boolean, ? super String, ? super Integer, ? super LocalDateTime, ? super String, ? super Long, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

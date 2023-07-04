@@ -219,7 +219,8 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     public final TableField<ExtensionVersionRecord, String> SEMVER_BUILD_METADATA = createField(DSL.name("semver_build_metadata"), SQLDataType.VARCHAR, this, "");
 
     /**
-     * The column <code>public.extension_version.universal_target_platform</code>.
+     * The column
+     * <code>public.extension_version.universal_target_platform</code>.
      */
     public final TableField<ExtensionVersionRecord, Boolean> UNIVERSAL_TARGET_PLATFORM = createField(DSL.name("universal_target_platform"), SQLDataType.BOOLEAN, this, "");
 
@@ -258,12 +259,12 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX, Indexes.EXTENSION_VERSION_BY_TARGET_PLATFORM_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_LATEST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_LIST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_MAP_ORDER_BY_IDX);
+        return Arrays.asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX, Indexes.EXTENSION_VERSION_BY_TARGET_PLATFORM_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_LATEST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_LIST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_MAP_ORDER_BY_IDX);
     }
 
     @Override
@@ -272,19 +273,22 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     }
 
     @Override
-    public List<UniqueKey<ExtensionVersionRecord>> getKeys() {
-        return Arrays.<UniqueKey<ExtensionVersionRecord>>asList(Keys.EXTENSION_VERSION_PKEY, Keys.UNIQUE_EXTENSION_VERSION);
+    public List<UniqueKey<ExtensionVersionRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UNIQUE_EXTENSION_VERSION);
     }
 
     @Override
     public List<ForeignKey<ExtensionVersionRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<ExtensionVersionRecord, ?>>asList(Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY);
+        return Arrays.asList(Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY);
     }
 
     private transient Extension _extension;
     private transient PersonalAccessToken _personalAccessToken;
     private transient SignatureKeyPair _signatureKeyPair;
 
+    /**
+     * Get the implicit join path to the <code>public.extension</code> table.
+     */
     public Extension extension() {
         if (_extension == null)
             _extension = new Extension(this, Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT);
@@ -292,6 +296,10 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
         return _extension;
     }
 
+    /**
+     * Get the implicit join path to the
+     * <code>public.personal_access_token</code> table.
+     */
     public PersonalAccessToken personalAccessToken() {
         if (_personalAccessToken == null)
             _personalAccessToken = new PersonalAccessToken(this, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80);
@@ -299,6 +307,10 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
         return _personalAccessToken;
     }
 
+    /**
+     * Get the implicit join path to the <code>public.signature_key_pair</code>
+     * table.
+     */
     public SignatureKeyPair signatureKeyPair() {
         if (_signatureKeyPair == null)
             _signatureKeyPair = new SignatureKeyPair(this, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY);
@@ -316,6 +328,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
         return new ExtensionVersion(alias, this);
     }
 
+    @Override
+    public ExtensionVersion as(Table<?> alias) {
+        return new ExtensionVersion(alias.getQualifiedName(), this);
+    }
+
     /**
      * Rename this table
      */
@@ -330,5 +347,13 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     @Override
     public ExtensionVersion rename(Name name) {
         return new ExtensionVersion(name, null);
+    }
+
+    /**
+     * Rename this table
+     */
+    @Override
+    public ExtensionVersion rename(Table<?> name) {
+        return new ExtensionVersion(name.getQualifiedName(), null);
     }
 }

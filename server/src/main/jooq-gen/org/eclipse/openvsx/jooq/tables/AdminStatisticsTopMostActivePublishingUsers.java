@@ -6,16 +6,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopMostActivePublishingUsersRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function3;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row3;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -33,7 +37,8 @@ public class AdminStatisticsTopMostActivePublishingUsers extends TableImpl<Admin
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>public.admin_statistics_top_most_active_publishing_users</code>
+     * The reference instance of
+     * <code>public.admin_statistics_top_most_active_publishing_users</code>
      */
     public static final AdminStatisticsTopMostActivePublishingUsers ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS = new AdminStatisticsTopMostActivePublishingUsers();
 
@@ -46,17 +51,20 @@ public class AdminStatisticsTopMostActivePublishingUsers extends TableImpl<Admin
     }
 
     /**
-     * The column <code>public.admin_statistics_top_most_active_publishing_users.admin_statistics_id</code>.
+     * The column
+     * <code>public.admin_statistics_top_most_active_publishing_users.admin_statistics_id</code>.
      */
     public final TableField<AdminStatisticsTopMostActivePublishingUsersRecord, Long> ADMIN_STATISTICS_ID = createField(DSL.name("admin_statistics_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_top_most_active_publishing_users.login_name</code>.
+     * The column
+     * <code>public.admin_statistics_top_most_active_publishing_users.login_name</code>.
      */
     public final TableField<AdminStatisticsTopMostActivePublishingUsersRecord, String> LOGIN_NAME = createField(DSL.name("login_name"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_top_most_active_publishing_users.extension_version_count</code>.
+     * The column
+     * <code>public.admin_statistics_top_most_active_publishing_users.extension_version_count</code>.
      */
     public final TableField<AdminStatisticsTopMostActivePublishingUsersRecord, Integer> EXTENSION_VERSION_COUNT = createField(DSL.name("extension_version_count"), SQLDataType.INTEGER.nullable(false), this, "");
 
@@ -69,21 +77,27 @@ public class AdminStatisticsTopMostActivePublishingUsers extends TableImpl<Admin
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_top_most_active_publishing_users</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_top_most_active_publishing_users</code>
+     * table reference
      */
     public AdminStatisticsTopMostActivePublishingUsers(String alias) {
         this(DSL.name(alias), ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS);
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_top_most_active_publishing_users</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_top_most_active_publishing_users</code>
+     * table reference
      */
     public AdminStatisticsTopMostActivePublishingUsers(Name alias) {
         this(alias, ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS);
     }
 
     /**
-     * Create a <code>public.admin_statistics_top_most_active_publishing_users</code> table reference
+     * Create a
+     * <code>public.admin_statistics_top_most_active_publishing_users</code>
+     * table reference
      */
     public AdminStatisticsTopMostActivePublishingUsers() {
         this(DSL.name("admin_statistics_top_most_active_publishing_users"), null);
@@ -95,16 +109,20 @@ public class AdminStatisticsTopMostActivePublishingUsers extends TableImpl<Admin
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<ForeignKey<AdminStatisticsTopMostActivePublishingUsersRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<AdminStatisticsTopMostActivePublishingUsersRecord, ?>>asList(Keys.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS__ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS_FKEY);
+        return Arrays.asList(Keys.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS__ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS_FKEY);
     }
 
     private transient AdminStatistics _adminStatistics;
 
+    /**
+     * Get the implicit join path to the <code>public.admin_statistics</code>
+     * table.
+     */
     public AdminStatistics adminStatistics() {
         if (_adminStatistics == null)
             _adminStatistics = new AdminStatistics(this, Keys.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS__ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS_FKEY);
@@ -120,6 +138,11 @@ public class AdminStatisticsTopMostActivePublishingUsers extends TableImpl<Admin
     @Override
     public AdminStatisticsTopMostActivePublishingUsers as(Name alias) {
         return new AdminStatisticsTopMostActivePublishingUsers(alias, this);
+    }
+
+    @Override
+    public AdminStatisticsTopMostActivePublishingUsers as(Table<?> alias) {
+        return new AdminStatisticsTopMostActivePublishingUsers(alias.getQualifiedName(), this);
     }
 
     /**
@@ -138,6 +161,14 @@ public class AdminStatisticsTopMostActivePublishingUsers extends TableImpl<Admin
         return new AdminStatisticsTopMostActivePublishingUsers(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public AdminStatisticsTopMostActivePublishingUsers rename(Table<?> name) {
+        return new AdminStatisticsTopMostActivePublishingUsers(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row3 type methods
     // -------------------------------------------------------------------------
@@ -145,5 +176,20 @@ public class AdminStatisticsTopMostActivePublishingUsers extends TableImpl<Admin
     @Override
     public Row3<Long, String, Integer> fieldsRow() {
         return (Row3) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function3<? super Long, ? super String, ? super Integer, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function3<? super Long, ? super String, ? super Integer, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

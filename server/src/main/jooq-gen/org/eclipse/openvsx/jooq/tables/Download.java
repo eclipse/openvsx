@@ -7,6 +7,7 @@ package org.eclipse.openvsx.jooq.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -14,11 +15,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.DownloadRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function4;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row4;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -104,22 +108,17 @@ public class Download extends TableImpl<DownloadRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.DOWNLOAD_TIMESTAMP_BRIN_IDX);
+        return Arrays.asList(Indexes.DOWNLOAD_TIMESTAMP_BRIN_IDX);
     }
 
     @Override
     public UniqueKey<DownloadRecord> getPrimaryKey() {
         return Keys.DOWNLOAD_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<DownloadRecord>> getKeys() {
-        return Arrays.<UniqueKey<DownloadRecord>>asList(Keys.DOWNLOAD_PKEY);
     }
 
     @Override
@@ -130,6 +129,11 @@ public class Download extends TableImpl<DownloadRecord> {
     @Override
     public Download as(Name alias) {
         return new Download(alias, this);
+    }
+
+    @Override
+    public Download as(Table<?> alias) {
+        return new Download(alias.getQualifiedName(), this);
     }
 
     /**
@@ -148,6 +152,14 @@ public class Download extends TableImpl<DownloadRecord> {
         return new Download(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public Download rename(Table<?> name) {
+        return new Download(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row4 type methods
     // -------------------------------------------------------------------------
@@ -155,5 +167,20 @@ public class Download extends TableImpl<DownloadRecord> {
     @Override
     public Row4<Long, Long, LocalDateTime, Integer> fieldsRow() {
         return (Row4) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function4<? super Long, ? super Long, ? super LocalDateTime, ? super Integer, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super Long, ? super Long, ? super LocalDateTime, ? super Integer, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

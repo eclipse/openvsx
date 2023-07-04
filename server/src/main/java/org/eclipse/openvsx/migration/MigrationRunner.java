@@ -46,6 +46,8 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         fixTargetPlatformMigration();
         generateSha256ChecksumMigration();
         extensionVersionSignatureMigration();
+        setFileResourceContentTypeMigration();
+        setNamespaceLogoContentTypeMigration();
     }
 
     private void extractResourcesMigration() {
@@ -88,5 +90,17 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         if(!mirrorEnabled) {
             scheduler.enqueue(new HandlerJobRequest<>(GenerateKeyPairJobRequestHandler.class));
         }
+    }
+
+    private void setFileResourceContentTypeMigration() {
+        var jobName = "SetFileResourceContentTypeMigration";
+        var handler = SetFileResourceContentTypeJobRequestHandler.class;
+        repositories.findNotMigratedFileResourceContentTypes().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+    }
+
+    private void setNamespaceLogoContentTypeMigration() {
+        var jobName = "SetNamespaceLogoContentTypeMigration";
+        var handler = SetNamespaceLogoContentTypeJobRequestHandler.class;
+        repositories.findNotMigratedNamespaceLogoContentTypes().forEach(item -> migrations.enqueueMigration(jobName,  handler, item));
     }
 }

@@ -15,7 +15,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -23,7 +25,12 @@ import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
+import org.springframework.http.MediaType;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -295,17 +302,22 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     public List<FileResource> getFileResources(ExtensionVersion extVersion) {
-        var resources = new ArrayList<FileResource>();
+        readInputStream();
+        var contentTypes = loadContentTypes();
         var mappers = List.<Function<ExtensionVersion, FileResource>>of(
                 this::getManifest, this::getReadme, this::getChangelog, this::getLicense, this::getIcon, this::getVsixManifest
         );
 
-        mappers.forEach(mapper -> Optional.of(extVersion).map(mapper).ifPresent(resources::add));
-        return resources;
+        return mappers.stream()
+                .map(mapper -> mapper.apply(extVersion))
+                .filter(Objects::nonNull)
+                .map(resource -> setContentType(resource, contentTypes))
+                .collect(Collectors.toList());
     }
 
     public void processEachResource(ExtensionVersion extVersion, Consumer<FileResource> processor) {
         readInputStream();
+        var contentTypes = loadContentTypes();
         zipFile.stream()
                 .filter(zipEntry -> !zipEntry.isDirectory())
                 .map(zipEntry -> {
@@ -324,6 +336,7 @@ public class ExtensionProcessor implements AutoCloseable {
                     resource.setName(zipEntry.getName());
                     resource.setType(FileResource.RESOURCE);
                     resource.setContent(bytes);
+                    setContentType(resource, contentTypes);
                     return resource;
                 })
                 .filter(Objects::nonNull)
@@ -340,6 +353,7 @@ public class ExtensionProcessor implements AutoCloseable {
         binary.setName(binaryName);
         binary.setType(FileResource.DOWNLOAD);
         binary.setContent(null);
+        binary.setContentType("application/zip");
         return binary;
     }
 
@@ -360,6 +374,7 @@ public class ExtensionProcessor implements AutoCloseable {
         sha256.setName(NamingUtil.toFileFormat(extVersion, ".sha256"));
         sha256.setType(FileResource.DOWNLOAD_SHA256);
         sha256.setContent(hash.getBytes(StandardCharsets.UTF_8));
+        sha256.setContentType(MediaType.TEXT_PLAIN_VALUE);
         return sha256;
     }
 
@@ -418,9 +433,7 @@ public class ExtensionProcessor implements AutoCloseable {
                 var fileName = matcher.group("file");
                 var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
                 if (bytes != null) {
-                    var lastSegmentIndex = fileName.lastIndexOf('/');
-                    var lastSegment = fileName.substring(lastSegmentIndex + 1);
-                    license.setName(lastSegment);
+                    license.setName(FilenameUtils.getName(fileName));
                     license.setContent(bytes);
                     detectLicense(bytes, extVersion);
                     return license;
@@ -437,6 +450,38 @@ public class ExtensionProcessor implements AutoCloseable {
         license.setContent(result.getFirst());
         detectLicense(result.getFirst(), extVersion);
         return license;
+    }
+
+    private Map<String, String> loadContentTypes() {
+        var content = ArchiveUtil.readEntry(zipFile, "[Content_Types].xml");
+        var contentTypes = new HashMap<String, String>();
+        try (var input = new ByteArrayInputStream(content)) {
+            var document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(input);
+            var elements = document.getDocumentElement().getElementsByTagName("Default");
+            for(var i = 0; i < elements.getLength(); i++) {
+                var element = elements.item(i);
+                var attributes = element.getAttributes();
+                var extension = attributes.getNamedItem("Extension").getTextContent();
+                if(extension.startsWith(".")) {
+                    extension = extension.substring(1);
+                }
+
+                var contentType = attributes.getNamedItem("ContentType").getTextContent();
+                contentTypes.put(extension, contentType);
+            }
+        } catch (IOException | ParserConfigurationException | SAXException e) {
+            logger.error("failed to read content types", e);
+            contentTypes.clear();
+        }
+
+        return contentTypes;
+    }
+
+    private FileResource setContentType(FileResource resource, Map<String, String> contentTypes) {
+        var fileExtension = FilenameUtils.getExtension(resource.getName());
+        var contentType = contentTypes.getOrDefault(fileExtension, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        resource.setContentType(contentType);
+        return resource;
     }
 
     private void detectLicense(byte[] content, ExtensionVersion extVersion) {
@@ -464,9 +509,7 @@ public class ExtensionProcessor implements AutoCloseable {
             var entry = ArchiveUtil.getEntryIgnoreCase(zipFile, name);
             if (entry != null) {
                 var bytes = ArchiveUtil.readEntry(zipFile, entry);
-                var lastSegmentIndex = entry.getName().lastIndexOf('/');
-                var lastSegment = entry.getName().substring(lastSegmentIndex + 1);
-                return Pair.of(bytes, lastSegment);
+                return Pair.of(bytes, FilenameUtils.getName(entry.getName()));
             }
         }
         return null;
@@ -506,12 +549,7 @@ public class ExtensionProcessor implements AutoCloseable {
 
         var icon = new FileResource();
         icon.setExtension(extVersion);
-        var fileNameIndex = iconPath.lastIndexOf('/');
-        var iconName = fileNameIndex >= 0
-                ? iconPath.substring(fileNameIndex + 1)
-                : iconPath;
-
-        icon.setName(iconName);
+        icon.setName(FilenameUtils.getName(iconPath));
         icon.setType(FileResource.ICON);
         icon.setContent(bytes);
         return icon;

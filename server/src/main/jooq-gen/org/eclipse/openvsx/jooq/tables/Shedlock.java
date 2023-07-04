@@ -5,18 +5,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.ShedlockRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function4;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row4;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -102,17 +104,12 @@ public class Shedlock extends TableImpl<ShedlockRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public UniqueKey<ShedlockRecord> getPrimaryKey() {
         return Keys.SHEDLOCK_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<ShedlockRecord>> getKeys() {
-        return Arrays.<UniqueKey<ShedlockRecord>>asList(Keys.SHEDLOCK_PKEY);
     }
 
     @Override
@@ -123,6 +120,11 @@ public class Shedlock extends TableImpl<ShedlockRecord> {
     @Override
     public Shedlock as(Name alias) {
         return new Shedlock(alias, this);
+    }
+
+    @Override
+    public Shedlock as(Table<?> alias) {
+        return new Shedlock(alias.getQualifiedName(), this);
     }
 
     /**
@@ -141,6 +143,14 @@ public class Shedlock extends TableImpl<ShedlockRecord> {
         return new Shedlock(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public Shedlock rename(Table<?> name) {
+        return new Shedlock(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row4 type methods
     // -------------------------------------------------------------------------
@@ -148,5 +158,20 @@ public class Shedlock extends TableImpl<ShedlockRecord> {
     @Override
     public Row4<String, LocalDateTime, LocalDateTime, String> fieldsRow() {
         return (Row4) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function4<? super String, ? super LocalDateTime, ? super LocalDateTime, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super String, ? super LocalDateTime, ? super LocalDateTime, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

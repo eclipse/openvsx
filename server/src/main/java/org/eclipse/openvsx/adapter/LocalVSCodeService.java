@@ -423,7 +423,7 @@ public class LocalVSCodeService implements IVSCodeService {
             String version
     ) {
         if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            var headers = storageUtil.getFileResponseHeaders(resource.getName());
+            var headers = storageUtil.getFileResponseHeaders(resource);
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
         } else {
             var namespace = new Namespace();

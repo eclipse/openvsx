@@ -27,6 +27,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -173,6 +174,23 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
+    public void uploadNamespaceLogo(Namespace namespace, TempFile file) {
+        var storageType = getActiveStorageType();
+        switch (storageType) {
+            case STORAGE_GOOGLE:
+                googleStorage.uploadNamespaceLogo(namespace, file);
+                break;
+            case STORAGE_AZURE:
+                azureStorage.uploadNamespaceLogo(namespace, file);
+                break;
+            default:
+                throw new RuntimeException("External storage is not available.");
+        }
+
+        namespace.setLogoStorageType(storageType);
+    }
+
+    @Override
     public void removeFile(FileResource resource) {
         switch (resource.getStorageType()) {
             case STORAGE_GOOGLE:
@@ -297,9 +315,13 @@ public class StorageUtilService implements IStorageService {
         }
     }
 
-    public HttpHeaders getFileResponseHeaders(String fileName) {
+    public HttpHeaders getFileResponseHeaders(FileResource resource) {
+        return getFileResponseHeaders(resource.getName(), resource.getContentType());
+    }
+
+    private HttpHeaders getFileResponseHeaders(String fileName, String contentType) {
         var headers = new HttpHeaders();
-        headers.setContentType(StorageUtil.getFileType(fileName));
+        headers.setContentType(MediaType.parseMediaType(contentType));
         if (fileName.endsWith(".vsix")) {
             headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
         } else {
@@ -312,7 +334,7 @@ public class StorageUtilService implements IStorageService {
     public ResponseEntity<byte[]> getFileResponse(FileResource resource) {
         resource = entityManager.merge(resource);
         if (resource.getStorageType().equals(STORAGE_DB)) {
-            var headers = getFileResponseHeaders(resource.getName());
+            var headers = getFileResponseHeaders(resource);
             return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
@@ -326,7 +348,7 @@ public class StorageUtilService implements IStorageService {
     public ResponseEntity<byte[]> getNamespaceLogo(Namespace namespace) {
         namespace = entityManager.merge(namespace);
         if (namespace.getLogoStorageType().equals(STORAGE_DB)) {
-            var headers = getFileResponseHeaders(namespace.getLogoName());
+            var headers = getFileResponseHeaders(namespace.getLogoName(), namespace.getLogoContentType());
             return new ResponseEntity<>(namespace.getLogoBytes(), headers, HttpStatus.OK);
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)

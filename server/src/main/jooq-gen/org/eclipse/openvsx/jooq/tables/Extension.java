@@ -7,6 +7,7 @@ package org.eclipse.openvsx.jooq.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -14,11 +15,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function10;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row10;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -134,12 +138,12 @@ public class Extension extends TableImpl<ExtensionRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.EXTENSION__NAMESPACE_ID__IDX);
+        return Arrays.asList(Indexes.EXTENSION__NAMESPACE_ID__IDX);
     }
 
     @Override
@@ -148,17 +152,20 @@ public class Extension extends TableImpl<ExtensionRecord> {
     }
 
     @Override
-    public List<UniqueKey<ExtensionRecord>> getKeys() {
-        return Arrays.<UniqueKey<ExtensionRecord>>asList(Keys.EXTENSION_PKEY, Keys.UNIQUE_EXTENSION_PUBLIC_ID);
+    public List<UniqueKey<ExtensionRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UNIQUE_EXTENSION_PUBLIC_ID);
     }
 
     @Override
     public List<ForeignKey<ExtensionRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<ExtensionRecord, ?>>asList(Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN);
+        return Arrays.asList(Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN);
     }
 
     private transient Namespace _namespace;
 
+    /**
+     * Get the implicit join path to the <code>public.namespace</code> table.
+     */
     public Namespace namespace() {
         if (_namespace == null)
             _namespace = new Namespace(this, Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN);
@@ -174,6 +181,11 @@ public class Extension extends TableImpl<ExtensionRecord> {
     @Override
     public Extension as(Name alias) {
         return new Extension(alias, this);
+    }
+
+    @Override
+    public Extension as(Table<?> alias) {
+        return new Extension(alias.getQualifiedName(), this);
     }
 
     /**
@@ -192,6 +204,14 @@ public class Extension extends TableImpl<ExtensionRecord> {
         return new Extension(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public Extension rename(Table<?> name) {
+        return new Extension(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row10 type methods
     // -------------------------------------------------------------------------
@@ -199,5 +219,20 @@ public class Extension extends TableImpl<ExtensionRecord> {
     @Override
     public Row10<Long, Double, Integer, String, Long, String, Boolean, LocalDateTime, LocalDateTime, Long> fieldsRow() {
         return (Row10) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function10<? super Long, ? super Double, ? super Integer, ? super String, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? super LocalDateTime, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function10<? super Long, ? super Double, ? super Integer, ? super String, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? super LocalDateTime, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

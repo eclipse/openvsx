@@ -6,16 +6,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.NamespaceRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function11;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row10;
+import org.jooq.Records;
+import org.jooq.Row11;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -96,6 +100,11 @@ public class Namespace extends TableImpl<NamespaceRecord> {
      */
     public final TableField<NamespaceRecord, String> LOGO_STORAGE_TYPE = createField(DSL.name("logo_storage_type"), SQLDataType.VARCHAR(32), this, "");
 
+    /**
+     * The column <code>public.namespace.logo_content_type</code>.
+     */
+    public final TableField<NamespaceRecord, String> LOGO_CONTENT_TYPE = createField(DSL.name("logo_content_type"), SQLDataType.VARCHAR(255), this, "");
+
     private Namespace(Name alias, Table<NamespaceRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -131,7 +140,7 @@ public class Namespace extends TableImpl<NamespaceRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
@@ -140,8 +149,8 @@ public class Namespace extends TableImpl<NamespaceRecord> {
     }
 
     @Override
-    public List<UniqueKey<NamespaceRecord>> getKeys() {
-        return Arrays.<UniqueKey<NamespaceRecord>>asList(Keys.NAMESPACE_PKEY, Keys.UNIQUE_NAMESPACE_PUBLIC_ID);
+    public List<UniqueKey<NamespaceRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UNIQUE_NAMESPACE_PUBLIC_ID);
     }
 
     @Override
@@ -152,6 +161,11 @@ public class Namespace extends TableImpl<NamespaceRecord> {
     @Override
     public Namespace as(Name alias) {
         return new Namespace(alias, this);
+    }
+
+    @Override
+    public Namespace as(Table<?> alias) {
+        return new Namespace(alias.getQualifiedName(), this);
     }
 
     /**
@@ -170,12 +184,35 @@ public class Namespace extends TableImpl<NamespaceRecord> {
         return new Namespace(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public Namespace rename(Table<?> name) {
+        return new Namespace(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
-    // Row10 type methods
+    // Row11 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row10<Long, String, String, String, String, String, String, String, byte[], String> fieldsRow() {
-        return (Row10) super.fieldsRow();
+    public Row11<Long, String, String, String, String, String, String, String, byte[], String, String> fieldsRow() {
+        return (Row11) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function11<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super byte[], ? super String, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function11<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super byte[], ? super String, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

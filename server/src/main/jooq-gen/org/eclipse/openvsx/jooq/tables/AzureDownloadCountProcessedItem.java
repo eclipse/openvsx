@@ -5,18 +5,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.AzureDownloadCountProcessedItemRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function5;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row5;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -35,7 +37,8 @@ public class AzureDownloadCountProcessedItem extends TableImpl<AzureDownloadCoun
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>public.azure_download_count_processed_item</code>
+     * The reference instance of
+     * <code>public.azure_download_count_processed_item</code>
      */
     public static final AzureDownloadCountProcessedItem AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM = new AzureDownloadCountProcessedItem();
 
@@ -58,17 +61,20 @@ public class AzureDownloadCountProcessedItem extends TableImpl<AzureDownloadCoun
     public final TableField<AzureDownloadCountProcessedItemRecord, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
-     * The column <code>public.azure_download_count_processed_item.processed_on</code>.
+     * The column
+     * <code>public.azure_download_count_processed_item.processed_on</code>.
      */
     public final TableField<AzureDownloadCountProcessedItemRecord, LocalDateTime> PROCESSED_ON = createField(DSL.name("processed_on"), SQLDataType.LOCALDATETIME(6), this, "");
 
     /**
-     * The column <code>public.azure_download_count_processed_item.execution_time</code>.
+     * The column
+     * <code>public.azure_download_count_processed_item.execution_time</code>.
      */
     public final TableField<AzureDownloadCountProcessedItemRecord, Integer> EXECUTION_TIME = createField(DSL.name("execution_time"), SQLDataType.INTEGER, this, "");
 
     /**
-     * The column <code>public.azure_download_count_processed_item.success</code>.
+     * The column
+     * <code>public.azure_download_count_processed_item.success</code>.
      */
     public final TableField<AzureDownloadCountProcessedItemRecord, Boolean> SUCCESS = createField(DSL.name("success"), SQLDataType.BOOLEAN.nullable(false), this, "");
 
@@ -81,21 +87,24 @@ public class AzureDownloadCountProcessedItem extends TableImpl<AzureDownloadCoun
     }
 
     /**
-     * Create an aliased <code>public.azure_download_count_processed_item</code> table reference
+     * Create an aliased <code>public.azure_download_count_processed_item</code>
+     * table reference
      */
     public AzureDownloadCountProcessedItem(String alias) {
         this(DSL.name(alias), AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM);
     }
 
     /**
-     * Create an aliased <code>public.azure_download_count_processed_item</code> table reference
+     * Create an aliased <code>public.azure_download_count_processed_item</code>
+     * table reference
      */
     public AzureDownloadCountProcessedItem(Name alias) {
         this(alias, AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM);
     }
 
     /**
-     * Create a <code>public.azure_download_count_processed_item</code> table reference
+     * Create a <code>public.azure_download_count_processed_item</code> table
+     * reference
      */
     public AzureDownloadCountProcessedItem() {
         this(DSL.name("azure_download_count_processed_item"), null);
@@ -107,17 +116,12 @@ public class AzureDownloadCountProcessedItem extends TableImpl<AzureDownloadCoun
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public UniqueKey<AzureDownloadCountProcessedItemRecord> getPrimaryKey() {
         return Keys.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<AzureDownloadCountProcessedItemRecord>> getKeys() {
-        return Arrays.<UniqueKey<AzureDownloadCountProcessedItemRecord>>asList(Keys.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_PKEY);
     }
 
     @Override
@@ -128,6 +132,11 @@ public class AzureDownloadCountProcessedItem extends TableImpl<AzureDownloadCoun
     @Override
     public AzureDownloadCountProcessedItem as(Name alias) {
         return new AzureDownloadCountProcessedItem(alias, this);
+    }
+
+    @Override
+    public AzureDownloadCountProcessedItem as(Table<?> alias) {
+        return new AzureDownloadCountProcessedItem(alias.getQualifiedName(), this);
     }
 
     /**
@@ -146,6 +155,14 @@ public class AzureDownloadCountProcessedItem extends TableImpl<AzureDownloadCoun
         return new AzureDownloadCountProcessedItem(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public AzureDownloadCountProcessedItem rename(Table<?> name) {
+        return new AzureDownloadCountProcessedItem(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row5 type methods
     // -------------------------------------------------------------------------
@@ -153,5 +170,20 @@ public class AzureDownloadCountProcessedItem extends TableImpl<AzureDownloadCoun
     @Override
     public Row5<Long, String, LocalDateTime, Integer, Boolean> fieldsRow() {
         return (Row5) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function5<? super Long, ? super String, ? super LocalDateTime, ? super Integer, ? super Boolean, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function5<? super Long, ? super String, ? super LocalDateTime, ? super Integer, ? super Boolean, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

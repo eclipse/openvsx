@@ -6,16 +6,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopMostDownloadedExtensionsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function3;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row3;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -33,7 +37,8 @@ public class AdminStatisticsTopMostDownloadedExtensions extends TableImpl<AdminS
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>public.admin_statistics_top_most_downloaded_extensions</code>
+     * The reference instance of
+     * <code>public.admin_statistics_top_most_downloaded_extensions</code>
      */
     public static final AdminStatisticsTopMostDownloadedExtensions ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS = new AdminStatisticsTopMostDownloadedExtensions();
 
@@ -46,17 +51,20 @@ public class AdminStatisticsTopMostDownloadedExtensions extends TableImpl<AdminS
     }
 
     /**
-     * The column <code>public.admin_statistics_top_most_downloaded_extensions.admin_statistics_id</code>.
+     * The column
+     * <code>public.admin_statistics_top_most_downloaded_extensions.admin_statistics_id</code>.
      */
     public final TableField<AdminStatisticsTopMostDownloadedExtensionsRecord, Long> ADMIN_STATISTICS_ID = createField(DSL.name("admin_statistics_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_top_most_downloaded_extensions.extension_identifier</code>.
+     * The column
+     * <code>public.admin_statistics_top_most_downloaded_extensions.extension_identifier</code>.
      */
     public final TableField<AdminStatisticsTopMostDownloadedExtensionsRecord, String> EXTENSION_IDENTIFIER = createField(DSL.name("extension_identifier"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_top_most_downloaded_extensions.downloads</code>.
+     * The column
+     * <code>public.admin_statistics_top_most_downloaded_extensions.downloads</code>.
      */
     public final TableField<AdminStatisticsTopMostDownloadedExtensionsRecord, Long> DOWNLOADS = createField(DSL.name("downloads"), SQLDataType.BIGINT.nullable(false), this, "");
 
@@ -69,21 +77,27 @@ public class AdminStatisticsTopMostDownloadedExtensions extends TableImpl<AdminS
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_top_most_downloaded_extensions</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_top_most_downloaded_extensions</code> table
+     * reference
      */
     public AdminStatisticsTopMostDownloadedExtensions(String alias) {
         this(DSL.name(alias), ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS);
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_top_most_downloaded_extensions</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_top_most_downloaded_extensions</code> table
+     * reference
      */
     public AdminStatisticsTopMostDownloadedExtensions(Name alias) {
         this(alias, ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS);
     }
 
     /**
-     * Create a <code>public.admin_statistics_top_most_downloaded_extensions</code> table reference
+     * Create a
+     * <code>public.admin_statistics_top_most_downloaded_extensions</code> table
+     * reference
      */
     public AdminStatisticsTopMostDownloadedExtensions() {
         this(DSL.name("admin_statistics_top_most_downloaded_extensions"), null);
@@ -95,16 +109,20 @@ public class AdminStatisticsTopMostDownloadedExtensions extends TableImpl<AdminS
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<ForeignKey<AdminStatisticsTopMostDownloadedExtensionsRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<AdminStatisticsTopMostDownloadedExtensionsRecord, ?>>asList(Keys.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS__ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS_FKEY);
+        return Arrays.asList(Keys.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS__ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS_FKEY);
     }
 
     private transient AdminStatistics _adminStatistics;
 
+    /**
+     * Get the implicit join path to the <code>public.admin_statistics</code>
+     * table.
+     */
     public AdminStatistics adminStatistics() {
         if (_adminStatistics == null)
             _adminStatistics = new AdminStatistics(this, Keys.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS__ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS_FKEY);
@@ -120,6 +138,11 @@ public class AdminStatisticsTopMostDownloadedExtensions extends TableImpl<AdminS
     @Override
     public AdminStatisticsTopMostDownloadedExtensions as(Name alias) {
         return new AdminStatisticsTopMostDownloadedExtensions(alias, this);
+    }
+
+    @Override
+    public AdminStatisticsTopMostDownloadedExtensions as(Table<?> alias) {
+        return new AdminStatisticsTopMostDownloadedExtensions(alias.getQualifiedName(), this);
     }
 
     /**
@@ -138,6 +161,14 @@ public class AdminStatisticsTopMostDownloadedExtensions extends TableImpl<AdminS
         return new AdminStatisticsTopMostDownloadedExtensions(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public AdminStatisticsTopMostDownloadedExtensions rename(Table<?> name) {
+        return new AdminStatisticsTopMostDownloadedExtensions(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row3 type methods
     // -------------------------------------------------------------------------
@@ -145,5 +176,20 @@ public class AdminStatisticsTopMostDownloadedExtensions extends TableImpl<AdminS
     @Override
     public Row3<Long, String, Long> fieldsRow() {
         return (Row3) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function3<? super Long, ? super String, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function3<? super Long, ? super String, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

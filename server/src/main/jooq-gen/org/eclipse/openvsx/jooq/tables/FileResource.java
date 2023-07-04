@@ -6,6 +6,7 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -13,11 +14,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.FileResourceRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function7;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row6;
+import org.jooq.Records;
+import org.jooq.Row7;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -78,6 +82,11 @@ public class FileResource extends TableImpl<FileResourceRecord> {
      */
     public final TableField<FileResourceRecord, String> STORAGE_TYPE = createField(DSL.name("storage_type"), SQLDataType.VARCHAR(32), this, "");
 
+    /**
+     * The column <code>public.file_resource.content_type</code>.
+     */
+    public final TableField<FileResourceRecord, String> CONTENT_TYPE = createField(DSL.name("content_type"), SQLDataType.VARCHAR(255), this, "");
+
     private FileResource(Name alias, Table<FileResourceRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -113,12 +122,12 @@ public class FileResource extends TableImpl<FileResourceRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.FILE_RESOURCE_EXTENSION_IDX, Indexes.FILE_RESOURCE_TYPE_IDX);
+        return Arrays.asList(Indexes.FILE_RESOURCE_EXTENSION_IDX, Indexes.FILE_RESOURCE_TYPE_IDX);
     }
 
     @Override
@@ -127,17 +136,16 @@ public class FileResource extends TableImpl<FileResourceRecord> {
     }
 
     @Override
-    public List<UniqueKey<FileResourceRecord>> getKeys() {
-        return Arrays.<UniqueKey<FileResourceRecord>>asList(Keys.FILE_RESOURCE_PKEY);
-    }
-
-    @Override
     public List<ForeignKey<FileResourceRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<FileResourceRecord, ?>>asList(Keys.FILE_RESOURCE__FILE_RESOURCE_EXTENSION_FKEY);
+        return Arrays.asList(Keys.FILE_RESOURCE__FILE_RESOURCE_EXTENSION_FKEY);
     }
 
     private transient ExtensionVersion _extensionVersion;
 
+    /**
+     * Get the implicit join path to the <code>public.extension_version</code>
+     * table.
+     */
     public ExtensionVersion extensionVersion() {
         if (_extensionVersion == null)
             _extensionVersion = new ExtensionVersion(this, Keys.FILE_RESOURCE__FILE_RESOURCE_EXTENSION_FKEY);
@@ -153,6 +161,11 @@ public class FileResource extends TableImpl<FileResourceRecord> {
     @Override
     public FileResource as(Name alias) {
         return new FileResource(alias, this);
+    }
+
+    @Override
+    public FileResource as(Table<?> alias) {
+        return new FileResource(alias.getQualifiedName(), this);
     }
 
     /**
@@ -171,12 +184,35 @@ public class FileResource extends TableImpl<FileResourceRecord> {
         return new FileResource(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public FileResource rename(Table<?> name) {
+        return new FileResource(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
-    // Row6 type methods
+    // Row7 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row6<Long, String, byte[], Long, String, String> fieldsRow() {
-        return (Row6) super.fieldsRow();
+    public Row7<Long, String, byte[], Long, String, String, String> fieldsRow() {
+        return (Row7) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function7<? super Long, ? super String, ? super byte[], ? super Long, ? super String, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super Long, ? super String, ? super byte[], ? super Long, ? super String, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

@@ -6,16 +6,22 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
+import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.JobrunrRecurringJobsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function4;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row3;
+import org.jooq.Records;
+import org.jooq.Row4;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -61,6 +67,11 @@ public class JobrunrRecurringJobs extends TableImpl<JobrunrRecurringJobsRecord> 
      */
     public final TableField<JobrunrRecurringJobsRecord, String> JOBASJSON = createField(DSL.name("jobasjson"), SQLDataType.CLOB.nullable(false), this, "");
 
+    /**
+     * The column <code>public.jobrunr_recurring_jobs.createdat</code>.
+     */
+    public final TableField<JobrunrRecurringJobsRecord, Long> CREATEDAT = createField(DSL.name("createdat"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.field(DSL.raw("'0'::bigint"), SQLDataType.BIGINT)), this, "");
+
     private JobrunrRecurringJobs(Name alias, Table<JobrunrRecurringJobsRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -70,14 +81,16 @@ public class JobrunrRecurringJobs extends TableImpl<JobrunrRecurringJobsRecord> 
     }
 
     /**
-     * Create an aliased <code>public.jobrunr_recurring_jobs</code> table reference
+     * Create an aliased <code>public.jobrunr_recurring_jobs</code> table
+     * reference
      */
     public JobrunrRecurringJobs(String alias) {
         this(DSL.name(alias), JOBRUNR_RECURRING_JOBS);
     }
 
     /**
-     * Create an aliased <code>public.jobrunr_recurring_jobs</code> table reference
+     * Create an aliased <code>public.jobrunr_recurring_jobs</code> table
+     * reference
      */
     public JobrunrRecurringJobs(Name alias) {
         this(alias, JOBRUNR_RECURRING_JOBS);
@@ -96,17 +109,17 @@ public class JobrunrRecurringJobs extends TableImpl<JobrunrRecurringJobsRecord> 
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
+    }
+
+    @Override
+    public List<Index> getIndexes() {
+        return Arrays.asList(Indexes.JOBRUNR_RECURRING_JOB_CREATED_AT_IDX);
     }
 
     @Override
     public UniqueKey<JobrunrRecurringJobsRecord> getPrimaryKey() {
         return Keys.JOBRUNR_RECURRING_JOBS_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<JobrunrRecurringJobsRecord>> getKeys() {
-        return Arrays.<UniqueKey<JobrunrRecurringJobsRecord>>asList(Keys.JOBRUNR_RECURRING_JOBS_PKEY);
     }
 
     @Override
@@ -117,6 +130,11 @@ public class JobrunrRecurringJobs extends TableImpl<JobrunrRecurringJobsRecord> 
     @Override
     public JobrunrRecurringJobs as(Name alias) {
         return new JobrunrRecurringJobs(alias, this);
+    }
+
+    @Override
+    public JobrunrRecurringJobs as(Table<?> alias) {
+        return new JobrunrRecurringJobs(alias.getQualifiedName(), this);
     }
 
     /**
@@ -135,12 +153,35 @@ public class JobrunrRecurringJobs extends TableImpl<JobrunrRecurringJobsRecord> 
         return new JobrunrRecurringJobs(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public JobrunrRecurringJobs rename(Table<?> name) {
+        return new JobrunrRecurringJobs(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
-    // Row3 type methods
+    // Row4 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<String, Integer, String> fieldsRow() {
-        return (Row3) super.fieldsRow();
+    public Row4<String, Integer, String, Long> fieldsRow() {
+        return (Row4) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function4<? super String, ? super Integer, ? super String, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super String, ? super Integer, ? super String, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

@@ -51,6 +51,11 @@ public interface IStorageService {
     void uploadNamespaceLogo(Namespace namespace);
 
     /**
+     * Upload a namespace logo to the external storage.
+     */
+    void uploadNamespaceLogo(Namespace namespace, TempFile logoFile);
+
+    /**
      * Remove a namespace logo from the external storage.
      */
     void removeNamespaceLogo(Namespace namespace);

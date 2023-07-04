@@ -13,6 +13,7 @@ import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
 import org.eclipse.openvsx.jooq.tables.JobrunrBackgroundjobservers;
 import org.eclipse.openvsx.jooq.tables.JobrunrJobs;
+import org.eclipse.openvsx.jooq.tables.JobrunrRecurringJobs;
 import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
@@ -52,7 +53,8 @@ public class Indexes {
     public static final Index JOBRUNR_JOB_RCI_IDX = Internal.createIndex(DSL.name("jobrunr_job_rci_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.RECURRINGJOBID }, false);
     public static final Index JOBRUNR_JOB_SCHEDULED_AT_IDX = Internal.createIndex(DSL.name("jobrunr_job_scheduled_at_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.SCHEDULEDAT }, false);
     public static final Index JOBRUNR_JOB_SIGNATURE_IDX = Internal.createIndex(DSL.name("jobrunr_job_signature_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.JOBSIGNATURE }, false);
-    public static final Index JOBRUNR_JOB_UPDATED_AT_IDX = Internal.createIndex(DSL.name("jobrunr_job_updated_at_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.UPDATEDAT }, false);
+    public static final Index JOBRUNR_JOBS_STATE_UPDATED_IDX = Internal.createIndex(DSL.name("jobrunr_jobs_state_updated_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.STATE, JobrunrJobs.JOBRUNR_JOBS.UPDATEDAT }, false);
+    public static final Index JOBRUNR_RECURRING_JOB_CREATED_AT_IDX = Internal.createIndex(DSL.name("jobrunr_recurring_job_created_at_idx"), JobrunrRecurringJobs.JOBRUNR_RECURRING_JOBS, new OrderField[] { JobrunrRecurringJobs.JOBRUNR_RECURRING_JOBS.CREATEDAT }, false);
     public static final Index JOBRUNR_STATE_IDX = Internal.createIndex(DSL.name("jobrunr_state_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.STATE }, false);
     public static final Index NAMESPACE_MEMBERSHIP__NAMESPACE__IDX = Internal.createIndex(DSL.name("namespace_membership__namespace__idx"), NamespaceMembership.NAMESPACE_MEMBERSHIP, new OrderField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.NAMESPACE }, false);
     public static final Index NAMESPACE_MEMBERSHIP__USER_DATA__IDX = Internal.createIndex(DSL.name("namespace_membership__user_data__idx"), NamespaceMembership.NAMESPACE_MEMBERSHIP, new OrderField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.USER_DATA }, false);

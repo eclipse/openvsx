@@ -23,6 +23,7 @@ import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -263,6 +264,7 @@ public class PublishExtensionVersionHandler {
         resource.setExtension(extVersion);
         resource.setName(signatureName);
         resource.setType(FileResource.DOWNLOAD_SIG);
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
         return resource;
     }
 }

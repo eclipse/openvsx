@@ -68,30 +68,40 @@ public class AzureBlobStorageService implements IStorageService {
 	@Override
     public void uploadFile(FileResource resource) {
         var blobName = getBlobName(resource);
-        uploadFile(resource.getContent(), resource.getName(), blobName);
+        uploadFile(resource.getContent(), resource.getName(), blobName, resource.getContentType());
     }
 
     @Override
     public void uploadNamespaceLogo(Namespace namespace) {
         var blobName = getBlobName(namespace);
-        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), blobName);
+        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), blobName, namespace.getLogoContentType());
     }
-    
-    protected void uploadFile(byte[] content, String fileName, String blobName) {
+
+    @Override
+    public void uploadNamespaceLogo(Namespace namespace, TempFile logoFile) {
+        var blobName = getBlobName(namespace);
+        uploadFile(logoFile, namespace.getLogoName(), blobName, namespace.getLogoStorageType());
+    }
+
+    protected void uploadFile(byte[] content, String fileName, String blobName, String contentType) {
         if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
         }
+        if(contentType.startsWith("text/")) {
+            contentType += "; charset=utf-8";
+        }
 
         var blobClient = getContainerClient().getBlobClient(blobName);
         var headers = new BlobHttpHeaders();
-        headers.setContentType(StorageUtil.getFileType(fileName).toString());
+        headers.setContentType(contentType);
         if (fileName.endsWith(".vsix")) {
             headers.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
             var cacheControl = StorageUtil.getCacheControl(fileName);
             headers.setCacheControl(cacheControl.getHeaderValue());
         }
+
         try (var dataStream = new ByteArrayInputStream(content)) {
             blobClient.upload(dataStream, content.length, true);
             blobClient.setHttpHeaders(headers);
@@ -103,10 +113,10 @@ public class AzureBlobStorageService implements IStorageService {
     @Override
     public void uploadFile(FileResource resource, TempFile file) {
         var blobName = getBlobName(resource);
-        uploadFile(file, resource.getName(), blobName);
+        uploadFile(file, resource.getName(), blobName, resource.getContentType());
     }
 
-    protected void uploadFile(TempFile file, String fileName, String blobName) {
+    protected void uploadFile(TempFile file, String fileName, String blobName, String contentType) {
         if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException("Cannot upload file "
                     + blobName + ": missing Azure blob service endpoint");
@@ -114,7 +124,7 @@ public class AzureBlobStorageService implements IStorageService {
 
         var blobClient = getContainerClient().getBlobClient(blobName);
         var headers = new BlobHttpHeaders();
-        headers.setContentType(StorageUtil.getFileType(fileName).toString());
+        headers.setContentType(contentType);
         if (fileName.endsWith(".vsix")) {
             headers.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {

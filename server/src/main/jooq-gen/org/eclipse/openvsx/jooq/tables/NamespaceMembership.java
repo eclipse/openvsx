@@ -6,6 +6,7 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -13,11 +14,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.NamespaceMembershipRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function4;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row4;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -77,14 +81,16 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
     }
 
     /**
-     * Create an aliased <code>public.namespace_membership</code> table reference
+     * Create an aliased <code>public.namespace_membership</code> table
+     * reference
      */
     public NamespaceMembership(String alias) {
         this(DSL.name(alias), NAMESPACE_MEMBERSHIP);
     }
 
     /**
-     * Create an aliased <code>public.namespace_membership</code> table reference
+     * Create an aliased <code>public.namespace_membership</code> table
+     * reference
      */
     public NamespaceMembership(Name alias) {
         this(alias, NAMESPACE_MEMBERSHIP);
@@ -103,12 +109,12 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.NAMESPACE_MEMBERSHIP__NAMESPACE__IDX, Indexes.NAMESPACE_MEMBERSHIP__USER_DATA__IDX);
+        return Arrays.asList(Indexes.NAMESPACE_MEMBERSHIP__NAMESPACE__IDX, Indexes.NAMESPACE_MEMBERSHIP__USER_DATA__IDX);
     }
 
     @Override
@@ -117,18 +123,21 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
     }
 
     @Override
-    public List<UniqueKey<NamespaceMembershipRecord>> getKeys() {
-        return Arrays.<UniqueKey<NamespaceMembershipRecord>>asList(Keys.NAMESPACE_MEMBERSHIP_PKEY);
+    public List<UniqueKey<NamespaceMembershipRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UNIQUE_NAMESPACE_MEMBERSHIP);
     }
 
     @Override
     public List<ForeignKey<NamespaceMembershipRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<NamespaceMembershipRecord, ?>>asList(Keys.NAMESPACE_MEMBERSHIP__FKGFHWHKNULA6DO2N6WYVQETM3N, Keys.NAMESPACE_MEMBERSHIP__FKNSAMEKUTXYWVSB3S1MJDCJKYP);
+        return Arrays.asList(Keys.NAMESPACE_MEMBERSHIP__FKGFHWHKNULA6DO2N6WYVQETM3N, Keys.NAMESPACE_MEMBERSHIP__FKNSAMEKUTXYWVSB3S1MJDCJKYP);
     }
 
     private transient Namespace _namespace;
     private transient UserData _userData;
 
+    /**
+     * Get the implicit join path to the <code>public.namespace</code> table.
+     */
     public Namespace namespace() {
         if (_namespace == null)
             _namespace = new Namespace(this, Keys.NAMESPACE_MEMBERSHIP__FKGFHWHKNULA6DO2N6WYVQETM3N);
@@ -136,6 +145,9 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
         return _namespace;
     }
 
+    /**
+     * Get the implicit join path to the <code>public.user_data</code> table.
+     */
     public UserData userData() {
         if (_userData == null)
             _userData = new UserData(this, Keys.NAMESPACE_MEMBERSHIP__FKNSAMEKUTXYWVSB3S1MJDCJKYP);
@@ -151,6 +163,11 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
     @Override
     public NamespaceMembership as(Name alias) {
         return new NamespaceMembership(alias, this);
+    }
+
+    @Override
+    public NamespaceMembership as(Table<?> alias) {
+        return new NamespaceMembership(alias.getQualifiedName(), this);
     }
 
     /**
@@ -169,6 +186,14 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
         return new NamespaceMembership(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public NamespaceMembership rename(Table<?> name) {
+        return new NamespaceMembership(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row4 type methods
     // -------------------------------------------------------------------------
@@ -176,5 +201,20 @@ public class NamespaceMembership extends TableImpl<NamespaceMembershipRecord> {
     @Override
     public Row4<Long, String, Long, Long> fieldsRow() {
         return (Row4) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function4<? super Long, ? super String, ? super Long, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super Long, ? super String, ? super Long, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }
