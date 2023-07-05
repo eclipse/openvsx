@@ -2,6 +2,15 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.8.2 (July 2023)
+
+#### Dependencies
+
+- Upgrade `vcse` from `2.15.0` to `2.19.0` ([#775](https://github.com/eclipse/openvsx/pull/775))
+- Upgrade `semver` from `5.7.1` to `7.5.2` ([#763](https://github.com/eclipse/openvsx/pull/763))
+
+---
+
 ### v0.8.1 (May. 2023)
 
 #### Dependencies
