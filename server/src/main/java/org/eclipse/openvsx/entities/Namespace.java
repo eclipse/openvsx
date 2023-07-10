@@ -57,6 +57,8 @@ public class Namespace implements Serializable {
 	@Column(length = 32)
 	String logoStorageType;
 
+	String logoContentType;
+
 	@ElementCollection
 	@MapKeyColumn(name = "provider")
 	@Column(name = "social_link")
@@ -133,6 +135,14 @@ public class Namespace implements Serializable {
 		this.logoStorageType = logoStorageType;
 	}
 
+	public String getLogoContentType() {
+		return logoContentType;
+	}
+
+	public void setLogoContentType(String logoContentType) {
+		this.logoContentType = logoContentType;
+	}
+
 	public String getWebsite() {
 		return website;
 	}
@@ -206,6 +216,7 @@ public class Namespace implements Serializable {
 				&& Objects.equals(logoName, namespace.logoName)
 				&& Arrays.equals(logoBytes, namespace.logoBytes)
 				&& Objects.equals(logoStorageType, namespace.logoStorageType)
+				&& Objects.equals(logoContentType, namespace.logoContentType)
 				&& Objects.equals(socialLinks, namespace.socialLinks)
 				&& Objects.equals(extensions, namespace.extensions)
 				&& Objects.equals(memberships, namespace.memberships);
@@ -214,7 +225,7 @@ public class Namespace implements Serializable {
 	@Override
 	public int hashCode() {
 		int result = Objects.hash(id, publicId, name, displayName, description, website, supportLink, logoName,
-				logoStorageType, socialLinks, extensions, memberships);
+				logoStorageType, logoContentType, socialLinks, extensions, memberships);
 		result = 31 * result + Arrays.hashCode(logoBytes);
 		return result;
 	}

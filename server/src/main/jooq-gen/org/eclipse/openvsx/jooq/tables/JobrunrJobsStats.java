@@ -4,14 +4,20 @@
 package org.eclipse.openvsx.jooq.tables;
 
 
+import java.math.BigDecimal;
+import java.util.function.Function;
+
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.JobrunrJobsStatsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function10;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row11;
+import org.jooq.Records;
+import org.jooq.Row10;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -47,11 +53,6 @@ public class JobrunrJobsStats extends TableImpl<JobrunrJobsStatsRecord> {
     public final TableField<JobrunrJobsStatsRecord, Long> TOTAL = createField(DSL.name("total"), SQLDataType.BIGINT, this, "");
 
     /**
-     * The column <code>public.jobrunr_jobs_stats.awaiting</code>.
-     */
-    public final TableField<JobrunrJobsStatsRecord, Long> AWAITING = createField(DSL.name("awaiting"), SQLDataType.BIGINT, this, "");
-
-    /**
      * The column <code>public.jobrunr_jobs_stats.scheduled</code>.
      */
     public final TableField<JobrunrJobsStatsRecord, Long> SCHEDULED = createField(DSL.name("scheduled"), SQLDataType.BIGINT, this, "");
@@ -79,7 +80,7 @@ public class JobrunrJobsStats extends TableImpl<JobrunrJobsStatsRecord> {
     /**
      * The column <code>public.jobrunr_jobs_stats.alltimesucceeded</code>.
      */
-    public final TableField<JobrunrJobsStatsRecord, Long> ALLTIMESUCCEEDED = createField(DSL.name("alltimesucceeded"), SQLDataType.BIGINT, this, "");
+    public final TableField<JobrunrJobsStatsRecord, BigDecimal> ALLTIMESUCCEEDED = createField(DSL.name("alltimesucceeded"), SQLDataType.NUMERIC, this, "");
 
     /**
      * The column <code>public.jobrunr_jobs_stats.deleted</code>.
@@ -87,7 +88,8 @@ public class JobrunrJobsStats extends TableImpl<JobrunrJobsStatsRecord> {
     public final TableField<JobrunrJobsStatsRecord, Long> DELETED = createField(DSL.name("deleted"), SQLDataType.BIGINT, this, "");
 
     /**
-     * The column <code>public.jobrunr_jobs_stats.nbrofbackgroundjobservers</code>.
+     * The column
+     * <code>public.jobrunr_jobs_stats.nbrofbackgroundjobservers</code>.
      */
     public final TableField<JobrunrJobsStatsRecord, Long> NBROFBACKGROUNDJOBSERVERS = createField(DSL.name("nbrofbackgroundjobservers"), SQLDataType.BIGINT, this, "");
 
@@ -101,7 +103,42 @@ public class JobrunrJobsStats extends TableImpl<JobrunrJobsStatsRecord> {
     }
 
     private JobrunrJobsStats(Name alias, Table<JobrunrJobsStatsRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.view("create view \"jobrunr_jobs_stats\" as  SELECT count(*) AS total,\n    ( SELECT count(*) AS count\n           FROM jobrunr_jobs jobs\n          WHERE ((jobs.state)::text = 'AWAITING'::text)) AS awaiting,\n    ( SELECT count(*) AS count\n           FROM jobrunr_jobs jobs\n          WHERE ((jobs.state)::text = 'SCHEDULED'::text)) AS scheduled,\n    ( SELECT count(*) AS count\n           FROM jobrunr_jobs jobs\n          WHERE ((jobs.state)::text = 'ENQUEUED'::text)) AS enqueued,\n    ( SELECT count(*) AS count\n           FROM jobrunr_jobs jobs\n          WHERE ((jobs.state)::text = 'PROCESSING'::text)) AS processing,\n    ( SELECT count(*) AS count\n           FROM jobrunr_jobs jobs\n          WHERE ((jobs.state)::text = 'FAILED'::text)) AS failed,\n    ( SELECT count(*) AS count\n           FROM jobrunr_jobs jobs\n          WHERE ((jobs.state)::text = 'SUCCEEDED'::text)) AS succeeded,\n    ( SELECT ((jm.value)::character(10))::numeric(10,0) AS value\n           FROM jobrunr_metadata jm\n          WHERE ((jm.id)::text = 'succeeded-jobs-counter-cluster'::text)) AS alltimesucceeded,\n    ( SELECT count(*) AS count\n           FROM jobrunr_jobs jobs\n          WHERE ((jobs.state)::text = 'DELETED'::text)) AS deleted,\n    ( SELECT count(*) AS count\n           FROM jobrunr_backgroundjobservers) AS nbrofbackgroundjobservers,\n    ( SELECT count(*) AS count\n           FROM jobrunr_recurring_jobs) AS nbrofrecurringjobs\n   FROM jobrunr_jobs j;"));
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.view("""
+        create view "jobrunr_jobs_stats" as  WITH job_stat_results AS (
+                SELECT jobrunr_jobs.state,
+                   count(*) AS count
+                  FROM jobrunr_jobs
+                 GROUP BY ROLLUP(jobrunr_jobs.state)
+               )
+        SELECT COALESCE(( SELECT job_stat_results.count
+                  FROM job_stat_results
+                 WHERE (job_stat_results.state IS NULL)), (0)::bigint) AS total,
+           COALESCE(( SELECT job_stat_results.count
+                  FROM job_stat_results
+                 WHERE ((job_stat_results.state)::text = 'SCHEDULED'::text)), (0)::bigint) AS scheduled,
+           COALESCE(( SELECT job_stat_results.count
+                  FROM job_stat_results
+                 WHERE ((job_stat_results.state)::text = 'ENQUEUED'::text)), (0)::bigint) AS enqueued,
+           COALESCE(( SELECT job_stat_results.count
+                  FROM job_stat_results
+                 WHERE ((job_stat_results.state)::text = 'PROCESSING'::text)), (0)::bigint) AS processing,
+           COALESCE(( SELECT job_stat_results.count
+                  FROM job_stat_results
+                 WHERE ((job_stat_results.state)::text = 'FAILED'::text)), (0)::bigint) AS failed,
+           COALESCE(( SELECT job_stat_results.count
+                  FROM job_stat_results
+                 WHERE ((job_stat_results.state)::text = 'SUCCEEDED'::text)), (0)::bigint) AS succeeded,
+           COALESCE(( SELECT ((jm.value)::character(10))::numeric(10,0) AS value
+                  FROM jobrunr_metadata jm
+                 WHERE ((jm.id)::text = 'succeeded-jobs-counter-cluster'::text)), (0)::numeric) AS alltimesucceeded,
+           COALESCE(( SELECT job_stat_results.count
+                  FROM job_stat_results
+                 WHERE ((job_stat_results.state)::text = 'DELETED'::text)), (0)::bigint) AS deleted,
+           ( SELECT count(*) AS count
+                  FROM jobrunr_backgroundjobservers) AS nbrofbackgroundjobservers,
+           ( SELECT count(*) AS count
+                  FROM jobrunr_recurring_jobs) AS nbrofrecurringjobs;
+        """));
     }
 
     /**
@@ -131,7 +168,7 @@ public class JobrunrJobsStats extends TableImpl<JobrunrJobsStatsRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
@@ -142,6 +179,11 @@ public class JobrunrJobsStats extends TableImpl<JobrunrJobsStatsRecord> {
     @Override
     public JobrunrJobsStats as(Name alias) {
         return new JobrunrJobsStats(alias, this);
+    }
+
+    @Override
+    public JobrunrJobsStats as(Table<?> alias) {
+        return new JobrunrJobsStats(alias.getQualifiedName(), this);
     }
 
     /**
@@ -160,12 +202,35 @@ public class JobrunrJobsStats extends TableImpl<JobrunrJobsStatsRecord> {
         return new JobrunrJobsStats(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public JobrunrJobsStats rename(Table<?> name) {
+        return new JobrunrJobsStats(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
-    // Row11 type methods
+    // Row10 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row11<Long, Long, Long, Long, Long, Long, Long, Long, Long, Long, Long> fieldsRow() {
-        return (Row11) super.fieldsRow();
+    public Row10<Long, Long, Long, Long, Long, Long, BigDecimal, Long, Long, Long> fieldsRow() {
+        return (Row10) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function10<? super Long, ? super Long, ? super Long, ? super Long, ? super Long, ? super Long, ? super BigDecimal, ? super Long, ? super Long, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function10<? super Long, ? super Long, ? super Long, ? super Long, ? super Long, ? super Long, ? super BigDecimal, ? super Long, ? super Long, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

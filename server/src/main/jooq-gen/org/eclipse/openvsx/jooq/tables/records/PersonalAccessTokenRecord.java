@@ -326,5 +326,6 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         setDescription(description);
         setValue(value);
         setUserData(userData);
+        resetChangedOnNotNull();
     }
 }

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class SetPreReleaseJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
 
-    protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtractResourcesJobRequestHandler.class));
+    protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(SetPreReleaseJobRequestHandler.class));
 
     @Autowired
     MigrationService migrations;

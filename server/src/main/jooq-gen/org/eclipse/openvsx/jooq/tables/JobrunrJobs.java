@@ -7,6 +7,7 @@ package org.eclipse.openvsx.jooq.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -14,11 +15,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.JobrunrJobsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function9;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row9;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -129,22 +133,17 @@ public class JobrunrJobs extends TableImpl<JobrunrJobsRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.JOBRUNR_JOB_CREATED_AT_IDX, Indexes.JOBRUNR_JOB_RCI_IDX, Indexes.JOBRUNR_JOB_SCHEDULED_AT_IDX, Indexes.JOBRUNR_JOB_SIGNATURE_IDX, Indexes.JOBRUNR_JOB_UPDATED_AT_IDX, Indexes.JOBRUNR_STATE_IDX);
+        return Arrays.asList(Indexes.JOBRUNR_JOB_CREATED_AT_IDX, Indexes.JOBRUNR_JOB_RCI_IDX, Indexes.JOBRUNR_JOB_SCHEDULED_AT_IDX, Indexes.JOBRUNR_JOB_SIGNATURE_IDX, Indexes.JOBRUNR_JOBS_STATE_UPDATED_IDX, Indexes.JOBRUNR_STATE_IDX);
     }
 
     @Override
     public UniqueKey<JobrunrJobsRecord> getPrimaryKey() {
         return Keys.JOBRUNR_JOBS_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<JobrunrJobsRecord>> getKeys() {
-        return Arrays.<UniqueKey<JobrunrJobsRecord>>asList(Keys.JOBRUNR_JOBS_PKEY);
     }
 
     @Override
@@ -155,6 +154,11 @@ public class JobrunrJobs extends TableImpl<JobrunrJobsRecord> {
     @Override
     public JobrunrJobs as(Name alias) {
         return new JobrunrJobs(alias, this);
+    }
+
+    @Override
+    public JobrunrJobs as(Table<?> alias) {
+        return new JobrunrJobs(alias.getQualifiedName(), this);
     }
 
     /**
@@ -173,6 +177,14 @@ public class JobrunrJobs extends TableImpl<JobrunrJobsRecord> {
         return new JobrunrJobs(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public JobrunrJobs rename(Table<?> name) {
+        return new JobrunrJobs(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row9 type methods
     // -------------------------------------------------------------------------
@@ -180,5 +192,20 @@ public class JobrunrJobs extends TableImpl<JobrunrJobsRecord> {
     @Override
     public Row9<String, Integer, String, String, String, LocalDateTime, LocalDateTime, LocalDateTime, String> fieldsRow() {
         return (Row9) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function9<? super String, ? super Integer, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? super LocalDateTime, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function9<? super String, ? super Integer, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? super LocalDateTime, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

@@ -252,5 +252,6 @@ public class EntityActiveStateRecord extends UpdatableRecordImpl<EntityActiveSta
         setEntityType(entityType);
         setActive(active);
         setTimestamp(timestamp);
+        resetChangedOnNotNull();
     }
 }

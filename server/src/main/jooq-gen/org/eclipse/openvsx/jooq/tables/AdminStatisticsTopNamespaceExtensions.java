@@ -6,16 +6,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopNamespaceExtensionsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function3;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row3;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -33,7 +37,8 @@ public class AdminStatisticsTopNamespaceExtensions extends TableImpl<AdminStatis
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>public.admin_statistics_top_namespace_extensions</code>
+     * The reference instance of
+     * <code>public.admin_statistics_top_namespace_extensions</code>
      */
     public static final AdminStatisticsTopNamespaceExtensions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS = new AdminStatisticsTopNamespaceExtensions();
 
@@ -46,17 +51,20 @@ public class AdminStatisticsTopNamespaceExtensions extends TableImpl<AdminStatis
     }
 
     /**
-     * The column <code>public.admin_statistics_top_namespace_extensions.admin_statistics_id</code>.
+     * The column
+     * <code>public.admin_statistics_top_namespace_extensions.admin_statistics_id</code>.
      */
     public final TableField<AdminStatisticsTopNamespaceExtensionsRecord, Long> ADMIN_STATISTICS_ID = createField(DSL.name("admin_statistics_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_top_namespace_extensions.namespace</code>.
+     * The column
+     * <code>public.admin_statistics_top_namespace_extensions.namespace</code>.
      */
     public final TableField<AdminStatisticsTopNamespaceExtensionsRecord, String> NAMESPACE = createField(DSL.name("namespace"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
-     * The column <code>public.admin_statistics_top_namespace_extensions.extension_count</code>.
+     * The column
+     * <code>public.admin_statistics_top_namespace_extensions.extension_count</code>.
      */
     public final TableField<AdminStatisticsTopNamespaceExtensionsRecord, Integer> EXTENSION_COUNT = createField(DSL.name("extension_count"), SQLDataType.INTEGER.nullable(false), this, "");
 
@@ -69,21 +77,26 @@ public class AdminStatisticsTopNamespaceExtensions extends TableImpl<AdminStatis
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_top_namespace_extensions</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_top_namespace_extensions</code> table
+     * reference
      */
     public AdminStatisticsTopNamespaceExtensions(String alias) {
         this(DSL.name(alias), ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS);
     }
 
     /**
-     * Create an aliased <code>public.admin_statistics_top_namespace_extensions</code> table reference
+     * Create an aliased
+     * <code>public.admin_statistics_top_namespace_extensions</code> table
+     * reference
      */
     public AdminStatisticsTopNamespaceExtensions(Name alias) {
         this(alias, ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS);
     }
 
     /**
-     * Create a <code>public.admin_statistics_top_namespace_extensions</code> table reference
+     * Create a <code>public.admin_statistics_top_namespace_extensions</code>
+     * table reference
      */
     public AdminStatisticsTopNamespaceExtensions() {
         this(DSL.name("admin_statistics_top_namespace_extensions"), null);
@@ -95,16 +108,20 @@ public class AdminStatisticsTopNamespaceExtensions extends TableImpl<AdminStatis
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<ForeignKey<AdminStatisticsTopNamespaceExtensionsRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<AdminStatisticsTopNamespaceExtensionsRecord, ?>>asList(Keys.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS__ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS_FKEY);
+        return Arrays.asList(Keys.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS__ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS_FKEY);
     }
 
     private transient AdminStatistics _adminStatistics;
 
+    /**
+     * Get the implicit join path to the <code>public.admin_statistics</code>
+     * table.
+     */
     public AdminStatistics adminStatistics() {
         if (_adminStatistics == null)
             _adminStatistics = new AdminStatistics(this, Keys.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS__ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS_FKEY);
@@ -120,6 +137,11 @@ public class AdminStatisticsTopNamespaceExtensions extends TableImpl<AdminStatis
     @Override
     public AdminStatisticsTopNamespaceExtensions as(Name alias) {
         return new AdminStatisticsTopNamespaceExtensions(alias, this);
+    }
+
+    @Override
+    public AdminStatisticsTopNamespaceExtensions as(Table<?> alias) {
+        return new AdminStatisticsTopNamespaceExtensions(alias.getQualifiedName(), this);
     }
 
     /**
@@ -138,6 +160,14 @@ public class AdminStatisticsTopNamespaceExtensions extends TableImpl<AdminStatis
         return new AdminStatisticsTopNamespaceExtensions(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public AdminStatisticsTopNamespaceExtensions rename(Table<?> name) {
+        return new AdminStatisticsTopNamespaceExtensions(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row3 type methods
     // -------------------------------------------------------------------------
@@ -145,5 +175,20 @@ public class AdminStatisticsTopNamespaceExtensions extends TableImpl<AdminStatis
     @Override
     public Row3<Long, String, Integer> fieldsRow() {
         return (Row3) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function3<? super Long, ? super String, ? super Integer, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function3<? super Long, ? super String, ? super Integer, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

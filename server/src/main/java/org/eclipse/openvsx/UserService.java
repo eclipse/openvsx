@@ -11,6 +11,10 @@ package org.eclipse.openvsx;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.AccessTokenJson;
@@ -221,6 +225,23 @@ public class UserService {
             throw new ErrorResultException(message);
         }
 
+        String contentType = null;
+        if(details.logoBytes != null) {
+            try (var in = new ByteArrayInputStream(details.logoBytes)) {
+                var tika = new Tika();
+                contentType = tika.detect(in, details.logo);
+                var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(contentType);
+                if(logoType != null) {
+                    details.logo = "logo-" + details.name + "-" + System.currentTimeMillis() + logoType.getExtension();
+                    if(!logoType.getType().equals(MediaType.image("png")) && !logoType.getType().equals(MediaType.image("jpg"))) {
+                        throw new ErrorResultException("Namespace logo should be of png or jpg type");
+                    }
+                }
+            } catch (IOException | MimeTypeException e) {
+                throw new ErrorResultException("Failed to read namespace logo");
+            }
+        }
+
         if(!Objects.equals(details.displayName, namespace.getDisplayName())) {
             namespace.setDisplayName(details.displayName);
         }
@@ -259,11 +280,13 @@ public class UserService {
 
                 namespace.setLogoName(details.logo);
                 namespace.setLogoBytes(details.logoBytes);
+                namespace.setLogoContentType(contentType);
                 storeNamespaceLogo(namespace);
             } else if (namespace.getLogoStorageType() != null) {
                 storageUtil.removeNamespaceLogo(namespace);
                 namespace.setLogoName(null);
                 namespace.setLogoBytes(null);
+                namespace.setLogoContentType(null);
                 namespace.setLogoStorageType(null);
             }
         }

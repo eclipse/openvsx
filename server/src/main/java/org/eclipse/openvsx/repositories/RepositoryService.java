@@ -453,6 +453,14 @@ public class RepositoryService {
         return findNotMigratedItems("V1_35__FileResource_Generate_Sha256_Checksum.sql");
     }
 
+    public Streamable<MigrationItem> findNotMigratedFileResourceContentTypes() {
+        return findNotMigratedItems("V1_41__FileResource_ContentType.sql");
+    }
+
+    public Streamable<MigrationItem> findNotMigratedNamespaceLogoContentTypes() {
+        return findNotMigratedItems("V1_42__Namespace_Logo_ContentType.sql");
+    }
+
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
         return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript);
     }

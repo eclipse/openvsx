@@ -5,18 +5,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.EntityActiveStateRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function5;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row5;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -107,17 +109,12 @@ public class EntityActiveState extends TableImpl<EntityActiveStateRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public UniqueKey<EntityActiveStateRecord> getPrimaryKey() {
         return Keys.ENTITY_ACTIVE_STATE_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<EntityActiveStateRecord>> getKeys() {
-        return Arrays.<UniqueKey<EntityActiveStateRecord>>asList(Keys.ENTITY_ACTIVE_STATE_PKEY);
     }
 
     @Override
@@ -128,6 +125,11 @@ public class EntityActiveState extends TableImpl<EntityActiveStateRecord> {
     @Override
     public EntityActiveState as(Name alias) {
         return new EntityActiveState(alias, this);
+    }
+
+    @Override
+    public EntityActiveState as(Table<?> alias) {
+        return new EntityActiveState(alias.getQualifiedName(), this);
     }
 
     /**
@@ -146,6 +148,14 @@ public class EntityActiveState extends TableImpl<EntityActiveStateRecord> {
         return new EntityActiveState(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public EntityActiveState rename(Table<?> name) {
+        return new EntityActiveState(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row5 type methods
     // -------------------------------------------------------------------------
@@ -153,5 +163,20 @@ public class EntityActiveState extends TableImpl<EntityActiveStateRecord> {
     @Override
     public Row5<Long, Long, String, Boolean, LocalDateTime> fieldsRow() {
         return (Row5) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function5<? super Long, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function5<? super Long, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import jakarta.persistence.EntityManager;
@@ -103,6 +104,7 @@ public class ExtensionVersionIntegrityService {
         resource.setExtension(download.getExtension());
         resource.setName(NamingUtil.toFileFormat(download.getExtension(), ".sigzip"));
         resource.setType(FileResource.DOWNLOAD_SIG);
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
 
         var privateKeyParameters = new Ed25519PrivateKeyParameters(keyPair.getPrivateKey(), 0);
         try {

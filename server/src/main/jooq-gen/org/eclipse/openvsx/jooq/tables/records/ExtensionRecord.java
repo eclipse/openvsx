@@ -437,5 +437,6 @@ public class ExtensionRecord extends UpdatableRecordImpl<ExtensionRecord> implem
         setPublishedDate(publishedDate);
         setLastUpdatedDate(lastUpdatedDate);
         setReviewCount(reviewCount);
+        resetChangedOnNotNull();
     }
 }

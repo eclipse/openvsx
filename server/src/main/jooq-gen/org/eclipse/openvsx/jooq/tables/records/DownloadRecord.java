@@ -215,5 +215,6 @@ public class DownloadRecord extends UpdatableRecordImpl<DownloadRecord> implemen
         setFileResourceIdNotFk(fileResourceIdNotFk);
         setTimestamp(timestamp);
         setAmount(amount);
+        resetChangedOnNotNull();
     }
 }

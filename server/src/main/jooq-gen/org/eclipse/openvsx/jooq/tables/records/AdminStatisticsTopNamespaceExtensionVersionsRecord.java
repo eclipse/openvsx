@@ -20,42 +20,48 @@ public class AdminStatisticsTopNamespaceExtensionVersionsRecord extends TableRec
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>public.admin_statistics_top_namespace_extension_versions.admin_statistics_id</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_namespace_extension_versions.admin_statistics_id</code>.
      */
     public void setAdminStatisticsId(Long value) {
         set(0, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_namespace_extension_versions.admin_statistics_id</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_namespace_extension_versions.admin_statistics_id</code>.
      */
     public Long getAdminStatisticsId() {
         return (Long) get(0);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_top_namespace_extension_versions.namespace</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_namespace_extension_versions.namespace</code>.
      */
     public void setNamespace(String value) {
         set(1, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_namespace_extension_versions.namespace</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_namespace_extension_versions.namespace</code>.
      */
     public String getNamespace() {
         return (String) get(1);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_top_namespace_extension_versions.extension_version_count</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_namespace_extension_versions.extension_version_count</code>.
      */
     public void setExtensionVersionCount(Integer value) {
         set(2, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_namespace_extension_versions.extension_version_count</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_namespace_extension_versions.extension_version_count</code>.
      */
     public Integer getExtensionVersionCount() {
         return (Integer) get(2);
@@ -158,7 +164,8 @@ public class AdminStatisticsTopNamespaceExtensionVersionsRecord extends TableRec
     }
 
     /**
-     * Create a detached, initialised AdminStatisticsTopNamespaceExtensionVersionsRecord
+     * Create a detached, initialised
+     * AdminStatisticsTopNamespaceExtensionVersionsRecord
      */
     public AdminStatisticsTopNamespaceExtensionVersionsRecord(Long adminStatisticsId, String namespace, Integer extensionVersionCount) {
         super(AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS);
@@ -166,5 +173,6 @@ public class AdminStatisticsTopNamespaceExtensionVersionsRecord extends TableRec
         setAdminStatisticsId(adminStatisticsId);
         setNamespace(namespace);
         setExtensionVersionCount(extensionVersionCount);
+        resetChangedOnNotNull();
     }
 }

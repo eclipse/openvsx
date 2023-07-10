@@ -289,5 +289,6 @@ public class JobrunrMetadataRecord extends UpdatableRecordImpl<JobrunrMetadataRe
         setValue(value);
         setCreatedat(createdat);
         setUpdatedat(updatedat);
+        resetChangedOnNotNull();
     }
 }

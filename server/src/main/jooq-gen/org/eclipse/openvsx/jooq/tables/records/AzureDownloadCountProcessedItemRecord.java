@@ -51,42 +51,48 @@ public class AzureDownloadCountProcessedItemRecord extends UpdatableRecordImpl<A
     }
 
     /**
-     * Setter for <code>public.azure_download_count_processed_item.processed_on</code>.
+     * Setter for
+     * <code>public.azure_download_count_processed_item.processed_on</code>.
      */
     public void setProcessedOn(LocalDateTime value) {
         set(2, value);
     }
 
     /**
-     * Getter for <code>public.azure_download_count_processed_item.processed_on</code>.
+     * Getter for
+     * <code>public.azure_download_count_processed_item.processed_on</code>.
      */
     public LocalDateTime getProcessedOn() {
         return (LocalDateTime) get(2);
     }
 
     /**
-     * Setter for <code>public.azure_download_count_processed_item.execution_time</code>.
+     * Setter for
+     * <code>public.azure_download_count_processed_item.execution_time</code>.
      */
     public void setExecutionTime(Integer value) {
         set(3, value);
     }
 
     /**
-     * Getter for <code>public.azure_download_count_processed_item.execution_time</code>.
+     * Getter for
+     * <code>public.azure_download_count_processed_item.execution_time</code>.
      */
     public Integer getExecutionTime() {
         return (Integer) get(3);
     }
 
     /**
-     * Setter for <code>public.azure_download_count_processed_item.success</code>.
+     * Setter for
+     * <code>public.azure_download_count_processed_item.success</code>.
      */
     public void setSuccess(Boolean value) {
         set(4, value);
     }
 
     /**
-     * Getter for <code>public.azure_download_count_processed_item.success</code>.
+     * Getter for
+     * <code>public.azure_download_count_processed_item.success</code>.
      */
     public Boolean getSuccess() {
         return (Boolean) get(4);
@@ -252,5 +258,6 @@ public class AzureDownloadCountProcessedItemRecord extends UpdatableRecordImpl<A
         setProcessedOn(processedOn);
         setExecutionTime(executionTime);
         setSuccess(success);
+        resetChangedOnNotNull();
     }
 }

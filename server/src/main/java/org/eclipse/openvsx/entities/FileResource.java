@@ -47,6 +47,8 @@ public class FileResource {
     @Basic(fetch = FetchType.LAZY)
     byte[] content;
 
+    String contentType;
+
     @Column(length = 32)
     String storageType;
 
@@ -89,6 +91,14 @@ public class FileResource {
 	public void setContent(byte[] content) {
 		this.content = content;
 	}
+
+	public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
 
     public String getStorageType() {
         return storageType;

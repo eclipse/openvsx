@@ -14,15 +14,14 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -72,7 +71,7 @@ public class GoogleCloudStorageService implements IStorageService {
                     + objectId + ": missing Google bucket id");
         }
 
-        uploadFile(resource.getContent(), resource.getName(), objectId);
+        uploadFile(resource.getContent(), resource.getName(), objectId, resource.getContentType());
     }
 
     @Override
@@ -83,12 +82,27 @@ public class GoogleCloudStorageService implements IStorageService {
                     + objectId + ": missing Google bucket id");
         }
 
-        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), objectId);
+        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), objectId, namespace.getLogoContentType());
     }
 
-    protected void uploadFile(byte[] content, String fileName, String objectId) {
+    @Override
+    public void uploadNamespaceLogo(Namespace namespace, TempFile logoFile) {
+        var objectId = getObjectId(namespace);
+        if (StringUtils.isEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot upload file "
+                    + objectId + ": missing Google bucket id");
+        }
+
+        uploadFile(logoFile, namespace.getLogoName(), objectId, namespace.getLogoStorageType());
+    }
+
+    protected void uploadFile(byte[] content, String fileName, String objectId, String contentType) {
+        if(contentType.startsWith("text/")) {
+            contentType += "; charset=utf-8";
+        }
+
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
-                .setContentType(StorageUtil.getFileType(fileName).toString());
+                .setContentType(contentType);
         if (fileName.endsWith(".vsix")) {
             blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
@@ -106,12 +120,12 @@ public class GoogleCloudStorageService implements IStorageService {
                     + objectId + ": missing Google bucket id");
         }
 
-        uploadFile(file, resource.getName(), objectId);
+        uploadFile(file, resource.getName(), objectId, resource.getContentType());
     }
 
-    protected void uploadFile(TempFile file, String fileName, String objectId) {
+    protected void uploadFile(TempFile file, String fileName, String objectId, String contentType) {
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
-                .setContentType(StorageUtil.getFileType(fileName).toString());
+                .setContentType(contentType);
         if (fileName.endsWith(".vsix")) {
             blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {

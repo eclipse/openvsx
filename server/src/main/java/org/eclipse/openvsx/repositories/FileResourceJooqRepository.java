@@ -44,7 +44,12 @@ public class FileResourceJooqRepository {
     }
 
     public List<FileResource> findAll(Collection<Long> extensionIds, Collection<String> types) {
-        return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE)
+        return dsl.select(
+                    FILE_RESOURCE.ID,
+                    FILE_RESOURCE.EXTENSION_ID,
+                    FILE_RESOURCE.NAME,
+                    FILE_RESOURCE.TYPE
+                )
                 .from(FILE_RESOURCE)
                 .where(FILE_RESOURCE.EXTENSION_ID.in(extensionIds).and(FILE_RESOURCE.TYPE.in(types)))
                 .fetch()
@@ -52,7 +57,15 @@ public class FileResourceJooqRepository {
     }
 
     public List<FileResource> findAllResources(long extVersionId, String prefix) {
-        return dsl.select(FILE_RESOURCE.ID, FILE_RESOURCE.EXTENSION_ID, FILE_RESOURCE.NAME, FILE_RESOURCE.TYPE, FILE_RESOURCE.STORAGE_TYPE, FILE_RESOURCE.CONTENT)
+        return dsl.select(
+                    FILE_RESOURCE.ID,
+                    FILE_RESOURCE.EXTENSION_ID,
+                    FILE_RESOURCE.NAME,
+                    FILE_RESOURCE.TYPE,
+                    FILE_RESOURCE.STORAGE_TYPE,
+                    FILE_RESOURCE.CONTENT,
+                    FILE_RESOURCE.CONTENT_TYPE
+                )
                 .from(FILE_RESOURCE)
                 .where(FILE_RESOURCE.TYPE.eq(FileResource.RESOURCE))
                 .and(FILE_RESOURCE.EXTENSION_ID.eq(extVersionId))
