@@ -199,7 +199,7 @@ public class AdminAPI {
                 json.allVersions = Collections.emptyMap();
                 json.allTargetPlatformVersions = Collections.emptyMap();
             } else {
-                json = local.toExtensionVersionJson(latest, null, false, false);
+                json = local.toExtensionVersionJson(latest, null, false);
                 json.allTargetPlatformVersions = versions.getVersionsTrxn(extension).stream()
                         .collect(Collectors.groupingBy(ExtensionVersion::getVersion, Collectors.mapping(ExtensionVersion::getTargetPlatform, Collectors.toList())));
             }

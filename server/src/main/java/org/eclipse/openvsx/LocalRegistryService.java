@@ -113,7 +113,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
-        var json = toExtensionVersionJson(extVersion, targetPlatform, true, false);
+        var json = toExtensionVersionJson(extVersion, targetPlatform, true);
         json.downloads = getDownloads(extVersion.getExtension(), targetPlatform, extVersion.getVersion());
         return json;
     }
@@ -611,24 +611,13 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Valid token");
     }
 
-    @Retryable(value = { DataIntegrityViolationException.class })
-    @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        var token = new PersonalAccessToken();
-        token.setDescription("One time use publish token");
-        token.setValue(users.generateTokenValue());
-        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
-        token.setAccessedTimestamp(token.getCreatedTimestamp());
-        token.setUser(user);
-        token.setActive(true);
-        entityManager.persist(token);
-
-        var json = publish(content, token.getValue());
-        token.setActive(false);
+        var token = users.createAccessToken(user, "One time use publish token");
+        var json = publish(content, token.value);
+        users.deleteAccessToken(user, token.id);
         return json;
     }
 
-    @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
         var token = users.useAccessToken(tokenValue);
         if (token == null || token.getUser() == null) {
@@ -639,7 +628,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         eclipse.checkPublisherAgreement(token.getUser());
 
         var extVersion = extensions.publishVersion(content, token);
-        var json = toExtensionVersionJson(extVersion, null, true, true);
+        var json = toExtensionVersionJson(extVersion, null, true);
         json.success = "It can take a couple minutes before the extension version is available";
 
         var sameVersions = repositories.findVersions(extVersion.getVersion(), extVersion.getExtension());
@@ -812,14 +801,10 @@ public class LocalRegistryService implements IExtensionRegistry {
         }).collect(Collectors.toList());
     }
 
-    public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, String targetPlatform, boolean onlyActive, boolean inTransaction) {
+    public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, String targetPlatform, boolean onlyActive) {
         var extension = extVersion.getExtension();
-        var latest = inTransaction
-                ? versions.getLatest(extension, targetPlatform, false, onlyActive)
-                : versions.getLatestTrxn(extension, targetPlatform, false, onlyActive);
-        var latestPreRelease = inTransaction
-                ? versions.getLatest(extension, targetPlatform, true, onlyActive)
-                : versions.getLatestTrxn(extension, targetPlatform, true, onlyActive);
+        var latest = versions.getLatestTrxn(extension, targetPlatform, false, onlyActive);
+        var latestPreRelease = versions.getLatestTrxn(extension, targetPlatform, true, onlyActive);
 
         var json = extVersion.toExtensionJson();
         json.preview = latest != null && latest.isPreview();
