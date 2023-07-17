@@ -39,6 +39,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,9 +66,8 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 @ExtendWith(SpringExtension.class)
 @MockBean({
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
-    UserService.class, PublishExtensionVersionHandler.class,
-    SimpleMeterRegistry.class
+    VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class, UserService.class,
+    PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, JobRequestScheduler.class
 })
 public class EclipseServiceTest {
 

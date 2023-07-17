@@ -23,11 +23,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
+import org.eclipse.openvsx.publish.PublishExtensionVersionJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -50,6 +52,9 @@ public class ExtensionService {
     @Autowired
     PublishExtensionVersionHandler publishHandler;
 
+    @Autowired
+    JobRequestScheduler scheduler;
+
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
 
@@ -61,10 +66,14 @@ public class ExtensionService {
     }
 
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
-        var extensionFile = createExtensionFile(content);
-        var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-        publishHandler.publishAsync(download, extensionFile, this);
-        return download.getExtension();
+        try(var extensionFile = createExtensionFile(content)) {
+            var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+            publishHandler.persistDownload(download);
+            scheduler.enqueue(new PublishExtensionVersionJobRequest(download.getId()));
+            return download.getExtension();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private FileResource doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
