@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
 public class AdminStatistics {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "adminStatisticsSeq")
+    @SequenceGenerator(name = "adminStatisticsSeq", sequenceName = "admin_statistics_seq")
     long id;
 
     int year;

@@ -33,8 +33,9 @@ public class Namespace implements Serializable {
 	private static final String SL_TWITTER = "twitter";
 
     @Id
-    @GeneratedValue
-    long id;
+	@GeneratedValue(generator = "namespaceSeq")
+	@SequenceGenerator(name = "namespaceSeq", sequenceName = "namespace_seq")
+	long id;
 
     @Column(length = 128)
     String publicId;

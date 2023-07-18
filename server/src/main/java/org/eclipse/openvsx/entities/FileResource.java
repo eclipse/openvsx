@@ -33,7 +33,8 @@ public class FileResource {
     public static final String STORAGE_AZURE = "azure-blob";
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "fileResourceSeq")
+    @SequenceGenerator(name = "fileResourceSeq", sequenceName = "file_resource_seq")
     long id;
 
     @OneToOne

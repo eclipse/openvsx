@@ -339,12 +339,7 @@ public class ExtensionProcessor implements AutoCloseable {
         binary.setExtension(extVersion);
         binary.setName(binaryName);
         binary.setType(FileResource.DOWNLOAD);
-        try {
-            binary.setContent(Files.readAllBytes(extensionFile.getPath()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        binary.setContent(null);
         return binary;
     }
 

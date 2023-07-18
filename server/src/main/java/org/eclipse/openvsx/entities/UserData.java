@@ -13,12 +13,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 
 import org.eclipse.openvsx.json.UserJson;
 
@@ -29,7 +24,8 @@ public class UserData implements Serializable {
     public static final String ROLE_PRIVILEGED = "privileged";
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "userDataSeq")
+    @SequenceGenerator(name = "userDataSeq", sequenceName = "user_data_seq")
     long id;
 
     @Column(length = 32)

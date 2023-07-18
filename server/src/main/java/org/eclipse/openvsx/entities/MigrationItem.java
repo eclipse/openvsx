@@ -9,15 +9,14 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class MigrationItem {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "migrationItemSeq")
+    @SequenceGenerator(name = "migrationItemSeq", sequenceName = "migration_item_seq")
     long id;
 
     String migrationScript;
