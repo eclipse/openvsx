@@ -10,8 +10,9 @@
 package org.eclipse.openvsx.publish;
 
 import com.google.common.base.Joiner;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.ExtensionProcessor;
-import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
@@ -23,18 +24,12 @@ import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.retry.annotation.Retryable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
@@ -201,50 +196,6 @@ public class PublishExtensionVersionHandler {
         return updatedExtensions;
     }
 
-    @Async
-    @Retryable
-    public void publishAsync(FileResource download, TempFile extensionFile, ExtensionService extensionService) {
-        var extVersion = download.getExtension();
-
-        // Delete file resources in case publishAsync is retried
-        service.deleteFileResources(extVersion);
-        download.setId(0L);
-
-        service.storeDownload(download, extensionFile);
-        service.persistResource(download);
-        try(var processor = new ExtensionProcessor(extensionFile)) {
-            Consumer<FileResource> consumer = resource -> {
-                service.storeResource(resource);
-                service.persistResource(resource);
-            };
-
-            if(integrityService.isEnabled()) {
-                var keyPair = extVersion.getSignatureKeyPair();
-                if(keyPair != null) {
-                    var signature = integrityService.generateSignature(download, extensionFile, keyPair);
-                    consumer.accept(signature);
-                } else {
-                    // Can happen when GenerateKeyPairJobRequestHandler hasn't run yet and there is no active SignatureKeyPair.
-                    // This extension version should be assigned a SignatureKeyPair and a signature FileResource should be created
-                    // by the ExtensionVersionSignatureJobRequestHandler migration.
-                    logger.warn("Integrity service is enabled, but {} did not have an active key pair", NamingUtil.toLogFormat(extVersion));
-                }
-            }
-
-            processor.processEachResource(extVersion, consumer);
-            processor.getFileResources(extVersion).forEach(consumer);
-            consumer.accept(processor.generateSha256Checksum(extVersion));
-        }
-
-        // Update whether extension is active, the search index and evict cache
-        service.activateExtension(extVersion, extensionService);
-        try {
-            extensionFile.close();
-        } catch (IOException e) {
-            logger.error("failed to delete temp file", e);
-        }
-    }
-
     public void mirror(FileResource download, TempFile extensionFile, String signatureName) {
         var extVersion = download.getExtension();
         service.mirrorResource(download);
@@ -264,5 +215,11 @@ public class PublishExtensionVersionHandler {
         resource.setName(signatureName);
         resource.setType(FileResource.DOWNLOAD_SIG);
         return resource;
+    }
+
+    @Transactional
+    public void persistDownload(FileResource download) {
+        download.setStorageType(FileResource.STORAGE_DB);
+        entityManager.persist(download);
     }
 }
