@@ -11,19 +11,14 @@ package org.eclipse.openvsx.entities;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 @Entity
 public class PersistedLog {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "persistedLogSeq")
+    @SequenceGenerator(name = "persistedLogSeq", sequenceName = "persisted_log_seq")
     long id;
 
     LocalDateTime timestamp;

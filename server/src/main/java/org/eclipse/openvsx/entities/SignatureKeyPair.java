@@ -9,10 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -26,7 +24,8 @@ public class SignatureKeyPair implements Serializable {
     public static final String KEYPAIR_MODE_DELETE = "delete";
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "signatureKeyPairSeq")
+    @SequenceGenerator(name = "signatureKeyPairSeq", sequenceName = "signature_key_pair_seq")
     long id;
 
     @Column(length = 128)

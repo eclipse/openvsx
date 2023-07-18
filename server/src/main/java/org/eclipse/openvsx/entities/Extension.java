@@ -28,7 +28,8 @@ import org.eclipse.openvsx.util.NamingUtil;
 public class Extension implements Serializable {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "extensionSeq")
+    @SequenceGenerator(name = "extensionSeq", sequenceName = "extension_seq")
     long id;
 
     @Column(length = 128)

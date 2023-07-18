@@ -36,7 +36,6 @@ import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
-import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -85,7 +84,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
-    EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class, JobRequestScheduler.class
+    EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class
 })
 public class RegistryAPITest {
 

@@ -9,12 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 import org.eclipse.openvsx.json.NamespaceMembershipJson;
 
@@ -28,7 +23,8 @@ public class NamespaceMembership implements Serializable {
     public static final String ROLE_CONTRIBUTOR = "contributor";
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "namespaceMembershipSeq")
+    @SequenceGenerator(name = "namespaceMembershipSeq", sequenceName = "namespace_membership_seq")
     long id;
 
     @ManyToOne

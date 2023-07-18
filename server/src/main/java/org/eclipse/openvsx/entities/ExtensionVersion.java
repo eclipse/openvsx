@@ -41,7 +41,8 @@ public class ExtensionVersion implements Serializable {
     }
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "extensionVersionSeq")
+    @SequenceGenerator(name = "extensionVersionSeq", sequenceName = "extension_version_seq")
     long id;
 
     @ManyToOne
