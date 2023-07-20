@@ -37,7 +37,8 @@ def versions = [
     commons_lang3: '3.12.0',
     httpclient5: '5.2.1',
     jaxb_api: '2.3.1',
-    jaxb_impl: '2.3.8'
+    jaxb_impl: '2.3.8',
+    gatling: '3.9.5'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -60,6 +61,8 @@ sourceSets {
 configurations {
     devImplementation.extendsFrom implementation
     devRuntimeOnly.extendsFrom runtimeOnly
+
+    gatling.exclude group: "io.gatling.highcharts", module: "gatling-charts-highcharts"
 }
 
 dependencies {
@@ -115,6 +118,9 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
     testRuntimeOnly "org.testcontainers:postgresql:${versions.testcontainers}"
+
+    gatling "io.gatling:gatling-core:${versions.gatling}"
+    gatling "io.gatling:gatling-app:${versions.gatling}"
 }
 
 jooq {
