@@ -11,7 +11,7 @@
 import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
-import { Button, Typography } from '@material-ui/core';
+import { Button, Typography } from '@mui/material';
 import { MainContext } from '../../context';
 import { isError, Extension } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';

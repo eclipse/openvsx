@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Theme, createStyles, WithStyles, withStyles, Box, Typography, Divider, Link } from '@material-ui/core';
+import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect } from 'react';
+import { Box, Typography, Divider, Link } from '@mui/material';
 import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';
 import { ExtensionReview, Extension, ExtensionReviewList, isEqualUser, isError } from '../../extension-registry-types';
@@ -20,126 +20,74 @@ import { Timestamp } from '../../components/timestamp';
 import { ExportRatingStars } from './extension-rating-stars';
 import { ExtensionReviewDialog } from './extension-review-dialog';
 
-const reviewStyles = (theme: Theme) => createStyles({
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        ['@media(max-width: 360px)']: {
-            flexDirection: 'column',
-            '& > div:first-of-type': {
-                marginBottom: '1rem'
-            },
-            '& button': {
-                maxWidth: '12rem',
-            }
-        },
-    },
-    link: {
-        textDecoration: 'none',
-        color: theme.palette.text.primary,
-        '&:hover': {
-            textDecoration: 'underline'
-        }
-    },
-    comment: {
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-    }
-});
+export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsProps> = props => {
+    const [reviewList, setReviewList] = useState<ExtensionReviewList>();
+    const [loading, setLoading] = useState<boolean>(true);
+    const [revoked, setRevoked] = useState<boolean>(false);
+    const context = useContext(MainContext);
+    const abortController = new AbortController();
 
-class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailReviewsComponent.Props, ExtensionDetailReviewsComponent.State> {
+    useEffect(() => {
+        updateReviews();
+        return () => abortController.abort();
+    }, []);
 
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected abortController = new AbortController();
-
-    constructor(props: ExtensionDetailReviewsComponent.Props) {
-        super(props);
-
-        this.state = { loading: true, revoked: false };
-    }
-
-    componentDidMount() {
-        this.updateReviews();
-    }
-
-    componentWillUnmount() {
-        this.abortController.abort();
-    }
-
-    protected async updateReviews() {
+    const updateReviews = async () => {
         try {
-            const reviewList = await this.context.service.getExtensionReviews(this.abortController, this.props.extension);
-            this.setState({ reviewList, loading: false, revoked: false });
+            const reviewList = await context.service.getExtensionReviews(abortController, props.extension);
+            setReviewList(reviewList);
         } catch (err) {
-            this.context.handleError(err);
-            this.setState({ loading: false, revoked: false });
+            context.handleError(err);
         }
-    }
 
-    protected readonly saveCompleted = () => {
-        this.setState({ loading: true });
-        this.updateReviews();
-        this.props.reviewsDidUpdate();
+        setLoading(false);
+        setRevoked(false);
     };
 
-    protected handleRevokeButton = async () => {
-        this.setState({ revoked: true });
+    const saveCompleted = () => {
+        setLoading(true);
+        updateReviews();
+        props.reviewsDidUpdate();
+    };
+
+    const handleRevokeButton = async () => {
+        setRevoked(true);
         try {
-            const result = await this.context.service.deleteReview(this.abortController, this.state.reviewList!.deleteUrl);
+            const result = await context.service.deleteReview(abortController, reviewList!.deleteUrl);
             if (isError(result)) {
                 throw result;
             }
-            this.saveCompleted();
+            saveCompleted();
         } catch (err) {
-            this.context.handleError(err);
+            context.handleError(err);
         }
     };
 
-    render() {
-        return <React.Fragment>
-            <Box className={this.props.classes.header} my={2}>
-                <Box>
-                    <Typography variant='h5'>
-                        User Reviews
-                    </Typography>
-                </Box>
-                {this.renderButton()}
-            </Box>
-            <Divider />
-            <Box>
-                <DelayedLoadIndicator loading={this.state.loading}/>
-                {this.renderReviewList(this.state.reviewList)}
-            </Box>
-        </React.Fragment>;
-    }
-
-    protected renderButton(): React.ReactNode {
-        if (!this.context.user || !this.state.reviewList) {
+    const renderButton = (): ReactNode => {
+        if (!context.user || !reviewList) {
             return  '';
         }
-        const existingReview = this.state.reviewList.reviews.find(r => isEqualUser(r.user, this.context.user!));
+        const existingReview = reviewList.reviews.find(r => isEqualUser(r.user, context.user!));
         if (existingReview) {
             const localTime = toLocalTime(existingReview.timestamp);
             return <ButtonWithProgress
-                    working={this.state.revoked}
-                    onClick={this.handleRevokeButton}
-                    title={`Revoke review written by ${this.context.user.loginName} on ${localTime}`} >
+                    working={revoked}
+                    onClick={handleRevokeButton}
+                    title={`Revoke review written by ${context.user.loginName} on ${localTime}`} >
                 Revoke my Review
             </ButtonWithProgress>;
         } else {
             return <Box>
                 <ExtensionReviewDialog
-                    saveCompleted={this.saveCompleted}
-                    extension={this.props.extension}
-                    reviewPostUrl={this.state.reviewList.postUrl}
+                    saveCompleted={saveCompleted}
+                    extension={props.extension}
+                    reviewPostUrl={reviewList.postUrl}
                 />
             </Box>;
         }
-    }
+    };
 
-    protected renderReviewList(list?: ExtensionReviewList): React.ReactNode {
+    const renderReviewList = (list?: ExtensionReviewList): ReactNode => {
         if (!list) {
             return '';
         }
@@ -148,25 +96,29 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                 <Typography>Be the first to review this extension</Typography>
             </Box>;
         }
-        return list.reviews.map(this.renderReview.bind(this));
-    }
+        return list.reviews.map(renderReview.bind(this));
+    };
 
-    protected renderReview(r: ExtensionReview): React.ReactNode {
-        return <React.Fragment key={r.user.loginName + r.timestamp}>
+    const renderReview = (r: ExtensionReview): ReactNode => {
+        return <Fragment key={r.user.loginName + r.timestamp}>
             <Box my={2}>
                 <Box display='flex'>
                     {
                         r.timestamp ?
-                        <React.Fragment>
+                        <>
                             <Typography variant='body2'><Timestamp value={r.timestamp}/></Typography>
                             <TextDivider />
-                        </React.Fragment>
+                        </>
                         : null
                     }
                     <Typography variant='body2'>
                         {
                             r.user.homepage ?
-                            <Link href={r.user.homepage} className={this.props.classes.link}>
+                            <Link
+                                href={r.user.homepage}
+                                color='text.primary'
+                                underline='hover'
+                            >
                                 {r.user.loginName}
                             </Link>
                             :
@@ -178,25 +130,47 @@ class ExtensionDetailReviewsComponent extends React.Component<ExtensionDetailRev
                     <ExportRatingStars number={r.rating} />
                 </Box>
                 <Box overflow='auto'>
-                    <Typography variant='body1' classes={{ root: this.props.classes.comment }}>{r.comment}</Typography>
+                    <Typography variant='body1' sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.comment}</Typography>
                 </Box>
             </Box>
             <Divider />
-        </React.Fragment>;
-    }
+        </Fragment>;
+    };
+
+    return <>
+        <Box
+            sx={{
+                my: 2,
+                display: 'flex',
+                justifyContent: 'space-between',
+                ['@media(max-width: 360px)']: {
+                    flexDirection: 'column',
+                    '& > div:first-of-type': {
+                        marginBottom: '1rem'
+                    },
+                    '& button': {
+                        maxWidth: '12rem',
+                    }
+                }
+            }}
+        >
+            <Box>
+                <Typography variant='h5'>
+                    User Reviews
+                </Typography>
+            </Box>
+            {renderButton()}
+        </Box>
+        <Divider />
+        <Box>
+            <DelayedLoadIndicator loading={loading}/>
+            {renderReviewList(reviewList)}
+        </Box>
+    </>;
+
+};
+
+export interface ExtensionDetailReviewsProps {
+    extension: Extension;
+    reviewsDidUpdate: () => void;
 }
-
-export namespace ExtensionDetailReviewsComponent {
-    export interface Props extends WithStyles<typeof reviewStyles> {
-        extension: Extension;
-        reviewsDidUpdate: () => void;
-    }
-    export interface State {
-        reviewList?: ExtensionReviewList;
-        loading: boolean;
-        revoked: boolean;
-    }
-}
-
-export const ExtensionDetailReviews = withStyles(reviewStyles)(ExtensionDetailReviewsComponent);
-

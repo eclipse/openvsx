@@ -10,7 +10,6 @@
 package org.eclipse.openvsx;
 
 import com.google.common.base.Joiner;
-import org.apache.commons.io.IOUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.AccessTokenJson;
@@ -31,9 +30,6 @@ import org.springframework.stereotype.Component;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -236,23 +232,13 @@ public class UserService {
         if(!Objects.equals(details.socialLinks, namespace.getSocialLinks())) {
             namespace.setSocialLinks(details.socialLinks);
         }
-        if(details.logoBytes == null) {
-            details.logoBytes = new byte[0];
-        }
 
-        boolean contentEquals;
-        try (
-                var oldLogo = storageUtil.downloadNamespaceLogo(namespace);
-                var newLogoInput = new ByteArrayInputStream(details.logoBytes);
-                var oldLogoInput = Files.newInputStream(oldLogo.getPath())
-        ) {
-            contentEquals = IOUtils.contentEquals(newLogoInput, oldLogoInput);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        var logo = namespace.getLogoStorageType() != null
+                ? storageUtil.getNamespaceLogoLocation(namespace).toString()
+                : null;
 
-        if(!contentEquals) {
-            if (details.logoBytes.length > 0) {
+        if(!Objects.equals(details.logo, logo)) {
+            if (details.logoBytes != null && details.logoBytes.length > 0) {
                 if (namespace.getLogoStorageType() != null) {
                     storageUtil.removeNamespaceLogo(namespace);
                 }

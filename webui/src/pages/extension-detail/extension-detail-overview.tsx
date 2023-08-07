@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Box, withStyles, Theme, createStyles, WithStyles, Typography, Button, Link, NativeSelect } from '@material-ui/core';
-import { RouteComponentProps, Link as RouteLink, withRouter } from 'react-router-dom';
-import HomeIcon from '@material-ui/icons/Home';
-import GitHubIcon from '@material-ui/icons/GitHub';
-import BugReportIcon from '@material-ui/icons/BugReport';
-import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState } from 'react';
+import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled } from '@mui/material';
+import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
+import HomeIcon from '@mui/icons-material/Home';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MainContext } from '../../context';
 import { addQuery, createRoute, getTargetPlatformDisplayName } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -22,234 +22,52 @@ import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
 import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-registry-types';
 import { ExtensionListRoutes } from '../extension-list/extension-list-container';
-import { ExtensionDetailComponent, ExtensionDetailRoutes } from './extension-detail';
+import { ExtensionDetailRoutes } from './extension-detail';
 import { ExtensionDetailDownloadsMenu } from './extension-detail-downloads-menu';
 import { UrlString } from '../..';
 
-const overviewStyles = (theme: Theme) => createStyles({
-    overview: {
-        display: 'flex',
-        marginTop: theme.spacing(2),
-        [theme.breakpoints.down('lg')]: {
-            flexDirection: 'column-reverse',
-        }
-    },
-    resourcesWrapper: {
-        flex: 1,
-        display: 'flex',
-        width: '100%',
-        minWidth: '290px',
-        margin: '0 0 0 4.8rem',
-        [theme.breakpoints.down('lg')]: {
-            margin: `0 0 ${theme.spacing(2)}px 0`
-        },
-        [theme.breakpoints.up('xl')]: {
-            flexDirection: 'column'
-        },
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column'
-        }
-    },
-    resourcesGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
-        [theme.breakpoints.up('xl')]: {
-            flex: 'none',
-            marginBottom: theme.spacing(2)
-        },
-        [theme.breakpoints.down('sm')]: {
-            flex: 'none',
-            marginBottom: theme.spacing(2)
-        }
-    },
-    link: {
-        textDecoration: 'none',
-        color: theme.palette.text.primary,
-        '&:hover': {
-            textDecoration: 'underline'
-        }
-    },
-    resourceLink: {
-        display: 'flex',
-        alignItems: 'center',
-        marginTop: theme.spacing(0.5)
-    },
-    versionAlias: {
-        color: theme.palette.primary.dark,
-        fontWeight: theme.typography.fontWeightBold
-    },
-    preReleaseFlag: {
-        color: theme.palette.primary.dark,
-        fontStyle: 'italic',
-        marginLeft: theme.spacing(2),
-        padding: '4px'
-    },
-    tagButton: {
-        fontWeight: 'normal',
-        textTransform: 'none',
-        marginRight: theme.spacing(0.5),
-        marginBottom: theme.spacing(0.5),
-        padding: '1px 6px'
-    },
-    downloadButton: {
-        marginTop: theme.spacing(2)
-    },
-    moreInfo: {
-        maxWidth: '30rem',
-    }
-});
+export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewProps> = props => {
 
-class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOverview.Props, ExtensionDetailOverview.State> {
+    const [loading, setLoading] = useState(true);
+    const [readme, setReadme] = useState('');
+    const { pageSettings, service, handleError } = useContext(MainContext);
+    const params = useParams();
+    const navigate = useNavigate();
+    const abortController = new AbortController();
 
-    static contextType = MainContext;
-    declare context: MainContext;
+    useEffect(() => {
+        updateReadme();
+        return () => {
+            abortController.abort();
+        };
+    }, []);
 
-    protected abortController = new AbortController();
+    useEffect(() => {
+        setLoading(true);
+        updateReadme();
+    }, [props.extension.namespace, props.extension.name, props.extension.version]);
 
-    constructor(props: ExtensionDetailOverview.Props) {
-        super(props);
-        this.state = { loading: true };
-    }
-
-    componentDidMount(): void {
-        this.updateReadme();
-    }
-
-    componentWillUnmount(): void {
-        this.abortController.abort();
-    }
-
-    componentDidUpdate(prevProps: ExtensionDetailOverview.Props) {
-        const prevExt = prevProps.extension;
-        const newExt = this.props.extension;
-        if (prevExt.namespace !== newExt.namespace || prevExt.name !== newExt.name || prevExt.version !== newExt.version) {
-            this.setState({ loading: true });
-            this.updateReadme();
-        }
-    }
-
-    protected async updateReadme(): Promise<void> {
-        if (this.props.extension.files.readme) {
+    const updateReadme = async (): Promise<void> => {
+        if (props.extension.files.readme) {
             try {
-                const readme = await this.context.service.getExtensionReadme(this.abortController, this.props.extension);
-                this.setState({ readme, loading: false });
+                const readme = await service.getExtensionReadme(abortController, props.extension);
+                setReadme(readme);
+                setLoading(false);
             } catch (err) {
-                this.context.handleError(err);
-                this.setState({ loading: false });
+                handleError(err);
+                setLoading(false);
             }
         } else {
-            this.setState({ readme: '## No README available', loading: false });
+            setReadme('## No README available');
+            setLoading(false);
         }
-    }
+    };
 
-    render() {
-        if (!this.state.readme) {
-            return <DelayedLoadIndicator loading={this.state.loading} />;
-        }
-        const { classes, extension } = this.props;
-        const ClaimNamespace = this.context.pageSettings.elements.claimNamespace;
-        const ReportAbuse = this.context.pageSettings.elements.reportAbuse;
-        const otherAliases = Object.keys(extension.allVersions)
-            .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
-        // filter internal tags
-        const tags = extension.tags?.filter(t => !t.startsWith('__'));
-        const DownloadTerms = this.context.pageSettings.elements.downloadTerms;
-        return <React.Fragment>
-            <Box className={classes.overview}>
-                <Box flex={5} overflow='auto'>
-                    <SanitizedMarkdown content={this.state.readme} />
-                </Box>
-                <Box className={classes.resourcesWrapper}>
-                    <Box className={classes.resourcesGroup}>
-                        <Box>
-                            {this.renderVersionSection()}
-                        </Box>
-                        {
-                            (otherAliases.length || extension.versionAlias.length) ? <Box>{this.renderAliasesSection(otherAliases)}</Box> : ''
-                        }
-                    </Box>
-                    <Box className={classes.resourcesGroup}>
-                        {
-                            extension.categories && extension.categories.length > 0 ?
-                            <Box>
-                                {this.renderButtonList('category', 'Categories', extension.categories)}
-                            </Box>
-                            : null
-                        }
-                        {
-                            tags && tags.length > 0 ?
-                            <Box mt={2}>
-                                {this.renderButtonList('search', 'Tags', tags)}
-                            </Box>
-                            : null
-                        }
-                    </Box>
-                    {
-                        extension.downloads ?
-                        <Box className={classes.resourcesGroup}>
-                            <Box>
-                                <Typography variant='h6'>Works With</Typography>
-                                {this.renderWorksWithList(extension.downloads)}
-                            </Box>
-                        </Box>
-                        : null
-                    }
-                    <Box className={classes.resourcesGroup}>
-                        <Box>
-                            <Typography variant='h6'>Resources</Typography>
-                            {this.renderResourceLink('Homepage', extension.homepage)}
-                            {this.renderResourceLink('Repository', extension.repository)}
-                            {this.renderResourceLink('Bugs', extension.bugs)}
-                            {this.renderResourceLink('Q\'n\'A', extension.qna)}
-                            {
-                                extension.downloads && Object.keys(extension.downloads).length > 1 ?
-                                <ExtensionDetailDownloadsMenu downloads={extension.downloads}/>
-                                : extension.downloads && Object.keys(extension.downloads).length == 1 ?
-                                <Button variant='contained' color='secondary'
-                                    href={extension.downloads[Object.keys(extension.downloads)[0]]}
-                                    className={classes.downloadButton}>
-                                    Download
-                                </Button>
-                                : null
-                            }
-                            {
-                                DownloadTerms && extension.downloads && Object.keys(extension.downloads).length > 0
-                                ? <DownloadTerms/>
-                                : null
-                            }
-                        </Box>
-                        {
-                            extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0 ?
-                            <Box mt={2}>
-                                <Typography variant='h6'>Bundled Extensions</Typography>
-                                {extension.bundledExtensions!.map(ref => this.renderExtensionRef(ref))}
-                            </Box>
-                            : null
-                        }
-                        {
-                            extension.dependencies !== undefined && extension.dependencies.length > 0 ?
-                            <Box mt={2}>
-                                <Typography variant='h6'>Dependencies</Typography>
-                                {extension.dependencies!.map(ref => this.renderExtensionRef(ref))}
-                            </Box>
-                            : null
-                        }
-                        <Box mt={2}>
-                            {ClaimNamespace ? <ClaimNamespace extension={extension} className={classes.resourceLink} /> : ''}
-                            {ReportAbuse ? <ReportAbuse extension={extension} className={classes.resourceLink} /> : ''}
-                        </Box>
-                    </Box>
-                </Box>
-            </Box>
-        </React.Fragment>;
-    }
-
-    protected renderVersionSection(): React.ReactNode {
-        const { classes, extension } = this.props;
+    const renderVersionSection = (): ReactNode => {
+        const { extension } = props;
         const allVersions = Object.keys(extension.allVersions)
             .filter(version => VERSION_ALIASES.indexOf(version) < 0);
-        return <React.Fragment>
+        return <>
             <Typography variant='h6'>Version</Typography>
             {
                 allVersions.length === 1 ?
@@ -258,7 +76,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 <NativeSelect
                     name='Version'
                     value={extension.version}
-                    onChange={event => this.props.selectVersion(event.target.value)}
+                    onChange={event => props.selectVersion(event.target.value)}
                     inputProps={{ 'aria-label': 'Version' }} >
                     {
                         allVersions.map(version => <option key={version}>{version}</option>)
@@ -267,7 +85,7 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             }
             {
                 extension.preRelease ?
-                    <span className={classes.preReleaseFlag}>(pre-release version)</span>
+                    <Box component='span' sx={{ color: 'primary.dark', fontStyle: 'italic', ml: 2, p: '4px' }}>(pre-release version)</Box>
                     : ''
             }
             {
@@ -277,11 +95,11 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                 </Box>
                 : null
             }
-        </React.Fragment>;
-    }
+        </>;
+    };
 
-    protected renderAliasesSection(otherAliases: string[]): React.ReactNode {
-        const { classes, extension, params } = this.props;
+    const renderAliasesSection = (otherAliases: string[], sx: SxProps<Theme>): ReactNode => {
+        const { extension } = props;
         const aliasButtons = otherAliases.length ?
             otherAliases.map(alias => {
                 const arr = [ExtensionDetailRoutes.ROOT, extension.namespace, extension.name];
@@ -294,20 +112,21 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
 
                 const route = createRoute(arr);
                 return <Button
-                    className={classes.tagButton}
+                    sx={sx}
                     size='small'
                     variant='outlined'
                     key={alias}
                     title={`Switch to version with "${alias}" alias`}
-                    onClick={() => this.props.history.push(route)} >
+                    onClick={() => navigate(route)}
+                >
                     {alias}
                 </Button>;
             }) : '';
-        return <React.Fragment>
+        return <>
             <Typography variant='h6'>Version Alias{extension.versionAlias.length > 1 ? 'es' : ''}</Typography>
             {
                 extension.versionAlias.map((alias, idx) =>
-                    <span key={alias} className={classes.versionAlias}>{idx > 0 ? ', ' : ''}{alias}</span>
+                    <Box component='span' key={alias} sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>{idx > 0 ? ', ' : ''}{alias}</Box>
                 )
             }
             {
@@ -315,17 +134,17 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                     {extension.versionAlias.length > 0 ? ' ' : ''}Switch to {aliasButtons}
                 </> : ''
             }
-        </React.Fragment>;
-    }
+        </>;
+    };
 
-    protected renderButtonList(kind: 'category' | 'search', title: string, arr: string[]): React.ReactNode {
+    const renderButtonList = (kind: 'category' | 'search', title: string, arr: string[], sx: SxProps<Theme>): ReactNode => {
         const filtered = Array.from(new Set(arr)).sort((a, b) => a.localeCompare(b));
-        return <React.Fragment>
+        return <>
             <Typography variant='h6'>{title}</Typography>
             {
                 filtered.map((buttonLabel: string) =>
                     <Button
-                        className={this.props.classes.tagButton}
+                        sx={sx}
                         size='small'
                         variant='outlined'
                         key={buttonLabel}
@@ -336,26 +155,26 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
                         }
                         onClick={() => {
                             const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
-                            this.props.history.push(route);
+                            navigate(route);
                         }} >
                         {buttonLabel}
                     </Button>)
             }
-        </React.Fragment>;
-    }
+        </>;
+    };
 
-    protected renderWorksWithList(downloads: {[targetPlatform: string]: UrlString}): React.ReactNode {
+    const renderWorksWithList = (downloads: {[targetPlatform: string]: UrlString}): ReactNode => {
         return Object.keys(downloads).map((targetPlatform, index) => {
             const displayName = getTargetPlatformDisplayName(targetPlatform);
             return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
         });
-    }
+    };
 
-    protected renderResourceLink(label: string, href?: string): React.ReactNode {
+    const renderResourceLink = (label: string, resourceLink: SxProps<Theme>, href?: string): ReactNode => {
         if (!href || !(href.startsWith('http') || href.startsWith('mailto'))) {
             return '';
         }
-        let icon: React.ReactNode;
+        let icon: ReactNode;
         if (label === 'Homepage') {
             icon = <HomeIcon fontSize='small' />;
         } else if (label === 'Repository' && href.startsWith('https://github.com/')) {
@@ -366,45 +185,172 @@ class ExtensionDetailOverviewComponent extends React.Component<ExtensionDetailOv
             icon = <QuestionAnswerIcon fontSize='small' />;
         }
         return <Box>
-            <Link href={href} target='_blank' variant='body2' color='secondary'
-                className={this.props.classes.resourceLink} >
+            <Link href={href} target='_blank' variant='body2' color='secondary' underline='hover' sx={resourceLink}>
                 {icon}&nbsp;{label}
             </Link>
         </Box>;
-    }
+    };
 
-    protected renderExtensionRef(ref: ExtensionReference): React.ReactNode {
+    const StyledRouteLink = styled(RouteLink)(({ theme }: { theme: Theme }) => ({
+        textDecoration: 'none',
+        color: theme.palette.text.primary,
+        '&:hover': {
+            textDecoration: 'underline'
+        }
+    }));
+
+    const renderExtensionRef = (ref: ExtensionReference): ReactNode => {
         return <Box key={`${ref.namespace}.${ref.extension}`}>
-            <RouteLink to={createRoute([ExtensionDetailRoutes.ROOT, ref.namespace, ref.extension])}
-                className={this.props.classes.link} >
+            <StyledRouteLink to={createRoute([ExtensionDetailRoutes.ROOT, ref.namespace, ref.extension])}>
                 {ref.namespace}.{ref.extension}
-            </RouteLink>
+            </StyledRouteLink>
         </Box>;
+    };
+
+    if (!readme) {
+        return <DelayedLoadIndicator loading={loading} />;
     }
 
-    protected renderInfo(key: string, value: React.ReactNode): React.ReactNode {
-        return <Box display='flex'>
-            <Box flex='1'>
-                <Typography variant='body2'>{key}</Typography>
+    const { extension } = props;
+    const tagButton = {
+        fontWeight: 'normal',
+        textTransform: 'none',
+        mr: 0.5,
+        mb: 0.5,
+        padding: '1px 6px'
+    };
+    const resourceLink = {
+        display: 'flex',
+        alignItems: 'center',
+        mt: 0.5
+    };
+    const resourcesGroup = {
+        display: 'flex',
+        flexDirection: 'column',
+        flex: { xs: 'none', sm: 'none', md: 1, lg: 1, xl: 'none' },
+        mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 2 }
+    };
+
+    const ClaimNamespace = pageSettings.elements.claimNamespace;
+    const ReportAbuse = pageSettings.elements.reportAbuse;
+    const DownloadTerms = pageSettings.elements.downloadTerms;
+    const otherAliases = Object.keys(extension.allVersions)
+        .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
+    // filter internal tags
+    const tags = extension.tags?.filter(t => !t.startsWith('__'));
+    return <>
+        <Box
+            sx={{
+                display: 'flex',
+                mt: 2,
+                flexDirection: {
+                    xs: 'column-reverse',
+                    sm: 'column-reverse',
+                    md: 'column-reverse',
+                    lg: 'column-reverse',
+                    xl: 'row'
+                }
+            }}
+        >
+            <Box flex={5} overflow='auto'>
+                <SanitizedMarkdown content={readme} />
             </Box>
-            <Box flex='1'>
-                <Typography variant='body2'>{value}</Typography>
+            <Box
+                sx={{
+                    flex: 1,
+                    display: 'flex',
+                    width: '100%',
+                    minWidth: '290px',
+                    mb: { xs: 2, sm: 2, md: 2, lg: 2, xl: 0 },
+                    ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: '4.8rem' },
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'column' }
+                }}
+            >
+                <Box sx={resourcesGroup}>
+                    <Box>
+                        {renderVersionSection()}
+                    </Box>
+                    {
+                        (otherAliases.length || extension.versionAlias.length) ? <Box>{renderAliasesSection(otherAliases, tagButton)}</Box> : ''
+                    }
+                </Box>
+                <Box sx={resourcesGroup}>
+                    {
+                        extension.categories && extension.categories.length > 0 ?
+                        <Box>
+                            {renderButtonList('category', 'Categories', extension.categories, tagButton)}
+                        </Box>
+                        : null
+                    }
+                    {
+                        tags && tags.length > 0 ?
+                        <Box mt={2}>
+                            {renderButtonList('search', 'Tags', tags, tagButton)}
+                        </Box>
+                        : null
+                    }
+                </Box>
+                {
+                    extension.downloads ?
+                    <Box sx={resourcesGroup}>
+                        <Box>
+                            <Typography variant='h6'>Works With</Typography>
+                            {renderWorksWithList(extension.downloads)}
+                        </Box>
+                    </Box>
+                    : null
+                }
+                <Box sx={resourcesGroup}>
+                    <Box>
+                        <Typography variant='h6'>Resources</Typography>
+                        {renderResourceLink('Homepage', resourceLink, extension.homepage)}
+                        {renderResourceLink('Repository', resourceLink, extension.repository)}
+                        {renderResourceLink('Bugs', resourceLink, extension.bugs)}
+                        {renderResourceLink('Q\'n\'A', resourceLink, extension.qna)}
+                        {
+                            extension.downloads && Object.keys(extension.downloads).length > 1 ?
+                            <ExtensionDetailDownloadsMenu downloads={extension.downloads}/>
+                            : extension.downloads && Object.keys(extension.downloads).length == 1 ?
+                            <Button variant='contained' color='secondary' sx={{ mt: 2 }}
+                                href={extension.downloads[Object.keys(extension.downloads)[0]]}
+                            >
+                                Download
+                            </Button>
+                            : null
+                        }
+                        {
+                            DownloadTerms && extension.downloads && Object.keys(extension.downloads).length > 0
+                            ? <DownloadTerms/>
+                            : null
+                        }
+                    </Box>
+                    {
+                        extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0 ?
+                        <Box mt={2}>
+                            <Typography variant='h6'>Bundled Extensions</Typography>
+                            {extension.bundledExtensions!.map(ref => renderExtensionRef(ref))}
+                        </Box>
+                        : null
+                    }
+                    {
+                        extension.dependencies !== undefined && extension.dependencies.length > 0 ?
+                        <Box mt={2}>
+                            <Typography variant='h6'>Dependencies</Typography>
+                            {extension.dependencies!.map(ref => renderExtensionRef(ref))}
+                        </Box>
+                        : null
+                    }
+                    <Box mt={2}>
+                        {ClaimNamespace ? <ClaimNamespace extension={extension} sx={resourceLink} /> : ''}
+                        {ReportAbuse ? <ReportAbuse extension={extension} sx={resourceLink} /> : ''}
+                    </Box>
+                </Box>
             </Box>
-        </Box>;
-    }
+        </Box>
+    </>;
+};
 
+export interface ExtensionDetailOverviewProps {
+    extension: Extension;
+    selectVersion: (version: string) => void;
 }
-
-export namespace ExtensionDetailOverview {
-    export interface Props extends WithStyles<typeof overviewStyles>, RouteComponentProps {
-        params: ExtensionDetailComponent.Params;
-        extension: Extension;
-        selectVersion: (version: string) => void;
-    }
-    export interface State {
-        readme?: string;
-        loading: boolean;
-    }
-}
-
-export const ExtensionDetailOverview = withStyles(overviewStyles)(withRouter(ExtensionDetailOverviewComponent));

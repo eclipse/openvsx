@@ -8,54 +8,44 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Button, Theme, CircularProgress, createStyles } from '@material-ui/core';
-import { withStyles, WithStyles } from '@material-ui/styles';
+import React, { FunctionComponent, MouseEventHandler, PropsWithChildren } from 'react';
+import { Box, Button, CircularProgress, SxProps, Theme } from '@mui/material';
 
-const buttonStyles = (theme: Theme) => createStyles({
-    buttonProgress: {
-        color: theme.palette.secondary.main,
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        marginTop: -12,
-        marginLeft: -12,
-    },
-    buttonWrapper: {
-        position: 'relative'
-    }
-});
+export const ButtonWithProgress: FunctionComponent<PropsWithChildren<ButtonWithProgressProps>> = props => {
+    return <Box component='div' sx={[{ position: 'relative' }, ...(Array.isArray(props.sx) ? props.sx : [props.sx])]}>
+        <Button
+            variant='contained'
+            color='secondary'
+            disabled={props.working || props.error}
+            autoFocus={props.autoFocus}
+            onClick={props.onClick}
+            title={props.title}
+            disableTouchRipple={true}
+        >
+            {props.children}
+        </Button>
+        {   props.working ?
+            <CircularProgress
+                size={24}
+                sx={{
+                    color: 'secondary.main',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    mt: '-12px',
+                    ml: '-12px'
+                }}
+            />
+            : null
+        }
+    </Box>;
+};
 
-export class ButtonComponent extends React.Component<ButtonComponent.Props> {
-    render(): React.ReactNode {
-        return <div className={this.props.classes.buttonWrapper}>
-            <Button
-                variant='contained'
-                color='secondary'
-                disabled={this.props.working || this.props.error}
-                autoFocus={this.props.autoFocus}
-                onClick={this.props.onClick}
-                title={this.props.title}
-                disableTouchRipple={true} >
-                {this.props.children}
-            </Button>
-            {
-                this.props.working ?
-                <CircularProgress size={24} className={this.props.classes.buttonProgress} />
-                : null
-            }
-        </div>;
-    }
+export interface ButtonWithProgressProps {
+    working: boolean;
+    error?: boolean;
+    autoFocus?: boolean;
+    onClick: MouseEventHandler<HTMLButtonElement>;
+    title?: string;
+    sx?: SxProps<Theme>;
 }
-
-export namespace ButtonComponent {
-    export interface Props extends WithStyles<typeof buttonStyles> {
-        working: boolean;
-        error?: boolean;
-        autoFocus?: boolean;
-        onClick: React.MouseEventHandler<HTMLButtonElement>;
-        title?: string;
-    }
-}
-
-export const ButtonWithProgress = withStyles(buttonStyles)(ButtonComponent);

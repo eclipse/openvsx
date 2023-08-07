@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
-import { Typography, Box } from '@material-ui/core';
+import { Typography, Box } from '@mui/material';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Namespace, isError } from '../../extension-registry-types';

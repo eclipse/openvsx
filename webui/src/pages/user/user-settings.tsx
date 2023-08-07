@@ -8,10 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Helmet } from 'react-helmet';
-import { createStyles, Theme, WithStyles, withStyles, Grid, Container, Box, Typography, Link } from '@material-ui/core';
-import { RouteComponentProps, Route } from 'react-router-dom';
+import React, { FunctionComponent, ReactNode, useContext } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { Grid, Container, Box, Typography, Link } from '@mui/material';
+import { useParams } from 'react-router-dom';
 import { createRoute } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserSettingTabs } from './user-setting-tabs';
@@ -20,6 +20,7 @@ import { UserSettingsProfile } from './user-settings-profile';
 import { UserSettingsNamespaces } from './user-settings-namespaces';
 import { UserSettingsExtensions } from './user-settings-extensions';
 import { MainContext } from '../../context';
+import { UserData } from '../../extension-registry-types';
 
 export namespace UserSettingsRoutes {
     export const ROOT = createRoute(['user-settings']);
@@ -30,47 +31,38 @@ export namespace UserSettingsRoutes {
     export const EXTENSIONS = createRoute([ROOT, 'extensions']);
 }
 
-const profileStyles = (theme: Theme) => createStyles({
-    container: {
-        [theme.breakpoints.down('md')]: {
-            flexDirection: 'column'
+export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
+
+    const { pageSettings, service, user } = useContext(MainContext);
+    const { tab } = useParams();
+
+    const renderTab = (tab: string, user: UserData): ReactNode => {
+        switch (tab) {
+            case 'profile':
+                return <UserSettingsProfile user={user} />;
+            case 'tokens':
+                return <UserSettingsTokens />;
+            case 'namespaces':
+                return <UserSettingsNamespaces />;
+            case 'extensions':
+                return <UserSettingsExtensions />;
+            default:
+                return null;
         }
-    },
-    tabs: {
-        [theme.breakpoints.down('lg')]: {
-            marginBottom: '3rem'
-        },
-    },
-    info: {
-        [theme.breakpoints.up('lg')]: {
-            paddingTop: '.5rem',
-            paddingLeft: '3rem',
-            flex: '1'
-        },
-        [theme.breakpoints.down('md')]: {
-            width: '100%'
-        }
-    }
-});
+    };
 
-class UserSettingsComponent extends React.Component<UserSettingsComponent.Props> {
-
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected renderContent(): React.ReactNode {
-        if (this.props.userLoading) {
+    const renderContent = (): ReactNode => {
+        if (props.userLoading) {
             return <DelayedLoadIndicator loading={true} />;
         }
 
-        const user = this.context.user;
         if (!user) {
             return <Container>
                 <Box mt={6}>
                     <Typography variant='h4'>Not Logged In</Typography>
                     <Box mt={2}>
                         <Typography variant='body1'>
-                            Please <Link color='secondary' href={this.context.service.getLoginUrl()}>log in with GitHub</Link> to
+                            Please <Link color='secondary' href={service.getLoginUrl()}>log in with GitHub</Link> to
                             access your account settings.
                         </Typography>
                     </Box>
@@ -80,45 +72,36 @@ class UserSettingsComponent extends React.Component<UserSettingsComponent.Props>
 
         return <Container>
             <Box mt={6}>
-                <Grid container className={this.props.classes.container}>
-                    <Grid item className={this.props.classes.tabs}>
-                        <UserSettingTabs {...this.props} />
+                <Grid container sx={{ flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' } }}>
+                    <Grid item sx={{ mb: { xs: '3rem', sm: '3rem', md: '3rem', lg: '3rem', xl: 0 } }}>
+                        <UserSettingTabs />
                     </Grid>
-                    <Grid item className={this.props.classes.info}>
+                    <Grid
+                        item
+                        sx={{
+                            pt: { xs: 0, sm: 0, md: 0, lg: '.5rem', xl: '.5rem' },
+                            pl: { xs: 0, sm: 0, md: 0, lg: '3rem', xl: '3rem' },
+                            flex: { xs: 'none', sm: 'none', md: 'none', lg: '1', xl: '1' },
+                            width: { xs: '100%', sm: '100%', md: '100%', lg: 'auto', xl: 'auto' }
+                        }}
+                    >
                         <Box>
-                            <Route path={UserSettingsRoutes.PROFILE}>
-                                <UserSettingsProfile user={user} />
-                            </Route>
-                            <Route path={UserSettingsRoutes.TOKENS}>
-                                <UserSettingsTokens />
-                            </Route>
-                            <Route path={UserSettingsRoutes.NAMESPACES}>
-                                <UserSettingsNamespaces />
-                            </Route>
-                            <Route path={UserSettingsRoutes.EXTENSIONS}>
-                                <UserSettingsExtensions />
-                            </Route>
+                            { renderTab(tab as string, user) }
                         </Box>
                     </Grid>
                 </Grid>
             </Box>
         </Container>;
-    }
+    };
 
-    render() {
-        return <React.Fragment>
-            <Helmet>
-                <title>Settings – {this.context.pageSettings.pageTitle}</title>
-            </Helmet>
-            { this.renderContent() }
-        </React.Fragment>;
-    }
+    return <>
+        <Helmet>
+            <title>Settings – { pageSettings.pageTitle }</title>
+        </Helmet>
+        { renderContent() }
+    </>;
+};
+
+export interface UserSettingsProps {
+    userLoading: boolean;
 }
-
-export namespace UserSettingsComponent {
-    export interface Props extends WithStyles<typeof profileStyles>, RouteComponentProps {
-        userLoading: boolean;
-    }
-}
-
-export const UserSettings = withStyles(profileStyles)(UserSettingsComponent);

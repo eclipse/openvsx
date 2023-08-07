@@ -1,6 +1,6 @@
 {
     "name": "ovsx",
-    "version": "0.8.2",
+    "version": "0.8.3",
     "description": "Command line interface for Eclipse Open VSX",
     "keywords": [
         "cli",
@@ -18,7 +18,7 @@
     "bugs": "https://github.com/eclipse/openvsx/issues",
     "contributors": [
         {
-            "name": "Miro Spönemann",
+            "name": "Miro Sp�nemann",
             "email": "miro.spoenemann@typefox.io",
             "url": "https://www.typefox.io"
         }
@@ -29,9 +29,7 @@
     ],
     "main": "lib/index",
     "types": "lib/index",
-    "bin": {
-        "ovsx": "lib/ovsx"
-    },
+    "bin": "lib/ovsx",
     "engines": {
         "node": ">= 14"
     },
@@ -64,5 +62,6 @@
         "prepare": "yarn run clean && yarn run build",
         "publish:next": "yarn publish --new-version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" --tag next --no-git-tag-version",
         "publish:latest": "yarn publish --tag latest"
-    }
+    },
+    "packageManager": "yarn@3.6.1"
 }

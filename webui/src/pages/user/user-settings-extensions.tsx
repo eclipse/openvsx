@@ -8,109 +8,84 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import * as React from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Extension } from '../../extension-registry-types';
-import { withStyles, createStyles } from '@material-ui/styles';
-import { Box, Theme, Typography, WithStyles } from '@material-ui/core';
+import { Box, Typography } from '@mui/material';
 import { PublishExtensionDialog } from './publish-extension-dialog';
 import { UserExtensionList } from './user-extension-list';
 import { isError } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
 
-const extensionsStyle = (theme: Theme) => createStyles({
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column',
-            alignItems: 'center'
-        }
-    },
-    buttons: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        [theme.breakpoints.down('sm')]: {
-            justifyContent: 'center'
-        }
-    }
-});
+export const UserSettingsExtensions: FunctionComponent = () => {
 
-class UserSettingsExtensionsComponent extends React.Component<UserSettingsExtensionsComponent.Props, UserSettingsExtensionsComponent.State> {
+    const [loading, setLoading] = useState(true);
+    const [extensions, setExtensions] = useState(Array<Extension>());
+    const { user, service, handleError } = useContext(MainContext);
+    const abortController = new AbortController();
 
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected abortController = new AbortController();
-
-    constructor(props: UserSettingsExtensionsComponent.Props) {
-        super(props);
-
-        this.state = {
-            loading: true,
-            extensions: []
+    useEffect(() => {
+        updateExtensions();
+        return () => {
+            abortController.abort();
         };
-    }
+    }, []);
 
-    componentDidMount() {
-        this.updateExtensions();
-    }
-
-    protected handleExtensionPublished = () => {
-        this.setState({ loading: true });
-        this.updateExtensions();
+    const handleExtensionPublished = () => {
+        setLoading(true);
+        updateExtensions();
     };
 
-    render() {
-        return <React.Fragment>
-            <Box className={this.props.classes.header}>
-                <Box>
-                    <Typography variant='h5' gutterBottom>Extensions</Typography>
-                </Box>
-                <Box className={this.props.classes.buttons}>
-                    <Box mr={1} mb={1}>
-                        <PublishExtensionDialog extensionPublished={this.handleExtensionPublished}/>
-                    </Box>
-                </Box>
-            </Box>
-            <Box mt={2}>
-                <DelayedLoadIndicator loading={this.state.loading} />
-                {
-                    this.state.extensions && this.state.extensions.length > 0
-                    ? <UserExtensionList extensions={this.state.extensions} loading={this.state.loading} />
-                    : <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
-                }
-            </Box>
-        </React.Fragment>;
-    }
-
-    protected async updateExtensions(): Promise<void> {
-        if (!this.context.user) {
+    const updateExtensions = async (): Promise<void> => {
+        if (!user) {
             return;
         }
         try {
-            const response = await this.context.service.getExtensions(this.abortController);
+            const response = await service.getExtensions(abortController);
             if (isError(response)) {
                 throw response;
             }
 
             const extensions = response as Extension[];
-            this.setState({ extensions, loading: false });
+            setExtensions(extensions);
+            setLoading(false);
         } catch (err) {
-            this.context.handleError(err);
-            this.setState({ loading: false });
+            handleError(err);
+            setLoading(false);
         }
-    }
-}
+    };
 
-export namespace UserSettingsExtensionsComponent {
-    export interface Props extends WithStyles<typeof extensionsStyle> {
-    }
-
-    export interface State {
-        loading: boolean;
-        extensions: Extension[];
-    }
-}
-
-export const UserSettingsExtensions = withStyles(extensionsStyle)(UserSettingsExtensionsComponent);
+    return <>
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
+                alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+            }}
+        >
+            <Box>
+                <Typography variant='h5' gutterBottom>Extensions</Typography>
+            </Box>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                }}
+            >
+                <Box mr={1} mb={1}>
+                    <PublishExtensionDialog extensionPublished={handleExtensionPublished}/>
+                </Box>
+            </Box>
+        </Box>
+        <Box mt={2}>
+            <DelayedLoadIndicator loading={loading} />
+            {
+                extensions && extensions.length > 0
+                ? <UserExtensionList extensions={extensions} loading={loading} />
+                : <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
+            }
+        </Box>
+    </>;
+};

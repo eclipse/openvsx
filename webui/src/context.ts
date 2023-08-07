@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import { createContext } from 'react';
 import { PageSettings } from './page-settings';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData } from './extension-registry-types';
@@ -23,4 +23,4 @@ export interface MainContext {
 }
 
 // We don't include `undefined` as context value to avoid checking the value in all components
-export const MainContext = React.createContext<MainContext>(undefined!);
+export const MainContext = createContext<MainContext>(undefined!);

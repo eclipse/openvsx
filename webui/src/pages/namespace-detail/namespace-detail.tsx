@@ -8,13 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Grid, Link, Divider } from '@material-ui/core';
-import GitHubIcon from '@material-ui/icons/GitHub';
-import LinkedInIcon from '@material-ui/icons/LinkedIn';
-import TwitterIcon from '@material-ui/icons/Twitter';
-import { RouteComponentProps } from 'react-router-dom';
-import Truncate from 'react-truncate';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState } from 'react';
+import { Typography, Box, Container, Grid, Link, Divider } from '@mui/material';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import { useParams } from 'react-router-dom';
 import { ExtensionListItem } from '../extension-list/extension-list-item';
 import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
@@ -30,203 +29,172 @@ export namespace NamespaceDetailRoutes {
     export const MAIN = createRoute([ROOT, Parameters.NAME]);
 }
 
-const detailStyles = (theme: Theme) => createStyles({
-    extensionsContainer: {
-        justifyContent: 'center',
-        paddingTop: theme.spacing(6)
-    },
-    head: {
-        backgroundColor: theme.palette.neutral.dark,
-    },
-    header: {
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column',
-        padding: `${theme.spacing(4)}px 0`
-    },
-    iconAndInfo: {
-        display: 'flex',
-        width: '100%',
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column',
-            textAlign: 'center',
-            alignItems: 'center'
-        }
-    },
-    linksDivider: {
-        margin: theme.spacing(0.25),
-        width: theme.spacing(0.25)
-    },
-    namespaceLogo: {
-        height: '7.5rem',
-        maxWidth: '9rem',
-        [theme.breakpoints.up('md')]: {
-            marginRight: '2rem'
-        }
-    },
-    badgePadding: {
-        paddingTop: theme.spacing(1)
-    },
-    descriptionPadding: {
-        paddingRight: '0 !important'
-    }
-});
+export const NamespaceDetail: FunctionComponent = () => {
+    const [loading, setLoading] = useState(true);
+    const [truncateReadMore, setTruncateReadMore] = useState(true);
+    const [showReadMore, setShowReadMore] = useState(false);
+    const [namespaceDetails, setNamespaceDetails] = useState<Readonly<NamespaceDetails>>();
+    const [notFoundError, setNotFoundError] = useState('');
 
-export class NamespaceDetailComponent extends React.Component<NamespaceDetailComponent.Props, NamespaceDetailComponent.State> {
+    const { name } = useParams();
+    const { pageSettings, service, handleError } = useContext(MainContext);
 
-    static contextType = MainContext;
-    declare context: MainContext;
+    const abortController = new AbortController();
+    useEffect(() => {
+        updateNamespaceDetails(name as string);
+        return () => {
+            abortController.abort();
+        };
+    }, []);
 
-    protected abortController = new AbortController();
+    useEffect(() => {
+        setNamespaceDetails(undefined);
+        setLoading(true);
+        updateNamespaceDetails(name as string);
+    }, [name]);
 
-    constructor(props: NamespaceDetailComponent.Props) {
-        super(props);
-        this.state = { loading: true, truncateReadMore: true };
-    }
-
-    componentDidMount(): void {
-        const params = this.props.match.params as NamespaceDetailComponent.Params;
-        this.updateNamespaceDetails(params);
-    }
-
-    componentDidUpdate(prevProps: NamespaceDetailComponent.Props): void {
-        const prevParams = prevProps.match.params as NamespaceDetailComponent.Params;
-        const newParams = this.props.match.params as NamespaceDetailComponent.Params;
-        if (newParams.name !== prevParams.name) {
-            this.setState({ namespaceDetails: undefined, loading: true });
-            this.updateNamespaceDetails(newParams);
-        }
-    }
-
-    protected async updateNamespaceDetails(params: NamespaceDetailComponent.Params): Promise<void> {
+    const updateNamespaceDetails = async(name: string): Promise<void> => {
         try {
-            const namespaceDetails = await this.context.service.getNamespaceDetails(this.abortController, params.name);
+            const namespaceDetails = await service.getNamespaceDetails(abortController, name);
             if (isError(namespaceDetails)) {
                 throw namespaceDetails;
             }
-            this.setState({ namespaceDetails, loading: false, truncateReadMore: true });
+
+            setNamespaceDetails(namespaceDetails);
+            setLoading(false);
+            setTruncateReadMore(true);
         } catch (err) {
             if (err && err.status === 404) {
-                this.setState({
-                    notFoundError: `Namespace Not Found: ${params.name}`,
-                    loading: false
-                });
+                setNotFoundError(`Namespace Not Found: ${name}`);
             } else {
-                this.context.handleError(err);
+                handleError(err);
             }
-            this.setState({ loading: false });
-        }
-    }
 
-    protected readMore = () => {
-        this.setState({ truncateReadMore: false });
+            setLoading(false);
+        }
     };
 
-    protected displayLink = (link: UrlString) => {
+    const readMore = () => {
+        setTruncateReadMore(false);
+    };
+
+    const displayLink = (link: UrlString) => {
         return link.replace(/https?:\/\//, '');
     };
 
-    render(): React.ReactNode {
-        const { namespaceDetails, truncateReadMore } = this.state;
-        const params = this.props.match.params as NamespaceDetailComponent.Params;
-        return <>
-            { this.renderHeaderTags(params, namespaceDetails) }
-            <DelayedLoadIndicator loading={this.state.loading} />
-            {
-                namespaceDetails
-                    ? this.renderNamespaceDetails(namespaceDetails, truncateReadMore)
-                    : this.renderNotFound()
-            }
-        </>;
-    }
-
-    protected renderHeaderTags(params: NamespaceDetailComponent.Params, namespaceDetails?: NamespaceDetails): React.ReactNode {
-        const pageSettings = this.context.pageSettings;
+    const renderHeaderTags = (name: string, namespaceDetails?: NamespaceDetails): ReactNode => {
         const { namespaceHeadTags: NamespaceHeadTagsComponent } = pageSettings.elements;
-        return <React.Fragment>
+        return <>
             { NamespaceHeadTagsComponent
-                ? <NamespaceHeadTagsComponent namespaceDetails={namespaceDetails} params={params} pageSettings={pageSettings}/>
+                ? <NamespaceHeadTagsComponent namespaceDetails={namespaceDetails} name={name} pageSettings={pageSettings}/>
                 : null
             }
-        </React.Fragment>;
-    }
+        </>;
+    };
 
-    protected renderNotFound(): React.ReactNode {
+    const renderNotFound = (): ReactNode => {
         return <>
             {
-                this.state.notFoundError ?
+                notFoundError ?
                 <Box p={4}>
                     <Typography variant='h5'>
-                        {this.state.notFoundError}
+                        {notFoundError}
                     </Typography>
                 </Box>
                 : null
             }
         </>;
-    }
+    };
 
-    protected renderNamespaceDetails(namespaceDetails: NamespaceDetails, truncateReadMore: boolean): React.ReactNode {
-        const classes = this.props.classes;
+    const calculateShowReadMore = (el: HTMLElement) => {
+        const showReadMore = truncateReadMore && el && (el.scrollHeight > el.offsetHeight || el.scrollWidth > el.offsetWidth);
+        setShowReadMore(showReadMore);
+    };
+
+    const renderNamespaceDetails = (namespaceDetails: NamespaceDetails, truncateReadMore: boolean): ReactNode => {
         return <>
-            <Box className={classes.head}>
+            <Box sx={{ bgcolor: 'neutral.dark' }}>
                 <Container maxWidth='xl'>
-                    <Box className={classes.header}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', py: 4, px: 0 }}>
                         <Grid container>
                             <Grid item>
-                                <img src={namespaceDetails.logo || this.context.pageSettings.urls.extensionDefaultIcon}
-                                    className={`${classes.namespaceLogo} ${classes.badgePadding}`}
+                                <Box
+                                    component='img'
+                                    src={namespaceDetails.logo || pageSettings.urls.extensionDefaultIcon}
+                                    sx={{
+                                        height: '7.5rem',
+                                        maxWidth: '9rem',
+                                        mr: { xs: 0, sm: 0, md: '2rem', lg: '2rem', xl: '2rem' },
+                                        pt: 1
+                                    }}
                                     alt={namespaceDetails.displayName || namespaceDetails.name} />
                             </Grid>
                             <Grid item xs={7}>
                                 <Grid container spacing={2}>
-                                    <Grid item>
+                                    <Grid item xs={12}>
                                         <Typography variant='h5'>{namespaceDetails.displayName || namespaceDetails.name}</Typography>
                                     </Grid>
-                                </Grid>
-                                <Grid container spacing={2}>
-                                    <Grid item className={classes.descriptionPadding}>
+                                    <Grid item xs={12} sx={{ pr: '0 !important' }}>
                                         {
                                             namespaceDetails.description
-                                            ? truncateReadMore
-                                              ? <Truncate lines={2} ellipsis={<span>... <Link color='secondary' onClick={this.readMore}>Read more</Link></span>}>
-                                                { namespaceDetails.description }
-                                              </Truncate>
-                                              : <Typography>{ namespaceDetails.description }</Typography>
+                                            ? <Box>
+                                                <Typography
+                                                    ref={calculateShowReadMore}
+                                                    sx={ truncateReadMore
+                                                        ? {
+                                                            overflow: "hidden",
+                                                            textOverflow: "ellipsis",
+                                                            display: "-webkit-box",
+                                                            WebkitLineClamp: "2",
+                                                            WebkitBoxOrient: "vertical"
+                                                        }
+                                                        : {}
+                                                    }>
+                                                    { namespaceDetails.description }
+                                                </Typography>
+                                                { showReadMore ? <Link color='secondary' underline='hover' component='button' onClick={readMore}>Read more</Link> : null }
+                                            </Box>
                                             : null
                                         }
                                     </Grid>
-                                </Grid>
-                                <Grid container spacing={2}>
-                                    {
-                                        namespaceDetails.website
-                                        ? <Grid item><Link color='secondary' target='_blank' href={namespaceDetails.website}>{this.displayLink(namespaceDetails.website)}</Link></Grid>
-                                        : null
-                                    }
-                                    {
-                                        namespaceDetails.website && namespaceDetails.supportLink ? <Divider className={classes.linksDivider} orientation='vertical' flexItem /> : null
-                                    }
-                                    {
-                                        namespaceDetails.supportLink
-                                        ? <Grid item><Link color='secondary' target='_blank' href={namespaceDetails.supportLink}>{this.displayLink(namespaceDetails.supportLink)}</Link></Grid>
-                                        : null
-                                    }
-                                </Grid>
-                                <Grid container spacing={2}>
-                                    {
-                                        namespaceDetails.socialLinks.linkedin
-                                        ? <Grid item><Link target='_blank' color='textPrimary' href={namespaceDetails.socialLinks.linkedin}><LinkedInIcon/></Link></Grid>
-                                        : null
-                                    }
-                                    {
-                                        namespaceDetails.socialLinks.github
-                                        ? <Grid item><Link target='_blank' color='textPrimary' href={namespaceDetails.socialLinks.github}><GitHubIcon/></Link></Grid>
-                                        : null
-                                    }
-                                    {
-                                        namespaceDetails.socialLinks.twitter
-                                        ? <Grid item><Link target='_blank' color='textPrimary' href={namespaceDetails.socialLinks.twitter}><TwitterIcon/></Link></Grid>
-                                        : null
-                                    }
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={2}>
+                                            {
+                                                namespaceDetails.website
+                                                    ? <Grid item><Link color='secondary' underline='hover' target='_blank' href={namespaceDetails.website}>{displayLink(namespaceDetails.website)}</Link></Grid>
+                                                    : null
+                                            }
+                                            {
+                                                namespaceDetails.website && namespaceDetails.supportLink
+                                                    ? <Grid item><Divider orientation='vertical' sx={{ height: '100%' }} /></Grid>
+                                                    : null
+                                            }
+                                            {
+                                                namespaceDetails.supportLink
+                                                    ? <Grid item><Link color='secondary' underline='hover' target='_blank' href={namespaceDetails.supportLink}>{displayLink(namespaceDetails.supportLink)}</Link></Grid>
+                                                    : null
+                                            }
+                                        </Grid>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={2}>
+                                            {
+                                                namespaceDetails.socialLinks.linkedin
+                                                ? <Grid item><Link target='_blank' color='text.primary' href={namespaceDetails.socialLinks.linkedin}><LinkedInIcon/></Link></Grid>
+                                                : null
+                                            }
+                                            {
+                                                namespaceDetails.socialLinks.github
+                                                ? <Grid item><Link target='_blank' color='text.primary' href={namespaceDetails.socialLinks.github}><GitHubIcon/></Link></Grid>
+                                                : null
+                                            }
+                                            {
+                                                namespaceDetails.socialLinks.twitter
+                                                ? <Grid item><Link target='_blank' color='text.primary' href={namespaceDetails.socialLinks.twitter}><TwitterIcon/></Link></Grid>
+                                                : null
+                                            }
+                                        </Grid>
+                                    </Grid>
                                 </Grid>
                             </Grid>
                         </Grid>
@@ -235,14 +203,13 @@ export class NamespaceDetailComponent extends React.Component<NamespaceDetailCom
             </Box>
             { namespaceDetails.extensions ?
                 <Container maxWidth='xl'>
-                    <Grid container spacing={2} className={classes.extensionsContainer}>
+                    <Grid container spacing={2} sx={{ justifyContent: 'center', pt: 6 }}>
                         {
                             namespaceDetails.extensions.map((ext, idx) => (
                                 <ExtensionListItem
                                     idx={idx}
                                     extension={ext}
                                     filterSize={10}
-                                    pageSettings={this.context.pageSettings}
                                     key={`${ext.namespace}.${ext.name}`} />
                             ))
                         }
@@ -251,23 +218,15 @@ export class NamespaceDetailComponent extends React.Component<NamespaceDetailCom
                 : null
             }
         </>;
-    }
-}
+    };
 
-export namespace NamespaceDetailComponent {
-    export interface Props extends WithStyles<typeof detailStyles>, RouteComponentProps {
-    }
-
-    export interface State {
-        namespaceDetails?: NamespaceDetails;
-        truncateReadMore: boolean;
-        loading: boolean;
-        notFoundError?: string;
-    }
-
-    export interface Params {
-        readonly name: string;
-    }
-}
-
-export const NamespaceDetail = withStyles(detailStyles)(NamespaceDetailComponent);
+    return <>
+        { renderHeaderTags(name as string, namespaceDetails) }
+        <DelayedLoadIndicator loading={loading} />
+        {
+            namespaceDetails
+                ? renderNamespaceDetails(namespaceDetails, truncateReadMore)
+                : renderNotFound()
+        }
+    </>;
+};

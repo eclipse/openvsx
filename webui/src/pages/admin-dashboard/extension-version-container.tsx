@@ -8,50 +8,17 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useEffect } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useState, useEffect } from 'react';
 import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
-import { Grid, makeStyles, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@material-ui/core';
+import { Box, Grid, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
 import { getTargetPlatformDisplayName } from '../../utils';
 import { MainContext } from '../../context';
 
-const useStyles = makeStyles((theme) => ({
-    indent0: {
-        paddingLeft: '0 px'
-    },
-    indent1: {
-        paddingLeft: `${theme.spacing(4)}px`
-    },
-    indent2: {
-        paddingLeft: `${theme.spacing(8)}px`
-    },
-    extensionLogo: {
-        height: '7.5rem',
-        maxWidth: '9rem',
-    },
-    description: {
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-    },
-    code: {
-        fontFamily: 'Monaco, monospace'
-    },
-    titleRow: {
-        fontWeight: 'bold'
-    },
-    extensionContainer: {
-        height: '100%'
-    },
-    versionsContainer: {
-        flex: '1'
-    }
-}));
-
-export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainer.Props> = props => {
+export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainerProps> = props => {
     const WILDCARD = '*';
     const { extension } = props;
-    const { service } = React.useContext(MainContext);
-    const classes = useStyles();
+    const { service } = useContext(MainContext);
 
     const getTargetPlatformVersions = () => {
         const versionMap: TargetPlatformVersion[] = [];
@@ -85,7 +52,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         setTargetPlatformVersions(getTargetPlatformVersions());
     }, [props.extension]);
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const newTargetPlatformVersions: TargetPlatformVersion[] = [];
         targetPlatformVersions.forEach((targetPlatformVersion) => {
             const equals = (change: string, current: string) => {
@@ -128,34 +95,40 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
     };
 
     return <>
-        <Grid container direction='column' className={classes.extensionContainer}>
+        <Grid container direction='column' sx={{ height: '100%' }}>
             <Grid item container>
                 {
                     icon ?
                         <Grid item xs={12} md={4}>
-                            <img src={icon}
-                                className={classes.extensionLogo}
-                                alt={extension.displayName || extension.name} />
+                            <Box
+                                component='img'
+                                src={icon}
+                                alt={extension.displayName || extension.name}
+                                sx={{
+                                    height: '7.5rem',
+                                    maxWidth: '9rem'
+                                }}
+                            />
                         </Grid>
                         : ''
                 }
                 <Grid item container xs={12} md={8}>
-                    <Grid item container direction='column' justify='center'>
+                    <Grid item container direction='column' justifyContent='center'>
                         <Grid item>
-                            <Typography variant='h5' className={classes.titleRow}>
+                            <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
                                 {extension.displayName || extension.name}
                             </Typography>
                         </Grid>
                         <Grid item>
-                            <Typography className={classes.code}>{extension.namespace}.{extension.name}</Typography>
+                            <Typography sx={{ fontFamily: 'Monaco, monospace' }}>{extension.namespace}.{extension.name}</Typography>
                         </Grid>
                         <Grid item>
-                            <Typography classes={{ root: classes.description }}>{extension.description}</Typography>
+                            <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{extension.description}</Typography>
                         </Grid>
                     </Grid>
                 </Grid>
             </Grid>
-            <Grid item container className={classes.versionsContainer}>
+            <Grid item container sx={{ flex: 1 }}>
                 <Grid item xs={12} md={4}></Grid>
                 <Grid item container xs={12} md={8} direction='column'>
                     <FormControl component='fieldset'>
@@ -163,21 +136,21 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                             {
                                 targetPlatformVersions.map((targetPlatformVersion, index) => {
                                         let label: string;
-                                        let indentClass: string;
+                                        let indent: number;
                                         if (targetPlatformVersion.version === WILDCARD && targetPlatformVersion.targetPlatform === WILDCARD) {
                                             label = 'All Versions';
-                                            indentClass = classes.indent0;
+                                            indent = 0;
                                         } else if (targetPlatformVersion.targetPlatform === WILDCARD) {
                                             label = targetPlatformVersion.version;
-                                            indentClass = classes.indent1;
+                                            indent = 4;
                                         } else {
                                             label = getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform);
-                                            indentClass = classes.indent2;
+                                            indent = 8;
                                         }
 
                                         const name = `${targetPlatformVersion.targetPlatform}/${targetPlatformVersion.version}`;
                                         return <FormControlLabel
-                                            classes={{ root: indentClass }}
+                                            sx={{ pl: indent }}
                                             key={`${name}_${index}`}
                                             control={<Checkbox checked={targetPlatformVersion.checked} onChange={handleChange} name={name} />}
                                             label={label} />;
@@ -201,9 +174,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
     </>;
 };
 
-export namespace ExtensionVersionContainer {
-    export interface Props {
-        extension: Extension;
-        onUpdate: () => void;
-    }
+export interface ExtensionVersionContainerProps {
+    extension: Extension;
+    onUpdate: () => void;
 }

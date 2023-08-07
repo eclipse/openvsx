@@ -8,88 +8,60 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import * as React from 'react';
-import {
-    Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle,
-    DialogContent, DialogActions, Typography, Box, Paper
-} from '@material-ui/core';
-import { CheckCircleOutline } from '@material-ui/icons';
+import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Paper } from '@mui/material';
+import { CheckCircleOutline } from '@mui/icons-material';
 import Dropzone from 'react-dropzone';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { ErrorResult, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
-import clsx from 'clsx';
+import { styled, Theme } from '@mui/material/styles';
 
-const publishDialogStyle = (theme: Theme) => createStyles({
-    boldText: {
-        fontWeight: 'bold'
-    },
-    banner: {
-        margin: `0 0 ${theme.spacing(2)}px 0`,
-        padding: theme.spacing(2),
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center'
-    },
-    bannerText: {
-        marginLeft: theme.spacing(1)
-    },
-    undoButton: {
-        marginLeft: 'auto'
-    },
-    successLight: {
-        backgroundColor: theme.palette.success.light,
-        color: '#000'
-    },
-    successDark: {
-        backgroundColor: theme.palette.success.dark,
-        color: '#fff'
-    },
-    dropzone: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: theme.spacing(3),
-        borderWidth: 2,
-        borderRadius: 2,
-        borderColor: theme.palette.text.primary,
-        borderStyle: 'dashed',
-        backgroundColor: theme.palette.background.default,
-        color: theme.palette.text.primary,
-        outline: 'none',
-        transition: 'border .24s ease-in-out'
-    },
-    dropzoneFocused: {
-        borderColor: theme.palette.secondary.main
-    },
-    dropzoneAccept: {
-        borderColor: theme.palette.success.main
-    },
-    dropzoneReject: {
-        borderColor: theme.palette.error.main
+const getColor = (isFocused: boolean, isDragAccept: boolean, isDragReject: boolean) => {
+    if (isDragAccept) {
+        return 'success.main';
+    } else if (isDragReject) {
+        return 'error.main';
+    } else if (isFocused) {
+        return 'secondary.main';
+    } else {
+        return 'text.primary';
     }
-});
+};
 
-class PublishExtensionDialogComponent extends React.Component<PublishExtensionDialogComponent.Props, PublishExtensionDialogComponent.State> {
+const DropzoneDiv = styled('div')(({ theme }: { theme: Theme }) => ({
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: theme.spacing(3),
+    borderWidth: 2,
+    borderRadius: 2,
+    borderStyle: 'dashed',
+    backgroundColor: theme.palette.background.default,
+    color: theme.palette.text.primary,
+    outline: 'none',
+    transition: 'border .24s ease-in-out'
+}));
 
-    static contextType = MainContext;
-    declare context: MainContext;
+export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogProps> = props => {
+    const [open, setOpen] = useState<boolean>(false);
+    const [publishing, setPublishing] = useState<boolean>(false);
+    const [fileToPublish, setFileToPublish] = useState<File>();
+    const [oldFileToPublish, setOldFileToPublish] = useState<File>();
 
-    protected abortController = new AbortController();
+    const context = useContext(MainContext);
+    const abortController = new AbortController();
 
-    constructor(props: PublishExtensionDialogComponent.Props) {
-        super(props);
-        this.state = {
-            open: false,
-            publishing: false,
-            fileToPublish: undefined,
-            oldFileToPublish: undefined
+    useEffect(() => {
+        document.addEventListener('keydown', handleEnter);
+        return () => {
+            abortController.abort();
+            document.removeEventListener('keydown', handleEnter);
         };
-    }
+    }, []);
 
-    protected toMegaBytes = (bytes: number): string => {
+    const toMegaBytes = (bytes: number): string => {
         const megaBytes = bytes / (1024.0 * 1024.0);
         return megaBytes.toLocaleString('en-US', {
             minimumFractionDigits: 2,
@@ -97,85 +69,78 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
         });
     };
 
-    protected handleOpenDialog = () => {
-        this.setState({ open: true });
-    };
+    const handleOpenDialog = () => setOpen(true);
 
-    protected handleCancel = () => {
-        if (this.state.publishing) {
-            this.abortController.abort();
-        }
-        this.setState({
-            open: false,
-            publishing: false,
-            fileToPublish: undefined,
-            oldFileToPublish: undefined
-        });
-    };
-
-    protected handleUndo = () => {
-        const oldFileToPublish = this.state.oldFileToPublish;
-        this.setState({ fileToPublish: oldFileToPublish, oldFileToPublish: undefined });
-    };
-
-    protected handleDrop = <T extends File>(acceptedFiles: T[]) => {
-        if (this.state.fileToPublish) {
-            this.setState({ oldFileToPublish: this.state.fileToPublish });
+    const handleCancel = () => {
+        if (publishing) {
+            abortController.abort();
         }
 
-        this.setState({ fileToPublish: acceptedFiles[0] });
+        setOpen(false);
+        setPublishing(false);
+        setFileToPublish(undefined);
+        setOldFileToPublish(undefined);
     };
 
-    protected handleFileDialogOpen = () => {
-        this.setState({ oldFileToPublish: undefined });
+    const handleUndo = () => {
+        setFileToPublish(oldFileToPublish);
+        setOldFileToPublish(undefined);
     };
 
-    protected handlePublish = async () => {
-        if (!this.context.user || !this.state.fileToPublish) {
+    const handleDrop = <T extends File>(acceptedFiles: T[]) => {
+        if (fileToPublish) {
+            setOldFileToPublish(fileToPublish);
+        }
+
+        setFileToPublish(acceptedFiles[0]);
+    };
+
+    const handleFileDialogOpen = () => setOldFileToPublish(undefined);
+
+    const handlePublish = async () => {
+        if (!context.user || !fileToPublish) {
             return;
         }
 
-        this.setState({ publishing: true });
+        setPublishing(true);
         let published = false;
         let retryPublish = false;
         try {
-            published = await this.tryPublishExtension(this.state.fileToPublish);
+            published = await tryPublishExtension(fileToPublish);
         } catch (err) {
             try {
-                await this.tryResolveNamespaceError(err);
+                await tryResolveNamespaceError(err);
                 retryPublish = true;
             } catch (namespaceError) {
-                this.context.handleError(namespaceError);
+                context.handleError(namespaceError);
             }
         }
         if (retryPublish) {
             try {
-                published = await this.tryPublishExtension(this.state.fileToPublish);
+                published = await tryPublishExtension(fileToPublish);
             } catch (err) {
-                this.context.handleError(err);
+                context.handleError(err);
             }
         }
         if (published) {
-            this.props.extensionPublished();
-            this.setState({
-                open: false,
-                fileToPublish: undefined,
-                oldFileToPublish: undefined
-            });
+            props.extensionPublished();
+            setOpen(false);
+            setFileToPublish(undefined);
+            setOldFileToPublish(undefined);
         }
 
-        this.setState({ publishing: false });
+        setPublishing(false);
     };
 
-    handleEnter = (e: KeyboardEvent) => {
+    const handleEnter = (e: KeyboardEvent) => {
         if (e.code ===  'Enter') {
-            this.handlePublish();
+            handlePublish();
         }
     };
 
-    protected tryPublishExtension = async (fileToPublish: File): Promise<boolean> => {
+    const tryPublishExtension = async (fileToPublish: File): Promise<boolean> => {
         let published = false;
-        const publishResponse = await this.context.service.publishExtension(this.abortController, fileToPublish);
+        const publishResponse = await context.service.publishExtension(abortController, fileToPublish);
         if (isError(publishResponse)) {
             throw publishResponse;
         }
@@ -184,7 +149,7 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
         return published;
     };
 
-    protected tryResolveNamespaceError = async (publishResponse: Readonly<ErrorResult>) => {
+    const tryResolveNamespaceError = async (publishResponse: Readonly<ErrorResult>) => {
         const namespaceError = 'Unknown publisher: ';
         if (!publishResponse.error.startsWith(namespaceError)) {
             throw publishResponse;
@@ -196,57 +161,54 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
             };
             throw result;
         }
-        const namespaceResponse = await this.context.service.createNamespace(this.abortController, namespace);
+        const namespaceResponse = await context.service.createNamespace(abortController, namespace);
         if (isError(namespaceResponse)) {
             throw namespaceResponse;
         }
     };
 
-    componentDidMount() {
-        document.addEventListener('keydown', this.handleEnter);
-    }
-
-    componentWillUnmount() {
-        this.abortController.abort();
-        document.removeEventListener('keydown', this.handleEnter);
-    }
-
-    render() {
-        const classes = this.props.classes;
-        const successClass = this.context.pageSettings.themeType === 'dark' ? classes.successDark : classes.successLight;
-
-        return <React.Fragment>
-            <Button variant='outlined' onClick={this.handleOpenDialog}>Publish extension</Button>
-            <Dialog open={this.state.open} onClose={this.handleCancel}>
+    const successColor = context.pageSettings.themeType === 'dark' ? '#fff' : '#000';
+        return <>
+            <Button variant='outlined' onClick={handleOpenDialog}>Publish extension</Button>
+            <Dialog open={open} onClose={handleCancel}>
                 <DialogTitle>Publish extension</DialogTitle>
                 <DialogContent>
                     {
-                        this.state.oldFileToPublish
-                            ? <Paper className={`${classes.banner} ${successClass}`}>
+                        oldFileToPublish
+                            ? <Paper
+                                sx={{
+                                    mb: 2,
+                                    p: 2,
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    color: successColor,
+                                    bgcolor: `success.${context.pageSettings.themeType}`
+                                }}
+                              >
                                 <CheckCircleOutline fontSize='large' />
-                                <Typography variant='body1' className={classes.bannerText}>Changed extension package.</Typography>
-                                <Button onClick={this.handleUndo} className={classes.undoButton}>Undo</Button>
+                                <Typography variant='body1' sx={{ ml: 1 }}>Changed extension package.</Typography>
+                                <Button onClick={handleUndo} sx={{ ml: 'auto' }}>Undo</Button>
                             </Paper>
                             : null
                     }
-                    <Dropzone onDrop={this.handleDrop} onFileDialogOpen={this.handleFileDialogOpen} maxFiles={1} maxSize={512 * 1024 * 1024}>
+                    <Dropzone onDrop={handleDrop} onFileDialogOpen={handleFileDialogOpen} maxFiles={1} maxSize={512 * 1024 * 1024}>
                     {({ getRootProps, getInputProps, isFocused, isDragAccept, isDragReject }) => (
                         <section>
-                            <div {...getRootProps({ className: clsx(
-                                this.props.classes.dropzone,
-                                isFocused && this.props.classes.dropzoneFocused,
-                                isDragAccept && this.props.classes.dropzoneAccept,
-                                isDragReject && this.props.classes.dropzoneReject
-                                ) })}>
+                            <DropzoneDiv
+                                {...getRootProps({ isFocused, isDragAccept, isDragReject })}
+                                style={{ borderColor: getColor(isFocused, isDragAccept, isDragReject) }}
+                            >
                                 <input {...getInputProps({ accept: 'application/vsix,.vsix', multiple: false })} />
                                 <p>Drag &amp; drop an extension here, or click to select an extension</p>
                                 <p>(Only 1 *.vsix package at a time is accepted)</p>
-                            </div>
+                            </DropzoneDiv>
                             {
-                                this.state.fileToPublish
+                                fileToPublish
                                     ? <Box mt={1}>
-                                        <Typography key={this.state.fileToPublish.name} variant='body2' classes={{ root: this.props.classes.boldText }}>
-                                            {this.state.fileToPublish.name} ({this.toMegaBytes(this.state.fileToPublish.size)} MB)
+                                        <Typography key={fileToPublish.name} variant='body2' sx={{ fontWeight: 'bold' }}>
+                                            {fileToPublish.name} ({toMegaBytes(fileToPublish.size)} MB)
                                         </Typography>
                                     </Box>
                                     : null
@@ -256,34 +218,23 @@ class PublishExtensionDialogComponent extends React.Component<PublishExtensionDi
                     </Dropzone>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={this.handleCancel} color='secondary'>
+                    <Button onClick={handleCancel} color='secondary'>
                         Cancel
                     </Button>
                     <ButtonWithProgress
                             autoFocus
+                            sx={{ ml: 1 }}
                             title="After you click 'Publish', this extension will be available on the Marketplace"
-                            error={!this.state.fileToPublish}
-                            working={this.state.publishing}
-                            onClick={this.handlePublish} >
+                            error={!fileToPublish}
+                            working={publishing}
+                            onClick={handlePublish} >
                         Publish
                     </ButtonWithProgress>
                 </DialogActions>
             </Dialog>
-        </React.Fragment>;
-    }
+        </>;
+};
+
+export interface PublishExtensionDialogProps {
+    extensionPublished: () => void;
 }
-
-export namespace PublishExtensionDialogComponent {
-    export interface Props extends WithStyles<typeof publishDialogStyle> {
-        extensionPublished: () => void;
-    }
-
-    export interface State {
-        open: boolean;
-        publishing: boolean;
-        fileToPublish?: File;
-        oldFileToPublish?: File;
-    }
-}
-
-export const PublishExtensionDialog = withStyles(publishDialogStyle)(PublishExtensionDialogComponent);

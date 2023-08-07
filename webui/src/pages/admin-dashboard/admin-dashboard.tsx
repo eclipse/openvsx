@@ -9,53 +9,39 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useContext, useState } from 'react';
-import { Box, Container, makeStyles, CssBaseline, Typography, IconButton } from '@material-ui/core';
+import { Box, Container, CssBaseline, Typography, IconButton } from '@mui/material';
 import { createRoute } from '../../utils';
 import { Sidepanel } from '../../components/sidepanel/sidepanel';
 import { NavigationItem } from '../../components/sidepanel/navigation-item';
-import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
-import ExtensionSharpIcon from '@material-ui/icons/ExtensionSharp';
-import { Route, Switch, useHistory, useLocation } from 'react-router-dom';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import ExtensionSharpIcon from '@mui/icons-material/ExtensionSharp';
+import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { NamespaceAdmin } from './namespace-admin';
 import { ExtensionAdmin } from './extension-admin';
 import { MainContext } from '../../context';
-import HighlightOffIcon from '@material-ui/icons/HighlightOff';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { Welcome } from './welcome';
 import { PublisherAdmin } from './publisher-admin';
-import PersonIcon from '@material-ui/icons/Person';
+import PersonIcon from '@mui/icons-material/Person';
 
 export namespace AdminDashboardRoutes {
     export const ROOT = 'admin-dashboard';
     export const MAIN = createRoute([ROOT]);
-    export const NAMESPACE_ADMIN = createRoute([MAIN, 'namespaces']);
-    export const EXTENSION_ADMIN = createRoute([MAIN, 'extensions']);
-    export const PUBLISHER_ADMIN = createRoute([MAIN, 'publisher']);
+    export const NAMESPACE_ADMIN = createRoute([ROOT, 'namespaces']);
+    export const EXTENSION_ADMIN = createRoute([ROOT, 'extensions']);
+    export const PUBLISHER_ADMIN = createRoute([ROOT, 'publisher']);
 }
 
-const useStyles = makeStyles((theme) => ({
-    container: {
-        paddingTop: theme.spacing(8),
-        height: '100%'
-    },
-    message: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%'
-    }
-}));
-
-export const AdminDashboard: FunctionComponent<AdminDashboard.Props> = props => {
-    const classes = useStyles();
-
+export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
     const { user } = useContext(MainContext);
 
-    const history = useHistory();
-    const toMainPage = () => history.push('/');
+    const navigate = useNavigate();
+    const toMainPage = () => navigate('/');
 
     const [currentPage, setCurrentPage] = useState<string | undefined>(useLocation().pathname);
     const handleOpenRoute = (route: string) => setCurrentPage(route);
 
+    const message = user ? 'You are not authorized as administrator.' : !props.userLoading ? 'You are not logged in.' : null;
     return <>
         <CssBaseline />
         <Box display='flex' height='100vh'>
@@ -63,38 +49,39 @@ export const AdminDashboard: FunctionComponent<AdminDashboard.Props> = props => 
                 user?.role === 'admin' ?
                 <>
                     <Sidepanel>
-                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' icon={<AssignmentIndIcon />} route={AdminDashboardRoutes.NAMESPACE_ADMIN}></NavigationItem>
-                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' icon={<ExtensionSharpIcon />} route={AdminDashboardRoutes.EXTENSION_ADMIN}></NavigationItem>
-                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' icon={<PersonIcon />} route={AdminDashboardRoutes.PUBLISHER_ADMIN}></NavigationItem>
+                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' icon={<AssignmentIndIcon />} route={AdminDashboardRoutes.NAMESPACE_ADMIN} />
+                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' icon={<ExtensionSharpIcon />} route={AdminDashboardRoutes.EXTENSION_ADMIN} />
+                        <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' icon={<PersonIcon />} route={AdminDashboardRoutes.PUBLISHER_ADMIN} />
                     </Sidepanel>
-                    <Box overflow='auto' flex={1} >
-                        <Container className={classes.container} maxWidth='lg'>
-                            <Switch>
-                                <Route path={AdminDashboardRoutes.NAMESPACE_ADMIN} component={NamespaceAdmin} />
-                                <Route path={AdminDashboardRoutes.EXTENSION_ADMIN} component={ExtensionAdmin} />
-                                <Route path={AdminDashboardRoutes.PUBLISHER_ADMIN} component={PublisherAdmin} />
-                                <Route path='*' component={Welcome} />
-                            </Switch>
+                    <Box overflow='auto' flex={1}>
+                        <IconButton onClick={toMainPage} sx={{ float: 'right', mt: 1, mr: 1 }}>
+                            <HighlightOffIcon/>
+                        </IconButton>
+                        <Container sx={{ pt: 8, height: '100%' }} maxWidth='lg'>
+                            <Routes>
+                                <Route path='/namespaces' element={<NamespaceAdmin/>} />
+                                <Route path='/extensions' element={<ExtensionAdmin/>} />
+                                <Route path='/publisher' element={<PublisherAdmin/>} />
+                                <Route path='*' element={<Welcome/>} />
+                            </Routes>
                         </Container>
                     </Box>
                 </>
-                : user ?
-                <Box className={classes.message}><Typography variant='h6'>You are not authorized as administrator.</Typography></Box>
-                : !props.userLoading ?
-                <Box className={classes.message}><Typography variant='h6'>You are not logged in.</Typography></Box>
+                : message ?
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '100%'
+                    }}>
+                        <Typography variant='h6'>{message}</Typography>
+                    </Box>
                 : null
             }
-            <Box position='absolute' top='5px' right='5px'>
-                <IconButton onClick={toMainPage}>
-                    <HighlightOffIcon></HighlightOffIcon>
-                </IconButton>
-            </Box>
         </Box>
     </>;
 };
 
-export namespace AdminDashboard {
-    export interface Props {
-        userLoading: boolean;
-    }
+export interface AdminDashboardProps {
+    userLoading: boolean;
 }

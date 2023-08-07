@@ -1,4 +1,4 @@
-FROM node:14-alpine3.16 as builder
+FROM node:18-alpine3.17 as builder
 
 # Copy sources
 COPY --chown=node:node package.json tsconfig.json yarn.lock /home/node/builder/
@@ -9,12 +9,15 @@ COPY --chown=node:node static ./static/
 COPY --chown=node:node test ./test/
 
 # Build and test the library and default app
+RUN corepack enable
+RUN corepack prepare yarn@stable --activate
 RUN yarn install --frozen-lockfile
 RUN yarn test
+RUN yarn build
 RUN yarn build:default
 
 
-FROM node:14-alpine3.16
+FROM node:18-alpine3.17
 
 # Copy build result to runtime directory
 COPY --chown=node:node --from=builder /home/node/builder/static /home/node/webui/static/

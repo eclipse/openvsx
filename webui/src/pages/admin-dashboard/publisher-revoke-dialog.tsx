@@ -11,14 +11,14 @@
 import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
 import {
     Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Link
-} from '@material-ui/core';
+} from '@mui/material';
 import { createAbsoluteURL } from '../../utils';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { PublisherInfo, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 
-export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Props> = props => {
+export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps> = props => {
     const { user, service, handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
 
@@ -115,6 +115,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Prop
                 </Button>
                 <ButtonWithProgress
                     autoFocus
+                    sx={{ ml: 1 }}
                     working={working}
                     onClick={doRevoke} >
                     Revoke Contributions
@@ -124,8 +125,6 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialog.Prop
     </>;
 };
 
-export namespace PublisherRevokeDialog {
-    export interface Props {
-        publisherInfo: PublisherInfo;
-    }
+export interface PublisherRevokeDialogProps {
+    publisherInfo: PublisherInfo;
 }

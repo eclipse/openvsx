@@ -8,35 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
+import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useState, useContext, useEffect } from 'react';
 import { UserData } from '../..';
 import {
     Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Popper, Fade, Paper,
-    Box, Avatar, makeStyles
-} from '@material-ui/core';
+    Box, Avatar
+} from '@mui/material';
 import { Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
 import { NamespaceDetailConfigContext } from './user-settings-namespace-detail';
 import { MainContext } from '../../context';
-
-const useStyles = makeStyles((theme) => ({
-    foundUserListPopper: {
-        zIndex: theme.zIndex.tooltip
-    },
-    foundUserListContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        width: 350
-    },
-    foundUserContainer: {
-        display: 'flex',
-        height: 60,
-        alignItems: 'center',
-        '&:hover': {
-            cursor: 'pointer',
-            background: theme.palette.action.hover
-        }
-    }
-}));
 
 export interface AddMemberDialogProps {
     open: boolean;
@@ -49,7 +29,6 @@ export interface AddMemberDialogProps {
 
 export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props => {
     const { open } = props;
-    const classes = useStyles();
     const config = useContext(NamespaceDetailConfigContext);
     const { service, handleError } = useContext(MainContext);
     const [foundUsers, setFoundUsers] = useState<UserData[]>([]);
@@ -92,7 +71,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props =>
         props.onClose();
     };
 
-    const handleUserSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleUserSearch = async (e: ChangeEvent<HTMLInputElement>) => {
         const popperTarget = e.currentTarget;
         setPopperTarget(popperTarget);
         const val = popperTarget.value;
@@ -124,7 +103,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props =>
                     label='Open VSX User'
                     fullWidth
                     onChange={handleUserSearch}
-                    onKeyPress={(e: React.KeyboardEvent) => {
+                    onKeyDown={(e: KeyboardEvent) => {
                         if (e.key === "Enter" && foundUsers.length === 1) {
                             e.preventDefault();
                             addUser(foundUsers[0]);
@@ -139,20 +118,29 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props =>
             </DialogActions>
         </Dialog>
         <Popper
-            className={classes.foundUserListPopper}
+            sx={{ zIndex: 'tooltip' }}
             open={showUserPopper}
             anchorEl={popperTarget}
             placement='bottom'
             transition>
             {({ TransitionProps }) => (
                 <Fade {...TransitionProps} timeout={350}>
-                    <Paper className={classes.foundUserListContainer}>
+                    <Paper sx={{ display: 'flex', flexDirection: 'column', width: 350 }}>
                         {
                             foundUsers.filter(props.filterUsers).map(foundUser => {
                                 return <Box
                                     onClick={() => addUser(foundUser)}
-                                    className={classes.foundUserContainer}
-                                    key={'found' + foundUser.loginName}>
+                                    key={'found' + foundUser.loginName}
+                                    sx={{
+                                        display: 'flex',
+                                        height: 60,
+                                        alignItems: 'center',
+                                        '&:hover': {
+                                            cursor: 'pointer',
+                                            bgcolor: 'action.hover'
+                                        }
+                                    }}
+                                >
                                     <Box flex='1' marginLeft='10px'>
                                         <Box fontWeight='bold'>
                                             {foundUser.loginName}

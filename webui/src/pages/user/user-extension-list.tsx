@@ -9,19 +9,10 @@
  ********************************************************************************/
 
 import React, { FunctionComponent } from 'react';
-import { makeStyles } from '@material-ui/core';
+import { Box } from '@mui/material';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserNamespaceExtensionListItem } from './user-namespace-extension-list-item';
 import { Extension } from '../../extension-registry-types';
-
-const extensionListStyles = makeStyles(theme => ({
-    extensions: {
-        display: 'grid',
-        gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
-        gap: `.5rem`,
-        marginTop: '1rem',
-    }
-}));
 
 interface UserExtensionListProps {
     extensions?: Extension[];
@@ -29,19 +20,24 @@ interface UserExtensionListProps {
 }
 
 export const UserExtensionList: FunctionComponent<UserExtensionListProps> = props => {
-    const classes = extensionListStyles();
-    return <>
-        <div className={classes.extensions}>
-            <DelayedLoadIndicator loading={props.loading} />
-            {
-                props.extensions && props.extensions.length > 0 ?
-                props.extensions.map((extension: Extension) => <UserNamespaceExtensionListItem
-                    key={`${extension.namespace}.${extension.name}-${extension.version}`}
-                    extension={extension}
-                />)
-                : null
-            }
-        </div>
-    </>;
+    return <Box
+        component='div'
+        sx={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
+            gap: '.5rem',
+            mt: '1rem'
+        }}
+    >
+        <DelayedLoadIndicator loading={props.loading} />
+        {
+            props.extensions && props.extensions.length > 0 ?
+            props.extensions.map((extension: Extension) => <UserNamespaceExtensionListItem
+                key={`${extension.namespace}.${extension.name}-${extension.version}`}
+                extension={extension}
+            />)
+            : null
+        }
+    </Box>;
 };
 

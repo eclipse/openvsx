@@ -8,21 +8,22 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Tabs, Tab, useTheme, useMediaQuery } from '@material-ui/core';
-import { RouteComponentProps } from 'react-router-dom';
+import React, { ChangeEvent, ReactElement } from 'react';
+import { Tabs, Tab, useTheme, useMediaQuery } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
 import { createRoute } from '../../utils';
 import { UserSettingsRoutes } from './user-settings';
 
-export const UserSettingTabs = (props: UserSettingTabs.Props): React.ReactElement => {
+export const UserSettingTabs = (): ReactElement => {
 
     const theme = useTheme();
     const isATablet = useMediaQuery(theme.breakpoints.down('md'));
     const isAMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const params = props.match.params as UserSettingTabs.Params;
+    const { tab } = useParams();
+    const navigate = useNavigate();
 
-    const handleChange = (event: React.ChangeEvent, newTab: string) => {
-        props.history.push(generateRoute(newTab));
+    const handleChange = (event: ChangeEvent, newTab: string) => {
+        navigate(generateRoute(newTab));
     };
 
     const generateRoute = (tab: string) => {
@@ -30,27 +31,17 @@ export const UserSettingTabs = (props: UserSettingTabs.Props): React.ReactElemen
     };
 
     return (
-        <React.Fragment>
-            <Tabs
-                value={params.tab}
-                onChange={handleChange}
-                orientation={isATablet ? 'horizontal' : 'vertical'}
-                centered={isAMobile ? true : false}
-            >
-                <Tab value='profile' label='Profile' />
-                <Tab value='tokens' label='Access Tokens' />
-                <Tab value='namespaces' label='Namespaces' />
-                <Tab value='extensions' label='Extensions' />
-            </Tabs>
-        </React.Fragment>
+        <Tabs
+            value={tab}
+            onChange={handleChange}
+            orientation={isATablet ? 'horizontal' : 'vertical'}
+            centered={isAMobile ? true : false}
+            indicatorColor='secondary'
+        >
+            <Tab value='profile' label='Profile' />
+            <Tab value='tokens' label='Access Tokens' />
+            <Tab value='namespaces' label='Namespaces' />
+            <Tab value='extensions' label='Extensions' />
+        </Tabs>
     );
 };
-
-export namespace UserSettingTabs {
-    export interface Props extends RouteComponentProps {
-    }
-
-    export interface Params {
-        tab: string;
-    }
-}

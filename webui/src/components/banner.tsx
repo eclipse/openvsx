@@ -8,72 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
-import clsx from 'clsx';
-import {
-    Paper, Card, Grid, Button, Divider, CardActions, CardContent, Hidden, Collapse
-} from '@material-ui/core';
-import makeStyles from '@material-ui/core/styles/makeStyles';
+import React, { FunctionComponent, PropsWithChildren } from 'react';
+import { Box, Paper, Card, Grid, Button, Divider, CardActions, CardContent, Hidden, Collapse } from '@mui/material';
 
-const useStyles = makeStyles((theme) => ({
-    root: {
-        display: 'block',
-        width: '100%',
-        marginLeft: 'auto',
-        marginRight: 'auto',
-    },
-    cardContent: {
-        paddingBottom: theme.spacing(1),
-        paddingRight: theme.spacing(1),
-        paddingLeft: theme.spacing(2),
-        paddingTop: theme.spacing(1) + 2
-    },
-    flex: {
-        flexGrow: 1,
-    },
-    buttons: {
-        whiteSpace: 'nowrap',
-        alignSelf: 'flex-end',
-        paddingLeft: '90px !important',
-    },
-    label: {
-        alignSelf: 'center',
-    },
-    lightTheme: {
-        color: '#000',
-        '& a': {
-            color: '#000',
-            fontWeight: 'bold'
-        }
-    },
-    darkTheme: {
-        color: '#fff',
-        '& a': {
-            color: '#fff',
-            fontWeight: 'bold'
-        }
-    },
-    infoLight: {
-        backgroundColor: theme.palette.info.light
-    },
-    infoDark: {
-        backgroundColor: theme.palette.info.dark,
-    },
-    warningLight: {
-        backgroundColor: theme.palette.warning.light
-    },
-    warningDark: {
-        backgroundColor: theme.palette.warning.dark,
-    }
-}));
-
-export const Banner: FunctionComponent<BannerProps> = props => {
-    const classes = useStyles();
-
+export const Banner: FunctionComponent<PropsWithChildren<BannerProps>> = props => {
     const renderButtons = <>
-        <span className={classes.flex} />
-
-        <Grid item className={classes.buttons}>
+        <Box sx={{ flexGrow: 1 }} component='span'/>
+        <Grid item sx={{ whiteSpace: 'nowrap', alignSelf: 'flex-end', paddingLeft: '90px !important' }}>
             <Button
                 variant='outlined'
                 onClick={props.dismissButtonOnClick}
@@ -83,34 +24,32 @@ export const Banner: FunctionComponent<BannerProps> = props => {
         </Grid>
     </>;
 
-    let cardClasses = '';
-    if (props.color === 'info') {
-        cardClasses = props.theme === 'dark'
-            ? ` ${classes.darkTheme} ${classes.infoDark}`
-            : ` ${classes.lightTheme} ${classes.infoLight}`;
-    } else if (props.color === 'warning') {
-        cardClasses = props.theme === 'dark'
-            ? ` ${classes.darkTheme} ${classes.warningDark}`
-            : ` ${classes.lightTheme} ${classes.warningLight}`;
-    }
+    const cardColor = props.theme === 'dark' ? '#fff' : '#000';
+    const cardBackground = `${props.color}.${props.theme}`;
     return <>
         <Collapse in={props.open}>
-            <Paper elevation={0} className={classes.root}>
-                <Card elevation={0} className={cardClasses}>
-                    <CardContent
-                        className={clsx(
-                            classes.cardContent
-                        )}
-                    >
+            <Paper elevation={0} sx={{ display: 'block', width: '100%', mx: 'auto' }}>
+                <Card
+                    elevation={0}
+                    sx={{
+                        color: cardColor,
+                        bgcolor: cardBackground,
+                        '& a': {
+                            color: cardColor,
+                            fontWeight: 'bold'
+                        }
+                    }}
+                >
+                    <CardContent sx={{ pb: 1, pr: 1, pl: 2, pt: 1.25 }}>
                         <Grid
                             container
                             wrap='nowrap'
                             spacing={2}
                             direction='row'
-                            justify='flex-start'
+                            justifyContent='flex-start'
                             alignItems='flex-start'
                         >
-                            <Grid item className={classes.label}>
+                            <Grid item sx={{ alignSelf: 'center' }}>
                                 {props.children}
                             </Grid>
                             {

@@ -19,13 +19,15 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: 14.x
+        node-version: 18.x
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:
         java-version: 17
     - name: Install Yarn
-      run: npm install --global yarn
+      run: |
+        corepack enable
+        corepack prepare yarn@stable --activate
     - uses: actions/checkout@v2
     - name: Set Image Version
       run: echo "IMAGE_VERSION=${GITHUB_SHA:0:7}" >> $GITHUB_ENV

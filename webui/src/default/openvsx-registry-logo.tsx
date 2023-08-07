@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import React, { FunctionComponent } from 'react';
 
-const OpenVSXLogo: React.FunctionComponent<{ className: string, prefersDarkMode: boolean }> = props => {
+const OpenVSXLogo: FunctionComponent<{width: string, height: string, marginTop: string, prefersDarkMode: boolean }> = props => {
     return (
-        <svg viewBox='0 0 725.4 131' className={props.className}>
+        <svg viewBox='0 0 725.4 131' style={{ width: props.width, height: props.height, marginTop: props.marginTop }}>
             <path
                 d='M30 44.2L52.6 5H7.3zM4.6 88.5h45.3L27.2 49.4zm51 0l22.6 39.2 22.6-39.2z'
                 fill='#c160ef' />

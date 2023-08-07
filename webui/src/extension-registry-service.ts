@@ -50,11 +50,12 @@ export class ExtensionRegistryService {
     }
 
     async setNamespaceDetails(abortController: AbortController, details: NamespaceDetails): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
 
@@ -152,11 +153,12 @@ export class ExtensionRegistryService {
     }
 
     async postReview(abortController: AbortController, review: NewReview, postReviewUrl: UrlString): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
@@ -170,9 +172,10 @@ export class ExtensionRegistryService {
     }
 
     async deleteReview(abortController: AbortController, deleteReviewUrl: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
@@ -217,11 +220,13 @@ export class ExtensionRegistryService {
     }
 
     async createAccessToken(abortController: AbortController, user: UserData, description: string): Promise<Readonly<PersonalAccessToken>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
+
         const endpoint = addQuery(user.createTokenUrl, [{ key: 'description', value: description }]);
         return sendRequest({
             abortController,
@@ -233,9 +238,10 @@ export class ExtensionRegistryService {
     }
 
     async deleteAccessToken(abortController: AbortController, token: PersonalAccessToken): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
@@ -248,9 +254,10 @@ export class ExtensionRegistryService {
     }
 
     async deleteAllAccessTokens(abortController: AbortController, tokens: PersonalAccessToken[]): Promise<Readonly<SuccessResult | ErrorResult>[]> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return await Promise.all(tokens.map(token => sendRequest<SuccessResult | ErrorResult>({
@@ -287,9 +294,10 @@ export class ExtensionRegistryService {
     }
 
     async setNamespaceMember(abortController: AbortController, endpoint: UrlString, user: UserData, role: MembershipRole | 'remove'): Promise<Readonly<SuccessResult | ErrorResult>[]> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         const query = [
@@ -307,9 +315,10 @@ export class ExtensionRegistryService {
     }
 
     async signPublisherAgreement(abortController: AbortController): Promise<Readonly<UserData | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest<UserData | ErrorResult>({
@@ -331,11 +340,12 @@ export class ExtensionRegistryService {
     }
 
     async publishExtension(abortController: AbortController, extensionPackage: File): Promise<Readonly<Extension | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/octet-stream'
         };
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
 
@@ -350,11 +360,12 @@ export class ExtensionRegistryService {
     }
 
     async createNamespace(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
 
@@ -369,9 +380,10 @@ export class ExtensionRegistryService {
     }
 
     async getExtensions(abortController: AbortController): Promise<Readonly<Extension[] | ErrorResult>> {
-        const csrfToken = await this.getCsrfToken(abortController);
+        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
 
@@ -398,13 +410,15 @@ export class AdminService {
     }
 
     async deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken(abortController);
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
+
         return sendRequest({
             abortController,
             method: 'POST',
@@ -424,11 +438,12 @@ export class AdminService {
     }
 
     async createNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken(abortController);
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
@@ -442,11 +457,12 @@ export class AdminService {
     }
 
     async changeNamespace(abortController: AbortController, req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken(abortController);
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
@@ -468,9 +484,10 @@ export class AdminService {
     }
 
     async revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfToken = await this.registry.getCsrfToken(abortController);
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfToken)) {
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
         return sendRequest({
@@ -485,10 +502,10 @@ export class AdminService {
 }
 
 export interface ExtensionFilter {
-    query?: string;
-    category?: ExtensionCategory | '';
-    size?: number;
-    offset?: number;
-    sortBy?: SortBy;
-    sortOrder?: SortOrder;
+    query: string;
+    category: ExtensionCategory | '';
+    size: number;
+    offset: number;
+    sortBy: SortBy;
+    sortOrder: SortOrder;
 }

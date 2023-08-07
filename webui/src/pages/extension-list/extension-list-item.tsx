@@ -8,136 +8,102 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import React, { FunctionComponent, useContext, useState, useEffect } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
-import { Paper, Typography, Box, Grid, Fade } from '@material-ui/core';
-import { withStyles, createStyles, WithStyles, Theme } from '@material-ui/core/styles';
-import SaveAltIcon from '@material-ui/icons/SaveAlt';
+import { Paper, Typography, Box, Grid, Fade } from '@mui/material';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import { MainContext } from '../../context';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 import { SearchEntry } from '../../extension-registry-types';
 import { ExportRatingStars } from '../extension-detail/extension-rating-stars';
 import { createRoute } from '../../utils';
-import { PageSettings } from '../../page-settings';
 
+export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = props => {
+    const [icon, setIcon] = useState<string>();
+    const context = useContext(MainContext);
+    const abortController = new AbortController();
 
-const itemStyles = (theme: Theme) => createStyles({
-    extensionCard: {
-        maxWidth: '14.875rem',
-        minWidth: '11.875rem',
-    },
-    paper: {
-        padding: theme.spacing(3, 2),
-        '& > *': {
-            '&:not(:last-child)': {
-                marginBottom: '.5rem',
+    useEffect(() => {
+        updateChanges();
+        return () => {
+            abortController.abort();
+            if (icon) {
+                URL.revokeObjectURL(icon);
             }
-        }
-    },
-    link: {
-        textDecoration: 'none'
-    },
-    img: {
-        width: '4.5rem',
-        maxHeight: '5.4rem',
-    }
-});
+        };
+    }, []);
 
-class ExtensionListItemComponent extends React.Component<ExtensionListItemComponent.Props, ExtensionListItemComponent.State> {
+    useEffect(() => {
+        updateChanges();
+    }, [props.extension.namespace, props.extension.name, props.extension.version]);
 
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected abortController = new AbortController();
-
-    constructor(props: ExtensionListItemComponent.Props) {
-        super(props);
-        this.state = { icon: undefined };
-    }
-
-    componentDidMount(): void {
-        this.updateChanges();
-    }
-
-    componentDidUpdate(prevProps: ExtensionListItemComponent.Props) {
-        const prevExt = prevProps.extension;
-        const newExt = this.props.extension;
-        if (prevExt.namespace !== newExt.namespace || prevExt.name !== newExt.name || prevExt.version !== newExt.version) {
-            this.updateChanges();
-        }
-    }
-
-    componentWillUnmount() {
-        this.abortController.abort();
-        if (this.state.icon) {
-            URL.revokeObjectURL(this.state.icon);
-        }
-    }
-
-    protected async updateChanges(): Promise<void> {
-        if (this.state.icon) {
-            URL.revokeObjectURL(this.state.icon);
+    const updateChanges = async (): Promise<void> => {
+        if (icon) {
+            URL.revokeObjectURL(icon);
         }
         try {
-            const icon = await this.context.service.getExtensionIcon(this.abortController, this.props.extension);
-            this.setState({ icon });
+            const icon = await context.service.getExtensionIcon(abortController, props.extension);
+            setIcon(icon);
         } catch (err) {
-            this.context.handleError(err);
+            context.handleError(err);
         }
-    }
+    };
 
-    render() {
-        const { classes, extension } = this.props;
-        const { icon } = this.state;
-        const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
-        const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
-        const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
-        return <React.Fragment>
-            <Fade in={true} timeout={{ enter: ((this.props.filterSize + this.props.idx) % this.props.filterSize) * 200 }}>
-                <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name} className={classes.extensionCard}>
-                    <RouteLink to={route} className={classes.link}>
-                        <Paper className={classes.paper}>
-                            <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
-                                <img src={ icon || this.props.pageSettings.urls.extensionDefaultIcon }
-                                className={classes.img}
-                                alt={extension.displayName || extension.name} />
-                            </Box>
-                            <Box display='flex' justifyContent='center'>
-                                <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
-                                    {extension.displayName || extension.name}
-                                </Typography>
-                            </Box>
-                            <Box display='flex' justifyContent='space-between'>
-                                <Typography component='div' variant='caption' noWrap={true} align='left'>
-                                    {extension.namespace}
-                                </Typography>
-                                <Typography component='div' variant='caption' noWrap={true} align='right'>
-                                    {extension.version}
-                                </Typography>
-                            </Box>
-                            <Box display='flex' justifyContent='center'>
-                                <ExportRatingStars number={extension.averageRating || 0} fontSize='small'/>
-                                &nbsp;
-                                {downloadCountFormatted != "0" && <><SaveAltIcon/> {downloadCountFormatted}</>}
-                            </Box>
-                        </Paper>
-                    </RouteLink>
-                </Grid>
-            </Fade>
-        </React.Fragment>;
-    }
+    const { extension, filterSize, idx } = props;
+    const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
+    const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
+    const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
+    return <>
+        <Fade in={true} timeout={{ enter: ((filterSize + idx) % filterSize) * 200 }}>
+            <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name} sx={{ maxWidth: '14.875rem', minWidth: '11.875rem' }}>
+                <RouteLink to={route} style={{ textDecoration: 'none' }}>
+                    <Paper
+                        elevation={3}
+                        sx={{
+                            py: 3,
+                            px: 2,
+                            '& > *': {
+                                '&:not(:last-child)': {
+                                    marginBottom: '.5rem',
+                                }
+                            }
+                        }}
+                    >
+                        <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
+                            <Box
+                                component='img'
+                                src={ icon || context.pageSettings.urls.extensionDefaultIcon }
+                                alt={extension.displayName || extension.name}
+                                sx={{ width: '4.5rem', maxHeight: '5.4rem' }}
+                            />
+                        </Box>
+                        <Box display='flex' justifyContent='center'>
+                            <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
+                                {extension.displayName || extension.name}
+                            </Typography>
+                        </Box>
+                        <Box display='flex' justifyContent='space-between'>
+                            <Typography component='div' variant='caption' noWrap={true} align='left'>
+                                {extension.namespace}
+                            </Typography>
+                            <Typography component='div' variant='caption' noWrap={true} align='right'>
+                                {extension.version}
+                            </Typography>
+                        </Box>
+                        <Box display='flex' justifyContent='center'>
+                            <ExportRatingStars number={extension.averageRating || 0} fontSize='small'/>
+                            &nbsp;
+                            {downloadCountFormatted != "0" && <><SaveAltIcon/> {downloadCountFormatted}</>}
+                        </Box>
+                    </Paper>
+                </RouteLink>
+            </Grid>
+        </Fade>
+    </>;
+};
+
+export interface ExtensionListItemProps {
+    extension: SearchEntry;
+    idx: number;
+    filterSize: number;
 }
-
-export namespace ExtensionListItemComponent {
-    export interface Props extends WithStyles<typeof itemStyles> {
-        extension: SearchEntry;
-        idx: number;
-        pageSettings: PageSettings;
-        filterSize: number;
-    }
-    export interface State {
-        icon?: string;
-    }
-}
-
-export const ExtensionListItem = withStyles(itemStyles)(ExtensionListItemComponent);

@@ -8,56 +8,43 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { LinearProgress } from "@material-ui/core";
+import React, { FunctionComponent, useState, useRef, useEffect } from 'react';
+import { LinearProgress } from "@mui/material";
 
-export class DelayedLoadIndicator extends React.Component<DelayedLoadIndicator.Props, DelayedLoadIndicator.State> {
+export const DelayedLoadIndicator: FunctionComponent<DelayedLoadIndicatorProps> = props => {
+    const [waiting, setWaiting] = useState<boolean>(false);
+    const timeout = useRef<number>();
 
-    protected timeout: number;
+    useEffect(() => {
+        setDelay();
+        return tryClearTimeout;
+    }, []);
 
-    constructor(props: DelayedLoadIndicator.Props) {
-        super(props);
+    useEffect(() => {
+        setDelay();
+    }, [props.loading]);
 
-        this.state = { waiting: false };
-    }
-
-    componentDidMount(): void {
-        this.componentDidUpdate({ loading: false });
-    }
-
-    componentWillUnmount(): void {
-        clearTimeout(this.timeout);
-    }
-
-    componentDidUpdate(prevProps: DelayedLoadIndicator.Props): void {
-        if (this.props.loading !== prevProps.loading) {
-            clearTimeout(this.timeout);
+    const tryClearTimeout = () => {
+        if (timeout.current) {
+            clearTimeout(timeout.current);
         }
-        if (this.props.loading && !prevProps.loading) {
-            this.setState({ waiting: true });
-            this.timeout = window.setTimeout(() => {
-                this.setState({ waiting: false });
-            }, this.props.delay || 200);
+    };
+
+    const setDelay = () => {
+        tryClearTimeout();
+        if (props.loading) {
+            setWaiting(true);
+            timeout.current = setTimeout(() => setWaiting(false), props.delay || 200);
         }
-    }
+    };
 
-    render(): React.ReactNode {
-        if (this.props.loading && !this.state.waiting) {
-            return <LinearProgress color={this.props.color || 'secondary'}/>;
-        } else {
-            return '';
-        }
-    }
+    return props.loading && !waiting
+        ? <LinearProgress color={props.color || 'secondary'}/>
+        : null;
+};
 
-}
-
-export namespace DelayedLoadIndicator {
-    export interface Props {
-        loading: boolean;
-        delay?: number;
-        color?: 'primary' | 'secondary';
-    }
-    export interface State {
-        waiting: boolean;
-    }
+export interface DelayedLoadIndicatorProps {
+    loading: boolean;
+    delay?: number;
+    color?: 'primary' | 'secondary';
 }

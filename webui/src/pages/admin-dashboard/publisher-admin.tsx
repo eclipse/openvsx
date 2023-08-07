@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useState, useContext, createContext, useEffect } from 'react';
-import { Typography, Box } from '@material-ui/core';
+import { Typography, Box } from '@mui/material';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';

@@ -8,33 +8,28 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Link, Typography, Container, useTheme, makeStyles } from '@material-ui/core';
+import React, { FunctionComponent } from 'react';
+import { Link, Typography, Container } from '@mui/material';
+import { styled, Theme } from '@mui/material/styles';
 
-const About: React.FunctionComponent = () => {
-    const theme = useTheme();
-    const classes = makeStyles({
-        heading: {
-            marginTop: theme.spacing(4)
-        },
-        paragraph: {
-            marginTop: theme.spacing(2)
-        }
-    })();
+const Heading = styled(Typography)(({ theme }: { theme: Theme }) => ({ marginTop: theme.spacing(4) }));
+const Paragraph = styled(Typography)(({ theme }: { theme: Theme }) => ({ margingTop: theme.spacing(2) }));
+
+const About: FunctionComponent = () => {
     return <Container maxWidth='md'>
-        <Typography variant='h4' className={classes.heading}>About This Service</Typography>
-        <Typography variant='body1' className={classes.paragraph}>
+        <Heading variant='h4'>About This Service</Heading>
+        <Paragraph variant='body1'>
             Open VSX is an open-source registry for VS Code extensions.
             It can be used by any development environment that supports such extensions.
-            See <Link color='secondary' href='https://www.eclipse.org/community/eclipse_newsletter/2020/march/1.php'>this article</Link> for
+            See <Link color='secondary' underline='hover' href='https://www.eclipse.org/community/eclipse_newsletter/2020/march/1.php'>this article</Link> for
             more information.
-        </Typography>
-        <Typography variant='body1' className={classes.paragraph}>
+        </Paragraph>
+        <Paragraph variant='body1'>
             This instance of Open VSX uses the default UI from
-            the <Link color='secondary' href='https://www.npmjs.com/package/openvsx-webui'>openvsx-webui npm package</Link>,
+            the <Link color='secondary' underline='hover' href='https://www.npmjs.com/package/openvsx-webui'>openvsx-webui npm package</Link>,
             which is also included in
-            the <Link color='secondary' href='https://github.com/eclipse/openvsx/packages/324117'>openvsx-webui Docker image</Link>.
-        </Typography>
+            the <Link color='secondary' underline='hover' href='https://github.com/eclipse/openvsx/pkgs/container/openvsx-webui'>openvsx-webui Docker image</Link>.
+        </Paragraph>
     </Container>;
 };
 
