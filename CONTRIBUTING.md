@@ -4,7 +4,7 @@ Thank you for your interest in the Open VSX project! The following is a set of g
 
 ## Code of Conduct
 
-This project is governed by the [Eclipse Community Code of Conduct](https://github.com/eclipse/.github/blob/master/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+This project is governed by the [Eclipse Community Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## Communication
 
