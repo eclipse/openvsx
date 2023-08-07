@@ -53,7 +53,7 @@ public class SearchEntryJson implements Serializable {
     @NotNull
     public String timestamp;
 
-    @Schema(description = "Essential metadata of all available versions. Deprecated: only returns the last 200 versions. Use allVersionsUrl instead.")
+    @Schema(description = "Essential metadata of all available versions. Deprecated: only returns the last 100 versions. Use allVersionsUrl instead.")
     @Deprecated
     public List<VersionReferenceJson> allVersions;
 

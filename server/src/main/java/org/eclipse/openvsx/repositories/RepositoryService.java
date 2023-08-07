@@ -30,7 +30,7 @@ import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
 @Component
 public class RepositoryService {
 
-    private static final int MAX_VERSIONS = 200;
+    private static final int MAX_VERSIONS = 100;
     private static final Sort VERSIONS_SORT = Sort.by(Sort.Direction.DESC, "semver.major", "semver.minor", "semver.patch")
             .and(Sort.by(Sort.Direction.ASC, "semver.isPreRelease"))
             .and(Sort.by(Sort.Direction.DESC, "universalTargetPlatform"))
@@ -138,11 +138,6 @@ public class RepositoryService {
 
     public Streamable<ExtensionVersion> findActiveVersions(Extension extension) {
          return extensionVersionRepo.findByExtensionAndActiveTrue(extension);
-    }
-
-    public List<ExtensionVersion> findActiveVersionsSorted(Extension extension) {
-        var page = PageRequest.ofSize(MAX_VERSIONS).withSort(VERSIONS_SORT);
-        return extensionVersionRepo.findByExtensionAndActiveTrue(extension, page);
     }
 
     public Page<ExtensionVersion> findActiveVersionsSorted(String namespace, String extension, PageRequest page) {

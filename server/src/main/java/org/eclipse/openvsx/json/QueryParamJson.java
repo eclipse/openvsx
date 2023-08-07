@@ -56,7 +56,7 @@ public class QueryParamJson {
     })
     public String targetPlatform;
 
-    @Schema(description = "Maximal number of entries to return", minimum = "0", defaultValue = "200")
+    @Schema(description = "Maximal number of entries to return", minimum = "0", defaultValue = "100")
     public Integer size;
 
     @Schema(description = "Number of entries to skip (usually a multiple of the page size)", minimum = "0", defaultValue = "0")
