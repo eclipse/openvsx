@@ -9,23 +9,24 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Typography, Box, createStyles, Theme, WithStyles, withStyles, Container, Link, Avatar, Paper, Badge } from '@material-ui/core';
-import { RouteComponentProps, Switch, Route, Link as RouteLink } from 'react-router-dom';
-import SaveAltIcon from '@material-ui/icons/SaveAlt';
-import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
-import WarningIcon from '@material-ui/icons/Warning';
+import { ChangeEvent, FunctionComponent, ReactElement, ReactNode, useContext, useEffect, useState } from 'react';
+import { Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab } from '@mui/material';
+import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import WarningIcon from '@mui/icons-material/Warning';
 import { MainContext } from '../../context';
 import { createRoute, getTargetPlatforms } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { HoverPopover } from '../../components/hover-popover';
 import { Extension, UserData, isError } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
+import { ExportRatingStars } from './extension-rating-stars';
+import { NamespaceDetailRoutes } from '../namespace-detail/namespace-detail';
 import { ExtensionDetailOverview } from './extension-detail-overview';
 import { ExtensionDetailChanges } from './extension-detail-changes';
 import { ExtensionDetailReviews } from './extension-detail-reviews';
-import { ExtensionDetailTabs, versionPointsToTab } from './extension-detail-tabs';
-import { ExportRatingStars } from './extension-rating-stars';
-import { NamespaceDetailRoutes } from '../namespace-detail/namespace-detail';
+import styled from '@mui/material/styles/styled';
 
 export namespace ExtensionDetailRoutes {
     export namespace Parameters {
@@ -48,265 +49,206 @@ export namespace ExtensionDetailRoutes {
     export const CHANGES_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, 'changes']);
 }
 
-const detailStyles = (theme: Theme) => createStyles({
-    badge: {
-        top: theme.spacing(1),
-        right: theme.spacing(-5)
-    },
-    badgePadding: {
-        paddingTop: theme.spacing(1)
-    },
-    link: {
-        display: 'contents',
-        cursor: 'pointer',
-        textDecoration: 'none',
-        '&:hover': {
-            textDecoration: 'underline'
-        }
-    },
-    lightTheme: {
-        color: '#333',
-    },
-    darkTheme: {
-        color: '#fff',
-    },
-    titleRow: {
-        fontWeight: 'bold',
-        marginBottom: theme.spacing(1)
-    },
-    infoRowBreak: {
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column'
-        }
-    },
-    infoRowNonBreak: {
-        [theme.breakpoints.down('sm')]: {
-            justifyContent: 'center'
-        }
-    },
-    head: {
-        backgroundColor: theme.palette.neutral.dark,
-    },
-    extensionLogo: {
-        height: '7.5rem',
-        maxWidth: '9rem',
-        [theme.breakpoints.up('md')]: {
-            marginRight: '2rem'
-        }
-    },
-    description: {
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-    },
-    alignVertically: {
-        display: 'flex',
-        alignItems: 'center'
-    },
-    code: {
-        fontFamily: 'Monaco, monospace',
-        fontSize: '0.8rem'
-    },
-    avatar: {
-        width: '20px',
-        height: '20px'
-    },
-    avatarPopover: {
-        width: '60px',
-        height: '60px'
-    },
-    header: {
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column',
-        padding: `${theme.spacing(4)}px 0`
-    },
-    iconAndInfo: {
-        display: 'flex',
-        width: '100%',
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column',
-            textAlign: 'center',
-            alignItems: 'center'
-        }
-    },
-    banner: {
-        maxWidth: '800px',
-        margin: `0 ${theme.spacing(6)}px ${theme.spacing(4)}px ${theme.spacing(6)}px`,
-        padding: theme.spacing(2),
-        display: 'flex',
-        [theme.breakpoints.down('sm')]: {
-            margin: `0 0 ${theme.spacing(2)}px 0`,
-        }
-    },
-    warningLight: {
-        backgroundColor: theme.palette.warning.light,
-        color: '#000',
-        '& a': {
-            color: '#000',
-            textDecoration: 'underline'
-        }
-    },
-    warningDark: {
-        backgroundColor: theme.palette.warning.dark,
-        color: '#fff',
-        '& a': {
-            color: '#fff',
-            textDecoration: 'underline'
-        }
+const alignVertically = {
+    display: 'flex',
+    alignItems: 'center'
+};
+
+const link = {
+    display: 'contents',
+    cursor: 'pointer',
+    textDecoration: 'none',
+    '&:hover': {
+        textDecoration: 'underline'
     }
-});
+};
 
-export class ExtensionDetailComponent extends React.Component<ExtensionDetailComponent.Props, ExtensionDetailComponent.State> {
+const StyledRouteLink = styled(RouteLink)(link);
+const StyledLink = styled(Link)(link);
+const StyledHoverPopover = styled(HoverPopover)(alignVertically);
 
-    static contextType = MainContext;
-    declare context: MainContext;
+export const ExtensionDetail: FunctionComponent = () => {
 
-    protected abortController = new AbortController();
+    const [loading, setLoading] = useState<boolean>(true);
+    const [notFoundError, setNotFoundError] = useState<string>();
+    const [extension, setExtension] = useState<Extension>();
+    const [icon, setIcon] = useState<string>();
 
-    constructor(props: ExtensionDetailComponent.Props) {
-        super(props);
-        this.state = { loading: true };
-    }
+    const navigate = useNavigate();
+    const { namespace, name, target, version } = useParams();
+    const { handleError, pageSettings, service } = useContext(MainContext);
 
-    componentDidMount(): void {
-        const params = this.props.match.params as ExtensionDetailComponent.Params;
-        this.updateExtension(params);
-    }
-
-    componentWillUnmount(): void {
-        this.abortController.abort();
-        if (this.state.icon) {
-            URL.revokeObjectURL(this.state.icon);
-        }
-    }
-
-    componentDidUpdate(prevProps: ExtensionDetailComponent.Props): void {
-        const prevParams = prevProps.match.params as ExtensionDetailComponent.Params;
-        const newParams = this.props.match.params as ExtensionDetailComponent.Params;
-        if (newParams.namespace !== prevParams.namespace || newParams.name !== prevParams.name || newParams.target !== prevParams.target
-                || newParams.version !== prevParams.version && !versionPointsToTab(newParams)
-                && !(newParams.version === undefined && versionPointsToTab(prevParams))) {
-            if (newParams.namespace === prevParams.namespace && newParams.name === prevParams.name) {
-                this.setState({ loading: true });
-            } else {
-                this.setState({ extension: undefined, loading: true });
+    const abortController = new AbortController();
+    useEffect(() => {
+        updateExtension();
+        return () => {
+            abortController.abort();
+            if (icon) {
+                URL.revokeObjectURL(icon);
             }
-            this.updateExtension(newParams);
-        }
-    }
+        };
+    }, []);
 
-    protected getExtensionApiUrl(params: ExtensionDetailComponent.Params): string {
-        if (versionPointsToTab(params)) {
-            return this.context.service.getExtensionApiUrl({ namespace: params.namespace, name: params.name });
+    useEffect(() => {
+        if (versionPointsToTab(version)) {
+            return;
         }
-        return this.context.service.getExtensionApiUrl(params);
-    }
 
-    protected async updateExtension(params: ExtensionDetailComponent.Params): Promise<void> {
-        const extensionUrl = this.getExtensionApiUrl(params);
+        setLoading(true);
+        updateExtension();
+    }, [namespace, name, target, version]);
+
+    const updateExtension = async (): Promise<void> => {
+        const extensionUrl = getExtensionApiUrl();
         try {
-            const extension = await this.context.service.getExtensionDetail(this.abortController, extensionUrl);
-            if (isError(extension)) {
-                throw extension;
+            const response = await service.getExtensionDetail(abortController, extensionUrl);
+            if (isError(response)) {
+                throw response;
             }
-            const icon = await this.updateIcon(extension);
-            this.setState({ extension, icon, loading: false });
+            const extension = response as Extension;
+            const icon = await updateIcon(extension);
+            setExtension(extension);
+            setIcon(icon);
+            setLoading(false);
         } catch (err) {
             if (err && err.status === 404) {
-                this.setState({
-                    notFoundError: `Extension Not Found: ${params.namespace}.${params.name}`,
-                    loading: false
-                });
+                setNotFoundError(`Extension Not Found: ${namespace}.${name}`);
+                setLoading(false);
             } else {
-                this.context.handleError(err);
+                handleError(err);
             }
-            this.setState({ loading: false });
+            setLoading(false);
         }
-    }
-
-    protected async updateIcon(extension: Extension): Promise<string | undefined> {
-        if (this.state.icon) {
-            URL.revokeObjectURL(this.state.icon);
-        }
-
-        return await this.context.service.getExtensionIcon(this.abortController, extension);
-    }
-
-    protected onReviewUpdate = (): void => {
-        const params = this.props.match.params as ExtensionDetailComponent.Params;
-        this.updateExtension(params);
     };
 
-    protected onVersionSelect = (version: string): void => {
-        const params = this.props.match.params as ExtensionDetailComponent.Params;
-        const arr = [ExtensionDetailRoutes.ROOT, params.namespace, params.name];
-        if (params.target) {
-            arr.push(params.target);
+    const getExtensionApiUrl = (): string => {
+        return versionPointsToTab(version)
+            ? service.getExtensionApiUrl({ namespace: namespace as string, name: name as string })
+            : service.getExtensionApiUrl({ namespace: namespace as string, name: name as string, target: target, version: version });
+    };
+
+    const updateIcon = async (extension: Extension): Promise<string | undefined> => {
+        if (icon) {
+            URL.revokeObjectURL(icon);
+        }
+
+        return await service.getExtensionIcon(abortController, extension);
+    };
+
+    const onVersionSelect = (version: string): void => {
+        const arr = [ExtensionDetailRoutes.ROOT, namespace as string, name as string];
+        if (target) {
+            arr.push(target);
         }
         if (version !== 'latest') {
             arr.push(version);
         }
 
-        this.props.history.push(createRoute(arr));
+        navigate(createRoute(arr));
     };
 
-    render(): React.ReactNode {
-        const { extension, icon } = this.state;
-        const params = this.props.match.params as ExtensionDetailComponent.Params;
-        return <>
-            { this.renderHeaderTags(params, extension) }
-            <DelayedLoadIndicator loading={this.state.loading} />
-            {
-                extension
-                    ? this.renderExtension(extension, icon)
-                    : this.renderNotFound()
-            }
-        </>;
-    }
+    const onReviewUpdate = (): void => {
+        updateExtension();
+    };
 
-    protected renderHeaderTags(params: ExtensionDetailComponent.Params, extension?: Extension): React.ReactNode {
-        const pageSettings = this.context.pageSettings;
+    const handleTabChange = (event: ChangeEvent, newTab: string): void => {
+        const previousTab = versionPointsToTab(version) ? version : 'overview';
+        if (newTab !== previousTab) {
+            const arr = [ExtensionDetailRoutes.ROOT, namespace as string, name as string];
+            if (target) {
+                arr.push(target);
+            }
+
+            if (newTab === 'reviews' || newTab === 'changes') {
+                arr.push(newTab);
+            } else if (version && !versionPointsToTab(version)) {
+                arr.push(version);
+            } else if (extension && !isLatestVersion(extension)) {
+                arr.push(extension.version);
+            }
+
+            navigate(createRoute(arr));
+        }
+    };
+
+    const isLatestVersion = (extension: Extension): boolean => {
+        return extension.versionAlias.indexOf('latest') >= 0;
+    };
+
+    const versionPointsToTab = (version?: string): boolean => {
+        return version === 'reviews' || version === 'changes';
+    };
+
+    const renderHeaderTags = (extension?: Extension): ReactNode => {
         const { extensionHeadTags: ExtensionHeadTagsComponent } = pageSettings.elements;
-        return <React.Fragment>
+        return <>
             { ExtensionHeadTagsComponent
-                ? <ExtensionHeadTagsComponent extension={extension} params={params} pageSettings={pageSettings}/>
+                ? <ExtensionHeadTagsComponent extension={extension} pageSettings={pageSettings}/>
                 : null
             }
-        </React.Fragment>;
-    }
+        </>;
+    };
 
-    protected renderNotFound(): React.ReactNode {
-        return <React.Fragment>
+    const renderNotFound = (): ReactNode => {
+        return <>
             {
-                this.state.notFoundError ?
+                notFoundError ?
                 <Box p={4}>
                     <Typography variant='h5'>
-                        {this.state.notFoundError}
+                        {notFoundError}
                     </Typography>
                 </Box>
                 : null
             }
-        </React.Fragment>;
-    }
+        </>;
+    };
 
-    protected renderExtension(extension: Extension, icon?: string): React.ReactNode {
-        const classes = this.props.classes;
-        const headerTheme = extension.galleryTheme || this.context.pageSettings.themeType || 'light';
+    const renderTab = (tab: string, extension: Extension): ReactNode => {
+        switch (tab) {
+            case 'changes':
+                return <ExtensionDetailChanges extension={extension} />;
+            case 'reviews':
+                return <ExtensionDetailReviews extension={extension} reviewsDidUpdate={onReviewUpdate} />;
+            default:
+                return <ExtensionDetailOverview extension={extension} selectVersion={onVersionSelect} />;
+        }
+    };
+
+    const renderExtension = (extension: Extension): ReactNode => {
+        const tab = versionPointsToTab(version) ? version as string : 'overview';
+        const headerTheme = extension.galleryTheme || pageSettings.themeType || 'light';
+        const headerColor = headerTheme === 'dark' ? '#fff' : '#151515';
         return <>
-            <Box className={classes.head}
-                style={{
-                    backgroundColor: extension.galleryColor,
-                    color: headerTheme === 'dark' ? '#fff' : '#333'
+            <Box
+                sx={{
+                    bgcolor: extension.galleryColor || 'neutral.dark',
+                    color: headerColor
                 }}
             >
                 <Container maxWidth='xl'>
-                    <Box className={classes.header}>
-                        {this.renderBanner(extension, headerTheme)}
-                        <Box className={classes.iconAndInfo}>
-                            <img src={icon || this.context.pageSettings.urls.extensionDefaultIcon }
-                                className={`${classes.extensionLogo} ${classes.badgePadding}`}
-                                alt={extension.displayName || extension.name} />
-                            {this.renderHeaderInfo(extension, headerTheme)}
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', py: 4, px: 0 }}>
+                        {renderBanner(extension, headerTheme, headerColor)}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                width: '100%',
+                                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
+                                textAlign: { xs: 'center', sm: 'center', md: 'start', lg: 'start', xl: 'start' },
+                                alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                            }}
+                        >
+                            <Box
+                                component='img'
+                                src={icon || pageSettings.urls.extensionDefaultIcon }
+                                alt={extension.displayName || extension.name}
+                                sx={{
+                                    height: '7.5rem',
+                                    maxWidth: '9rem',
+                                    mr: { xs: 0, sm: 0, md: '2rem', lg: '2rem', xl: '2rem' },
+                                    pt: 1
+                                }}
+                            />
+                            {renderHeaderInfo(extension, headerTheme, headerColor)}
                         </Box>
                     </Box>
                 </Container>
@@ -314,42 +256,37 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             <Container maxWidth='xl'>
                 <Box>
                     <Box>
-                        <ExtensionDetailTabs
-                            extension={extension} />
-                    </Box>
-                    <Box>
-                        <Switch>
-                            <Route path={[ExtensionDetailRoutes.CHANGES_TARGET, ExtensionDetailRoutes.CHANGES]}>
-                                <ExtensionDetailChanges
-                                    extension={extension}
-                                />
-                            </Route>
-                            <Route path={[ExtensionDetailRoutes.REVIEWS_TARGET, ExtensionDetailRoutes.REVIEWS]}>
-                                <ExtensionDetailReviews
-                                    extension={extension}
-                                    reviewsDidUpdate={this.onReviewUpdate}
-                                />
-                            </Route>
-                            <Route path={[ExtensionDetailRoutes.LATEST_TARGET, ExtensionDetailRoutes.LATEST]}>
-                                <ExtensionDetailOverview
-                                    params={this.props.match.params as ExtensionDetailComponent.Params}
-                                    extension={extension}
-                                    selectVersion={this.onVersionSelect}
-                                />
-                            </Route>
-                        </Switch>
+                        <Tabs value={tab} onChange={handleTabChange} indicatorColor='secondary'>
+                            <Tab value='overview' label='Overview' />
+                            <Tab value='changes' label='Changes' />
+                            <Tab value='reviews' label='Ratings &amp; Reviews' />
+                        </Tabs>
+                        {renderTab(tab, extension)}
                     </Box>
                 </Box>
             </Container>
         </>;
-    }
+    };
 
-    protected renderBanner(extension: Extension, themeType: 'light' | 'dark'): React.ReactNode {
-        const classes = this.props.classes;
-        const warningClass = themeType === 'dark' ? classes.warningDark : classes.warningLight;
-        const themeClass = themeType === 'dark' ? classes.darkTheme : classes.lightTheme;
+    const renderBanner = (extension: Extension, themeType: 'light' | 'dark', themeColor: string): ReactNode => {
         if (!extension.verified) {
-            return <Paper className={`${classes.banner} ${warningClass} ${themeClass}`}>
+            return <Paper
+                sx={{
+                    display: 'flex',
+                    maxWidth: '800px',
+                    p: 2,
+                    mt: 0,
+                    mr: { xs: 0, sm: 0, md: 6, lg: 6, xl: 6 },
+                    mb: { xs: 2, sm: 2, md: 4, lg: 4, xl: 4 },
+                    ml: { xs: 0, sm: 0, md: 6, lg: 6, xl: 6 },
+                    bgcolor: `warning.${themeType}`,
+                    color: themeColor,
+                    '& a': {
+                        color: themeColor,
+                        textDecoration: 'underline'
+                    }
+                }}
+            >
                 <WarningIcon fontSize='large' />
                 <Box ml={1}>
                     This version of the &ldquo;{extension.displayName || extension.name}&rdquo; extension was published
@@ -358,7 +295,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     </Link>. That user account is not a verified publisher of
                     the namespace &ldquo;{extension.namespace}&rdquo; of
                     this extension. <Link
-                        href={this.context.pageSettings.urls.namespaceAccessInfo}
+                        href={pageSettings.urls.namespaceAccessInfo}
                         target='_blank' >
                         See the documentation
                     </Link> to learn how we handle namespaces and what you can do to eliminate this warning.
@@ -366,70 +303,90 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             </Paper>;
         }
         return null;
-    }
+    };
 
-    protected renderHeaderInfo(extension: Extension, themeType: 'light' | 'dark'): React.ReactNode {
-        const classes = this.props.classes;
-        const themeClass = themeType === 'dark' ? classes.darkTheme : classes.lightTheme;
+    const renderHeaderInfo = (extension: Extension, themeType: 'light' | 'dark', themeColor: string): ReactNode => {
         const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
         const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
         const reviewCountFormatted = numberFormat.format(extension.reviewCount || 0);
+        const previewBadgeStyle = (theme: Theme) => ({
+            "& .MuiBadge-badge": {
+                top: theme.spacing(1),
+                right: theme.spacing(-5)
+            }
+        });
+
         return (
-        <Box overflow='auto' className={classes.badgePadding}>
-            <Badge color='secondary' badgeContent='Preview' invisible={!extension.preview} classes={{ badge: classes.badge }}>
-                <Typography variant='h5' className={classes.titleRow}>
+        <Box overflow='auto' sx={{ pt: 1, overflow: 'visible' }}>
+            <Badge color='secondary' badgeContent='Preview' invisible={!extension.preview} sx={previewBadgeStyle}>
+                <Typography variant='h5' sx={{ fontWeight: 'bold', mb: 1 }}>
                     { extension.displayName || extension.name}
                 </Typography>
             </Badge>
-            <Box className={`${themeClass} ${classes.infoRowBreak} ${classes.alignVertically}`}>
-                <Box className={classes.alignVertically}>
-                    {this.renderAccessInfo(extension, themeClass)}&nbsp;
-                    <RouteLink
+            <Box
+                sx={{
+                    ...alignVertically,
+                    color: themeColor,
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
+                }}
+            >
+                <Box sx={alignVertically}>
+                    {renderAccessInfo(extension, themeColor)}&nbsp;
+                    <StyledRouteLink
                         to={createRoute([NamespaceDetailRoutes.ROOT, extension.namespace])}
-                        className={`${this.props.classes.link} ${themeClass}`}>
+                        style={{ color: themeColor }}>
                         {extension.namespaceDisplayName || extension.namespace}
-                    </RouteLink>
+                    </StyledRouteLink>
                 </Box>
                 <TextDivider themeType={themeType} collapseSmall={true} />
-                <Box className={classes.alignVertically}>
-                    Published by&nbsp;{this.renderUser(extension.publishedBy, themeClass)}
+                <Box sx={alignVertically}>
+                    Published by&nbsp;{renderUser(extension.publishedBy, themeColor, alignVertically)}
                 </Box>
                 <TextDivider themeType={themeType} collapseSmall={true} />
-                <Box className={classes.alignVertically}>
-                    {this.renderLicense(extension, themeClass)}
+                <Box sx={alignVertically}>
+                    {renderLicense(extension, themeColor)}
                 </Box>
             </Box>
             <Box mt={2} mb={2} overflow='auto'>
-                <Typography classes={{ root: classes.description }}>{extension.description}</Typography>
+                <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{extension.description}</Typography>
             </Box>
-            <Box className={`${themeClass} ${classes.infoRowNonBreak} ${classes.alignVertically}`}>
-                <span className={classes.alignVertically}
+            <Box
+                sx={{
+                    ...alignVertically,
+                    color: themeColor,
+                    justifyContent: { xs: 'center', sm: 'center', md: 'flex-start', lg: 'flex-start', xl: 'flex-start' }
+                }}
+            >
+                <Box component='span' sx={alignVertically}
                     title={extension.downloadCount && extension.downloadCount >= 1000 ? `${extension.downloadCount} downloads` : undefined}>
                     <SaveAltIcon fontSize='small' />&nbsp;{downloadCountFormatted}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
-                </span>
+                </Box>
                 <TextDivider themeType={themeType} />
-                <RouteLink
-                    to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, 'reviews'])}
-                    className={`${classes.link} ${themeClass} ${classes.alignVertically}`}
+                <StyledLink
+                    href={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, 'reviews'])}
+                    sx={{
+                        ...alignVertically,
+                        color: themeColor
+                    }}
                     title={
                         extension.averageRating !== undefined ?
-                            `Average rating: ${this.getRoundedRating(extension.averageRating)} out of 5 (${extension.reviewCount} reviews)`
+                            `Average rating: ${getRoundedRating(extension.averageRating)} out of 5 (${extension.reviewCount} reviews)`
                             : 'Not rated yet'
                     }>
                     <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
                     ({reviewCountFormatted})
-                </RouteLink>
+                </StyledLink>
                 </Box>
             </Box>
         );
-    }
+    };
 
-    protected getRoundedRating(rating: number): number {
+    const getRoundedRating = (rating: number): number => {
         return Math.round(rating * 10) / 10;
-    }
+    };
 
-    protected renderAccessInfo(extension: Extension, themeClass: string): React.ReactNode {
-        let icon: React.ReactElement;
+    const renderAccessInfo = (extension: Extension, themeColor: string): ReactNode => {
+        let icon: ReactElement;
         let title: string;
         if (extension.verified) {
             icon = <VerifiedUserIcon fontSize='small' />;
@@ -438,16 +395,16 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
             icon = <WarningIcon fontSize='small' />;
             title = 'Unverified publisher';
         }
-        return <Link
-            href={this.context.pageSettings.urls.namespaceAccessInfo}
+        return <StyledLink
+            href={pageSettings.urls.namespaceAccessInfo}
             target='_blank'
             title={title}
-            className={`${this.props.classes.link} ${themeClass}`} >
+            sx={{ color: themeColor }}>
             {icon}
-        </Link>;
-    }
+        </StyledLink>;
+    };
 
-    protected renderUser(user: UserData, themeClass: string): React.ReactNode {
+    const renderUser = (user: UserData, themeColor: string, alignVertically: SxProps<Theme>): ReactNode => {
         const popupContent = <Box display='flex' flexDirection='row'>
             {
                 user.avatarUrl ?
@@ -455,7 +412,7 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                     src={user.avatarUrl}
                     alt={user.fullName || user.loginName}
                     variant='rounded'
-                    classes={{ root: this.props.classes.avatarPopover }} />
+                    sx={{ width: '60px', height: '60px' }} />
                 : null
             }
             <Box ml={2}>
@@ -467,66 +424,52 @@ export class ExtensionDetailComponent extends React.Component<ExtensionDetailCom
                 <Typography variant='body1'>{user.loginName}</Typography>
             </Box>
         </Box>;
-        return <HoverPopover
+        return <StyledHoverPopover
             id={`user_${user.loginName}_popover`}
             popupContent={popupContent}
-            className={this.props.classes.alignVertically} >
-            <Link href={user.homepage}
-                className={`${this.props.classes.link} ${themeClass}`}>
+        >
+            <StyledLink href={user.homepage} sx={{ color: themeColor }}>
                 {
                     user.avatarUrl ?
-                    <React.Fragment>
+                    <>
                         {user.loginName}&nbsp;<Avatar
                             src={user.avatarUrl}
                             alt={user.loginName}
-                            variant='circle'
-                            classes={{ root: this.props.classes.avatar }} />
-                    </React.Fragment>
+                            sx={{ width: '20px', height: '20px' }} />
+                    </>
                     : user.loginName
                 }
-            </Link>
-        </HoverPopover>;
-    }
+            </StyledLink>
+        </StyledHoverPopover>;
+    };
 
-    protected renderLicense(extension: Extension, themeClass: string): React.ReactNode {
+    const renderLicense = (extension: Extension, themeColor: string): ReactNode => {
         if (extension.files.license) {
-            return <Link
+            return <StyledLink
                 href={extension.files.license}
-                className={`${this.props.classes.link} ${themeClass}`}
+                sx={{ color: themeColor }}
                 title={extension.license ? 'License type' : undefined} >
                 {extension.license || 'Provided license'}
-            </Link>;
+            </StyledLink>;
         } else if (extension.license) {
-            return <Link
+            return <StyledLink
                 href={`https://spdx.org/licenses/${encodeURIComponent(extension.license)}.html`}
-                className={`${this.props.classes.link} ${themeClass}`}
+                sx={{ color: themeColor }}
                 title={extension.license ? 'License type' : undefined} >
                 {extension.license}
-            </Link>;
+            </StyledLink>;
         } else {
             return 'Unlicensed';
         }
-    }
+    };
 
-}
-
-export namespace ExtensionDetailComponent {
-    export interface Props extends WithStyles<typeof detailStyles>, RouteComponentProps {
-    }
-
-    export interface State {
-        extension?: Extension;
-        icon?: string;
-        loading: boolean;
-        notFoundError?: string;
-    }
-
-    export interface Params {
-        readonly namespace: string;
-        readonly name: string;
-        readonly target?: string;
-        readonly version?: string;
-    }
-}
-
-export const ExtensionDetail = withStyles(detailStyles)(ExtensionDetailComponent);
+    return <>
+        { renderHeaderTags(extension) }
+        <DelayedLoadIndicator loading={loading} />
+        {
+            extension
+                ? renderExtension(extension)
+                : renderNotFound()
+        }
+    </>;
+};

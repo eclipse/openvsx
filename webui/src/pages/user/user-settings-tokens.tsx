@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Theme, createStyles, WithStyles, withStyles, Typography, Box, Paper, Button, Link } from '@material-ui/core';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState } from 'react';
+import { Theme, Typography, Box, Paper, Button, Link } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
@@ -17,186 +17,170 @@ import { PersonalAccessToken } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { GenerateTokenDialog } from './generate-token-dialog';
 import { UserSettingsRoutes } from './user-settings';
+import styled from '@mui/material/styles/styled';
 
-const tokensStyle = (theme: Theme) => createStyles({
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column',
-            alignItems: 'center'
-        }
-    },
-    buttons: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        [theme.breakpoints.down('sm')]: {
-            justifyContent: 'center'
-        }
-    },
-    description: {
-        fontWeight: 'bold',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-    },
-    deleteBtn: {
-        color: theme.palette.error.main,
-        height: 36
-    },
-    link: {
-        color: theme.palette.secondary.main,
-        textDecoration: 'none',
-        '&:hover': {
-            textDecoration: 'underline'
-        }
-    },
-    empty: {
-        [theme.breakpoints.down('sm')]: {
-            textAlign: 'center'
-        }
+const link = ({ theme }: { theme: Theme }) => ({
+    color: theme.palette.secondary.main,
+    textDecoration: 'none',
+    '&:hover': {
+        textDecoration: 'underline'
     }
 });
 
-class UserSettingsTokensComponent extends React.Component<UserSettingsTokensComponent.Props, UserSettingsTokensComponent.State> {
+const StyledLink = styled(Link)(link);
+const StyledRouteLink = styled(RouteLink)(link);
 
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected abortController = new AbortController();
-
-    constructor(props: UserSettingsTokensComponent.Props) {
-        super(props);
-
-        this.state = { tokens: [], loading: true };
+const EmptyTypography = styled(Typography)(({ theme }: { theme: Theme }) => ({
+    [theme.breakpoints.down('sm')]: {
+        textAlign: 'center'
     }
+}));
 
-    componentDidMount() {
-        this.updateTokens();
-    }
+const DeleteButton = styled(Button)(({ theme }: { theme: Theme }) => ({
+    color: theme.palette.error.main,
+    height: 36
+}));
 
-    componentWillUnmount() {
-        this.abortController.abort();
-    }
+export const UserSettingsTokens: FunctionComponent = () => {
 
-    protected async updateTokens() {
-        if (!this.context.user) {
+    const { service, user, handleError } = useContext(MainContext);
+
+    const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
+    const [loading, setLoading] = useState(true);
+
+    const abortController = new AbortController();
+    useEffect(() => {
+        updateTokens();
+        return () => {
+            abortController.abort();
+        };
+    }, []);
+
+    const updateTokens = async() => {
+        if (!user) {
             return;
         }
         try {
-            const tokens = await this.context.service.getAccessTokens(this.abortController, this.context.user);
-            this.setState({ tokens, loading: false });
+            const tokens = await service.getAccessTokens(abortController, user);
+            setTokens(tokens);
+            setLoading(false);
         } catch (err) {
-            this.context.handleError(err);
-            this.setState({ loading: false });
+            handleError(err);
+            setLoading(false);
         }
-    }
+    };
 
-    protected handleDelete = async (token: PersonalAccessToken) => {
-        this.setState({ loading: true });
+    const handleDelete = async (token: PersonalAccessToken) => {
+        setLoading(true);
         try {
-            await this.context.service.deleteAccessToken(this.abortController, token);
-            this.updateTokens();
+            await service.deleteAccessToken(abortController, token);
+            updateTokens();
         } catch (err) {
-            this.context.handleError(err);
+            handleError(err);
         }
     };
 
-    protected handleDeleteAll = async () => {
-        this.setState({ loading: true });
+    const handleDeleteAll = async () => {
+        setLoading(true);
         try {
-            await this.context.service.deleteAllAccessTokens(this.abortController, this.state.tokens);
-            this.updateTokens();
+            await service.deleteAllAccessTokens(abortController, tokens);
+            updateTokens();
         } catch (err) {
-            this.context.handleError(err);
+            handleError(err);
         }
     };
 
-    protected handleTokenGenerated = () => {
-        this.setState({ loading: true });
-        this.updateTokens();
+    const handleTokenGenerated = () => {
+        setLoading(true);
+        updateTokens();
     };
 
-    render() {
-        const agreement = this.context.user?.publisherAgreement;
-        if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
-            return <Box>
-                <Typography variant='body1' className={this.props.classes.empty}>
-                    Access tokens cannot be created as you currently do not have an Eclipse Foundation Open VSX
-                    Publisher Agreement signed. Please return to
-                    your <RouteLink className={this.props.classes.link} to={UserSettingsRoutes.PROFILE}>Profile</RouteLink> page
-                    to sign the Publisher Agreement. Should you believe this is in error, please
-                    contact <Link className={this.props.classes.link} href='mailto:license@eclipse.org'>license@eclipse.org</Link>.
-                </Typography>
-            </Box>;
-        }
-        return <React.Fragment>
-            <Box className={this.props.classes.header}>
-                <Box>
-                    <Typography variant='h5' gutterBottom>Access Tokens</Typography>
-                </Box>
-                <Box className={this.props.classes.buttons}>
-                    <Box mr={1} mb={1}>
-                        <GenerateTokenDialog
-                            handleTokenGenerated={this.handleTokenGenerated}
-                        />
-                    </Box>
-                    <Box>
-                        <Button
-                            variant='outlined'
-                            onClick={this.handleDeleteAll}
-                            classes={{ root: this.props.classes.deleteBtn }}
-                            disabled={this.state.loading}>
-                            Delete all
-                        </Button>
-                    </Box>
-                </Box>
-            </Box>
-            <Box mt={2}>
-                {
-                    this.state.tokens.length === 0 && !this.state.loading ?
-                    <Typography variant='body1' className={this.props.classes.empty}>
-                        You currently have no tokens.
-                    </Typography> : null
-                }
-            </Box>
-            <Box mt={2}>
-                <DelayedLoadIndicator loading={this.state.loading}/>
-                <Paper>
-                    {this.state.tokens.map(token => this.renderToken(token))}
-                </Paper>
-            </Box>
-        </React.Fragment >;
-    }
-
-    protected renderToken(token: PersonalAccessToken): React.ReactNode {
+    const renderToken = (token: PersonalAccessToken): ReactNode => {
         return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
             <Box alignItems='center' overflow='auto'>
-                <Typography classes={{ root: this.props.classes.description }}>{token.description}</Typography>
+                <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>{token.description}</Typography>
                 <Typography variant='body2'>Created: <Timestamp value={token.createdTimestamp}/></Typography>
                 <Typography variant='body2'>Accessed: {token.accessedTimestamp ? <Timestamp value={token.accessedTimestamp}/> : 'never'}</Typography>
             </Box>
             <Box display='flex' alignItems='center'>
-                <Button
+                <DeleteButton
                     variant='outlined'
-                    onClick={() => this.handleDelete(token)}
-                    classes={{ root: this.props.classes.deleteBtn }}
-                    disabled={this.state.loading}>
+                    onClick={() => handleDelete(token)}
+                    disabled={loading}>
                     Delete
-                </Button>
+                </DeleteButton>
             </Box>
+        </Box>;
+    };
+
+    const agreement = user?.publisherAgreement;
+    if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
+        return <Box>
+            <EmptyTypography variant='body1'>
+                Access tokens cannot be created as you currently do not have an Eclipse Foundation Open VSX
+                Publisher Agreement signed. Please return to
+                your <StyledRouteLink to={UserSettingsRoutes.PROFILE}>Profile</StyledRouteLink> page
+                to sign the Publisher Agreement. Should you believe this is in error, please
+                contact <StyledLink href='mailto:license@eclipse.org'>license@eclipse.org</StyledLink>.
+            </EmptyTypography>
         </Box>;
     }
 
-}
+    return <>
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
+                alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+            }}
+        >
+            <Box>
+                <Typography variant='h5' gutterBottom>Access Tokens</Typography>
+            </Box>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                }}
+            >
+                <Box mr={1} mb={1}>
+                    <GenerateTokenDialog
+                        handleTokenGenerated={handleTokenGenerated}
+                    />
+                </Box>
+                <Box>
+                    <DeleteButton
+                        variant='outlined'
+                        onClick={handleDeleteAll}
+                        disabled={loading}>
+                        Delete all
+                    </DeleteButton>
+                </Box>
+            </Box>
+        </Box>
+        <Box mt={2}>
+            {
+                tokens.length === 0 && !loading ?
+                <EmptyTypography variant='body1'>
+                    You currently have no tokens.
+                </EmptyTypography> : null
+            }
+        </Box>
+        <Box mt={2}>
+            <DelayedLoadIndicator loading={loading}/>
+            <Paper elevation={3}>
+                {tokens.map(token => renderToken(token))}
+            </Paper>
+        </Box>
+    </>;
+};
 
-export namespace UserSettingsTokensComponent {
-    export interface Props extends WithStyles<typeof tokensStyle> {
-    }
-
+export namespace UserSettingsTokens {
+    export interface Props {}
     export interface State {
         tokens: PersonalAccessToken[];
         loading: boolean;
     }
 }
-
-export const UserSettingsTokens = withStyles(tokensStyle)(UserSettingsTokensComponent);

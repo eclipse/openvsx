@@ -8,56 +8,42 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ReactNode } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UserExtensionList } from './user-extension-list';
-import { Typography } from '@material-ui/core';
+import { Typography } from '@mui/material';
 
-export class UserNamespaceExtensionListContainer extends React.Component<UserNamespaceExtensionListContainerComponent.Props, UserNamespaceExtensionListContainerComponent.State> {
+export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespaceExtensionListContainerProps> = props => {
+    const [extensions, setExtensions] = useState<Extension[]>();
+    const [loading, setLoading] = useState<boolean>(true);
+    const context = useContext(MainContext);
 
-    static contextType = MainContext;
-    declare context: MainContext;
+    const abortController = new AbortController();
+    useEffect(() => {
+        updateExtensions();
+        return () => abortController.abort();
+    }, []);
 
-    protected abortController = new AbortController();
+    useEffect(() => {
+        setExtensions(undefined);
+        setLoading(true);
+        updateExtensions();
+    }, [props.namespace.name]);
 
-    constructor(props: UserNamespaceExtensionListContainerComponent.Props) {
-        super(props);
-
-        this.state = {
-            loading: true,
-            extensions: undefined,
-        };
-    }
-
-    componentDidMount(): void {
-        this.updateExtensions();
-    }
-
-    componentWillUnmount(): void {
-        this.abortController.abort();
-    }
-
-    componentDidUpdate(prevProps: UserNamespaceExtensionListContainerComponent.Props): void {
-        if (prevProps.namespace.name !== this.props.namespace.name) {
-            this.setState({ extensions: undefined, loading: true });
-            this.updateExtensions();
-        }
-    }
-
-    async updateExtensions(): Promise<void> {
-        const extensionsURLs: string[] = Object.keys(this.props.namespace.extensions).map((key: string) => this.props.namespace.extensions[key]);
+    const updateExtensions = async (): Promise<void> => {
+        const extensionsURLs: string[] = Object.keys(props.namespace.extensions).map((key: string) => props.namespace.extensions[key]);
 
         const getExtension = async (url: string) => {
             let result: Extension | ErrorResult;
             try {
-                result = await this.context.service.getExtensionDetail(this.abortController, url);
+                result = await context.service.getExtensionDetail(abortController, url);
                 if (isError(result)) {
                     throw result;
                 }
                 return result;
             } catch (error) {
-                this.context.handleError(error);
+                context.handleError(error);
                 return undefined;
             }
         };
@@ -67,29 +53,20 @@ export class UserNamespaceExtensionListContainer extends React.Component<UserNam
         );
         const extensions = extensionUnfiltered.filter(e => !!e) as Extension[];
 
-        this.setState({ extensions, loading: false });
-    }
+        setExtensions(extensions);
+        setLoading(false);
+    };
 
-    render(): ReactNode {
-        return <>
-            <Typography variant='h5'>Extensions</Typography>
-            {
-                this.state.extensions && this.state.extensions.length > 0 ?
-                <UserExtensionList extensions={this.state.extensions} loading={this.state.loading} />
-                :
-                <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
-            }
-        </>;
-    }
-}
+    return <>
+        <Typography variant='h5'>Extensions</Typography>
+        {
+            extensions && extensions.length > 0
+                ? <UserExtensionList extensions={extensions} loading={loading} />
+                : <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
+        }
+    </>;
+};
 
-export namespace UserNamespaceExtensionListContainerComponent {
-    export interface Props {
-        namespace: Namespace;
-    }
-
-    export interface State {
-        loading: boolean;
-        extensions?: Extension[];
-    }
+export interface UserNamespaceExtensionListContainerProps {
+    namespace: Namespace;
 }

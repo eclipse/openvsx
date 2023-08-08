@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { Menu, IconButton, useTheme } from '@material-ui/core';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
-import MenuIcon from '@material-ui/icons/Menu';
+import React, { ComponentType, FunctionComponent, useContext, useEffect, useState } from 'react';
+import { Menu, IconButton, useTheme } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import MenuIcon from '@mui/icons-material/Menu';
 import { MainContext } from './context';
+import { useLocation } from 'react-router-dom';
 
-export const HeaderMenu: React.FunctionComponent = () => {
+export const HeaderMenu: FunctionComponent = () => {
     const theme = useTheme();
-    const { pageSettings } = React.useContext(MainContext);
+    const { pageSettings } = useContext(MainContext);
     const {
         defaultMenuContent: DefaultMenuContent,
         mobileMenuContent: MobileMenuContent
@@ -32,51 +32,37 @@ export const HeaderMenu: React.FunctionComponent = () => {
     }
 };
 
-export class MobileHeaderMenuComponent extends React.Component<MobileHeaderMenu.Props, MobileHeaderMenu.State> {
+export const MobileHeaderMenu: FunctionComponent<MobileHeaderMenuProps> = props => {
 
-    constructor(props: MobileHeaderMenu.Props) {
-        super(props);
-        this.state = { open: false };
-    }
+    const location = useLocation();
+    const [open, setOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState<Element>();
 
-    componentDidUpdate(prevProps: MobileHeaderMenu.Props): void {
-        const currProps = this.props;
-        if (currProps.location !== prevProps.location) {
-            this.setState({ open: false });
-        }
-    }
+    useEffect(() => {
+        setOpen(false);
+    }, [location]);
 
-    render(): React.ReactElement {
-        const MenuContent = this.props.menuContent;
-        return <React.Fragment>
-            <IconButton
-                title='Menu'
-                aria-label='Menu'
-                onClick={event => this.setState({
-                    anchorEl: event.currentTarget,
-                    open: !this.state.open
-                })} >
-                <MenuIcon />
-            </IconButton>
-            <Menu
-                open={this.state.open}
-                anchorEl={this.state.anchorEl}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                onClose={() => this.setState({ open: false })} >
-                <MenuContent />
-            </Menu>
-        </React.Fragment>;
-    }
+    const MenuContent = props.menuContent;
+    return <>
+        <IconButton
+            title='Menu'
+            aria-label='Menu'
+            onClick={(event) => {
+                setAnchorEl(event.currentTarget);
+                setOpen(!open);
+            }}>
+            <MenuIcon />
+        </IconButton>
+        <Menu
+            open={open}
+            anchorEl={anchorEl}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            onClose={() => setOpen(false)} >
+            <MenuContent />
+        </Menu>
+    </>;
+};
+
+export interface MobileHeaderMenuProps {
+    menuContent: ComponentType;
 }
-
-export namespace MobileHeaderMenu {
-    export interface Props extends RouteComponentProps {
-        menuContent: React.ComponentType;
-    }
-    export interface State {
-        open: boolean;
-        anchorEl?: Element;
-    }
-}
-
-export const MobileHeaderMenu = withRouter(MobileHeaderMenuComponent);

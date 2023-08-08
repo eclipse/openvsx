@@ -12,24 +12,14 @@ import React, { FunctionComponent } from 'react';
 import { PublisherInfo } from '../../extension-registry-types';
 import { UserSettingsProfile } from '../user/user-settings-profile';
 import { UserExtensionList } from '../user/user-extension-list';
-import { Box, makeStyles, Typography } from '@material-ui/core';
+import { Box, Typography } from '@mui/material';
 import { PublisherRevokeDialog } from './publisher-revoke-dialog';
-
-const useStyles = makeStyles(theme => ({
-    buttonContainer: {
-        marginTop: theme.spacing(2),
-        display: 'flex',
-        justifyContent: 'flex-end'
-    }
-}));
 
 interface PublisherDetailsProps {
     publisherInfo: PublisherInfo;
 }
 
 export const PublisherDetails: FunctionComponent<PublisherDetailsProps> = props => {
-    const classes = useStyles();
-
     return <Box mt={2}>
         <UserSettingsProfile user={props.publisherInfo.user} isAdmin={true} />
         <Box mt={2}>
@@ -47,7 +37,7 @@ export const PublisherDetails: FunctionComponent<PublisherDetailsProps> = props 
                 <Typography  variant='body1'>This user has not published any extensions.</Typography>
             }
         </Box>
-        <Box mt={2} className={classes.buttonContainer}>
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
             <PublisherRevokeDialog publisherInfo={props.publisherInfo} />
         </Box>
     </Box>;

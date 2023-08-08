@@ -10,28 +10,17 @@
 
 import React, { FunctionComponent, useContext, useState, useEffect } from 'react';
 import {
-    Box, Typography, Paper, Button, makeStyles, Dialog, DialogContent, DialogContentText, Link
-} from '@material-ui/core';
+    Box, Typography, Paper, Button, Dialog, DialogContent, DialogContentText, Link
+} from '@mui/material';
 import { UserData, isError, ReportedError } from '../../extension-registry-types';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { createAbsoluteURL } from '../../utils';
 import { MainContext } from '../../context';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import CircularProgress from '@mui/material/CircularProgress';
 
-const useStyles = makeStyles(theme => ({
-    paper: {
-        padding: theme.spacing(2)
-    },
-    dialogScrollPaper: {
-        height: '75%',
-        width: '100%'
-    }
-}));
-
-export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Props> = props => {
-    const classes = useStyles();
+export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = props => {
     const { service, pageSettings, updateUser, handleError } = useContext(MainContext);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
@@ -41,6 +30,12 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
             abortController.abort();
         };
     }, []);
+
+    useEffect(() => {
+        if (dialogOpen) {
+            onDialogOpened();
+        }
+    }, [dialogOpen]);
 
     const signPublisherAgreement = async (): Promise<void> => {
         try {
@@ -93,7 +88,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
         return null;
     }
     return <>
-        <Paper classes={{ root: classes.paper }} elevation={3}>
+        <Paper sx={{ p: 2 }} elevation={3}>
             {
                 user.publisherAgreement.status === 'signed' ?
                     <Typography variant='body1'>
@@ -134,11 +129,9 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
         </Paper>
         <Dialog
             open={dialogOpen}
-            onEntered={onDialogOpened}
-            onEscapeKeyDown={onClose}
-            onBackdropClick={onClose}
+            onClose={onClose}
             maxWidth='md'
-            classes={{ paperScrollPaper: classes.dialogScrollPaper }}>
+            sx={{ paperScrollPaper: { height: '75%', width: '100%' } }}>
             <DialogContent>
                 {
                     agreementText ?
@@ -164,8 +157,6 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreement.Pr
 
 };
 
-export namespace UserPublisherAgreement {
-    export interface Props {
-        user: UserData;
-    }
+export interface UserPublisherAgreementProps {
+    user: UserData;
 }

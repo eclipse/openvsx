@@ -8,21 +8,23 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import React, { FunctionComponent } from 'react';
+import { Box } from '@mui/material';
+import { SxProps, Theme } from '@mui/material/styles';
 import { toRelativeTime, toLocalTime } from '../utils';
 
-export class Timestamp extends React.Component<Timestamp.Props> {
-    render(): React.ReactNode {
-        const timestamp = this.props.value;
-        return <span title={toLocalTime(timestamp)} className={this.props.className}>
-            {toRelativeTime(timestamp)}
-        </span>;
-    }
-}
+export const Timestamp: FunctionComponent<TimestampProps> = props => {
+    const sx = props.sx || [];
+    const timestamp = props.value;
+    return <Box
+        component='span'
+        title={toLocalTime(timestamp)}
+        sx={[...(Array.isArray(sx) ? sx : [sx])]}>
+        {toRelativeTime(timestamp)}
+    </Box>;
+};
 
-export namespace Timestamp {
-    export interface Props {
-        value: string;
-        className?: string;
-    }
+export interface TimestampProps {
+    value: string;
+    sx?: SxProps<Theme>;
 }

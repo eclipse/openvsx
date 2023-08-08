@@ -8,11 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as ReactDOM from 'react-dom';
-import * as React from 'react';
+import { createRoot } from 'react-dom/client';
+import React, { useMemo } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from '@material-ui/styles';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { ThemeProvider } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { ExtensionRegistryService } from '../extension-registry-service';
 import { Main } from '../main';
 import createPageSettings from './page-settings';
@@ -34,23 +35,26 @@ const service = new ExtensionRegistryService(`${location.protocol}//${serverHost
 
 const App = () => {
     const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-    const theme = React.useMemo(
+    const theme = useMemo(
         () => createDefaultTheme(prefersDarkMode ? 'dark' : 'light'),
         [prefersDarkMode],
     );
 
-    const pageSettings = createPageSettings(theme, prefersDarkMode, service.serverUrl);
-    return (<>
-        <ThemeProvider theme={theme}>
-            <Main
-                service={service}
-                pageSettings={pageSettings}
-            />
-        </ThemeProvider>
-    </>);
+    const pageSettings = createPageSettings(prefersDarkMode, service.serverUrl);
+    return (
+        <HelmetProvider>
+            <ThemeProvider theme={theme}>
+                <Main
+                    service={service}
+                    pageSettings={pageSettings}
+                />
+            </ThemeProvider>
+        </HelmetProvider>
+    );
 };
 
-const node = document.getElementById('main');
-ReactDOM.render(<BrowserRouter>
+const node = document.getElementById('main') as HTMLElement;
+const root = createRoot(node);
+root.render(<BrowserRouter>
     <App />
-</BrowserRouter>, node);
+</BrowserRouter>);

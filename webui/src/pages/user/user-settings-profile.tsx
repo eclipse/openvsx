@@ -8,98 +8,83 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Theme, createStyles, WithStyles, withStyles, Grid, Typography, Avatar } from '@material-ui/core';
+import React, { FunctionComponent } from 'react';
+import { Theme, Grid, Typography, Avatar } from '@mui/material';
 import { toLocalTime } from '../../utils';
 import { UserData } from '../../extension-registry-types';
 import { UserPublisherAgreement } from './user-publisher-agreement';
+import styled from '@mui/material/styles/styled';
 
-const profileStyle = (theme: Theme) => createStyles({
-    profile: {
-        [theme.breakpoints.up('lg')]: {
-            justifyContent: 'space-between'
-        },
-        ['@media(max-width: 1040px)']: {
-            flexDirection: 'row-reverse',
-            justifyContent: 'flex-end',
-            '& > div:first-of-type': {
-                marginLeft: '2rem'
-            }
-        },
-        [theme.breakpoints.down('sm')]: {
-            textAlign: 'center',
-            flexDirection: 'column-reverse',
-            '& > div:first-of-type': {
-                marginLeft: '0',
-                marginTop: '2rem'
-            }
-        },
-        marginBottom: theme.spacing(2)
+const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
+    [theme.breakpoints.up('lg')]: {
+        justifyContent: 'space-between'
     },
-    avatar: {
-        width: '150px',
-        height: '150px',
-        [theme.breakpoints.down('sm')]: {
-            margin: '0 auto',
+    ['@media(max-width: 1040px)']: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'flex-end',
+        '& > div:first-of-type': {
+            marginLeft: '2rem'
         }
-    }
-});
+    },
+    [theme.breakpoints.down('sm')]: {
+        textAlign: 'center',
+        flexDirection: 'column-reverse',
+        '& > div:first-of-type': {
+            marginLeft: '0',
+            marginTop: '2rem'
+        }
+    },
+    marginBottom: theme.spacing(2)
+}));
 
-class UserSettingsProfileComponent extends React.Component<UserSettingsProfileComponent.Props, UserSettingsProfileComponent.State> {
+export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = props => {
 
-    constructor(props: UserSettingsProfileComponent.Props) {
-        super(props);
-
-        this.state = {};
-    }
-
-    render(): React.ReactNode {
-        const user = this.props.user;
-        return <React.Fragment>
-            <Grid container className={this.props.classes.profile}>
-                <Grid item>
-                    <Typography variant='h5' gutterBottom>Profile</Typography>
-                    <Typography variant='body1'>Login name: {user.loginName}</Typography>
-                    <Typography variant='body1'>Full name: {user.fullName}</Typography>
-                </Grid>
-                <Grid item>
-                    <Avatar classes={{ root: this.props.classes.avatar }} variant='rounded' src={user.avatarUrl} />
-                </Grid>
+    const user = props.user;
+    return <>
+        <ProfileGrid container>
+            <Grid item>
+                <Typography variant='h5' gutterBottom>Profile</Typography>
+                <Typography variant='body1'>Login name: {user.loginName}</Typography>
+                <Typography variant='body1'>Full name: {user.fullName}</Typography>
             </Grid>
-            {
-                user.publisherAgreement ? (
-                    this.props.isAdmin ?
-                    <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
-                        {user.loginName} {
-                            user.publisherAgreement.status === 'signed' ?
-                            <>has signed</>
-                            : user.publisherAgreement.status === 'outdated' ?
-                            <>has signed an outdated version of</>
-                            :
-                            <>has not signed</>
-                        } the Eclipse publisher agreement.
-                    </Typography>
-                    :
-                    <Grid container>
-                        <Grid item xs={12}>
-                            <UserPublisherAgreement user={user} />
-                        </Grid>
+            <Grid item>
+                <Avatar
+                    variant='rounded'
+                    src={user.avatarUrl}
+                    sx={{
+                        width: '150px',
+                        height: '150px',
+                        my: 0,
+                        mx: { xs: 'auto', sm: 'auto', md: 0, lg: 0, xl: 0 }
+                    }}
+                />
+            </Grid>
+        </ProfileGrid>
+        {
+            user.publisherAgreement ? (
+                props.isAdmin ?
+                <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
+                    {user.loginName} {
+                        user.publisherAgreement.status === 'signed' ?
+                        <>has signed</>
+                        : user.publisherAgreement.status === 'outdated' ?
+                        <>has signed an outdated version of</>
+                        :
+                        <>has not signed</>
+                    } the Eclipse publisher agreement.
+                </Typography>
+                :
+                <Grid container>
+                    <Grid item xs={12}>
+                        <UserPublisherAgreement user={user} />
                     </Grid>
-                ) : null
-            }
-        </React.Fragment>;
-    }
+                </Grid>
+            ) : null
+        }
+    </>;
+};
+
+export interface UserSettingsProfileProps {
+    user: UserData;
+    isAdmin?: boolean;
 }
-
-export namespace UserSettingsProfileComponent {
-    export interface Props extends WithStyles<typeof profileStyle> {
-        user: UserData;
-        isAdmin?: boolean;
-    }
-
-    export interface State {
-
-    }
-}
-
-export const UserSettingsProfile = withStyles(profileStyle)(UserSettingsProfileComponent);

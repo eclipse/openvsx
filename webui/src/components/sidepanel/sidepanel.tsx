@@ -8,61 +8,31 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
-import clsx from 'clsx';
-import { Drawer, List, makeStyles, useTheme, useMediaQuery } from '@material-ui/core';
-
-const drawerWidth = 240;
-
-const useStyles = makeStyles((theme) => ({
-    drawer: {
-        position: 'relative',
-        justifyContent: 'space-between'
-    },
-    drawerOpen: {
-        width: drawerWidth,
-        transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-        }),
-    },
-    drawerClose: {
-        transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-        overflowX: 'hidden',
-        width: theme.spacing(7) + 1,
-        [theme.breakpoints.up('sm')]: {
-            width: theme.spacing(9) + 1,
-        }
-    },
-    upper: {
-
-    },
-    lower: {
-
-    }
-}));
+import React, { FunctionComponent, PropsWithChildren } from 'react';
+import { Drawer, List } from '@mui/material';
+import { Theme } from '@mui/material/styles';
 
 export interface SidepanelProps {}
 
-export const Sidepanel: FunctionComponent<SidepanelProps> = props => {
-    const classes = useStyles();
-    const theme = useTheme();
-    const isLarge = useMediaQuery(theme.breakpoints.up('md'));
+export const Sidepanel: FunctionComponent<PropsWithChildren<SidepanelProps>> = props => {
     return (
         <Drawer
             variant='permanent'
-            classes={{
-                paper: clsx(
-                    classes.drawer,
-                    {
-                        [classes.drawerOpen]: isLarge,
-                        [classes.drawerClose]: !isLarge
+            PaperProps={{ elevation: 3 }}
+            sx={(theme: Theme) => ({
+                '& .MuiDrawer-paper': {
+                    position: 'relative',
+                    justifyContent: 'space-between',
+                    transition: theme.transitions.create('width', {
+                        easing: theme.transitions.easing.sharp,
+                        duration: theme.transitions.duration.enteringScreen
                     }),
-            }}>
-            <List className={classes.upper}>
+                    overflowX: { xs: 'hidden', sm: 'hidden', md: 'none', lg: 'none', xl: 'none' },
+                    width: { xs: theme.spacing(7) + 1, sm: theme.spacing(9) + 1, md: 240 },
+                }
+            })}
+        >
+            <List>
                 {props.children}
             </List>
         </Drawer>

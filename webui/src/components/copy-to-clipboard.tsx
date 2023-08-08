@@ -7,16 +7,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-import * as React from 'react';
+import React, { FunctionComponent, ReactElement, useState } from 'react';
 import copy from 'clipboard-copy';
-import { Tooltip, TooltipProps } from '@material-ui/core';
+import { Tooltip, TooltipProps } from '@mui/material';
 
-interface ChildProps {
-    copy: (content: any) => void;
-}
-
-export function CopyToClipboard(props: CopyToClipboard.Props): React.ReactElement {
-    const [showTooltip, setTooltip] = React.useState<boolean>(false);
+export const CopyToClipboard: FunctionComponent<CopyToClipboardProps> = props => {
+    const [showTooltip, setTooltip] = useState<boolean>(false);
 
     const handleOnTooltipClose = () => {
         setTooltip(false);
@@ -37,19 +33,17 @@ export function CopyToClipboard(props: CopyToClipboard.Props): React.ReactElemen
             {...props.tooltipProps || {}}
         >
             {
-                props.children({ copy: onCopy }) as React.ReactElement<any>
+                props.children({ copy: onCopy }) as ReactElement<any>
             }
         </Tooltip>
     );
+};
+
+interface ChildProps {
+    copy: (content: any) => void;
 }
 
-export namespace CopyToClipboard {
-    export interface Props {
-        tooltipProps?: Partial<TooltipProps>;
-        children: (props: ChildProps) => React.ReactElement<any>;
-    }
-
-    export interface State {
-        showTooltip: boolean
-    }
+export interface CopyToClipboardProps {
+    tooltipProps?: Partial<TooltipProps>;
+    children: (props: ChildProps) => ReactElement<any>;
 }

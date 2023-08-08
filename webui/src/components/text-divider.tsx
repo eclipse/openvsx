@@ -8,51 +8,27 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Theme, createStyles, WithStyles, withStyles } from "@material-ui/core/styles";
-import { Divider } from "@material-ui/core";
+import React, { FunctionComponent } from 'react';
+import { Divider } from "@mui/material";
 
+export const TextDivider: FunctionComponent<TextDividerProps> = props => {
+    const height =  props.collapseSmall ? { xs: 0, sm: 0, md: '1em', lg: '1em', xl: '1em' } : '1em';
+    const marginX = props.collapseSmall ? { xs: 0.25, sm: 0.25, md: 1, lg: 1, xl: 1 } : 1;
+    const marginY = props.collapseSmall ? { xs: 0.25, sm: 0.25, md: 0, lg: 0, xl: 0 } : 0;
+    const backgroundColor = props.themeType === 'dark' ? '#edf5ea' : '#151515';
+    return <Divider
+        orientation='vertical'
+        sx={{
+            alignSelf: 'center',
+            height: height,
+            mx: marginX,
+            my: marginY,
+            bgcolor: backgroundColor
+        }}
+    />;
+};
 
-const dividerStyles = (theme: Theme) => createStyles({
-    root: {
-        alignSelf: 'center',
-        height: '1em',
-        margin: `0 ${theme.spacing(1)}px`
-    },
-    collapseSmall: {
-        [theme.breakpoints.down('sm')]: {
-            height: 0,
-            margin: `${theme.spacing(0.25)}px`
-        }
-    },
-    lightTheme: {
-        backgroundColor: '#333'
-    },
-    darkTheme: {
-        backgroundColor: '#edf5ea'
-    }
-});
-
-export class TextDividerComponent extends React.Component<TextDividerComponent.Props> {
-    render(): React.ReactNode {
-        const classes = [this.props.classes.root];
-        if (this.props.themeType === 'dark') {
-            classes.push(this.props.classes.darkTheme);
-        } else if (this.props.themeType === 'light') {
-            classes.push(this.props.classes.lightTheme);
-        }
-        if (this.props.collapseSmall) {
-            classes.push(this.props.classes.collapseSmall);
-        }
-        return <Divider orientation='vertical' classes={{ root: classes.join(' ') }} />;
-    }
+export interface TextDividerProps {
+    themeType?: 'light' | 'dark';
+    collapseSmall?: boolean;
 }
-
-export namespace TextDividerComponent {
-    export interface Props extends WithStyles<typeof dividerStyles> {
-        themeType?: 'light' | 'dark';
-        collapseSmall?: boolean;
-    }
-}
-
-export const TextDivider = withStyles(dividerStyles)(TextDividerComponent);

@@ -9,47 +9,22 @@
  ********************************************************************************/
 
 import React, { FunctionComponent } from 'react';
-import { Typography, Grid, Paper, makeStyles } from '@material-ui/core';
+import { Typography, Grid, Paper } from '@mui/material';
+import { styled, Theme } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import { AdminDashboardRoutes } from './admin-dashboard';
 
-const useStyles = makeStyles((theme) => ({
-    containerRoot: {
-        height: '100%'
-    },
-    linkContainer: {
-        marginTop: theme.spacing(2)
-    },
-    linkItemContainer: {
-        marginBottom: theme.spacing(2)
-    },
-    link: {
-        color: theme.palette.secondary.main,
-        textDecoration: 'none',
-        '&:hover': {
-            textDecoration: 'underline'
-        }
-    },
-    paper: {
-        padding: theme.spacing(4)
-    },
-    title: {
-        marginBottom: theme.spacing(2)
-    }
-}));
-
 export const Welcome: FunctionComponent = props => {
-    const classes = useStyles();
     return <>
-        <Grid container direction='column' spacing={2} classes={{ root: classes.containerRoot }}>
-            <Grid item container direction='column' alignItems='center' justify='flex-end'>
-                <Paper className={classes.paper} variant='outlined' >
-                    <Typography className={classes.title} align='center' variant='h5'>Welcome to the Admin Dashboard!</Typography>
+        <Grid container direction='column' spacing={2} sx={{ height: '100%' }}>
+            <Grid item container direction='column' alignItems='center' justifyContent='flex-end'>
+                <Paper elevation={3} sx={{ p: 4 }}>
+                    <Typography sx={{ mb: 2 }} align='center' variant='h5'>Welcome to the Admin Dashboard!</Typography>
                     <Typography align='center'>You can switch pages in the sidepanel menu on the left side.</Typography>
                     <Typography align='center'>
                         Choose between administration for
                     </Typography>
-                    <Grid container justify='center' alignItems='center' className={classes.linkContainer}>
+                    <Grid container justifyContent='center' alignItems='center' sx={{ mt: 2 }}>
                         <WelcomeLinkItem route={AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' description='Manage user roles, create new namespaces' />
                         <WelcomeLinkItem route={AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' description='Search for extensions and remove certain versions' />
                         <WelcomeLinkItem route={AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' description='Search for publishers and revoke their contributions' />
@@ -60,13 +35,22 @@ export const Welcome: FunctionComponent = props => {
     </>;
 };
 
+const StyledLink = styled(Link)(({ theme }: { theme: Theme }) => ({
+    color: theme.palette.secondary.main,
+    textDecoration: 'none',
+    '&:hover': {
+        textDecoration: 'underline'
+    }
+}));
+
 const WelcomeLinkItem: FunctionComponent<{ route: string, label: string, description: string }> = props => {
-    const classes = useStyles();
     return <>
-        <Grid container item xs={8} className={classes.linkItemContainer}>
+        <Grid container item xs={8} sx={{ mb: 2 }}>
             <Grid container alignItems='center' item xs={12} md={4}>
                 <Typography>
-                    <Link className={classes.link} to={props.route}>{props.label}</Link>
+                    <StyledLink to={props.route}>
+                        {props.label}
+                    </StyledLink>
                 </Typography>
             </Grid>
             <Grid item xs={12} md={8}>

@@ -8,63 +8,41 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import {
-    Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions,
-    Theme, createStyles, withStyles, WithStyles
-} from '@material-ui/core';
-import { MainContext } from '../context';
+import React, { FunctionComponent, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions } from '@mui/material';
 
-const dialogStyles = (theme: Theme) => createStyles({
-    dialogContent: {
-        color: theme.palette.text.primary
-    }
-});
+export const InfoDialog: FunctionComponent<InfoDialogProps> = props => {
 
-export class InfoDialogComponent extends React.Component<InfoDialogComponent.Props> {
+    useEffect(() => {
+        document.addEventListener('keydown', handleEnter);
+        return () => document.removeEventListener('keydown', handleEnter);
+    }, []);
 
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    handleEnter = (event: KeyboardEvent): void => {
+    const handleEnter = (event: KeyboardEvent): void => {
         if (event.code ===  'Enter') {
-            this.props.handleCloseDialog();
+            props.handleCloseDialog();
         }
     };
 
-    componentDidMount(): void {
-        document.addEventListener('keydown', this.handleEnter);
-    }
+    return <Dialog
+        open={props.isInfoDialogOpen}
+        onClose={props.handleCloseDialog} >
+        <DialogTitle>Info</DialogTitle>
+        <DialogContent>
+            <DialogContentText sx={{ color: 'text.primary' }}>
+                {props.infoMessage}
+            </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={props.handleCloseDialog}>
+                Close
+            </Button>
+        </DialogActions>
+    </Dialog>;
+};
 
-    componentWillUnmount(): void {
-        document.removeEventListener('keydown', this.handleEnter);
-    }
-
-    render(): React.ReactNode {
-        return <Dialog
-                open={this.props.isInfoDialogOpen}
-                onClose={this.props.handleCloseDialog} >
-            <DialogTitle>Info</DialogTitle>
-            <DialogContent>
-                <DialogContentText className={this.props.classes.dialogContent}>
-                    {this.props.infoMessage}
-                </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={this.props.handleCloseDialog}>
-                    Close
-                </Button>
-            </DialogActions>
-        </Dialog>;
-    }
+export interface InfoDialogProps {
+    infoMessage: string;
+    isInfoDialogOpen: boolean;
+    handleCloseDialog: () => void;
 }
-
-export namespace InfoDialogComponent {
-    export interface Props extends WithStyles<typeof dialogStyles> {
-        infoMessage: string;
-        isInfoDialogOpen: boolean;
-        handleCloseDialog: () => void;
-    }
-}
-
-export const InfoDialog = withStyles(dialogStyles)(InfoDialogComponent);

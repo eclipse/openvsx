@@ -8,50 +8,31 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import StarIcon from '@material-ui/icons/Star';
-import StarHalfIcon from '@material-ui/icons/StarHalf';
-import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core';
+import React, { FunctionComponent, ReactNode } from 'react';
+import StarIcon from '@mui/icons-material/Star';
+import StarHalfIcon from '@mui/icons-material/StarHalf';
+import { Box } from '@mui/material';
 
-const starStyles = (theme: Theme) => createStyles({
-    wrapper: {
-        position: 'relative',
-        display: 'inline-block',
-      },
-    topIcon: {
-        position: 'absolute',
-      },
-    bottomIcon: {
-        display: 'block',
-      }
-});
-
-interface ExportRatingStarsProps extends WithStyles<typeof starStyles>{
+export interface ExportRatingStarsProps {
     number: number;
-    fontSize?: 'inherit' | 'default' | 'small' | 'large';
+    fontSize?: 'inherit' | 'small' | 'medium' | 'large';
 }
 
-class ExportRatingStarsComponent extends React.Component<ExportRatingStarsProps> {
-    render(): React.ReactNode {
-        return <React.Fragment>
-            {this.getStar(1)}{this.getStar(2)}{this.getStar(3)}{this.getStar(4)}{this.getStar(5)}
-        </React.Fragment>;
-    }
-
-    protected getStar(i: number): React.ReactNode {
-        const starsNumber = this.props.number;
-        const fontSize = this.props.fontSize || 'default';
+export const ExportRatingStars: FunctionComponent<ExportRatingStarsProps> = props => {
+    const getStar = (i: number): ReactNode => {
+        const starsNumber = props.number;
+        const fontSize = props.fontSize || 'medium';
         if (i <= starsNumber) {
             return <StarIcon fontSize={fontSize}/>;
         }
         if (i > starsNumber && i - 1 < starsNumber) {
-            return <span className={this.props.classes.wrapper}>
-                <StarHalfIcon fontSize={fontSize} className={this.props.classes.topIcon}/>
-                <StarIcon style={{ color: '#bcbcbc' }} fontSize={fontSize} className={this.props.classes.bottomIcon}/>
-            </span>;
+            return <Box component='span' sx={{ position: 'relative', display: 'inline-block' }}>
+                <StarHalfIcon fontSize={fontSize} sx={{ position: 'absolute' }}/>
+                <StarIcon fontSize={fontSize} sx={{ display: 'block', color: '#bcbcbc' }}/>
+            </Box>;
         }
-        return <StarIcon style={{ color: '#bcbcbc' }} fontSize={fontSize}/>;
-    }
-}
+        return <StarIcon fontSize={fontSize} sx={{ color: '#bcbcbc' }}/>;
+    };
 
-export const ExportRatingStars = withStyles(starStyles)(ExportRatingStarsComponent);
+    return <>{[1, 2, 3, 4, 5].map(getStar)}</>;
+};

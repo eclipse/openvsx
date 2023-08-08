@@ -8,24 +8,27 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { createMuiTheme, Theme } from "@material-ui/core";
+import { CSSProperties } from 'react';
+import { createTheme, Theme } from '@mui/material';
 
-declare module '@material-ui/core/styles/createPalette' {
+declare module '@mui/material/styles/createPalette' {
     interface Palette {
         neutral: {
-            light: React.CSSProperties['color'],
-            dark: React.CSSProperties['color']
-        }
+            light: CSSProperties['color'],
+            dark: CSSProperties['color']
+        },
+        textHint: CSSProperties['color']
       }
     interface PaletteOptions {
         neutral: {
-            light: React.CSSProperties['color'],
-            dark: React.CSSProperties['color']
-        }
+            light: CSSProperties['color'],
+            dark: CSSProperties['color']
+        },
+        textHint: CSSProperties['color']
     }
 }
 export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
-    return createMuiTheme({
+    return createTheme({
         palette: {
             primary: {
                 main: themeType === 'dark' ? '#eeeeee' : '#444',
@@ -37,9 +40,10 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             },
             neutral: {
                 light: themeType === 'dark' ? '#000' : '#e6e6e6',
-                dark: themeType === 'dark' ? '#333' : '#fff',
+                dark: themeType === 'dark' ? '#151515' : '#fff',
             },
-            type: themeType
+            textHint: 'rgba(0, 0, 0, 0.38)',
+            mode: themeType
         },
         breakpoints: {
             values: {

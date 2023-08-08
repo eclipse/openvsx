@@ -8,59 +8,43 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from "react";
-import { Theme, WithStyles, createStyles, withStyles, Popover } from "@material-ui/core";
+import React, { FunctionComponent, PropsWithChildren, ReactNode, useState } from 'react';
+import { Popover } from "@mui/material";
 
-const popoverStyles = (theme: Theme) => createStyles({
-    popover: {
-        pointerEvents: 'none',
-    },
-    paper: {
-        padding: theme.spacing(1),
-        maxWidth: '80%'
-    }
-});
+export const HoverPopover: FunctionComponent<PropsWithChildren<HoverPopoverProps>> = props => {
+    const [anchor, setAnchor] = useState<Element | null>(null);
 
-export class HoverPopoverComponent extends React.Component<HoverPopoverComponent.Props, HoverPopoverComponent.State> {
-    constructor(props: Readonly<HoverPopoverComponent.Props>) {
-        super(props);
-        this.state = {};
-    }
+    return <>
+        <div
+            className={props.className}
+            aria-haspopup='true'
+            aria-owns={anchor ? props.id : undefined}
+            onMouseEnter={event => setAnchor(event.currentTarget)}
+            onMouseLeave={() => setAnchor(null)} >
+            {props.children}
+        </div>
+        <Popover
+            id={props.id}
+            open={Boolean(anchor)}
+            anchorEl={anchor}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            onClose={() => setAnchor(null)}
+            disableRestoreFocus
+            sx={{
+                pointerEvents: 'none',
+                '& .MuiPopover-paper': {
+                    p: 1,
+                    maxWidth: '80%'
+                }
+            }}
+        >
+            {props.popupContent}
+        </Popover>
+    </>;
+};
 
-    render(): React.ReactNode {
-        return <React.Fragment>
-            <div
-                className={this.props.className}
-                aria-haspopup='true'
-                aria-owns={this.state.anchor ? this.props.id : undefined}
-                onMouseEnter={event => this.setState({ anchor: event.currentTarget })}
-                onMouseLeave={() => this.setState({ anchor: null })} >
-                {this.props.children}
-            </div>
-            <Popover
-                id={this.props.id}
-                className={this.props.classes.popover}
-                classes={{ paper: this.props.classes.paper }}
-                open={Boolean(this.state.anchor)}
-                anchorEl={this.state.anchor}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                onClose={() => this.setState({ anchor: null })}
-                disableRestoreFocus >
-                {this.props.popupContent}
-            </Popover>
-        </React.Fragment>;
-    }
+export interface HoverPopoverProps {
+    id: string;
+    popupContent: ReactNode;
+    className?: string;
 }
-
-export namespace HoverPopoverComponent {
-    export interface Props extends WithStyles<typeof popoverStyles> {
-        id: string;
-        popupContent: React.ReactNode;
-        className?: string;
-    }
-    export interface State {
-        anchor?: Element | null;
-    }
-}
-
-export const HoverPopover = withStyles(popoverStyles)(HoverPopoverComponent);

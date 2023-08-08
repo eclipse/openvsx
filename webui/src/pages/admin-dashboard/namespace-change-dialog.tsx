@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
- import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
+ import React, { ChangeEvent, FunctionComponent, useState, useContext, useEffect } from 'react';
  import {
      Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, TextField
- } from '@material-ui/core';
+ } from '@mui/material';
  import { ButtonWithProgress } from '../../components/button-with-progress';
- import { Namespace, isError } from '../../extension-registry-types';
+ import { Namespace, SuccessResult, isError } from '../../extension-registry-types';
  import { MainContext } from '../../context';
  import { InfoDialog } from '../../components/info-dialog';
 
@@ -56,10 +56,10 @@
         onClose();
         setInfoDialogIsOpen(false);
     };
-    const onRemoveOldNamespaceChange = (event: React.ChangeEvent, checked: boolean) => {
+    const onRemoveOldNamespaceChange = (event: ChangeEvent, checked: boolean) => {
         setRemoveOldNamespace(checked);
     };
-    const onMergeIfNewNamespaceAlreadyExistsChange = (event: React.ChangeEvent, checked: boolean) => {
+    const onMergeIfNewNamespaceAlreadyExistsChange = (event: ChangeEvent, checked: boolean) => {
         setMergeIfNewNamespaceAlreadyExists(checked);
     };
     const handleChangeNamespace = async () => {
@@ -74,10 +74,12 @@
             if (isError(result)) {
                 throw result;
             }
+
+            const successResult = result as SuccessResult;
             props.setLoadingState(false);
             setWorking(false);
             setInfoDialogIsOpen(true);
-            setInfoDialogMessage(result.success);
+            setInfoDialogMessage(successResult.success);
         } catch (err) {
             props.setLoadingState(false);
             setWorking(false);
@@ -118,6 +120,7 @@
                     Cancel
                 </Button>
                 <ButtonWithProgress
+                    sx={{ ml: 1 }}
                     working={working}
                     onClick={handleChangeNamespace} >
                     Change Namespace

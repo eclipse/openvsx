@@ -8,39 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState } from 'react';
-import { Paper, IconButton, makeStyles, InputBase } from '@material-ui/core';
-import SearchIcon from '@material-ui/icons/Search';
-
-const useStyles = makeStyles(theme =>
-    ({
-        root: {
-            flex: 2,
-            display: 'flex',
-            marginRight: theme.spacing(1),
-            [theme.breakpoints.down('sm')]: {
-                marginRight: 0,
-                marginBottom: theme.spacing(2),
-            },
-        },
-        input: {
-            flex: 1,
-            paddingLeft: theme.spacing(1)
-        },
-        iconButton: {
-            backgroundColor: theme.palette.secondary.main,
-            borderRadius: '0 4px 4px 0',
-            padding: theme.spacing(1),
-            transition: 'all 0s',
-            '&:hover': {
-                filter: 'invert(100%)',
-            }
-        },
-        error: {
-            border: `2px solid ${theme.palette.error.main}`
-        }
-    })
-);
+import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useContext, useState } from 'react';
+import { Paper, IconButton, InputBase } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import { MainContext } from '../../context';
 
 interface InputProps {
     onSubmit?: (inputValue: string) => void;
@@ -52,9 +23,9 @@ interface InputProps {
 }
 
 export const StyledInput: FunctionComponent<InputProps> = props => {
-    const classes = useStyles();
     const [inputValue, setInputValue] = useState('');
-    const onChangeInputValue = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const { pageSettings } = useContext(MainContext);
+    const onChangeInputValue = (ev: ChangeEvent<HTMLInputElement>) => {
         const inputValue = ev.target.value;
         props.onChange(inputValue);
         setInputValue(inputValue);
@@ -64,23 +35,48 @@ export const StyledInput: FunctionComponent<InputProps> = props => {
             props.onSubmit(inputValue);
         }
     };
-    return <Paper className={classes.root} classes={{ root: props.error ? classes.error : '' }}>
-        <InputBase
-            autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
-            className={classes.input}
-            placeholder={props.placeholder}
-            onChange={onChangeInputValue}
-            onKeyPress={(e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' && props.onSubmit) {
-                    props.onSubmit(inputValue);
+
+    const searchIconColor = pageSettings?.themeType === 'dark' ? '#111111' : '#ffffff';
+    return <Paper
+                elevation={3}
+                sx={{
+                    flex: 2,
+                    display: 'flex',
+                    mr: { xs: 0, sm: 0, md: 1, lg: 1, xl: 1 },
+                    mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 0 },
+                    border: (props.error ? 2 : 0),
+                    borderColor: 'error.main'
+                }}
+            >
+                <InputBase
+                    autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
+                    sx={{ flex: 1, pl: 1 }}
+                    placeholder={props.placeholder}
+                    onChange={onChangeInputValue}
+                    onKeyDown={(e: KeyboardEvent) => {
+                        if (e.key === 'Enter' && props.onSubmit) {
+                            props.onSubmit(inputValue);
+                        }
+                    }}
+                />
+                {
+                    props.hideIconButton ? '' :
+                        <IconButton
+                            color='primary'
+                            type='submit'
+                            onClick={onSubmit}
+                            sx={{
+                                bgcolor: 'secondary.main',
+                                borderRadius: '0 4px 4px 0',
+                                padding: 1,
+                                transition: 'all 0s',
+                                '&:hover': {
+                                    filter: 'invert(100%)',
+                                }
+                            }}
+                        >
+                            <SearchIcon sx={{ color: searchIconColor }}/>
+                        </IconButton>
                 }
-            }}
-        />
-        {
-            props.hideIconButton ? '' :
-                <IconButton color='primary' type='submit' className={classes.iconButton} onClick={onSubmit}>
-                    <SearchIcon />
-                </IconButton>
-        }
-    </Paper>;
+            </Paper>;
 };

@@ -8,105 +8,24 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import {
-    Box, WithStyles, createStyles, Theme, withStyles, Paper, InputBase,
-    Select, MenuItem, Container
-} from '@material-ui/core';
+import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useContext, useEffect, useState } from 'react';
+import { Box, Paper, InputBase, Select, MenuItem, Container, SelectChangeEvent } from '@mui/material';
 import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
-import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
-import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { ExtensionListSearchfield } from './extension-list-searchfield';
 import { MainContext } from '../../context';
 
-const headerStyles = (theme: Theme) => createStyles({
-    formContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        [theme.breakpoints.up('md')]: {
-            width: '70%'
-        },
-        [theme.breakpoints.down('md')]: {
-            maxWidth: 500,
-        }
-    },
-    form: {
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        [theme.breakpoints.up('md')]: {
-            flexDirection: 'row',
-        }
-    },
-    resultNumAndSortContainer: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '0.75rem',
-        marginTop: 5
-    },
-    resultNum: {
-        color: theme.palette.text.hint,
-    },
-    resultSort: {
-        color: theme.palette.text.secondary,
-        display: 'flex'
-    },
-    resultSortBySelectRoot: {
-        fontSize: '0.75rem',
-        height: '1.1rem'
-    },
-    resultSortBySelect: {
-        padding: '0px !important',
-        '&:hover': {
-            color: theme.palette.secondary.main
-        }
-    },
-    resultSortBySelectIcon: {
-        display: 'none'
-    },
-    resultSortOrder: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginLeft: theme.spacing(0.75),
-        '&:hover': {
-            cursor: 'pointer',
-            color: theme.palette.secondary.main
-        }
-    },
-    category: {
-        flex: 1,
-        display: 'flex'
-    },
-    inputBase: {
-        flex: 1,
-        paddingLeft: theme.spacing(1)
-    },
-    placeholder: {
-        opacity: 0.4
-    }
-});
+export const ExtensionListHeader: FunctionComponent<ExtensionListHeaderProps> = props => {
+    const [categories, setCategories] = useState<ExtensionCategory[]>([]);
+    const [category, setCategory] = useState<ExtensionCategory | ''>('');
+    const [sortBy, setSortBy] = useState<SortBy>('relevance');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+    const context = useContext(MainContext);
 
-class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Props, ExtensionListHeaderComp.State> {
-
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected categories: ExtensionCategory[] = [];
-
-    constructor(props: ExtensionListHeaderComp.Props) {
-        super(props);
-        this.state = {
-            category: '',
-            sortBy: 'relevance',
-            sortOrder: 'desc'
-        };
-    }
-
-    componentDidMount() {
-        this.categories = Array.from(this.context.service.getCategories());
-        this.categories.sort((a, b) => {
+    useEffect(() => {
+        const categories = Array.from(context.service.getCategories());
+        categories.sort((a, b) => {
             if (a === b)
                 return 0;
             if (a === 'Other')
@@ -116,149 +35,177 @@ class ExtensionListHeaderComp extends React.Component<ExtensionListHeaderComp.Pr
             return a.localeCompare(b);
         });
 
-        this.setState({
-            category: this.props.category || '',
-            sortBy: this.props.sortBy,
-            sortOrder: this.props.sortOrder
-        });
-    }
+        setCategories(categories);
+        setCategory(props.category || '');
+        setSortBy(props.sortBy);
+        setSortOrder(props.sortOrder);
+    }, []);
 
-    componentDidUpdate(prevProps: ExtensionListHeaderComp.Props) {
-        if (this.props.category !== prevProps.category || this.props.sortBy !== prevProps.sortBy || this.props.sortOrder !== prevProps.sortOrder) {
-            this.setState({
-                category: this.props.category || '',
-                sortBy: this.props.sortBy,
-                sortOrder: this.props.sortOrder
-            });
-        }
-    }
+    useEffect(() => {
+        setCategory(props.category || '');
+        setSortBy(props.sortBy);
+        setSortOrder(props.sortOrder);
+    }, [props.category, props.sortBy, props.sortOrder]);
 
-    protected handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const category = event.target.value as ExtensionCategory;
-        this.setState({ category });
-        this.props.onCategoryChanged(category);
+    const handleCategoryChange = (event: SelectChangeEvent<string>) => {
+        const category = event.target.value as ExtensionCategory || '';
+        setCategory(category);
+        props.onCategoryChanged(category);
     };
 
-    protected handleSearchChange = (value: string) => {
-        this.props.onSearchChanged(value);
+    const handleSearchChange = (value: string) => {
+        props.onSearchChanged(value);
     };
 
-    protected handleSearchSubmit = (value: string) => {
-        this.props.onSearchSubmit(value);
+    const handleSearchSubmit = (value: string) => {
+        props.onSearchSubmit(value);
     };
 
-    protected renderValue = (value: string) => {
-        if (value === '') {
-            return <Box component='span' className={this.props.classes.placeholder}>All Categories</Box>;
-        } else {
-            return value;
-        }
-    };
-
-    protected handleSortByChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSortByChange = (event: ChangeEvent<HTMLInputElement>) => {
         const sortBy = event.target.value as SortBy;
-        this.setState({ sortBy });
-        this.props.onSortByChanged(sortBy);
+        setSortBy(sortBy);
+        props.onSortByChanged(sortBy);
     };
 
-    protected handleSortOrderChange = () => {
-        const sortOrder = this.state.sortOrder === 'asc' ? 'desc' : 'asc';
-        this.setState({ sortOrder });
-        this.props.onSortOrderChanged(sortOrder);
+    const handleSortOrderChange = () => {
+        const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+        setSortOrder(newSortOrder);
+        props.onSortOrderChanged(newSortOrder);
     };
 
-    render() {
-        const classes = this.props.classes;
-        const SearchHeader = this.context.pageSettings.elements.searchHeader;
-        return <React.Fragment>
-            <Container>
-                <Box display='flex' flexDirection='column' alignItems='center' py={6}>
-                    {SearchHeader ? <SearchHeader /> : ''}
-                    <Box className={classes.formContainer}>
-                        <Box className={classes.form}>
-                            <ExtensionListSearchfield
-                                onSearchChanged={this.handleSearchChange}
-                                onSearchSubmit={this.handleSearchSubmit}
-                                searchQuery={this.props.searchQuery}
-                                placeholder='Search by Name, Tag, or Description' />
-                            <Paper className={classes.category}>
+    const renderValue = (value: string) => {
+        return value === ''
+            ? <Box component='span' sx={{ opacity: 0.4 }}>All Categories</Box>
+            : value;
+    };
+
+    const SearchHeader = context.pageSettings.elements.searchHeader;
+    return <>
+        <Container>
+            <Box display='flex' flexDirection='column' alignItems='center' py={6}>
+                {SearchHeader ? <SearchHeader /> : ''}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: { xs: '100%', sm: '100%', md: '70%', lg: '70%', xl: '70%' },
+                        maxWidth: { xs: 500, sm: 500, md: 500, lg: 'none', xl: 'none' }
+                    }}
+                >
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            width: '100%',
+                            flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
+                        }}
+                    >
+                        <ExtensionListSearchfield
+                            onSearchChanged={handleSearchChange}
+                            onSearchSubmit={handleSearchSubmit}
+                            searchQuery={props.searchQuery}
+                            placeholder='Search by Name, Tag, or Description' />
+                        <Paper sx={{ flex: 1, display: 'flex' }}>
+                            <Select
+                                value={category}
+                                onChange={handleCategoryChange}
+                                renderValue={renderValue}
+                                displayEmpty
+                                input={<InputBase sx={{ flex: 1, pl: 1 }} />}>
+                                <MenuItem value=''>All Categories</MenuItem>
+                                {categories.map(c => {
+                                    return <MenuItem value={c} key={c}>{c}</MenuItem>;
+                                })}
+                            </Select>
+                        </Paper>
+                    </Box>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontSize: '0.75rem',
+                            mt: 1
+                        }}
+                    >
+                        <Box sx={{ color: 'text.secondary' }} >{`${props.resultNumber} Result${props.resultNumber !== 1 ? 's' : ''}`}</Box>
+                        <Box sx={{ color: 'text.secondary', display: 'flex' }}>
+                            <Box>
+                                Sort by
                                 <Select
-                                    value={this.state.category}
-                                    onChange={this.handleCategoryChange}
-                                    renderValue={this.renderValue}
-                                    displayEmpty
-                                    input={<InputBase className={classes.inputBase}></InputBase>}>
-                                    <MenuItem value=''>All Categories</MenuItem>
-                                    {this.categories.map(c => {
-                                        return <MenuItem value={c} key={c}>{c}</MenuItem>;
-                                    })}
-                                </Select>
-                            </Paper>
-                        </Box>
-                        <Box className={classes.resultNumAndSortContainer}>
-                            <Box className={classes.resultNum} >{`${this.props.resultNumber} Result${this.props.resultNumber !== 1 ? 's' : ''}`}</Box>
-                            <Box className={classes.resultSort}>
-                                <Box>
-                                    Sort by
-                                    <Select
-                                        style={{ marginLeft: '4px' }}
-                                        classes={{ root: classes.resultSortBySelectRoot, select: classes.resultSortBySelect, icon: classes.resultSortBySelectIcon }}
-                                        disableUnderline
-                                        IconComponent={() => <span />}
-                                        value={this.state.sortBy}
-                                        onChange={this.handleSortByChange}
-                                    >
-                                        <MenuItem value={'relevance'}>Relevance</MenuItem>
-                                        <MenuItem value={'timestamp'}>Date</MenuItem>
-                                        <MenuItem value={'downloadCount'}>Downloads</MenuItem>
-                                        <MenuItem value={'rating'}>Rating</MenuItem>
-                                    </Select>
-                                </Box>
-                                <Box
-                                    className={classes.resultSortOrder}
-                                    title={this.state.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                                    tabIndex={0}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            this.handleSortOrderChange();
+                                    sx={{
+                                        ml: '4px',
+                                        fontSize: '0.75rem',
+                                        height: '1.1rem',
+                                        '& .MuiSelect-select': {
+                                            padding: '0px !important',
+                                            '&:hover': {
+                                                color: 'secondary.main'
+                                            }
+                                        },
+                                        '& .MuiSelect-icon': {
+                                            display: 'none'
+                                        },
+                                        '&.Mui-focused': {
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                border: 0
+                                            }
+                                        },
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                            border: 0
                                         }
                                     }}
-                                    onClick={this.handleSortOrderChange}>
-                                    {
-                                        this.state.sortOrder === 'asc' ?
-                                            <ArrowUpwardIcon fontSize='small' />
-                                            :
-                                            <ArrowDownwardIcon fontSize='small' />
+                                    IconComponent={() => <span />}
+                                    value={sortBy}
+                                    onChange={handleSortByChange}
+                                >
+                                    <MenuItem value={'relevance'}>Relevance</MenuItem>
+                                    <MenuItem value={'timestamp'}>Date</MenuItem>
+                                    <MenuItem value={'downloadCount'}>Downloads</MenuItem>
+                                    <MenuItem value={'rating'}>Rating</MenuItem>
+                                </Select>
+                            </Box>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    ml: 0.75,
+                                    '&:hover': {
+                                        cursor: 'pointer',
+                                        color: 'secondary.main'
                                     }
-                                </Box>
+                                }}
+                                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                                tabIndex={0}
+                                onKeyDown={(e: KeyboardEvent) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSortOrderChange();
+                                    }
+                                }}
+                                onClick={handleSortOrderChange}>
+                                {
+                                    sortOrder === 'asc'
+                                        ? <ArrowUpwardIcon fontSize='small' />
+                                        : <ArrowDownwardIcon fontSize='small' />
+                                }
                             </Box>
                         </Box>
                     </Box>
                 </Box>
-            </Container>
-        </React.Fragment>;
-    }
-}
+            </Box>
+        </Container>
+    </>;
+};
 
-namespace ExtensionListHeaderComp {
-    export interface Props extends WithStyles<typeof headerStyles> {
-        onSearchChanged: (s: string) => void;
-        onSearchSubmit: (s: string) => void;
-        onCategoryChanged: (c: ExtensionCategory) => void;
-        onSortByChanged: (sb: SortBy) => void;
-        onSortOrderChanged: (so: SortOrder) => void;
-        searchQuery?: string;
-        category?: ExtensionCategory | '';
-        sortBy: SortBy,
-        sortOrder: SortOrder,
-        resultNumber: number;
-    }
-    export interface State {
-        category: ExtensionCategory | '';
-        sortBy: SortBy;
-        sortOrder: SortOrder;
-    }
+export interface ExtensionListHeaderProps {
+    onSearchChanged: (s: string) => void;
+    onSearchSubmit: (s: string) => void;
+    onCategoryChanged: (c: ExtensionCategory) => void;
+    onSortByChanged: (sb: SortBy) => void;
+    onSortOrderChanged: (so: SortOrder) => void;
+    searchQuery?: string;
+    category?: ExtensionCategory | '';
+    sortBy: SortBy,
+    sortOrder: SortOrder,
+    resultNumber: number;
 }
-
-export const ExtensionListHeader = withStyles(headerStyles)(ExtensionListHeaderComp);

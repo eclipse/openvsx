@@ -8,161 +8,123 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Theme } from '@material-ui/core';
-import { withStyles, createStyles, WithStyles } from '@material-ui/styles';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import { Box, Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { Extension, isError } from '../../extension-registry-types';
+import { Extension, StarRating, isError } from '../../extension-registry-types';
 import { ExtensionRatingStarSetter } from './extension-rating-star-setter';
 import { MainContext } from '../../context';
 
 const REVIEW_COMMENT_SIZE = 2048;
 
-const reviewDialogStyles = (theme: Theme) => createStyles({
-    dialogActions: {
-        [theme.breakpoints.down('xs')]: {
-            justifyContent: 'center'
-        }
-    },
-    stars: {
-        [theme.breakpoints.down('xs')]: {
-            width: '135%',
-            transform: 'scale(.8) translateX(-15%)',
-        },
-        ['@media(max-width: 305px)']: {
-            width: '140%',
-            transform: 'scale(.7) translateX(-23%)',
-        }
-    }
-});
+export const ExtensionReviewDialog: FunctionComponent<ExtensionReviewDialogProps> = props => {
+    const [open, setOpen] = useState<boolean>(false);
+    const [posted, setPosted] = useState<boolean>(false);
+    const [rating, setRating] = useState<StarRating>(1);
+    const [comment, setComment] = useState<string>('');
+    const [commentError, setCommentError] = useState<string>();
+    const context = useContext(MainContext);
+    const abortController = new AbortController();
 
-class ExtensionReviewDialogComponent extends React.Component<ExtensionReviewDialogComponent.Props, ExtensionReviewDialogComponent.State> {
-
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected starSetter: ExtensionRatingStarSetter | null;
-    protected abortController = new AbortController();
-
-    constructor(props: ExtensionReviewDialogComponent.Props) {
-        super(props);
-
-        this.state = {
-            open: false,
-            posted: false,
-            comment: ''
+    useEffect(() => {
+        document.addEventListener('keydown', handleEnter);
+        return () => {
+            abortController.abort();
+            document.removeEventListener('keydown', handleEnter);
         };
-    }
+    }, []);
 
-    protected handleOpenButton = () => {
-        if (this.context.user) {
-            this.setState({ open: true, posted: false });
+    const handleOpenButton = () => {
+        if (context.user) {
+            setOpen(true);
+            setPosted(false);
         }
     };
 
-    protected handleCancel = () => this.setState({ open: false });
+    const handleCancel = () => setOpen(false);
 
-    protected handlePost = async () => {
-        this.setState({ posted: true });
+    const handlePost = async () => {
+        setPosted(true);
         try {
-            const rating = this.starSetter ? this.starSetter.state.number : 1;
-            const result = await this.context.service.postReview(this.abortController, {
-                rating,
-                comment: this.state.comment
-            }, this.props.reviewPostUrl);
+            const result = await context.service.postReview(abortController, { rating, comment }, props.reviewPostUrl);
             if (isError(result)) {
                 throw result;
             }
-            this.setState({ open: false, comment: '' });
-            this.props.saveCompleted();
+
+            setOpen(false);
+            setComment('');
+            props.saveCompleted();
         } catch (err) {
-            this.context.handleError(err);
+            context.handleError(err);
         }
     };
 
-    protected handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleCommentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
         const comment = event.target.value;
         let commentError: string | undefined;
         if (comment.length > REVIEW_COMMENT_SIZE) {
             commentError = `The review comment must not be longer than ${REVIEW_COMMENT_SIZE} characters.`;
         }
-        this.setState({ comment, commentError });
+
+        setComment(comment);
+        setCommentError(commentError);
     };
 
-    handleEnter = (e: KeyboardEvent) => {
+    const handleEnter = (e: KeyboardEvent) => {
         if (e.code ===  'Enter') {
-            this.handlePost();
+            handlePost();
         }
     };
 
-    componentDidMount() {
-        document.addEventListener('keydown', this.handleEnter);
+    if (!context.user) {
+        return null;
     }
+    return <>
+        {!posted && (<Button variant='contained' color='secondary' onClick={handleOpenButton}>
+            Write a Review
+        </Button>)}
+        <Dialog open={open} onClose={handleCancel}>
+            <DialogTitle>{props.extension.displayName || props.extension.name} Review</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    Your review will be posted publicly as {context.user.loginName}
+                </DialogContentText>
+                <Box
+                    component='div'
+                    sx={{
+                        width: { xs: '140%', sm: '100%', md: '100%', lg: '100%', xl: '100%' },
+                        transform: { xs: 'scale(.7) translateX(-23%)', sm: 'none', md: 'none', lg: 'none', xl: 'none' }
+                    }}
+                >
+                    <ExtensionRatingStarSetter handleRatingChange={(rating: number) => setRating(rating as StarRating)} />
+                </Box>
+                <TextField
+                    margin='dense'
+                    label='Your Review...'
+                    fullWidth
+                    multiline
+                    variant='outlined'
+                    rows={4}
+                    error={Boolean(commentError)}
+                    helperText={commentError}
+                    onChange={handleCommentChange} />
+            </DialogContent>
+            <DialogActions sx={{ justifyContent: { xs: 'center', sm: 'normal', md: 'normal', lg: 'normal', xl: 'normal' } }}>
+                <Button
+                    onClick={handleCancel}
+                    color='secondary' >
+                    Cancel
+                </Button>
+                <ButtonWithProgress autoFocus error={Boolean(commentError)} working={posted} sx={{ ml: 1 }} onClick={handlePost}>
+                    Post Review
+                </ButtonWithProgress>
+            </DialogActions>
+        </Dialog>
+    </>;
+};
 
-    componentWillUnmount() {
-        this.abortController.abort();
-        document.removeEventListener('keydown', this.handleEnter);
-    }
-
-    render() {
-        if (!this.context.user) {
-            return null;
-        }
-        return <React.Fragment>
-            {!this.state.posted && (<Button variant='contained' color='secondary' onClick={this.handleOpenButton}>
-                Write a Review
-            </Button>)}
-            <Dialog open={this.state.open} onClose={this.handleCancel}>
-                <DialogTitle>{this.props.extension.displayName || this.props.extension.name} Review</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Your review will be posted publicly as {this.context.user.loginName}
-                    </DialogContentText>
-                    <div className={this.props.classes.stars}>
-                        <ExtensionRatingStarSetter ref={(ref: any) => this.starSetter = ref} />
-                    </div>
-                    <TextField
-                        margin='dense'
-                        label='Your Review...'
-                        fullWidth
-                        multiline
-                        variant='outlined'
-                        rows={4}
-                        error={Boolean(this.state.commentError)}
-                        helperText={this.state.commentError}
-                        onChange={this.handleCommentChange} />
-                </DialogContent>
-                <DialogActions className={this.props.classes.dialogActions}>
-                    <Button
-                        onClick={this.handleCancel}
-                        color='secondary' >
-                        Cancel
-                    </Button>
-                    <ButtonWithProgress
-                            autoFocus
-                            error={Boolean(this.state.commentError)}
-                            working={this.state.posted}
-                            onClick={this.handlePost} >
-                        Post Review
-                    </ButtonWithProgress>
-                </DialogActions>
-            </Dialog>
-        </React.Fragment>;
-    }
+export interface ExtensionReviewDialogProps {
+    extension: Extension;
+    reviewPostUrl: string;
+    saveCompleted: () => void;
 }
-
-export namespace ExtensionReviewDialogComponent {
-    export interface Props extends WithStyles<typeof reviewDialogStyles> {
-        extension: Extension;
-        reviewPostUrl: string;
-        saveCompleted: () => void;
-    }
-    export interface State {
-        open: boolean;
-        posted: boolean;
-        comment: string;
-        commentError?: string;
-    }
-}
-
-export const ExtensionReviewDialog = withStyles(reviewDialogStyles)(ExtensionReviewDialogComponent);

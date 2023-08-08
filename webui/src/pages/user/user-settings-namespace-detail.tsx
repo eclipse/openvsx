@@ -8,10 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useState, FunctionComponent } from 'react';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { makeStyles, Box, Button, Link, Paper, Grid, Typography } from '@material-ui/core';
-import WarningIcon from '@material-ui/icons/Warning';
+import React, { FunctionComponent, createContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Box, Button, Link, Paper, Grid, Typography } from '@mui/material';
+import { styled, Theme } from '@mui/material/styles';
+import WarningIcon from '@mui/icons-material/Warning';
 import { UserNamespaceExtensionListContainer } from './user-namespace-extension-list';
 import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
 import { Namespace, UserData } from '../../extension-registry-types';
@@ -22,70 +23,44 @@ import { UserNamespaceDetails } from './user-namespace-details';
 export interface NamespaceDetailConfig {
     defaultMemberRole?: 'contributor' | 'owner';
 }
-export const NamespaceDetailConfigContext = React.createContext<NamespaceDetailConfig>({});
+export const NamespaceDetailConfigContext = createContext<NamespaceDetailConfig>({});
 
-const useStyles = makeStyles((theme) => ({
-    namespaceDetailContainer: {
-        flex: 5,
-        padding: theme.spacing(0, 1),
-        [theme.breakpoints.only('md')]: {
-            width: '80%'
-        },
-        [theme.breakpoints.down('sm')]: {
-            width: '100%'
-        }
+const NamespaceDetailContainer = styled(Grid)(({ theme }: { theme: Theme }) => ({
+    flex: 5,
+    padding: theme.spacing(0, 1),
+    [theme.breakpoints.only('md')]: {
+        width: '80%'
     },
-    lightTheme: {
-        color: '#333',
-    },
-    darkTheme: {
-        color: '#fff',
-    },
-    banner: {
-        maxWidth: '800px',
-        margin: `0 ${theme.spacing(6)}px ${theme.spacing(4)}px ${theme.spacing(6)}px`,
-        padding: theme.spacing(2),
-        display: 'flex',
-        [theme.breakpoints.down('sm')]: {
-            margin: `0 0 ${theme.spacing(2)}px 0`,
-        }
-    },
-    warningLight: {
-        backgroundColor: theme.palette.warning.light,
-        color: '#000',
-        '& a': {
-            color: '#000',
-            textDecoration: 'underline'
-        }
-    },
-    warningDark: {
-        backgroundColor: theme.palette.warning.dark,
-        color: '#fff',
-        '& a': {
-            color: '#fff',
-            textDecoration: 'underline'
-        }
-    },
-    changeButton: {
-        [theme.breakpoints.down('md')]: {
-            marginLeft: theme.spacing(2)
-        }
-    },
-    namespaceHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: theme.spacing(1),
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column',
-            alignItems: 'center'
-        }
+    [theme.breakpoints.down('sm')]: {
+        width: '100%'
     }
 }));
 
-export const NamespaceDetailComponent: FunctionComponent<NamespaceDetailComponent.Props> = props => {
-    const classes = useStyles();
+const WarningPaper = styled(Paper)(({ theme }: { theme: Theme }) => ({
+    maxWidth: '800px',
+    margin: `0 ${theme.spacing(6)} ${theme.spacing(4)} ${theme.spacing(6)}`,
+    padding: theme.spacing(2),
+    display: 'flex',
+    [theme.breakpoints.down('sm')]: {
+        margin: `0 0 ${theme.spacing(2)} 0`,
+    }
+}));
+
+const NamespaceHeader = styled(Box)(({ theme }: { theme: Theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+        flexDirection: 'column',
+        alignItems: 'center'
+    }
+}));
+
+export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props => {
     const [changeDialogIsOpen, setChangeDialogIsOpen] = useState(false);
+    const { pathname } = useLocation();
+
     const handleCloseChangeDialog = async () => {
         setChangeDialogIsOpen(false);
     };
@@ -93,12 +68,21 @@ export const NamespaceDetailComponent: FunctionComponent<NamespaceDetailComponen
         setChangeDialogIsOpen(true);
     };
 
+    const warningColor = props.theme === 'dark' ? '#fff' : '#151515';
     return <>
-        <Grid container direction='column' spacing={4} className={classes.namespaceDetailContainer}>
+        <NamespaceDetailContainer container direction='column' spacing={4}>
             {
                 !props.namespace.verified && props.namespaceAccessUrl
                 ? <Grid item>
-                    <Paper className={`${classes.banner} ${props.theme === 'dark' ? classes.warningDark : classes.warningLight} ${props.theme === 'dark' ? classes.darkTheme : classes.lightTheme}`}>
+                    <WarningPaper
+                        sx={{
+                            backgroundColor: `warning.${props.theme}`,
+                            color: warningColor,
+                            '& a': {
+                                color: warningColor,
+                                textDecoration: 'underline'
+                            }
+                        }}>
                         <WarningIcon fontSize='large' />
                         <Box ml={1}>
                             This namespace is not verified. <Link
@@ -107,20 +91,20 @@ export const NamespaceDetailComponent: FunctionComponent<NamespaceDetailComponen
                                 See the documentation
                             </Link> to learn about claiming namespaces.
                         </Box>
-                    </Paper>
+                    </WarningPaper>
                 </Grid>
                 : null
             }
             <Grid item>
-                <Box className={classes.namespaceHeader}>
+                <NamespaceHeader>
                     <Typography variant='h4'>{props.namespace.name}</Typography>
-                    { props.location.pathname.startsWith(AdminDashboardRoutes.NAMESPACE_ADMIN)
-                        ? <Button className={classes.changeButton} variant='outlined' onClick={handleOpenChangeDialog}>
+                    { pathname.startsWith(AdminDashboardRoutes.NAMESPACE_ADMIN)
+                        ? <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' onClick={handleOpenChangeDialog}>
                             Change Namespace
                         </Button>
                         : null
                     }
-                </Box>
+                </NamespaceHeader>
             </Grid>
             {
                 props.namespace.membersUrl
@@ -141,7 +125,7 @@ export const NamespaceDetailComponent: FunctionComponent<NamespaceDetailComponen
                     namespace={props.namespace}
                 />
             </Grid>
-        </Grid>
+        </NamespaceDetailContainer>
         <NamespaceChangeDialog
             open={changeDialogIsOpen}
             onClose={handleCloseChangeDialog}
@@ -150,15 +134,11 @@ export const NamespaceDetailComponent: FunctionComponent<NamespaceDetailComponen
     </>;
 };
 
-export namespace NamespaceDetailComponent {
-    export interface Props extends RouteComponentProps {
-        namespace: Namespace;
-        filterUsers: (user: UserData) => boolean;
-        fixSelf: boolean;
-        setLoadingState: (loading: boolean) => void;
-        namespaceAccessUrl?: string;
-        theme?: string;
-    }
+export interface NamespaceDetailProps {
+    namespace: Namespace;
+    filterUsers: (user: UserData) => boolean;
+    fixSelf: boolean;
+    setLoadingState: (loading: boolean) => void;
+    namespaceAccessUrl?: string;
+    theme?: string;
 }
-
-export const NamespaceDetail = withRouter(NamespaceDetailComponent);

@@ -8,133 +8,110 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
- import * as React from 'react';
- import {
-     Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle,
-     DialogContent, Box, TextField, DialogActions
- } from '@material-ui/core';
- import { ButtonWithProgress } from '../../components/button-with-progress';
- import { isError } from '../../extension-registry-types';
- import { MainContext } from '../../context';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import { Button, Dialog, DialogTitle, DialogContent, Box, TextField, DialogActions } from '@mui/material';
+import { ButtonWithProgress } from '../../components/button-with-progress';
+import { isError } from '../../extension-registry-types';
+import { MainContext } from '../../context';
 
- const NAMESPACE_NAME_SIZE = 255;
+const NAMESPACE_NAME_SIZE = 255;
 
- const namespaceDialogStyle = (theme: Theme) => createStyles({});
+export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps> = props => {
+    const [open, setOpen] = useState<boolean>(false);
+    const [posted, setPosted] = useState<boolean>(false);
+    const [name, setName] = useState<string>('');
+    const [nameError, setNameError] = useState<string>();
 
- class CreateNamespaceDialogComponent extends React.Component<CreateNamespaceDialogComponent.Props, CreateNamespaceDialogComponent.State> {
+    const context = useContext(MainContext);
+    const abortController = new AbortController();
 
-     static contextType = MainContext;
-     declare context: MainContext;
+    useEffect(() => {
+        document.addEventListener('keydown', handleEnter);
+        return () => {
+            abortController.abort();
+            document.removeEventListener('keydown', handleEnter);
+        };
+    }, []);
 
-     protected abortController = new AbortController();
+    const handleOpenDialog = () => {
+        setOpen(true);
+        setPosted(false);
+    };
 
-     constructor(props: CreateNamespaceDialogComponent.Props) {
-         super(props);
+    const handleCancel = () => {
+        setOpen(false);
+        setName('');
+    };
 
-         this.state = {
-             open: false,
-             posted: false,
-             name: ''
-         };
-     }
+    const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const name = event.target.value;
+        let nameError: string | undefined;
+        if (name.length > NAMESPACE_NAME_SIZE) {
+            nameError = `The namespace name must not be longer than ${NAMESPACE_NAME_SIZE} characters.`;
+        }
 
-     protected handleOpenDialog = () => {
-         this.setState({ open: true, posted: false });
-     };
+        setName(name);
+        setNameError(nameError);
+    };
 
-     protected handleCancel = () => {
-         this.setState({
-             open: false,
-             name: ''
-         });
-     };
+    const handleCreateNamespace = async () => {
+        if (!context.user) {
+            return;
+        }
 
-     protected handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-         const name = event.target.value;
-         let nameError: string | undefined;
-         if (name.length > NAMESPACE_NAME_SIZE) {
-             nameError = `The namespace name must not be longer than ${NAMESPACE_NAME_SIZE} characters.`;
-         }
-         this.setState({ name, nameError });
-     };
+        setPosted(true);
+        try {
+            const response = await context.service.createNamespace(abortController, name);
+            if (isError(response)) {
+                throw response;
+            }
 
-     protected handleCreateNamespace = async () => {
-         if (!this.context.user) {
-             return;
-         }
-         this.setState({ posted: true });
-         try {
-             const response = await this.context.service.createNamespace(this.abortController, this.state.name);
-             if (isError(response)) {
-                 throw response;
-             }
+            setOpen(false);
+            props.namespaceCreated();
+        } catch (err) {
+            context.handleError(err);
+        }
 
-             this.setState({ open: false });
-             this.props.namespaceCreated();
-         } catch (err) {
-             this.context.handleError(err);
-         }
+        setPosted(false);
+    };
 
-         this.setState({ posted: false });
-     };
+    const handleEnter = (e: KeyboardEvent) => {
+        if (open && e.code ===  'Enter') {
+            handleCreateNamespace();
+        }
+    };
 
-     handleEnter = (e: KeyboardEvent) => {
-         if (this.state.open && e.code ===  'Enter') {
-             this.handleCreateNamespace();
-         }
-     };
+    return <>
+        <Button variant='outlined' onClick={handleOpenDialog}>Create namespace</Button>
+        <Dialog open={open} onClose={handleCancel}>
+            <DialogTitle>Create new namespace</DialogTitle>
+            <DialogContent>
+                <Box my={2}>
+                    <TextField
+                        fullWidth
+                        label='Namespace Name'
+                        error={Boolean(nameError)}
+                        helperText={nameError}
+                        onChange={handleNameChange} />
+                </Box>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleCancel} color='secondary'>
+                    Cancel
+                </Button>
+            <ButtonWithProgress
+                    autoFocus
+                    sx={{ ml: 1 }}
+                    error={Boolean(nameError) || !name}
+                    working={posted}
+                    onClick={handleCreateNamespace} >
+                Create Namespace
+            </ButtonWithProgress>
+            </DialogActions>
+        </Dialog>
+    </>;
+};
 
-     componentDidMount() {
-         document.addEventListener('keydown', this.handleEnter);
-     }
-
-     componentWillUnmount() {
-         document.removeEventListener('keydown', this.handleEnter);
-     }
-
-     render() {
-         return <React.Fragment>
-             <Button variant='outlined' onClick={this.handleOpenDialog}>Create namespace</Button>
-             <Dialog open={this.state.open} onClose={this.handleCancel}>
-                 <DialogTitle>Create new namespace</DialogTitle>
-                 <DialogContent>
-                     <Box my={2}>
-                         <TextField
-                             fullWidth
-                             label='Namespace Name'
-                             error={Boolean(this.state.nameError)}
-                             helperText={this.state.nameError}
-                             onChange={this.handleNameChange} />
-                     </Box>
-                 </DialogContent>
-                 <DialogActions>
-                     <Button onClick={this.handleCancel} color='secondary'>
-                         Cancel
-                     </Button>
-                    <ButtonWithProgress
-                            autoFocus
-                            error={Boolean(this.state.nameError) || !this.state.name}
-                            working={this.state.posted}
-                            onClick={this.handleCreateNamespace} >
-                        Create Namespace
-                    </ButtonWithProgress>
-                 </DialogActions>
-             </Dialog>
-         </React.Fragment>;
-     }
- }
-
- export namespace CreateNamespaceDialogComponent {
-     export interface Props extends WithStyles<typeof namespaceDialogStyle> {
-        namespaceCreated: () => void;
-     }
-
-     export interface State {
-         open: boolean;
-         posted: boolean;
-         name: string;
-         nameError?: string;
-     }
- }
-
- export const CreateNamespaceDialog = withStyles(namespaceDialogStyle)(CreateNamespaceDialogComponent);
+export interface CreateNamespaceDialogProps {
+    namespaceCreated: () => void;
+}

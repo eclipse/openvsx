@@ -8,43 +8,41 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { Box, IconButton } from '@material-ui/core';
-import StarIcon from '@material-ui/icons/Star';
-import StarBorderIcon from '@material-ui/icons/StarBorder';
+import React, { FunctionComponent, ReactNode, useState } from 'react';
+import { Box, IconButton } from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { StarRating } from '../../extension-registry-types';
 
-export class ExtensionRatingStarSetter extends React.Component<{}, { number: StarRating }> {
+export const ExtensionRatingStarSetter: FunctionComponent<ExtensionRatingStarSetterProps> = props => {
+    const [rating, setRating] = useState<number>(1);
 
-    constructor(props: {}) {
-        super(props);
-
-        this.state = { number: 1 };
-    }
-
-    protected handleStarClick = (number: StarRating): void => {
-        this.setState({ number });
+    const handleStarClick = (rating: StarRating): void => {
+        setRating(rating);
+        props.handleRatingChange(rating);
     };
 
-    protected renderStarButton(number: StarRating): React.ReactNode {
-        return <IconButton key={'starbtn' + number} onClick={() => this.handleStarClick(number)}>
-            {number <= this.state.number ? <StarIcon /> : <StarBorderIcon />}
+    const renderStarButton = (number: StarRating): ReactNode => {
+        return <IconButton key={'starbtn' + number} onClick={() => handleStarClick(number)}>
+            {number <= rating ? <StarIcon /> : <StarBorderIcon />}
         </IconButton>;
-    }
+    };
 
-    protected renderStars(): React.ReactNode[] {
-        const stars: React.ReactNode[] = [];
+    const renderStars = (): ReactNode[] => {
+        const stars: ReactNode[] = [];
         for (let i = 1; i <= 5; i++) {
-            stars.push(this.renderStarButton(i as StarRating));
+            stars.push(renderStarButton(i as StarRating));
         }
         return stars;
-    }
+    };
 
-    render(): React.ReactNode {
-        return <React.Fragment>
-            <Box>
-                {this.renderStars()}
-            </Box>
-        </React.Fragment>;
-    }
+    return <>
+        <Box>
+            {renderStars()}
+        </Box>
+    </>;
+};
+
+export interface ExtensionRatingStarSetterProps {
+    handleRatingChange: (rating: number) => void
 }

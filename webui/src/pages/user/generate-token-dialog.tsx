@@ -8,11 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import {
-    Button, Theme, createStyles, WithStyles, withStyles, Dialog, DialogTitle,
-    DialogContent, DialogContentText, Box, TextField, DialogActions, Typography
-} from '@material-ui/core';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { CopyToClipboard } from '../../components/copy-to-clipboard';
 import { PersonalAccessToken, isError } from '../../extension-registry-types';
@@ -20,171 +17,141 @@ import { MainContext } from '../../context';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
-const tokensDialogStyle = (theme: Theme) => createStyles({
-    boldText: {
-        color: 'red',
-        fontWeight: 'bold'
-    }
-});
+export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = props => {
+    const [open, setOpen] = useState<boolean>(false);
+    const [posted, setPosted] = useState<boolean>(false);
+    const [description, setDescription] = useState<string>('');
+    const [descriptionError, setDescriptionError] = useState<string>();
+    const [token, setToken] = useState<PersonalAccessToken>();
 
-class GenerateTokenDialogComponent extends React.Component<GenerateTokenDialogComponent.Props, GenerateTokenDialogComponent.State> {
+    const context = useContext(MainContext);
+    const abortController = new AbortController();
 
-    static contextType = MainContext;
-    declare context: MainContext;
-
-    protected abortController = new AbortController();
-
-    constructor(props: GenerateTokenDialogComponent.Props) {
-        super(props);
-
-        this.state = {
-            open: false,
-            posted: false,
-            description: ''
+    useEffect(() => {
+        document.addEventListener('keydown', handleEnter);
+        return () => {
+            abortController.abort();
+            document.removeEventListener('keydown', handleEnter);
         };
-    }
+    }, []);
 
-    protected handleOpenDialog = () => {
-        this.setState({
-            open: true,
-            posted: false,
-            description: '',
-            token: undefined
-        });
+    const handleOpenDialog = () => {
+        setOpen(true);
+        setPosted(false);
+        setDescription('');
+        setToken(undefined);
     };
 
-    protected handleClose = () => {
-        this.setState({ open: false });
-    };
+    const handleClose = () => setOpen(false);
 
-    protected handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleDescriptionChange = (event: ChangeEvent<HTMLInputElement>) => {
         const description = event.target.value;
         let descriptionError: string | undefined;
         if (description.length > TOKEN_DESCRIPTION_SIZE) {
             descriptionError = `The description must not be longer than ${TOKEN_DESCRIPTION_SIZE} characters.`;
         }
-        this.setState({ description, descriptionError });
+
+        setDescription(description);
+        setDescriptionError(descriptionError);
     };
 
-    protected handleGenerate = async () => {
-        if (!this.context.user) {
+    const handleGenerate = async () => {
+        if (!context.user) {
             return;
         }
-        this.setState({ posted: true });
+        setPosted(true);
         try {
-            const token = await this.context.service.createAccessToken(this.abortController, this.context.user, this.state.description);
+            const token = await context.service.createAccessToken(abortController, context.user, description);
             if (isError(token)) {
                 throw token;
             }
-            this.setState({ token });
-            this.props.handleTokenGenerated();
+            setToken(token);
+            props.handleTokenGenerated();
         } catch (err) {
-            this.context.handleError(err);
+            context.handleError(err);
         }
     };
 
-    handleEnter = (e: KeyboardEvent) => {
-        if (e.code === 'Enter' && this.state.open && !this.state.token) {
-            this.handleGenerate();
+    const handleEnter = (e: KeyboardEvent) => {
+        if (e.code === 'Enter' && open && !token) {
+            handleGenerate();
         }
     };
 
-    componentDidMount() {
-        document.addEventListener('keydown', this.handleEnter);
-    }
-
-    componentWillUnmount() {
-        this.abortController.abort();
-        document.removeEventListener('keydown', this.handleEnter);
-    }
-
-    render() {
-        return <React.Fragment>
-            <Button variant='outlined' onClick={this.handleOpenDialog}>Generate new token</Button>
-            <Dialog open={this.state.open} onClose={this.handleClose}>
-                <DialogTitle>Generate new token</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Describe where you will use this token.
-                    </DialogContentText>
-                    <Box my={2}>
-                        <TextField
-                            disabled={Boolean(this.state.token)}
-                            fullWidth
-                            label='Token Description'
-                            error={Boolean(this.state.descriptionError)}
-                            helperText={this.state.descriptionError}
-                            onChange={this.handleDescriptionChange} />
-                    </Box>
+    return <>
+        <Button variant='outlined' onClick={handleOpenDialog}>Generate new token</Button>
+        <Dialog open={open} onClose={handleClose}>
+            <DialogTitle>Generate new token</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    Describe where you will use this token.
+                </DialogContentText>
+                <Box my={2}>
                     <TextField
-                        disabled={!this.state.token}
-                        margin='dense'
-                        label='Generated Token...'
+                        disabled={Boolean(token)}
                         fullWidth
-                        multiline
-                        variant='outlined'
-                        rows={4}
-                        value={this.state.token ? this.state.token.value : ''}
-                    />
-                    {
-                        this.state.token ?
-                        <Box>
-                            <Typography classes={{ root: this.props.classes.boldText }}>
-                                Copy and paste this token to a safe place. It will not be displayed again.
-                            </Typography>
-                        </Box> : null
-                    }
-                </DialogContent>
-                <DialogActions>
-                     {
-                        this.state.token ?
-                        <CopyToClipboard tooltipProps={{ placement: 'left' }}>
-                            {({ copy }) => (
-                                <Button
-                                    autoFocus
-                                    variant='contained'
-                                    color='secondary'
-                                    onClick={() => {
-                                        copy(this.state.token!.value);
-                                        setTimeout(this.handleClose, 700);
-                                    }}
-                                >
-                                    Copy
-                                </Button>
-                            )}
-                        </CopyToClipboard> : null
-                    }
-                    <Button onClick={this.handleClose} color='secondary'>
-                        {this.state.token ? 'Close' : 'Cancel'}
-                    </Button>
-                    {
-                        !this.state.token ?
-                        <ButtonWithProgress
+                        label='Token Description'
+                        error={Boolean(descriptionError)}
+                        helperText={descriptionError}
+                        onChange={handleDescriptionChange} />
+                </Box>
+                <TextField
+                    disabled={!token}
+                    margin='dense'
+                    label='Generated Token...'
+                    fullWidth
+                    multiline
+                    variant='outlined'
+                    rows={4}
+                    value={token ? token.value : ''}
+                />
+                {
+                    token ?
+                    <Box>
+                        <Typography sx={{ color: 'red', fontWeight: 'bold' }}>
+                            Copy and paste this token to a safe place. It will not be displayed again.
+                        </Typography>
+                    </Box> : null
+                }
+            </DialogContent>
+            <DialogActions>
+                {
+                    token ?
+                    <CopyToClipboard tooltipProps={{ placement: 'left' }}>
+                        {({ copy }) => (
+                            <Button
                                 autoFocus
-                                error={Boolean(this.state.descriptionError)}
-                                working={this.state.posted}
-                                onClick={this.handleGenerate} >
-                            Generate Token
-                        </ButtonWithProgress> : null
-                    }
-                </DialogActions>
-            </Dialog>
-        </React.Fragment>;
-    }
+                                variant='contained'
+                                color='secondary'
+                                onClick={() => {
+                                    copy(token!.value);
+                                    setTimeout(handleClose, 700);
+                                }}
+                            >
+                                Copy
+                            </Button>
+                        )}
+                    </CopyToClipboard> : null
+                }
+                <Button onClick={handleClose} color='secondary'>
+                    {token ? 'Close' : 'Cancel'}
+                </Button>
+                {
+                    !token ?
+                    <ButtonWithProgress
+                            autoFocus
+                            sx={{ ml: 1 }}
+                            error={Boolean(descriptionError)}
+                            working={posted}
+                            onClick={handleGenerate} >
+                        Generate Token
+                    </ButtonWithProgress> : null
+                }
+            </DialogActions>
+        </Dialog>
+    </>;
+};
+
+export interface GenerateTokenDialogProps {
+    handleTokenGenerated: () => void;
 }
-
-export namespace GenerateTokenDialogComponent {
-    export interface Props extends WithStyles<typeof tokensDialogStyle> {
-        handleTokenGenerated: () => void;
-    }
-
-    export interface State {
-        open: boolean;
-        posted: boolean;
-        description: string;
-        descriptionError?: string;
-        token?: PersonalAccessToken;
-    }
-}
-
-export const GenerateTokenDialog = withStyles(tokensDialogStyle)(GenerateTokenDialogComponent);

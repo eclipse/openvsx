@@ -2,6 +2,14 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.8.3 (Aug. 2023)
+
+#### Dependencies
+
+- Upgrade `yarn` from `1.22.19` to `3.6.1` ([#793](https://github.com/eclipse/openvsx/pull/793))
+
+---
+
 ### v0.8.2 (July 2023)
 
 #### Dependencies

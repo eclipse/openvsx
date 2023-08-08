@@ -8,87 +8,44 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import {
-    Theme, createStyles, WithStyles,
-    withStyles, Box, Typography,
-    Tabs, Tab, useTheme, useMediaQuery, Link
-} from '@material-ui/core';
-import { Namespace } from '../../extension-registry-types';
-import { makeStyles } from '@material-ui/styles';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import { Box, Typography, Tabs, Tab, useTheme, useMediaQuery, Link } from '@mui/material';
+import { Namespace, UserData } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
 import { NamespaceDetail } from './user-settings-namespace-detail';
 import { CreateNamespaceDialog } from './create-namespace-dialog';
 
-
-const namespacesStyle = (theme: Theme) => createStyles({
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        [theme.breakpoints.down('sm')]: {
-            flexDirection: 'column',
-            alignItems: 'center'
-        }
-    },
-    buttons: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        [theme.breakpoints.down('sm')]: {
-            justifyContent: 'center'
-        }
-    },
-    namespaceManagementContainer: {
-        display: 'flex',
-        width: '100%',
-        [theme.breakpoints.down('md')]: {
-            flexDirection: 'column',
-            alignItems: 'center'
-        }
-    },
-    namespaceContainer: {
-        width: '160px',
-        [theme.breakpoints.down('md')]: {
-            width: '80%'
-        }
-    },
-    namespaceTab: {
-        minHeight: '24px'
-    },
-    namespaceTabWrapper: {
-        textTransform: 'none'
-    },
-    namespace: {
-
-    }
-});
-
 interface NamespaceTabProps {
     chosenNamespace: Namespace,
-    onChange: (event: React.ChangeEvent<{}>, value: Namespace) => void,
+    onChange: (event: ChangeEvent<{}>, value: Namespace) => void,
     namespaces: Namespace[]
 }
 
 const NamespacesTabs = (props: NamespaceTabProps) => {
     const theme = useTheme();
-    const classes = makeStyles(namespacesStyle)();
     const isATablet = useMediaQuery(theme.breakpoints.down('md'));
     return <Tabs
         orientation={isATablet ? 'horizontal' : 'vertical'}
         value={props.chosenNamespace}
         onChange={props.onChange}
         variant={isATablet ? 'scrollable' : 'standard'}
-        scrollButtons={isATablet ? 'auto' : 'off'}
-        className={classes.namespaceContainer}>
+        scrollButtons={isATablet ? 'auto' : false}
+        indicatorColor='secondary'
+        sx={{ width: { xs: '80%', sm: '80%', md: '80%', lg: '160px', xl: '160px' } }}
+    >
         {
             props.namespaces.map(namespace => {
                 return <Tab
-                    classes={{
-                        root: classes.namespaceTab,
-                        wrapper: classes.namespaceTabWrapper
+                    sx={{
+                        root: {
+                            minHeight: '24px'
+                        },
+                        wrapper: {
+                            textTransform: 'none'
+                        }
                     }}
                     key={'nmspc-' + namespace.name}
-                    className={classes.namespace}
                     value={namespace}
                     label={namespace.name}
                 />;
@@ -97,117 +54,106 @@ const NamespacesTabs = (props: NamespaceTabProps) => {
     </Tabs>;
 };
 
-class UserSettingsNamespacesComponent extends React.Component<UserSettingsNamespacesComponent.Props, UserSettingsNamespacesComponent.State> {
+export const UserSettingsNamespaces: FunctionComponent = () => {
 
-    static contextType = MainContext;
-    declare context: MainContext;
+    const [loading, setLoading] = useState(true);
+    const [namespaces, setNamespaces] = useState<Array<Namespace>>([]);
+    const [chosenNamespace, setChosenNamespace] = useState<Namespace>();
+    const { pageSettings, service, user, handleError } = useContext(MainContext);
+    const abortController = new AbortController();
 
-    protected abortController = new AbortController();
-
-    constructor(props: UserSettingsNamespacesComponent.Props) {
-        super(props);
-
-        this.state = {
-            loading: true,
-            namespaces: [],
-            addDialogIsOpen: false,
-            chosenNamespace: undefined
+    useEffect(() => {
+        initNamespaces();
+        return () => {
+            abortController.abort();
         };
-    }
+    }, []);
 
-    componentDidMount() {
-        this.initNamespaces();
-    }
-
-    componentWillUnmount() {
-        this.abortController.abort();
-    }
-
-    render() {
-        const namespace = this.state.chosenNamespace;
-        const namespaceAccessUrl = this.context.pageSettings.urls.namespaceAccessInfo;
-        const user = this.context.user;
-        return <React.Fragment>
-            <Box className={this.props.classes.header}>
-                <Box>
-                    <Typography variant='h5' gutterBottom>Namespaces</Typography>
-                </Box>
-                <Box className={this.props.classes.buttons}>
-                    <Box mr={1} mb={1}>
-                        <CreateNamespaceDialog
-                            namespaceCreated={this.handleNamespaceCreated}
-                        />
-                    </Box>
-                </Box>
-            </Box>
-            <Box mt={2}>
-                <DelayedLoadIndicator loading={this.state.loading}/>
-                {
-                    this.state.namespaces.length > 0 && namespace ?
-                        <React.Fragment>
-                            <Box className={this.props.classes.namespaceManagementContainer}>
-                                <NamespacesTabs
-                                    chosenNamespace={namespace}
-                                    namespaces={this.state.namespaces}
-                                    onChange={this.handleChangeNamespace}
-                                />
-                                <NamespaceDetail
-                                    namespace={namespace}
-                                    setLoadingState={loading => this.setState({ loading })}
-                                    filterUsers={foundUser => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName}
-                                    fixSelf={true}
-                                    namespaceAccessUrl={namespaceAccessUrl}
-                                    theme={this.context.pageSettings.themeType}/>
-                            </Box>
-                        </React.Fragment>
-                        : !this.state.loading ? <Typography variant='body1'>No namespaces available. {
-                            namespaceAccessUrl ?
-                                <React.Fragment>
-                                    Read <Link color='secondary' href={namespaceAccessUrl} target='_blank'>here</Link> about claiming namespaces.
-                                </React.Fragment>
-                                : null
-                        }
-                        </Typography> : null
-                }
-            </Box>
-        </React.Fragment>;
-    }
-
-    protected handleChangeNamespace = (event: React.ChangeEvent<{}>, value: Namespace): void => {
-        this.doHandleChangeNamespace(value);
+    const handleChangeNamespace = (event: ChangeEvent<{}>, value: Namespace): void => {
+        doHandleChangeNamespace(value);
     };
 
-    protected async doHandleChangeNamespace(chosenNamespace: Namespace): Promise<void> {
-        this.setState({ chosenNamespace });
-    }
+    const doHandleChangeNamespace = async(chosenNamespace: Namespace): Promise<void> => {
+        setChosenNamespace(chosenNamespace);
+    };
 
-    protected async initNamespaces(): Promise<void> {
+    const initNamespaces = async(): Promise<void> => {
         try {
-            const namespaces = await this.context.service.getNamespaces(this.abortController);
+            const namespaces = await service.getNamespaces(abortController);
             const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
-            this.setState({ namespaces, chosenNamespace, loading: false });
+            setNamespaces(namespaces);
+            setChosenNamespace(chosenNamespace);
+            setLoading(false);
         } catch (err) {
-            this.context.handleError(err);
-            this.setState({ loading: false });
+            handleError(err);
+            setLoading(false);
         }
-    }
-
-    protected handleNamespaceCreated = () => {
-        this.setState({ loading: true });
-        this.initNamespaces();
     };
-}
 
-export namespace UserSettingsNamespacesComponent {
-    export interface Props extends WithStyles<typeof namespacesStyle> {
-    }
+    const handleNamespaceCreated = () => {
+        setLoading(true);
+        initNamespaces();
+    };
 
-    export interface State {
-        loading: boolean;
-        namespaces: Namespace[];
-        addDialogIsOpen: boolean;
-        chosenNamespace?: Namespace;
-    }
-}
-
-export const UserSettingsNamespaces = withStyles(namespacesStyle)(UserSettingsNamespacesComponent);
+    const namespaceAccessUrl = pageSettings.urls.namespaceAccessInfo;
+    return <>
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
+                alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+            }}
+        >
+            <Box>
+                <Typography variant='h5' gutterBottom>Namespaces</Typography>
+            </Box>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                }}
+            >
+                <Box sx={{ mr: 1, mb: 1 }}>
+                    <CreateNamespaceDialog
+                        namespaceCreated={handleNamespaceCreated}
+                    />
+                </Box>
+            </Box>
+        </Box>
+        <Box mt={2}>
+            <DelayedLoadIndicator loading={loading}/>
+            {
+                namespaces.length > 0 && chosenNamespace ?
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            width: '100%',
+                            flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' },
+                            alignItems: { xs: 'center', sm: 'center', md: 'center', lg: 'normal', xl: 'normal' }
+                        }}
+                    >
+                        <NamespacesTabs
+                            chosenNamespace={chosenNamespace}
+                            namespaces={namespaces}
+                            onChange={handleChangeNamespace}
+                        />
+                        <NamespaceDetail
+                            namespace={chosenNamespace}
+                            setLoadingState={(loading: boolean) => setLoading(loading)}
+                            filterUsers={(foundUser: UserData) => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName}
+                            fixSelf={true}
+                            namespaceAccessUrl={namespaceAccessUrl}
+                            theme={pageSettings.themeType}/>
+                    </Box>
+                    : !loading ? <Typography variant='body1'>No namespaces available. {
+                        namespaceAccessUrl
+                            ? <>Read <Link color='secondary' href={namespaceAccessUrl} target='_blank'>here</Link> about claiming namespaces.</>
+                            : null
+                    }
+                    </Typography> : null
+            }
+        </Box>
+    </>;
+};

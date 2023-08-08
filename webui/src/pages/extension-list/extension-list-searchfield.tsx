@@ -8,44 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext } from 'react';
-import SearchIcon from '@material-ui/icons/Search';
-import { Paper, IconButton, makeStyles, InputBase } from '@material-ui/core';
+import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useContext } from 'react';
+import SearchIcon from '@mui/icons-material/Search';
+import { Paper, IconButton, InputBase } from '@mui/material';
 import { MainContext } from '../../context';
-
-const useStyles = makeStyles((theme) => ({
-    search: {
-        flex: 2,
-        display: 'flex',
-        marginRight: theme.spacing(1),
-        [theme.breakpoints.down('sm')]: {
-            marginRight: 0,
-            marginBottom: theme.spacing(2),
-        },
-    },
-    input: {
-        flex: 1,
-        paddingLeft: theme.spacing(1)
-    },
-    iconButton: {
-        backgroundColor: theme.palette.secondary.main,
-        borderRadius: '0 4px 4px 0',
-        padding: theme.spacing(1),
-        transition: 'all 0s',
-        '&:hover': {
-            filter: 'invert(100%)',
-        }
-    },
-    searchIconLight: {
-        color: '#ffffff',
-    },
-    searchIconDark: {
-        color: '#111111',
-    },
-    error: {
-        border: `2px solid ${theme.palette.error.main}`
-    }
-}));
 
 interface ExtensionListSearchfieldProps {
     onSearchChanged: (s: string) => void;
@@ -58,34 +24,41 @@ interface ExtensionListSearchfieldProps {
 }
 
 export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfieldProps> = props => {
-    const classes = useStyles();
 
     const { pageSettings } = useContext(MainContext);
 
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         props.onSearchChanged(event.target.value);
     };
 
-    const handleSearchButtonClick = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const handleSearchButtonClick = () => {
         if (props.onSearchSubmit) {
             props.onSearchSubmit(props.searchQuery || '');
         }
     };
 
-    const searchIconClass = pageSettings?.themeType === 'dark' ? classes.searchIconDark : classes.searchIconLight;
-
+    const searchIconColor = pageSettings?.themeType === 'dark' ? '#111111' : '#ffffff';
     return (<>
-        <Paper className={classes.search} classes={{ root: props.error ? classes.error : '' }}>
+        <Paper
+            sx={{
+                flex: 2,
+                display: 'flex',
+                mr: { xs: 0, sm: 0, md: 1, lg: 1, xl: 1 },
+                mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 0 },
+                border: (props.error ? 2 : 0),
+                borderColor: 'error.main'
+            }}
+        >
             <InputBase
                 autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
-                value={props.searchQuery || ''}
+                value={props.searchQuery}
                 onChange={handleSearchChange}
-                className={classes.input}
+                sx={{ flex: 1, pl: 1 }}
                 placeholder={props.placeholder}
                 id='search-input'
                 type='search'
                 inputMode='search'
-                onKeyPress={(e: React.KeyboardEvent) => {
+                onKeyDown={(e: KeyboardEvent) => {
                     if (e.key === 'Enter' && props.onSearchSubmit) {
                         props.onSearchSubmit(props.searchQuery || '');
                     }
@@ -95,11 +68,24 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
                 htmlFor='search-input'
                 className='visually-hidden' >
                 Search for Name, Tags or Description
-                                </label>
+            </label>
             {
                 props.hideIconButton ? '' :
-                    <IconButton color='primary' aria-label='Search' classes={{ root: classes.iconButton }} onClick={handleSearchButtonClick}>
-                        <SearchIcon classes={{ root: searchIconClass }} />
+                    <IconButton
+                        color='primary'
+                        aria-label='Search'
+                        onClick={handleSearchButtonClick}
+                        sx={{
+                            bgcolor: 'secondary.main',
+                            borderRadius: '0 4px 4px 0',
+                            p: 1,
+                            transition: 'all 0s',
+                            '&:hover': {
+                                filter: 'invert(100%)'
+                            }
+                        }}
+                    >
+                        <SearchIcon sx={{ color: searchIconColor }} />
                     </IconButton>
             }
         </Paper>
