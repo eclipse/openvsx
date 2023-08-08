@@ -107,8 +107,8 @@
         "watch:default": "webpack --config ./configs/webpack.config.js --mode development --watch",
         "start:default": "node lib/default/server",
         "copy2server": "cp -rfv static ../server/src/dev/resources/",
-        "publish:next": "yarn publish --new-version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" --tag next --no-git-tag-version",
-        "publish:latest": "yarn publish --tag latest"
+        "publish:next": "yarn npm publish --tag next",
+        "publish:latest": "yarn npm publish --tag latest"
     },
     "packageManager": "yarn@3.6.1"
 }
