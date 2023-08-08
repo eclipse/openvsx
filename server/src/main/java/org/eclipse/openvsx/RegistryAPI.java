@@ -1084,8 +1084,8 @@ public class RegistryAPI {
                 })
             )
             String targetPlatform,
-            @RequestParam(defaultValue = "200")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "200"))
+            @RequestParam(defaultValue = "100")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "100"))
             int size,
             @RequestParam(defaultValue = "0")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
@@ -1214,8 +1214,8 @@ public class RegistryAPI {
                 })
             )
             String targetPlatform,
-            @RequestParam(defaultValue = "200")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "200"))
+            @RequestParam(defaultValue = "100")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "100"))
             int size,
             @RequestParam(defaultValue = "0")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))

@@ -662,9 +662,9 @@ public class RegistryAPITest {
         var query = new QueryRequest();
         query.namespaceUuid = "1234";
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/-/query?namespaceUuid={namespaceUuid}", "1234"))
                 .andExpect(status().isOk())
@@ -772,9 +772,9 @@ public class RegistryAPITest {
         query.extensionName = "bar";
         query.includeAllVersions = true;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "true"))
                 .andExpect(status().isOk())
@@ -832,10 +832,10 @@ public class RegistryAPITest {
         query.extensionName = "bar";
         query.includeAllVersions = false;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         versions = versions.stream().filter(ev -> ev.getVersion().equals("3.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "false"))
                 .andExpect(status().isOk())
@@ -860,10 +860,10 @@ public class RegistryAPITest {
         query.extensionName = "bar";
         query.includeAllVersions = false;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         versions = versions.stream().filter(ev -> ev.getVersion().equals("3.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "links"))
                 .andExpect(status().isOk())
@@ -893,10 +893,10 @@ public class RegistryAPITest {
         query.extensionName = "bar";
         query.includeAllVersions = false;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "links"))
                 .andExpect(status().isOk())
@@ -943,9 +943,9 @@ public class RegistryAPITest {
         query.targetPlatform = "linux-x64";
         query.includeAllVersions = true;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&targetPlatform={targetPlatform}&includeAllVersions={includeAllVersions}", "foo.bar", "linux-x64", "true"))
                 .andExpect(status().isOk())
@@ -982,10 +982,10 @@ public class RegistryAPITest {
         query.extensionVersion = "2.0.0";
         query.includeAllVersions = false;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&extensionVersion={extensionVersion}&includeAllVersions={includeAllVersions}", "foo.bar", "2.0.0", "true"))
                 .andExpect(status().isOk())
@@ -1022,10 +1022,10 @@ public class RegistryAPITest {
         query.extensionVersion = "2.0.0";
         query.includeAllVersions = false;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&extensionVersion={extensionVersion}&includeAllVersions={includeAllVersions}", "foo.bar", "2.0.0", "false"))
                 .andExpect(status().isOk())
@@ -1050,10 +1050,10 @@ public class RegistryAPITest {
         query.extensionVersion = "2.0.0";
         query.includeAllVersions = false;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&extensionVersion={extensionVersion}&includeAllVersions={includeAllVersions}", "foo.bar", "2.0.0", "links"))
                 .andExpect(status().isOk())
@@ -1111,9 +1111,9 @@ public class RegistryAPITest {
         query.namespaceUuid = "1234";
         query.includeAllVersions = false;
         query.offset = 0;
-        query.size = 200;
+        query.size = 100;
         Mockito.when(repositories.findActiveVersions(query))
-                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(200), versions.size()));
+                .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?namespaceUuid={namespaceUuid}", "1234"))
                 .andExpect(status().isOk())
@@ -1715,7 +1715,7 @@ public class RegistryAPITest {
         var request = new QueryRequest();
         request.namespaceName = namespaceName;
         request.extensionName = extensionName;
-        request.size = 200;
+        request.size = 100;
 
         Mockito.when(repositories.findActiveVersions(request))
                 .thenReturn(new PageImpl<>(Collections.emptyList(), Pageable.ofSize(request.size), 0));
@@ -1841,7 +1841,7 @@ public class RegistryAPITest {
                             ? List.of(extVersion)
                             : Collections.<ExtensionVersion>emptyList();
 
-                    return new PageImpl<>(versions, Pageable.ofSize(200), versions.size());
+                    return new PageImpl<>(versions, Pageable.ofSize(100), versions.size());
                 });
 
         var fileTypes = List.of(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG);

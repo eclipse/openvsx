@@ -86,7 +86,7 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @Deprecated
     public String namespaceAccess;
 
-    @Schema(description = "Map of available versions to their metadata URLs. Deprecated: only returns the last 200 versions. Use allVersionsUrl instead.")
+    @Schema(description = "Map of available versions to their metadata URLs. Deprecated: only returns the last 100 versions. Use allVersionsUrl instead.")
     @Deprecated
     public Map<String, String> allVersions;
 
