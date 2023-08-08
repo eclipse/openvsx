@@ -7,6 +7,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Dependencies
 
 - Upgrade `yarn` from `1.22.19` to `3.6.1` ([#793](https://github.com/eclipse/openvsx/pull/793))
+- Upgrade `word-wrap` from `1.2.3` to `1.2.4` ([#787](https://github.com/eclipse/openvsx/pull/787))
 
 ---
 
