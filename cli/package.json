@@ -60,8 +60,8 @@
         "watch": "tsc -w -p ./tsconfig.json",
         "lint": "eslint -c ./configs/eslintrc.json --ext .ts src",
         "prepare": "yarn run clean && yarn run build",
-        "publish:next": "yarn publish --new-version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" --tag next --no-git-tag-version",
-        "publish:latest": "yarn publish --tag latest"
+        "publish:next": "yarn npm publish --tag next",
+        "publish:latest": "yarn npm publish --tag latest"
     },
     "packageManager": "yarn@3.6.1"
 }
