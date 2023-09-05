@@ -9,9 +9,8 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
-import Button from '@mui/base/Button';
 import { styled } from '@mui/material/styles';
-import { Avatar, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@mui/material';
+import { Avatar, Button, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { isError, CsrfTokenJson } from '../../extension-registry-types';
 import { UserSettingsRoutes } from './user-settings';

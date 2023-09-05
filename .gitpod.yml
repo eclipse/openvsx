@@ -31,9 +31,14 @@ ports:
 tasks:
 - init: |
     # Build all components
-    yarn --cwd cli
-    yarn --cwd webui
-    yarn --cwd webui build:default
+    cd cli
+    yarn install
+    yarn prepare
+    cd ../webui
+    yarn install
+    yarn build
+    yarn build:default
+    cd ..
     server/gradlew -p server assemble downloadTestExtensions
   name: Server
   command: |
