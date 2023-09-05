@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -44,10 +43,7 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String VSIX_MANIFEST = "extension.vsixmanifest";
     private static final String PACKAGE_JSON = "extension/package.json";
     private static final String[] README = { "extension/README.md", "extension/README", "extension/README.txt" };
-    private static final String[] LICENSE = { "extension/LICENSE.md", "extension/LICENSE", "extension/LICENSE.txt" };
     private static final String[] CHANGELOG = { "extension/CHANGELOG.md", "extension/CHANGELOG", "extension/CHANGELOG.txt" };
-
-    private static final Pattern LICENSE_PATTERN = Pattern.compile("SEE( (?<license>\\S+))? LICENSE IN (?<file>\\S+)");
 
     protected final Logger logger = LoggerFactory.getLogger(ExtensionProcessor.class);
 
@@ -410,40 +406,19 @@ public class ExtensionProcessor implements AutoCloseable {
         var license = new FileResource();
         license.setExtension(extVersion);
         license.setType(FileResource.LICENSE);
-        // Parse specifications in the form "SEE MIT LICENSE IN LICENSE.txt"
-        if (!StringUtils.isEmpty(extVersion.getLicense())) {
-            var matcher = LICENSE_PATTERN.matcher(extVersion.getLicense());
-            if (matcher.find()) {
-                extVersion.setLicense(matcher.group("license"));
-                var fileName = matcher.group("file");
-                var bytes = ArchiveUtil.readEntry(zipFile, "extension/" + fileName);
-                if (bytes != null) {
-                    var lastSegmentIndex = fileName.lastIndexOf('/');
-                    var lastSegment = fileName.substring(lastSegmentIndex + 1);
-                    license.setName(lastSegment);
-                    license.setContent(bytes);
-                    detectLicense(bytes, extVersion);
-                    return license;
-                }
-            }
+
+        var assetPath = tryGetLicensePath();
+        if(StringUtils.isNotEmpty(assetPath)) {
+            var bytes = ArchiveUtil.readEntry(zipFile, assetPath);
+            var lastSegmentIndex = assetPath.lastIndexOf('/');
+            var lastSegment = assetPath.substring(lastSegmentIndex + 1);
+
+            license.setName(lastSegment);
+            license.setContent(bytes);
+            return license;
         }
 
-        var result = readFromVsixPackage(ExtensionQueryResult.ExtensionFile.FILE_LICENSE, LICENSE);
-        if (result == null) {
-            return null;
-        }
-
-        license.setName(result.getSecond());
-        license.setContent(result.getFirst());
-        detectLicense(result.getFirst(), extVersion);
-        return license;
-    }
-
-    private void detectLicense(byte[] content, ExtensionVersion extVersion) {
-        if (StringUtils.isEmpty(extVersion.getLicense())) {
-            var detection = new LicenseDetection();
-            extVersion.setLicense(detection.detectLicense(content));
-        }
+        return null;
     }
 
     private Pair<byte[], String> readFromVsixPackage(String assetType, String[] alternateNames) {
@@ -470,6 +445,14 @@ public class ExtensionProcessor implements AutoCloseable {
             }
         }
         return null;
+    }
+
+    private String tryGetLicensePath() {
+        loadVsixManifest();
+        var licensePath = vsixManifest.path("Metadata").path("License").asText();
+        return licensePath.isEmpty()
+                ? tryGetAssetPath(ExtensionQueryResult.ExtensionFile.FILE_LICENSE)
+                : licensePath;
     }
 
     private String tryGetAssetPath(String type) {
