@@ -6,6 +6,7 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -13,11 +14,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function7;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row7;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -118,22 +122,17 @@ public class SpringSession extends TableImpl<SpringSessionRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.SPRING_SESSION_IX1, Indexes.SPRING_SESSION_IX2, Indexes.SPRING_SESSION_IX3);
+        return Arrays.asList(Indexes.SPRING_SESSION_IX1, Indexes.SPRING_SESSION_IX2, Indexes.SPRING_SESSION_IX3);
     }
 
     @Override
     public UniqueKey<SpringSessionRecord> getPrimaryKey() {
         return Keys.SPRING_SESSION_PK;
-    }
-
-    @Override
-    public List<UniqueKey<SpringSessionRecord>> getKeys() {
-        return Arrays.<UniqueKey<SpringSessionRecord>>asList(Keys.SPRING_SESSION_PK);
     }
 
     @Override
@@ -144,6 +143,11 @@ public class SpringSession extends TableImpl<SpringSessionRecord> {
     @Override
     public SpringSession as(Name alias) {
         return new SpringSession(alias, this);
+    }
+
+    @Override
+    public SpringSession as(Table<?> alias) {
+        return new SpringSession(alias.getQualifiedName(), this);
     }
 
     /**
@@ -162,6 +166,14 @@ public class SpringSession extends TableImpl<SpringSessionRecord> {
         return new SpringSession(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public SpringSession rename(Table<?> name) {
+        return new SpringSession(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row7 type methods
     // -------------------------------------------------------------------------
@@ -169,5 +181,20 @@ public class SpringSession extends TableImpl<SpringSessionRecord> {
     @Override
     public Row7<String, String, Long, Long, Integer, Long, String> fieldsRow() {
         return (Row7) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function7<? super String, ? super String, ? super Long, ? super Long, ? super Integer, ? super Long, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super String, ? super String, ? super Long, ? super Long, ? super Integer, ? super Long, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

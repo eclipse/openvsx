@@ -12,14 +12,12 @@ package org.eclipse.openvsx.storage;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.Download;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.TempFile;
-import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -279,12 +277,6 @@ public class StorageUtilService implements IStorageService {
             // don't count downloads twice
             return;
         }
-
-        var download = new Download();
-        download.setAmount(1);
-        download.setTimestamp(TimeUtil.getCurrentUTC());
-        download.setFileResourceId(resource.getId());
-        entityManager.persist(download);
 
         resource = entityManager.merge(resource);
         var extension = resource.getExtension().getExtension();

@@ -496,14 +496,16 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     }
 
     /**
-     * Setter for <code>public.extension_version.universal_target_platform</code>.
+     * Setter for
+     * <code>public.extension_version.universal_target_platform</code>.
      */
     public void setUniversalTargetPlatform(Boolean value) {
         set(34, value);
     }
 
     /**
-     * Getter for <code>public.extension_version.universal_target_platform</code>.
+     * Getter for
+     * <code>public.extension_version.universal_target_platform</code>.
      */
     public Boolean getUniversalTargetPlatform() {
         return (Boolean) get(34);
@@ -570,5 +572,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setSemverIsPreRelease(semverIsPreRelease);
         setSemverBuildMetadata(semverBuildMetadata);
         setUniversalTargetPlatform(universalTargetPlatform);
+        resetChangedOnNotNull();
     }
 }

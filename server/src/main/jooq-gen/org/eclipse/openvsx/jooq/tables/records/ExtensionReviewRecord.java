@@ -363,5 +363,6 @@ public class ExtensionReviewRecord extends UpdatableRecordImpl<ExtensionReviewRe
         setTitle(title);
         setExtensionId(extensionId);
         setUserId(userId);
+        resetChangedOnNotNull();
     }
 }

@@ -4,18 +4,20 @@
 package org.eclipse.openvsx.jooq.tables;
 
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.JobrunrMigrationsRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function3;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row3;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -96,17 +98,12 @@ public class JobrunrMigrations extends TableImpl<JobrunrMigrationsRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public UniqueKey<JobrunrMigrationsRecord> getPrimaryKey() {
         return Keys.JOBRUNR_MIGRATIONS_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<JobrunrMigrationsRecord>> getKeys() {
-        return Arrays.<UniqueKey<JobrunrMigrationsRecord>>asList(Keys.JOBRUNR_MIGRATIONS_PKEY);
     }
 
     @Override
@@ -117,6 +114,11 @@ public class JobrunrMigrations extends TableImpl<JobrunrMigrationsRecord> {
     @Override
     public JobrunrMigrations as(Name alias) {
         return new JobrunrMigrations(alias, this);
+    }
+
+    @Override
+    public JobrunrMigrations as(Table<?> alias) {
+        return new JobrunrMigrations(alias.getQualifiedName(), this);
     }
 
     /**
@@ -135,6 +137,14 @@ public class JobrunrMigrations extends TableImpl<JobrunrMigrationsRecord> {
         return new JobrunrMigrations(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public JobrunrMigrations rename(Table<?> name) {
+        return new JobrunrMigrations(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row3 type methods
     // -------------------------------------------------------------------------
@@ -142,5 +152,20 @@ public class JobrunrMigrations extends TableImpl<JobrunrMigrationsRecord> {
     @Override
     public Row3<String, String, String> fieldsRow() {
         return (Row3) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function3<? super String, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function3<? super String, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

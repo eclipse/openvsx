@@ -16,22 +16,72 @@ import org.jooq.impl.SQLDataType;
 public class Sequences {
 
     /**
-     * The sequence <code>public.download_id_seq</code>
+     * The sequence <code>public.admin_statistics_seq</code>
      */
-    public static final Sequence<Long> DOWNLOAD_ID_SEQ = Internal.createSequence("download_id_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Long> ADMIN_STATISTICS_SEQ = Internal.createSequence("admin_statistics_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
-     * The sequence <code>public.entity_active_state_id_seq</code>
+     * The sequence <code>public.azure_download_count_processed_item_seq</code>
      */
-    public static final Sequence<Long> ENTITY_ACTIVE_STATE_ID_SEQ = Internal.createSequence("entity_active_state_id_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Long> AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_SEQ = Internal.createSequence("azure_download_count_processed_item_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
-     * The sequence <code>public.file_resource_id_seq</code>
+     * The sequence <code>public.extension_review_seq</code>
      */
-    public static final Sequence<Long> FILE_RESOURCE_ID_SEQ = Internal.createSequence("file_resource_id_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Long> EXTENSION_REVIEW_SEQ = Internal.createSequence("extension_review_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.extension_seq</code>
+     */
+    public static final Sequence<Long> EXTENSION_SEQ = Internal.createSequence("extension_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.extension_version_seq</code>
+     */
+    public static final Sequence<Long> EXTENSION_VERSION_SEQ = Internal.createSequence("extension_version_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.file_resource_seq</code>
+     */
+    public static final Sequence<Long> FILE_RESOURCE_SEQ = Internal.createSequence("file_resource_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
      * The sequence <code>public.hibernate_sequence</code>
      */
     public static final Sequence<Long> HIBERNATE_SEQUENCE = Internal.createSequence("hibernate_sequence", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
+     * The sequence <code>public.migration_item_seq</code>
+     */
+    public static final Sequence<Long> MIGRATION_ITEM_SEQ = Internal.createSequence("migration_item_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.namespace_membership_seq</code>
+     */
+    public static final Sequence<Long> NAMESPACE_MEMBERSHIP_SEQ = Internal.createSequence("namespace_membership_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.namespace_seq</code>
+     */
+    public static final Sequence<Long> NAMESPACE_SEQ = Internal.createSequence("namespace_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.persisted_log_seq</code>
+     */
+    public static final Sequence<Long> PERSISTED_LOG_SEQ = Internal.createSequence("persisted_log_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.personal_access_token_seq</code>
+     */
+    public static final Sequence<Long> PERSONAL_ACCESS_TOKEN_SEQ = Internal.createSequence("personal_access_token_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.signature_key_pair_seq</code>
+     */
+    public static final Sequence<Long> SIGNATURE_KEY_PAIR_SEQ = Internal.createSequence("signature_key_pair_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.user_data_seq</code>
+     */
+    public static final Sequence<Long> USER_DATA_SEQ = Internal.createSequence("user_data_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 }

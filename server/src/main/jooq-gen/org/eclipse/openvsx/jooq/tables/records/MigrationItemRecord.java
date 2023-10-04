@@ -213,5 +213,6 @@ public class MigrationItemRecord extends UpdatableRecordImpl<MigrationItemRecord
         setMigrationScript(migrationScript);
         setEntityId(entityId);
         setMigrationScheduled(migrationScheduled);
+        resetChangedOnNotNull();
     }
 }

@@ -20,42 +20,48 @@ public class AdminStatisticsTopMostActivePublishingUsersRecord extends TableReco
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>public.admin_statistics_top_most_active_publishing_users.admin_statistics_id</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_most_active_publishing_users.admin_statistics_id</code>.
      */
     public void setAdminStatisticsId(Long value) {
         set(0, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_most_active_publishing_users.admin_statistics_id</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_most_active_publishing_users.admin_statistics_id</code>.
      */
     public Long getAdminStatisticsId() {
         return (Long) get(0);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_top_most_active_publishing_users.login_name</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_most_active_publishing_users.login_name</code>.
      */
     public void setLoginName(String value) {
         set(1, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_most_active_publishing_users.login_name</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_most_active_publishing_users.login_name</code>.
      */
     public String getLoginName() {
         return (String) get(1);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_top_most_active_publishing_users.extension_version_count</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_most_active_publishing_users.extension_version_count</code>.
      */
     public void setExtensionVersionCount(Integer value) {
         set(2, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_most_active_publishing_users.extension_version_count</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_most_active_publishing_users.extension_version_count</code>.
      */
     public Integer getExtensionVersionCount() {
         return (Integer) get(2);
@@ -158,7 +164,8 @@ public class AdminStatisticsTopMostActivePublishingUsersRecord extends TableReco
     }
 
     /**
-     * Create a detached, initialised AdminStatisticsTopMostActivePublishingUsersRecord
+     * Create a detached, initialised
+     * AdminStatisticsTopMostActivePublishingUsersRecord
      */
     public AdminStatisticsTopMostActivePublishingUsersRecord(Long adminStatisticsId, String loginName, Integer extensionVersionCount) {
         super(AdminStatisticsTopMostActivePublishingUsers.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS);
@@ -166,5 +173,6 @@ public class AdminStatisticsTopMostActivePublishingUsersRecord extends TableReco
         setAdminStatisticsId(adminStatisticsId);
         setLoginName(loginName);
         setExtensionVersionCount(extensionVersionCount);
+        resetChangedOnNotNull();
     }
 }

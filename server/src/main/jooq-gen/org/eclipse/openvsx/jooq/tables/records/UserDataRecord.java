@@ -509,5 +509,6 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
         setEclipseData(eclipseData);
         setEclipseToken(eclipseToken);
         setGithubToken(githubToken);
+        resetChangedOnNotNull();
     }
 }

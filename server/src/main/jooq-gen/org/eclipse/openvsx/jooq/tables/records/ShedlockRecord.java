@@ -215,5 +215,6 @@ public class ShedlockRecord extends UpdatableRecordImpl<ShedlockRecord> implemen
         setLockUntil(lockUntil);
         setLockedAt(lockedAt);
         setLockedBy(lockedBy);
+        resetChangedOnNotNull();
     }
 }

@@ -5,7 +5,6 @@ package org.eclipse.openvsx.jooq;
 
 
 import org.eclipse.openvsx.jooq.tables.AdminStatistics;
-import org.eclipse.openvsx.jooq.tables.Download;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -13,6 +12,7 @@ import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
 import org.eclipse.openvsx.jooq.tables.JobrunrBackgroundjobservers;
 import org.eclipse.openvsx.jooq.tables.JobrunrJobs;
+import org.eclipse.openvsx.jooq.tables.JobrunrRecurringJobs;
 import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
@@ -32,7 +32,6 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
-    public static final Index DOWNLOAD_TIMESTAMP_BRIN_IDX = Internal.createIndex(DSL.name("download_timestamp_brin_idx"), Download.DOWNLOAD, new OrderField[] { Download.DOWNLOAD.TIMESTAMP }, false);
     public static final Index EXTENSION__NAMESPACE_ID__IDX = Internal.createIndex(DSL.name("extension__namespace_id__idx"), Extension.EXTENSION, new OrderField[] { Extension.EXTENSION.NAMESPACE_ID }, false);
     public static final Index EXTENSION_REVIEW__EXTENSION_ID__IDX = Internal.createIndex(DSL.name("extension_review__extension_id__idx"), ExtensionReview.EXTENSION_REVIEW, new OrderField[] { ExtensionReview.EXTENSION_REVIEW.EXTENSION_ID }, false);
     public static final Index EXTENSION_REVIEW__USER_ID__IDX = Internal.createIndex(DSL.name("extension_review__user_id__idx"), ExtensionReview.EXTENSION_REVIEW, new OrderField[] { ExtensionReview.EXTENSION_REVIEW.USER_ID }, false);
@@ -52,7 +51,8 @@ public class Indexes {
     public static final Index JOBRUNR_JOB_RCI_IDX = Internal.createIndex(DSL.name("jobrunr_job_rci_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.RECURRINGJOBID }, false);
     public static final Index JOBRUNR_JOB_SCHEDULED_AT_IDX = Internal.createIndex(DSL.name("jobrunr_job_scheduled_at_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.SCHEDULEDAT }, false);
     public static final Index JOBRUNR_JOB_SIGNATURE_IDX = Internal.createIndex(DSL.name("jobrunr_job_signature_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.JOBSIGNATURE }, false);
-    public static final Index JOBRUNR_JOB_UPDATED_AT_IDX = Internal.createIndex(DSL.name("jobrunr_job_updated_at_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.UPDATEDAT }, false);
+    public static final Index JOBRUNR_JOBS_STATE_UPDATED_IDX = Internal.createIndex(DSL.name("jobrunr_jobs_state_updated_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.STATE, JobrunrJobs.JOBRUNR_JOBS.UPDATEDAT }, false);
+    public static final Index JOBRUNR_RECURRING_JOB_CREATED_AT_IDX = Internal.createIndex(DSL.name("jobrunr_recurring_job_created_at_idx"), JobrunrRecurringJobs.JOBRUNR_RECURRING_JOBS, new OrderField[] { JobrunrRecurringJobs.JOBRUNR_RECURRING_JOBS.CREATEDAT }, false);
     public static final Index JOBRUNR_STATE_IDX = Internal.createIndex(DSL.name("jobrunr_state_idx"), JobrunrJobs.JOBRUNR_JOBS, new OrderField[] { JobrunrJobs.JOBRUNR_JOBS.STATE }, false);
     public static final Index NAMESPACE_MEMBERSHIP__NAMESPACE__IDX = Internal.createIndex(DSL.name("namespace_membership__namespace__idx"), NamespaceMembership.NAMESPACE_MEMBERSHIP, new OrderField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.NAMESPACE }, false);
     public static final Index NAMESPACE_MEMBERSHIP__USER_DATA__IDX = Internal.createIndex(DSL.name("namespace_membership__user_data__idx"), NamespaceMembership.NAMESPACE_MEMBERSHIP, new OrderField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.USER_DATA }, false);

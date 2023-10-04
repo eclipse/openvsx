@@ -36,7 +36,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -149,7 +148,7 @@ public class AzureDownloadCountService {
         logger.info("<< updateDownloadCounts");
     }
 
-    private Map<String, List<LocalDateTime>> processBlobItem(String blobName) {
+    private Map<String, Integer> processBlobItem(String blobName) {
         try (
                 var downloadsTempFile = downloadBlobItem(blobName);
                 var reader = Files.newBufferedReader(downloadsTempFile.getPath())
@@ -176,10 +175,9 @@ public class AzureDownloadCountService {
                     .map(entry -> {
                         var pathParams = entry.getKey();
                         var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
-                        var time = LocalDateTime.parse(entry.getValue(), DateTimeFormatter.ISO_ZONED_DATE_TIME);
-                        return new AbstractMap.SimpleEntry<>(fileName, time);
+                        return new AbstractMap.SimpleEntry<>(fileName, 1);
                     })
-                    .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+                    .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingInt(Map.Entry::getValue)));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -54,33 +54,21 @@ public class AzureDownloadCountProcessor {
         entityManager.persist(processedItem);
     }
 
-    public Map<Long, List<Download>> processDownloadCounts(Map<String, List<LocalDateTime>> files) {
+    public Map<Long, Integer> processDownloadCounts(Map<String, Integer> files) {
         return repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
-                .map(fileResource -> new AbstractMap.SimpleEntry<>(fileResource, toDownloads(fileResource, files)))
+                .map(fileResource -> new AbstractMap.SimpleEntry<>(fileResource, files.get(fileResource.getName().toUpperCase())))
                 .collect(Collectors.groupingBy(
                         e -> e.getKey().getExtension().getExtension().getId(),
-                        Collectors.mapping(Map.Entry::getValue, Collectors.flatMapping(List::stream, Collectors.toList()))
+                        Collectors.summingInt(Map.Entry::getValue)
                 ));
     }
 
-    private List<Download> toDownloads(FileResource fileResource, Map<String, List<LocalDateTime>> files) {
-        return files.get(fileResource.getName().toUpperCase()).stream()
-                .map(time -> {
-                    var download = new Download();
-                    download.setAmount(1);
-                    download.setTimestamp(time);
-                    download.setFileResourceId(fileResource.getId());
-                    return download;
-                }).collect(Collectors.toList());
-    }
-
     @Transactional
-    public List<Extension> increaseDownloadCounts(Map<Long, List<Download>> extensionDownloads) {
+    public List<Extension> increaseDownloadCounts(Map<Long, Integer> extensionDownloads) {
         var extensions = repositories.findExtensions(extensionDownloads.keySet()).toList();
         extensions.forEach(extension -> {
             var downloads = extensionDownloads.get(extension.getId());
-            downloads.forEach(entityManager::persist);
-            extension.setDownloadCount(extension.getDownloadCount() + downloads.size());
+            extension.setDownloadCount(extension.getDownloadCount() + downloads);
         });
 
         return extensions;

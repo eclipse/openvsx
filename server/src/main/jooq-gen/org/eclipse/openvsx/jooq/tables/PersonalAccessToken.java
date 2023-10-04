@@ -7,16 +7,20 @@ package org.eclipse.openvsx.jooq.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.PersonalAccessTokenRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function7;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row7;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -91,14 +95,16 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
     }
 
     /**
-     * Create an aliased <code>public.personal_access_token</code> table reference
+     * Create an aliased <code>public.personal_access_token</code> table
+     * reference
      */
     public PersonalAccessToken(String alias) {
         this(DSL.name(alias), PERSONAL_ACCESS_TOKEN);
     }
 
     /**
-     * Create an aliased <code>public.personal_access_token</code> table reference
+     * Create an aliased <code>public.personal_access_token</code> table
+     * reference
      */
     public PersonalAccessToken(Name alias) {
         this(alias, PERSONAL_ACCESS_TOKEN);
@@ -117,7 +123,7 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
@@ -126,17 +132,20 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
     }
 
     @Override
-    public List<UniqueKey<PersonalAccessTokenRecord>> getKeys() {
-        return Arrays.<UniqueKey<PersonalAccessTokenRecord>>asList(Keys.PERSONAL_ACCESS_TOKEN_PKEY, Keys.UKJEUD5MSSQBQKID58RD2K1INOF);
+    public List<UniqueKey<PersonalAccessTokenRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UKJEUD5MSSQBQKID58RD2K1INOF);
     }
 
     @Override
     public List<ForeignKey<PersonalAccessTokenRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<PersonalAccessTokenRecord, ?>>asList(Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L);
+        return Arrays.asList(Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L);
     }
 
     private transient UserData _userData;
 
+    /**
+     * Get the implicit join path to the <code>public.user_data</code> table.
+     */
     public UserData userData() {
         if (_userData == null)
             _userData = new UserData(this, Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L);
@@ -152,6 +161,11 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
     @Override
     public PersonalAccessToken as(Name alias) {
         return new PersonalAccessToken(alias, this);
+    }
+
+    @Override
+    public PersonalAccessToken as(Table<?> alias) {
+        return new PersonalAccessToken(alias.getQualifiedName(), this);
     }
 
     /**
@@ -170,6 +184,14 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
         return new PersonalAccessToken(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public PersonalAccessToken rename(Table<?> name) {
+        return new PersonalAccessToken(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row7 type methods
     // -------------------------------------------------------------------------
@@ -177,5 +199,20 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
     @Override
     public Row7<Long, LocalDateTime, Boolean, LocalDateTime, String, String, Long> fieldsRow() {
         return (Row7) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function7<? super Long, ? super LocalDateTime, ? super Boolean, ? super LocalDateTime, ? super String, ? super String, ? super Long, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super Long, ? super LocalDateTime, ? super Boolean, ? super LocalDateTime, ? super String, ? super String, ? super Long, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

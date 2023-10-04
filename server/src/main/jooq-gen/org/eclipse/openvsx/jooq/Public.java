@@ -15,8 +15,6 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtension
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
 import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
-import org.eclipse.openvsx.jooq.tables.Download;
-import org.eclipse.openvsx.jooq.tables.EntityActiveState;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -69,22 +67,26 @@ public class Public extends SchemaImpl {
     public final AdminStatisticsExtensionsByRating ADMIN_STATISTICS_EXTENSIONS_BY_RATING = AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING;
 
     /**
-     * The table <code>public.admin_statistics_publishers_by_extensions_published</code>.
+     * The table
+     * <code>public.admin_statistics_publishers_by_extensions_published</code>.
      */
     public final AdminStatisticsPublishersByExtensionsPublished ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED = AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED;
 
     /**
-     * The table <code>public.admin_statistics_top_most_active_publishing_users</code>.
+     * The table
+     * <code>public.admin_statistics_top_most_active_publishing_users</code>.
      */
     public final AdminStatisticsTopMostActivePublishingUsers ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS = AdminStatisticsTopMostActivePublishingUsers.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS;
 
     /**
-     * The table <code>public.admin_statistics_top_most_downloaded_extensions</code>.
+     * The table
+     * <code>public.admin_statistics_top_most_downloaded_extensions</code>.
      */
     public final AdminStatisticsTopMostDownloadedExtensions ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS = AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS;
 
     /**
-     * The table <code>public.admin_statistics_top_namespace_extension_versions</code>.
+     * The table
+     * <code>public.admin_statistics_top_namespace_extension_versions</code>.
      */
     public final AdminStatisticsTopNamespaceExtensionVersions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS = AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS;
 
@@ -97,16 +99,6 @@ public class Public extends SchemaImpl {
      * The table <code>public.azure_download_count_processed_item</code>.
      */
     public final AzureDownloadCountProcessedItem AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM = AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM;
-
-    /**
-     * The table <code>public.download</code>.
-     */
-    public final Download DOWNLOAD = Download.DOWNLOAD;
-
-    /**
-     * The table <code>public.entity_active_state</code>.
-     */
-    public final EntityActiveState ENTITY_ACTIVE_STATE = EntityActiveState.ENTITY_ACTIVE_STATE;
 
     /**
      * The table <code>public.extension</code>.
@@ -233,16 +225,27 @@ public class Public extends SchemaImpl {
 
     @Override
     public final List<Sequence<?>> getSequences() {
-        return Arrays.<Sequence<?>>asList(
-            Sequences.DOWNLOAD_ID_SEQ,
-            Sequences.ENTITY_ACTIVE_STATE_ID_SEQ,
-            Sequences.FILE_RESOURCE_ID_SEQ,
-            Sequences.HIBERNATE_SEQUENCE);
+        return Arrays.asList(
+            Sequences.ADMIN_STATISTICS_SEQ,
+            Sequences.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_SEQ,
+            Sequences.EXTENSION_REVIEW_SEQ,
+            Sequences.EXTENSION_SEQ,
+            Sequences.EXTENSION_VERSION_SEQ,
+            Sequences.FILE_RESOURCE_SEQ,
+            Sequences.HIBERNATE_SEQUENCE,
+            Sequences.MIGRATION_ITEM_SEQ,
+            Sequences.NAMESPACE_MEMBERSHIP_SEQ,
+            Sequences.NAMESPACE_SEQ,
+            Sequences.PERSISTED_LOG_SEQ,
+            Sequences.PERSONAL_ACCESS_TOKEN_SEQ,
+            Sequences.SIGNATURE_KEY_PAIR_SEQ,
+            Sequences.USER_DATA_SEQ
+        );
     }
 
     @Override
     public final List<Table<?>> getTables() {
-        return Arrays.<Table<?>>asList(
+        return Arrays.asList(
             AdminStatistics.ADMIN_STATISTICS,
             AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING,
             AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED,
@@ -251,8 +254,6 @@ public class Public extends SchemaImpl {
             AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS,
             AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS,
             AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM,
-            Download.DOWNLOAD,
-            EntityActiveState.ENTITY_ACTIVE_STATE,
             Extension.EXTENSION,
             ExtensionReview.EXTENSION_REVIEW,
             ExtensionVersion.EXTENSION_VERSION,
@@ -274,6 +275,7 @@ public class Public extends SchemaImpl {
             SignatureKeyPair.SIGNATURE_KEY_PAIR,
             SpringSession.SPRING_SESSION,
             SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES,
-            UserData.USER_DATA);
+            UserData.USER_DATA
+        );
     }
 }
