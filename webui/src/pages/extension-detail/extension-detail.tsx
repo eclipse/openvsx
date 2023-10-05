@@ -452,12 +452,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                 {extension.license || 'Provided license'}
             </StyledLink>;
         } else if (extension.license) {
-            return <StyledLink
-                href={`https://spdx.org/licenses/${encodeURIComponent(extension.license)}.html`}
-                sx={{ color: themeColor }}
-                title={extension.license ? 'License type' : undefined} >
-                {extension.license}
-            </StyledLink>;
+            return extension.license;
         } else {
             return 'Unlicensed';
         }
