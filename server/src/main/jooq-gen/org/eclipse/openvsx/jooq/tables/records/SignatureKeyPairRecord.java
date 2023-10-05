@@ -289,5 +289,6 @@ public class SignatureKeyPairRecord extends UpdatableRecordImpl<SignatureKeyPair
         setPublicKeyText(publicKeyText);
         setCreated(created);
         setActive(active);
+        resetChangedOnNotNull();
     }
 }

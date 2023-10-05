@@ -6,16 +6,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionAttributesRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function3;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row3;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -47,7 +51,8 @@ public class SpringSessionAttributes extends TableImpl<SpringSessionAttributesRe
     }
 
     /**
-     * The column <code>public.spring_session_attributes.session_primary_id</code>.
+     * The column
+     * <code>public.spring_session_attributes.session_primary_id</code>.
      */
     public final TableField<SpringSessionAttributesRecord, String> SESSION_PRIMARY_ID = createField(DSL.name("session_primary_id"), SQLDataType.CHAR(36).nullable(false), this, "");
 
@@ -70,14 +75,16 @@ public class SpringSessionAttributes extends TableImpl<SpringSessionAttributesRe
     }
 
     /**
-     * Create an aliased <code>public.spring_session_attributes</code> table reference
+     * Create an aliased <code>public.spring_session_attributes</code> table
+     * reference
      */
     public SpringSessionAttributes(String alias) {
         this(DSL.name(alias), SPRING_SESSION_ATTRIBUTES);
     }
 
     /**
-     * Create an aliased <code>public.spring_session_attributes</code> table reference
+     * Create an aliased <code>public.spring_session_attributes</code> table
+     * reference
      */
     public SpringSessionAttributes(Name alias) {
         this(alias, SPRING_SESSION_ATTRIBUTES);
@@ -96,7 +103,7 @@ public class SpringSessionAttributes extends TableImpl<SpringSessionAttributesRe
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
@@ -105,17 +112,16 @@ public class SpringSessionAttributes extends TableImpl<SpringSessionAttributesRe
     }
 
     @Override
-    public List<UniqueKey<SpringSessionAttributesRecord>> getKeys() {
-        return Arrays.<UniqueKey<SpringSessionAttributesRecord>>asList(Keys.SPRING_SESSION_ATTRIBUTES_PK);
-    }
-
-    @Override
     public List<ForeignKey<SpringSessionAttributesRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<SpringSessionAttributesRecord, ?>>asList(Keys.SPRING_SESSION_ATTRIBUTES__SPRING_SESSION_ATTRIBUTES_FK);
+        return Arrays.asList(Keys.SPRING_SESSION_ATTRIBUTES__SPRING_SESSION_ATTRIBUTES_FK);
     }
 
     private transient SpringSession _springSession;
 
+    /**
+     * Get the implicit join path to the <code>public.spring_session</code>
+     * table.
+     */
     public SpringSession springSession() {
         if (_springSession == null)
             _springSession = new SpringSession(this, Keys.SPRING_SESSION_ATTRIBUTES__SPRING_SESSION_ATTRIBUTES_FK);
@@ -131,6 +137,11 @@ public class SpringSessionAttributes extends TableImpl<SpringSessionAttributesRe
     @Override
     public SpringSessionAttributes as(Name alias) {
         return new SpringSessionAttributes(alias, this);
+    }
+
+    @Override
+    public SpringSessionAttributes as(Table<?> alias) {
+        return new SpringSessionAttributes(alias.getQualifiedName(), this);
     }
 
     /**
@@ -149,6 +160,14 @@ public class SpringSessionAttributes extends TableImpl<SpringSessionAttributesRe
         return new SpringSessionAttributes(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public SpringSessionAttributes rename(Table<?> name) {
+        return new SpringSessionAttributes(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row3 type methods
     // -------------------------------------------------------------------------
@@ -156,5 +175,20 @@ public class SpringSessionAttributes extends TableImpl<SpringSessionAttributesRe
     @Override
     public Row3<String, String, byte[]> fieldsRow() {
         return (Row3) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function3<? super String, ? super String, ? super byte[], ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function3<? super String, ? super String, ? super byte[], ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

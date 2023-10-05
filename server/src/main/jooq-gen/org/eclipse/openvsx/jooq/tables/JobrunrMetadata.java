@@ -5,18 +5,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.JobrunrMetadataRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function6;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row6;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -112,17 +114,12 @@ public class JobrunrMetadata extends TableImpl<JobrunrMetadataRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public UniqueKey<JobrunrMetadataRecord> getPrimaryKey() {
         return Keys.JOBRUNR_METADATA_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<JobrunrMetadataRecord>> getKeys() {
-        return Arrays.<UniqueKey<JobrunrMetadataRecord>>asList(Keys.JOBRUNR_METADATA_PKEY);
     }
 
     @Override
@@ -133,6 +130,11 @@ public class JobrunrMetadata extends TableImpl<JobrunrMetadataRecord> {
     @Override
     public JobrunrMetadata as(Name alias) {
         return new JobrunrMetadata(alias, this);
+    }
+
+    @Override
+    public JobrunrMetadata as(Table<?> alias) {
+        return new JobrunrMetadata(alias.getQualifiedName(), this);
     }
 
     /**
@@ -151,6 +153,14 @@ public class JobrunrMetadata extends TableImpl<JobrunrMetadataRecord> {
         return new JobrunrMetadata(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public JobrunrMetadata rename(Table<?> name) {
+        return new JobrunrMetadata(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row6 type methods
     // -------------------------------------------------------------------------
@@ -158,5 +168,20 @@ public class JobrunrMetadata extends TableImpl<JobrunrMetadataRecord> {
     @Override
     public Row6<String, String, String, String, LocalDateTime, LocalDateTime> fieldsRow() {
         return (Row6) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function6<? super String, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function6<? super String, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

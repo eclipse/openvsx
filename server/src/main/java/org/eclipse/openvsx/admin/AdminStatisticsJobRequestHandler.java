@@ -35,70 +35,68 @@ public class AdminStatisticsJobRequestHandler implements JobRequestHandler<Admin
     public void run(AdminStatisticsJobRequest jobRequest) throws Exception {
         var year = jobRequest.getYear();
         var month = jobRequest.getMonth();
-        var startInclusive = LocalDateTime.of(year, month, 1, 0, 0);
-        var endExclusive = startInclusive.plusMonths(1);
 
         LOGGER.info(">> ADMIN REPORT STATS {} {}", year, month);
         var stopwatch = new StopWatch();
         stopwatch.start("repositories.countActiveExtensions");
-        var extensions = repositories.countActiveExtensions(endExclusive);
-        stopwatch.stop();
-        LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
-
-        stopwatch.start("repositories.downloadsBetween");
-        var downloads = repositories.downloadsBetween(startInclusive, endExclusive);
+        var extensions = repositories.countActiveExtensions();
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.downloadsUntil");
-        var downloadsTotal = repositories.downloadsUntil(endExclusive);
+        var downloadsTotal = repositories.downloadsTotal();
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
+        var lastDate = LocalDateTime.of(year, month, 1, 0, 0).minusMonths(1);
+        var lastAdminStatistics = repositories.findAdminStatisticsByYearAndMonth(lastDate.getYear(), lastDate.getMonthValue());
+        var lastDownloadsTotal = lastAdminStatistics != null ? lastAdminStatistics.getDownloadsTotal() : 0;
+        var downloads = downloadsTotal - lastDownloadsTotal;
+
         stopwatch.start("repositories.countActiveExtensionPublishers");
-        var publishers = repositories.countActiveExtensionPublishers(endExclusive);
+        var publishers = repositories.countActiveExtensionPublishers();
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.averageNumberOfActiveReviewsPerActiveExtension");
-        var averageReviewsPerExtension = repositories.averageNumberOfActiveReviewsPerActiveExtension(endExclusive);
+        var averageReviewsPerExtension = repositories.averageNumberOfActiveReviewsPerActiveExtension();
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.countPublishersThatClaimedNamespaceOwnership");
-        var namespaceOwners = repositories.countPublishersThatClaimedNamespaceOwnership(endExclusive);
+        var namespaceOwners = repositories.countPublishersThatClaimedNamespaceOwnership();
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.countActiveExtensionsGroupedByExtensionReviewRating");
-        var extensionsByRating = repositories.countActiveExtensionsGroupedByExtensionReviewRating(endExclusive);
+        var extensionsByRating = repositories.countActiveExtensionsGroupedByExtensionReviewRating();
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.countActiveExtensionPublishersGroupedByExtensionsPublished");
-        var publishersByExtensionsPublished = repositories.countActiveExtensionPublishersGroupedByExtensionsPublished(endExclusive);
+        var publishersByExtensionsPublished = repositories.countActiveExtensionPublishersGroupedByExtensionsPublished();
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         var limit = 10;
 
         stopwatch.start("repositories.topMostActivePublishingUsers");
-        var topMostActivePublishingUsers = repositories.topMostActivePublishingUsers(endExclusive, limit);
+        var topMostActivePublishingUsers = repositories.topMostActivePublishingUsers(limit);
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.topNamespaceExtensions");
-        var topNamespaceExtensions = repositories.topNamespaceExtensions(endExclusive, limit);
+        var topNamespaceExtensions = repositories.topNamespaceExtensions(limit);
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.topNamespaceExtensionVersions");
-        var topNamespaceExtensionVersions = repositories.topNamespaceExtensionVersions(endExclusive, limit);
+        var topNamespaceExtensionVersions = repositories.topNamespaceExtensionVersions(limit);
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
 
         stopwatch.start("repositories.topMostDownloadedExtensions");
-        var topMostDownloadedExtensions = repositories.topMostDownloadedExtensions(endExclusive, limit);
+        var topMostDownloadedExtensions = repositories.topMostDownloadedExtensions(limit);
         stopwatch.stop();
         LOGGER.info("{} took {} ms", stopwatch.getLastTaskName(), stopwatch.getLastTaskTimeMillis());
         LOGGER.info("<< ADMIN REPORT STATS {} {}", year, month);

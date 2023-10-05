@@ -435,5 +435,6 @@ public class NamespaceRecord extends UpdatableRecordImpl<NamespaceRecord> implem
         setLogoName(logoName);
         setLogoBytes(logoBytes);
         setLogoStorageType(logoStorageType);
+        resetChangedOnNotNull();
     }
 }

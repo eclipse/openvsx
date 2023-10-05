@@ -20,42 +20,48 @@ public class AdminStatisticsExtensionsByRatingRecord extends TableRecordImpl<Adm
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>public.admin_statistics_extensions_by_rating.admin_statistics_id</code>.
+     * Setter for
+     * <code>public.admin_statistics_extensions_by_rating.admin_statistics_id</code>.
      */
     public void setAdminStatisticsId(Long value) {
         set(0, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_extensions_by_rating.admin_statistics_id</code>.
+     * Getter for
+     * <code>public.admin_statistics_extensions_by_rating.admin_statistics_id</code>.
      */
     public Long getAdminStatisticsId() {
         return (Long) get(0);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_extensions_by_rating.rating</code>.
+     * Setter for
+     * <code>public.admin_statistics_extensions_by_rating.rating</code>.
      */
     public void setRating(Integer value) {
         set(1, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_extensions_by_rating.rating</code>.
+     * Getter for
+     * <code>public.admin_statistics_extensions_by_rating.rating</code>.
      */
     public Integer getRating() {
         return (Integer) get(1);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_extensions_by_rating.extensions</code>.
+     * Setter for
+     * <code>public.admin_statistics_extensions_by_rating.extensions</code>.
      */
     public void setExtensions(Integer value) {
         set(2, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_extensions_by_rating.extensions</code>.
+     * Getter for
+     * <code>public.admin_statistics_extensions_by_rating.extensions</code>.
      */
     public Integer getExtensions() {
         return (Integer) get(2);
@@ -166,5 +172,6 @@ public class AdminStatisticsExtensionsByRatingRecord extends TableRecordImpl<Adm
         setAdminStatisticsId(adminStatisticsId);
         setRating(rating);
         setExtensions(extensions);
+        resetChangedOnNotNull();
     }
 }

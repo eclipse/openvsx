@@ -12,8 +12,6 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtension
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
 import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
-import org.eclipse.openvsx.jooq.tables.Download;
-import org.eclipse.openvsx.jooq.tables.EntityActiveState;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -55,22 +53,26 @@ public class Tables {
     public static final AdminStatisticsExtensionsByRating ADMIN_STATISTICS_EXTENSIONS_BY_RATING = AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING;
 
     /**
-     * The table <code>public.admin_statistics_publishers_by_extensions_published</code>.
+     * The table
+     * <code>public.admin_statistics_publishers_by_extensions_published</code>.
      */
     public static final AdminStatisticsPublishersByExtensionsPublished ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED = AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED;
 
     /**
-     * The table <code>public.admin_statistics_top_most_active_publishing_users</code>.
+     * The table
+     * <code>public.admin_statistics_top_most_active_publishing_users</code>.
      */
     public static final AdminStatisticsTopMostActivePublishingUsers ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS = AdminStatisticsTopMostActivePublishingUsers.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS;
 
     /**
-     * The table <code>public.admin_statistics_top_most_downloaded_extensions</code>.
+     * The table
+     * <code>public.admin_statistics_top_most_downloaded_extensions</code>.
      */
     public static final AdminStatisticsTopMostDownloadedExtensions ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS = AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS;
 
     /**
-     * The table <code>public.admin_statistics_top_namespace_extension_versions</code>.
+     * The table
+     * <code>public.admin_statistics_top_namespace_extension_versions</code>.
      */
     public static final AdminStatisticsTopNamespaceExtensionVersions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS = AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS;
 
@@ -83,16 +85,6 @@ public class Tables {
      * The table <code>public.azure_download_count_processed_item</code>.
      */
     public static final AzureDownloadCountProcessedItem AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM = AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM;
-
-    /**
-     * The table <code>public.download</code>.
-     */
-    public static final Download DOWNLOAD = Download.DOWNLOAD;
-
-    /**
-     * The table <code>public.entity_active_state</code>.
-     */
-    public static final EntityActiveState ENTITY_ACTIVE_STATE = EntityActiveState.ENTITY_ACTIVE_STATE;
 
     /**
      * The table <code>public.extension</code>.

@@ -20,42 +20,48 @@ public class AdminStatisticsPublishersByExtensionsPublishedRecord extends TableR
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>public.admin_statistics_publishers_by_extensions_published.admin_statistics_id</code>.
+     * Setter for
+     * <code>public.admin_statistics_publishers_by_extensions_published.admin_statistics_id</code>.
      */
     public void setAdminStatisticsId(Long value) {
         set(0, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_publishers_by_extensions_published.admin_statistics_id</code>.
+     * Getter for
+     * <code>public.admin_statistics_publishers_by_extensions_published.admin_statistics_id</code>.
      */
     public Long getAdminStatisticsId() {
         return (Long) get(0);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_publishers_by_extensions_published.extensions_published</code>.
+     * Setter for
+     * <code>public.admin_statistics_publishers_by_extensions_published.extensions_published</code>.
      */
     public void setExtensionsPublished(Integer value) {
         set(1, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_publishers_by_extensions_published.extensions_published</code>.
+     * Getter for
+     * <code>public.admin_statistics_publishers_by_extensions_published.extensions_published</code>.
      */
     public Integer getExtensionsPublished() {
         return (Integer) get(1);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_publishers_by_extensions_published.publishers</code>.
+     * Setter for
+     * <code>public.admin_statistics_publishers_by_extensions_published.publishers</code>.
      */
     public void setPublishers(Integer value) {
         set(2, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_publishers_by_extensions_published.publishers</code>.
+     * Getter for
+     * <code>public.admin_statistics_publishers_by_extensions_published.publishers</code>.
      */
     public Integer getPublishers() {
         return (Integer) get(2);
@@ -158,7 +164,8 @@ public class AdminStatisticsPublishersByExtensionsPublishedRecord extends TableR
     }
 
     /**
-     * Create a detached, initialised AdminStatisticsPublishersByExtensionsPublishedRecord
+     * Create a detached, initialised
+     * AdminStatisticsPublishersByExtensionsPublishedRecord
      */
     public AdminStatisticsPublishersByExtensionsPublishedRecord(Long adminStatisticsId, Integer extensionsPublished, Integer publishers) {
         super(AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED);
@@ -166,5 +173,6 @@ public class AdminStatisticsPublishersByExtensionsPublishedRecord extends TableR
         setAdminStatisticsId(adminStatisticsId);
         setExtensionsPublished(extensionsPublished);
         setPublishers(publishers);
+        resetChangedOnNotNull();
     }
 }

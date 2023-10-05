@@ -1,0 +1,16 @@
+DROP TRIGGER extension_active_insert ON extension;
+DROP TRIGGER extension_review_active_insert ON extension_review;
+DROP TRIGGER extension_version_active_insert ON extension_version;
+DROP TRIGGER personal_access_token_active_insert ON personal_access_token;
+DROP TRIGGER extension_active_update ON extension;
+DROP TRIGGER extension_review_active_update ON extension_review;
+DROP TRIGGER extension_version_active_update ON extension_version;
+DROP TRIGGER personal_access_token_active_update ON personal_access_token;
+DROP TRIGGER extension_delete_entity_active_state ON extension;
+DROP TRIGGER extension_review_delete_entity_active_state ON extension_review;
+DROP TRIGGER extension_version_delete_entity_active_state ON extension_version;
+DROP TRIGGER personal_access_token_delete_entity_active_state ON personal_access_token;
+DROP FUNCTION public.insert_entity_active_state;
+
+DROP TABLE entity_active_state;
+DROP TABLE download;

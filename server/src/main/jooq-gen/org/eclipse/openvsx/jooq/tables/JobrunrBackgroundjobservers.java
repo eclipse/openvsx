@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Indexes;
 import org.eclipse.openvsx.jooq.Keys;
@@ -15,11 +16,14 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.JobrunrBackgroundjobserversRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function16;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row15;
+import org.jooq.Records;
+import org.jooq.Row16;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -38,7 +42,8 @@ public class JobrunrBackgroundjobservers extends TableImpl<JobrunrBackgroundjobs
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>public.jobrunr_backgroundjobservers</code>
+     * The reference instance of
+     * <code>public.jobrunr_backgroundjobservers</code>
      */
     public static final JobrunrBackgroundjobservers JOBRUNR_BACKGROUNDJOBSERVERS = new JobrunrBackgroundjobservers();
 
@@ -56,22 +61,26 @@ public class JobrunrBackgroundjobservers extends TableImpl<JobrunrBackgroundjobs
     public final TableField<JobrunrBackgroundjobserversRecord, String> ID = createField(DSL.name("id"), SQLDataType.CHAR(36).nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.workerpoolsize</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.workerpoolsize</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, Integer> WORKERPOOLSIZE = createField(DSL.name("workerpoolsize"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.pollintervalinseconds</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.pollintervalinseconds</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, Integer> POLLINTERVALINSECONDS = createField(DSL.name("pollintervalinseconds"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.firstheartbeat</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.firstheartbeat</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, LocalDateTime> FIRSTHEARTBEAT = createField(DSL.name("firstheartbeat"), SQLDataType.LOCALDATETIME(6).nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.lastheartbeat</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.lastheartbeat</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, LocalDateTime> LASTHEARTBEAT = createField(DSL.name("lastheartbeat"), SQLDataType.LOCALDATETIME(6).nullable(false), this, "");
 
@@ -81,49 +90,63 @@ public class JobrunrBackgroundjobservers extends TableImpl<JobrunrBackgroundjobs
     public final TableField<JobrunrBackgroundjobserversRecord, Integer> RUNNING = createField(DSL.name("running"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.systemtotalmemory</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.systemtotalmemory</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, Long> SYSTEMTOTALMEMORY = createField(DSL.name("systemtotalmemory"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.systemfreememory</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.systemfreememory</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, Long> SYSTEMFREEMEMORY = createField(DSL.name("systemfreememory"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.systemcpuload</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.systemcpuload</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, BigDecimal> SYSTEMCPULOAD = createField(DSL.name("systemcpuload"), SQLDataType.NUMERIC(3, 2).nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.processmaxmemory</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.processmaxmemory</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, Long> PROCESSMAXMEMORY = createField(DSL.name("processmaxmemory"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.processfreememory</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.processfreememory</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, Long> PROCESSFREEMEMORY = createField(DSL.name("processfreememory"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.processallocatedmemory</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.processallocatedmemory</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, Long> PROCESSALLOCATEDMEMORY = createField(DSL.name("processallocatedmemory"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.processcpuload</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.processcpuload</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, BigDecimal> PROCESSCPULOAD = createField(DSL.name("processcpuload"), SQLDataType.NUMERIC(3, 2).nullable(false), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.deletesucceededjobsafter</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.deletesucceededjobsafter</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, String> DELETESUCCEEDEDJOBSAFTER = createField(DSL.name("deletesucceededjobsafter"), SQLDataType.VARCHAR(32), this, "");
 
     /**
-     * The column <code>public.jobrunr_backgroundjobservers.permanentlydeletejobsafter</code>.
+     * The column
+     * <code>public.jobrunr_backgroundjobservers.permanentlydeletejobsafter</code>.
      */
     public final TableField<JobrunrBackgroundjobserversRecord, String> PERMANENTLYDELETEJOBSAFTER = createField(DSL.name("permanentlydeletejobsafter"), SQLDataType.VARCHAR(32), this, "");
+
+    /**
+     * The column <code>public.jobrunr_backgroundjobservers.name</code>.
+     */
+    public final TableField<JobrunrBackgroundjobserversRecord, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(128), this, "");
 
     private JobrunrBackgroundjobservers(Name alias, Table<JobrunrBackgroundjobserversRecord> aliased) {
         this(alias, aliased, null);
@@ -134,14 +157,16 @@ public class JobrunrBackgroundjobservers extends TableImpl<JobrunrBackgroundjobs
     }
 
     /**
-     * Create an aliased <code>public.jobrunr_backgroundjobservers</code> table reference
+     * Create an aliased <code>public.jobrunr_backgroundjobservers</code> table
+     * reference
      */
     public JobrunrBackgroundjobservers(String alias) {
         this(DSL.name(alias), JOBRUNR_BACKGROUNDJOBSERVERS);
     }
 
     /**
-     * Create an aliased <code>public.jobrunr_backgroundjobservers</code> table reference
+     * Create an aliased <code>public.jobrunr_backgroundjobservers</code> table
+     * reference
      */
     public JobrunrBackgroundjobservers(Name alias) {
         this(alias, JOBRUNR_BACKGROUNDJOBSERVERS);
@@ -160,22 +185,17 @@ public class JobrunrBackgroundjobservers extends TableImpl<JobrunrBackgroundjobs
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.JOBRUNR_BGJOBSRVRS_FSTHB_IDX, Indexes.JOBRUNR_BGJOBSRVRS_LSTHB_IDX);
+        return Arrays.asList(Indexes.JOBRUNR_BGJOBSRVRS_FSTHB_IDX, Indexes.JOBRUNR_BGJOBSRVRS_LSTHB_IDX);
     }
 
     @Override
     public UniqueKey<JobrunrBackgroundjobserversRecord> getPrimaryKey() {
         return Keys.JOBRUNR_BACKGROUNDJOBSERVERS_PKEY;
-    }
-
-    @Override
-    public List<UniqueKey<JobrunrBackgroundjobserversRecord>> getKeys() {
-        return Arrays.<UniqueKey<JobrunrBackgroundjobserversRecord>>asList(Keys.JOBRUNR_BACKGROUNDJOBSERVERS_PKEY);
     }
 
     @Override
@@ -186,6 +206,11 @@ public class JobrunrBackgroundjobservers extends TableImpl<JobrunrBackgroundjobs
     @Override
     public JobrunrBackgroundjobservers as(Name alias) {
         return new JobrunrBackgroundjobservers(alias, this);
+    }
+
+    @Override
+    public JobrunrBackgroundjobservers as(Table<?> alias) {
+        return new JobrunrBackgroundjobservers(alias.getQualifiedName(), this);
     }
 
     /**
@@ -204,12 +229,35 @@ public class JobrunrBackgroundjobservers extends TableImpl<JobrunrBackgroundjobs
         return new JobrunrBackgroundjobservers(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public JobrunrBackgroundjobservers rename(Table<?> name) {
+        return new JobrunrBackgroundjobservers(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
-    // Row15 type methods
+    // Row16 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row15<String, Integer, Integer, LocalDateTime, LocalDateTime, Integer, Long, Long, BigDecimal, Long, Long, Long, BigDecimal, String, String> fieldsRow() {
-        return (Row15) super.fieldsRow();
+    public Row16<String, Integer, Integer, LocalDateTime, LocalDateTime, Integer, Long, Long, BigDecimal, Long, Long, Long, BigDecimal, String, String, String> fieldsRow() {
+        return (Row16) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function16<? super String, ? super Integer, ? super Integer, ? super LocalDateTime, ? super LocalDateTime, ? super Integer, ? super Long, ? super Long, ? super BigDecimal, ? super Long, ? super Long, ? super Long, ? super BigDecimal, ? super String, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function16<? super String, ? super Integer, ? super Integer, ? super LocalDateTime, ? super LocalDateTime, ? super Integer, ? super Long, ? super Long, ? super BigDecimal, ? super Long, ? super Long, ? super Long, ? super BigDecimal, ? super String, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

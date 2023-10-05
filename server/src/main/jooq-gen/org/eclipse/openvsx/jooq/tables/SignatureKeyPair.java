@@ -7,16 +7,20 @@ package org.eclipse.openvsx.jooq.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.SignatureKeyPairRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function6;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row6;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -112,7 +116,7 @@ public class SignatureKeyPair extends TableImpl<SignatureKeyPairRecord> {
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
@@ -121,8 +125,8 @@ public class SignatureKeyPair extends TableImpl<SignatureKeyPairRecord> {
     }
 
     @Override
-    public List<UniqueKey<SignatureKeyPairRecord>> getKeys() {
-        return Arrays.<UniqueKey<SignatureKeyPairRecord>>asList(Keys.SIGNATURE_KEY_PAIR_PKEY);
+    public List<UniqueKey<SignatureKeyPairRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.SIGNATURE_KEY_PAIR_UNIQUE_PUBLIC_ID);
     }
 
     @Override
@@ -133,6 +137,11 @@ public class SignatureKeyPair extends TableImpl<SignatureKeyPairRecord> {
     @Override
     public SignatureKeyPair as(Name alias) {
         return new SignatureKeyPair(alias, this);
+    }
+
+    @Override
+    public SignatureKeyPair as(Table<?> alias) {
+        return new SignatureKeyPair(alias.getQualifiedName(), this);
     }
 
     /**
@@ -151,6 +160,14 @@ public class SignatureKeyPair extends TableImpl<SignatureKeyPairRecord> {
         return new SignatureKeyPair(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public SignatureKeyPair rename(Table<?> name) {
+        return new SignatureKeyPair(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row6 type methods
     // -------------------------------------------------------------------------
@@ -158,5 +175,20 @@ public class SignatureKeyPair extends TableImpl<SignatureKeyPairRecord> {
     @Override
     public Row6<Long, String, byte[], String, LocalDateTime, Boolean> fieldsRow() {
         return (Row6) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function6<? super Long, ? super String, ? super byte[], ? super String, ? super LocalDateTime, ? super Boolean, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function6<? super Long, ? super String, ? super byte[], ? super String, ? super LocalDateTime, ? super Boolean, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

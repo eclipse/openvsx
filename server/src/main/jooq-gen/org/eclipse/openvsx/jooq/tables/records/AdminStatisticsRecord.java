@@ -119,14 +119,16 @@ public class AdminStatisticsRecord extends UpdatableRecordImpl<AdminStatisticsRe
     }
 
     /**
-     * Setter for <code>public.admin_statistics.average_reviews_per_extension</code>.
+     * Setter for
+     * <code>public.admin_statistics.average_reviews_per_extension</code>.
      */
     public void setAverageReviewsPerExtension(Double value) {
         set(7, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics.average_reviews_per_extension</code>.
+     * Getter for
+     * <code>public.admin_statistics.average_reviews_per_extension</code>.
      */
     public Double getAverageReviewsPerExtension() {
         return (Double) get(7);
@@ -398,5 +400,6 @@ public class AdminStatisticsRecord extends UpdatableRecordImpl<AdminStatisticsRe
         setPublishers(publishers);
         setAverageReviewsPerExtension(averageReviewsPerExtension);
         setNamespaceOwners(namespaceOwners);
+        resetChangedOnNotNull();
     }
 }

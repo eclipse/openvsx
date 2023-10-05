@@ -6,16 +6,20 @@ package org.eclipse.openvsx.jooq.tables;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.openvsx.jooq.Keys;
 import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.NamespaceSocialLinksRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function3;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row3;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -69,14 +73,16 @@ public class NamespaceSocialLinks extends TableImpl<NamespaceSocialLinksRecord> 
     }
 
     /**
-     * Create an aliased <code>public.namespace_social_links</code> table reference
+     * Create an aliased <code>public.namespace_social_links</code> table
+     * reference
      */
     public NamespaceSocialLinks(String alias) {
         this(DSL.name(alias), NAMESPACE_SOCIAL_LINKS);
     }
 
     /**
-     * Create an aliased <code>public.namespace_social_links</code> table reference
+     * Create an aliased <code>public.namespace_social_links</code> table
+     * reference
      */
     public NamespaceSocialLinks(Name alias) {
         this(alias, NAMESPACE_SOCIAL_LINKS);
@@ -95,16 +101,19 @@ public class NamespaceSocialLinks extends TableImpl<NamespaceSocialLinksRecord> 
 
     @Override
     public Schema getSchema() {
-        return Public.PUBLIC;
+        return aliased() ? null : Public.PUBLIC;
     }
 
     @Override
     public List<ForeignKey<NamespaceSocialLinksRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<NamespaceSocialLinksRecord, ?>>asList(Keys.NAMESPACE_SOCIAL_LINKS__NAMESPACE_SOCIAL_LINKS_FKEY);
+        return Arrays.asList(Keys.NAMESPACE_SOCIAL_LINKS__NAMESPACE_SOCIAL_LINKS_FKEY);
     }
 
     private transient Namespace _namespace;
 
+    /**
+     * Get the implicit join path to the <code>public.namespace</code> table.
+     */
     public Namespace namespace() {
         if (_namespace == null)
             _namespace = new Namespace(this, Keys.NAMESPACE_SOCIAL_LINKS__NAMESPACE_SOCIAL_LINKS_FKEY);
@@ -120,6 +129,11 @@ public class NamespaceSocialLinks extends TableImpl<NamespaceSocialLinksRecord> 
     @Override
     public NamespaceSocialLinks as(Name alias) {
         return new NamespaceSocialLinks(alias, this);
+    }
+
+    @Override
+    public NamespaceSocialLinks as(Table<?> alias) {
+        return new NamespaceSocialLinks(alias.getQualifiedName(), this);
     }
 
     /**
@@ -138,6 +152,14 @@ public class NamespaceSocialLinks extends TableImpl<NamespaceSocialLinksRecord> 
         return new NamespaceSocialLinks(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public NamespaceSocialLinks rename(Table<?> name) {
+        return new NamespaceSocialLinks(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row3 type methods
     // -------------------------------------------------------------------------
@@ -145,5 +167,20 @@ public class NamespaceSocialLinks extends TableImpl<NamespaceSocialLinksRecord> 
     @Override
     public Row3<Long, String, String> fieldsRow() {
         return (Row3) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function3<? super Long, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function3<? super Long, ? super String, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

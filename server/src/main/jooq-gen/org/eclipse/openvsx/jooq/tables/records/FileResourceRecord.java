@@ -287,5 +287,6 @@ public class FileResourceRecord extends UpdatableRecordImpl<FileResourceRecord> 
         setExtensionId(extensionId);
         setName(name);
         setStorageType(storageType);
+        resetChangedOnNotNull();
     }
 }

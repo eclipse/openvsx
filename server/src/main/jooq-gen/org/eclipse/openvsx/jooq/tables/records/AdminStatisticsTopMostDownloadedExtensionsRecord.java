@@ -20,42 +20,48 @@ public class AdminStatisticsTopMostDownloadedExtensionsRecord extends TableRecor
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>public.admin_statistics_top_most_downloaded_extensions.admin_statistics_id</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_most_downloaded_extensions.admin_statistics_id</code>.
      */
     public void setAdminStatisticsId(Long value) {
         set(0, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_most_downloaded_extensions.admin_statistics_id</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_most_downloaded_extensions.admin_statistics_id</code>.
      */
     public Long getAdminStatisticsId() {
         return (Long) get(0);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_top_most_downloaded_extensions.extension_identifier</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_most_downloaded_extensions.extension_identifier</code>.
      */
     public void setExtensionIdentifier(String value) {
         set(1, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_most_downloaded_extensions.extension_identifier</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_most_downloaded_extensions.extension_identifier</code>.
      */
     public String getExtensionIdentifier() {
         return (String) get(1);
     }
 
     /**
-     * Setter for <code>public.admin_statistics_top_most_downloaded_extensions.downloads</code>.
+     * Setter for
+     * <code>public.admin_statistics_top_most_downloaded_extensions.downloads</code>.
      */
     public void setDownloads(Long value) {
         set(2, value);
     }
 
     /**
-     * Getter for <code>public.admin_statistics_top_most_downloaded_extensions.downloads</code>.
+     * Getter for
+     * <code>public.admin_statistics_top_most_downloaded_extensions.downloads</code>.
      */
     public Long getDownloads() {
         return (Long) get(2);
@@ -158,7 +164,8 @@ public class AdminStatisticsTopMostDownloadedExtensionsRecord extends TableRecor
     }
 
     /**
-     * Create a detached, initialised AdminStatisticsTopMostDownloadedExtensionsRecord
+     * Create a detached, initialised
+     * AdminStatisticsTopMostDownloadedExtensionsRecord
      */
     public AdminStatisticsTopMostDownloadedExtensionsRecord(Long adminStatisticsId, String extensionIdentifier, Long downloads) {
         super(AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS);
@@ -166,5 +173,6 @@ public class AdminStatisticsTopMostDownloadedExtensionsRecord extends TableRecor
         setAdminStatisticsId(adminStatisticsId);
         setExtensionIdentifier(extensionIdentifier);
         setDownloads(downloads);
+        resetChangedOnNotNull();
     }
 }
