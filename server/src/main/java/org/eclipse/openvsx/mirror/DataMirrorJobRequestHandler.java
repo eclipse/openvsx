@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.admin.AdminService;
@@ -80,6 +81,90 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
             var extensionIds = new ArrayList<String>();
             try(var reader = new StringReader(getSitemap())) {
                 var factory = DocumentBuilderFactory.newInstance();
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
+                String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+                try {
+                    factory.setFeature(FEATURE, true);
+                } catch (ParserConfigurationException e) {
+                    throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+                            + FEATURE + "' is not supported by your XML processor.", e);
+                }
                 var builder = factory.newDocumentBuilder();
                 var sitemap = builder.parse(new InputSource(reader));
                 var urls = sitemap.getElementsByTagName("url");
