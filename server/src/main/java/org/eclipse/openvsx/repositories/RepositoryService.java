@@ -38,6 +38,7 @@ public class RepositoryService {
             .and(Sort.by(Sort.Direction.DESC, "timestamp"));
 
     @Autowired NamespaceRepository namespaceRepo;
+    @Autowired NamespaceJooqRepository namespaceJooqRepo;
     @Autowired ExtensionRepository extensionRepo;
     @Autowired ExtensionVersionRepository extensionVersionRepo;
     @Autowired FileResourceRepository fileResourceRepo;
@@ -483,5 +484,41 @@ public class RepositoryService {
 
     public SignatureKeyPair findKeyPair(String publicId) {
         return signatureKeyPairRepo.findByPublicId(publicId);
+    }
+
+    public List<Extension> findAllPublicIds() {
+        return extensionJooqRepo.findAllPublicIds();
+    }
+
+    public Extension findPublicId(String namespace, String extension) {
+        return extensionJooqRepo.findPublicId(namespace, extension);
+    }
+
+    public Extension findPublicId(String publicId) {
+        return extensionJooqRepo.findPublicId(publicId);
+    }
+
+    public Extension findNamespacePublicId(String publicId) {
+        return extensionJooqRepo.findNamespacePublicId(publicId);
+    }
+
+    public void updateExtensionPublicIds(Map<Long, String> publicIds) {
+        extensionJooqRepo.updatePublicIds(publicIds);
+    }
+
+    public void updateExtensionPublicId(long id, String publicId) {
+        extensionJooqRepo.updatePublicId(id, publicId);
+    }
+
+    public void updateNamespacePublicIds(Map<Long, String> publicIds) {
+        namespaceJooqRepo.updatePublicIds(publicIds);
+    }
+
+    public boolean extensionPublicIdExists(String publicId) {
+        return extensionJooqRepo.publicIdExists(publicId);
+    }
+
+    public boolean namespacePublicIdExists(String publicId) {
+        return namespaceJooqRepo.publicIdExists(publicId);
     }
 }

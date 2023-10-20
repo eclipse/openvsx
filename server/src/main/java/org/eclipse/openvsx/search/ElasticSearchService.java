@@ -22,6 +22,7 @@ import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jobrunr.scheduling.cron.Cron;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,7 +97,7 @@ public class ElasticSearchService implements ISearchService {
     @Retryable(DataAccessResourceFailureException.class)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void initSearchIndex(ApplicationStartedEvent event) {
-        scheduler.scheduleRecurrently("ElasticSearchUpdateIndex", "0 0 4 * * *", ZoneId.of("UTC"), new HandlerJobRequest<>(ElasticSearchUpdateIndexJobRequestHandler.class));
+        scheduler.scheduleRecurrently("ElasticSearchUpdateIndex", Cron.daily(4), ZoneId.of("UTC"), new HandlerJobRequest<>(ElasticSearchUpdateIndexJobRequestHandler.class));
         if (!isEnabled() || !clearOnStart && searchOperations.indexOps(ExtensionSearch.class).exists()) {
             return;
         }

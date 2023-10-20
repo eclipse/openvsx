@@ -31,7 +31,7 @@ public class UrlConfigService {
         return upstreamUrl;
     }
 
-    public String  getUpstreamGalleryUrl() {
+    public String getUpstreamGalleryUrl() {
         return upstreamGalleryUrl;
     }
 

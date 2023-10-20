@@ -13,19 +13,24 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jobrunr.scheduling.cron.Cron;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.UUID;
+import java.time.ZoneId;
 
 @Component
 public class VSCodeIdService {
@@ -38,35 +43,41 @@ public class VSCodeIdService {
     RestTemplate vsCodeIdRestTemplate;
 
     @Autowired
-    RepositoryService repositories;
-
-    @Autowired
     UrlConfigService urlConfigService;
 
-    public boolean setPublicIds(Extension extension) {
-        var updateExistingPublicIds = false;
+    @Autowired
+    JobRequestScheduler scheduler;
+
+    @Value("${ovsx.data.mirror.enabled:false}")
+    boolean mirrorEnabled;
+
+    @Value("${ovsx.vscode.upstream.update-on-start:false}")
+    boolean updateOnStart;
+
+    @EventListener
+    public void applicationStarted(ApplicationStartedEvent event) {
+        if(mirrorEnabled) {
+            return;
+        }
+        if(updateOnStart) {
+            scheduler.enqueue(new HandlerJobRequest<>(VSCodeIdDailyUpdateJobRequestHandler.class));
+        }
+
+        scheduler.scheduleRecurrently("VSCodeIdDailyUpdate", Cron.daily(3), ZoneId.of("UTC"), new HandlerJobRequest<>(VSCodeIdDailyUpdateJobRequestHandler.class));
+    }
+
+    public void getUpstreamPublicIds(Extension extension) {
+        extension.setPublicId(null);
+        extension.getNamespace().setPublicId(null);
         var upstream = getUpstreamExtension(extension);
         if (upstream != null) {
             if (upstream.extensionId != null) {
                 extension.setPublicId(upstream.extensionId);
-                updateExistingPublicIds = true;
             }
             if (upstream.publisher != null && upstream.publisher.publisherId != null) {
                 extension.getNamespace().setPublicId(upstream.publisher.publisherId);
             }
         }
-        if (extension.getPublicId() == null) {
-            extension.setPublicId(createRandomId());
-        }
-        if (extension.getNamespace().getPublicId() == null) {
-            extension.getNamespace().setPublicId(createRandomId());
-        }
-
-        return updateExistingPublicIds;
-    }
-
-    private String createRandomId() {
-        return UUID.randomUUID().toString();
     }
 
     private ExtensionQueryResult.Extension getUpstreamExtension(Extension extension) {

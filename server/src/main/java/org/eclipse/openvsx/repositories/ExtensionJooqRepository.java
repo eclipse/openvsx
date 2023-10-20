@@ -11,10 +11,8 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
+import org.jooq.*;
 import org.jooq.Record;
-import org.jooq.SelectQuery;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,6 +20,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
 
@@ -60,7 +60,69 @@ public class ExtensionJooqRepository {
         return record != null ? toExtension(record) : null;
     }
 
-    private SelectQuery<Record> findAllActive() {
+    public List<Extension> findAllPublicIds() {
+        return findPublicId().fetch().map(this::toPublicId);
+    }
+
+    public Extension findPublicId(String namespace, String extension) {
+        var query = findPublicId();
+        query.addConditions(
+                DSL.upper(EXTENSION.NAME).eq(DSL.upper(extension)),
+                DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespace))
+        );
+
+        var record = query.fetchOne();
+        return record != null ? toPublicId(record) : null;
+    }
+
+    public Extension findPublicId(String publicId) {
+        var query = findPublicId();
+        query.addConditions(EXTENSION.PUBLIC_ID.eq(publicId));
+
+        var record = query.fetchOne();
+        return record != null ? toPublicId(record) : null;
+    }
+
+    public Extension findNamespacePublicId(String publicId) {
+        var query = findPublicId();
+        query.addConditions(NAMESPACE.PUBLIC_ID.eq(publicId));
+        query.addLimit(1);
+
+        var record = query.fetchOne();
+        return record != null ? toPublicId(record) : null;
+    }
+
+    private SelectQuery<Record> findPublicId() {
+        var query = dsl.selectQuery();
+        query.addSelect(
+                EXTENSION.ID,
+                EXTENSION.PUBLIC_ID,
+                EXTENSION.NAME,
+                NAMESPACE.ID,
+                NAMESPACE.PUBLIC_ID,
+                NAMESPACE.NAME
+        );
+
+        query.addFrom(EXTENSION);
+        query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+        return query;
+    }
+
+    private Extension toPublicId(Record record) {
+        var namespace = new Namespace();
+        namespace.setId(record.get(NAMESPACE.ID));
+        namespace.setPublicId(record.get(NAMESPACE.PUBLIC_ID));
+        namespace.setName(record.get(NAMESPACE.NAME));
+
+        var extension = new Extension();
+        extension.setId(record.get(EXTENSION.ID));
+        extension.setPublicId(record.get(EXTENSION.PUBLIC_ID));
+        extension.setName(record.get(EXTENSION.NAME));
+        extension.setNamespace(namespace);
+        return extension;
+    }
+
+        private SelectQuery<Record> findAllActive() {
         var query = dsl.selectQuery();
         query.addSelect(
                 EXTENSION.ID,
@@ -104,5 +166,38 @@ public class ExtensionJooqRepository {
         extension.setNamespace(namespace);
 
         return extension;
+    }
+
+    public void updatePublicId(long id, String publicId) {
+        dsl.update(EXTENSION)
+                .set(EXTENSION.PUBLIC_ID, publicId)
+                .where(EXTENSION.ID.eq(id))
+                .execute();
+    }
+
+    public void updatePublicIds(Map<Long, String> publicIds) {
+        if(publicIds.isEmpty()) {
+            return;
+        }
+
+        var extension = EXTENSION.as("e");
+        var rows = publicIds.entrySet().stream()
+                .map(e -> DSL.row(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+
+        var updates = DSL.values(rows.toArray(Row2[]::new)).as("u", "id", "public_id");
+        dsl.update(extension)
+                .set(extension.PUBLIC_ID, updates.field("public_id", String.class))
+                .from(updates)
+                .where(updates.field("id", Long.class).eq(extension.ID))
+                .execute();
+    }
+
+    public boolean publicIdExists(String publicId) {
+        return dsl.selectOne()
+                .from(EXTENSION)
+                .where(EXTENSION.PUBLIC_ID.eq(publicId))
+                .fetch()
+                .isNotEmpty();
     }
 }
