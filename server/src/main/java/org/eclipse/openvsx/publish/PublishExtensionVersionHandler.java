@@ -10,16 +10,18 @@
 package org.eclipse.openvsx.publish;
 
 import com.google.common.base.Joiner;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
-import org.eclipse.openvsx.adapter.VSCodeIdService;
+import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +33,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -55,7 +54,7 @@ public class PublishExtensionVersionHandler {
     RepositoryService repositories;
 
     @Autowired
-    VSCodeIdService vsCodeIdService;
+    JobRequestScheduler scheduler;
 
     @Autowired
     UserService users;
@@ -125,11 +124,6 @@ public class PublishExtensionVersionHandler {
             extension.setNamespace(namespace);
             extension.setPublishedDate(extVersion.getTimestamp());
 
-            var updateExistingPublicIds = vsCodeIdService.setPublicIds(extension);
-            if(updateExistingPublicIds) {
-                updateExistingPublicIds(extension).forEach(service::updateExtensionPublicId);
-            }
-
             entityManager.persist(extension);
         } else {
             var existingVersion = repositories.findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
@@ -178,27 +172,6 @@ public class PublishExtensionVersionHandler {
         }
 
         return bundledExtension;
-    }
-
-    private List<Extension> updateExistingPublicIds(Extension extension) {
-        var updated = true;
-        var updatedExtensions = new ArrayList<Extension>();
-        var newExtension = extension;
-        while(updated) {
-            updated = false;
-            var oldExtension = repositories.findExtensionByPublicId(newExtension.getPublicId());
-            if (oldExtension != null && !oldExtension.equals(newExtension)) {
-                entityManager.detach(oldExtension);
-                updated = vsCodeIdService.setPublicIds(oldExtension);
-            }
-            if(updated) {
-                updatedExtensions.add(oldExtension);
-                newExtension = oldExtension;
-            }
-        }
-
-        Collections.reverse(updatedExtensions);
-        return updatedExtensions;
     }
 
     @Async
@@ -264,5 +237,13 @@ public class PublishExtensionVersionHandler {
         resource.setName(signatureName);
         resource.setType(FileResource.DOWNLOAD_SIG);
         return resource;
+    }
+
+    public void schedulePublicIdJob(FileResource download) {
+        var extension = download.getExtension().getExtension();
+        if(StringUtils.isEmpty(extension.getPublicId())) {
+            var namespace = extension.getNamespace();
+            scheduler.enqueue(new VSCodeIdNewExtensionJobRequest(namespace.getName(), extension.getName()));
+        }
     }
 }

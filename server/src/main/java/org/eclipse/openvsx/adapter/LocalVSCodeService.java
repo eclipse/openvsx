@@ -45,8 +45,6 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class LocalVSCodeService implements IVSCodeService {
 
-    private static final String BUILT_IN_EXTENSION_NAMESPACE = "vscode";
-
     @Autowired
     RepositoryService repositories;
 
@@ -106,12 +104,12 @@ public class LocalVSCodeService implements IVSCodeService {
         Long totalCount = null;
         List<Extension> extensionsList;
         if (!extensionIds.isEmpty()) {
-            extensionsList = repositories.findActiveExtensionsByPublicId(extensionIds, BUILT_IN_EXTENSION_NAMESPACE);
+            extensionsList = repositories.findActiveExtensionsByPublicId(extensionIds, BuiltInExtensionUtil.getBuiltInNamespace());
         } else if (!extensionNames.isEmpty()) {
             extensionsList = extensionNames.stream()
                     .map(name -> name.split("\\."))
                     .filter(split -> split.length == 2)
-                    .filter(split -> !isBuiltInExtensionNamespace(split[0]))
+                    .filter(split -> !BuiltInExtensionUtil.isBuiltIn(split[0]))
                     .map(split -> {
                         var name = split[1];
                         var namespaceName = split[0];
@@ -125,7 +123,7 @@ public class LocalVSCodeService implements IVSCodeService {
             try {
                 var pageOffset = pageNumber * pageSize;
                 var searchOptions = new SearchUtilService.Options(queryString, category, targetPlatform, pageSize,
-                        pageOffset, sortOrder, sortBy, false, BUILT_IN_EXTENSION_NAMESPACE);
+                        pageOffset, sortOrder, sortBy, false, BuiltInExtensionUtil.getBuiltInNamespace());
 
                 var searchResult = search.search(searchOptions);
                 totalCount = searchResult.getTotalHits();
@@ -280,7 +278,7 @@ public class LocalVSCodeService implements IVSCodeService {
             String namespace, String extensionName, String version, String assetType, String targetPlatform,
             String restOfTheUrl
     ) {
-        if(isBuiltInExtensionNamespace(namespace)) {
+        if(BuiltInExtensionUtil.isBuiltIn(namespace)) {
             return new ResponseEntity<>(("Built-in extension namespace '" + namespace + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
         }
 
@@ -344,7 +342,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
     @Override
     public String getItemUrl(String namespaceName, String extensionName) {
-        if(isBuiltInExtensionNamespace(namespaceName)) {
+        if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespaceName + "' not allowed");
         }
 
@@ -358,7 +356,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
     @Override
     public String download(String namespace, String extension, String version, String targetPlatform) {
-        if(isBuiltInExtensionNamespace(namespace)) {
+        if(BuiltInExtensionUtil.isBuiltIn(namespace)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespace + "' not allowed");
         }
 
@@ -387,7 +385,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
     @Override
     public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path) {
-        if(isBuiltInExtensionNamespace(namespaceName)) {
+        if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
             return new ResponseEntity<>(("Built-in extension namespace '" + namespaceName + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
         }
 
@@ -618,9 +616,5 @@ public class LocalVSCodeService implements IVSCodeService {
 
     private boolean test(int flags, int flag) {
         return (flags & flag) != 0;
-    }
-
-    private boolean isBuiltInExtensionNamespace(String namespaceName) {
-        return namespaceName.equals(BUILT_IN_EXTENSION_NAMESPACE);
     }
 }

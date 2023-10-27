@@ -64,6 +64,7 @@ public class ExtensionService {
         var extensionFile = createExtensionFile(content);
         var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
         publishHandler.publishAsync(download, extensionFile, this);
+        publishHandler.schedulePublicIdJob(download);
         return download.getExtension();
     }
 

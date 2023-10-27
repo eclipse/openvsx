@@ -23,6 +23,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -183,7 +184,16 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findActiveVersions(queryRequest),
                 () -> repositories.findActiveVersionStringsSorted(LONG_LIST,"targetPlatform"),
-                () -> repositories.findActiveVersionReferencesSorted(List.of(extension))
+                () -> repositories.findActiveVersionReferencesSorted(List.of(extension)),
+                () -> repositories.findAllPublicIds(),
+                () -> repositories.findPublicId("namespaceName", "extensionName"),
+                () -> repositories.findPublicId("namespaceName.extensionName"),
+                () -> repositories.findNamespacePublicId("namespaceName.extensionName"),
+                () -> repositories.updateExtensionPublicIds(Collections.emptyMap()),
+                () -> repositories.updateExtensionPublicId(1L, "namespaceName.extensionName"),
+                () -> repositories.updateNamespacePublicIds(Collections.emptyMap()),
+                () -> repositories.extensionPublicIdExists("namespaceName.extensionName"),
+                () -> repositories.namespacePublicIdExists("namespaceName.extensionName")
         );
 
         // check that we did not miss anything
