@@ -39,6 +39,18 @@ jobs:
       run: docker build -t $WEBUI_TAG:$IMAGE_VERSION webui
     - name: Run Server Tests
       run: server/gradlew --no-daemon -p server check
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:

@@ -7,7 +7,6 @@ buildscript {
     }
 }
 plugins {
-    id "org.sonarqube" version "4.4.1.3373"
     id 'nu.studer.jooq' version '8.2.1'
     id 'de.undercouch.download' version '5.4.0'
     id 'org.springframework.boot' version '3.1.0'
@@ -122,14 +121,6 @@ dependencies {
 
     gatling "io.gatling:gatling-core:${versions.gatling}"
     gatling "io.gatling:gatling-app:${versions.gatling}"
-}
-
-sonar {
-  properties {
-    property "sonar.projectKey", "open-vsx_openvsx"
-    property "sonar.organization", "open-vsx"
-    property "sonar.host.url", "https://sonarcloud.io"
-  }
 }
 
 jooq {
