@@ -59,16 +59,14 @@ jobs:
         restore-keys: ${{ runner.os }}-gradle
     - name: Make server libraries directory
       run: mkdir server/libraries
-    - name: Copy server libraries #TODO remove after debugging
+    - name: Copy server libraries
       run: find ~/.gradle/caches -type f -name '*.jar' -exec cp {} server/libraries \;
-    - name: List Files #TODO remove after debugging
-      run: ls -al server/libraries
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:
         java-version: 17
-    - name: Build Server
-      run: server/gradlew --no-daemon -p server compileJava compileScala compileTestJava compileTestScala  
+    - name: Generate JaCoCo test report
+      run: server/gradlew --no-daemon -p server jacocoTestReport
     - name: SonarCloud Scan on PR
       if: github.event.workflow_run.event == 'pull_request'
       uses: sonarsource/sonarcloud-github-action@master
