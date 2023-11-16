@@ -1,0 +1,85 @@
+name: Sonar
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+jobs:
+  sonar:
+    name: Sonar
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download PR number artifact
+      if: github.event.workflow_run.event == 'pull_request'
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: Build
+        run_id: ${{ github.event.workflow_run.id }}
+        name: PR_NUMBER
+    - name: Read PR_NUMBER.txt
+      if: github.event.workflow_run.event == 'pull_request'
+      id: pr_number
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: ./PR_NUMBER.txt
+    - name: Request GitHub API for PR data
+      if: github.event.workflow_run.event == 'pull_request'
+      uses: octokit/request-action@v2.x
+      id: get_pr_data
+      with:
+        route: GET /repos/{full_name}/pulls/{number}
+        number: ${{ steps.pr_number.outputs.content }}
+        full_name: ${{ github.event.repository.full_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v3
+      with:
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+    - name: Checkout base branch
+      if: github.event.workflow_run.event == 'pull_request'
+      run: |
+        git remote add upstream ${{ github.event.repository.clone_url }}
+        git fetch upstream
+        git checkout -B ${{ fromJson(steps.get_pr_data.outputs.data).base.ref }} upstream/${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
+        git checkout ${{ github.event.workflow_run.head_branch }}
+        git clean -ffdx && git reset --hard HEAD
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
+    - name: List Files #TODO remove after debugging
+      run: ls -al
+    - name: Build Server
+      run: server/gradlew --no-daemon -p server build    
+    - name: SonarCloud Scan on PR
+      if: github.event.workflow_run.event == 'pull_request'
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }}
+          -Dsonar.pullrequest.key=${{ fromJson(steps.get_pr_data.outputs.data).number }}
+          -Dsonar.pullrequest.branch=${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
+          -Dsonar.pullrequest.base=${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
+    - name: SonarCloud Scan on push
+      if: github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.event.repository.full_name
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }}
+          -Dsonar.branch.name=${{ github.event.workflow_run.head_branch }}
