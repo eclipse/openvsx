@@ -58,9 +58,9 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Print current working directory #TODO remove after debugging
-      run: pwd
+      run: cd ~/.gradle/caches && pwd
     - name: List Files #TODO remove after debugging
-      run: ls -al
+      run: cd ~ && ls -al
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:

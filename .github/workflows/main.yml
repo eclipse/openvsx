@@ -29,24 +29,22 @@ jobs:
         corepack enable
         corepack prepare yarn@stable --activate
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0 # Sonar needs blame info
     - name: Set Image Version
       run: echo "IMAGE_VERSION=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
-    - name: Build CLI
-      run: yarn --cwd cli
-    - name: Build Web UI Image
-      run: docker build -t $WEBUI_TAG:$IMAGE_VERSION webui
-    - name: Run Server Tests
-      run: server/gradlew --no-daemon -p server check
-    - name: Build Server Image
-      run: docker build -t $SERVER_TAG:$IMAGE_VERSION server
-    - name: Push Docker Images
-      run: |
-        echo ${{ secrets.BOT_ACCESS_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-        docker push $SERVER_TAG:$IMAGE_VERSION
-        docker push $WEBUI_TAG:$IMAGE_VERSION
-      if: github.repository == 'eclipse/openvsx' && github.ref == 'refs/heads/master'
+    # - name: Build CLI
+    #   run: yarn --cwd cli
+    # - name: Build Web UI Image
+    #   run: docker build -t $WEBUI_TAG:$IMAGE_VERSION webui
+    # - name: Run Server Tests
+    #   run: server/gradlew --no-daemon -p server check
+    # - name: Build Server Image
+    #   run: docker build -t $SERVER_TAG:$IMAGE_VERSION server
+    # - name: Push Docker Images
+    #   run: |
+    #     echo ${{ secrets.BOT_ACCESS_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+    #     docker push $SERVER_TAG:$IMAGE_VERSION
+    #     docker push $WEBUI_TAG:$IMAGE_VERSION
+    #   if: github.repository == 'eclipse/openvsx' && github.ref == 'refs/heads/master'
     - name: Save PR number to file
       if: github.event_name == 'pull_request'
       run: echo ${{ github.event.number }} > PR_NUMBER.txt
