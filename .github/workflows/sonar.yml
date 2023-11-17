@@ -57,16 +57,16 @@ jobs:
         path: ~/.gradle/caches
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
-    - name: Make server libraries directory
-      run: mkdir server/libraries
-    - name: Copy server libraries
-      run: find ~/.gradle/caches -type f -name '*.jar' -exec cp {} server/libraries \;
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:
         java-version: 17
     - name: Generate JaCoCo test report
       run: server/gradlew --no-daemon -p server jacocoTestReport
+    - name: Make server libraries directory
+      run: mkdir server/libraries
+    - name: Copy server libraries
+      run: find ~/.gradle/caches -type f -name '*.jar' -exec cp {} server/libraries \;
     - name: SonarCloud Scan on PR
       if: github.event.workflow_run.event == 'pull_request'
       uses: sonarsource/sonarcloud-github-action@master
