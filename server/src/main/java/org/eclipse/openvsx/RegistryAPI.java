@@ -9,7 +9,66 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_ALPINE_ARM64;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_ALPINE_X64;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_DARWIN_ARM64;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_DARWIN_X64;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_LINUX_ARM64;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_LINUX_ARMHF;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_LINUX_X64;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_WEB;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_WIN32_ARM64;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_WIN32_IA32;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_WIN32_X64;
+
+import java.io.InputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.entities.SemanticVersion;
+import org.eclipse.openvsx.json.ExtensionJson;
+import org.eclipse.openvsx.json.NamespaceDetailsJson;
+import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.QueryParamJson;
+import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.json.QueryRequestV2;
+import org.eclipse.openvsx.json.QueryResultJson;
+import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.ReviewJson;
+import org.eclipse.openvsx.json.ReviewListJson;
+import org.eclipse.openvsx.json.SearchEntryJson;
+import org.eclipse.openvsx.json.SearchResultJson;
+import org.eclipse.openvsx.json.VersionReferencesJson;
+import org.eclipse.openvsx.json.VersionsJson;
+import org.eclipse.openvsx.search.ISearchService;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LogUtils.ScopeLog;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.UrlUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.google.common.collect.Iterables;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -18,33 +77,14 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.apache.commons.lang3.StringUtils;
-import org.eclipse.openvsx.entities.SemanticVersion;
-import org.eclipse.openvsx.json.*;
-import org.eclipse.openvsx.search.ISearchService;
-import org.eclipse.openvsx.util.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.eclipse.openvsx.util.TargetPlatform.*;
 
 @RestController
 public class RegistryAPI {
     private final static int REVIEW_TITLE_SIZE = 255;
     private final static int REVIEW_COMMENT_SIZE = 2048;
     private final static String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
+    private final static Logger LOGGER = Logger.getLogger(RegistryAPI.class.getName());
 
     @Autowired
     LocalRegistryService local;
@@ -976,45 +1016,47 @@ public class RegistryAPI {
             @RequestParam(required = false)
             @Parameter(description = "Whether to include information on all available versions for each returned entry")
             boolean includeAllVersions
-    ) {
-        if (size < 0) {
-            var json = SearchResultJson.error("The parameter 'size' must not be negative.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = SearchResultJson.error("The parameter 'offset' must not be negative.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
+	) {
+		try (ScopeLog sl = new ScopeLog(LOGGER, Level.FINER, "/api/-/search")) {
+			if (size < 0) {
+				var json = SearchResultJson.error("The parameter 'size' must not be negative.");
+				return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+			}
+			if (offset < 0) {
+				var json = SearchResultJson.error("The parameter 'offset' must not be negative.");
+				return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+			}
 
-        var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions);
-        var result = new SearchResultJson();
-        result.extensions = new ArrayList<>(size);
-        for (var registry : getRegistries()) {
-            if (result.extensions.size() >= size) {
-                return ResponseEntity.ok(result);
-            }
-            try {
-                var subResult = registry.search(options);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeSearchResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
-                }
-                result.totalSize += subResult.totalSize;
-            } catch (NotFoundException exc) {
-                // Try the next registry
-            } catch (ErrorResultException exc) {
-                return exc.toResponseEntity(SearchResultJson.class);
-            }
-        }
+			var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy,
+					includeAllVersions);
+			var result = new SearchResultJson();
+			result.extensions = new ArrayList<>(size);
+			for (var registry : getRegistries()) {
+				if (result.extensions.size() >= size) {
+					return ResponseEntity.ok(result);
+				}
+				try (ScopeLog inner = new ScopeLog(LOGGER, Level.FINER, "registry#search")) {
+					var subResult = registry.search(options);
+					if (result.extensions.isEmpty() && subResult.extensions != null) {
+						result.extensions.addAll(subResult.extensions);
+					} else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
+						int limit = size - result.extensions.size();
+						var subResultSize = mergeSearchResults(result, subResult.extensions, limit);
+						result.offset += subResult.offset;
+						offset = Math.max(offset - subResult.offset - subResultSize, 0);
+					}
+					result.totalSize += subResult.totalSize;
+				} catch (NotFoundException exc) {
+					// Try the next registry
+				} catch (ErrorResultException exc) {
+					return exc.toResponseEntity(SearchResultJson.class);
+				}
+			}
 
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.noCache().cachePublic())
-                .body(result);
-    }
+			return ResponseEntity.ok().cacheControl(CacheControl.noCache().cachePublic()).body(result);
+
+		}
+	}
 
     private int mergeSearchResults(SearchResultJson result, List<SearchEntryJson> entries, int limit) {
         var previousResult = Iterables.limit(result.extensions, result.extensions.size());
@@ -1091,56 +1133,57 @@ public class RegistryAPI {
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
-        if (size < 0) {
-            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if(!List.of("true", "false", "links").contains(includeAllVersions)) {
-            var json = QueryResultJson.error("Invalid includeAllVersions value: " + includeAllVersions + ".");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
+		try (ScopeLog sl = new ScopeLog(LOGGER, Level.FINER, "/api/v2/-/query")) {
+			if (size < 0) {
+				var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+				return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+			}
+			if (offset < 0) {
+				var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+				return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+			}
+			if (!List.of("true", "false", "links").contains(includeAllVersions)) {
+				var json = QueryResultJson.error("Invalid includeAllVersions value: " + includeAllVersions + ".");
+				return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+			}
 
-        var request = new QueryRequestV2();
-        request.namespaceName = namespaceName;
-        request.extensionName = extensionName;
-        request.extensionVersion = extensionVersion;
-        request.extensionId = extensionId;
-        request.extensionUuid = extensionUuid;
-        request.namespaceUuid = namespaceUuid;
-        request.includeAllVersions = includeAllVersions;
-        request.targetPlatform = targetPlatform;
-        request.size = size;
-        request.offset = offset;
+			var request = new QueryRequestV2();
+			request.namespaceName = namespaceName;
+			request.extensionName = extensionName;
+			request.extensionVersion = extensionVersion;
+			request.extensionId = extensionId;
+			request.extensionUuid = extensionUuid;
+			request.namespaceUuid = namespaceUuid;
+			request.includeAllVersions = includeAllVersions;
+			request.targetPlatform = targetPlatform;
+			request.size = size;
+			request.offset = offset;
 
-        var result = new QueryResultJson();
-        result.offset = request.offset;
-        result.extensions = new ArrayList<>(size);
-        for (var registry : getRegistries()) {
-            try {
-                var subResult = registry.queryV2(request);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
-                }
-                result.totalSize += subResult.totalSize;
-            } catch (NotFoundException exc) {
-                // Try the next registry
-            } catch (ErrorResultException exc) {
-                return exc.toResponseEntity(QueryResultJson.class);
-            }
-        }
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                .body(result);
-    }
+			var result = new QueryResultJson();
+			result.offset = request.offset;
+			result.extensions = new ArrayList<>(size);
+			for (var registry : getRegistries()) {
+				try (ScopeLog inner = new ScopeLog(LOGGER, Level.FINER, "registry#query")) {
+					var subResult = registry.queryV2(request);
+					if (result.extensions.isEmpty() && subResult.extensions != null) {
+						result.extensions.addAll(subResult.extensions);
+					} else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
+						int limit = size - result.extensions.size();
+						var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
+						result.offset += subResult.offset;
+						offset = Math.max(offset - subResult.offset - subResultSize, 0);
+					}
+					result.totalSize += subResult.totalSize;
+				} catch (NotFoundException exc) {
+					// Try the next registry
+				} catch (ErrorResultException exc) {
+					return exc.toResponseEntity(QueryResultJson.class);
+				}
+			}
+			return ResponseEntity.ok().cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+					.body(result);
+		}
+	}
 
     @GetMapping(
         path = "/api/-/query",
@@ -1220,53 +1263,54 @@ public class RegistryAPI {
             @RequestParam(defaultValue = "0")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
-    ) {
-        if (size < 0) {
-            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        
-        var request = new QueryRequest();
-        request.namespaceName = namespaceName;
-        request.extensionName = extensionName;
-        request.extensionVersion = extensionVersion;
-        request.extensionId = extensionId;
-        request.extensionUuid = extensionUuid;
-        request.namespaceUuid = namespaceUuid;
-        request.includeAllVersions = includeAllVersions;
-        request.targetPlatform = targetPlatform;
-        request.size = size;
-        request.offset = offset;
+	) {
+		try (ScopeLog sl = new ScopeLog(LOGGER, Level.FINER, "/api/-/query")) {
+			if (size < 0) {
+				var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+				return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+			}
+			if (offset < 0) {
+				var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+				return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+			}
 
-        var result = new QueryResultJson();
-        result.offset = request.offset;
-        result.extensions = new ArrayList<>(size);
-        for (var registry : getRegistries()) {
-            try {
-                var subResult = registry.query(request);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
-                }
-                result.totalSize += subResult.totalSize;
-            } catch (NotFoundException exc) {
-                // Try the next registry
-            } catch (ErrorResultException exc) {
-                return exc.toResponseEntity(QueryResultJson.class);
-            }
-        }
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                .body(result);
-    }
+			var request = new QueryRequest();
+			request.namespaceName = namespaceName;
+			request.extensionName = extensionName;
+			request.extensionVersion = extensionVersion;
+			request.extensionId = extensionId;
+			request.extensionUuid = extensionUuid;
+			request.namespaceUuid = namespaceUuid;
+			request.includeAllVersions = includeAllVersions;
+			request.targetPlatform = targetPlatform;
+			request.size = size;
+			request.offset = offset;
+
+			var result = new QueryResultJson();
+			result.offset = request.offset;
+			result.extensions = new ArrayList<>(size);
+			for (var registry : getRegistries()) {
+				try (ScopeLog inner = new ScopeLog(LOGGER, Level.FINER, "registry#query")) {
+					var subResult = registry.query(request);
+					if (result.extensions.isEmpty() && subResult.extensions != null) {
+						result.extensions.addAll(subResult.extensions);
+					} else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
+						int limit = size - result.extensions.size();
+						var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
+						result.offset += subResult.offset;
+						offset = Math.max(offset - subResult.offset - subResultSize, 0);
+					}
+					result.totalSize += subResult.totalSize;
+				} catch (NotFoundException exc) {
+					// Try the next registry
+				} catch (ErrorResultException exc) {
+					return exc.toResponseEntity(QueryResultJson.class);
+				}
+			}
+			return ResponseEntity.ok().cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+					.body(result);
+		}
+	}
 
     private int mergeQueryResults(QueryResultJson result, List<ExtensionJson> entries, int limit) {
         var previousResult = Iterables.limit(result.extensions, result.extensions.size());
