@@ -7,4 +7,4 @@ if (semver.lt(process.versions.node, '20.0.0')) {
     process.exit(1);
 }
 
-require('./main')(process.argv);
+require('./lib/main')(process.argv);
