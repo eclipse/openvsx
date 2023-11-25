@@ -9,12 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import static org.eclipse.openvsx.security.CodedAuthException.*;
+import static org.eclipse.openvsx.security.CodedAuthException.ECLIPSE_MISMATCH_GITHUB_ID;
+import static org.eclipse.openvsx.security.CodedAuthException.ECLIPSE_MISSING_GITHUB_ID;
+import static org.eclipse.openvsx.security.CodedAuthException.INVALID_GITHUB_USER;
+import static org.eclipse.openvsx.security.CodedAuthException.NEED_MAIN_LOGIN;
+import static org.eclipse.openvsx.security.CodedAuthException.UNSUPPORTED_REGISTRATION;
 
 import java.util.Collection;
 import java.util.Collections;
-
-import jakarta.persistence.EntityManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UserService;
@@ -39,6 +41,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import jakarta.persistence.EntityManager;
+
 @Service
 public class OAuth2UserServices {
 
@@ -47,7 +51,7 @@ public class OAuth2UserServices {
 
     @Autowired
     TokenService tokens;
-    
+
     @Autowired
     RepositoryService repositories;
 
@@ -112,16 +116,17 @@ public class OAuth2UserServices {
     }
 
     private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
-        var authUser = delegate.loadUser(userRequest);
-        String loginName = authUser.getAttribute("login");
+        var authUser = new GithubAuthUser(delegate.loadUser(userRequest));
+        String loginName = authUser.getLoginName();
         if (StringUtils.isEmpty(loginName))
             throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
         var userData = repositories.findUserByLoginName("github", loginName);
-        if (userData == null)
+        if (userData == null) {
             userData = users.registerNewUser(authUser);
-        else
+        } else {
             users.updateExistingUser(userData, authUser);
-        return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
+        }
+        return new IdPrincipal(userData.getId(), authUser.getAuthId(), getAuthorities(userData));
     }
 
     private IdPrincipal loadEclipseUser(OAuth2UserRequest userRequest) {
@@ -169,4 +174,30 @@ public class OAuth2UserServices {
         }
     }
 
+    static class GithubAuthUser implements AuthUser {
+
+        final String authId;
+        final String avatarUrl;
+        final String email;
+        final String fullName;
+        final String loginName;
+        final String providerUrl;
+
+        @Override public String getAuthId() { return authId; }
+        @Override public String getAvatarUrl() { return avatarUrl; }
+        @Override public String getEmail() { return email; }
+        @Override public String getFullName() { return fullName; }
+        @Override public String getLoginName() { return loginName; }
+        @Override public String getProviderId() { return "github"; }
+        @Override public String getProviderUrl() { return providerUrl; }
+
+        public GithubAuthUser(OAuth2User oauth2User) {
+            authId = oauth2User.getName();
+            avatarUrl = oauth2User.getAttribute("avatar_url");
+            email = oauth2User.getAttribute("email");
+            fullName = oauth2User.getAttribute("name");
+            loginName = oauth2User.getAttribute("login");
+            providerUrl = oauth2User.getAttribute("html_url");
+        }
+    }
 }
