@@ -116,11 +116,11 @@ public class OAuth2UserServices {
     }
 
     private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
-        var authUser = new GithubAuthUser(delegate.loadUser(userRequest));
+        var authUser = new DefaultAuthUser("github", delegate.loadUser(userRequest));
         String loginName = authUser.getLoginName();
         if (StringUtils.isEmpty(loginName))
             throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
-        var userData = repositories.findUserByLoginName("github", loginName);
+        var userData = repositories.findUserByLoginName(authUser.getProviderId(), loginName);
         if (userData == null) {
             userData = users.registerNewUser(authUser);
         } else {
@@ -171,33 +171,6 @@ public class OAuth2UserServices {
                 return AuthorityUtils.createAuthorityList("ROLE_PRIVILEGED");
             default:
                 return Collections.emptyList();
-        }
-    }
-
-    static class GithubAuthUser implements AuthUser {
-
-        final String authId;
-        final String avatarUrl;
-        final String email;
-        final String fullName;
-        final String loginName;
-        final String providerUrl;
-
-        @Override public String getAuthId() { return authId; }
-        @Override public String getAvatarUrl() { return avatarUrl; }
-        @Override public String getEmail() { return email; }
-        @Override public String getFullName() { return fullName; }
-        @Override public String getLoginName() { return loginName; }
-        @Override public String getProviderId() { return "github"; }
-        @Override public String getProviderUrl() { return providerUrl; }
-
-        public GithubAuthUser(OAuth2User oauth2User) {
-            authId = oauth2User.getName();
-            avatarUrl = oauth2User.getAttribute("avatar_url");
-            email = oauth2User.getAttribute("email");
-            fullName = oauth2User.getAttribute("name");
-            loginName = oauth2User.getAttribute("login");
-            providerUrl = oauth2User.getAttribute("html_url");
         }
     }
 }
