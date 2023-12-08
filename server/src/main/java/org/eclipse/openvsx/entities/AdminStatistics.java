@@ -12,10 +12,8 @@ package org.eclipse.openvsx.entities;
 import org.eclipse.openvsx.json.AdminStatisticsJson;
 
 import jakarta.persistence.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
@@ -326,5 +324,18 @@ public class AdminStatistics {
 
     public void setTopMostDownloadedExtensions(Map<String, Long> topMostDownloadedExtensions) {
         this.topMostDownloadedExtensions = topMostDownloadedExtensions;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AdminStatistics that = (AdminStatistics) o;
+        return id == that.id && year == that.year && month == that.month && extensions == that.extensions && downloads == that.downloads && downloadsTotal == that.downloadsTotal && publishers == that.publishers && Double.compare(that.averageReviewsPerExtension, averageReviewsPerExtension) == 0 && namespaceOwners == that.namespaceOwners && Objects.equals(extensionsByRating, that.extensionsByRating) && Objects.equals(publishersByExtensionsPublished, that.publishersByExtensionsPublished) && Objects.equals(topMostActivePublishingUsers, that.topMostActivePublishingUsers) && Objects.equals(topNamespaceExtensions, that.topNamespaceExtensions) && Objects.equals(topNamespaceExtensionVersions, that.topNamespaceExtensionVersions) && Objects.equals(topMostDownloadedExtensions, that.topMostDownloadedExtensions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, year, month, extensions, downloads, downloadsTotal, publishers, averageReviewsPerExtension, namespaceOwners, extensionsByRating, publishersByExtensionsPublished, topMostActivePublishingUsers, topNamespaceExtensions, topNamespaceExtensionVersions, topMostDownloadedExtensions);
     }
 }
