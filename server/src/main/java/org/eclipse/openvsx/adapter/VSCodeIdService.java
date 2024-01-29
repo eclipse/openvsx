@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.ZoneId;
+import java.util.UUID;
 
 @Component
 public class VSCodeIdService {
@@ -66,18 +67,24 @@ public class VSCodeIdService {
         scheduler.scheduleRecurrently("VSCodeIdDailyUpdate", Cron.daily(3), ZoneId.of("UTC"), new HandlerJobRequest<>(VSCodeIdDailyUpdateJobRequestHandler.class));
     }
 
-    public void getUpstreamPublicIds(Extension extension) {
-        extension.setPublicId(null);
-        extension.getNamespace().setPublicId(null);
+    public String getRandomPublicId() {
+        return UUID.randomUUID().toString();
+    }
+
+    public PublicIds getUpstreamPublicIds(Extension extension) {
+        String extensionPublicId = null;
+        String namespacePublicId = null;
         var upstream = getUpstreamExtension(extension);
         if (upstream != null) {
             if (upstream.extensionId != null) {
-                extension.setPublicId(upstream.extensionId);
+                extensionPublicId = upstream.extensionId;
             }
             if (upstream.publisher != null && upstream.publisher.publisherId != null) {
-                extension.getNamespace().setPublicId(upstream.publisher.publisherId);
+                namespacePublicId = upstream.publisher.publisherId;
             }
         }
+
+        return new PublicIds(namespacePublicId, extensionPublicId);
     }
 
     private ExtensionQueryResult.Extension getUpstreamExtension(Extension extension) {

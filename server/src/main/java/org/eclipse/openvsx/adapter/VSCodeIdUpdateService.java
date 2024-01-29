@@ -20,14 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Component
 public class VSCodeIdUpdateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(VSCodeIdUpdateService.class);
-    private static final Semaphore LOCK = new Semaphore(1);
 
     @Autowired
     RepositoryService repositories;
@@ -36,10 +33,6 @@ public class VSCodeIdUpdateService {
     VSCodeIdService service;
 
     public void update(String namespaceName, String extensionName) throws InterruptedException {
-        var acquired = LOCK.tryAcquire(15, TimeUnit.SECONDS);
-        if(!acquired) {
-            throw new RuntimeException("Failed to update public id for " + NamingUtil.toExtensionId(namespaceName, extensionName));
-        }
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
             LOGGER.debug("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(namespaceName, extensionName));
             return;
@@ -47,64 +40,62 @@ public class VSCodeIdUpdateService {
 
         var extension = repositories.findPublicId(namespaceName, extensionName);
         var extensionUpdates = new HashMap<Long, String>();
-        updateExtensionPublicId(extension, extensionUpdates);
+        updateExtensionPublicId(extension, extensionUpdates, false);
         if(!extensionUpdates.isEmpty()) {
             repositories.updateExtensionPublicIds(extensionUpdates);
         }
 
         var namespaceUpdates = new HashMap<Long, String>();
-        updateNamespacePublicId(extension, namespaceUpdates);
+        updateNamespacePublicId(extension, namespaceUpdates, false);
         if(!namespaceUpdates.isEmpty()) {
             repositories.updateNamespacePublicIds(namespaceUpdates);
         }
-        LOCK.release();
     }
 
-    private void updateExtensionPublicId(Extension extension, Map<Long, String> updates) {
+    private void updateExtensionPublicId(Extension extension, Map<Long, String> updates, boolean mustUpdate) {
         LOGGER.debug("updateExtensionPublicId: {}", NamingUtil.toExtensionId(extension));
-        service.getUpstreamPublicIds(extension);
-        if(extension.getPublicId() == null) {
-            var publicId = "";
+        var oldPublicId = extension.getPublicId();
+        var newPublicId = service.getUpstreamPublicIds(extension).extension();
+        if(newPublicId == null || (mustUpdate && newPublicId.equals(oldPublicId))) {
             do {
-                publicId = UUID.randomUUID().toString();
-                LOGGER.debug("RANDOM EXTENSION PUBLIC ID: {}", publicId);
-            } while(updates.containsValue(publicId) || repositories.extensionPublicIdExists(publicId));
-            LOGGER.debug("RANDOM PUT UPDATE: {} - {}", extension.getId(), publicId);
-            updates.put(extension.getId(), publicId);
-        } else {
-            LOGGER.debug("UPSTREAM PUT UPDATE: {} - {}", extension.getId(), extension.getPublicId());
-            updates.put(extension.getId(), extension.getPublicId());
-            var duplicatePublicId = repositories.findPublicId(extension.getPublicId());
+                newPublicId = service.getRandomPublicId();
+                LOGGER.debug("RANDOM EXTENSION PUBLIC ID: {}", newPublicId);
+            } while(updates.containsValue(newPublicId) || repositories.extensionPublicIdExists(newPublicId));
+            LOGGER.debug("RANDOM PUT UPDATE: {} - {}", extension.getId(), newPublicId);
+            updates.put(extension.getId(), newPublicId);
+        } else if (!newPublicId.equals(oldPublicId)) {
+            LOGGER.debug("UPSTREAM PUT UPDATE: {} - {}", extension.getId(), newPublicId);
+            updates.put(extension.getId(), newPublicId);
+            var duplicatePublicId = repositories.findPublicId(newPublicId);
             if(duplicatePublicId != null) {
-                updateExtensionPublicId(duplicatePublicId, updates);
+                updateExtensionPublicId(duplicatePublicId, updates, true);
             }
         }
     }
 
-    private void updateNamespacePublicId(Extension extension, Map<Long, String> updates) {
+    private void updateNamespacePublicId(Extension extension, Map<Long, String> updates, boolean mustUpdate) {
         LOGGER.debug("updateNamespacePublicId: {}", extension.getNamespace().getName());
-        service.getUpstreamPublicIds(extension);
-        var namespace = extension.getNamespace();
-        if(namespace.getPublicId() == null) {
-            var publicId = "";
+        var oldPublicId = extension.getNamespace().getPublicId();
+        var newPublicId = service.getUpstreamPublicIds(extension).namespace();
+        var id = extension.getNamespace().getId();
+        if(newPublicId == null || (mustUpdate && newPublicId.equals(oldPublicId))) {
             do {
-                publicId = UUID.randomUUID().toString();
-                LOGGER.debug("RANDOM NAMESPACE PUBLIC ID: {}", publicId);
-            } while(updates.containsValue(publicId) || repositories.namespacePublicIdExists(publicId));
-            LOGGER.debug("RANDOM PUT UPDATE: {} - {}", namespace.getId(), publicId);
-            updates.put(namespace.getId(), publicId);
-        } else {
-            LOGGER.debug("UPSTREAM PUT UPDATE: {} - {}", namespace.getId(), namespace.getPublicId());
-            updates.put(namespace.getId(), namespace.getPublicId());
-            var duplicatePublicId = repositories.findNamespacePublicId(namespace.getPublicId());
+                newPublicId = service.getRandomPublicId();
+                LOGGER.debug("RANDOM NAMESPACE PUBLIC ID: {}", newPublicId);
+            } while(updates.containsValue(newPublicId) || repositories.namespacePublicIdExists(newPublicId));
+            LOGGER.debug("RANDOM PUT UPDATE: {} - {}", id, newPublicId);
+            updates.put(id, newPublicId);
+        } else if(!newPublicId.equals(oldPublicId)) {
+            LOGGER.debug("UPSTREAM PUT UPDATE: {} - {}", id, newPublicId);
+            updates.put(id, newPublicId);
+            var duplicatePublicId = repositories.findNamespacePublicId(newPublicId);
             if(duplicatePublicId != null) {
-                updateNamespacePublicId(duplicatePublicId, updates);
+                updateNamespacePublicId(duplicatePublicId, updates, true);
             }
         }
     }
 
     public void updateAll() throws InterruptedException {
-        LOCK.acquire();
         LOGGER.debug("DAILY UPDATE ALL");
         var extensions = repositories.findAllPublicIds();
         var extensionPublicIdsMap = extensions.stream()
@@ -124,16 +115,16 @@ public class VSCodeIdUpdateService {
             }
 
             LOGGER.trace("GET UPSTREAM PUBLIC ID: {} | {}", extension.getId(), NamingUtil.toExtensionId(extension));
-            service.getUpstreamPublicIds(extension);
+            var publicIds = service.getUpstreamPublicIds(extension);
             if(upstreamExtensionPublicIds.get(extension.getId()) == null) {
-                LOGGER.trace("ADD EXTENSION PUBLIC ID: {} - {}", extension.getId(), extension.getPublicId());
-                upstreamExtensionPublicIds.put(extension.getId(), extension.getPublicId());
+                LOGGER.trace("ADD EXTENSION PUBLIC ID: {} - {}", extension.getId(), publicIds.extension());
+                upstreamExtensionPublicIds.put(extension.getId(), publicIds.extension());
             }
 
             var namespace = extension.getNamespace();
             if(upstreamNamespacePublicIds.get(namespace.getId()) == null) {
-                LOGGER.trace("ADD NAMESPACE PUBLIC ID: {} - {}", namespace.getId(), namespace.getPublicId());
-                upstreamNamespacePublicIds.put(namespace.getId(), namespace.getPublicId());
+                LOGGER.trace("ADD NAMESPACE PUBLIC ID: {} - {}", namespace.getId(), publicIds.namespace());
+                upstreamNamespacePublicIds.put(namespace.getId(), publicIds.namespace());
             }
         }
 
@@ -160,8 +151,6 @@ public class VSCodeIdUpdateService {
 
             repositories.updateNamespacePublicIds(changedNamespacePublicIds);
         }
-
-        LOCK.release();
     }
 
     private Map<Long, String> getChangedPublicIds(Map<Long, String> upstreamPublicIds, Map<Long, String> currentPublicIds) {
@@ -190,7 +179,7 @@ public class VSCodeIdUpdateService {
             return remove;
         });
 
-        // put random UUIDs where upstream public id is missing
+        // put random public ids where upstream public id is missing
         for(var key : changedPublicIds.keySet()) {
             if(changedPublicIds.get(key) != null) {
                 continue;
@@ -198,7 +187,7 @@ public class VSCodeIdUpdateService {
 
             String publicId = null;
             while(newPublicIds.contains(publicId)) {
-                publicId = UUID.randomUUID().toString();
+                publicId = service.getRandomPublicId();
                 LOGGER.debug("NEW PUBLIC ID - {}: '{}'", key, publicId);
             }
 
