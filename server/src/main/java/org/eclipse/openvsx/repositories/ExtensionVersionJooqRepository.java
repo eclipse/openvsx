@@ -81,8 +81,8 @@ public class ExtensionVersionJooqRepository {
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
-                .and(NAMESPACE.NAME.eq(namespace))
-                .and(EXTENSION.NAME.eq(extension));
+                .and(NAMESPACE.NAME.equalIgnoreCase(namespace))
+                .and(EXTENSION.NAME.equalIgnoreCase(extension));
 
         if(targetPlatform != null) {
             totalQuery = totalQuery.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
@@ -90,8 +90,8 @@ public class ExtensionVersionJooqRepository {
 
         var conditions = new ArrayList<Condition>();
         conditions.add(EXTENSION_VERSION.ACTIVE.eq(true));
-        conditions.add(NAMESPACE.NAME.eq(namespace));
-        conditions.add(EXTENSION.NAME.eq(extension));
+        conditions.add(NAMESPACE.NAME.equalIgnoreCase(namespace));
+        conditions.add(EXTENSION.NAME.equalIgnoreCase(extension));
         if(targetPlatform != null) {
             conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }

@@ -149,10 +149,6 @@ public class RepositoryService {
         return extensionVersionRepo.findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(targetPlatform, extension, namespace, page.withSort(VERSIONS_SORT));
     }
 
-    public Page<String> findActiveVersionStringsSorted(String namespace, String extension, PageRequest page) {
-        return extensionVersionJooqRepo.findActiveVersionStringsSorted(namespace, extension, null, page);
-    }
-
     public Page<String> findActiveVersionStringsSorted(String namespace, String extension, String targetPlatform, PageRequest page) {
         return extensionVersionJooqRepo.findActiveVersionStringsSorted(namespace, extension, targetPlatform, page);
     }

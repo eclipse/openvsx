@@ -121,17 +121,17 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public VersionsJson getVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
         var pageRequest = PageRequest.of((offset/size), size);
-        var page = targetPlatform == null
-                ? repositories.findActiveVersionStringsSorted(namespace, extension, pageRequest)
-                : repositories.findActiveVersionStringsSorted(namespace, extension, targetPlatform, pageRequest);
+        var page = repositories.findActiveVersionStringsSorted(namespace, extension, targetPlatform, pageRequest);
 
         var json = new VersionsJson();
         json.offset = (int) page.getPageable().getOffset();
         json.totalSize = (int) page.getTotalElements();
+        var namespaceLowerCase = namespace.toLowerCase();
+        var extensionLowerCase = extension.toLowerCase();
         json.versions = page.get()
                 .collect(Collectors.toMap(
                         version -> version,
-                        version -> UrlUtil.createApiVersionUrl(UrlUtil.getBaseUrl(), namespace, extension, targetPlatform, version),
+                        version -> UrlUtil.createApiVersionUrl(UrlUtil.getBaseUrl(), namespaceLowerCase, extensionLowerCase, targetPlatform, version),
                         (v1, v2) -> v1,
                         LinkedHashMap::new
                 ));
