@@ -178,7 +178,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.deleteAllKeyPairs(),
                 () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", PageRequest.ofSize(1)),
                 () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", "targetPlatform", PageRequest.ofSize(1)),
-                () -> repositories.findActiveVersionStringsSorted("namespaceName", "extensionName", PageRequest.ofSize(1)),
                 () -> repositories.findActiveVersionStringsSorted("namespaceName", "extensionName", "targetPlatform", PageRequest.ofSize(1)),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
