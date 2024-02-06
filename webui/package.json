@@ -110,5 +110,5 @@
         "publish:next": "yarn npm publish --tag next",
         "publish:latest": "yarn npm publish --tag latest"
     },
-    "packageManager": "yarn@4.0.0"
+    "packageManager": "yarn@4.1.0"
 }
