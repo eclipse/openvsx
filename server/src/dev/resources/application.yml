@@ -1,7 +1,16 @@
+logging:
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+
 server:
   port: 8080
 
 spring:
+  application:
+    name: openvsx-server
+  autoconfigure:
+    # don't send traces to Zipkin in development
+    exclude: org.springframework.boot.actuate.autoconfigure.tracing.zipkin.ZipkinAutoConfiguration
   profiles:
     include: ovsx
   cache:

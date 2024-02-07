@@ -10,6 +10,7 @@
 package org.eclipse.openvsx;
 
 import com.google.common.collect.Maps;
+import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -259,6 +260,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Observed
     public SearchResultJson search(ISearchService.Options options) {
         var json = new SearchResultJson();
         var size = options.requestedSize;
@@ -280,6 +282,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Observed
     public QueryResultJson query(QueryRequest request) {
         if (!StringUtils.isEmpty(request.extensionId)) {
             var split = request.extensionId.split("\\.");
@@ -331,6 +334,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Observed
     public QueryResultJson queryV2(QueryRequestV2 request) {
         if (!StringUtils.isEmpty(request.extensionId)) {
             var split = request.extensionId.split("\\.");

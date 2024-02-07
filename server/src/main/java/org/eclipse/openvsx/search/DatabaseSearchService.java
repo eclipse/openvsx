@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,7 @@ public class DatabaseSearchService implements ISearchService {
     @Autowired
     VersionService versions;
 
+    @Observed
     @Transactional
     @Cacheable(CACHE_DATABASE_SEARCH)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)

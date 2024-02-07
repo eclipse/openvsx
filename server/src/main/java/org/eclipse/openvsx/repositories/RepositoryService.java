@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -317,6 +318,7 @@ public class RepositoryService {
         return extensionJooqRepo.findAllActiveById(ids);
     }
 
+    @Observed
     public Page<ExtensionVersion> findActiveVersions(QueryRequest request) {
         return extensionVersionJooqRepo.findActiveVersions(request);
     }
