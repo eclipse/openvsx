@@ -1,0 +1,33 @@
+name: Playwright Tests against open-vsx.org
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * *" # run every day at 6pm
+  # push:
+  #   branches: [main, master]
+  # pull_request:
+  #   branches: [main, master]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - name: Install dependencies
+        working-directory: ./webui
+        run: yarn
+      - name: Install Playwright Browsers
+        working-directory: ./webui
+        run: yarn playwright install --with-deps
+      - name: Run Playwright tests
+        working-directory: ./webui
+        run: yarn smoke-tests
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: webui/playwright-report/
+          retention-days: 30

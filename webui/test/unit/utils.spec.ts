@@ -10,7 +10,7 @@
 
 import 'mocha';
 import { expect } from 'chai';
-import { toRelativeTime } from '../src/utils';
+import { toRelativeTime } from '../../src/utils';
 
 describe('toRelativeTime', () => {
     const msPerMinute = 60 * 1000;
