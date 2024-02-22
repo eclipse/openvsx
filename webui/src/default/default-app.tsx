@@ -33,6 +33,13 @@ if (serverHost.startsWith('3000-')) {
 }
 const service = new ExtensionRegistryService(`${location.protocol}//${serverHost}`);
 
+async function getServerVersion(): Promise<string> {
+   const abortController = new AbortController();
+   const result = await service.getRegistryVersion(abortController);
+   console.log('Server version:', result.version);
+   return result.version;
+}
+
 const App = () => {
     const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
     const theme = useMemo(
@@ -40,7 +47,7 @@ const App = () => {
         [prefersDarkMode],
     );
 
-    const pageSettings = createPageSettings(prefersDarkMode, service.serverUrl);
+    const pageSettings = createPageSettings(prefersDarkMode, service.serverUrl, getServerVersion());
     return (
         <HelmetProvider>
             <ThemeProvider theme={theme}>

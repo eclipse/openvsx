@@ -11,7 +11,7 @@
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
-    SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry
+    SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -394,6 +394,11 @@ export class ExtensionRegistryService {
             headers: headers,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'extensions'])
         });
+    }
+
+    async getRegistryVersion(abortController: AbortController): Promise<Readonly<RegistryVersion>> {
+        const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'version']);
+        return sendRequest({ abortController, endpoint });
     }
 }
 

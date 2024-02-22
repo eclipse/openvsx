@@ -1717,4 +1717,13 @@ public class RegistryAPI {
 
         return ResponseEntity.notFound().build();
     }
+
+    @GetMapping(path = "/api/version", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RegistryVersionJson> getServerVersion() {
+        try {
+            return ResponseEntity.ok(local.getRegistryVersion());
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(RegistryVersionJson.class);
+        }
+    }
 }
