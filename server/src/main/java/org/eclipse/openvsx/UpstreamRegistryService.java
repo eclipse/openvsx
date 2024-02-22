@@ -384,6 +384,28 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         }
     }
 
+    /**
+     * Returns the version of the upstream registry.
+     *
+     * This functionality is currently not used, but could be called when
+     * the need to show or check the version of the upstream registry arises.
+     *
+     * @return the version of the upstream registry
+     */
+    @Override
+    public RegistryVersionJson getRegistryVersion() {
+        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/version";
+
+        try {
+            ResponseEntity<RegistryVersionJson> response = restTemplate.getForEntity(urlTemplate,
+                    RegistryVersionJson.class);
+            return response.getBody();
+        } catch (RestClientException exc) {
+            logger.error("GET " + urlTemplate, exc);
+            throw new NotFoundException();
+        }
+    }
+
     private void handleError(Throwable exc) throws RuntimeException {
         if (exc instanceof HttpStatusCodeException) {
             var status = ((HttpStatusCodeException) exc).getStatusCode();

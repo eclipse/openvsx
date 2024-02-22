@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode } from 'react';
+import React, { FunctionComponent, ReactNode, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { styled, Theme } from '@mui/material/styles';
 import { Link, Typography, Box } from '@mui/material';
@@ -22,7 +22,7 @@ import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
 import { createAbsoluteURL } from '../utils';
 
-export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string): PageSettings {
+export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string, serverVersionPromise: Promise<string>): PageSettings {
     const toolbarContent: FunctionComponent = () =>
         <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
             <OpenVSXLogo width='auto' height='40px' marginTop='8px' prefersDarkMode={prefersDarkMode} />
@@ -38,6 +38,13 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
     });
 
     const StyledRouteLink = styled(RouteLink)(link);
+
+    const ServerVersion = lazy(async () => {
+        const version = await serverVersionPromise;
+        return { default: () => <Typography variant='body2' sx={{ fontSize: '0.8rem' }}>Server Version: {version}</Typography> };
+    });
+
+
     const footerContent: FunctionComponent<{ expanded: boolean }> = () =>
         <Box sx={{
             display: 'flex',
@@ -58,6 +65,9 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
             >
                 <GitHubIcon />&nbsp;eclipse/openvsx
             </Link>
+            <Suspense fallback={<div>Loading version...</div>}>
+                <ServerVersion/>
+            </Suspense>
             <StyledRouteLink to='/about'>
                 About This Service
             </StyledRouteLink>

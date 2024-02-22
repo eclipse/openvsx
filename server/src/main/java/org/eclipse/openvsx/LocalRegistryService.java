@@ -28,6 +28,7 @@ import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -83,6 +84,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Autowired
     ExtensionVersionIntegrityService integrityService;
+
+    @Value("${ovsx.registry.version:}")
+    String registryVersion;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -1020,5 +1024,15 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         return keyPair.getPublicKeyText();
+    }
+
+    @Override
+    public RegistryVersionJson getRegistryVersion() {
+        if (this.registryVersion == null || this.registryVersion.isEmpty()) {
+            throw new NotFoundException();
+        }
+        var registryVersion = new RegistryVersionJson();
+        registryVersion.version = this.registryVersion;
+        return registryVersion;
     }
 }
