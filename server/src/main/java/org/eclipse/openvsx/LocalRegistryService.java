@@ -41,6 +41,7 @@ import jakarta.transaction.Transactional;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -709,9 +710,10 @@ public class LocalRegistryService implements IExtensionRegistry {
     private List<Extension> getExtensions(SearchHits<ExtensionSearch> searchHits) {
         var ids = searchHits.stream()
                 .map(searchHit -> searchHit.getContent().id)
-                .collect(Collectors.toSet());
+                .distinct()
+                .collect(Collectors.toList());
 
-        var extensions = new ArrayList<>(repositories.findExtensions(ids).toList());
+        var extensions = findExtensions(ids).collect(Collectors.toList());
         var extensionIds = extensions.stream()
                 .map(Extension::getId)
                 .collect(Collectors.toSet());
@@ -736,6 +738,16 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         return extensions;
     }
+
+    private Stream<Extension> findExtensions(Collection<Long> ids) {
+        var extById = new HashMap<Long, Extension>();
+        repositories.findExtensions(ids)
+                .forEach(ext -> extById.put(ext.getId(), ext));
+        return ids.stream()
+                .map(extById::get)
+                .filter(Objects::nonNull);
+    }
+
 
     private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> searchHits, ISearchService.Options options) {
         var serverUrl = UrlUtil.getBaseUrl();

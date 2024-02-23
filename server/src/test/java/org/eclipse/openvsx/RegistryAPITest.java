@@ -2064,7 +2064,7 @@ public class RegistryAPITest {
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false);
         Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
-        Mockito.when(repositories.findExtensions(Set.of(extension.getId())))
+        Mockito.when(repositories.findExtensions(List.of(extension.getId())))
                 .thenReturn(Streamable.of(extension));
         return Arrays.asList(extension);
     }
