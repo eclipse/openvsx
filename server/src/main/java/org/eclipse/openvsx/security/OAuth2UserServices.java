@@ -61,6 +61,9 @@ public class OAuth2UserServices {
     @Autowired
     EclipseService eclipse;
 
+    @Autowired
+    AuthUserFactory authUserFactory;
+
     private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
     private final OAuth2UserService<OidcUserRequest, OidcUser> oidc;
@@ -116,7 +119,7 @@ public class OAuth2UserServices {
     }
 
     private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
-        var authUser = new DefaultAuthUser("github", delegate.loadUser(userRequest));
+        var authUser = authUserFactory.createAuthUser("github", delegate.loadUser(userRequest));
         String loginName = authUser.getLoginName();
         if (StringUtils.isEmpty(loginName))
             throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);

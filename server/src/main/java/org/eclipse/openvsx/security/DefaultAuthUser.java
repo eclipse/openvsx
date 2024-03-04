@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import org.springframework.security.oauth2.core.user.OAuth2User;
-
 public class DefaultAuthUser implements AuthUser {
 
     final String authId;
@@ -21,14 +19,22 @@ public class DefaultAuthUser implements AuthUser {
     final String providerId;
     final String providerUrl;
 
-    public DefaultAuthUser(String providerId, OAuth2User oauth2User) {
-        authId = oauth2User.getName();
-        avatarUrl = oauth2User.getAttribute("avatar_url");
-        email = oauth2User.getAttribute("email");
-        fullName = oauth2User.getAttribute("name");
-        loginName = oauth2User.getAttribute("login");
+    public DefaultAuthUser(
+        final String authId,
+        final String avatarUrl,
+        final String email,
+        final String fullName,
+        final String loginName,
+        final String providerId,
+        final String providerUrl
+    ) {
+        this.authId = authId;
+        this.avatarUrl = avatarUrl;
+        this.email = email;
+        this.fullName = fullName;
+        this.loginName = loginName;
         this.providerId = providerId;
-        providerUrl = oauth2User.getAttribute("html_url");
+        this.providerUrl = providerUrl;
     }
 
     @Override
