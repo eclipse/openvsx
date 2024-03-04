@@ -81,6 +81,9 @@ public class CacheServiceTest {
     @Autowired
     RepositoryService repositories;
 
+    @Autowired
+    AuthUserFactory authUserFactory;
+
     @Test
     @Transactional
     public void testGetExtension() {
@@ -124,7 +127,6 @@ public class CacheServiceTest {
 
         var user = extVersion.getPublishedWith().getUser();
         var oauthUser = new DefaultOAuth2User(authorities, attributes, "name");
-        var authUserFactory = new AuthUserFactory();
         var authUser = authUserFactory.createAuthUser(authority, oauthUser);
         users.updateExistingUser(user, authUser);
         assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
