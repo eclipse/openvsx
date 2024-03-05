@@ -43,7 +43,9 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Bean;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -430,5 +432,14 @@ public class CacheServiceTest {
         entityManager.persist(download);
 
         return extVersion;
+    }
+
+    @TestConfiguration
+    static class CacheServiceTestConfiguration {
+
+        @Bean
+        AuthUserFactory authUserFactory() {
+            return new AuthUserFactory();
+        }
     }
 }
