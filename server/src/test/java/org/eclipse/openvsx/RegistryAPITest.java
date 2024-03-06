@@ -27,6 +27,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.security.AuthUserFactory;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
@@ -118,7 +119,7 @@ public class RegistryAPITest {
         var namespace = mockNamespace();
         Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(0L);
-        
+
         mockMvc.perform(get("/api/{namespace}", "foobar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespaceJson(n -> {
@@ -1207,7 +1208,7 @@ public class RegistryAPITest {
                 .andExpect(redirectedUrl("http://localhost/api/foobar"))
                 .andExpect(content().json(successJson("Created namespace foobar")));
     }
-    
+
     @Test
     public void testCreateNamespaceNoName() throws Exception {
         mockAccessToken();
@@ -1217,7 +1218,7 @@ public class RegistryAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(errorJson("Missing required property 'name'.")));
     }
-    
+
     @Test
     public void testCreateNamespaceInvalidName() throws Exception {
         mockAccessToken();
@@ -1227,7 +1228,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid namespace name: foo.bar")));
     }
-    
+
     @Test
     public void testCreateNamespaceInactiveToken() throws Exception {
         var token = mockAccessToken();
@@ -1238,7 +1239,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
-    
+
     @Test
     public void testCreateExistingNamespace() throws Exception {
         mockAccessToken();
@@ -1246,7 +1247,7 @@ public class RegistryAPITest {
         namespace.setName("foobar");
         Mockito.when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
- 
+
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foobar"; })))
@@ -1296,7 +1297,7 @@ public class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foobar", "my_token"))
                 .andExpect(status().isBadRequest());
     }
-    
+
     @Test
     public void testPublishOrphan() throws Exception {
         mockForPublish("orphan");
@@ -1307,7 +1308,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Insufficient access rights for publisher: foo")));
     }
-    
+
     @Test
     public void testPublishRequireLicenseNone() throws Exception {
         var previousRequireLicense = extensions.requireLicense;
@@ -1324,7 +1325,7 @@ public class RegistryAPITest {
             extensions.requireLicense = previousRequireLicense;
         }
     }
-    
+
     @Test
     public void testPublishRequireLicenseOk() throws Exception {
         var previousRequireLicense = extensions.requireLicense;
@@ -1350,7 +1351,7 @@ public class RegistryAPITest {
             extensions.requireLicense = previousRequireLicense;
         }
     }
-    
+
     @Test
     public void testPublishInactiveToken() throws Exception {
         mockForPublish("invalid");
@@ -1361,7 +1362,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
-    
+
     @Test
     public void testPublishUnknownNamespace() throws Exception {
         mockAccessToken();
@@ -1373,7 +1374,7 @@ public class RegistryAPITest {
                 .andExpect(content().json(errorJson("Unknown publisher: foo"
                         + "\nUse the 'create-namespace' command to create a namespace corresponding to your publisher name.")));
     }
-    
+
     @Test
     public void testPublishVerifiedOwner() throws Exception {
         mockForPublish("owner");
@@ -1535,7 +1536,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("The version string 'latest' is reserved.")));
     }
-    
+
     @Test
     public void testPostReview() throws Exception {
         var user = mockUserData();
@@ -1558,7 +1559,7 @@ public class RegistryAPITest {
                 .andExpect(status().isCreated())
                 .andExpect(content().json(successJson("Added review for foo.bar")));
     }
-    
+
     @Test
     public void testPostReviewNotLoggedIn() throws Exception {
         mockMvc.perform(post("/api/{namespace}/{extension}/review", "foo", "bar")
@@ -1568,7 +1569,7 @@ public class RegistryAPITest {
                 })).with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
-    
+
     @Test
     public void testPostReviewInvalidRating() throws Exception {
         mockMvc.perform(post("/api/{namespace}/{extension}/review", "foo", "bar")
@@ -1581,7 +1582,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("The rating must be an integer number between 0 and 5.")));
     }
-    
+
     @Test
     public void testPostReviewUnknownExtension() throws Exception {
         mockUserData();
@@ -1595,7 +1596,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar")));
     }
-    
+
     @Test
     public void testPostExistingReview() throws Exception {
         var user = mockUserData();
@@ -1620,7 +1621,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("You must not submit more than one review for an extension.")));
     }
-    
+
     @Test
     public void testDeleteReview() throws Exception {
         var user = mockUserData();
@@ -1643,13 +1644,13 @@ public class RegistryAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deleted review for foo.bar")));
     }
-    
+
     @Test
     public void testDeleteReviewNotLoggedIn() throws Exception {
         mockMvc.perform(post("/api/{namespace}/{extension}/review/delete", "foo", "bar").with(csrf()))
                 .andExpect(status().isForbidden());
     }
-    
+
     @Test
     public void testDeleteReviewUnknownExtension() throws Exception {
         mockUserData();
@@ -1659,7 +1660,7 @@ public class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Extension not found: foo.bar")));
     }
-    
+
     @Test
     public void testDeleteNonExistingReview() throws Exception {
         var user = mockUserData();
@@ -2088,7 +2089,7 @@ public class RegistryAPITest {
                 .thenReturn(token);
         return token;
     }
-    
+
     private void mockForPublish(String mode) {
         var token = mockAccessToken();
         if (mode.equals("invalid")) {
@@ -2262,7 +2263,7 @@ public class RegistryAPITest {
         archive.finish();
         return bytes.toByteArray();
     }
-    
+
     @TestConfiguration
     @Import(SecurityConfig.class)
     static class TestConfig {
@@ -2317,6 +2318,11 @@ public class RegistryAPITest {
         @Bean
         PublishExtensionVersionHandler publishExtensionVersionHandler() {
             return new PublishExtensionVersionHandler();
+        }
+
+        @Bean
+        AuthUserFactory authUserFactory() {
+            return new AuthUserFactory();
         }
     }
 }

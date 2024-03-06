@@ -433,13 +433,4 @@ public class CacheServiceTest {
 
         return extVersion;
     }
-
-    @TestConfiguration
-    static class CacheServiceTestConfiguration {
-
-        @Bean
-        AuthUserFactory authUserFactory() {
-            return new AuthUserFactory();
-        }
-    }
 }

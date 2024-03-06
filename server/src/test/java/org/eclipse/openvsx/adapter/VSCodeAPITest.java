@@ -42,6 +42,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.security.AuthUserFactory;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
@@ -955,6 +956,10 @@ public class VSCodeAPITest {
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
         }
-    }
 
+        @Bean
+        AuthUserFactory authUserFactory() {
+            return new AuthUserFactory();
+        }
+    }
 }
