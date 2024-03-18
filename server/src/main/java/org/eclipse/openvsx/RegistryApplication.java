@@ -15,7 +15,6 @@ import org.eclipse.openvsx.mirror.ReadOnlyRequestFilter;
 import org.eclipse.openvsx.web.ShallowEtagHeaderFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -65,6 +64,8 @@ public class RegistryApplication {
     public RequestRejectedHandler requestRejectedHandler() {
         return new HttpStatusRequestRejectedHandler();
     }
+
+    @Bean
     @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
     public FilterRegistrationBean<ReadOnlyRequestFilter> readOnlyRequestFilter(
             @Value("${ovsx.data.mirror.read-only.allowed-endpoints}") String[] allowedEndpoints,
@@ -75,10 +76,5 @@ public class RegistryApplication {
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
 
         return registrationBean;
-    }
-    
-    @Bean
-    public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags() {
-        return registry -> registry.config().commonTags("application", "openvsx-server");
     }
 }

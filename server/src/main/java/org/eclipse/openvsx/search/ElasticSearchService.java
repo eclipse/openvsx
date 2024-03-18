@@ -14,6 +14,7 @@ import co.elastic.clients.elasticsearch._types.mapping.FieldType;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.util.ObjectBuilder;
+import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
@@ -250,6 +251,7 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
+    @Observed
     public SearchHits<ExtensionSearch> search(Options options) {
         var resultWindow = options.requestedOffset + options.requestedSize;
         if(resultWindow > getMaxResultWindow()) {

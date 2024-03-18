@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.eclipse.openvsx.entities.Extension;
 
@@ -29,6 +31,7 @@ public interface ISearchService {
     /**
      * Search with given options
      */
+    @Observed
     SearchHits<ExtensionSearch> search(Options options);
 
     /**

@@ -39,7 +39,8 @@ def versions = [
     httpclient5: '5.2.1',
     jaxb_api: '2.3.1',
     jaxb_impl: '2.3.8',
-    gatling: '3.9.5'
+    gatling: '3.9.5',
+    loki4j: '1.4.2'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -105,6 +106,10 @@ dependencies {
         exclude group: 'org.antlr', module: 'antlr'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
+    implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
+    implementation "io.micrometer:micrometer-tracing"
+    implementation "io.micrometer:micrometer-tracing-bridge-otel"
+    implementation "io.opentelemetry:opentelemetry-exporter-zipkin"
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
     jooqGenerator "org.postgresql:postgresql"
