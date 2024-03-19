@@ -26,7 +26,7 @@ if (process.argv.length >= 4) {
 
 async function loadTestExtensions() {
     const publicReg = new Registry();
-    const localReg = new Registry({url: 'http://localhost:8080'});
+    const localReg = new Registry({registryUrl: process.env.OVSX_REGISTRY_URL ?? 'http://localhost:8080'});
     /** @type {{ extensions: import('../lib/registry').Extension[] } & import('../lib/registry').Response} */
     const search = await publicReg.getJson(new URL(`${DEFAULT_URL}/api/-/search?size=${searchSize}`));
     if (search.error) {
@@ -41,17 +41,25 @@ async function loadTestExtensions() {
             continue;
         }
         const fileName = await download(publicReg, meta);
-        const nsResult = await localReg.createNamespace(meta.namespace, accessToken);
-        if (nsResult.error && !nsResult.error.startsWith('Namespace already exists')) {
-            console.error(nsResult.error);
-        } else if (nsResult.success) {
-            console.log(nsResult.success);
+        try {
+          const nsResult = await localReg.createNamespace(meta.namespace, accessToken);
+          console.log(nsResult.success);
+        } catch (error) {
+          if (!error.message.startsWith('Namespace already exists')) {
+            console.error(error);
+            process.exit(1);
+          }
         }
-        const published = await localReg.publish(fileName, accessToken);
-        if (published.error && !published.error.endsWith('is already published.')) {
-            console.error(`\u274c  ${published.error}`);
-        } else if (published.namespace && published.name) {
+
+        try {
+          const published = await localReg.publish(fileName, accessToken);
+          if (published.namespace && published.name) {
             console.log(`\u2713  Published ${published.namespace}.${published.name}@${published.version}`);
+          }
+        } catch (error) {
+          if (!error.message.endsWith('is already published.')) {
+              console.error(`\u274c  ${error}`);
+          }
         }
     }
 }

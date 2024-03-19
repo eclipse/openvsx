@@ -61,7 +61,8 @@
         "lint": "eslint -c ./configs/eslintrc.json --ext .ts src",
         "prepare": "yarn run clean && yarn run build",
         "publish:next": "yarn npm publish --tag next",
-        "publish:latest": "yarn npm publish --tag latest"
+        "publish:latest": "yarn npm publish --tag latest",
+        "load-extensions": "node scripts/load-test-extensions.js"
     },
     "packageManager": "yarn@4.1.0"
 }

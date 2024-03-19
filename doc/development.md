@@ -6,6 +6,29 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/eclipse/openvsx)
 
+### Using Docker Compose
+
+To run the Open VSX registry in a development environment, you can use `docker compose` by following these steps:
+
+ * Verify Docker Compose is installed by running `docker compose version`. If an error occurs, you may need to [install docker compose](https://docs.docker.com/compose/install/) on your machine.
+ * Decide which profile(s) to run based on your needs. By default, only the PostgreSQL and Elasticsearch containers start, which suits running the OpenVSX server and web UI locally for easier debugging. The [docker-compose.yml] file defines additional profiles for specific components:
+   * `backend`: Starts the OpenVSX server container (java).
+   * `frontend`: Starts the web UI container.
+   * `commandline`: Starts a container with the OpenVSX CLI tools.
+   * `openvsx`: Combines `backend`, `frontend`, and `commandline` profiles to start all related services.
+   * `kibana`: Starts a kibana instance for easier access to the Elasticsearch service.
+ * In the project root, initiate Docker Compose:
+   * Without profiles: `docker compose up`.
+   * With profiles: `docker compose --profile <profile_name> up`. Use multiple `--profile` flags for multiple profiles, e.g., `docker compose --profile openvsx --profile kibana up`.
+
+ * Depending on which profile(s) you selected, after some seconds, the respective services become available:
+   * registry backend is available at [http://localhost:8080/](http://localhost:8080/) if the `backend` or `openvsx` profile was selected.
+   * web ui is available at [http://localhost:3000/](http://localhost:3000/) if the `frontend` or `openvsx` profile was selected.
+   * kibana is exposed at [http://localhost:5601/](http://localhost:5601/) if the `kibana` profile was selected.
+ * Open VSX CLI commands can be run via `docker compose exec cli lib/ovsx` if the `commandline` or `openvsx` profile was selected.
+ * To load some extensions from the main registry (openvsx.org), run `docker compose exec cli yarn load-extensions <N>`, where N is the number of extensions you would like to publish in your local registry.
+ * For troubleshooting or manual intervention, access a service's interactive shell with `docker compose run --rm <service> /bin/bash`. Service names are listed in the [docker-compose.yml](docker-compose.yml) file.
+
 ### Setup locally on WSL
 
 - Install WSL
@@ -96,7 +119,7 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 - Download the Elasticsearch image from Docker Hub and enable it in the Docker Desktop
 
-### Run the application
+### Run the application locally
 
 - cd cli
 
@@ -115,3 +138,19 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
   - yarn build:default
   - yarn start:default
 - Go to localhost:3000 on browser and it should be up and running
+
+### Optional: Deploy example extensions to your local registry
+
+Run:
+
+- in `server/`:  
+  `gradlew downloadTestExtensions` to download vsix files from the official store and from Github.
+- in project root (the server application must be running):
+  ```bash
+  export OVSX_REGISTRY_URL=http://localhost:8080
+  export OVSX_PAT=super_token
+  export PUBLISHERS="DotJoshJohnson eamodio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode vscodevim Wscats"
+  for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub; done
+  find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
+  find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
+  ```

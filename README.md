@@ -62,6 +62,11 @@ After you created the GitHub OAuth app, the next step is to copy the _Client ID_
 
 With these settings in place, you should be able to log in by authorizing your OAuth app.
 
+### Docker Compose Setup
+
+If you prefer to quickly get started with a local, docker-based development environment, you can use the approach described in our [docker compose setup](doc/development.md#using-docker-compose).
+You can use our docker compose profiles, allowing you the option to either run a service directly in a docker container or to manually build and run it on your local machine.
+
 ### Google Cloud Setup
 
 If you would like to test file storage via Google Cloud, follow these steps:
