@@ -60,4 +60,14 @@
             <disk unit="MB">128</disk>
         </resources>
     </cache>
+    <cache alias="sitemap">
+        <expiry>
+            <ttl unit="seconds">3600</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">1</heap>
+            <offheap unit="MB">2</offheap>
+            <disk unit="MB">8</disk>
+        </resources>
+    </cache>
 </config>

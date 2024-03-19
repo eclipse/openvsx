@@ -13,6 +13,7 @@ import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.web.SitemapRow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -518,5 +519,9 @@ public class RepositoryService {
 
     public boolean namespacePublicIdExists(String publicId) {
         return namespaceJooqRepo.publicIdExists(publicId);
+    }
+
+    public List<SitemapRow> fetchSitemapRows() {
+        return extensionJooqRepo.fetchSitemapRows();
     }
 }

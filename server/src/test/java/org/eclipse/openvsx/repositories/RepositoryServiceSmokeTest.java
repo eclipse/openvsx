@@ -192,7 +192,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.updateExtensionPublicId(1L, "namespaceName.extensionName"),
                 () -> repositories.updateNamespacePublicIds(Collections.emptyMap()),
                 () -> repositories.extensionPublicIdExists("namespaceName.extensionName"),
-                () -> repositories.namespacePublicIdExists("namespaceName.extensionName")
+                () -> repositories.namespacePublicIdExists("namespaceName.extensionName"),
+                () -> repositories.fetchSitemapRows()
         );
 
         // check that we did not miss anything
