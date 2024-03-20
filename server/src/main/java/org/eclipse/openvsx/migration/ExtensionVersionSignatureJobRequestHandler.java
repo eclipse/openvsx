@@ -58,6 +58,10 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
         }
 
         var entry = migrations.getDownload(extVersion);
+        if(entry == null) {
+            return;
+        }
+
         try(var extensionFile = migrations.getExtensionFile(entry)) {
             var download = entry.getKey();
             var keyPair = repositories.findActiveKeyPair();
