@@ -40,6 +40,10 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
 
         service.deleteResources(extVersion);
         var entry = migrations.getDownload(extVersion);
+        if(entry == null) {
+            return;
+        }
+
         var download = entry.getKey();
         try(
                 var extensionFile = migrations.getExtensionFile(entry);

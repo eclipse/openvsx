@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.MigrationItem;
@@ -16,17 +18,18 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.IStorageService;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -36,6 +39,8 @@ import java.util.UUID;
 
 @Component
 public class MigrationService {
+
+    protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
 
     @Autowired
     RestTemplate backgroundRestTemplate;
@@ -143,8 +148,13 @@ public class MigrationService {
     @Transactional
     public Map.Entry<FileResource, byte[]> getDownload(ExtensionVersion extVersion) {
         var download = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-        var content = download.getStorageType().equals(FileResource.STORAGE_DB) ? download.getContent() : null;
-        return new AbstractMap.SimpleEntry<>(download, content);
+        if(download != null) {
+            var content = download.getStorageType().equals(FileResource.STORAGE_DB) ? download.getContent() : null;
+            return new AbstractMap.SimpleEntry<>(download, content);
+        } else {
+            logger.warn("Could not find download for: {}", NamingUtil.toLogFormat(extVersion));
+            return null;
+        }
     }
 
     @Transactional
