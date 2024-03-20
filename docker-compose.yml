@@ -1,0 +1,91 @@
+services:
+
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=openvsx
+      - POSTGRES_PASSWORD=openvsx
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - '5432:5432'
+
+  elasticsearch:
+    image: elasticsearch:8.7.1
+    environment:
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - cluster.routing.allocation.disk.threshold_enabled=false
+    ports:
+      - 9200:9200
+      - 9300:9300
+    healthcheck:
+      test: curl -s http://elasticsearch01:9200 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 50
+      start_period: 5s
+
+  kibana:
+    image: kibana:8.7.1
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    profiles:
+      - kibana
+
+  server:
+    image: openjdk:17
+    working_dir: /app
+    command: sh -c 'scripts/generate-properties.sh --docker && ./gradlew assemble && ./gradlew runServer'
+    volumes:
+      - ./server:/app
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+      - elasticsearch
+    healthcheck:
+      test: "curl --fail --silent localhost:8081/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 50
+      start_period: 5s
+    profiles:
+      - openvsx
+      - backend
+    
+  webui:
+    image: node:18
+    working_dir: /app
+    command: sh -c 'yarn && yarn build && yarn build:default && yarn start:default'
+    volumes:
+      - ./webui:/app
+    ports:
+      - 3000:3000
+    depends_on:
+      - server
+    profiles:
+      - openvsx
+      - frontend
+
+  cli:
+    image: node:18
+    working_dir: /app
+    command: sh -c 'yarn && yarn watch'
+    volumes:
+      - ./cli:/app
+    depends_on:
+      - server
+    environment:
+      - OVSX_REGISTRY_URL=http://server:8080
+    profiles:
+      - openvsx
+      - commandline
