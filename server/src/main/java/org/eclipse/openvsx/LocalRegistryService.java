@@ -106,12 +106,14 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Observed
     @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform) {
         return getExtension(namespace, extensionName, targetPlatform, VersionAlias.LATEST);
     }
 
     @Override
+    @Observed
     @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
@@ -261,7 +263,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public SearchResultJson search(ISearchService.Options options) {
         var json = new SearchResultJson();
         var size = options.requestedSize;
@@ -283,7 +284,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public QueryResultJson query(QueryRequest request) {
         if (!StringUtils.isEmpty(request.extensionId)) {
             var split = request.extensionId.split("\\.");
@@ -335,7 +335,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public QueryResultJson queryV2(QueryRequestV2 request) {
         if (!StringUtils.isEmpty(request.extensionId)) {
             var split = request.extensionId.split("\\.");

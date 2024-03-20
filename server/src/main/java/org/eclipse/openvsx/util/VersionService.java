@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ public class VersionService {
      * @return list of ExtensionVersion.
      */
     @Transactional
+    @Observed
     public List<ExtensionVersion> getVersionsTrxn(Extension extension) {
         extension = entityManager.merge(extension);
         var versions = extension.getVersions();
@@ -51,6 +53,7 @@ public class VersionService {
      * @return the latest ExtensionVersion.
      */
     @Transactional
+    @Observed
     @Cacheable(value = CACHE_LATEST_EXTENSION_VERSION, keyGenerator = GENERATOR_LATEST_EXTENSION_VERSION)
     public ExtensionVersion getLatestTrxn(Extension extension, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
         extension = entityManager.merge(extension);

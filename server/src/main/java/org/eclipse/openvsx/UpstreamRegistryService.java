@@ -87,6 +87,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Observed
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
         var uriVariables = new HashMap<String, String>();
@@ -111,6 +112,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Observed
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform, String version) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
         var uriVariables = new HashMap<String, String>();
@@ -260,7 +262,6 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
 	@Override
-    @Observed
 	public SearchResultJson search(ISearchService.Options options) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/search";
         var uriVariables = new HashMap<String,String>();
@@ -295,7 +296,6 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public QueryResultJson query(QueryRequest request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/query";
         var queryParams = new HashMap<String,String>();
@@ -333,7 +333,6 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public QueryResultJson queryV2(QueryRequestV2 request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/v2/-/query";
         var queryParams = new HashMap<String,String>();

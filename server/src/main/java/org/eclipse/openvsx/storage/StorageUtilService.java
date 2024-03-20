@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.storage;
 
 import com.google.common.collect.Maps;
+import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -257,6 +258,7 @@ public class StorageUtilService implements IStorageService {
     /**
      * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */
+    @Observed
     public Map<Long, Map<String, String>> getFileUrls(Collection<ExtensionVersion> extVersions, String serverUrl, String... types) {
         var type2Url = extVersions.stream()
                 .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))

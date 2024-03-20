@@ -10,25 +10,26 @@
 
 package org.eclipse.openvsx.search;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import io.micrometer.observation.annotation.Observed;
+import jakarta.transaction.Transactional;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.elasticsearch.core.*;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.SearchHitsImpl;
+import org.springframework.data.elasticsearch.core.TotalHitsRelation;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 
-import jakarta.transaction.Transactional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
 import static org.eclipse.openvsx.cache.CacheService.CACHE_DATABASE_SEARCH;
@@ -55,7 +56,6 @@ public class DatabaseSearchService implements ISearchService {
     @Autowired
     VersionService versions;
 
-    @Observed
     @Transactional
     @Cacheable(CACHE_DATABASE_SEARCH)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)

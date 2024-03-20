@@ -279,6 +279,7 @@ public class RegistryAPI {
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
+    @Observed
     @GetMapping(
         path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -400,6 +401,7 @@ public class RegistryAPI {
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
+    @Observed
     @GetMapping(
         path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/{version:" + VERSION_PATH_PARAM_REGEX + "}",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -905,7 +907,6 @@ public class RegistryAPI {
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
-    @Observed
     @GetMapping(
         path = "/api/-/search",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -1032,7 +1033,6 @@ public class RegistryAPI {
         return mergedEntries;
     }
 
-    @Observed
     @GetMapping(
         path = "/api/v2/-/query",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -1145,7 +1145,6 @@ public class RegistryAPI {
                 .body(result);
     }
 
-    @Observed
     @GetMapping(
         path = "/api/-/query",
         produces = MediaType.APPLICATION_JSON_VALUE
