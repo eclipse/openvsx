@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
@@ -57,6 +58,7 @@ public class NamespaceMembershipJooqRepository {
         return namespaceMembership;
     }
 
+    @Observed
     public boolean isVerified(Namespace namespace, UserData user) {
         var nm = NAMESPACE_MEMBERSHIP.as("nm");
         var onm = NAMESPACE_MEMBERSHIP.as("onm");

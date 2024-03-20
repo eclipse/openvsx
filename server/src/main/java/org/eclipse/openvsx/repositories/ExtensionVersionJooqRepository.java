@@ -226,6 +226,7 @@ public class ExtensionVersionJooqRepository {
                 .collect(Collectors.toList());
     }
 
+    @Observed
     public List<String> findVersionStringsSorted(Long extensionId, String targetPlatform, boolean onlyActive, int numberOfRows) {
         var conditions = new ArrayList<Condition>();
         conditions.add(EXTENSION_VERSION.EXTENSION_ID.eq(extensionId));
@@ -268,7 +269,6 @@ public class ExtensionVersionJooqRepository {
         return versionsQuery.fetch(record -> record.get(EXTENSION_VERSION.VERSION));
     }
 
-    @Observed
     public Page<ExtensionVersion> findActiveVersions(QueryRequest request) {
         var conditions = new ArrayList<Condition>();
         if (!StringUtils.isEmpty(request.namespaceUuid)) {

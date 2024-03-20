@@ -10,11 +10,10 @@
 
 package org.eclipse.openvsx.search;
 
-import io.micrometer.observation.annotation.Observed;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.eclipse.openvsx.entities.Extension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
@@ -55,7 +54,6 @@ public class SearchUtilService implements ISearchService {
 
     }
 
-    @Observed
     public SearchHits<ExtensionSearch> search(ElasticSearchService.Options options) {
         return getImplementation().search(options);
     }

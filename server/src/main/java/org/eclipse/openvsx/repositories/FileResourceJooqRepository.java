@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.jooq.DSLContext;
@@ -30,6 +31,7 @@ public class FileResourceJooqRepository {
     @Autowired
     DSLContext dsl;
 
+    @Observed
     public List<FileResource> findByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
         if(extVersions.isEmpty() || types.isEmpty()) {
             return Collections.emptyList();
