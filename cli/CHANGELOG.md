@@ -2,6 +2,15 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.8.4 (Mar. 2023)
+
+#### Dependencies
+
+- Upgrade `follow-redirects` from `1.14.8` to `1.15.6` ([#869](https://github.com/eclipse/openvsx/pull/869))
+- Upgrade `ip` from `2.0.0` to `2.0.1` ([#858](https://github.com/eclipse/openvsx/pull/858))
+
+---
+
 ### v0.8.3 (Aug. 2023)
 
 #### Dependencies
