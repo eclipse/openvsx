@@ -2125,7 +2125,7 @@ __metadata:
     tmp: "npm:^0.2.1"
     typescript: "npm:3.8.3"
   bin:
-    ovsx: lib/ovsx
+    ovsx: ovsx
   languageName: unknown
   linkType: soft
 
