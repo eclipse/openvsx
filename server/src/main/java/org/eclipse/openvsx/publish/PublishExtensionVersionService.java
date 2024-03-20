@@ -18,6 +18,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.nio.file.Files;
+
+import static org.eclipse.openvsx.cache.CacheService.CACHE_SITEMAP;
 
 @Component
 public class PublishExtensionVersionService {
@@ -84,6 +87,7 @@ public class PublishExtensionVersionService {
     }
 
     @Transactional
+    @CacheEvict(value = CACHE_SITEMAP, allEntries = true)
     public void activateExtension(ExtensionVersion extVersion, ExtensionService extensions) {
         extVersion.setActive(true);
         extVersion = entityManager.merge(extVersion);

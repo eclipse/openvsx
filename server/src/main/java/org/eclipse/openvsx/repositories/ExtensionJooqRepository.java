@@ -11,6 +11,7 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.web.SitemapRow;
 import org.jooq.*;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
@@ -199,5 +200,25 @@ public class ExtensionJooqRepository {
                 .where(EXTENSION.PUBLIC_ID.eq(publicId))
                 .fetch()
                 .isNotEmpty();
+    }
+
+    public List<SitemapRow> fetchSitemapRows() {
+        var LAST_UPDATED = DSL.toChar(EXTENSION.LAST_UPDATED_DATE, "YYYY-MM-DD");
+        return dsl.select(
+                    NAMESPACE.NAME,
+                    EXTENSION.NAME,
+                    LAST_UPDATED
+                )
+                .from(NAMESPACE)
+                .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
+                .where(EXTENSION.ACTIVE.eq(true))
+                .fetch()
+                .map((record) -> {
+                    return new SitemapRow(
+                            record.get(NAMESPACE.NAME),
+                            record.get(EXTENSION.NAME),
+                            record.get(LAST_UPDATED)
+                    );
+                });
     }
 }
