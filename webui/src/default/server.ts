@@ -10,8 +10,38 @@
 
 import * as express from 'express';
 import * as path from 'path';
+import { rateLimit } from 'express-rate-limit';
 
 const app = express();
+
+const args = process.argv.slice(2);
+if (args.indexOf('-ratelimit') != -1) {
+    const proxiesIndex = args.indexOf('-ratelimit-proxies');
+    if (proxiesIndex != -1) {
+        app.set('trust proxy', Number(args[proxiesIndex + 1]));
+    }
+
+    let windowMs = 15 * 60 * 1000; // 15 minutes
+    const rateLimitWindowIndex = args.indexOf('-ratelimit-window-seconds');
+    if (rateLimitWindowIndex != -1) {
+        windowMs = Number(args[rateLimitWindowIndex + 1]) * 1000;
+    }
+
+    let limit = 100; // Limit each IP to 100 requests per windowMs
+    const rateLimitAmountIndex = args.indexOf('-ratelimit-limit');
+    if (rateLimitAmountIndex != -1) {
+        limit = Number(args[rateLimitAmountIndex + 1]);
+    }
+
+    // Apply rate limiter to all requests
+    const limiter = rateLimit({
+        windowMs,
+        limit,
+        standardHeaders: 'draft-7',
+        legacyHeaders: false
+    });
+    app.use(limiter);
+}
 
 // Serve static resources
 const staticPath = path.join(__dirname, '..', '..', 'static');
