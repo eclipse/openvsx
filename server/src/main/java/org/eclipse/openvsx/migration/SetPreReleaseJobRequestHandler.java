@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
+
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class SetPreReleaseJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
@@ -38,7 +40,9 @@ public class SetPreReleaseJobRequestHandler implements JobRequestHandler<Migrati
             var entry = migrations.getDownload(extVersion);
             if(entry != null) {
                 try (var extensionFile = migrations.getExtensionFile(entry)) {
-                    service.updatePreviewAndPreRelease(extVersion, extensionFile);
+                    if(Files.size(extensionFile.getPath()) > 0) {
+                        service.updatePreviewAndPreRelease(extVersion, extensionFile);
+                    }
                 }
             }
         }

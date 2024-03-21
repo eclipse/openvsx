@@ -26,8 +26,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -86,13 +88,21 @@ public class MigrationService {
             var download = entry.getKey();
             var storage = getStorage(download);
             var uri = storage.getLocation(download);
-            backgroundRestTemplate.execute("{extensionLocation}", HttpMethod.GET, null, response -> {
-                try(var out = Files.newOutputStream(extensionFile.getPath())) {
-                    response.getBody().transferTo(out);
-                }
+            try {
+                backgroundRestTemplate.execute("{extensionLocation}", HttpMethod.GET, null, response -> {
+                    try (var out = Files.newOutputStream(extensionFile.getPath())) {
+                        response.getBody().transferTo(out);
+                    }
 
-                return extensionFile;
-            }, Map.of("extensionLocation", uri.toString()));
+                    return extensionFile;
+                }, Map.of("extensionLocation", uri.toString()));
+            } catch (HttpClientErrorException e) {
+                if(e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                    logger.warn("Could not find extension file for: {}", NamingUtil.toLogFormat(download.getExtension()));
+                } else {
+                    throw e;
+                }
+            }
         } else {
             Files.write(extensionFile.getPath(), content);
         }

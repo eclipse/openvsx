@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
 import java.util.AbstractMap;
 
 @Component
@@ -42,7 +43,12 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
 
         logger.info("Renaming download {}", download.getName());
         var content = migrations.getContent(download);
-        try(var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content))) {
+        var entry = new AbstractMap.SimpleEntry<>(download, content);
+        try(var extensionFile = migrations.getExtensionFile(entry)) {
+            if(Files.size(extensionFile.getPath()) == 0) {
+                return;
+            }
+
             var newDownload = service.cloneResource(download, name);
             migrations.uploadFileResource(newDownload, extensionFile);
             migrations.removeFile(download);

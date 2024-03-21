@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
 import java.util.AbstractMap;
 
 @Component
@@ -44,14 +45,17 @@ public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandle
         }
 
         var content = migrations.getContent(download);
-        try(
-                var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content));
-                var extProcessor = new ExtensionProcessor(extensionFile)
-        ) {
-            var checksum = extProcessor.generateSha256Checksum(extVersion);
-            checksum.setStorageType(download.getStorageType());
-            migrations.uploadFileResource(checksum);
-            migrations.persistFileResource(checksum);
+        var entry = new AbstractMap.SimpleEntry<>(download, content);
+        try(var extensionFile = migrations.getExtensionFile(entry)) {
+            if(Files.size(extensionFile.getPath()) == 0) {
+                return;
+            }
+            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
+                var checksum = extProcessor.generateSha256Checksum(extVersion);
+                checksum.setStorageType(download.getStorageType());
+                migrations.uploadFileResource(checksum);
+                migrations.persistFileResource(checksum);
+            }
         }
     }
 }
