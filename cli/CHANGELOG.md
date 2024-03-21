@@ -2,6 +2,19 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.9.0 (Next)
+
+#### Breaking Changes
+
+- The minimum version of Node.js required is now `18` because of the newer `@vscode/vsce`
+
+#### Dependencies
+
+- Upgrade `@vscode/vsce` from `2.19.0` to `2.24.0` ([#878](https://github.com/eclipse/openvsx/pull/878))
+- Upgrade `semver` from `7.5.2` to `7.6.0` ([#878](https://github.com/eclipse/openvsx/pull/878))
+
+---
+
 ### v0.8.4 (Mar. 2023)
 
 #### Dependencies
