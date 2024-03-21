@@ -46,4 +46,6 @@ public interface IExtensionRegistry {
     ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName);
 
     String getPublicKey(String publicId);
+
+    RegistryVersionJson getRegistryVersion();
 }

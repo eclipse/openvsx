@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -39,6 +40,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1050,5 +1053,21 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         return keyPair.getPublicKeyText();
+    }
+
+    @Override
+    public RegistryVersionJson getRegistryVersion() {
+        String propertiesPath = "version.properties";
+        Properties properties = new Properties();
+
+        try {
+            properties.load(new ClassPathResource(propertiesPath).getInputStream());
+            var registryVersion = new RegistryVersionJson();
+            registryVersion.version = properties.getProperty("version");
+            return registryVersion;
+        } catch (IOException e) {
+            logger.warn("Could not read server version from path: " + propertiesPath);
+            throw new ErrorResultException("Failed to determine server version");
+        }
     }
 }
