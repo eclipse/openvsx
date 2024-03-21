@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
+
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class ExtractResourcesJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
@@ -45,15 +47,17 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
         }
 
         var download = entry.getKey();
-        try(
-                var extensionFile = migrations.getExtensionFile(entry);
-                var extProcessor = new ExtensionProcessor(extensionFile)
-        ) {
-            extProcessor.processEachResource(download.getExtension(), (resource) -> {
-                resource.setStorageType(download.getStorageType());
-                migrations.uploadFileResource(resource);
-                migrations.persistFileResource(resource);
-            });
+        try(var extensionFile = migrations.getExtensionFile(entry)) {
+            if(Files.size(extensionFile.getPath()) == 0) {
+                return;
+            }
+            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
+                extProcessor.processEachResource(download.getExtension(), (resource) -> {
+                    resource.setStorageType(download.getStorageType());
+                    migrations.uploadFileResource(resource);
+                    migrations.persistFileResource(resource);
+                });
+            }
         }
 
         service.deleteWebResources(extVersion);

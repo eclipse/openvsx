@@ -51,6 +51,10 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
         var extVersion = download.getExtension();
         var content = migrations.getContent(download);
         try (var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content))) {
+            if(Files.size(extensionFile.getPath()) == 0) {
+                return;
+            }
+
             boolean fixTargetPlatform;
             try (var extProcessor = new ExtensionProcessor(extensionFile)) {
                 fixTargetPlatform = !extProcessor.getMetadata().getTargetPlatform().equals(extVersion.getTargetPlatform());

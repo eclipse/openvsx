@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
+
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
@@ -63,6 +65,10 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
         }
 
         try(var extensionFile = migrations.getExtensionFile(entry)) {
+            if(Files.size(extensionFile.getPath()) == 0) {
+                return;
+            }
+
             var download = entry.getKey();
             var keyPair = repositories.findActiveKeyPair();
             var signature = integrityService.generateSignature(download, extensionFile, keyPair);
