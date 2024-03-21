@@ -2840,6 +2840,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"express-rate-limit@npm:^7.2.0":
+  version: 7.2.0
+  resolution: "express-rate-limit@npm:7.2.0"
+  peerDependencies:
+    express: 4 || 5 || ^5.0.0-beta.1
+  checksum: 10/1cd33daeeeb3428f8990718512e8c803ca3406d1e99cbc38bcda12056a42ea51319a7bbc357bdc02d79b7f2b508c743895e8805118115cc637e180eb420e643f
+  languageName: node
+  linkType: hard
+
 "express@npm:^4.18.2":
   version: 4.18.2
   resolution: "express@npm:4.18.2"
@@ -4648,6 +4657,7 @@ __metadata:
     eslint: "npm:^8.44.0"
     eslint-plugin-react: "npm:^7.32.2"
     express: "npm:^4.18.2"
+    express-rate-limit: "npm:^7.2.0"
     fetch-retry: "npm:^5.0.6"
     lodash: "npm:^4.17.21"
     markdown-it: "npm:^13.0.1"

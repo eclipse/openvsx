@@ -44,6 +44,7 @@
         "clipboard-copy": "^4.0.1",
         "clsx": "^1.2.1",
         "dompurify": "^3.0.4",
+        "express-rate-limit": "^7.2.0",
         "fetch-retry": "^5.0.6",
         "lodash": "^4.17.21",
         "markdown-it": "^13.0.1",
