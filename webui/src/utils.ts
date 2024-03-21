@@ -137,15 +137,14 @@ export function setCookie(cookie: Cookie): void {
     document.cookie = cookieString;
 }
 
-const cookieRegexp = /(?<key>[^ \t=]+)\s*=\s*(?<value>[^;]+)(?:;|$)/g;
-
 export function getCookieValueByKey(key: string): string | undefined {
-    const matches = document.cookie.matchAll(cookieRegexp);
-    for (const match of matches) {
-        if (match[1] === key) {
-            return decodeURIComponent(match[2]);
-        }
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${key}=`);
+    if (parts.length === 2) {
+        const value = parts[1].split(';')[0];
+        return decodeURIComponent(value);
     }
+
     return undefined;
 }
 
