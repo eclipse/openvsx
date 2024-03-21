@@ -1,6 +1,6 @@
 {
     "name": "ovsx",
-    "version": "0.8.4",
+    "version": "0.9.0",
     "description": "Command line interface for Eclipse Open VSX",
     "keywords": [
         "cli",
@@ -31,22 +31,22 @@
     "types": "lib/index",
     "bin": "lib/ovsx",
     "engines": {
-        "node": ">= 14"
+        "node": ">= 18"
     },
     "dependencies": {
-        "@vscode/vsce": "^2.19.0",
+        "@vscode/vsce": "^2.24.0",
         "commander": "^6.1.0",
         "follow-redirects": "^1.14.6",
         "is-ci": "^2.0.0",
         "leven": "^3.1.0",
-        "semver": "^7.5.2",
+        "semver": "^7.6.0",
         "tmp": "^0.2.1"
     },
     "devDependencies": {
         "@types/follow-redirects": "^1.13.1",
         "@types/is-ci": "^2.0.0",
         "@types/node": "^10.17.60",
-        "@types/semver": "^7.3.9",
+        "@types/semver": "^7.5.8",
         "@types/tmp": "^0.1.0",
         "@typescript-eslint/eslint-plugin": "^5.44.0",
         "@typescript-eslint/parser": "^5.44.0",
