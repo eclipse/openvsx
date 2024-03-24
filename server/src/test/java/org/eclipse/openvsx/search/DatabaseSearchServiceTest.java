@@ -10,17 +10,11 @@
 
 package org.eclipse.openvsx.search;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-
+import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -32,7 +26,10 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import jakarta.persistence.EntityManager;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
 public class DatabaseSearchServiceTest {
@@ -44,16 +41,13 @@ public class DatabaseSearchServiceTest {
     RepositoryService repositories;
 
     @Autowired
-    VersionService versions;
-
-    @Autowired
     DatabaseSearchService search;
 
     @Test
-    public void testCategory() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
+    public void testCategory() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3)));
 
         var searchOptions = new ISearchService.Options(null, "Programming Languages", TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
@@ -63,10 +57,10 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testRelevance() throws Exception {
-        var ext1 = mockExtension("yaml", 1.0, 100, 100, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 4.0, 100, 10000, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("openshift", 1.0, 100, 10, "redhat", Arrays.asList("Snippets", "Other"));
+    public void testRelevance() {
+        var ext1 = mockExtension("yaml", 1.0, 100, 100, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 10000, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 1.0, 100, 10, "redhat", List.of("Snippets", "Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3)));
 
         var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "relevance", false);
@@ -82,9 +76,9 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testReverse() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
+    public void testReverse() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2)));
 
         var searchOptions = new ISearchService.Options(null, "Programming Languages", TargetPlatform.NAME_UNIVERSAL, 50, 0, "desc", null, false);
@@ -98,14 +92,14 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSimplePageSize() throws Exception {
-        var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext4 = mockExtension("ext4", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext5 = mockExtension("ext5", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext6 = mockExtension("ext6", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext7 = mockExtension("ext7", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
+    public void testSimplePageSize() {
+        var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext4 = mockExtension("ext4", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext5 = mockExtension("ext5", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext6 = mockExtension("ext6", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext7 = mockExtension("ext7", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4, ext5, ext6, ext7)));
 
         var pageSizeItems = 5;
@@ -126,14 +120,14 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testPages() throws Exception {
-        var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext4 = mockExtension("ext4", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext5 = mockExtension("ext5", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext6 = mockExtension("ext6", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext7 = mockExtension("ext7", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
+    public void testPages() {
+        var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext4 = mockExtension("ext4", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext5 = mockExtension("ext5", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext6 = mockExtension("ext6", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext7 = mockExtension("ext7", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4, ext5, ext6, ext7)));
 
         var pageSizeItems = 2;
@@ -151,11 +145,11 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringPublisherName() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
+    public void testQueryStringPublisherName() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options("redhat", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
@@ -171,11 +165,11 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringExtensionName() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
+    public void testQueryStringExtensionName() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options("openshift", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
@@ -189,13 +183,13 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringDescription() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        versions.getLatest(ext2, null, false, false).setDescription("another desc");
-        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        versions.getLatest(ext3, null, false, false).setDescription("my custom desc");
-        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
+    public void testQueryStringDescription() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        ext2.getVersions().get(0).setDescription("another desc");
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        ext3.getVersions().get(0).setDescription("my custom desc");
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options("my custom desc", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
@@ -209,13 +203,13 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringDisplayName() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        versions.getLatest(ext1, null, false, false).setDisplayName("This is a YAML extension");
-        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        versions.getLatest(ext2, null, false, false).setDisplayName("Red Hat");
-        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
+    public void testQueryStringDisplayName() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        ext1.getVersions().get(0).setDisplayName("This is a YAML extension");
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        ext2.getVersions().get(0).setDisplayName("Red Hat");
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options("Red Hat", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
@@ -230,15 +224,15 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByTimeStamp() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        versions.getLatest(ext1, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-10T00:00"));
-        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        versions.getLatest(ext2, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-07T00:00"));
-        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        versions.getLatest(ext3, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-11T00:00"));
-        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", Arrays.asList("Other"));
-        versions.getLatest(ext4, null, false, false).setTimestamp(LocalDateTime.parse("2021-10-06T00:00"));
+    public void testSortByTimeStamp() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        ext1.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-10T00:00"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        ext2.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-07T00:00"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        ext3.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-11T00:00"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
+        ext4.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-06T00:00"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "timestamp", false);
@@ -255,11 +249,11 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByDownloadCount() throws Exception {
-        var ext1 = mockExtension("yaml", 3.0, 100, 100, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 4.0, 100, 1000, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("openshift", 4.0, 100, 300, "redhat", Arrays.asList("Snippets", "Other"));
-        var ext4 = mockExtension("foo", 4.0, 100, 500, "bar", Arrays.asList("Other"));
+    public void testSortByDownloadCount() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 100, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 1000, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 300, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 500, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "downloadCount", false);
@@ -276,11 +270,11 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByRating() throws Exception {
-        var ext1 = mockExtension("yaml", 4.0, 1, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext2 = mockExtension("java", 5.0, 1, 0, "redhat", Arrays.asList("Snippets", "Programming Languages"));
-        var ext3 = mockExtension("openshift", 2.0, 1, 0, "redhat", Arrays.asList("Snippets", "Other"));
-        var ext4 = mockExtension("foo", 1.0, 1, 0, "bar", Arrays.asList("Other"));
+    public void testSortByRating() {
+        var ext1 = mockExtension("yaml", 4.0, 1, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 5.0, 1, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 2.0, 1, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 1.0, 1, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
         var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "rating", false);
@@ -334,6 +328,7 @@ public class DatabaseSearchServiceTest {
         token.setUser(user);
         extVer.setPublishedWith(token);
         Mockito.when(repositories.isVerified(namespace, user)).thenReturn(false);
+        Mockito.when(repositories.findLatestVersion(extension, null, false, true)).thenReturn(extVer);
         return extension;
     }
 
@@ -347,11 +342,6 @@ public class DatabaseSearchServiceTest {
         @Bean
         RelevanceService relevanceService() {
             return new RelevanceService();
-        }
-
-        @Bean
-        VersionService versionService() {
-            return new VersionService();
         }
 
         @Bean

@@ -38,7 +38,6 @@ import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -312,11 +311,6 @@ public class EclipseServiceTest {
         @Bean
         StorageUtilService storageUtilService() {
             return new StorageUtilService();
-        }
-
-        @Bean
-        VersionService versionService() {
-            return new VersionService();
         }
 
         @Bean

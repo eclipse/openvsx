@@ -41,7 +41,6 @@ import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -564,11 +563,6 @@ public class UserAPITest {
         @Bean
         TokenService tokenService() {
             return new TokenService();
-        }
-
-        @Bean
-        VersionService versionService() {
-            return new VersionService();
         }
 
         @Bean

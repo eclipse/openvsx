@@ -9,19 +9,19 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.google.common.collect.Maps;
 import jakarta.persistence.*;
-
-import org.apache.jena.ext.com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "targetPlatform", "version" })})
@@ -29,10 +29,9 @@ public class ExtensionVersion implements Serializable {
 
     public static final Comparator<ExtensionVersion> SORT_COMPARATOR =
         Comparator.comparing(ExtensionVersion::getSemanticVersion)
-                .thenComparing(ExtensionVersion::isUniversalTargetPlatform)
+                .thenComparing(ExtensionVersion::isUniversalTargetPlatform, Comparator.reverseOrder())
                 .thenComparing(ExtensionVersion::getTargetPlatform)
-                .thenComparing(ExtensionVersion::getTimestamp)
-                .reversed();
+                .thenComparing(ExtensionVersion::getTimestamp, Comparator.reverseOrder());
 
     public enum Type {
         REGULAR,
@@ -142,8 +141,11 @@ public class ExtensionVersion implements Serializable {
     public ExtensionJson toExtensionJson() {
         var json = new ExtensionJson();
         json.targetPlatform = this.getTargetPlatform();
-        json.namespace = extension.getNamespace().getName();
-        json.namespaceDisplayName = extension.getNamespace().getDisplayName();
+        var namespace = extension.getNamespace();
+        json.namespace = namespace.getName();
+        json.namespaceDisplayName = StringUtils.isNotEmpty(namespace.getDisplayName())
+                ? namespace.getDisplayName()
+                : json.namespace;
         json.name = extension.getName();
         json.averageRating = extension.getAverageRating();
         json.downloadCount = extension.getDownloadCount();

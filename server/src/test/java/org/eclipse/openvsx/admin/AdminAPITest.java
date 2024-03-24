@@ -1117,8 +1117,11 @@ public class AdminAPITest {
                     .thenReturn(Streamable.of(versions));
             versions.add(extVersion);
         }
+
         extension.getVersions().addAll(versions);
-        Mockito.when(repositories.countVersions(extension)).thenReturn(versions.size());
+        Mockito.when(repositories.countVersions(extension)).thenReturn(numberOfVersions);
+        Mockito.when(repositories.findLatestVersion(extension, null, false, false))
+                .thenReturn(versions.get(numberOfVersions - 1));
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
         Mockito.when(repositories.findActiveVersions(extension))

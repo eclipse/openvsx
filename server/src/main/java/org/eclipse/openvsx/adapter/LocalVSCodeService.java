@@ -391,7 +391,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
         var extVersions = repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName);
         var extVersion = extVersions.stream().max(Comparator.<ExtensionVersion, Boolean>comparing(ExtensionVersion::isUniversalTargetPlatform)
-                .thenComparing(ExtensionVersion::getTargetPlatform))
+                .thenComparing(ExtensionVersion::getTargetPlatform, Comparator.reverseOrder()))
                 .orElse(null);
 
         if (extVersion == null) {

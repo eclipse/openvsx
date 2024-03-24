@@ -466,8 +466,8 @@ public class VSCodeAPITest {
                 .thenReturn(extVersions);
 
         var content = "<xml></xml>".getBytes(StandardCharsets.UTF_8);
-        var vsixResource = mockFileResource(15, extVersions.get(2), "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
-        Mockito.when(repositories.findResourceFileResources(4L, "extension.vsixmanifest"))
+        var vsixResource = mockFileResource(15, extVersions.get(0), "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
+        Mockito.when(repositories.findResourceFileResources(2L, "extension.vsixmanifest"))
                 .thenReturn(List.of(vsixResource));
 
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension.vsixmanifest"))
@@ -902,9 +902,9 @@ public class VSCodeAPITest {
         return extVersion;
     }
 
-    private String file(String name) throws UnsupportedEncodingException, IOException {
+    private String file(String name) throws IOException {
         try (var stream = getClass().getResourceAsStream(name)) {
-            return CharStreams.toString(new InputStreamReader(stream, "UTF-8"));
+            return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
         }
     }
 

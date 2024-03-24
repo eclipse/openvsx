@@ -58,18 +58,14 @@ public class Extension implements Serializable {
     /**
      * Convert to a search entity for Elasticsearch.
      */
-    public ExtensionSearch toSearch(ExtensionVersion latest) {
+    public ExtensionSearch toSearch(ExtensionVersion latest, List<String> targetPlatforms) {
         var search = new ExtensionSearch();
         search.id = this.getId();
         search.name = this.getName();
         search.namespace = this.getNamespace().getName();
         search.extensionId = NamingUtil.toExtensionId(search);
         search.downloadCount = this.getDownloadCount();
-        search.targetPlatforms = this.getVersions().stream()
-                .map(ExtensionVersion::getTargetPlatform)
-                .distinct()
-                .collect(Collectors.toList());
-
+        search.targetPlatforms = targetPlatforms;
         search.displayName = latest.getDisplayName();
         search.description = latest.getDescription();
         search.timestamp = latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);

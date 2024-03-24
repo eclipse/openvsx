@@ -9,18 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
-import java.time.Period;
-import java.time.format.DateTimeParseException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.net.URI;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
-import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -31,13 +22,17 @@ import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.net.URI;
+import java.time.Period;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
 
@@ -46,9 +41,6 @@ public class AdminAPI {
 
     @Autowired
     RepositoryService repositories;
-
-    @Autowired
-    VersionService versions;
 
     @Autowired
     AdminService admins;
@@ -191,7 +183,7 @@ public class AdminAPI {
             }
 
             ExtensionJson json;
-            var latest = versions.getLatestTrxn(extension, null, false, false);
+            var latest = repositories.findLatestVersion(extension, null, false, false);
             if (latest == null) {
                 json = new ExtensionJson();
                 json.namespace = extension.getNamespace().getName();
@@ -200,8 +192,7 @@ public class AdminAPI {
                 json.allTargetPlatformVersions = Collections.emptyMap();
             } else {
                 json = local.toExtensionVersionJson(latest, null, false);
-                json.allTargetPlatformVersions = versions.getVersionsTrxn(extension).stream()
-                        .collect(Collectors.groupingBy(ExtensionVersion::getVersion, Collectors.mapping(ExtensionVersion::getTargetPlatform, Collectors.toList())));
+                json.allTargetPlatformVersions = repositories.findTargetPlatformsGroupedByVersion(extension);
             }
             json.active = extension.isActive();
             return ResponseEntity.ok(json);
