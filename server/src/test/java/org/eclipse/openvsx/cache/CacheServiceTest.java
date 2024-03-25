@@ -9,20 +9,43 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
+import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.STORAGE_DB;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.admin.AdminService;
-import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionReview;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.AuthUserFactory;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Bean;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -34,16 +57,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-
-import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
-import static org.eclipse.openvsx.entities.FileResource.STORAGE_DB;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -69,6 +82,9 @@ public class CacheServiceTest {
 
     @Autowired
     RepositoryService repositories;
+
+    @Autowired
+    AuthUserFactory authUserFactory;
 
     @Test
     @Transactional
@@ -113,7 +129,8 @@ public class CacheServiceTest {
 
         var user = extVersion.getPublishedWith().getUser();
         var oauthUser = new DefaultOAuth2User(authorities, attributes, "name");
-        users.updateExistingUser(user, oauthUser);
+        var authUser = authUserFactory.createAuthUser(authority, oauthUser);
+        users.updateExistingUser(user, authUser);
         assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
         var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());

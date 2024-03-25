@@ -9,12 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import static org.eclipse.openvsx.security.CodedAuthException.*;
+import static org.eclipse.openvsx.security.CodedAuthException.ECLIPSE_MISMATCH_GITHUB_ID;
+import static org.eclipse.openvsx.security.CodedAuthException.ECLIPSE_MISSING_GITHUB_ID;
+import static org.eclipse.openvsx.security.CodedAuthException.INVALID_GITHUB_USER;
+import static org.eclipse.openvsx.security.CodedAuthException.NEED_MAIN_LOGIN;
+import static org.eclipse.openvsx.security.CodedAuthException.UNSUPPORTED_REGISTRATION;
 
 import java.util.Collection;
 import java.util.Collections;
-
-import jakarta.persistence.EntityManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UserService;
@@ -39,6 +41,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import jakarta.persistence.EntityManager;
+
 @Service
 public class OAuth2UserServices {
 
@@ -47,7 +51,7 @@ public class OAuth2UserServices {
 
     @Autowired
     TokenService tokens;
-    
+
     @Autowired
     RepositoryService repositories;
 
@@ -56,6 +60,9 @@ public class OAuth2UserServices {
 
     @Autowired
     EclipseService eclipse;
+
+    @Autowired
+    AuthUserFactory authUserFactory;
 
     private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
@@ -112,16 +119,17 @@ public class OAuth2UserServices {
     }
 
     private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
-        var authUser = delegate.loadUser(userRequest);
-        String loginName = authUser.getAttribute("login");
+        var authUser = authUserFactory.createAuthUser("github", delegate.loadUser(userRequest));
+        String loginName = authUser.getLoginName();
         if (StringUtils.isEmpty(loginName))
             throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
-        var userData = repositories.findUserByLoginName("github", loginName);
-        if (userData == null)
+        var userData = repositories.findUserByLoginName(authUser.getProviderId(), loginName);
+        if (userData == null) {
             userData = users.registerNewUser(authUser);
-        else
+        } else {
             users.updateExistingUser(userData, authUser);
-        return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
+        }
+        return new IdPrincipal(userData.getId(), authUser.getAuthId(), getAuthorities(userData));
     }
 
     private IdPrincipal loadEclipseUser(OAuth2UserRequest userRequest) {
@@ -168,5 +176,4 @@ public class OAuth2UserServices {
                 return Collections.emptyList();
         }
     }
-
 }
