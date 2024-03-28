@@ -9,23 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import static org.eclipse.openvsx.entities.FileResource.*;
-import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.*;
-import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.util.CollectionUtil;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -38,6 +32,13 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.eclipse.openvsx.entities.FileResource.*;
+import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @RestController
 public class UserAPI {
@@ -55,9 +56,6 @@ public class UserAPI {
 
     @Autowired
     StorageUtilService storageUtil;
-
-    @Autowired
-    VersionService versions;
 
     /**
      * Redirect to GitHub Oauth2 login as default login provider.
@@ -191,7 +189,7 @@ public class UserAPI {
 
         var types = new String[]{ DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         return repositories.findExtensions(user)
-                .map(e -> versions.getLatestTrxn(e, null, false, false))
+                .map(e -> repositories.findLatestVersion(e, null, false, false))
                 .map(latest -> {
                     var json = latest.toExtensionJson();
                     json.preview = latest.isPreview();

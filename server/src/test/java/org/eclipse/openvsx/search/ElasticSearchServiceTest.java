@@ -13,7 +13,6 @@ import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +55,7 @@ public class ElasticSearchServiceTest {
     ElasticSearchService search;
 
     @Test
-    public void testRelevanceAverageRating() throws Exception {
+    public void testRelevanceAverageRating() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",3.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext2 = mockExtension( "bar", "n2", "u2", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
@@ -68,7 +67,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceReviewCount() throws Exception {
+    public void testRelevanceReviewCount() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",4.0, 2, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext2 = mockExtension("bar", "n2", "u2",4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
@@ -80,7 +79,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceDownloadCount() throws Exception {
+    public void testRelevanceDownloadCount() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",0.0, 0, 1, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext2 = mockExtension("bar", "n2", "u2",0.0, 0, 10, LocalDateTime.parse("2020-01-01T00:00"), false, false);
@@ -92,7 +91,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceTimestamp() throws Exception {
+    public void testRelevanceTimestamp() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n2", "u2",0.0, 0, 0, LocalDateTime.parse("2020-02-01T00:00"), false, false);
         var ext2 = mockExtension("bar", "n1", "u1",0.0, 0, 0, LocalDateTime.parse("2020-10-01T00:00"), false, false);
@@ -104,7 +103,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceUnverified1() throws Exception {
+    public void testRelevanceUnverified1() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, true);
         var ext2 = mockExtension("bar", "n2", "u2",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
@@ -116,7 +115,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceUnverified2() throws Exception {
+    public void testRelevanceUnverified2() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), true, false);
         var ext2 = mockExtension("bar", "n2", "u2",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
@@ -128,7 +127,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testSoftUpdateExists() throws Exception {
+    public void testSoftUpdateExists() {
         var index = mockIndex(true);
         mockExtensions();
         search.updateSearchIndex(false);
@@ -139,7 +138,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testSoftUpdateNotExists() throws Exception {
+    public void testSoftUpdateNotExists() {
         var index = mockIndex(false);
         mockExtensions();
         search.updateSearchIndex(false);
@@ -150,7 +149,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testHardUpdateExists() throws Exception {
+    public void testHardUpdateExists() {
         var index = mockIndex(true);
         mockExtensions();
         search.updateSearchIndex(true);
@@ -161,7 +160,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testHardUpdateNotExists() throws Exception {
+    public void testHardUpdateNotExists() {
         var index = mockIndex(false);
         mockExtensions();
         search.updateSearchIndex(true);
@@ -257,6 +256,8 @@ public class ElasticSearchServiceTest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         extVer.setPublishedWith(token);
+        Mockito.when(repositories.findLatestVersion(extension,  null, false, true))
+                .thenReturn(extVer);
         Mockito.when(repositories.isVerified(namespace, user))
                 .thenReturn(!isUnverified && !isUnrelated);
         return extension;
@@ -286,11 +287,6 @@ public class ElasticSearchServiceTest {
         @Bean
         RelevanceService relevanceService() {
             return new RelevanceService();
-        }
-
-        @Bean
-        VersionService versionService() {
-            return new VersionService();
         }
 
         @Bean

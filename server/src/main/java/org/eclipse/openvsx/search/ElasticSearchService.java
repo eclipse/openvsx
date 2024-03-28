@@ -163,7 +163,7 @@ public class ElasticSearchService implements ISearchService {
             var stats = new SearchStats(repositories);
             var indexQueries = allExtensions.map(extension ->
                 new IndexQueryBuilder()
-                    .withObject(relevanceService.toSearchEntryTrxn(extension, stats))
+                    .withObject(relevanceService.toSearchEntry(extension, stats))
                     .build()
             ).toList();
 
@@ -197,7 +197,7 @@ public class ElasticSearchService implements ISearchService {
             var stats = new SearchStats(repositories);
             var indexQueries = extensions.stream().map(extension ->
                     new IndexQueryBuilder()
-                            .withObject(relevanceService.toSearchEntryTrxn(extension, stats))
+                            .withObject(relevanceService.toSearchEntry(extension, stats))
                             .build()
             ).collect(Collectors.toList());
             searchOperations.bulkIndex(indexQueries, indexOps.getIndexCoordinates());

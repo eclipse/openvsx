@@ -25,6 +25,7 @@ import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -193,7 +194,13 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.updateNamespacePublicIds(Collections.emptyMap()),
                 () -> repositories.extensionPublicIdExists("namespaceName.extensionName"),
                 () -> repositories.namespacePublicIdExists("namespaceName.extensionName"),
-                () -> repositories.fetchSitemapRows()
+                () -> repositories.fetchSitemapRows(),
+                () -> repositories.findTargetPlatformsGroupedByVersion(extension),
+                () -> repositories.findVersionsForUrls(extension, "targetPlatform", "version"),
+                () -> repositories.findExtensionVersion("namespaceName", "extensionName", "targetPlatform", "version"),
+                () -> repositories.findLatestVersionForAllUrls(extension, "targetPlatform", false, false),
+                () -> repositories.findLatestVersion(extension, "targetPlatform", false, false),
+                () -> repositories.findExtensionTargetPlatforms(extension)
         );
 
         // check that we did not miss anything

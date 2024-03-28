@@ -527,4 +527,31 @@ public class RepositoryService {
     public List<SitemapRow> fetchSitemapRows() {
         return extensionJooqRepo.fetchSitemapRows();
     }
+
+    public Map<String, List<String>> findTargetPlatformsGroupedByVersion(Extension extension) {
+        return extensionVersionJooqRepo.findTargetPlatformsGroupedByVersion(extension);
+    }
+
+    @Observed
+    public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
+        return extensionVersionJooqRepo.findVersionsForUrls(extension, targetPlatform, version);
+    }
+
+    @Observed
+    public ExtensionVersion findExtensionVersion(String namespace, String extension, String targetPlatform, String version) {
+        return extensionVersionJooqRepo.find(namespace, extension, targetPlatform, version);
+    }
+
+    @Observed
+    public ExtensionVersion findLatestVersionForAllUrls(Extension extension, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
+        return extensionVersionJooqRepo.findLatestForAllUrls(extension, targetPlatform, onlyPreRelease, onlyActive);
+    }
+
+    public ExtensionVersion findLatestVersion(Extension extension, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
+        return extensionVersionJooqRepo.findLatest(extension, targetPlatform, onlyPreRelease, onlyActive);
+    }
+
+    public List<String> findExtensionTargetPlatforms(Extension extension) {
+        return extensionVersionJooqRepo.findDistinctTargetPlatforms(extension);
+    }
 }

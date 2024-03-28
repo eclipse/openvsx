@@ -123,7 +123,7 @@ public class ExtensionJooqRepository {
         return extension;
     }
 
-        private SelectQuery<Record> findAllActive() {
+    private SelectQuery<Record> findAllActive() {
         var query = dsl.selectQuery();
         query.addSelect(
                 EXTENSION.ID,
@@ -136,7 +136,8 @@ public class ExtensionJooqRepository {
                 EXTENSION.LAST_UPDATED_DATE,
                 NAMESPACE.ID,
                 NAMESPACE.PUBLIC_ID,
-                NAMESPACE.NAME
+                NAMESPACE.NAME,
+                NAMESPACE.DISPLAY_NAME
         );
 
         query.addFrom(EXTENSION);
@@ -164,6 +165,7 @@ public class ExtensionJooqRepository {
         namespace.setId(record.get(NAMESPACE.ID));
         namespace.setPublicId(record.get(NAMESPACE.PUBLIC_ID));
         namespace.setName(record.get(NAMESPACE.NAME));
+        namespace.setDisplayName(record.get(NAMESPACE.DISPLAY_NAME));
         extension.setNamespace(namespace);
 
         return extension;

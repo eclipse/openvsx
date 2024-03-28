@@ -121,10 +121,10 @@ public class SemanticVersion implements Comparable<SemanticVersion>, Serializabl
     @Override
     public int compareTo(SemanticVersion that) {
         List<Supplier<Integer>> comparators = List.of(
-                () -> Integer.compare(this.getMajor(), that.getMajor()),
-                () -> Integer.compare(this.getMinor(), that.getMinor()),
-                () -> Integer.compare(this.getPatch(), that.getPatch()),
-                () -> -Boolean.compare(this.isIsPreRelease(), that.isIsPreRelease())
+                () -> Integer.compare(that.getMajor(), this.getMajor()),
+                () -> Integer.compare(that.getMinor(), this.getMinor()),
+                () -> Integer.compare(that.getPatch(), this.getPatch()),
+                () -> -Boolean.compare(that.isIsPreRelease(), this.isIsPreRelease())
         );
 
         var compare = 0;

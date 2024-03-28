@@ -12,13 +12,13 @@ package org.eclipse.openvsx.search;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.VersionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +26,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -64,9 +62,6 @@ public class RelevanceService {
     @Autowired
     RepositoryService repositories;
 
-    @Autowired
-    VersionService versions;
-
     @PostConstruct
     void init() {
         if (deprecatedElasticSearchRatingRelevance != -1.0) {
@@ -87,15 +82,10 @@ public class RelevanceService {
         }
     }
 
-    @Transactional
-    public ExtensionSearch toSearchEntryTrxn(Extension extension, SearchStats stats) {
-        extension = entityManager.merge(extension);
-        return toSearchEntry(extension, stats);
-    }
-
     public ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
-        var latest = versions.getLatest(extension, null, false, true);
-        var entry = extension.toSearch(latest);
+        var latest = repositories.findLatestVersion(extension,  null, false, true);
+        var targetPlatforms = repositories.findExtensionTargetPlatforms(extension);
+        var entry = extension.toSearch(latest, targetPlatforms);
         entry.rating = calculateRating(extension, stats);
         entry.relevance = calculateRelevance(extension, latest, stats, entry);
 

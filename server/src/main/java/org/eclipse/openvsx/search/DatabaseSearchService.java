@@ -15,7 +15,6 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.eclipse.openvsx.util.VersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
@@ -53,9 +52,6 @@ public class DatabaseSearchService implements ISearchService {
     @Autowired
     RepositoryService repositories;
 
-    @Autowired
-    VersionService versions;
-
     @Transactional
     @Cacheable(CACHE_DATABASE_SEARCH)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
@@ -83,7 +79,7 @@ public class DatabaseSearchService implements ISearchService {
         // filter category
         if (options.category != null) {
             matchingExtensions = matchingExtensions.filter(extension -> {
-                var latest = versions.getLatest(extension, null, false, true);
+                var latest = repositories.findLatestVersion(extension, null, false, true);
                 return latest.getCategories().stream().anyMatch(category -> category.equalsIgnoreCase(options.category));
             });
         }
@@ -91,7 +87,7 @@ public class DatabaseSearchService implements ISearchService {
         // filter text
         if (options.queryString != null) {
             matchingExtensions = matchingExtensions.filter(extension -> {
-                var latest = versions.getLatest(extension, null, false, true);
+                var latest = repositories.findLatestVersion(extension, null, false, true);
                 return extension.getName().toLowerCase().contains(options.queryString.toLowerCase())
                     || extension.getNamespace().getName().contains(options.queryString.toLowerCase())
                     || (latest.getDescription() != null && latest.getDescription()
@@ -110,8 +106,9 @@ public class DatabaseSearchService implements ISearchService {
             searchEntries = matchingExtensions.stream().map(extension -> relevanceService.toSearchEntry(extension, searchStats));
         } else {
             searchEntries = matchingExtensions.stream().map(extension -> {
-                var latest = versions.getLatest(extension, null, false, true);
-                return extension.toSearch(latest);
+                var latest = repositories.findLatestVersion(extension, null, false, true);
+                var targetPlatforms = repositories.findExtensionTargetPlatforms(extension);
+                return extension.toSearch(latest, targetPlatforms);
             });
         }
 

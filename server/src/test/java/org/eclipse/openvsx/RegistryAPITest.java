@@ -12,6 +12,7 @@ package org.eclipse.openvsx;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.observation.annotation.Observed;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
@@ -35,6 +36,7 @@ import org.eclipse.openvsx.storage.AzureDownloadCountService;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
@@ -110,9 +112,6 @@ public class RegistryAPITest {
     @Autowired
     ExtensionService extensions;
 
-    @Autowired
-    VersionService versions;
-
     @Test
     public void testPublicNamespace() throws Exception {
         var namespace = mockNamespace();
@@ -153,7 +152,9 @@ public class RegistryAPITest {
 
     @Test
     public void testExtension() throws Exception {
-        mockExtension();
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -170,6 +171,8 @@ public class RegistryAPITest {
     public void testExtensionWithPublicKey() throws Exception {
         Mockito.when(integrityService.isEnabled()).thenReturn(true);
         var extVersion = mockExtensionWithSignature();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+
         var keyPair = new SignatureKeyPair();
         keyPair.setPublicId("123-456-7890");
         extVersion.setSignatureKeyPair(keyPair);
@@ -187,6 +190,7 @@ public class RegistryAPITest {
     public void testExtensionNonDefaultTarget() throws Exception {
         var extVersion = mockExtension("alpine-x64");
         extVersion.setDisplayName("Foo Bar (alpine x64)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
 
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
                 .andExpect(status().isOk())
@@ -205,6 +209,8 @@ public class RegistryAPITest {
     public void testExtensionLinuxTarget() throws Exception {
         var extVersion = mockExtension("linux-x64");
         extVersion.setDisplayName("Foo Bar (linux x64)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "linux-x64", VersionAlias.LATEST)).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}", "foo", "bar", "linux-x64"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -247,7 +253,9 @@ public class RegistryAPITest {
 
     @Test
     public void testExtensionVersion() throws Exception {
-        mockExtension();
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, "1.0.0")).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -264,6 +272,8 @@ public class RegistryAPITest {
     public void testExtensionVersionNonDefaultTarget() throws Exception {
         var extVersion = mockExtension("darwin-arm64");
         extVersion.setDisplayName("Foo Bar (darwin arm64)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, "1.0.0")).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -280,6 +290,8 @@ public class RegistryAPITest {
     public void testExtensionVersionMacOSXTarget() throws Exception {
         var extVersion = mockExtension("darwin-arm64");
         extVersion.setDisplayName("Foo Bar (darwin arm64)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "darwin-arm64", "1.0.0")).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "darwin-arm64", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -294,7 +306,10 @@ public class RegistryAPITest {
 
     @Test
     public void testLatestExtensionVersion() throws Exception {
-        mockExtension();
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), null, false, true)).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "latest"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -312,6 +327,9 @@ public class RegistryAPITest {
     public void testLatestExtensionVersionNonDefaultTarget() throws Exception {
         var extVersion = mockExtension("alpine-arm64");
         extVersion.setDisplayName("Foo Bar (alpine arm64)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), null, false, true)).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "latest"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -330,6 +348,9 @@ public class RegistryAPITest {
     public void testLatestExtensionVersionAlpineLinuxTarget() throws Exception {
         var extVersion = mockExtension("alpine-arm64");
         extVersion.setDisplayName("Foo Bar (alpine arm64)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "alpine-arm64", VersionAlias.LATEST)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), "alpine-arm64", false, true)).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "alpine-arm64", "latest"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -348,6 +369,9 @@ public class RegistryAPITest {
     public void testPreReleaseExtensionVersion() throws Exception {
         var extVersion = mockExtension();
         extVersion.setPreRelease(true);
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.PRE_RELEASE)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), null, false, true)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), null, true, true)).thenReturn(extVersion);
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "pre-release"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -367,6 +391,9 @@ public class RegistryAPITest {
         var extVersion = mockExtension("web");
         extVersion.setPreRelease(true);
         extVersion.setDisplayName("Foo Bar (web)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.PRE_RELEASE)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), null, false, true)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), null, true, true)).thenReturn(extVersion);
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "pre-release"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -386,6 +413,9 @@ public class RegistryAPITest {
         var extVersion = mockExtension("web");
         extVersion.setPreRelease(true);
         extVersion.setDisplayName("Foo Bar (web)");
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "web", VersionAlias.PRE_RELEASE)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), "web", false, true)).thenReturn(extVersion);
+        Mockito.when(repositories.findLatestVersionForAllUrls(extVersion.getExtension(), "web", true, true)).thenReturn(extVersion);
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "web", "pre-release"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
@@ -428,7 +458,10 @@ public class RegistryAPITest {
 
     @Test
     public void testReadmeUniversalTarget() throws Exception {
-        mockReadme();
+        var resource = mockReadme();
+        var extVersion = resource.getExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "universal", "1.0.0")).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "README"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Please read me"));
@@ -436,7 +469,10 @@ public class RegistryAPITest {
 
     @Test
     public void testReadmeWindowsTarget() throws Exception {
-        mockReadme("win32-x64");
+        var resource = mockReadme("win32-x64");
+        var extVersion = resource.getExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "win32-x64", "1.0.0")).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}/file/{fileName}", "foo", "bar", "win32-x64", "1.0.0", "README"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Please read me"));
@@ -451,7 +487,10 @@ public class RegistryAPITest {
 
     @Test
     public void testChangelog() throws Exception {
-        mockChangelog();
+        var resource = mockChangelog();
+        var extVersion = resource.getExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "universal", "1.0.0")).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "CHANGELOG"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("All notable changes is documented here"));
@@ -459,7 +498,10 @@ public class RegistryAPITest {
 
     @Test
     public void testLicense() throws Exception {
-        mockLicense();
+        var resource = mockLicense();
+        var extVersion = resource.getExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "universal", "1.0.0")).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "LICENSE"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("I never broke the Law! I am the law!"));
@@ -483,7 +525,10 @@ public class RegistryAPITest {
 
     @Test
     public void testLatestFile() throws Exception {
-        mockLatest();
+        var resource = mockLatest();
+        var extVersion = resource.getExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", "universal", VersionAlias.LATEST)).thenReturn(extVersion);
+
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "latest", "DOWNLOAD"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("latest download"));
@@ -516,7 +561,9 @@ public class RegistryAPITest {
 
     @Test
     public void testSearch() throws Exception {
-        mockSearch();
+        var extVersions = mockSearch();
+        extVersions.forEach(extVersion -> Mockito.when(repositories.findLatestVersion(extVersion.getExtension(), null, false, true)).thenReturn(extVersion));
+
         mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "10", "0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(searchJson(s -> {
@@ -534,10 +581,11 @@ public class RegistryAPITest {
 
     @Test
     public void testSearchInactive() throws Exception {
-        var extensionsList = mockSearch();
-        extensionsList.forEach(extension -> {
+        var extVersionsList = mockSearch();
+        extVersionsList.forEach(extVersion -> {
+            var extension = extVersion.getExtension();
             extension.setActive(false);
-            versions.getLatest(extension, null, false, false).setActive(false);
+            extension.getVersions().get(0).setActive(false);
         });
 
         mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "10", "0"))
@@ -1904,6 +1952,11 @@ public class RegistryAPITest {
         Mockito.when(repositories.findExtensionByPublicId("5678"))
                 .thenReturn(extension);
 
+//        Mockito.when(repositories.findTargetPlatformsGroupedByVersion(extension)).thenReturn();
+//        Mockito.when(repositories.findVersionsForUrls(extension, targetPlatform, extVersion.getVersion())).thenReturn(List.of(extVersion));
+//        Mockito.when(repositories.findLatestVersion(extension, targetPlatform, false, true)).thenReturn(extVersion);
+//        Mockito.when(repositories.findExtensionTargetPlatforms(extension)).thenReturn(List.of(targetPlatform));
+
         var download = new FileResource();
         download.setExtension(extVersion);
         download.setType(DOWNLOAD);
@@ -2051,7 +2104,7 @@ public class RegistryAPITest {
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private List<Extension> mockSearch() {
+    private List<ExtensionVersion> mockSearch() {
         var extVersion = mockExtension();
         var extension = extVersion.getExtension();
         extension.setId(1L);
@@ -2066,7 +2119,7 @@ public class RegistryAPITest {
                 .thenReturn(searchHits);
         Mockito.when(repositories.findExtensions(List.of(extension.getId())))
                 .thenReturn(Streamable.of(extension));
-        return Arrays.asList(extension);
+        return List.of(extVersion);
     }
 
     private String searchJson(Consumer<SearchResultJson> content) throws JsonProcessingException {

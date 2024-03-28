@@ -32,9 +32,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -47,9 +47,6 @@ public class AdminService {
 
     @Autowired
     ExtensionService extensions;
-
-    @Autowired
-    VersionService versions;
 
     @Autowired
     EntityManager entityManager;
@@ -267,7 +264,7 @@ public class AdminService {
         eclipse.enrichUserJson(userPublishInfo.user, user);
         userPublishInfo.activeAccessTokenNum = (int) repositories.countActiveAccessTokens(user);
         userPublishInfo.extensions = repositories.findExtensions(user).stream()
-                .map(e -> versions.getLatestTrxn(e, null, false, false))
+                .map(e -> repositories.findLatestVersion(e, null, false, false))
                 .map(latest -> {
                     var json = latest.toExtensionJson();
                     json.preview = latest.isPreview();
