@@ -177,7 +177,7 @@ public class ExtensionJson extends ResultJson implements Serializable {
     public Map<String, String> downloads;
 
     @Schema(description = "Map of target platforms by extension version")
-    public Map<String, List<String>> allTargetPlatformVersions;
+    public List<VersionTargetPlatformsJson> allTargetPlatformVersions;
 
     @Schema(description = "version metadata URL")
     public String url;

@@ -23,13 +23,15 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
     const getTargetPlatformVersions = () => {
         const versionMap: TargetPlatformVersion[] = [];
         versionMap.push({ targetPlatform: WILDCARD, version: WILDCARD, checked: false });
-        Object.keys(extension.allTargetPlatformVersions)
-            .filter(version => VERSION_ALIASES.indexOf(version) < 0)
-            .forEach(version => {
-                versionMap.push({ targetPlatform: WILDCARD, version: version, checked: false });
-                const targetPlatforms = extension.allTargetPlatformVersions[version];
-                targetPlatforms.forEach(targetPlatform => versionMap.push({ targetPlatform: targetPlatform, version: version, checked: false }));
-            });
+        if (extension.allTargetPlatformVersions != null) {
+            extension.allTargetPlatformVersions
+                .filter(i => VERSION_ALIASES.indexOf(i.version) < 0)
+                .forEach(i => {
+                    const { version, targetPlatforms } = i;
+                    versionMap.push({ targetPlatform: WILDCARD, version, checked: false });
+                    targetPlatforms.forEach(targetPlatform => versionMap.push({ targetPlatform, version, checked: false }));
+                });
+        }
 
         return versionMap;
     };

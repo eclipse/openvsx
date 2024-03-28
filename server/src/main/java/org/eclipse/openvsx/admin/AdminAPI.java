@@ -189,7 +189,7 @@ public class AdminAPI {
                 json.namespace = extension.getNamespace().getName();
                 json.name = extension.getName();
                 json.allVersions = Collections.emptyMap();
-                json.allTargetPlatformVersions = Collections.emptyMap();
+                json.allTargetPlatformVersions = Collections.emptyList();
             } else {
                 json = local.toExtensionVersionJson(latest, null, false);
                 json.allTargetPlatformVersions = repositories.findTargetPlatformsGroupedByVersion(extension);

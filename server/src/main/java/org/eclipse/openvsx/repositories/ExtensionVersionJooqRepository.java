@@ -13,6 +13,7 @@ import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.jooq.Record;
@@ -542,16 +543,41 @@ public class ExtensionVersionJooqRepository {
         return converter.convertToEntityAttribute(raw);
     }
 
-    public Map<String, List<String>> findTargetPlatformsGroupedByVersion(Extension extension) {
-        var TARGET_PLATFORMS = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM);
-        return dsl.select(EXTENSION_VERSION.VERSION, TARGET_PLATFORMS)
+    public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension) {
+        var targetPlatforms = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc()
+                );
+
+        return dsl.select(
+                    EXTENSION_VERSION.SEMVER_MAJOR,
+                    EXTENSION_VERSION.SEMVER_MINOR,
+                    EXTENSION_VERSION.SEMVER_PATCH,
+                    EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
+                    EXTENSION_VERSION.VERSION,
+                    targetPlatforms
+                )
                 .from(EXTENSION_VERSION)
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
-                .groupBy(EXTENSION_VERSION.VERSION)
+                .groupBy(
+                        EXTENSION_VERSION.SEMVER_MAJOR,
+                        EXTENSION_VERSION.SEMVER_MINOR,
+                        EXTENSION_VERSION.SEMVER_PATCH,
+                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
+                        EXTENSION_VERSION.VERSION
+                )
+                .orderBy(
+                        EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                        EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                        EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                        EXTENSION_VERSION.VERSION.asc()
+                )
                 .fetch()
-                .collect(Collectors.toMap(
-                        r -> r.get(EXTENSION_VERSION.VERSION),
-                        r -> List.of(r.get(TARGET_PLATFORMS))
+                .map(record -> new VersionTargetPlatformsJson(
+                        record.get(EXTENSION_VERSION.VERSION),
+                        record.get(targetPlatforms)
                 ));
     }
 

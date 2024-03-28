@@ -12,6 +12,7 @@ package org.eclipse.openvsx.repositories;
 import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -528,7 +529,7 @@ public class RepositoryService {
         return extensionJooqRepo.fetchSitemapRows();
     }
 
-    public Map<String, List<String>> findTargetPlatformsGroupedByVersion(Extension extension) {
+    public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension) {
         return extensionVersionJooqRepo.findTargetPlatformsGroupedByVersion(extension);
     }
 
