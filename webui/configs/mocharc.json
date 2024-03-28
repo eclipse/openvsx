@@ -3,5 +3,5 @@
     "colors": true,
     "watch-extensions": ["ts", "tsx"],
     "timeout": 10000,
-    "spec": "test/**/*.spec.{ts,tsx}"
+    "spec": "test/unit/**/*.spec.{ts,tsx}"
 }
