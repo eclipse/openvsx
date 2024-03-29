@@ -107,9 +107,7 @@ export interface Extension {
 
     // key: target platform, value: download link
     downloads: { [targetPlatform: string]: UrlString };
-
-    // key: version, value: target platforms
-    allTargetPlatformVersions: { [version: string]: string[] };
+    allTargetPlatformVersions?: VersionTargetPlatforms[];
 }
 
 export interface Badge {
@@ -122,6 +120,11 @@ export interface ExtensionReference {
     namespace: string;
     extension: string;
     version?: string;
+}
+
+export interface VersionTargetPlatforms {
+    version: string;
+    targetPlatforms: string[];
 }
 
 export type StarRating = 1 | 2 | 3 | 4 | 5;
