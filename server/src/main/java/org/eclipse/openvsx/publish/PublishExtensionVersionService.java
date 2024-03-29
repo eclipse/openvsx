@@ -14,9 +14,12 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.storage.LimitStoredVersionsJobRequest;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.storage.StoredVersionsLimiter;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.retry.annotation.Retryable;
@@ -40,6 +43,12 @@ public class PublishExtensionVersionService {
 
     @Autowired
     StorageUtilService storageUtil;
+
+    @Autowired
+    StoredVersionsLimiter storedVersionsLimiter;
+
+    @Autowired
+    JobRequestScheduler scheduler;
 
     @Transactional
     public void deleteFileResources(ExtensionVersion extVersion) {
@@ -92,6 +101,17 @@ public class PublishExtensionVersionService {
         extVersion.setActive(true);
         extVersion = entityManager.merge(extVersion);
         extensions.updateExtension(extVersion.getExtension());
+        scheduleLimitStoredVersionsJob(extVersion);
+    }
+
+    private void scheduleLimitStoredVersionsJob(ExtensionVersion extVersion) {
+        if(!storedVersionsLimiter.isEnabled()) {
+            return;
+        }
+
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        scheduler.enqueue(new LimitStoredVersionsJobRequest(namespace.getName(), extension.getName()));
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)

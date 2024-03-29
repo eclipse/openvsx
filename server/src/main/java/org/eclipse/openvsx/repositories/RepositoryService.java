@@ -555,4 +555,12 @@ public class RepositoryService {
     public List<String> findExtensionTargetPlatforms(Extension extension) {
         return extensionVersionJooqRepo.findDistinctTargetPlatforms(extension);
     }
+
+    public List<ExtensionVersion> findExcessExtensionVersions(String namespace, String extension, int limit) {
+        return extensionVersionJooqRepo.findExcess(namespace, extension, limit);
+    }
+
+    public List<ExtensionVersion> findAllExcessExtensionVersions(int limit) {
+        return extensionVersionJooqRepo.findAllExcess(limit);
+    }
 }

@@ -41,9 +41,6 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
     @Autowired
     MigrationService migrations;
 
-    @Autowired
-    FixTargetPlatformsService service;
-
     @Override
     @Job(name = "Fix target platform for published extension version", retries = 3)
     public void run(MigrationJobRequest jobRequest) throws Exception {
@@ -71,13 +68,14 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
     }
 
     private void deleteExtension(ExtensionVersion extVersion) {
+        var user = admins.createSystemUser("FixTargetPlatformMigration");
         var extension = extVersion.getExtension();
         admins.deleteExtension(
                 extension.getNamespace().getName(),
                 extension.getName(),
                 extVersion.getTargetPlatform(),
                 extVersion.getVersion(),
-                service.getUser()
+                user
         );
     }
 }

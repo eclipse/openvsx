@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
 
@@ -543,42 +544,46 @@ public class ExtensionVersionJooqRepository {
         return converter.convertToEntityAttribute(raw);
     }
 
+    private SelectQuery<Record> findGroupedByVersionQuery() {
+        var query = dsl.selectQuery();
+        query.addSelect(
+                EXTENSION_VERSION.SEMVER_MAJOR,
+                EXTENSION_VERSION.SEMVER_MINOR,
+                EXTENSION_VERSION.SEMVER_PATCH,
+                EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
+                EXTENSION_VERSION.VERSION
+        );
+        query.addFrom(EXTENSION_VERSION);
+        query.addGroupBy(
+                EXTENSION_VERSION.SEMVER_MAJOR,
+                EXTENSION_VERSION.SEMVER_MINOR,
+                EXTENSION_VERSION.SEMVER_PATCH,
+                EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
+                EXTENSION_VERSION.VERSION
+        );
+        query.addOrderBy(
+                EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                EXTENSION_VERSION.VERSION.asc()
+        );
+        return query;
+    }
+
     public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension) {
+        var query = findGroupedByVersionQuery();
         var targetPlatforms = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM)
                 .orderBy(
                         EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
                         EXTENSION_VERSION.TARGET_PLATFORM.asc()
                 );
-
-        return dsl.select(
-                    EXTENSION_VERSION.SEMVER_MAJOR,
-                    EXTENSION_VERSION.SEMVER_MINOR,
-                    EXTENSION_VERSION.SEMVER_PATCH,
-                    EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
-                    EXTENSION_VERSION.VERSION,
-                    targetPlatforms
-                )
-                .from(EXTENSION_VERSION)
-                .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
-                .groupBy(
-                        EXTENSION_VERSION.SEMVER_MAJOR,
-                        EXTENSION_VERSION.SEMVER_MINOR,
-                        EXTENSION_VERSION.SEMVER_PATCH,
-                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
-                        EXTENSION_VERSION.VERSION
-                )
-                .orderBy(
-                        EXTENSION_VERSION.SEMVER_MAJOR.desc(),
-                        EXTENSION_VERSION.SEMVER_MINOR.desc(),
-                        EXTENSION_VERSION.SEMVER_PATCH.desc(),
-                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
-                        EXTENSION_VERSION.VERSION.asc()
-                )
-                .fetch()
-                .map(record -> new VersionTargetPlatformsJson(
-                        record.get(EXTENSION_VERSION.VERSION),
-                        record.get(targetPlatforms)
-                ));
+        query.addSelect(targetPlatforms);
+        query.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()));
+        return query.fetch(record -> new VersionTargetPlatformsJson(
+                record.get(EXTENSION_VERSION.VERSION),
+                record.get(targetPlatforms)
+        ));
     }
 
     @Observed
@@ -791,5 +796,92 @@ public class ExtensionVersionJooqRepository {
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
                 .and(EXTENSION_VERSION.ACTIVE.eq(true))
                 .fetch(EXTENSION_VERSION.TARGET_PLATFORM);
+    }
+
+    public List<ExtensionVersion> findExcess(String namespaceName, String extensionName, int limit) {
+        var TARGET_PLATFORMS = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM);
+        var query = findGroupedByVersionQuery();
+        query.addSelect(TARGET_PLATFORMS);
+        query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
+        query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+        query.addConditions(
+                NAMESPACE.NAME.eq(namespaceName),
+                EXTENSION.NAME.eq(extensionName)
+        );
+        query.addOffset(limit);
+        return query.fetch(record -> {
+                    var list = new ArrayList<ExtensionVersion>();
+                    var version = record.get(EXTENSION_VERSION.VERSION);
+                    var targetPlatforms = record.get(TARGET_PLATFORMS);
+                    for(var targetPlatform : targetPlatforms) {
+                        var namespace = new Namespace();
+                        namespace.setName(namespaceName);
+
+                        var extension = new Extension();
+                        extension.setName(extensionName);
+                        extension.setNamespace(namespace);
+
+                        var extVersion = new ExtensionVersion();
+                        extVersion.setVersion(version);
+                        extVersion.setTargetPlatform(targetPlatform);
+                        extVersion.setExtension(extension);
+                        list.add(extVersion);
+                    }
+                    return list;
+                })
+                .stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+    }
+
+    public List<ExtensionVersion> findAllExcess(int limit) {
+        var namespaceNameAlias = NAMESPACE.NAME.as("namespaceName");
+        var extensionNameAlias = EXTENSION.NAME.as("extensionName");
+        var table = dsl.select(namespaceNameAlias, extensionNameAlias, EXTENSION.ID)
+                .from(EXTENSION)
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .asTable();
+
+        var namespaceNameField = table.field(namespaceNameAlias);
+        var extensionNameField = table.field(extensionNameAlias);
+
+        var TARGET_PLATFORMS = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM);
+        var lateralQuery = findGroupedByVersionQuery();
+        lateralQuery.addSelect(TARGET_PLATFORMS);
+        lateralQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(table.field(EXTENSION.ID)));
+        lateralQuery.addOffset(limit);
+        var lateralTable = lateralQuery.asTable();
+        var versionField = lateralTable.field(EXTENSION_VERSION.VERSION);
+        var targetPlatformsField = lateralTable.field(TARGET_PLATFORMS);
+
+        var query = dsl.selectQuery();
+        query.addSelect(namespaceNameField, extensionNameField, versionField, targetPlatformsField);
+        query.addFrom(table, DSL.lateral(lateralTable));
+
+        return query.fetch(record -> {
+                    var list = new ArrayList<ExtensionVersion>();
+                    var namespaceName = record.get(namespaceNameField);
+                    var extensionName = record.get(extensionNameField);
+                    var version = record.get(versionField);
+                    var targetPlatforms = record.get(targetPlatformsField);
+                    for(var targetPlatform : targetPlatforms) {
+                        var namespace = new Namespace();
+                        namespace.setName(namespaceName);
+
+                        var extension = new Extension();
+                        extension.setName(extensionName);
+                        extension.setNamespace(namespace);
+
+                        var extVersion = new ExtensionVersion();
+                        extVersion.setVersion(version);
+                        extVersion.setTargetPlatform(targetPlatform);
+                        extVersion.setExtension(extension);
+                        list.add(extVersion);
+                    }
+                    return list;
+                })
+                .stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 }

@@ -139,15 +139,8 @@ public class DataMirrorService {
         return extension.getVersions().stream().filter(v -> targetPlatform.equals(v.getTargetPlatform())).collect(Collectors.toList());
     }
 
-    @Transactional
     public UserData createMirrorUser() {
-        var user = repositories.findUserByLoginName(null, userName);
-        if(user == null) {
-            user = new UserData();
-            user.setLoginName(userName);
-            entityManager.persist(user);
-        }
-        return user;
+        return admin.createSystemUser(userName);
     }
 
     @Transactional
