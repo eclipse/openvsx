@@ -771,8 +771,8 @@ public class ExtensionVersionJooqRepository {
         query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
         query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
         query.addConditions(
-                EXTENSION.NAME.eq(extensionName),
-                NAMESPACE.NAME.eq(namespaceName)
+                EXTENSION.NAME.equalIgnoreCase(extensionName),
+                NAMESPACE.NAME.equalIgnoreCase(namespaceName)
         );
         if(!VersionAlias.LATEST.equals(version) && !VersionAlias.PRE_RELEASE.equals(version)) {
             query.addConditions(EXTENSION_VERSION.VERSION.eq(version));
