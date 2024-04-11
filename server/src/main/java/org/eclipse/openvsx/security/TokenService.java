@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.UserData;
-import org.json.simple.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -166,16 +165,16 @@ public class TokenService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
 
-        var data = new JsonObject();
-        data.put("grant_type", "refresh_token");
-        data.put("client_id", reg.getClientId());
-        data.put("client_secret", reg.getClientSecret());
-        data.put("refresh_token", token.refreshToken != null ? token.refreshToken : token.accessToken);
-
-        var request = new HttpEntity<String>(data.toJson(), headers);
-        var restTemplate = new RestTemplate();
         var objectMapper = new ObjectMapper();
+        var data = objectMapper.createObjectNode()
+                .put("grant_type", "refresh_token")
+                .put("client_id", reg.getClientId())
+                .put("client_secret", reg.getClientSecret())
+                .put("refresh_token", token.refreshToken != null ? token.refreshToken : token.accessToken);
+
         try {
+            var request = new HttpEntity<>(objectMapper.writeValueAsString(data), headers);
+            var restTemplate = new RestTemplate();
             var response = restTemplate.postForObject(tokenUri, request, String.class);
             var root = objectMapper.readTree(response);
             var newTokenValue = root.get("access_token").asText();
@@ -188,7 +187,6 @@ public class TokenService {
             var newToken = new OAuth2AccessToken(TokenType.BEARER, newTokenValue, issuedAt, expiresAt);
             var newRefreshToken = new OAuth2RefreshToken(newRefreshTokenValue, issuedAt);
             return Pair.of(newToken, newRefreshToken);
-
         } catch (RestClientException exc) {
             logger.error("Post request failed with URL: " + tokenUri, exc);
         } catch (JsonProcessingException exc) {

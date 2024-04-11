@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import org.apache.jena.ext.com.google.common.collect.Lists;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
@@ -25,6 +24,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import jakarta.persistence.EntityManager;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledFuture;
@@ -69,7 +71,7 @@ public class StorageMigration {
             return;
         }
 
-        var migrations = Lists.newArrayList(STORAGE_DB, STORAGE_GOOGLE, STORAGE_AZURE);
+        var migrations = new ArrayList<>(List.of(STORAGE_DB, STORAGE_GOOGLE, STORAGE_AZURE));
         migrations.remove(storageType);
         var migrationCount = new int[migrations.size()];
         for (var i = 0; i < migrations.size(); i++) {
