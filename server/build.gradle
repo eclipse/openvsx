@@ -22,10 +22,8 @@ def versions = [
     java: '17',
     flyway: '9.19.1',
     springdoc: '2.1.0',
-    spdx: '2.2.8',
-    gcloud: '2.22.3',
+    gcloud: '2.36.1',
     azure: '12.23.0',
-    guava: '30.0-jre',
     junit: '5.7.1',
     testcontainers: '1.15.2',
     jackson: '2.15.2',
@@ -34,7 +32,7 @@ def versions = [
     bucket4j: '0.9.0',
     ehcache: '3.10.8',
     tika: '2.6.0',
-    bouncycastle: '1.69',
+    bouncycastle: '1.77',
     commons_lang3: '3.12.0',
     httpclient5: '5.2.1',
     jaxb_api: '2.3.1',
@@ -81,7 +79,7 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.springframework.retry:spring-retry"
-    implementation "org.bouncycastle:bcpkix-jdk15on:${versions.bouncycastle}"
+    implementation "org.bouncycastle:bcpkix-jdk18on:${versions.bouncycastle}"
     implementation "org.ehcache:ehcache:${versions.ehcache}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
     implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
@@ -89,7 +87,6 @@ dependencies {
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${versions.springdoc}"
-    implementation "com.google.guava:guava:${versions.guava}"
     implementation "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
@@ -101,11 +98,6 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:${versions.commons_lang3}"
     implementation "org.apache.httpcomponents.client5:httpclient5:${versions.httpclient5}"
     implementation "org.apache.tika:tika-core:${versions.tika}"
-    implementation("org.spdx:spdx-tools:${versions.spdx}") {
-        exclude group: 'net.sf.saxon'
-        exclude group: 'org.antlr', module: 'antlr'
-        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
-    }
     implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
     implementation "io.micrometer:micrometer-tracing"
     implementation "io.micrometer:micrometer-tracing-bridge-otel"
@@ -127,6 +119,12 @@ dependencies {
 
     gatling "io.gatling:gatling-core:${versions.gatling}"
     gatling "io.gatling:gatling-app:${versions.gatling}"
+
+    constraints {
+        implementation('org.eclipse.parsson:parsson:1.0.5') {
+            because 'version 1.0.0 pulled from elasticsearch-java has CVE-2023-4043'
+        }
+    }
 }
 
 jooq {
