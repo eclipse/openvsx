@@ -1716,4 +1716,43 @@ public class RegistryAPI {
 
         return ResponseEntity.notFound().build();
     }
+
+    @GetMapping(path = "/api/version", produces = MediaType.APPLICATION_JSON_VALUE)
+    @CrossOrigin
+    @Operation(summary = "Return the registry version")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "The registry version is returned in JSON format"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "The registry version could not be determined"
+        ),
+        @ApiResponse(
+            responseCode = "429",
+            description = "A client has sent too many requests in a given amount of time",
+            headers = {
+                @Header(
+                    name = "X-Rate-Limit-Retry-After-Seconds",
+                    description = "Number of seconds to wait after receiving a 429 response",
+                    schema = @Schema(type = "integer", format = "int32")
+                ),
+                @Header(
+                    name = "X-Rate-Limit-Remaining",
+                    description = "Remaining number of requests left",
+                    schema = @Schema(type = "integer", format = "int32")
+                )
+            }
+        )
+    })
+    public ResponseEntity<RegistryVersionJson> getServerVersion() {
+        try {
+            return ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .body(local.getRegistryVersion());
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(RegistryVersionJson.class);
+        }
+    }
 }
