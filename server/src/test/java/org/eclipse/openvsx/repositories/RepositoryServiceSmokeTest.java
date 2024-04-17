@@ -200,7 +200,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findExtensionVersion("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findLatestVersionForAllUrls(extension, "targetPlatform", false, false),
                 () -> repositories.findLatestVersion(extension, "targetPlatform", false, false),
-                () -> repositories.findExtensionTargetPlatforms(extension)
+                () -> repositories.findExtensionTargetPlatforms(extension),
+                () -> repositories.findExcessExtensionVersions("namespaceName", "extensionName",1),
+                () -> repositories.findAllExcessExtensionVersions(1)
         );
 
         // check that we did not miss anything

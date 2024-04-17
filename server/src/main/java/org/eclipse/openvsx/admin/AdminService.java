@@ -371,4 +371,15 @@ public class AdminService {
             throw new ErrorResultException("Combination of year and month lies in the future", HttpStatus.BAD_REQUEST);
         }
     }
+
+    @Transactional
+    public UserData createSystemUser(String userName) {
+        var user = repositories.findUserByLoginName(null, userName);
+        if(user == null) {
+            user = new UserData();
+            user.setLoginName(userName);
+            entityManager.persist(user);
+        }
+        return user;
+    }
 }
