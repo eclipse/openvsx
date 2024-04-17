@@ -190,10 +190,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^10.17.60":
-  version: 10.17.60
-  resolution: "@types/node@npm:10.17.60"
-  checksum: 10/f9161493b3284b1d41d5d594c2768625acdd9e33f992f71ccde47861916e662e2ae438d2cc5f1b285053391a31b52a7564ecedc22d485610d236bfad9c7e6a1c
+"@types/node@npm:^16.11.7":
+  version: 16.18.96
+  resolution: "@types/node@npm:16.18.96"
+  checksum: 10/6b6d1250c777f40bbc665024b13912c8f65ebe64e7dfe8369084aa65a8ebeaec7037f7a87f280b211bdb0b2b8a4173619be89e642962a1f58690d3bac08bfa33
   languageName: node
   linkType: hard
 
@@ -339,14 +339,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vscode/vsce@npm:^2.24.0":
-  version: 2.24.0
-  resolution: "@vscode/vsce@npm:2.24.0"
+"@vscode/vsce@npm:^2.25.0":
+  version: 2.25.0
+  resolution: "@vscode/vsce@npm:2.25.0"
   dependencies:
-    azure-devops-node-api: "npm:^11.0.1"
+    azure-devops-node-api: "npm:^12.5.0"
     chalk: "npm:^2.4.2"
     cheerio: "npm:^1.0.0-rc.9"
+    cockatiel: "npm:^3.1.2"
     commander: "npm:^6.2.1"
+    form-data: "npm:^4.0.0"
     glob: "npm:^7.0.6"
     hosted-git-info: "npm:^4.0.2"
     jsonc-parser: "npm:^3.2.0"
@@ -369,7 +371,7 @@ __metadata:
       optional: true
   bin:
     vsce: vsce
-  checksum: 10/74473cb6715effcdc41381851582a7c5f643d707be01913153c79cd2a5c84266ef68e2ed81c2f282a5c7127dfbcc4b16378b4a73526ababe59190cef867dafe4
+  checksum: 10/5d9dd206789e8c8dfef5913357543c839b20d760d8b40292c01fd8b018c8cb17c14c14ef8ac7260461b82d4131e7f8c1aa5bd13b3728b19c8b142f462171fc48
   languageName: node
   linkType: hard
 
@@ -482,13 +484,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"azure-devops-node-api@npm:^11.0.1":
-  version: 11.2.0
-  resolution: "azure-devops-node-api@npm:11.2.0"
+"asynckit@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "asynckit@npm:0.4.0"
+  checksum: 10/3ce727cbc78f69d6a4722517a58ee926c8c21083633b1d3fdf66fd688f6c127a53a592141bd4866f9b63240a86e9d8e974b13919450bd17fa33c2d22c4558ad8
+  languageName: node
+  linkType: hard
+
+"azure-devops-node-api@npm:^12.5.0":
+  version: 12.5.0
+  resolution: "azure-devops-node-api@npm:12.5.0"
   dependencies:
     tunnel: "npm:0.0.6"
     typed-rest-client: "npm:^1.8.4"
-  checksum: 10/a01ee699e2488a3dce7ec99994db97c8124f7b793a0d9affacdbdb30235009c4e2151ebc2ec75eadbe91c2ea849d2a591f3535945343eaf235d1943253045aee
+  checksum: 10/68eb7bef399fec259cdd9ab52bb662281a5bb63b0eb5c76447a3c0b723e94fe40d1fa2282aaebf5bfdcfb4cbac6e96686bd2bb76364ba5b82ac786a2c2b9d4bd
   languageName: node
   linkType: hard
 
@@ -687,6 +696,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cockatiel@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "cockatiel@npm:3.1.2"
+  checksum: 10/52d8fd0038fc5fe5579962947243fe971fa827db5ad1acecec5dbde854d7018696d3c6967a4860d8399e39d0f53e9d762c00cad5e2b3694c554d19e7d08b3f6a
+  languageName: node
+  linkType: hard
+
 "color-convert@npm:^1.9.0":
   version: 1.9.3
   resolution: "color-convert@npm:1.9.3"
@@ -716,6 +732,15 @@ __metadata:
   version: 1.1.4
   resolution: "color-name@npm:1.1.4"
   checksum: 10/b0445859521eb4021cd0fb0cc1a75cecf67fceecae89b63f62b201cca8d345baf8b952c966862a9d9a2632987d4f6581f0ec8d957dfacece86f0a7919316f610
+  languageName: node
+  linkType: hard
+
+"combined-stream@npm:^1.0.8":
+  version: 1.0.8
+  resolution: "combined-stream@npm:1.0.8"
+  dependencies:
+    delayed-stream: "npm:~1.0.0"
+  checksum: 10/2e969e637d05d09fa50b02d74c83a1186f6914aae89e6653b62595cc75a221464f884f55f231b8f4df7a49537fba60bdc0427acd2bf324c09a1dbb84837e36e4
   languageName: node
   linkType: hard
 
@@ -807,6 +832,13 @@ __metadata:
     es-errors: "npm:^1.3.0"
     gopd: "npm:^1.0.1"
   checksum: 10/abdcb2505d80a53524ba871273e5da75e77e52af9e15b3aa65d8aad82b8a3a424dad7aee2cc0b71470ac7acf501e08defac362e8b6a73cdb4309f028061df4ae
+  languageName: node
+  linkType: hard
+
+"delayed-stream@npm:~1.0.0":
+  version: 1.0.0
+  resolution: "delayed-stream@npm:1.0.0"
+  checksum: 10/46fe6e83e2cb1d85ba50bd52803c68be9bd953282fa7096f51fc29edd5d67ff84ff753c51966061e5ba7cb5e47ef6d36a91924eddb7f3f3483b1c560f77a0020
   languageName: node
   linkType: hard
 
@@ -1224,6 +1256,17 @@ __metadata:
     cross-spawn: "npm:^7.0.0"
     signal-exit: "npm:^4.0.1"
   checksum: 10/087edd44857d258c4f73ad84cb8df980826569656f2550c341b27adf5335354393eec24ea2fabd43a253233fb27cee177ebe46bd0b7ea129c77e87cb1e9936fb
+  languageName: node
+  linkType: hard
+
+"form-data@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "form-data@npm:4.0.0"
+  dependencies:
+    asynckit: "npm:^0.4.0"
+    combined-stream: "npm:^1.0.8"
+    mime-types: "npm:^2.1.12"
+  checksum: 10/7264aa760a8cf09482816d8300f1b6e2423de1b02bba612a136857413fdc96d7178298ced106817655facc6b89036c6e12ae31c9eb5bdc16aabf502ae8a5d805
   languageName: node
   linkType: hard
 
@@ -1818,6 +1861,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mime-db@npm:1.52.0":
+  version: 1.52.0
+  resolution: "mime-db@npm:1.52.0"
+  checksum: 10/54bb60bf39e6f8689f6622784e668a3d7f8bed6b0d886f5c3c446cb3284be28b30bf707ed05d0fe44a036f8469976b2629bbea182684977b084de9da274694d7
+  languageName: node
+  linkType: hard
+
+"mime-types@npm:^2.1.12":
+  version: 2.1.35
+  resolution: "mime-types@npm:2.1.35"
+  dependencies:
+    mime-db: "npm:1.52.0"
+  checksum: 10/89aa9651b67644035de2784a6e665fc685d79aba61857e02b9c8758da874a754aed4a9aced9265f5ed1171fd934331e5516b84a7f0218031b6fa0270eca1e51a
+  languageName: node
+  linkType: hard
+
 "mime@npm:^1.3.4":
   version: 1.6.0
   resolution: "mime@npm:1.6.0"
@@ -2095,12 +2154,12 @@ __metadata:
   dependencies:
     "@types/follow-redirects": "npm:^1.13.1"
     "@types/is-ci": "npm:^2.0.0"
-    "@types/node": "npm:^10.17.60"
+    "@types/node": "npm:^16.11.7"
     "@types/semver": "npm:^7.5.8"
     "@types/tmp": "npm:^0.1.0"
     "@typescript-eslint/eslint-plugin": "npm:^5.44.0"
     "@typescript-eslint/parser": "npm:^5.44.0"
-    "@vscode/vsce": "npm:^2.24.0"
+    "@vscode/vsce": "npm:^2.25.0"
     commander: "npm:^6.1.0"
     eslint: "npm:^8.28.0"
     follow-redirects: "npm:^1.14.6"
@@ -2109,7 +2168,7 @@ __metadata:
     rimraf: "npm:^3.0.2"
     semver: "npm:^7.6.0"
     tmp: "npm:^0.2.1"
-    typescript: "npm:3.8.3"
+    typescript: "npm:^4.3.2"
   bin:
     ovsx: lib/ovsx
   languageName: unknown
@@ -2748,23 +2807,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:3.8.3":
-  version: 3.8.3
-  resolution: "typescript@npm:3.8.3"
+"typescript@npm:^4.3.2":
+  version: 4.9.5
+  resolution: "typescript@npm:4.9.5"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/1e6fc23f89311e6977b60521eee9ff84c16c90192caeb665920872dd915dbc9f92d83ad4935c1fa5d9cfbb87d66885e5513b1526a2f3ce48626f7d9073d97f42
+  checksum: 10/458f7220ab11e0fc191514cc41be1707645ec9a8c2d609448a448e18c522cef9646f58728f6811185a4c35613dacdf6c98cf8965c88b3541d0288c47291e4300
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A3.8.3#optional!builtin<compat/typescript>":
-  version: 3.8.3
-  resolution: "typescript@patch:typescript@npm%3A3.8.3#optional!builtin<compat/typescript>::version=3.8.3&hash=c44097"
+"typescript@patch:typescript@npm%3A^4.3.2#optional!builtin<compat/typescript>":
+  version: 4.9.5
+  resolution: "typescript@patch:typescript@npm%3A4.9.5#optional!builtin<compat/typescript>::version=4.9.5&hash=289587"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/3a48a367eb569a0a7002de896bb4246e9241994159bbd63e50b9e8edb117d652d906e9136ff8f0cd91e19d5f2eb8c9c0efd53a8172c1de775224abb7fe346fea
+  checksum: 10/5659316360b5cc2d6f5931b346401fa534107b68b60179cf14970e27978f0936c1d5c46f4b5b8175f8cba0430f522b3ce355b4b724c0ea36ce6c0347fab25afd
   languageName: node
   linkType: hard
 

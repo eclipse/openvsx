@@ -96,7 +96,7 @@ export function statusError(response: http.IncomingMessage): Error {
         return new Error(`The server responded with status ${response.statusCode}.`);
 }
 
-export function readFile(name: string, packagePath?: string, encoding = 'utf-8'): Promise<string> {
+export function readFile(name: string, packagePath?: string, encoding: BufferEncoding = 'utf-8'): Promise<string> {
     return new Promise((resolve, reject) => {
         fs.readFile(
             path.join(packagePath || process.cwd(), name),
@@ -129,7 +129,7 @@ export function validateManifest(manifest: Manifest): void {
     }
 }
 
-export function writeFile(name: string, content: string, packagePath?: string, encoding = 'utf-8'): Promise<void> {
+export function writeFile(name: string, content: string, packagePath?: string, encoding: BufferEncoding = 'utf-8'): Promise<void> {
     return new Promise((resolve, reject) => {
         fs.writeFile(
             path.join(packagePath || process.cwd(), name),

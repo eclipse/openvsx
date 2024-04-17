@@ -190,7 +190,7 @@ export class Registry {
 
     private getJsonResponse<T extends Response>(resolve: (value: T) => void, reject: (reason: any) => void): (res: http.IncomingMessage) => void {
         return response => {
-            response.setEncoding('UTF-8');
+            response.setEncoding('utf-8');
             let json = '';
             response.on('data', chunk => json += chunk);
             response.on('end', () => {
