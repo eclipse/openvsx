@@ -13,6 +13,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
@@ -176,6 +177,7 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
+    @Observed
     public URI getNamespaceLogoLocation(Namespace namespace) {
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot determine location of file "

@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 
 public interface NamespaceRepository extends Repository<Namespace, Long> {
 
+    @Observed
     Namespace findByNameIgnoreCase(String name);
 
     Namespace findByPublicId(String publicId);

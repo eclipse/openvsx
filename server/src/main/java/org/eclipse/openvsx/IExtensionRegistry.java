@@ -21,10 +21,8 @@ public interface IExtensionRegistry {
 
     NamespaceJson getNamespace(String namespace);
 
-    @Observed
     ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform);
 
-    @Observed
     ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version);
 
     VersionsJson getVersions(String namespace, String extension, String targetPlatform, int size, int offset);
@@ -41,6 +39,7 @@ public interface IExtensionRegistry {
 
     QueryResultJson queryV2(QueryRequestV2 request);
 
+    @Observed
     NamespaceDetailsJson getNamespaceDetails(String namespace);
 
     ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName);

@@ -229,7 +229,6 @@ public class ExtensionVersionJooqRepository {
                 .collect(Collectors.toList());
     }
 
-    @Observed
     public List<String> findVersionStringsSorted(Long extensionId, String targetPlatform, boolean onlyActive, int numberOfRows) {
         var conditions = new ArrayList<Condition>();
         conditions.add(EXTENSION_VERSION.EXTENSION_ID.eq(extensionId));
@@ -581,7 +580,6 @@ public class ExtensionVersionJooqRepository {
                 ));
     }
 
-    @Observed
     public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
         var query = dsl.selectQuery();
         query.addSelect(
@@ -609,6 +607,7 @@ public class ExtensionVersionJooqRepository {
                 });
     }
 
+    @Observed
     public ExtensionVersion findLatest(
             Extension extension,
             String targetPlatform,
@@ -657,7 +656,6 @@ public class ExtensionVersionJooqRepository {
         return query.fetchOne((record) -> toExtensionVersionFull(record, extension));
     }
 
-    @Observed
     public ExtensionVersion findLatestForAllUrls(
             Extension extension,
             String targetPlatform,
@@ -715,7 +713,6 @@ public class ExtensionVersionJooqRepository {
         return query;
     }
 
-    @Observed
     public ExtensionVersion find(String namespaceName, String extensionName, String targetPlatform, String version) {
         var onlyPreRelease = VersionAlias.PRE_RELEASE.equals(version);
         var query = findLatestQuery(targetPlatform, onlyPreRelease, true);

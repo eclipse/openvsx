@@ -20,13 +20,11 @@ import java.lang.reflect.Method;
 @Component
 public class ExtensionJsonCacheKeyGenerator implements KeyGenerator {
     @Override
-    @Observed
     public Object generate(Object target, Method method, Object... params) {
         var version = params.length == 4 ? (String) params[3] : VersionAlias.LATEST;
         return generate((String) params[0], (String) params[1], (String) params[2], version);
     }
 
-    @Observed
     public String generate(String namespaceName, String extensionName, String targetPlatform, String version) {
         return NamingUtil.toFileFormat(namespaceName, extensionName, version, targetPlatform);
     }
