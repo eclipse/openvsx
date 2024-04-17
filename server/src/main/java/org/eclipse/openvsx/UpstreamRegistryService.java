@@ -68,6 +68,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
+    @Observed
     public NamespaceDetailsJson getNamespaceDetails(String namespace) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/details";
         var uriVariables = Map.of("namespace", namespace);
@@ -87,7 +88,6 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
         var uriVariables = new HashMap<String, String>();
@@ -112,7 +112,6 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform, String version) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
         var uriVariables = new HashMap<String, String>();

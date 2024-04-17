@@ -23,7 +23,6 @@ import java.util.List;
 @Component
 public class LatestExtensionVersionCacheKeyGenerator implements KeyGenerator {
     @Override
-    @Observed
     public Object generate(Object target, Method method, Object... params) {
         Extension extension;
         String targetPlatform;
@@ -51,7 +50,6 @@ public class LatestExtensionVersionCacheKeyGenerator implements KeyGenerator {
         return generate(extension, targetPlatform, preRelease, onlyActive, type);
     }
 
-    @Observed
     public String generate(Extension extension, String targetPlatform, boolean preRelease, boolean onlyActive, ExtensionVersion.Type type) {
         var extensionName = extension.getName();
         var namespaceName = extension.getNamespace().getName();

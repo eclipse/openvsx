@@ -210,6 +210,7 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
+    @Observed
     public URI getNamespaceLogoLocation(Namespace namespace) {
         switch (namespace.getLogoStorageType()) {
             case STORAGE_GOOGLE:
@@ -250,6 +251,7 @@ public class StorageUtilService implements IStorageService {
         return UrlUtil.createApiFileUrl(serverUrl, extVersion, name);
     }
 
+    @Observed
     public Map<String, String> getFileUrls(ExtensionVersion extVersion, String serverUrl, String... types) {
         var fileUrls = getFileUrls(List.of(extVersion), serverUrl, types);
         return fileUrls.get(extVersion.getId());
@@ -258,7 +260,6 @@ public class StorageUtilService implements IStorageService {
     /**
      * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */
-    @Observed
     public Map<Long, Map<String, String>> getFileUrls(Collection<ExtensionVersion> extVersions, String serverUrl, String... types) {
         var type2Url = extVersions.stream()
                 .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))

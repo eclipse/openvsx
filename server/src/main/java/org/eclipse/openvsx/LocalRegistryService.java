@@ -107,14 +107,12 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform) {
         return getExtension(namespace, extensionName, targetPlatform, VersionAlias.LATEST);
     }
 
     @Override
-    @Observed
     @Cacheable(value = CACHE_EXTENSION_JSON, keyGenerator = GENERATOR_EXTENSION_JSON)
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
@@ -384,6 +382,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     @Transactional
     @Cacheable(CACHE_NAMESPACE_DETAILS_JSON)
+    @Observed
     public NamespaceDetailsJson getNamespaceDetails(String namespaceName) {
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {

@@ -58,7 +58,6 @@ public class NamespaceMembershipJooqRepository {
         return namespaceMembership;
     }
 
-    @Observed
     public boolean isVerified(Namespace namespace, UserData user) {
         var nm = NAMESPACE_MEMBERSHIP.as("nm");
         var onm = NAMESPACE_MEMBERSHIP.as("onm");

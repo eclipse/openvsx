@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 import org.eclipse.openvsx.entities.Namespace;
@@ -23,6 +24,7 @@ public interface NamespaceMembershipRepository extends Repository<NamespaceMembe
 
     Streamable<NamespaceMembership> findByNamespaceAndRoleIgnoreCase(Namespace namespace, String role);
 
+    @Observed
     long countByNamespaceAndRoleIgnoreCase(Namespace namespace, String role);
 
     Streamable<NamespaceMembership> findByNamespace(Namespace namespace);

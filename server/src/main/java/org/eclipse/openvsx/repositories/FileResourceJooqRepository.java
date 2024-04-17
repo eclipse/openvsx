@@ -31,7 +31,6 @@ public class FileResourceJooqRepository {
     @Autowired
     DSLContext dsl;
 
-    @Observed
     public List<FileResource> findByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
         if(extVersions.isEmpty() || types.isEmpty()) {
             return Collections.emptyList();

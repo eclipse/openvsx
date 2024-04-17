@@ -60,6 +60,7 @@ public class RepositoryService {
     @Autowired MigrationItemRepository migrationItemRepo;
     @Autowired SignatureKeyPairRepository signatureKeyPairRepo;
 
+    @Observed
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
     }
@@ -80,7 +81,6 @@ public class RepositoryService {
         return extensionRepo.findByNameIgnoreCaseAndNamespace(name, namespace);
     }
 
-    @Observed
     public Extension findExtension(String name, String namespace) {
         return extensionRepo.findByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespace);
     }
@@ -89,6 +89,7 @@ public class RepositoryService {
         return extensionRepo.findByPublicId(publicId);
     }
 
+    @Observed
     public Streamable<Extension> findActiveExtensions(Namespace namespace) {
         return extensionRepo.findByNamespaceAndActiveTrueOrderByNameAsc(namespace);
     }
@@ -157,7 +158,6 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findActiveVersionStringsSorted(namespace, extension, targetPlatform, page);
     }
 
-    @Observed
     public List<String> findVersionStringsSorted(Extension extension, String targetPlatform, boolean onlyActive) {
         return extensionVersionJooqRepo.findVersionStringsSorted(extension.getId(), targetPlatform, onlyActive, MAX_VERSIONS);
     }
@@ -222,7 +222,6 @@ public class RepositoryService {
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }
 
-    @Observed
     public List<FileResource> findFilesByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
         return fileResourceJooqRepo.findByType(extVersions, types);
     }
@@ -263,7 +262,6 @@ public class RepositoryService {
         return membershipRepo.findByUserAndNamespace(user, namespace);
     }
 
-    @Observed
     public boolean isVerified(Namespace namespace, UserData user) {
         return membershipJooqRepo.isVerified(namespace, user);
     }
@@ -272,6 +270,7 @@ public class RepositoryService {
         return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
     }
 
+    @Observed
     public long countMemberships(Namespace namespace, String role) {
         return membershipRepo.countByNamespaceAndRoleIgnoreCase(namespace, role);
     }
@@ -533,21 +532,19 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findTargetPlatformsGroupedByVersion(extension);
     }
 
-    @Observed
     public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
         return extensionVersionJooqRepo.findVersionsForUrls(extension, targetPlatform, version);
     }
 
-    @Observed
     public ExtensionVersion findExtensionVersion(String namespace, String extension, String targetPlatform, String version) {
         return extensionVersionJooqRepo.find(namespace, extension, targetPlatform, version);
     }
 
-    @Observed
     public ExtensionVersion findLatestVersionForAllUrls(Extension extension, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
         return extensionVersionJooqRepo.findLatestForAllUrls(extension, targetPlatform, onlyPreRelease, onlyActive);
     }
 
+    @Observed
     public ExtensionVersion findLatestVersion(Extension extension, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
         return extensionVersionJooqRepo.findLatest(extension, targetPlatform, onlyPreRelease, onlyActive);
     }

@@ -176,6 +176,7 @@ public class RegistryAPI {
     @CrossOrigin
     @Operation()
     @ApiResponses({})
+    @Observed
     public ResponseEntity<NamespaceDetailsJson> getNamespaceDetails(
             @PathVariable @Parameter(description = "Namespace name", example = "redhat")
             String namespace
@@ -279,7 +280,6 @@ public class RegistryAPI {
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
-    @Observed
     @GetMapping(
         path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -401,7 +401,6 @@ public class RegistryAPI {
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
-    @Observed
     @GetMapping(
         path = "/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/{version:" + VERSION_PATH_PARAM_REGEX + "}",
         produces = MediaType.APPLICATION_JSON_VALUE

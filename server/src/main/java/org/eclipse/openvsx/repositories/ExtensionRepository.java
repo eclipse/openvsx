@@ -26,11 +26,11 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Streamable<Extension> findByNamespace(Namespace namespace);
 
+    @Observed
     Streamable<Extension> findByNamespaceAndActiveTrueOrderByNameAsc(Namespace namespace);
 
     Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
 
-    @Observed
     Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
 
     Extension findByPublicId(String publicId);
