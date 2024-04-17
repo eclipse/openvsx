@@ -2,6 +2,20 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.9.1 (Apr. 2024)
+
+#### Bug Fixes
+
+- Add `BufferEncoding` type to parameter ([#896](https://github.com/eclipse/openvsx/pull/896))
+- Lower the minimum version of Node.js required from `18` to `16` ([microsoft/vscode-vsce#944](https://github.com/microsoft/vscode-vsce/issues/944))
+
+#### Dependencies
+
+- Upgrade `@vscode/vsce` from `2.24.0` to `2.25.0` ([#896](https://github.com/eclipse/openvsx/pull/896))
+- Upgrade `tar` from `6.2.0` to `6.2.1` ([#893](https://github.com/eclipse/openvsx/pull/893))
+
+---
+
 ### v0.9.0 (Mar. 2024)
 
 #### Breaking Changes
