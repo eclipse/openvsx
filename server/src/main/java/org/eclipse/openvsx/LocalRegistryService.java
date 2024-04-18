@@ -395,25 +395,21 @@ public class LocalRegistryService implements IExtensionRegistry {
                 ? storageUtil.getNamespaceLogoLocation(namespace).toString()
                 : null;
 
-        json.extensions = repositories.findActiveExtensions(namespace).stream()
-                .sorted(Comparator.comparingLong(Extension::getDownloadCount).reversed())
-                .map(this::toSearchEntryJson)
+        var serverUrl = UrlUtil.getBaseUrl();
+        json.extensions = repositories.findLatestVersions(namespace).stream()
+                .map(extVersion -> {
+                    var entry = extVersion.toSearchEntryJson();
+                    entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
+                    entry.files = storageUtil.getFileUrls(extVersion, serverUrl, withFileTypes(DOWNLOAD, ICON));
+                    if(entry.files.containsKey(DOWNLOAD_SIG)) {
+                        entry.files.put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
+                    }
+
+                    return entry;
+                })
                 .collect(Collectors.toList());
 
         return json;
-    }
-
-    private SearchEntryJson toSearchEntryJson(Extension extension) {
-        var serverUrl = UrlUtil.getBaseUrl();
-        var extVersion = repositories.findLatestVersion(extension, null, false, true);
-        var entry = extVersion.toSearchEntryJson();
-        entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
-        entry.files = storageUtil.getFileUrls(extVersion, serverUrl, withFileTypes(DOWNLOAD, ICON));
-        if(entry.files.containsKey(DOWNLOAD_SIG)) {
-            entry.files.put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
-        }
-
-        return entry;
     }
 
     private String[] withFileTypes(String... types) {
