@@ -548,6 +548,10 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findLatest(extension, targetPlatform, onlyPreRelease, onlyActive);
     }
 
+    public List<ExtensionVersion> findLatestVersions(Namespace namespace) {
+        return extensionVersionJooqRepo.findLatest(namespace);
+    }
+
     public List<String> findExtensionTargetPlatforms(Extension extension) {
         return extensionVersionJooqRepo.findDistinctTargetPlatforms(extension);
     }

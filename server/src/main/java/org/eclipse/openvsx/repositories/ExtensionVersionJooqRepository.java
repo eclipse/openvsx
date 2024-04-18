@@ -656,6 +656,66 @@ public class ExtensionVersionJooqRepository {
         return query.fetchOne((record) -> toExtensionVersionFull(record, extension));
     }
 
+    public List<ExtensionVersion> findLatest(Namespace namespace) {
+        var latestQuery = findLatestQuery(null, false, true);
+        latestQuery.addSelect(
+                EXTENSION_VERSION.ID,
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.TIMESTAMP,
+                EXTENSION_VERSION.DISPLAY_NAME,
+                EXTENSION_VERSION.DESCRIPTION,
+                SIGNATURE_KEY_PAIR.PUBLIC_ID
+        );
+        latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
+        latestQuery.addJoin(SIGNATURE_KEY_PAIR, JoinType.LEFT_OUTER_JOIN, SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID));
+        var latest = latestQuery.asTable();
+
+        var query = dsl.selectQuery();
+        query.addSelect(
+                EXTENSION.ID,
+                EXTENSION.NAME,
+                EXTENSION.AVERAGE_RATING,
+                EXTENSION.REVIEW_COUNT,
+                EXTENSION.DOWNLOAD_COUNT,
+                latest.field(EXTENSION_VERSION.ID),
+                latest.field(EXTENSION_VERSION.VERSION),
+                latest.field(EXTENSION_VERSION.TIMESTAMP),
+                latest.field(EXTENSION_VERSION.DISPLAY_NAME),
+                latest.field(EXTENSION_VERSION.DESCRIPTION),
+                latest.field(SIGNATURE_KEY_PAIR.PUBLIC_ID)
+        );
+        query.addFrom(EXTENSION, DSL.lateral(latest));
+        query.addConditions(
+                EXTENSION.NAMESPACE_ID.eq(namespace.getId()),
+                EXTENSION.ACTIVE.eq(true)
+        );
+        query.addOrderBy(EXTENSION.DOWNLOAD_COUNT.desc());
+
+        return query.fetch(record -> {
+            var extension = new Extension();
+            extension.setId(record.get(EXTENSION.ID));
+            extension.setName(record.get(EXTENSION.NAME));
+            extension.setAverageRating(record.get(EXTENSION.AVERAGE_RATING));
+            extension.setReviewCount(record.get(EXTENSION.REVIEW_COUNT));
+            extension.setDownloadCount(record.get(EXTENSION.DOWNLOAD_COUNT));
+            extension.setNamespace(namespace);
+
+            var extVersion = new ExtensionVersion();
+            extVersion.setId(record.get(latest.field(EXTENSION_VERSION.ID)));
+            extVersion.setVersion(record.get(latest.field(EXTENSION_VERSION.VERSION)));
+            extVersion.setTimestamp(record.get(latest.field(EXTENSION_VERSION.TIMESTAMP)));
+            extVersion.setDisplayName(record.get(latest.field(EXTENSION_VERSION.DISPLAY_NAME)));
+            extVersion.setDescription(record.get(latest.field(EXTENSION_VERSION.DESCRIPTION)));
+            extVersion.setExtension(extension);
+
+            var keyPair = new SignatureKeyPair();
+            keyPair.setPublicId(record.get(latest.field(SIGNATURE_KEY_PAIR.PUBLIC_ID)));
+            extVersion.setSignatureKeyPair(keyPair);
+
+            return extVersion;
+        });
+    }
+
     public ExtensionVersion findLatestForAllUrls(
             Extension extension,
             String targetPlatform,
