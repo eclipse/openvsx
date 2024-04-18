@@ -53,6 +53,10 @@ public class SearchEntryJson implements Serializable {
     @NotNull
     public String timestamp;
 
+    @Schema(description = "The value 'true' means the publishing user is a privileged user or the publishing user is a member of the extension's namespace and the namespace has at least one owner.")
+    @NotNull
+    public Boolean verified;
+
     @Schema(description = "Essential metadata of all available versions. Deprecated: only returns the last 100 versions. Use allVersionsUrl instead.")
     @Deprecated
     public List<VersionReferenceJson> allVersions;

@@ -512,7 +512,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .collect(Collectors.groupingBy(fr -> fr.getExtension().getId()));
     }
 
-    private Map<Long, List<NamespaceMembership>> getMemberships(List<ExtensionVersion> extensionVersions) {
+    private Map<Long, List<NamespaceMembership>> getMemberships(Collection<ExtensionVersion> extensionVersions) {
         if(extensionVersions.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -731,10 +731,12 @@ public class LocalRegistryService implements IExtensionRegistry {
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        var membershipsByNamespaceId = getMemberships(latestVersions.values());
         var searchEntries = latestVersions.entrySet().stream()
                 .map(e -> {
                     var entry = e.getValue().toSearchEntryJson();
                     entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
+                    entry.verified = isVerified(e.getValue(), membershipsByNamespaceId);
                     return new AbstractMap.SimpleEntry<>(e.getKey(), entry);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
