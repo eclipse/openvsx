@@ -552,6 +552,10 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findLatest(namespace);
     }
 
+    public List<ExtensionVersion> findLatestVersions(UserData user) {
+        return extensionVersionJooqRepo.findLatest(user);
+    }
+
     public List<String> findExtensionTargetPlatforms(Extension extension) {
         return extensionVersionJooqRepo.findDistinctTargetPlatforms(extension);
     }

@@ -483,8 +483,7 @@ public class AdminAPITest {
 
         Mockito.when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
         Mockito.when(repositories.countActiveAccessTokens(user)).thenReturn(1L);
-        Mockito.when(repositories.findExtensions(user))
-                .thenReturn(Streamable.of(versions.get(0).getExtension()));
+        Mockito.when(repositories.findLatestVersions(user)).thenReturn(versions);
 
         mockMvc.perform(get("/admin/publisher/{provider}/{loginName}", "github", "test")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))

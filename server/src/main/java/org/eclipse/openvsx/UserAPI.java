@@ -187,15 +187,15 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
+        var extVersions = repositories.findLatestVersions(user);
         var types = new String[]{ DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
-        return repositories.findExtensions(user)
-                .map(e -> repositories.findLatestVersion(e, null, false, false))
+        var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
+        return extVersions.stream()
                 .map(latest -> {
                     var json = latest.toExtensionJson();
                     json.preview = latest.isPreview();
                     json.active = latest.getExtension().isActive();
-                    json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(), types);
-
+                    json.files = fileUrls.get(latest.getId());
                     return json;
                 })
                 .toList();
