@@ -263,14 +263,15 @@ public class AdminService {
         userPublishInfo.user = user.toUserJson();
         eclipse.enrichUserJson(userPublishInfo.user, user);
         userPublishInfo.activeAccessTokenNum = (int) repositories.countActiveAccessTokens(user);
-        userPublishInfo.extensions = repositories.findExtensions(user).stream()
-                .map(e -> repositories.findLatestVersion(e, null, false, false))
+        var extVersions = repositories.findLatestVersions(user);
+        var types = new String[]{DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST};
+        var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
+        userPublishInfo.extensions = extVersions.stream()
                 .map(latest -> {
                     var json = latest.toExtensionJson();
                     json.preview = latest.isPreview();
                     json.active = latest.getExtension().isActive();
-                    json.files = storageUtil.getFileUrls(latest, UrlUtil.getBaseUrl(),
-                            DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST);
+                    json.files = fileUrls.get(latest.getId());
 
                     return json;
                 })

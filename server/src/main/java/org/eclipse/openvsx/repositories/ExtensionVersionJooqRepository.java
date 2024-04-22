@@ -449,16 +449,24 @@ public class ExtensionVersionJooqRepository {
     }
 
     private ExtensionVersion toExtensionVersionFull(Record record) {
-        return toExtensionVersionFull(record, null);
+        return toExtensionVersionFull(record, null, null);
     }
 
-    private ExtensionVersion toExtensionVersionFull(Record record, Extension extension) {
-        var extVersion = toExtensionVersionCommon(record, extension);
-        extVersion.setLicense(record.get(EXTENSION_VERSION.LICENSE));
-        extVersion.setHomepage(record.get(EXTENSION_VERSION.HOMEPAGE));
-        extVersion.setBugs(record.get(EXTENSION_VERSION.BUGS));
-        extVersion.setMarkdown(record.get(EXTENSION_VERSION.MARKDOWN));
-        extVersion.setQna(record.get(EXTENSION_VERSION.QNA));
+    private ExtensionVersion toExtensionVersionFull(
+            Record record,
+            Extension extension,
+            FieldMapper extensionVersionMapper
+    ) {
+        if(extensionVersionMapper == null) {
+            extensionVersionMapper = new DefaultFieldMapper();
+        }
+
+        var extVersion = toExtensionVersionCommon(record, extension, extensionVersionMapper);
+        extVersion.setLicense(record.get(extensionVersionMapper.map(EXTENSION_VERSION.LICENSE)));
+        extVersion.setHomepage(record.get(extensionVersionMapper.map(EXTENSION_VERSION.HOMEPAGE)));
+        extVersion.setBugs(record.get(extensionVersionMapper.map(EXTENSION_VERSION.BUGS)));
+        extVersion.setMarkdown(record.get(extensionVersionMapper.map(EXTENSION_VERSION.MARKDOWN)));
+        extVersion.setQna(record.get(extensionVersionMapper.map(EXTENSION_VERSION.QNA)));
 
         if(extension == null) {
             var newExtension = extVersion.getExtension();
@@ -490,34 +498,38 @@ public class ExtensionVersionJooqRepository {
     }
 
     private ExtensionVersion toExtensionVersion(Record record) {
-        var extVersion = toExtensionVersionCommon(record, null);
+        var extVersion = toExtensionVersionCommon(record, null, new DefaultFieldMapper());
         extVersion.setType(ExtensionVersion.Type.MINIMAL);
         return extVersion;
     }
 
-    private ExtensionVersion toExtensionVersionCommon(Record record, Extension extension) {
+    private ExtensionVersion toExtensionVersionCommon(
+            Record record,
+            Extension extension,
+            FieldMapper extensionVersionMapper
+    ) {
         var converter = new ListOfStringConverter();
 
         var extVersion = new ExtensionVersion();
-        extVersion.setId(record.get(EXTENSION_VERSION.ID));
-        extVersion.setVersion(record.get(EXTENSION_VERSION.VERSION));
-        extVersion.setTargetPlatform(record.get(EXTENSION_VERSION.TARGET_PLATFORM));
-        extVersion.setPreview(record.get(EXTENSION_VERSION.PREVIEW));
-        extVersion.setPreRelease(record.get(EXTENSION_VERSION.PRE_RELEASE));
-        extVersion.setTimestamp(record.get(EXTENSION_VERSION.TIMESTAMP));
-        extVersion.setDisplayName(record.get(EXTENSION_VERSION.DISPLAY_NAME));
-        extVersion.setDescription(record.get(EXTENSION_VERSION.DESCRIPTION));
-        extVersion.setEngines(toList(record.get(EXTENSION_VERSION.ENGINES), converter));
-        extVersion.setCategories(toList(record.get(EXTENSION_VERSION.CATEGORIES), converter));
-        extVersion.setTags(toList(record.get(EXTENSION_VERSION.TAGS), converter));
-        extVersion.setExtensionKind(toList(record.get(EXTENSION_VERSION.EXTENSION_KIND), converter));
-        extVersion.setRepository(record.get(EXTENSION_VERSION.REPOSITORY));
-        extVersion.setGalleryColor(record.get(EXTENSION_VERSION.GALLERY_COLOR));
-        extVersion.setGalleryTheme(record.get(EXTENSION_VERSION.GALLERY_THEME));
-        extVersion.setLocalizedLanguages(toList(record.get(EXTENSION_VERSION.LOCALIZED_LANGUAGES), converter));
-        extVersion.setDependencies(toList(record.get(EXTENSION_VERSION.DEPENDENCIES), converter));
-        extVersion.setBundledExtensions(toList(record.get(EXTENSION_VERSION.BUNDLED_EXTENSIONS), converter));
-        extVersion.setSponsorLink(record.get(EXTENSION_VERSION.SPONSOR_LINK));
+        extVersion.setId(record.get(extensionVersionMapper.map(EXTENSION_VERSION.ID)));
+        extVersion.setVersion(record.get(extensionVersionMapper.map(EXTENSION_VERSION.VERSION)));
+        extVersion.setTargetPlatform(record.get(extensionVersionMapper.map(EXTENSION_VERSION.TARGET_PLATFORM)));
+        extVersion.setPreview(record.get(extensionVersionMapper.map(EXTENSION_VERSION.PREVIEW)));
+        extVersion.setPreRelease(record.get(extensionVersionMapper.map(EXTENSION_VERSION.PRE_RELEASE)));
+        extVersion.setTimestamp(record.get(extensionVersionMapper.map(EXTENSION_VERSION.TIMESTAMP)));
+        extVersion.setDisplayName(record.get(extensionVersionMapper.map(EXTENSION_VERSION.DISPLAY_NAME)));
+        extVersion.setDescription(record.get(extensionVersionMapper.map(EXTENSION_VERSION.DESCRIPTION)));
+        extVersion.setEngines(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.ENGINES)), converter));
+        extVersion.setCategories(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.CATEGORIES)), converter));
+        extVersion.setTags(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.TAGS)), converter));
+        extVersion.setExtensionKind(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.EXTENSION_KIND)), converter));
+        extVersion.setRepository(record.get(extensionVersionMapper.map(EXTENSION_VERSION.REPOSITORY)));
+        extVersion.setGalleryColor(record.get(extensionVersionMapper.map(EXTENSION_VERSION.GALLERY_COLOR)));
+        extVersion.setGalleryTheme(record.get(extensionVersionMapper.map(EXTENSION_VERSION.GALLERY_THEME)));
+        extVersion.setLocalizedLanguages(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.LOCALIZED_LANGUAGES)), converter));
+        extVersion.setDependencies(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.DEPENDENCIES)), converter));
+        extVersion.setBundledExtensions(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.BUNDLED_EXTENSIONS)), converter));
+        extVersion.setSponsorLink(record.get(extensionVersionMapper.map(EXTENSION_VERSION.SPONSOR_LINK)));
 
         if(extension == null) {
             var namespace = new Namespace();
@@ -653,7 +665,7 @@ public class ExtensionVersionJooqRepository {
         query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
         query.addJoin(SIGNATURE_KEY_PAIR, JoinType.LEFT_OUTER_JOIN, SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID));
         query.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()));
-        return query.fetchOne((record) -> toExtensionVersionFull(record, extension));
+        return query.fetchOne((record) -> toExtensionVersionFull(record, extension, null));
     }
 
     public List<ExtensionVersion> findLatest(Namespace namespace) {
@@ -714,6 +726,96 @@ public class ExtensionVersionJooqRepository {
 
             return extVersion;
         });
+    }
+
+    public List<ExtensionVersion> findLatest(UserData user) {
+        var latestQuery = findLatestQuery(null, false, false);
+        latestQuery.addSelect(
+                EXTENSION_VERSION.ID,
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.PREVIEW,
+                EXTENSION_VERSION.PRE_RELEASE,
+                EXTENSION_VERSION.TIMESTAMP,
+                EXTENSION_VERSION.DISPLAY_NAME,
+                EXTENSION_VERSION.DESCRIPTION,
+                EXTENSION_VERSION.ENGINES,
+                EXTENSION_VERSION.CATEGORIES,
+                EXTENSION_VERSION.TAGS,
+                EXTENSION_VERSION.EXTENSION_KIND,
+                EXTENSION_VERSION.LICENSE,
+                EXTENSION_VERSION.HOMEPAGE,
+                EXTENSION_VERSION.REPOSITORY,
+                EXTENSION_VERSION.SPONSOR_LINK,
+                EXTENSION_VERSION.BUGS,
+                EXTENSION_VERSION.MARKDOWN,
+                EXTENSION_VERSION.GALLERY_COLOR,
+                EXTENSION_VERSION.GALLERY_THEME,
+                EXTENSION_VERSION.LOCALIZED_LANGUAGES,
+                EXTENSION_VERSION.QNA,
+                EXTENSION_VERSION.DEPENDENCIES,
+                EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
+                EXTENSION_VERSION.PUBLISHED_WITH_ID
+        );
+        latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
+        var latest = latestQuery.asTable();
+
+        var query = dsl.selectQuery();
+        query.addSelect(
+                NAMESPACE.ID,
+                NAMESPACE.NAME,
+                NAMESPACE.DISPLAY_NAME,
+                NAMESPACE.PUBLIC_ID,
+                EXTENSION.ID,
+                EXTENSION.NAME,
+                EXTENSION.PUBLIC_ID,
+                EXTENSION.AVERAGE_RATING,
+                EXTENSION.REVIEW_COUNT,
+                EXTENSION.DOWNLOAD_COUNT,
+                EXTENSION.PUBLISHED_DATE,
+                EXTENSION.LAST_UPDATED_DATE,
+                latest.field(EXTENSION_VERSION.ID),
+                latest.field(EXTENSION_VERSION.VERSION),
+                latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
+                latest.field(EXTENSION_VERSION.PREVIEW),
+                latest.field(EXTENSION_VERSION.PRE_RELEASE),
+                latest.field(EXTENSION_VERSION.TIMESTAMP),
+                latest.field(EXTENSION_VERSION.DISPLAY_NAME),
+                latest.field(EXTENSION_VERSION.DESCRIPTION),
+                latest.field(EXTENSION_VERSION.ENGINES),
+                latest.field(EXTENSION_VERSION.CATEGORIES),
+                latest.field(EXTENSION_VERSION.TAGS),
+                latest.field(EXTENSION_VERSION.EXTENSION_KIND),
+                latest.field(EXTENSION_VERSION.LICENSE),
+                latest.field(EXTENSION_VERSION.HOMEPAGE),
+                latest.field(EXTENSION_VERSION.REPOSITORY),
+                latest.field(EXTENSION_VERSION.SPONSOR_LINK),
+                latest.field(EXTENSION_VERSION.BUGS),
+                latest.field(EXTENSION_VERSION.MARKDOWN),
+                latest.field(EXTENSION_VERSION.GALLERY_COLOR),
+                latest.field(EXTENSION_VERSION.GALLERY_THEME),
+                latest.field(EXTENSION_VERSION.LOCALIZED_LANGUAGES),
+                latest.field(EXTENSION_VERSION.QNA),
+                latest.field(EXTENSION_VERSION.DEPENDENCIES),
+                latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                SIGNATURE_KEY_PAIR.PUBLIC_ID,
+                USER_DATA.ID,
+                USER_DATA.ROLE,
+                USER_DATA.LOGIN_NAME,
+                USER_DATA.FULL_NAME,
+                USER_DATA.AVATAR_URL,
+                USER_DATA.PROVIDER_URL,
+                USER_DATA.PROVIDER
+        );
+        query.addFrom(NAMESPACE);
+        query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
+        query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
+        query.addJoin(SIGNATURE_KEY_PAIR, JoinType.LEFT_OUTER_JOIN, SIGNATURE_KEY_PAIR.ID.eq(latest.field(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID)));
+        query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_WITH_ID)));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addConditions(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
+        return query.fetch(record -> toExtensionVersionFull(record, null, new TableFieldMapper(latest)));
     }
 
     public ExtensionVersion findLatestForAllUrls(
@@ -848,5 +950,21 @@ public class ExtensionVersionJooqRepository {
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
                 .and(EXTENSION_VERSION.ACTIVE.eq(true))
                 .fetch(EXTENSION_VERSION.TARGET_PLATFORM);
+    }
+
+    private interface FieldMapper {
+        <T> Field<T> map(Field<T> field);
+    }
+
+    private record TableFieldMapper(Table<Record> table) implements FieldMapper {
+        public <T> Field<T> map(Field<T> field) {
+            return table.field(field);
+        }
+    }
+
+    private static class DefaultFieldMapper implements FieldMapper {
+        public <T> Field<T> map(Field<T> field) {
+            return field;
+        }
     }
 }

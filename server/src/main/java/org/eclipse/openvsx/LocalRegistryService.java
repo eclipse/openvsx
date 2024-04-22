@@ -149,6 +149,8 @@ public class LocalRegistryService implements IExtensionRegistry {
                 ? repositories.findActiveVersionsSorted(namespace, extension, pageRequest)
                 : repositories.findActiveVersionsSorted(namespace, extension, targetPlatform, pageRequest);
 
+        var fileUrls = storageUtil.getFileUrls(page.getContent(), UrlUtil.getBaseUrl(), withFileTypes(DOWNLOAD));
+
         var json = new VersionReferencesJson();
         json.offset = (int) page.getPageable().getOffset();
         json.totalSize = (int) page.getTotalElements();
@@ -159,7 +161,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                     versionRef.targetPlatform = extVersion.getTargetPlatform();
                     versionRef.engines = extVersion.getEnginesMap();
                     versionRef.url = UrlUtil.createApiVersionUrl(UrlUtil.getBaseUrl(), extVersion);
-                    versionRef.files = storageUtil.getFileUrls(extVersion, UrlUtil.getBaseUrl(), withFileTypes(DOWNLOAD));
+                    versionRef.files = fileUrls.get(extVersion.getId());
                     if(versionRef.files.containsKey(DOWNLOAD_SIG)) {
                         versionRef.files.put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
                     }
@@ -396,11 +398,13 @@ public class LocalRegistryService implements IExtensionRegistry {
                 : null;
 
         var serverUrl = UrlUtil.getBaseUrl();
-        json.extensions = repositories.findLatestVersions(namespace).stream()
+        var extVersions = repositories.findLatestVersions(namespace);
+        var fileUrls = storageUtil.getFileUrls(extVersions, serverUrl, withFileTypes(DOWNLOAD, ICON));
+        json.extensions = extVersions.stream()
                 .map(extVersion -> {
                     var entry = extVersion.toSearchEntryJson();
                     entry.url = createApiUrl(serverUrl, "api", entry.namespace, entry.name);
-                    entry.files = storageUtil.getFileUrls(extVersion, serverUrl, withFileTypes(DOWNLOAD, ICON));
+                    entry.files = fileUrls.get(extVersion.getId());
                     if(entry.files.containsKey(DOWNLOAD_SIG)) {
                         entry.files.put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
                     }
