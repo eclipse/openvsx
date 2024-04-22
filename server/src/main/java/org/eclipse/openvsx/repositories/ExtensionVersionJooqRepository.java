@@ -673,6 +673,7 @@ public class ExtensionVersionJooqRepository {
         latestQuery.addSelect(
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.TIMESTAMP,
                 EXTENSION_VERSION.DISPLAY_NAME,
                 EXTENSION_VERSION.DESCRIPTION,
@@ -691,6 +692,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.DOWNLOAD_COUNT,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.VERSION),
+                latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
                 latest.field(EXTENSION_VERSION.TIMESTAMP),
                 latest.field(EXTENSION_VERSION.DISPLAY_NAME),
                 latest.field(EXTENSION_VERSION.DESCRIPTION),
@@ -715,6 +717,7 @@ public class ExtensionVersionJooqRepository {
             var extVersion = new ExtensionVersion();
             extVersion.setId(record.get(latest.field(EXTENSION_VERSION.ID)));
             extVersion.setVersion(record.get(latest.field(EXTENSION_VERSION.VERSION)));
+            extVersion.setTargetPlatform(record.get(latest.field(EXTENSION_VERSION.TARGET_PLATFORM)));
             extVersion.setTimestamp(record.get(latest.field(EXTENSION_VERSION.TIMESTAMP)));
             extVersion.setDisplayName(record.get(latest.field(EXTENSION_VERSION.DISPLAY_NAME)));
             extVersion.setDescription(record.get(latest.field(EXTENSION_VERSION.DESCRIPTION)));
@@ -775,6 +778,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.DOWNLOAD_COUNT,
                 EXTENSION.PUBLISHED_DATE,
                 EXTENSION.LAST_UPDATED_DATE,
+                EXTENSION.ACTIVE,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
@@ -815,7 +819,12 @@ public class ExtensionVersionJooqRepository {
         query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_WITH_ID)));
         query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
         query.addConditions(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
-        return query.fetch(record -> toExtensionVersionFull(record, null, new TableFieldMapper(latest)));
+        return query.fetch(record -> {
+            var extVersion = toExtensionVersionFull(record, null, new TableFieldMapper(latest));
+            extVersion.getExtension().getNamespace().setDisplayName(record.get(NAMESPACE.DISPLAY_NAME));
+            extVersion.getExtension().setActive(record.get(EXTENSION.ACTIVE));
+            return extVersion;
+        });
     }
 
     public ExtensionVersion findLatestForAllUrls(
