@@ -12,7 +12,6 @@ package org.eclipse.openvsx.repositories;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -24,8 +23,12 @@ import static org.eclipse.openvsx.jooq.Tables.*;
 
 @Component
 public class AdminStatisticCalculationsRepository {
-    @Autowired
-    DSLContext dsl;
+
+    private final DSLContext dsl;
+
+    public AdminStatisticCalculationsRepository(DSLContext dsl) {
+        this.dsl = dsl;
+    }
 
     public long downloadsTotal() {
         var sum = DSL.coalesce(DSL.sum(EXTENSION.DOWNLOAD_COUNT),new BigDecimal(0));

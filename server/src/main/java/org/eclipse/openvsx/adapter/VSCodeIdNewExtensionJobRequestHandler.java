@@ -10,14 +10,16 @@
 package org.eclipse.openvsx.adapter;
 
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class VSCodeIdNewExtensionJobRequestHandler implements JobRequestHandler<VSCodeIdNewExtensionJobRequest> {
 
-    @Autowired
-    VSCodeIdUpdateService service;
+    private final VSCodeIdUpdateService service;
+
+    public VSCodeIdNewExtensionJobRequestHandler(VSCodeIdUpdateService service) {
+        this.service = service;
+    }
 
     @Override
     public void run(VSCodeIdNewExtensionJobRequest jobRequest) throws Exception {

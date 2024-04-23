@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +17,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
-import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
@@ -32,14 +27,11 @@ public class SecurityConfig {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
-    @Autowired
-    OAuth2UserServices userServices;
-
     @Value("${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/user-settings/**,/admin-dashboard/**}")
     String[] frontendRoutes;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, OAuth2UserServices userServices) throws Exception {
         var redirectUrl = StringUtils.isEmpty(webuiUrl) ? "/" : webuiUrl;
         return http.authorizeHttpRequests(
                 registry -> registry

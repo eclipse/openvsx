@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
@@ -18,11 +20,8 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -33,12 +32,14 @@ import java.util.UUID;
 
 @Component
 public class GenerateKeyPairJobService {
-    
-    @Autowired
-    EntityManager entityManager;
 
-    @Autowired
-    RepositoryService repositories;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+
+    public GenerateKeyPairJobService(EntityManager entityManager, RepositoryService repositories) {
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+    }
 
     @Transactional
     public void renewKeyPair() {

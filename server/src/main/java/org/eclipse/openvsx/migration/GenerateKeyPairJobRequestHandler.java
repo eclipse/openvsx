@@ -16,7 +16,6 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.util.Streamable;
@@ -30,17 +29,22 @@ import static org.eclipse.openvsx.entities.SignatureKeyPair.*;
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    JobRequestScheduler scheduler;
-
-    @Autowired
-    GenerateKeyPairJobService service;
+    private final RepositoryService repositories;
+    private final JobRequestScheduler scheduler;
+    private final GenerateKeyPairJobService service;
 
     @Value("${ovsx.integrity.key-pair:}")
     String keyPairMode;
+
+    public GenerateKeyPairJobRequestHandler(
+            RepositoryService repositories,
+            JobRequestScheduler scheduler,
+            GenerateKeyPairJobService service
+    ) {
+        this.repositories = repositories;
+        this.scheduler = scheduler;
+        this.service = service;
+    }
 
     @Override
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {

@@ -556,13 +556,23 @@ public class UserAPITest {
         }
 
         @Bean
-        OAuth2UserServices oauth2UserServices() {
-            return new OAuth2UserServices();
+        OAuth2UserServices oauth2UserServices(
+                UserService users,
+                TokenService tokens,
+                RepositoryService repositories,
+                EntityManager entityManager,
+                EclipseService eclipse
+        ) {
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
         }
 
         @Bean
-        TokenService tokenService() {
-            return new TokenService();
+        TokenService tokenService(
+                TransactionTemplate transactions,
+                EntityManager entityManager,
+                ClientRegistrationRepository clientRegistrationRepository
+        ) {
+            return new TokenService(transactions, entityManager, clientRegistrationRepository);
         }
 
         @Bean

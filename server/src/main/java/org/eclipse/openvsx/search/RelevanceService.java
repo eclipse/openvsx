@@ -12,7 +12,6 @@ package org.eclipse.openvsx.search;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -20,7 +19,6 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +34,8 @@ import java.util.Optional;
 public class RelevanceService {
 
     protected final Logger logger = LoggerFactory.getLogger(RelevanceService.class);
+
+    private final RepositoryService repositories;
 
     @Value("${ovsx.search.relevance.rating:1.0}")
     double ratingRelevance;
@@ -55,11 +55,9 @@ public class RelevanceService {
     @Value("${ovsx.elasticsearch.relevance.unverified:-1.0}")
     double deprecatedElasticSearchUnverifiedRelevance;
 
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RepositoryService repositories;
+    public RelevanceService(RepositoryService repositories) {
+        this.repositories = repositories;
+    }
 
     @PostConstruct
     void init() {

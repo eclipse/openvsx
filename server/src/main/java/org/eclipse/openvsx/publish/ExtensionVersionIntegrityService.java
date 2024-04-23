@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -24,14 +26,11 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -44,14 +43,16 @@ public class ExtensionVersionIntegrityService {
 
     protected final Logger logger = LoggerFactory.getLogger(ExtensionVersionIntegrityService.class);
 
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    CacheService cache;
+    private final EntityManager entityManager;
+    private final CacheService cache;
 
     @Value("${ovsx.integrity.key-pair:}")
     String keyPairMode;
+
+    public ExtensionVersionIntegrityService(EntityManager entityManager, CacheService cache) {
+        this.entityManager = entityManager;
+        this.cache = cache;
+    }
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {

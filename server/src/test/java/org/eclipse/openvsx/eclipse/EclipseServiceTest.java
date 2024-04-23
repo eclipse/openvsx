@@ -294,13 +294,24 @@ public class EclipseServiceTest {
         }
 
         @Bean
-        EclipseService eclipseService() {
-            return new EclipseService();
+        EclipseService eclipseService(
+                TokenService tokens,
+                TransactionTemplate transactions,
+                ExtensionService extensions,
+                EntityManager entityManager,
+                RestTemplate restTemplate
+        ) {
+            return new EclipseService(tokens, transactions, extensions, entityManager, restTemplate);
         }
 
         @Bean
-        ExtensionService extensionService() {
-            return new ExtensionService();
+        ExtensionService extensionService(
+                RepositoryService repositories,
+                SearchUtilService search,
+                CacheService cache,
+                PublishExtensionVersionHandler publishHandler
+        ) {
+            return new ExtensionService(repositories, search, cache, publishHandler);
         }
 
         @Bean
@@ -309,8 +320,24 @@ public class EclipseServiceTest {
         }
 
         @Bean
-        StorageUtilService storageUtilService() {
-            return new StorageUtilService();
+        StorageUtilService storageUtilService(
+                RepositoryService repositories,
+                GoogleCloudStorageService googleStorage,
+                AzureBlobStorageService azureStorage,
+                AzureDownloadCountService azureDownloadCountService,
+                SearchUtilService search,
+                CacheService cache,
+                EntityManager entityManager
+        ) {
+            return new StorageUtilService(
+                    repositories,
+                    googleStorage,
+                    azureStorage,
+                    azureDownloadCountService,
+                    search,
+                    cache,
+                    entityManager
+            );
         }
 
         @Bean

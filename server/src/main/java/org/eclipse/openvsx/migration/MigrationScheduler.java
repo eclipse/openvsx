@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.migration;
 
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -21,11 +20,14 @@ import java.time.Instant;
 @Component
 public class MigrationScheduler {
 
-    @Autowired
-    JobRequestScheduler scheduler;
+    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.migrations.delay.seconds:0}")
     long delay;
+
+    public MigrationScheduler(JobRequestScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {

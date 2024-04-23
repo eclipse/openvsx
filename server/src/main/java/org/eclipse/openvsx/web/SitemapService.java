@@ -12,7 +12,6 @@ package org.eclipse.openvsx.web;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
@@ -33,11 +32,14 @@ import static org.eclipse.openvsx.cache.CacheService.CACHE_SITEMAP;
 @Component
 public class SitemapService {
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
+
+    public SitemapService(RepositoryService repositories) {
+        this.repositories = repositories;
+    }
 
     @Cacheable(CACHE_SITEMAP)
     public String generateSitemap() throws ParserConfigurationException {

@@ -9,16 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.time.LocalDateTime;
-import java.util.LinkedHashSet;
-
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
@@ -28,30 +20,41 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 
 @Component
 public class ExtensionService {
 
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    SearchUtilService search;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    PublishExtensionVersionHandler publishHandler;
+    private final RepositoryService repositories;
+    private final SearchUtilService search;
+    private final CacheService cache;
+    private final PublishExtensionVersionHandler publishHandler;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
+
+    public ExtensionService(
+            RepositoryService repositories,
+            SearchUtilService search,
+            CacheService cache,
+            PublishExtensionVersionHandler publishHandler
+    ) {
+        this.repositories = repositories;
+        this.search = search;
+        this.cache = cache;
+        this.publishHandler = publishHandler;
+    }
 
     @Transactional
     public ExtensionVersion mirrorVersion(TempFile extensionFile, String signatureName, PersonalAccessToken token, String binaryName, String timestamp) {

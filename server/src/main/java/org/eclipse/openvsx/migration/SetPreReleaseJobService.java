@@ -9,24 +9,26 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Component
 public class SetPreReleaseJobService {
 
-    @Autowired
-    EntityManager entityManager;
+    private final EntityManager entityManager;
+
+    public SetPreReleaseJobService(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
 
     @Transactional
     public List<ExtensionVersion> getExtensionVersions(MigrationJobRequest jobRequest, Logger logger) {

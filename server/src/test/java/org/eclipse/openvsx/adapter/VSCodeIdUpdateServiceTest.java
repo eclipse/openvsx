@@ -609,8 +609,8 @@ public class VSCodeIdUpdateServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        VSCodeIdUpdateService vsCodeIdUpdateService() {
-            return new VSCodeIdUpdateService();
+        VSCodeIdUpdateService vsCodeIdUpdateService(RepositoryService repositories, VSCodeIdService service) {
+            return new VSCodeIdUpdateService(repositories, service);
         }
     }
 }

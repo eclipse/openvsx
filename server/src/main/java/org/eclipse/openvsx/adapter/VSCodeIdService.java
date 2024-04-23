@@ -20,7 +20,6 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -40,20 +39,25 @@ public class VSCodeIdService {
 
     protected final Logger logger = LoggerFactory.getLogger(VSCodeIdService.class);
 
-    @Autowired
-    RestTemplate vsCodeIdRestTemplate;
-
-    @Autowired
-    UrlConfigService urlConfigService;
-
-    @Autowired
-    JobRequestScheduler scheduler;
+    private final RestTemplate vsCodeIdRestTemplate;
+    private final UrlConfigService urlConfigService;
+    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.data.mirror.enabled:false}")
     boolean mirrorEnabled;
 
     @Value("${ovsx.vscode.upstream.update-on-start:false}")
     boolean updateOnStart;
+
+    public VSCodeIdService(
+            RestTemplate vsCodeIdRestTemplate,
+            UrlConfigService urlConfigService,
+            JobRequestScheduler scheduler
+    ) {
+        this.vsCodeIdRestTemplate = vsCodeIdRestTemplate;
+        this.urlConfigService = urlConfigService;
+        this.scheduler = scheduler;
+    }
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {

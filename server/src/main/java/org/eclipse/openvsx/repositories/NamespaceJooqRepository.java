@@ -12,20 +12,21 @@ package org.eclipse.openvsx.repositories;
 import org.jooq.DSLContext;
 import org.jooq.Row2;
 import org.jooq.impl.DSL;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.eclipse.openvsx.jooq.Tables.EXTENSION;
 import static org.eclipse.openvsx.jooq.Tables.NAMESPACE;
 
 @Component
 public class NamespaceJooqRepository {
 
-    @Autowired
-    DSLContext dsl;
+    private final DSLContext dsl;
+
+    public NamespaceJooqRepository(DSLContext dsl) {
+        this.dsl = dsl;
+    }
 
     public void updatePublicIds(Map<Long, String> publicIds) {
         if(publicIds.isEmpty()) {

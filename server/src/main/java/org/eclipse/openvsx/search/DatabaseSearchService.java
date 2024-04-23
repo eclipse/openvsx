@@ -15,7 +15,6 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.RelevanceService.SearchStats;
 import org.eclipse.openvsx.util.TargetPlatform;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -39,18 +38,20 @@ import static org.eclipse.openvsx.cache.CacheService.CACHE_DATABASE_SEARCH;
 @Component
 public class DatabaseSearchService implements ISearchService {
 
+    private final RelevanceService relevanceService;
+    private final RepositoryService repositories;
+
     @Value("${ovsx.databasesearch.enabled:false}")
     boolean enableSearch;
 
-    @Autowired
-    RelevanceService relevanceService;
+    public DatabaseSearchService(RelevanceService relevanceService, RepositoryService repositories) {
+        this.relevanceService = relevanceService;
+        this.repositories = repositories;
+    }
 
     public boolean isEnabled() {
         return enableSearch;
     }
-
-    @Autowired
-    RepositoryService repositories;
 
     @Transactional
     @Cacheable(CACHE_DATABASE_SEARCH)

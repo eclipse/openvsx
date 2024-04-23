@@ -10,6 +10,8 @@
 package org.eclipse.openvsx;
 
 import com.google.common.base.Joiner;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.AccessTokenJson;
@@ -22,14 +24,11 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -39,20 +38,25 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 @Component
 public class UserService {
 
-    @Autowired
-    EntityManager entityManager;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final StorageUtilService storageUtil;
+    private final CacheService cache;
+    private final ExtensionValidator validator;
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    StorageUtilService storageUtil;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    ExtensionValidator validator;
+    public UserService(
+            EntityManager entityManager,
+            RepositoryService repositories,
+            StorageUtilService storageUtil,
+            CacheService cache,
+            ExtensionValidator validator
+    ) {
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+        this.storageUtil = storageUtil;
+        this.cache = cache;
+        this.validator = validator;
+    }
 
     public UserData findLoggedInUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();

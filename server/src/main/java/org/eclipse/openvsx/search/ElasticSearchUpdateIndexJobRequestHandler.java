@@ -12,14 +12,16 @@ package org.eclipse.openvsx.search;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ElasticSearchUpdateIndexJobRequestHandler implements JobRequestHandler<HandlerJobRequest> {
 
-    @Autowired
-    ElasticSearchService search;
+    private final ElasticSearchService search;
+
+    public ElasticSearchUpdateIndexJobRequestHandler(ElasticSearchService search) {
+        this.search = search;
+    }
 
     @Override
     @Job(name = "Task scheduled once per day to soft-update the search index.", retries = 0)

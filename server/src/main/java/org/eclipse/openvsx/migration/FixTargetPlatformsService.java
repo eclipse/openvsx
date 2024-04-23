@@ -9,22 +9,22 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 
 @Component
 public class FixTargetPlatformsService {
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final EntityManager entityManager;
 
-    @Autowired
-    EntityManager entityManager;
+    public FixTargetPlatformsService(RepositoryService repositories, EntityManager entityManager) {
+        this.repositories = repositories;
+        this.entityManager = entityManager;
+    }
 
     @Transactional
     public UserData getUser() {

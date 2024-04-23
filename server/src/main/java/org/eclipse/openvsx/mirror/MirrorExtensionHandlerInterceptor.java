@@ -9,14 +9,13 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
@@ -25,8 +24,11 @@ import java.util.TreeMap;
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
 public class MirrorExtensionHandlerInterceptor implements HandlerInterceptor {
 
-    @Autowired
-    DataMirrorService dataMirror;
+    private final DataMirrorService dataMirror;
+
+    public MirrorExtensionHandlerInterceptor(DataMirrorService dataMirror) {
+        this.dataMirror = dataMirror;
+    }
 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         var params = request.getRequestURI().equals("/vscode/item")

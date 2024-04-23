@@ -9,13 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -26,8 +24,11 @@ import static org.eclipse.openvsx.jooq.Tables.NAMESPACE_MEMBERSHIP;
 @Component
 public class NamespaceMembershipJooqRepository {
 
-    @Autowired
-    DSLContext dsl;
+    private final DSLContext dsl;
+
+    public NamespaceMembershipJooqRepository(DSLContext dsl) {
+        this.dsl = dsl;
+    }
 
     public List<NamespaceMembership> findAllByNamespaceId(Collection<Long> namespaceIds) {
         return dsl.select(

@@ -10,19 +10,21 @@
 package org.eclipse.openvsx.storage;
 
 import com.google.common.collect.Lists;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.entities.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.STORAGE_AZURE;
@@ -32,17 +34,22 @@ public class AzureDownloadCountProcessor {
 
     protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountProcessor.class);
 
-    @Autowired
-    EntityManager entityManager;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final CacheService cache;
+    private final SearchUtilService search;
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    SearchUtilService search;
+    public AzureDownloadCountProcessor(
+            EntityManager entityManager,
+            RepositoryService repositories,
+            CacheService cache,
+            SearchUtilService search
+    ) {
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+        this.cache = cache;
+        this.search = search;
+    }
 
     @Transactional
     public void persistProcessedItem(String name, LocalDateTime processedOn, int executionTime, boolean success) {

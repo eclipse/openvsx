@@ -9,6 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -17,13 +19,10 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -32,14 +31,19 @@ import static org.eclipse.openvsx.cache.CacheService.CACHE_SITEMAP;
 @Component
 public class PublishExtensionVersionService {
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final EntityManager entityManager;
+    private final StorageUtilService storageUtil;
 
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    StorageUtilService storageUtil;
+    public PublishExtensionVersionService(
+            RepositoryService repositories,
+            EntityManager entityManager,
+            StorageUtilService storageUtil
+    ) {
+        this.repositories = repositories;
+        this.entityManager = entityManager;
+        this.storageUtil = storageUtil;
+    }
 
     @Transactional
     public void deleteFileResources(ExtensionVersion extVersion) {

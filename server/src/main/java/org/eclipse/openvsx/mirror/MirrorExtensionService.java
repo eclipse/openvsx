@@ -21,7 +21,6 @@ import org.eclipse.openvsx.util.*;
 import org.jobrunr.jobs.context.JobContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -30,10 +29,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
@@ -44,29 +40,34 @@ public class MirrorExtensionService {
 
     protected final Logger logger = LoggerFactory.getLogger(MirrorExtensionService.class);
 
-    @Autowired(required = false)
-    DataMirrorService data;
+    private DataMirrorService data;
+    private final RepositoryService repositories;
+    private final UpstreamRegistryService upstream;
+    private final RestTemplate backgroundRestTemplate;
+    private final RestTemplate backgroundNonRedirectingRestTemplate;
+    private final UserService users;
+    private final ExtensionService extensions;
+    private final ExtensionVersionIntegrityService integrityService;
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    UpstreamRegistryService upstream;
-
-    @Autowired
-    RestTemplate backgroundRestTemplate;
-
-    @Autowired
-    RestTemplate backgroundNonRedirectingRestTemplate;
-
-    @Autowired
-    UserService users;
-
-    @Autowired
-    ExtensionService extensions;
-
-    @Autowired
-    ExtensionVersionIntegrityService integrityService;
+    public MirrorExtensionService(
+            Optional<DataMirrorService> dataMirrorService,
+            RepositoryService repositories,
+            UpstreamRegistryService upstream,
+            RestTemplate backgroundRestTemplate,
+            RestTemplate backgroundNonRedirectingRestTemplate,
+            UserService users,
+            ExtensionService extensions,
+            ExtensionVersionIntegrityService integrityService
+    ) {
+        dataMirrorService.ifPresent(service -> this.data = service);
+        this.repositories = repositories;
+        this.upstream = upstream;
+        this.backgroundRestTemplate = backgroundRestTemplate;
+        this.backgroundNonRedirectingRestTemplate = backgroundNonRedirectingRestTemplate;
+        this.users = users;
+        this.extensions = extensions;
+        this.integrityService = integrityService;
+    }
 
     /**
      * It applies delta from previous execution.

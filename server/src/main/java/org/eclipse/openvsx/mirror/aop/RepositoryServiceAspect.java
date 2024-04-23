@@ -15,7 +15,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -24,8 +23,11 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
 public class RepositoryServiceAspect {
 
-    @Autowired
-    StorageUtilService storageUtil;
+    private final StorageUtilService storageUtil;
+
+    public RepositoryServiceAspect(StorageUtilService storageUtil) {
+        this.storageUtil = storageUtil;
+    }
 
     @Around("execution(* org.eclipse.openvsx.repositories.RepositoryService.findFileByTypeAndName(..))")
     public Object findFileByTypeAndName(ProceedingJoinPoint joinPoint) throws Throwable {

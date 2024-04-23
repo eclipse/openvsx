@@ -17,7 +17,6 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,17 +38,22 @@ import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
 @RestController
 public class AdminAPI {
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final AdminService admins;
+    private final LocalRegistryService local;
+    private final SearchUtilService search;
 
-    @Autowired
-    AdminService admins;
-
-    @Autowired
-    LocalRegistryService local;
-
-    @Autowired
-    SearchUtilService search;
+    public AdminAPI(
+            RepositoryService repositories,
+            AdminService admins,
+            LocalRegistryService local,
+            SearchUtilService search
+    ) {
+        this.repositories = repositories;
+        this.admins = admins;
+        this.local = local;
+        this.search = search;
+    }
 
     @GetMapping(
             path = "/admin/report",

@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.publish;
 
 import com.google.common.base.Joiner;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
@@ -24,13 +26,10 @@ import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
@@ -41,26 +40,31 @@ public class PublishExtensionVersionHandler {
 
     protected final Logger logger = LoggerFactory.getLogger(PublishExtensionVersionHandler.class);
 
-    @Autowired
-    PublishExtensionVersionService service;
+    private final PublishExtensionVersionService service;
+    private final ExtensionVersionIntegrityService integrityService;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final JobRequestScheduler scheduler;
+    private final UserService users;
+    private final ExtensionValidator validator;
 
-    @Autowired
-    ExtensionVersionIntegrityService integrityService;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    JobRequestScheduler scheduler;
-
-    @Autowired
-    UserService users;
-
-    @Autowired
-    ExtensionValidator validator;
+    public PublishExtensionVersionHandler(
+            PublishExtensionVersionService service,
+            ExtensionVersionIntegrityService integrityService,
+            EntityManager entityManager,
+            RepositoryService repositories,
+            JobRequestScheduler scheduler,
+            UserService users,
+            ExtensionValidator validator
+    ) {
+        this.service = service;
+        this.integrityService = integrityService;
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+        this.scheduler = scheduler;
+        this.users = users;
+        this.validator = validator;
+    }
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionVersion createExtensionVersion(ExtensionProcessor processor, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
@@ -225,7 +229,7 @@ public class PublishExtensionVersionHandler {
             service.mirrorResource(getSignatureResource(signatureName, extVersion));
         }
         try(var processor = new ExtensionProcessor(extensionFile)) {
-            processor.getFileResources(extVersion).forEach(resource -> service.mirrorResource(resource));
+            processor.getFileResources(extVersion).forEach(service::mirrorResource);
             service.mirrorResource(processor.generateSha256Checksum(extVersion));
             // don't store file resources, they can be generated on the fly to avoid traversing entire zip file
         }

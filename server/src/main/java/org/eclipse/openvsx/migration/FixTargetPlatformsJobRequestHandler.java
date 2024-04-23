@@ -19,7 +19,6 @@ import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -32,17 +31,22 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(FixTargetPlatformsJobRequestHandler.class));
 
-    @Autowired
-    ExtensionService extensions;
+    private final ExtensionService extensions;
+    private final AdminService admins;
+    private final MigrationService migrations;
+    private final FixTargetPlatformsService service;
 
-    @Autowired
-    AdminService admins;
-
-    @Autowired
-    MigrationService migrations;
-
-    @Autowired
-    FixTargetPlatformsService service;
+    public FixTargetPlatformsJobRequestHandler(
+            ExtensionService extensions,
+            AdminService admins,
+            MigrationService migrations,
+            FixTargetPlatformsService service
+    ) {
+        this.extensions = extensions;
+        this.admins = admins;
+        this.migrations = migrations;
+        this.service = service;
+    }
 
     @Override
     @Job(name = "Fix target platform for published extension version", retries = 3)

@@ -17,7 +17,6 @@ import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
@@ -28,8 +27,11 @@ public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandle
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(GenerateSha256ChecksumJobRequestHandler.class));
 
-    @Autowired
-    MigrationService migrations;
+    private final MigrationService migrations;
+
+    public GenerateSha256ChecksumJobRequestHandler(MigrationService migrations) {
+        this.migrations = migrations;
+    }
 
     @Override
     @Job(name = "Generate sha256 checksum for published extension version", retries = 3)

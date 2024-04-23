@@ -9,12 +9,10 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -28,8 +26,11 @@ import static org.eclipse.openvsx.jooq.Tables.FILE_RESOURCE;
 @Component
 public class FileResourceJooqRepository {
 
-    @Autowired
-    DSLContext dsl;
+    private final DSLContext dsl;
+
+    public FileResourceJooqRepository(DSLContext dsl) {
+        this.dsl = dsl;
+    }
 
     public List<FileResource> findByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
         if(extVersions.isEmpty() || types.isEmpty()) {

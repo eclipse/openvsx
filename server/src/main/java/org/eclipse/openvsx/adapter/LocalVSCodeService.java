@@ -22,9 +22,11 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -45,23 +47,28 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class LocalVSCodeService implements IVSCodeService {
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    VersionService versions;
-
-    @Autowired
-    SearchUtilService search;
-
-    @Autowired
-    StorageUtilService storageUtil;
-
-    @Autowired
-    ExtensionVersionIntegrityService integrityService;
+    private final RepositoryService repositories;
+    private final VersionService versions;
+    private final SearchUtilService search;
+    private final StorageUtilService storageUtil;
+    private final ExtensionVersionIntegrityService integrityService;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
+
+    public LocalVSCodeService(
+            RepositoryService repositories,
+            VersionService versions,
+            SearchUtilService search,
+            StorageUtilService storageUtil,
+            ExtensionVersionIntegrityService integrityService
+    ) {
+        this.repositories = repositories;
+        this.versions = versions;
+        this.search = search;
+        this.storageUtil = storageUtil;
+        this.integrityService = integrityService;
+    }
 
     @Override
     public ExtensionQueryResult extensionQuery(ExtensionQueryParam param, int defaultPageSize) {

@@ -9,21 +9,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.AuthToken;
@@ -36,15 +28,8 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -53,11 +38,17 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 @Component
 public class EclipseService {
@@ -75,20 +66,12 @@ public class EclipseService {
 
     protected final Logger logger = LoggerFactory.getLogger(EclipseService.class);
 
-    @Autowired
-    TokenService tokens;
-
-    @Autowired
-    TransactionTemplate transactions;
-
-    @Autowired
-    ExtensionService extensions;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RestTemplate restTemplate;
+    private final TokenService tokens;
+    private final TransactionTemplate transactions;
+    private final ExtensionService extensions;
+    private final EntityManager entityManager;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${ovsx.eclipse.base-url:}")
     String eclipseApiUrl;
@@ -99,10 +82,20 @@ public class EclipseService {
     @Value("${ovsx.eclipse.publisher-agreement.timezone:}")
     String publisherAgreementTimeZone;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public EclipseService() {
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    public EclipseService(
+            TokenService tokens,
+            TransactionTemplate transactions,
+            ExtensionService extensions,
+            EntityManager entityManager,
+            RestTemplate restTemplate
+    ) {
+        this.tokens = tokens;
+        this.transactions = transactions;
+        this.extensions = extensions;
+        this.entityManager = entityManager;
+        this.restTemplate = restTemplate;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     private final Function<String, LocalDateTime> parseDate = dateString -> {

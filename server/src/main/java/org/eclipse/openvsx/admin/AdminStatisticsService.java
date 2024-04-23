@@ -9,19 +9,19 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.admin;
 
-import org.eclipse.openvsx.entities.AdminStatistics;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import java.util.Map;
+import org.eclipse.openvsx.entities.AdminStatistics;
+import org.springframework.stereotype.Component;
 
 @Component
 public class AdminStatisticsService {
 
-    @Autowired
-    EntityManager entityManager;
+    private final EntityManager entityManager;
+
+    public AdminStatisticsService(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
 
     @Transactional
     public void saveAdminStatistics(AdminStatistics statistics) {

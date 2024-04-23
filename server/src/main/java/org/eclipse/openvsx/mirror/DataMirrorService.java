@@ -9,26 +9,16 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror;
 
-import java.util.AbstractMap;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-
-import org.eclipse.openvsx.*;
+import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.LocalRegistryService;
+import org.eclipse.openvsx.UpstreamRegistryService;
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.admin.AdminService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionReview;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewJson;
@@ -39,15 +29,14 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -56,29 +45,19 @@ public class DataMirrorService {
 
     protected final Logger logger = LoggerFactory.getLogger(DataMirrorService.class);
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    UserService users;
-
-    @Autowired
-    ExtensionService extensions;
-
-    @Autowired
-    UpstreamRegistryService upstream;
-
-    @Autowired
-    LocalRegistryService local;
-
-    @Autowired
-    StorageUtilService storageUtil;
-
-    @Autowired
-    RestTemplate backgroundRestTemplate;
+    private final RepositoryService repositories;
+    private final EntityManager entityManager;
+    private final UserService users;
+    private final ExtensionService extensions;
+    private final UpstreamRegistryService upstream;
+    private final LocalRegistryService local;
+    private final StorageUtilService storageUtil;
+    private final RestTemplate backgroundRestTemplate;
+    private final AdminService admin;
+    private final Set<String> excludeExtensions;
+    private final Set<String> includeExtensions;
+    private final Counter mirroredVersions;
+    private final Counter failedVersions;
 
     @Value("${ovsx.data.mirror.user-name}")
     String userName;
@@ -86,19 +65,31 @@ public class DataMirrorService {
     @Value("${ovsx.data.mirror.schedule}")
     String schedule;
 
-    @Autowired
-    AdminService admin;
-
-    @Autowired
-    Set<String> excludeExtensions;
-
-    @Autowired
-    Set<String> includeExtensions;
-
-    private final Counter mirroredVersions;
-    private final Counter failedVersions;
-
-    public DataMirrorService(MeterRegistry registry) {
+    public DataMirrorService(
+            RepositoryService repositories,
+            EntityManager entityManager,
+            UserService users,
+            ExtensionService extensions,
+            UpstreamRegistryService upstream,
+            LocalRegistryService local,
+            StorageUtilService storageUtil,
+            RestTemplate backgroundRestTemplate,
+            AdminService admin,
+            Set<String> excludeExtensions,
+            Set<String> includeExtensions,
+            MeterRegistry registry
+    ) {
+        this.repositories = repositories;
+        this.entityManager = entityManager;
+        this.users = users;
+        this.extensions = extensions;
+        this.upstream = upstream;
+        this.local = local;
+        this.storageUtil = storageUtil;
+        this.backgroundRestTemplate = backgroundRestTemplate;
+        this.admin = admin;
+        this.excludeExtensions = excludeExtensions;
+        this.includeExtensions = includeExtensions;
         this.mirroredVersions = Counter.builder("ovsx_mirror_versions").tag("outcome", "success").register(registry);
         this.failedVersions = Counter.builder("ovsx_mirror_versions").tag("outcome", "failure").register(registry);
     }

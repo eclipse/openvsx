@@ -13,27 +13,31 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> {
 
-    @Autowired
-    OrphanNamespaceMigration orphanNamespaceMigration;
-
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    MigrationService migrations;
-
-    @Autowired
-    JobRequestScheduler scheduler;
+    private final OrphanNamespaceMigration orphanNamespaceMigration;
+    private final RepositoryService repositories;
+    private final MigrationService migrations;
+    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.data.mirror.enabled:false}")
     boolean mirrorEnabled;
+
+    public MigrationRunner(
+            OrphanNamespaceMigration orphanNamespaceMigration,
+            RepositoryService repositories,
+            MigrationService migrations,
+            JobRequestScheduler scheduler
+    ) {
+        this.orphanNamespaceMigration = orphanNamespaceMigration;
+        this.repositories = repositories;
+        this.migrations = migrations;
+        this.scheduler = scheduler;
+    }
 
     @Override
     @Job(name = "Run migrations", retries = 0)

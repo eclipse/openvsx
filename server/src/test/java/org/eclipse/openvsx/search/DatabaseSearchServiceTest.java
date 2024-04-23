@@ -335,13 +335,13 @@ public class DatabaseSearchServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        DatabaseSearchService searchService() {
-            return new DatabaseSearchService();
+        DatabaseSearchService searchService(RelevanceService relevanceService, RepositoryService repositories) {
+            return new DatabaseSearchService(relevanceService, repositories);
         }
 
         @Bean
-        RelevanceService relevanceService() {
-            return new RelevanceService();
+        RelevanceService relevanceService(RepositoryService repositories) {
+            return new RelevanceService(repositories);
         }
 
         @Bean
