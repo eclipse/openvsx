@@ -922,28 +922,66 @@ public class VSCodeAPITest {
         }
 
         @Bean
-        OAuth2UserServices oauth2UserServices() {
-            return new OAuth2UserServices();
+        OAuth2UserServices oauth2UserServices(
+                UserService users,
+                TokenService tokens,
+                RepositoryService repositories,
+                EntityManager entityManager,
+                EclipseService eclipse
+        ) {
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
         }
 
         @Bean
-        TokenService tokenService() {
-            return new TokenService();
+        TokenService tokenService(
+                TransactionTemplate transactions,
+                EntityManager entityManager,
+                ClientRegistrationRepository clientRegistrationRepository
+        ) {
+            return new TokenService(transactions, entityManager, clientRegistrationRepository);
         }
 
         @Bean
-        LocalVSCodeService localVSCodeService() {
-            return new LocalVSCodeService();
+        LocalVSCodeService localVSCodeService(
+                RepositoryService repositories,
+                VersionService versions,
+                SearchUtilService search,
+                StorageUtilService storageUtil,
+                ExtensionVersionIntegrityService integrityService
+        ) {
+            return new LocalVSCodeService(repositories, versions, search, storageUtil, integrityService);
         }
 
         @Bean
-        UserService userService() {
-            return new UserService();
+        UserService userService(
+                EntityManager entityManager,
+                RepositoryService repositories,
+                StorageUtilService storageUtil,
+                CacheService cache,
+                ExtensionValidator validator
+        ) {
+            return new UserService(entityManager, repositories, storageUtil, cache, validator);
         }
 
         @Bean
-        StorageUtilService storageUtilService() {
-            return new StorageUtilService();
+        StorageUtilService storageUtilService(
+                RepositoryService repositories,
+                GoogleCloudStorageService googleStorage,
+                AzureBlobStorageService azureStorage,
+                AzureDownloadCountService azureDownloadCountService,
+                SearchUtilService search,
+                CacheService cache,
+                EntityManager entityManager
+        ) {
+            return new StorageUtilService(
+                    repositories,
+                    googleStorage,
+                    azureStorage,
+                    azureDownloadCountService,
+                    search,
+                    cache,
+                    entityManager
+            );
         }
 
         @Bean

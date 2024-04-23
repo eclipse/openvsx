@@ -15,7 +15,6 @@ import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -40,25 +39,67 @@ public class RepositoryService {
             .and(Sort.by(Sort.Direction.ASC, "targetPlatform"))
             .and(Sort.by(Sort.Direction.DESC, "timestamp"));
 
-    @Autowired NamespaceRepository namespaceRepo;
-    @Autowired NamespaceJooqRepository namespaceJooqRepo;
-    @Autowired ExtensionRepository extensionRepo;
-    @Autowired ExtensionVersionRepository extensionVersionRepo;
-    @Autowired FileResourceRepository fileResourceRepo;
-    @Autowired ExtensionReviewRepository extensionReviewRepo;
-    @Autowired UserDataRepository userDataRepo;
-    @Autowired NamespaceMembershipRepository membershipRepo;
-    @Autowired PersonalAccessTokenRepository tokenRepo;
-    @Autowired PersistedLogRepository persistedLogRepo;
-    @Autowired AzureDownloadCountProcessedItemRepository downloadCountRepo;
-    @Autowired ExtensionJooqRepository extensionJooqRepo;
-    @Autowired ExtensionVersionJooqRepository extensionVersionJooqRepo;
-    @Autowired FileResourceJooqRepository fileResourceJooqRepo;
-    @Autowired NamespaceMembershipJooqRepository membershipJooqRepo;
-    @Autowired AdminStatisticsRepository adminStatisticsRepo;
-    @Autowired AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
-    @Autowired MigrationItemRepository migrationItemRepo;
-    @Autowired SignatureKeyPairRepository signatureKeyPairRepo;
+    private final NamespaceRepository namespaceRepo;
+    private final NamespaceJooqRepository namespaceJooqRepo;
+    private final ExtensionRepository extensionRepo;
+    private final ExtensionVersionRepository extensionVersionRepo;
+    private final FileResourceRepository fileResourceRepo;
+    private final ExtensionReviewRepository extensionReviewRepo;
+    private final UserDataRepository userDataRepo;
+    private final NamespaceMembershipRepository membershipRepo;
+    private final PersonalAccessTokenRepository tokenRepo;
+    private final PersistedLogRepository persistedLogRepo;
+    private final AzureDownloadCountProcessedItemRepository downloadCountRepo;
+    private final ExtensionJooqRepository extensionJooqRepo;
+    private final ExtensionVersionJooqRepository extensionVersionJooqRepo;
+    private final FileResourceJooqRepository fileResourceJooqRepo;
+    private final NamespaceMembershipJooqRepository membershipJooqRepo;
+    private final AdminStatisticsRepository adminStatisticsRepo;
+    private final AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
+    private final MigrationItemRepository migrationItemRepo;
+    private final SignatureKeyPairRepository signatureKeyPairRepo;
+
+    public RepositoryService(
+            NamespaceRepository namespaceRepo,
+            NamespaceJooqRepository namespaceJooqRepo,
+            ExtensionRepository extensionRepo,
+            ExtensionVersionRepository extensionVersionRepo,
+            FileResourceRepository fileResourceRepo,
+            ExtensionReviewRepository extensionReviewRepo,
+            UserDataRepository userDataRepo,
+            NamespaceMembershipRepository membershipRepo,
+            PersonalAccessTokenRepository tokenRepo,
+            PersistedLogRepository persistedLogRepo,
+            AzureDownloadCountProcessedItemRepository downloadCountRepo,
+            ExtensionJooqRepository extensionJooqRepo,
+            ExtensionVersionJooqRepository extensionVersionJooqRepo,
+            FileResourceJooqRepository fileResourceJooqRepo,
+            NamespaceMembershipJooqRepository membershipJooqRepo,
+            AdminStatisticsRepository adminStatisticsRepo,
+            AdminStatisticCalculationsRepository adminStatisticCalculationsRepo,
+            MigrationItemRepository migrationItemRepo,
+            SignatureKeyPairRepository signatureKeyPairRepo
+    ) {
+        this.namespaceRepo = namespaceRepo;
+        this.namespaceJooqRepo = namespaceJooqRepo;
+        this.extensionRepo = extensionRepo;
+        this.extensionVersionRepo = extensionVersionRepo;
+        this.fileResourceRepo = fileResourceRepo;
+        this.extensionReviewRepo = extensionReviewRepo;
+        this.userDataRepo = userDataRepo;
+        this.membershipRepo = membershipRepo;
+        this.tokenRepo = tokenRepo;
+        this.persistedLogRepo = persistedLogRepo;
+        this.downloadCountRepo = downloadCountRepo;
+        this.extensionJooqRepo = extensionJooqRepo;
+        this.extensionVersionJooqRepo = extensionVersionJooqRepo;
+        this.fileResourceJooqRepo = fileResourceJooqRepo;
+        this.membershipJooqRepo = membershipJooqRepo;
+        this.adminStatisticsRepo = adminStatisticsRepo;
+        this.adminStatisticCalculationsRepo = adminStatisticCalculationsRepo;
+        this.migrationItemRepo = migrationItemRepo;
+        this.signatureKeyPairRepo = signatureKeyPairRepo;
+    }
 
     @Observed
     public Namespace findNamespace(String name) {

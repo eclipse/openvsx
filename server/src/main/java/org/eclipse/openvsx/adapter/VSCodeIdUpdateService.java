@@ -16,7 +16,6 @@ import org.eclipse.openvsx.util.BuiltInExtensionUtil;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -26,11 +25,13 @@ import java.util.stream.Collectors;
 public class VSCodeIdUpdateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(VSCodeIdUpdateService.class);
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final VSCodeIdService service;
 
-    @Autowired
-    VSCodeIdService service;
+    public VSCodeIdUpdateService(RepositoryService repositories, VSCodeIdService service) {
+        this.repositories = repositories;
+        this.service = service;
+    }
 
     public void update(String namespaceName, String extensionName) throws InterruptedException {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {

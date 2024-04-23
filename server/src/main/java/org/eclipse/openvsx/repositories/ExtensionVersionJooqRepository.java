@@ -19,7 +19,6 @@ import org.eclipse.openvsx.util.VersionAlias;
 import org.jooq.Record;
 import org.jooq.*;
 import org.jooq.impl.DSL;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -34,8 +33,11 @@ import static org.eclipse.openvsx.jooq.Tables.*;
 @Component
 public class ExtensionVersionJooqRepository {
 
-    @Autowired
-    DSLContext dsl;
+    private final DSLContext dsl;
+
+    public ExtensionVersionJooqRepository(DSLContext dsl) {
+        this.dsl = dsl;
+    }
 
     public List<ExtensionVersion> findAllActiveByExtensionIdAndTargetPlatform(Collection<Long> extensionIds, String targetPlatform) {
         var query = dsl.select(

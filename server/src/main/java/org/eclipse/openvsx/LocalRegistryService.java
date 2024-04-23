@@ -27,7 +27,6 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
@@ -52,38 +51,43 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     protected final Logger logger = LoggerFactory.getLogger(LocalRegistryService.class);
 
-    @Autowired
-    EntityManager entityManager;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final ExtensionService extensions;
+    private final VersionService versions;
+    private final UserService users;
+    private final SearchUtilService search;
+    private final ExtensionValidator validator;
+    private final StorageUtilService storageUtil;
+    private final EclipseService eclipse;
+    private final CacheService cache;
+    private final ExtensionVersionIntegrityService integrityService;
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    ExtensionService extensions;
-
-    @Autowired
-    VersionService versions;
-
-    @Autowired
-    UserService users;
-
-    @Autowired
-    SearchUtilService search;
-
-    @Autowired
-    ExtensionValidator validator;
-
-    @Autowired
-    StorageUtilService storageUtil;
-
-    @Autowired
-    EclipseService eclipse;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    ExtensionVersionIntegrityService integrityService;
+    public LocalRegistryService(
+            EntityManager entityManager,
+            RepositoryService repositories,
+            ExtensionService extensions,
+            VersionService versions,
+            UserService users,
+            SearchUtilService search,
+            ExtensionValidator validator,
+            StorageUtilService storageUtil,
+            EclipseService eclipse,
+            CacheService cache,
+            ExtensionVersionIntegrityService integrityService
+    ) {
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+        this.extensions = extensions;
+        this.versions = versions;
+        this.users = users;
+        this.search = search;
+        this.validator = validator;
+        this.storageUtil = storageUtil;
+        this.eclipse = eclipse;
+        this.cache = cache;
+        this.integrityService = integrityService;
+    }
 
     @Value("${ovsx.registry.version:}")
     String registryVersion;

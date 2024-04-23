@@ -13,7 +13,6 @@ import org.eclipse.openvsx.adapter.*;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,14 +25,19 @@ public class MirrorExtensionQueryRequestHandler implements IExtensionQueryReques
 
     protected final Logger logger = LoggerFactory.getLogger(MirrorExtensionQueryRequestHandler.class);
 
-    @Autowired
-    LocalVSCodeService local;
+    private final LocalVSCodeService local;
+    private final UpstreamVSCodeService upstream;
+    private final DataMirrorService dataMirror;
 
-    @Autowired
-    UpstreamVSCodeService upstream;
-
-    @Autowired
-    DataMirrorService dataMirror;
+    public MirrorExtensionQueryRequestHandler(
+            LocalVSCodeService local,
+            UpstreamVSCodeService upstream,
+            DataMirrorService dataMirror
+    ) {
+        this.local = local;
+        this.upstream = upstream;
+        this.dataMirror = dataMirror;
+    }
 
     @Override
     public ExtensionQueryResult getResult(ExtensionQueryParam param, int pageSize, int defaultPageSize) {

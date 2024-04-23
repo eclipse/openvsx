@@ -9,20 +9,19 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.TargetPlatform;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.eclipse.openvsx.entities.FileResource;
+import org.springframework.stereotype.Component;
 
 @Component
 public class RenameDownloadsService {
 
-    @Autowired
-    EntityManager entityManager;
+    private final EntityManager entityManager;
+
+    public RenameDownloadsService(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
 
     @Transactional
     public FileResource cloneResource(FileResource resource, String name) {

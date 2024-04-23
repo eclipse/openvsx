@@ -9,11 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.web;
 
-import java.net.URI;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.mirror.MirrorExtensionHandlerInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -21,17 +18,23 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.net.URI;
+import java.util.Optional;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Autowired(required = false)
-    MirrorExtensionHandlerInterceptor mirrorInterceptor;
+    private MirrorExtensionHandlerInterceptor mirrorInterceptor;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
     @Value("${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/user-settings/**,/admin-dashboard/**}")
     String[] frontendRoutes;
+
+    public WebConfig(Optional<MirrorExtensionHandlerInterceptor> mirrorExtensionHandlerInterceptor) {
+        mirrorExtensionHandlerInterceptor.ifPresent(service -> this.mirrorInterceptor = service);
+    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {

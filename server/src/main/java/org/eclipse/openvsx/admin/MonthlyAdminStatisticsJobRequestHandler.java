@@ -13,7 +13,6 @@ import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -22,8 +21,11 @@ import java.util.UUID;
 @Component
 public class MonthlyAdminStatisticsJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
-    @Autowired
-    JobRequestScheduler scheduler;
+    private final JobRequestScheduler scheduler;
+
+    public MonthlyAdminStatisticsJobRequestHandler(JobRequestScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
 
     @Override
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {

@@ -17,7 +17,6 @@ import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -30,8 +29,11 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtractVsixManifestsJobRequestHandler.class));
 
-    @Autowired
-    MigrationService migrations;
+    private final MigrationService migrations;
+
+    public ExtractVsixManifestsJobRequestHandler(MigrationService migrations) {
+        this.migrations = migrations;
+    }
 
     @Override
     @Job(name = "Extract VSIX manifests from published extension version", retries = 3)

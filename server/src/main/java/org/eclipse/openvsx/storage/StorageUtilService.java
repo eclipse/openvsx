@@ -11,6 +11,8 @@ package org.eclipse.openvsx.storage;
 
 import com.google.common.collect.Maps;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -20,7 +22,6 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.http.CacheControl;
@@ -29,8 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -47,26 +46,13 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class StorageUtilService implements IStorageService {
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    GoogleCloudStorageService googleStorage;
-
-    @Autowired
-    AzureBlobStorageService azureStorage;
-
-    @Autowired
-    AzureDownloadCountService azureDownloadCountService;
-
-    @Autowired
-    SearchUtilService search;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final GoogleCloudStorageService googleStorage;
+    private final AzureBlobStorageService azureStorage;
+    private final AzureDownloadCountService azureDownloadCountService;
+    private final SearchUtilService search;
+    private final CacheService cache;
+    private final EntityManager entityManager;
 
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
@@ -75,6 +61,24 @@ public class StorageUtilService implements IStorageService {
     /** Determines which resource types are stored externally. Default: all resources ({@code *}) */
     @Value("${ovsx.storage.external-resource-types:*}")
     String[] externalResourceTypes;
+
+    public StorageUtilService(
+            RepositoryService repositories,
+            GoogleCloudStorageService googleStorage,
+            AzureBlobStorageService azureStorage,
+            AzureDownloadCountService azureDownloadCountService,
+            SearchUtilService search,
+            CacheService cache,
+            EntityManager entityManager
+    ) {
+        this.repositories = repositories;
+        this.googleStorage = googleStorage;
+        this.azureStorage = azureStorage;
+        this.azureDownloadCountService = azureDownloadCountService;
+        this.search = search;
+        this.cache = cache;
+        this.entityManager = entityManager;
+    }
 
     public boolean shouldStoreExternally(FileResource resource) {
         if (!isEnabled()) {

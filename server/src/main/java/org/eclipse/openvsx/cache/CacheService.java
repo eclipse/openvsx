@@ -15,7 +15,6 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
@@ -35,17 +34,22 @@ public class CacheService {
     public static final String GENERATOR_EXTENSION_JSON = "extensionJsonCacheKeyGenerator";
     public static final String GENERATOR_LATEST_EXTENSION_VERSION = "latestExtensionVersionCacheKeyGenerator";
 
-    @Autowired
-    CacheManager cacheManager;
+    private final CacheManager cacheManager;
+    private final RepositoryService repositoryService;
+    private final ExtensionJsonCacheKeyGenerator extensionJsonCacheKey;
+    private final LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
 
-    @Autowired
-    RepositoryService repositoryService;
-
-    @Autowired
-    ExtensionJsonCacheKeyGenerator extensionJsonCacheKey;
-
-    @Autowired
-    LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
+    public CacheService(
+            CacheManager cacheManager,
+            RepositoryService repositoryService,
+            ExtensionJsonCacheKeyGenerator extensionJsonCacheKey,
+            LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey
+    ) {
+        this.cacheManager = cacheManager;
+        this.repositoryService = repositoryService;
+        this.extensionJsonCacheKey = extensionJsonCacheKey;
+        this.latestExtensionVersionCacheKey = latestExtensionVersionCacheKey;
+    }
 
     public void evictNamespaceDetails() {
         invalidateCache(CACHE_NAMESPACE_DETAILS_JSON);

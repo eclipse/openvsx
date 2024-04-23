@@ -9,10 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import java.util.LinkedHashSet;
-
 import jakarta.persistence.EntityManager;
-
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -21,7 +18,6 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -29,28 +25,35 @@ import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.LinkedHashSet;
+
 @Component
 public class PublisherComplianceChecker {
 
     protected final Logger logger = LoggerFactory.getLogger(PublisherComplianceChecker.class);
 
-    @Autowired
-    TransactionTemplate transactions;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    ExtensionService extensions;
-
-    @Autowired
-    EclipseService eclipseService;
+    private final TransactionTemplate transactions;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final ExtensionService extensions;
+    private final EclipseService eclipseService;
 
     @Value("${ovsx.eclipse.check-compliance-on-start:false}")
     boolean checkCompliance;
+
+    public PublisherComplianceChecker(
+            TransactionTemplate transactions,
+            EntityManager entityManager,
+            RepositoryService repositories,
+            ExtensionService extensions,
+            EclipseService eclipseService
+    ) {
+        this.transactions = transactions;
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+        this.extensions = extensions;
+        this.eclipseService = eclipseService;
+    }
 
     @EventListener
     public void checkPublishers(ApplicationStartedEvent event) {

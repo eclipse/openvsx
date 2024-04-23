@@ -9,10 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 
 @RestController
@@ -29,14 +28,19 @@ public class VSCodeAPI {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
 
-    @Autowired
-    LocalVSCodeService local;
+    private final LocalVSCodeService local;
+    private final UpstreamVSCodeService upstream;
+    private final IExtensionQueryRequestHandler extensionQueryRequestHandler;
 
-    @Autowired
-    UpstreamVSCodeService upstream;
-
-    @Autowired
-    IExtensionQueryRequestHandler extensionQueryRequestHandler;
+    public VSCodeAPI(
+            LocalVSCodeService local,
+            UpstreamVSCodeService upstream,
+            IExtensionQueryRequestHandler extensionQueryRequestHandler
+    ) {
+        this.local = local;
+        this.upstream = upstream;
+        this.extensionQueryRequestHandler = extensionQueryRequestHandler;
+    }
 
     private Iterable<IVSCodeService> getVSCodeServices() {
         var registries = new ArrayList<IVSCodeService>();

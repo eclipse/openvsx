@@ -17,7 +17,6 @@ import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -30,23 +29,29 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class UpstreamVSCodeService implements IVSCodeService {
 
     protected final Logger logger = LoggerFactory.getLogger(UpstreamVSCodeService.class);
 
-    @Autowired
-    RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
+    private UpstreamProxyService proxy;
+    private final RestTemplate nonRedirectingRestTemplate;
+    private final UrlConfigService urlConfigService;
 
-    @Autowired(required = false)
-    UpstreamProxyService proxy;
-
-    @Autowired
-    RestTemplate nonRedirectingRestTemplate;
-
-    @Autowired
-    UrlConfigService urlConfigService;
+    public UpstreamVSCodeService(
+            RestTemplate restTemplate,
+            Optional<UpstreamProxyService> upstreamProxyService,
+            RestTemplate nonRedirectingRestTemplate,
+            UrlConfigService urlConfigService
+    ) {
+        this.restTemplate = restTemplate;
+        upstreamProxyService.ifPresent(service -> this.proxy = service);
+        this.nonRedirectingRestTemplate = nonRedirectingRestTemplate;
+        this.urlConfigService = urlConfigService;
+    }
 
     public boolean isValid() {
         return !StringUtils.isEmpty(urlConfigService.getUpstreamUrl());

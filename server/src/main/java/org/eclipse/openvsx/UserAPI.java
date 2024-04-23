@@ -20,7 +20,6 @@ import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -45,17 +44,22 @@ public class UserAPI {
 
     private final static int TOKEN_DESCRIPTION_SIZE = 255;
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final UserService users;
+    private final EclipseService eclipse;
+    private final StorageUtilService storageUtil;
 
-    @Autowired
-    UserService users;
-
-    @Autowired
-    EclipseService eclipse;
-
-    @Autowired
-    StorageUtilService storageUtil;
+    public UserAPI(
+            RepositoryService repositories,
+            UserService users,
+            EclipseService eclipse,
+            StorageUtilService storageUtil
+    ) {
+        this.repositories = repositories;
+        this.users = users;
+        this.eclipse = eclipse;
+        this.storageUtil = storageUtil;
+    }
 
     /**
      * Redirect to GitHub Oauth2 login as default login provider.

@@ -26,7 +26,6 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
@@ -42,35 +41,40 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class AdminService {
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final ExtensionService extensions;
+    private final EntityManager entityManager;
+    private final UserService users;
+    private final ExtensionValidator validator;
+    private final SearchUtilService search;
+    private final EclipseService eclipse;
+    private final StorageUtilService storageUtil;
+    private final CacheService cache;
+    private final JobRequestScheduler scheduler;
 
-    @Autowired
-    ExtensionService extensions;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    UserService users;
-
-    @Autowired
-    ExtensionValidator validator;
-
-    @Autowired
-    SearchUtilService search;
-
-    @Autowired
-    EclipseService eclipse;
-
-    @Autowired
-    StorageUtilService storageUtil;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    JobRequestScheduler scheduler;
+    public AdminService(
+            RepositoryService repositories,
+            ExtensionService extensions,
+            EntityManager entityManager,
+            UserService users,
+            ExtensionValidator validator,
+            SearchUtilService search,
+            EclipseService eclipse,
+            StorageUtilService storageUtil,
+            CacheService cache,
+            JobRequestScheduler scheduler
+    ) {
+        this.repositories = repositories;
+        this.extensions = extensions;
+        this.entityManager = entityManager;
+        this.users = users;
+        this.validator = validator;
+        this.search = search;
+        this.eclipse = eclipse;
+        this.storageUtil = storageUtil;
+        this.cache = cache;
+        this.scheduler = scheduler;
+    }
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {

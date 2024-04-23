@@ -9,19 +9,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
-import java.time.Instant;
-import java.util.Arrays;
-
-import jakarta.persistence.EntityManager;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -35,19 +29,27 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
+import java.util.Arrays;
+
 @Component
 public class TokenService {
 
     protected final Logger logger = LoggerFactory.getLogger(TokenService.class);
 
-    @Autowired
-    TransactionTemplate transactions;
+    private final TransactionTemplate transactions;
+    private final EntityManager entityManager;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    ClientRegistrationRepository clientRegistrationRepository;
+    public TokenService(
+            TransactionTemplate transactions,
+            EntityManager entityManager,
+            ClientRegistrationRepository clientRegistrationRepository
+    ) {
+        this.transactions = transactions;
+        this.entityManager = entityManager;
+        this.clientRegistrationRepository = clientRegistrationRepository;
+    }
 
     public AuthToken updateTokens(long userId, String registrationId, OAuth2AccessToken accessToken,
             OAuth2RefreshToken refreshToken) {

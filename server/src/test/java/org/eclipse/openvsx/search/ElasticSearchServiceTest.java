@@ -280,13 +280,18 @@ public class ElasticSearchServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        ElasticSearchService searchService() {
-            return new ElasticSearchService();
+        ElasticSearchService searchService(
+                RepositoryService repositories,
+                ElasticsearchOperations searchOperations,
+                RelevanceService relevanceService,
+                JobRequestScheduler scheduler
+        ) {
+            return new ElasticSearchService(repositories, searchOperations, relevanceService, scheduler);
         }
 
         @Bean
-        RelevanceService relevanceService() {
-            return new RelevanceService();
+        RelevanceService relevanceService(RepositoryService repositories) {
+            return new RelevanceService(repositories);
         }
 
         @Bean

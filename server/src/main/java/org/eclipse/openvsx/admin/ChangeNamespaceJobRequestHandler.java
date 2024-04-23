@@ -21,7 +21,6 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
@@ -48,17 +47,22 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
         });
     }
 
-    @Autowired
-    ExtensionValidator validator;
+    private final ExtensionValidator validator;
+    private final RepositoryService repositories;
+    private final StorageUtilService storageUtil;
+    private final ChangeNamespaceService service;
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    StorageUtilService storageUtil;
-
-    @Autowired
-    ChangeNamespaceService service;
+    public ChangeNamespaceJobRequestHandler(
+            ExtensionValidator validator,
+            RepositoryService repositories,
+            StorageUtilService storageUtil,
+            ChangeNamespaceService service
+    ) {
+        this.validator = validator;
+        this.repositories = repositories;
+        this.storageUtil = storageUtil;
+        this.service = service;
+    }
 
     @Override
     public void run(ChangeNamespaceJobRequest jobRequest) throws Exception {

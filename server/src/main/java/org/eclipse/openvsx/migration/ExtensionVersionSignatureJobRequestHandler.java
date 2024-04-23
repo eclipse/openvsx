@@ -19,7 +19,6 @@ import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -31,17 +30,22 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtensionVersionSignatureJobRequestHandler.class));
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final CacheService cache;
+    private final MigrationService migrations;
+    private final ExtensionVersionIntegrityService integrityService;
 
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    MigrationService migrations;
-
-    @Autowired
-    ExtensionVersionIntegrityService integrityService;
+    public ExtensionVersionSignatureJobRequestHandler(
+            RepositoryService repositories,
+            CacheService cache,
+            MigrationService migrations,
+            ExtensionVersionIntegrityService integrityService
+    ) {
+        this.repositories = repositories;
+        this.cache = cache;
+        this.migrations = migrations;
+        this.integrityService = integrityService;
+    }
 
     @Override
     @Job(name = "Generate signature for extension version", retries = 3)

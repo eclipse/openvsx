@@ -11,7 +11,6 @@
 package org.eclipse.openvsx.search;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Component;
 
@@ -25,11 +24,13 @@ import java.util.List;
 @Component
 public class SearchUtilService implements ISearchService {
 
-    @Autowired
-    DatabaseSearchService databaseSearchService;
+    private final DatabaseSearchService databaseSearchService;
+    private final ElasticSearchService elasticSearchService;
 
-    @Autowired
-    ElasticSearchService elasticSearchService;
+    public SearchUtilService(DatabaseSearchService databaseSearchService, ElasticSearchService elasticSearchService) {
+        this.databaseSearchService = databaseSearchService;
+        this.elasticSearchService = elasticSearchService;
+    }
 
     public boolean isEnabled() {
         return this.databaseSearchService.isEnabled() || this.elasticSearchService.isEnabled();

@@ -24,7 +24,6 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Retryable;
@@ -44,23 +43,28 @@ public class MigrationService {
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
 
-    @Autowired
-    RestTemplate backgroundRestTemplate;
+    private final RestTemplate backgroundRestTemplate;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final AzureBlobStorageService azureStorage;
+    private final GoogleCloudStorageService googleStorage;
+    private final JobRequestScheduler scheduler;
 
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    AzureBlobStorageService azureStorage;
-
-    @Autowired
-    GoogleCloudStorageService googleStorage;
-
-    @Autowired
-    JobRequestScheduler scheduler;
+    public MigrationService(
+            RestTemplate backgroundRestTemplate,
+            EntityManager entityManager,
+            RepositoryService repositories,
+            AzureBlobStorageService azureStorage,
+            GoogleCloudStorageService googleStorage,
+            JobRequestScheduler scheduler
+    ) {
+        this.backgroundRestTemplate =  backgroundRestTemplate;
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+        this.azureStorage = azureStorage;
+        this.googleStorage = googleStorage;
+        this.scheduler = scheduler;
+    }
 
     @Transactional
     public void enqueueMigration(String jobName, Class<? extends JobRequestHandler<MigrationJobRequest>> handler, MigrationItem item) {

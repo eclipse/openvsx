@@ -19,12 +19,12 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -32,7 +32,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
@@ -47,14 +46,19 @@ public class RegistryAPI {
     private final static int REVIEW_COMMENT_SIZE = 2048;
     private final static String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
 
-    @Autowired
-    LocalRegistryService local;
+    private final LocalRegistryService local;
+    private final UpstreamRegistryService upstream;
+    private final UserService users;
 
-    @Autowired
-    UpstreamRegistryService upstream;
-
-    @Autowired
-    UserService users;
+    public RegistryAPI(
+            LocalRegistryService local,
+            UpstreamRegistryService upstream,
+            UserService users
+    ) {
+        this.local = local;
+        this.upstream = upstream;
+        this.users = users;
+    }
 
     protected Iterable<IExtensionRegistry> getRegistries() {
         var registries = new ArrayList<IExtensionRegistry>();

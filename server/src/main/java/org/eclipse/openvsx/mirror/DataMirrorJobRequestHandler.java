@@ -9,16 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror;
 
-import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
-
-import java.io.StringReader;
-import java.net.URI;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -28,7 +18,6 @@ import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -38,33 +27,48 @@ import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
+import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Optional;
+
+import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
+
 @Component
 public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirrorJobRequest> {
 
     protected final Logger logger = LoggerFactory.getLogger(DataMirrorJobRequestHandler.class);
 
-    @Autowired(required = false)
-    DataMirrorService data;
+    private DataMirrorService data;
+    private final RepositoryService repositories;
+    private final RestTemplate backgroundRestTemplate;
+    private final UrlConfigService urlConfigService;
+    private final AdminService admin;
+    private final MirrorExtensionService mirrorExtensionService;
+    private final DateTimeFormatter dateFormatter;
 
     @Value("${ovsx.data.mirror.schedule:}")
     String schedule;
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    RestTemplate backgroundRestTemplate;
-    
-    @Autowired
-    UrlConfigService urlConfigService;
-
-    @Autowired
-    AdminService admin;
-
-    @Autowired
-    MirrorExtensionService mirrorExtensionService;
-
-    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    public DataMirrorJobRequestHandler(
+            Optional<DataMirrorService> dataMirrorService,
+            RepositoryService repositories,
+            RestTemplate backgroundRestTemplate,
+            UrlConfigService urlConfigService,
+            AdminService admin,
+            MirrorExtensionService mirrorExtensionService
+    ) {
+        dataMirrorService.ifPresent(service -> this.data = service);
+        this.repositories = repositories;
+        this.backgroundRestTemplate = backgroundRestTemplate;
+        this.urlConfigService = urlConfigService;
+        this.admin = admin;
+        this.mirrorExtensionService = mirrorExtensionService;
+        this.dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    }
 
     @Override
     @Job(name="Data Mirror")

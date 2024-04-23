@@ -14,7 +14,6 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -25,11 +24,13 @@ public class AdminStatisticsJobRequestHandler implements JobRequestHandler<Admin
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminStatisticsJobRequestHandler.class);
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final AdminStatisticsService service;
 
-    @Autowired
-    AdminStatisticsService service;
+    public AdminStatisticsJobRequestHandler(RepositoryService repositories, AdminStatisticsService service) {
+        this.repositories = repositories;
+        this.service = service;
+    }
 
     @Override
     public void run(AdminStatisticsJobRequest jobRequest) throws Exception {

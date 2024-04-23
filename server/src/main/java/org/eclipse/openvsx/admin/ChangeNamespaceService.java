@@ -9,35 +9,39 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.admin;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class ChangeNamespaceService {
 
-    @Autowired
-    RepositoryService repositories;
+    private final RepositoryService repositories;
+    private final EntityManager entityManager;
+    private final CacheService cache;
+    private final SearchUtilService search;
 
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    CacheService cache;
-
-    @Autowired
-    SearchUtilService search;
+    public ChangeNamespaceService(
+            RepositoryService repositories,
+            EntityManager entityManager,
+            CacheService cache,
+            SearchUtilService search
+    ) {
+        this.repositories = repositories;
+        this.entityManager = entityManager;
+        this.cache = cache;
+        this.search = search;
+    }
 
     @Transactional
     public void changeNamespaceInDatabase(

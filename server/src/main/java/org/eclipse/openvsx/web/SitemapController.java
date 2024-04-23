@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.web;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,8 +22,11 @@ import java.util.concurrent.TimeUnit;
 @RestController
 public class SitemapController {
 
-    @Autowired
-    SitemapService service;
+    private final SitemapService service;
+
+    public SitemapController(SitemapService service) {
+        this.service = service;
+    }
 
     @GetMapping(path = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> getSitemap() throws ParserConfigurationException {

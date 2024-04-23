@@ -13,7 +13,6 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -26,11 +25,13 @@ public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<Migr
 
     protected final Logger logger = LoggerFactory.getLogger(RenameDownloadsJobRequestHandler.class);
 
-    @Autowired
-    MigrationService migrations;
+    private final MigrationService migrations;
+    private final RenameDownloadsService service;
 
-    @Autowired
-    RenameDownloadsService service;
+    public RenameDownloadsJobRequestHandler(MigrationService migrations, RenameDownloadsService service) {
+        this.migrations = migrations;
+        this.service = service;
+    }
 
     @Override
     public void run(MigrationJobRequest jobRequest) throws Exception {

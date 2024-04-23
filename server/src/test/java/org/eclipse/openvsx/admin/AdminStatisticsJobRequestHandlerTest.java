@@ -60,8 +60,11 @@ public class AdminStatisticsJobRequestHandlerTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        AdminStatisticsJobRequestHandler adminStatisticsJobRequestHandler() {
-            return new AdminStatisticsJobRequestHandler();
+        AdminStatisticsJobRequestHandler adminStatisticsJobRequestHandler(
+                RepositoryService repositories,
+                AdminStatisticsService service
+        ) {
+            return new AdminStatisticsJobRequestHandler(repositories, service);
         }
     }
 

@@ -11,7 +11,6 @@ package org.eclipse.openvsx.adapter;
 
 import org.jobrunr.jobs.lambdas.JobRequest;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +18,11 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class VSCodeIdDailyUpdateJobRequestHandler implements JobRequestHandler<JobRequest> {
 
-    @Autowired
-    VSCodeIdUpdateService service;
+    private final VSCodeIdUpdateService service;
+
+    public VSCodeIdDailyUpdateJobRequestHandler(VSCodeIdUpdateService service) {
+        this.service = service;
+    }
 
     @Override
     public void run(JobRequest request) throws Exception {

@@ -9,11 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
@@ -22,8 +22,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestTemplate;
-
-import jakarta.persistence.EntityManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,29 +37,34 @@ public class StorageMigration {
 
     protected final Logger logger = LoggerFactory.getLogger(StorageMigration.class);
 
-    @Autowired
-    TaskScheduler taskScheduler;
-
-    @Autowired
-    TransactionTemplate transactions;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    StorageUtilService storageUtil;
-
-    @Autowired
-    RestTemplate backgroundRestTemplate;
+    private final TaskScheduler taskScheduler;
+    private final TransactionTemplate transactions;
+    private final EntityManager entityManager;
+    private final RepositoryService repositories;
+    private final StorageUtilService storageUtil;
+    private final RestTemplate backgroundRestTemplate;
+    private final ConcurrentLinkedQueue<Long> resourceQueue;
+    private ScheduledFuture<?> scheduledFuture;
 
     @Value("${ovsx.storage.migration-delay:500}")
     long migrationDelay;
 
-    private final ConcurrentLinkedQueue<Long> resourceQueue = new ConcurrentLinkedQueue<>();
-    private ScheduledFuture<?> scheduledFuture;
+    public StorageMigration(
+            TaskScheduler taskScheduler,
+            TransactionTemplate transactions,
+            EntityManager entityManager,
+            RepositoryService repositories,
+            StorageUtilService storageUtil,
+            RestTemplate backgroundRestTemplate
+    ) {
+        this.taskScheduler = taskScheduler;
+        this.transactions = transactions;
+        this.entityManager = entityManager;
+        this.repositories = repositories;
+        this.storageUtil = storageUtil;
+        this.backgroundRestTemplate = backgroundRestTemplate;
+        this.resourceQueue = new ConcurrentLinkedQueue<>();
+    }
 
     @EventListener
     public void findResources(ApplicationStartedEvent event) {

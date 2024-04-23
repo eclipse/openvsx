@@ -1202,28 +1202,89 @@ public class AdminAPITest {
         }
 
         @Bean
-        OAuth2UserServices oauth2UserServices() {
-            return new OAuth2UserServices();
+        OAuth2UserServices oauth2UserServices(
+                UserService users,
+                TokenService tokens,
+                RepositoryService repositories,
+                EntityManager entityManager,
+                EclipseService eclipse
+        ) {
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
         }
 
         @Bean
-        TokenService tokenService() {
-            return new TokenService();
+        TokenService tokenService(
+                TransactionTemplate transactions,
+                EntityManager entityManager,
+                ClientRegistrationRepository clientRegistrationRepository
+        ) {
+            return new TokenService(transactions, entityManager, clientRegistrationRepository);
         }
 
         @Bean
-        AdminService adminService() {
-            return new AdminService();
+        AdminService adminService(
+                RepositoryService repositories,
+                ExtensionService extensions,
+                EntityManager entityManager,
+                UserService users,
+                ExtensionValidator validator,
+                SearchUtilService search,
+                EclipseService eclipse,
+                StorageUtilService storageUtil,
+                CacheService cache,
+                JobRequestScheduler scheduler
+        ) {
+            return new AdminService(
+                    repositories,
+                    extensions,
+                    entityManager,
+                    users,
+                    validator,
+                    search,
+                    eclipse,
+                    storageUtil,
+                    cache,
+                    scheduler
+            );
         }
 
         @Bean
-        LocalRegistryService localRegistryService() {
-            return new LocalRegistryService();
+        LocalRegistryService localRegistryService(
+                EntityManager entityManager,
+                RepositoryService repositories,
+                ExtensionService extensions,
+                VersionService versions,
+                UserService users,
+                SearchUtilService search,
+                ExtensionValidator validator,
+                StorageUtilService storageUtil,
+                EclipseService eclipse,
+                CacheService cache,
+                ExtensionVersionIntegrityService integrityService
+        ) {
+            return new LocalRegistryService(
+                    entityManager,
+                    repositories,
+                    extensions,
+                    versions,
+                    users,
+                    search,
+                    validator,
+                    storageUtil,
+                    eclipse,
+                    cache,
+                    integrityService
+            );
         }
 
         @Bean
-        ExtensionService extensionService() {
-            return new ExtensionService();
+        ExtensionService extensionService(
+                RepositoryService repositories,
+                SearchUtilService search,
+                CacheService cache,
+                PublishExtensionVersionHandler publishHandler
+        ) {
+            return new ExtensionService(repositories, search, cache, publishHandler);
         }
 
         @Bean
@@ -1232,8 +1293,24 @@ public class AdminAPITest {
         }
 
         @Bean
-        StorageUtilService storageUtilService() {
-            return new StorageUtilService();
+        StorageUtilService storageUtilService(
+                RepositoryService repositories,
+                GoogleCloudStorageService googleStorage,
+                AzureBlobStorageService azureStorage,
+                AzureDownloadCountService azureDownloadCountService,
+                SearchUtilService search,
+                CacheService cache,
+                EntityManager entityManager
+        ) {
+            return new StorageUtilService(
+                    repositories,
+                    googleStorage,
+                    azureStorage,
+                    azureDownloadCountService,
+                    search,
+                    cache,
+                    entityManager
+            );
         }
 
         @Bean

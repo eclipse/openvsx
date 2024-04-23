@@ -25,7 +25,6 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.cache.annotation.CacheEvict;
@@ -55,17 +54,10 @@ public class ElasticSearchService implements ISearchService {
     protected final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected final Logger logger = LoggerFactory.getLogger(ElasticSearchService.class);
 
-    @Autowired
-    RepositoryService repositories;
-
-    @Autowired
-    ElasticsearchOperations searchOperations;
-
-    @Autowired
-    RelevanceService relevanceService;
-
-    @Autowired
-    JobRequestScheduler scheduler;
+    private final RepositoryService repositories;
+    private final ElasticsearchOperations searchOperations;
+    private final RelevanceService relevanceService;
+    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.elasticsearch.enabled:true}")
     boolean enableSearch;
@@ -82,6 +74,18 @@ public class ElasticSearchService implements ISearchService {
     double unverifiedRelevance;
 
     private Long maxResultWindow;
+
+    public ElasticSearchService(
+            RepositoryService repositories,
+            ElasticsearchOperations searchOperations,
+            RelevanceService relevanceService,
+            JobRequestScheduler scheduler
+    ) {
+        this.repositories = repositories;
+        this.searchOperations = searchOperations;
+        this.relevanceService = relevanceService;
+        this.scheduler = scheduler;
+    }
     
     public boolean isEnabled() {
         return enableSearch;

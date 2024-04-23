@@ -12,14 +12,16 @@ package org.eclipse.openvsx.admin;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RemoveFileJobRequestHandler implements JobRequestHandler<RemoveFileJobRequest> {
 
-    @Autowired
-    StorageUtilService storageUtil;
+    private final StorageUtilService storageUtil;
+
+    public RemoveFileJobRequestHandler(StorageUtilService storageUtil) {
+        this.storageUtil = storageUtil;
+    }
 
     @Override
     @Job(name = "Remove file in storage", retries = 10)

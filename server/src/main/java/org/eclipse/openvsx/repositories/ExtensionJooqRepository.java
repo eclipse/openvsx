@@ -12,10 +12,9 @@ package org.eclipse.openvsx.repositories;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.web.SitemapRow;
-import org.jooq.*;
 import org.jooq.Record;
+import org.jooq.*;
 import org.jooq.impl.DSL;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -24,13 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.eclipse.openvsx.jooq.Tables.*;
+import static org.eclipse.openvsx.jooq.Tables.EXTENSION;
+import static org.eclipse.openvsx.jooq.Tables.NAMESPACE;
 
 @Component
 public class ExtensionJooqRepository {
 
-    @Autowired
-    DSLContext dsl;
+    private final DSLContext dsl;
+
+    public ExtensionJooqRepository(DSLContext dsl) {
+        this.dsl = dsl;
+    }
 
     public List<Extension> findAllActiveById(Collection<Long> ids) {
         var query = findAllActive();

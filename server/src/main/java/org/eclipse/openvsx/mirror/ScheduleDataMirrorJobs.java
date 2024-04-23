@@ -10,19 +10,22 @@
 package org.eclipse.openvsx.mirror;
 
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 public class ScheduleDataMirrorJobs {
 
-    @Autowired(required = false)
-    DataMirrorService data;
+    private DataMirrorService data;
+    private final JobRequestScheduler scheduler;
 
-    @Autowired
-    JobRequestScheduler scheduler;
+    public ScheduleDataMirrorJobs(Optional<DataMirrorService> dataMirrorService, JobRequestScheduler scheduler) {
+        dataMirrorService.ifPresent(service -> this.data = service);
+        this.scheduler = scheduler;
+    }
 
     @EventListener
     public void scheduleJobs(ApplicationStartedEvent event) {

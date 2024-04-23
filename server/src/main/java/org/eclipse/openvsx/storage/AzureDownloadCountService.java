@@ -24,7 +24,6 @@ import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.spring.annotations.Recurring;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
@@ -52,8 +51,10 @@ public class AzureDownloadCountService {
 
     protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountService.class);
 
-    @Autowired
-    AzureDownloadCountProcessor processor;
+    private final AzureDownloadCountProcessor processor;
+    private BlobContainerClient containerClient;
+    private ObjectMapper objectMapper;
+    private Pattern blobItemNamePattern;
 
     @Value("${ovsx.logs.azure.sas-token:}")
     String sasToken;
@@ -70,9 +71,9 @@ public class AzureDownloadCountService {
     @Value("${ovsx.storage.azure.blob-container:openvsx-resources}")
     String storageBlobContainer;
 
-    private BlobContainerClient containerClient;
-    private ObjectMapper objectMapper;
-    private Pattern blobItemNamePattern;
+    public AzureDownloadCountService(AzureDownloadCountProcessor processor) {
+        this.processor = processor;
+    }
 
     /**
      * Indicates whether the download service is enabled by application config.
