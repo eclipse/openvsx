@@ -9,18 +9,14 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
-import io.micrometer.observation.annotation.Observed;
-import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.util.List;
 
-import static org.eclipse.openvsx.cache.CacheService.*;
+import static org.eclipse.openvsx.cache.CacheService.CACHE_LATEST_EXTENSION_VERSION;
+import static org.eclipse.openvsx.cache.CacheService.GENERATOR_LATEST_EXTENSION_VERSION;
 
 @Component
 public class VersionService {

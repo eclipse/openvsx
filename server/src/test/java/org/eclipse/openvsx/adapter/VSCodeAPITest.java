@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -958,9 +959,10 @@ public class VSCodeAPITest {
                 RepositoryService repositories,
                 StorageUtilService storageUtil,
                 CacheService cache,
-                ExtensionValidator validator
+                ExtensionValidator validator,
+                ObservationRegistry observations
         ) {
-            return new UserService(entityManager, repositories, storageUtil, cache, validator);
+            return new UserService(entityManager, repositories, storageUtil, cache, validator, observations);
         }
 
         @Bean
@@ -971,7 +973,8 @@ public class VSCodeAPITest {
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager
+                EntityManager entityManager,
+                ObservationRegistry observations
         ) {
             return new StorageUtilService(
                     repositories,
@@ -980,7 +983,8 @@ public class VSCodeAPITest {
                     azureDownloadCountService,
                     search,
                     cache,
-                    entityManager
+                    entityManager,
+                    observations
             );
         }
 
@@ -992,6 +996,11 @@ public class VSCodeAPITest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        ObservationRegistry observationRegistry() {
+            return ObservationRegistry.NOOP;
         }
     }
 

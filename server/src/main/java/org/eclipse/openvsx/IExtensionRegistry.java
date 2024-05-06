@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +38,6 @@ public interface IExtensionRegistry {
 
     QueryResultJson queryV2(QueryRequestV2 request);
 
-    @Observed
     NamespaceDetailsJson getNamespaceDetails(String namespace);
 
     ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName);

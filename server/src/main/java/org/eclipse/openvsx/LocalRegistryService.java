@@ -10,7 +10,8 @@
 package org.eclipse.openvsx;
 
 import com.google.common.collect.Maps;
-import io.micrometer.observation.annotation.Observed;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -62,6 +63,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final EclipseService eclipse;
     private final CacheService cache;
     private final ExtensionVersionIntegrityService integrityService;
+    private final ObservationRegistry observations;
 
     public LocalRegistryService(
             EntityManager entityManager,
@@ -74,7 +76,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             StorageUtilService storageUtil,
             EclipseService eclipse,
             CacheService cache,
-            ExtensionVersionIntegrityService integrityService
+            ExtensionVersionIntegrityService integrityService,
+            ObservationRegistry observations
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -87,6 +90,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.eclipse = eclipse;
         this.cache = cache;
         this.integrityService = integrityService;
+        this.observations = observations;
     }
 
     @Value("${ovsx.registry.version:}")
@@ -388,7 +392,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     @Transactional
     @Cacheable(CACHE_NAMESPACE_DETAILS_JSON)
-    @Observed
     public NamespaceDetailsJson getNamespaceDetails(String namespaceName) {
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
@@ -593,38 +596,42 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        var token = users.createAccessToken(user, "One time use publish token");
-        var json = publish(content, token.value);
-        users.deleteAccessToken(user, token.id);
-        return json;
+        return Observation.createNotStarted("LocalRegistryService#publish", observations).observe(() -> {
+            var token = users.createAccessToken(user, "One time use publish token");
+            var json = publish(content, token.value);
+            users.deleteAccessToken(user, token.id);
+            return json;
+        });
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        var token = users.useAccessToken(tokenValue);
-        if (token == null || token.getUser() == null) {
-            throw new ErrorResultException("Invalid access token.");
-        }
+        return Observation.createNotStarted("LocalRegistryService#publish", observations).observe(() -> {
+            var token = users.useAccessToken(tokenValue);
+            if (token == null || token.getUser() == null) {
+                throw new ErrorResultException("Invalid access token.");
+            }
 
-        // Check whether the user has a valid publisher agreement
-        eclipse.checkPublisherAgreement(token.getUser());
+            // Check whether the user has a valid publisher agreement
+            eclipse.checkPublisherAgreement(token.getUser());
 
-        var extVersion = extensions.publishVersion(content, token);
-        var json = toExtensionVersionJson(extVersion, null, true);
-        json.success = "It can take a couple minutes before the extension version is available";
+            var extVersion = extensions.publishVersion(content, token);
+            var json = toExtensionVersionJson(extVersion, null, true);
+            json.success = "It can take a couple minutes before the extension version is available";
 
-        var sameVersions = repositories.findVersions(extVersion.getVersion(), extVersion.getExtension());
-        if(sameVersions.stream().anyMatch(ev -> ev.isPreRelease() != extVersion.isPreRelease())) {
-            var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
-            var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
-            var extension = extVersion.getExtension();
-            var semver = extVersion.getSemanticVersion();
-            var newVersion = String.join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
+            var sameVersions = repositories.findVersions(extVersion.getVersion(), extVersion.getExtension());
+            if (sameVersions.stream().anyMatch(ev -> ev.isPreRelease() != extVersion.isPreRelease())) {
+                var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
+                var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
+                var extension = extVersion.getExtension();
+                var semver = extVersion.getSemanticVersion();
+                var newVersion = String.join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
 
-            json.warning = "A " + existingRelease + " already exists for " + NamingUtil.toLogFormat(extension.getNamespace().getName(), extension.getName(), extVersion.getVersion()) + ".\n" +
-                    "To prevent update conflicts, we recommend that this " + thisRelease + " uses " + newVersion + " as its version instead.";
-        }
+                json.warning = "A " + existingRelease + " already exists for " + NamingUtil.toLogFormat(extension.getNamespace().getName(), extension.getName(), extVersion.getVersion()) + ".\n" +
+                        "To prevent update conflicts, we recommend that this " + thisRelease + " uses " + newVersion + " as its version instead.";
+            }
 
-        return json;
+            return json;
+        });
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)
@@ -796,55 +803,57 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson toExtensionVersionJson(ExtensionVersion extVersion, String targetPlatform, boolean onlyActive) {
-        var extension = extVersion.getExtension();
-        var latest = repositories.findLatestVersionForAllUrls(extension, targetPlatform, false, onlyActive);
-        var latestPreRelease = repositories.findLatestVersionForAllUrls(extension, targetPlatform, true, onlyActive);
+        return Observation.createNotStarted("LocalRegistryService#toExtensionVersionJson", observations).observe(() -> {
+            var extension = extVersion.getExtension();
+            var latest = repositories.findLatestVersionForAllUrls(extension, targetPlatform, false, onlyActive);
+            var latestPreRelease = repositories.findLatestVersionForAllUrls(extension, targetPlatform, true, onlyActive);
 
-        var json = extVersion.toExtensionJson();
-        json.preview = latest != null && latest.isPreview();
-        json.versionAlias = new ArrayList<>(2);
-        if (latest != null && extVersion.getVersion().equals(latest.getVersion()))
-            json.versionAlias.add(VersionAlias.LATEST);
-        if (latestPreRelease != null && extVersion.getVersion().equals(latestPreRelease.getVersion()))
-            json.versionAlias.add(VersionAlias.PRE_RELEASE);
-        json.verified = isVerified(extVersion);
-        json.namespaceAccess = "restricted";
-        json.unrelatedPublisher = !json.verified;
-        json.reviewCount = Optional.ofNullable(extension.getReviewCount()).orElse(0L);
-        var serverUrl = UrlUtil.getBaseUrl();
-        json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
-        json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
+            var json = extVersion.toExtensionJson();
+            json.preview = latest != null && latest.isPreview();
+            json.versionAlias = new ArrayList<>(2);
+            if (latest != null && extVersion.getVersion().equals(latest.getVersion()))
+                json.versionAlias.add(VersionAlias.LATEST);
+            if (latestPreRelease != null && extVersion.getVersion().equals(latestPreRelease.getVersion()))
+                json.versionAlias.add(VersionAlias.PRE_RELEASE);
+            json.verified = isVerified(extVersion);
+            json.namespaceAccess = "restricted";
+            json.unrelatedPublisher = !json.verified;
+            json.reviewCount = Optional.ofNullable(extension.getReviewCount()).orElse(0L);
+            var serverUrl = UrlUtil.getBaseUrl();
+            json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
+            json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
 
-        var allVersions = new ArrayList<String>();
-        if (latest != null)
-            allVersions.add(VersionAlias.LATEST);
-        if (latestPreRelease != null)
-            allVersions.add(VersionAlias.PRE_RELEASE);
+            var allVersions = new ArrayList<String>();
+            if (latest != null)
+                allVersions.add(VersionAlias.LATEST);
+            if (latestPreRelease != null)
+                allVersions.add(VersionAlias.PRE_RELEASE);
 
-        var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.namespace, json.name, targetPlatform);
-        allVersions.addAll(repositories.findVersionStringsSorted(extension, targetPlatform, onlyActive));
-        json.allVersionsUrl = UrlUtil.createAllVersionsUrl(json.namespace, json.name, targetPlatform, "versions");
-        json.allVersions = Maps.newLinkedHashMapWithExpectedSize(allVersions.size());
-        for(var version : allVersions) {
-            json.allVersions.put(version, createApiUrl(versionBaseUrl, version));
-        }
+            var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.namespace, json.name, targetPlatform);
+            allVersions.addAll(repositories.findVersionStringsSorted(extension, targetPlatform, onlyActive));
+            json.allVersionsUrl = UrlUtil.createAllVersionsUrl(json.namespace, json.name, targetPlatform, "versions");
+            json.allVersions = Maps.newLinkedHashMapWithExpectedSize(allVersions.size());
+            for (var version : allVersions) {
+                json.allVersions.put(version, createApiUrl(versionBaseUrl, version));
+            }
 
-        var fileUrls = storageUtil.getFileUrls(List.of(extVersion), serverUrl, withFileTypes(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST));
-        json.files = fileUrls.get(extVersion.getId());
-        if(json.files.containsKey(DOWNLOAD_SIG)) {
-            json.files.put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
-        }
-        if (json.dependencies != null) {
-            json.dependencies.forEach(ref -> {
-                ref.url = createApiUrl(serverUrl, "api", ref.namespace, ref.extension);
-            });
-        }
-        if (json.bundledExtensions != null) {
-            json.bundledExtensions.forEach(ref -> {
-                ref.url = createApiUrl(serverUrl, "api", ref.namespace, ref.extension);
-            });
-        }
-        return json;
+            var fileUrls = storageUtil.getFileUrls(List.of(extVersion), serverUrl, withFileTypes(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST));
+            json.files = fileUrls.get(extVersion.getId());
+            if (json.files.containsKey(DOWNLOAD_SIG)) {
+                json.files.put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
+            }
+            if (json.dependencies != null) {
+                json.dependencies.forEach(ref -> {
+                    ref.url = createApiUrl(serverUrl, "api", ref.namespace, ref.extension);
+                });
+            }
+            if (json.bundledExtensions != null) {
+                json.bundledExtensions.forEach(ref -> {
+                    ref.url = createApiUrl(serverUrl, "api", ref.namespace, ref.extension);
+                });
+            }
+            return json;
+        });
     }
 
     public ExtensionJson toExtensionVersionJson(
@@ -993,17 +1002,19 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private boolean isVerified(ExtensionVersion extVersion) {
-        if (extVersion.getPublishedWith() == null) {
-            return false;
-        }
+        return Observation.createNotStarted("LocalRegistryService#isVerified", observations).observe(() -> {
+            if (extVersion.getPublishedWith() == null) {
+                return false;
+            }
 
-        var user = extVersion.getPublishedWith().getUser();
-        if(UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
-            return true;
-        }
+            var user = extVersion.getPublishedWith().getUser();
+            if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+                return true;
+            }
 
-        var namespace = extVersion.getExtension().getNamespace();
-        return repositories.isVerified(namespace, user);
+            var namespace = extVersion.getExtension().getNamespace();
+            return repositories.isVerified(namespace, user);
+        });
     }
 
     private boolean isVerified(ExtensionVersion extVersion, Map<Long, List<NamespaceMembership>> membershipsByNamespaceId) {

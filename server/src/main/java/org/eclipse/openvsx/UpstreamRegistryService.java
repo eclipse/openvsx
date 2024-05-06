@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
@@ -72,7 +71,6 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    @Observed
     public NamespaceDetailsJson getNamespaceDetails(String namespace) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/details";
         var uriVariables = Map.of("namespace", namespace);

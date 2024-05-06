@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Map;
 
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 
 import org.eclipse.openvsx.ExtensionService;
@@ -294,14 +295,20 @@ public class EclipseServiceTest {
         }
 
         @Bean
+        ObservationRegistry observationRegistry() {
+            return ObservationRegistry.NOOP;
+        }
+
+        @Bean
         EclipseService eclipseService(
                 TokenService tokens,
                 TransactionTemplate transactions,
                 ExtensionService extensions,
                 EntityManager entityManager,
-                RestTemplate restTemplate
+                RestTemplate restTemplate,
+                ObservationRegistry observations
         ) {
-            return new EclipseService(tokens, transactions, extensions, entityManager, restTemplate);
+            return new EclipseService(tokens, transactions, extensions, entityManager, restTemplate, observations);
         }
 
         @Bean
@@ -309,14 +316,15 @@ public class EclipseServiceTest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
-                PublishExtensionVersionHandler publishHandler
+                PublishExtensionVersionHandler publishHandler,
+                ObservationRegistry observations
         ) {
-            return new ExtensionService(repositories, search, cache, publishHandler);
+            return new ExtensionService(repositories, search, cache, publishHandler, observations);
         }
 
         @Bean
-        ExtensionValidator extensionValidator() {
-            return new ExtensionValidator();
+        ExtensionValidator extensionValidator(ObservationRegistry observations) {
+            return new ExtensionValidator(observations);
         }
 
         @Bean
@@ -327,7 +335,8 @@ public class EclipseServiceTest {
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager
+                EntityManager entityManager,
+                ObservationRegistry observations
         ) {
             return new StorageUtilService(
                     repositories,
@@ -336,7 +345,8 @@ public class EclipseServiceTest {
                     azureDownloadCountService,
                     search,
                     cache,
-                    entityManager
+                    entityManager,
+                    observations
             );
         }
 

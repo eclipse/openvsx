@@ -13,17 +13,15 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -177,7 +175,6 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    @Observed
     public URI getNamespaceLogoLocation(Namespace namespace) {
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot determine location of file "

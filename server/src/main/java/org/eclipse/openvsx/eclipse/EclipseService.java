@@ -14,6 +14,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -72,6 +74,7 @@ public class EclipseService {
     private final EntityManager entityManager;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final ObservationRegistry observations;
 
     @Value("${ovsx.eclipse.base-url:}")
     String eclipseApiUrl;
@@ -87,7 +90,8 @@ public class EclipseService {
             TransactionTemplate transactions,
             ExtensionService extensions,
             EntityManager entityManager,
-            RestTemplate restTemplate
+            RestTemplate restTemplate,
+            ObservationRegistry observations
     ) {
         this.tokens = tokens;
         this.transactions = transactions;
@@ -96,6 +100,7 @@ public class EclipseService {
         this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.observations = observations;
     }
 
     private final Function<String, LocalDateTime> parseDate = dateString -> {
@@ -120,28 +125,30 @@ public class EclipseService {
      * @throws ErrorResultException if the user has no active agreement
      */
     public void checkPublisherAgreement(UserData user) {
-        if (!isActive()) {
-            return;
-        }
-        // Users without authentication provider have been created directly in the DB,
-        // so we skip the agreement check in this case.
-        if (user.getProvider() == null) {
-            return;
-        }
-        var eclipseData = user.getEclipseData();
-        if (eclipseData == null || eclipseData.personId == null) {
-            throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
-        }
-        var profile = getPublicProfile(eclipseData.personId);
-        if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null
-                || profile.publisherAgreements.openVsx.version == null) {
-            throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
-        }
-        if (!publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version)) {
-            throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
-                    + profile.publisherAgreements.openVsx.version + "). The current version is "
-                    + publisherAgreementVersion + ".");
-        }
+        Observation.createNotStarted("EclipseService#checkPublisherAgreement", observations).observe(() -> {
+            if (!isActive()) {
+                return;
+            }
+            // Users without authentication provider have been created directly in the DB,
+            // so we skip the agreement check in this case.
+            if (user.getProvider() == null) {
+                return;
+            }
+            var eclipseData = user.getEclipseData();
+            if (eclipseData == null || eclipseData.personId == null) {
+                throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
+            }
+            var profile = getPublicProfile(eclipseData.personId);
+            if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null
+                    || profile.publisherAgreements.openVsx.version == null) {
+                throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
+            }
+            if (!publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version)) {
+                throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
+                        + profile.publisherAgreements.openVsx.version + "). The current version is "
+                        + publisherAgreementVersion + ".");
+            }
+        });
     }
 
     /**
@@ -232,28 +239,30 @@ public class EclipseService {
      * Get the publicly available user profile.
      */
     public EclipseProfile getPublicProfile(String personId) {
-        checkApiUrl();
-        var urlTemplate = eclipseApiUrl + "account/profile/{personId}";
-        var uriVariables = Map.of("personId", personId);
-        var headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        var request = new HttpEntity<Void>(headers);
+        return Observation.createNotStarted("EclipseService#getPublicProfile", observations).observe(() -> {
+            checkApiUrl();
+            var urlTemplate = eclipseApiUrl + "account/profile/{personId}";
+            var uriVariables = Map.of("personId", personId);
+            var headers = new HttpHeaders();
+            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+            var request = new HttpEntity<Void>(headers);
 
-        try {
-            var response = restTemplate.exchange(urlTemplate, HttpMethod.GET, request, String.class, uriVariables);
-            return parseEclipseProfile(response);
-        } catch (RestClientException exc) {
-            if (exc instanceof HttpStatusCodeException) {
-                var status = ((HttpStatusCodeException) exc).getStatusCode();
-                if (status == HttpStatus.NOT_FOUND)
-                    throw new ErrorResultException("No Eclipse profile data available for user: " + personId);
+            try {
+                var response = restTemplate.exchange(urlTemplate, HttpMethod.GET, request, String.class, uriVariables);
+                return parseEclipseProfile(response);
+            } catch (RestClientException exc) {
+                if (exc instanceof HttpStatusCodeException) {
+                    var status = ((HttpStatusCodeException) exc).getStatusCode();
+                    if (status == HttpStatus.NOT_FOUND)
+                        throw new ErrorResultException("No Eclipse profile data available for user: " + personId);
+                }
+
+                var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+                logger.error("Get request failed with URL: " + url, exc);
+                throw new ErrorResultException("Request for retrieving user profile failed: " + exc.getMessage(),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
-
-            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-            logger.error("Get request failed with URL: " + url, exc);
-            throw new ErrorResultException("Request for retrieving user profile failed: " + exc.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        });
     }
 
     /**
