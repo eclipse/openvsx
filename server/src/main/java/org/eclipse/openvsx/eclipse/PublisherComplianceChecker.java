@@ -10,11 +10,14 @@
 package org.eclipse.openvsx.eclipse;
 
 import jakarta.persistence.EntityManager;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,20 +81,19 @@ public class PublisherComplianceChecker {
         if (user.getProvider() == null) {
             return true;
         }
-        var eclipseData = user.getEclipseData();
-        if (eclipseData == null || eclipseData.personId == null) {
+        if (user.getEclipsePersonId() == null) {
             // The user has never logged in with Eclipse
             return false;
         }
-        if (eclipseData.publisherAgreement == null || !eclipseData.publisherAgreement.isActive) {
-            // We don't have any active PA in our DB, let's check their Eclipse profile
-            var profile = eclipseService.getPublicProfile(eclipseData.personId);
-            if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null
-                    || profile.publisherAgreements.openVsx.version == null) {
-                return false;
-            }
+
+        var json = new UserJson();
+        try {
+            eclipseService.enrichUserJson(json, user);
+            return !json.publisherAgreement.status.equals("none");
+        } catch(ErrorResultException e) {
+            // no way to determine whether the user has a publisher agreement
+            return true;
         }
-        return true;
     }
 
     private void deactivateExtensions(Streamable<PersonalAccessToken> accessTokens) {

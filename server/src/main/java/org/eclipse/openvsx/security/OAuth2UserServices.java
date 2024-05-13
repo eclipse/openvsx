@@ -146,10 +146,8 @@ public class OAuth2UserServices {
                         + ") does not match your GitHub authentication ("
                         + userData.getLoginName() + ").",
                         ECLIPSE_MISMATCH_GITHUB_ID);
+
             eclipse.updateUserData(userData, profile);
-            if (profile.publisherAgreements == null) {
-                eclipse.getPublisherAgreement(userData, accessToken);
-            }
             return principal;
         } catch (ErrorResultException exc) {
             throw new AuthenticationServiceException(exc.getMessage(), exc);

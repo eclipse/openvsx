@@ -9,26 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import java.time.LocalDateTime;
-import java.util.function.Function;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.eclipse.openvsx.entities.EclipseData;
 
 /**
  * https://eclipsefdn.github.io/openvsx-publisher-agreement-specs/#/paths/~1publisher_agreement/post
  */
 public class PublisherAgreementResponse {
-
-    public EclipseData.PublisherAgreement createEntityData(Function<String, LocalDateTime> parseDate) {
-        var pub = new EclipseData.PublisherAgreement();
-        pub.isActive = true;
-        pub.documentId = documentID;
-        pub.version = version;
-        pub.timestamp = parseDate.apply(effectiveDate);
-        return pub;
-    }
 
     /** Unique identifier for an addressable object in the API. */
     @JsonProperty("PersonID")
@@ -50,16 +36,9 @@ public class PublisherAgreementResponse {
     @JsonProperty("ReceivedDate")
     String receivedDate;
 
-    /** Date string in the RFC 3339 format. */
-    @JsonProperty("ExpirationDate")
-    String expirationDate;
-
     /** The signed document as a blob entity. */
     @JsonProperty("ScannedDocumentBLOB")
     String scannedDocumentBLOB;
-
-    @JsonProperty("ScannedDocumentBytes")
-    String scannedDocumentBytes;
 
     /** The MIME type for the posted document blob. */
     @JsonProperty("ScannedDocumentMime")
@@ -72,5 +51,4 @@ public class PublisherAgreementResponse {
     /** Comment about the document being posted. */
     @JsonProperty("Comments")
     String comments;
-
 }

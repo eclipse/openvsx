@@ -265,7 +265,12 @@ public class AdminService {
 
         var userPublishInfo = new UserPublishInfoJson();
         userPublishInfo.user = user.toUserJson();
-        eclipse.enrichUserJson(userPublishInfo.user, user);
+        try {
+            eclipse.enrichUserJson(userPublishInfo.user, user);
+        } catch (ErrorResultException e) {
+            userPublishInfo.user.error = e.getMessage();
+        }
+
         userPublishInfo.activeAccessTokenNum = (int) repositories.countActiveAccessTokens(user);
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[]{DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST};
@@ -296,9 +301,7 @@ public class AdminService {
         }
 
         // Send a DELETE request to the Eclipse publisher agreement API
-        if (eclipse.isActive() && user.getEclipseData() != null
-                && user.getEclipseData().publisherAgreement != null
-                && user.getEclipseData().publisherAgreement.isActive) {
+        if (eclipse.isActive() && user.getEclipsePersonId() != null) {
             eclipse.revokePublisherAgreement(user, admin);
         }
 

@@ -52,9 +52,7 @@ public class UserData implements Serializable {
     @OneToMany(mappedBy = "user")
     List<NamespaceMembership> memberships;
 
-    @Column(length = 4096)
-    @Convert(converter = EclipseDataConverter.class)
-    EclipseData eclipseData;
+    String eclipsePersonId;
 
     @Column(length = 4096)
     @Convert(converter = AuthTokenConverter.class)
@@ -150,12 +148,12 @@ public class UserData implements Serializable {
         this.providerUrl = providerUrl;
     }
 
-    public EclipseData getEclipseData() {
-        return eclipseData;
+    public String getEclipsePersonId() {
+        return eclipsePersonId;
     }
 
-    public void setEclipseData(EclipseData eclipseData) {
-        this.eclipseData = eclipseData;
+    public void setEclipsePersonId(String eclipsePersonId) {
+        this.eclipsePersonId = eclipsePersonId;
     }
 
     public AuthToken getGithubToken() {
@@ -190,7 +188,7 @@ public class UserData implements Serializable {
                 && Objects.equals(providerUrl, userData.providerUrl)
                 && Objects.equals(tokens, userData.tokens)
                 && Objects.equals(memberships, userData.memberships)
-                && Objects.equals(eclipseData, userData.eclipseData)
+                && Objects.equals(eclipsePersonId, userData.eclipsePersonId)
                 && Objects.equals(githubToken, userData.githubToken)
                 && Objects.equals(eclipseToken, userData.eclipseToken);
     }
@@ -199,7 +197,7 @@ public class UserData implements Serializable {
     public int hashCode() {
         return Objects.hash(
                 id, role, loginName, fullName, email, avatarUrl, provider, authId, providerUrl, tokens, memberships,
-                eclipseData, githubToken, eclipseToken
+                eclipsePersonId, githubToken, eclipseToken
         );
     }
 }

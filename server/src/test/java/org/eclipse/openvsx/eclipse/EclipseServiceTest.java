@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.eq;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import io.micrometer.observation.ObservationRegistry;
@@ -90,22 +91,6 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testGetPublicProfile() throws Exception {
-        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
-        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
-            .thenReturn(mockProfileResponse());
-
-        var profile = eclipse.getPublicProfile("test");
-
-        assertThat(profile).isNotNull();
-        assertThat(profile.name).isEqualTo("test");
-        assertThat(profile.githubHandle).isEqualTo("test");
-        assertThat(profile.publisherAgreements).isNotNull();
-        assertThat(profile.publisherAgreements.openVsx).isNotNull();
-        assertThat(profile.publisherAgreements.openVsx.version).isEqualTo("1");
-    }
-
-    @Test
     public void testGetUserProfile() throws Exception {
         Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
             .thenReturn(mockProfileResponse());
@@ -123,9 +108,7 @@ public class EclipseServiceTest {
     @Test
     public void testGetPublisherAgreement() throws Exception {
         var user = mockUser();
-        var eclipseData = new EclipseData();
-        user.setEclipseData(eclipseData);
-        eclipseData.personId = "test";
+        user.setEclipsePersonId("test");
 
         var urlTemplate = "https://test.openvsx.eclipse.org/openvsx/publisher_agreement/{personId}";
         Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
@@ -133,19 +116,16 @@ public class EclipseServiceTest {
 
         var agreement = eclipse.getPublisherAgreement(user);
         assertThat(agreement).isNotNull();
-        assertThat(agreement.isActive).isTrue();
+        assertThat(agreement.isActive).isEqualTo(true);
         assertThat(agreement.documentId).isEqualTo("abcd");
         assertThat(agreement.version).isEqualTo("1");
-        assertThat(agreement.timestamp).isNotNull();
-        assertThat(agreement.timestamp.toString()).isEqualTo("2020-10-09T05:10:32");
+        assertThat(agreement.timestamp).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
     }
 
     @Test
     public void testGetPublisherAgreementNotFound() throws Exception {
         var user = mockUser();
-        var eclipseData = new EclipseData();
-        user.setEclipseData(eclipseData);
-        eclipseData.personId = "test";
+        user.setEclipsePersonId("test");
 
         var urlTemplate = "https://test.openvsx.eclipse.org/openvsx/publisher_agreement/{personId}";
         Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
@@ -172,17 +152,12 @@ public class EclipseServiceTest {
         Mockito.when(repositories.findAccessTokens(user))
             .thenReturn(Streamable.empty());
 
-        eclipse.signPublisherAgreement(user);
-
-        assertThat(user.getEclipseData()).isNotNull();
-        var ed = user.getEclipseData();
-        assertThat(ed.personId).isEqualTo("test");
-        assertThat(ed.publisherAgreement).isNotNull();
-        assertThat(ed.publisherAgreement.isActive).isTrue();
-        assertThat(ed.publisherAgreement.documentId).isEqualTo("abcd");
-        assertThat(ed.publisherAgreement.version).isEqualTo("1");
-        assertThat(ed.publisherAgreement.timestamp).isNotNull();
-        assertThat(ed.publisherAgreement.timestamp.toString()).isEqualTo("2020-10-09T05:10:32");
+        var agreement = eclipse.signPublisherAgreement(user);
+        assertThat(agreement).isNotNull();
+        assertThat(agreement.isActive).isEqualTo(true);
+        assertThat(agreement.documentId).isEqualTo("abcd");
+        assertThat(agreement.version).isEqualTo("1");
+        assertThat(agreement.timestamp).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
     }
 
     @Test
@@ -208,9 +183,13 @@ public class EclipseServiceTest {
         Mockito.when(repositories.findVersionsByAccessToken(accessToken, false))
             .thenReturn(Streamable.of(extVersion));
 
-        eclipse.signPublisherAgreement(user);
+        var agreement = eclipse.signPublisherAgreement(user);
 
-        assertThat(user.getEclipseData()).isNotNull();
+        assertThat(agreement).isNotNull();
+        assertThat(agreement.isActive).isEqualTo(true);
+        assertThat(agreement.documentId).isEqualTo("abcd");
+        assertThat(agreement.version).isEqualTo("1");
+        assertThat(agreement.timestamp).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
         assertThat(extVersion.isActive()).isTrue();
         assertThat(extension.isActive()).isTrue();
     }
@@ -230,27 +209,18 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testRevokePublisherAgreement() throws Exception {
+    public void testRevokePublisherAgreement() {
         var user = mockUser();
-        var eclipseData = new EclipseData();
-        user.setEclipseData(eclipseData);
-        eclipseData.personId = "test";
-        eclipseData.publisherAgreement = new EclipseData.PublisherAgreement();
-        eclipseData.publisherAgreement.isActive = true;
+        user.setEclipsePersonId("test");
 
         eclipse.revokePublisherAgreement(user, null);
-
-        assertThat(user.getEclipseData().publisherAgreement.isActive).isFalse();
     }
 
     @Test
-    public void testRevokePublisherAgreementByAdmin() throws Exception {
+    public void testRevokePublisherAgreementByAdmin() {
         var user = mockUser();
-        var eclipseData = new EclipseData();
-        user.setEclipseData(eclipseData);
-        eclipseData.personId = "test";
-        eclipseData.publisherAgreement = new EclipseData.PublisherAgreement();
-        eclipseData.publisherAgreement.isActive = true;
+        user.setEclipsePersonId("test");
+
         var admin = new UserData();
         admin.setLoginName("admin");
         admin.setEclipseToken(new AuthToken());
@@ -259,8 +229,6 @@ public class EclipseServiceTest {
             .thenReturn(admin.getEclipseToken());
 
         eclipse.revokePublisherAgreement(user, admin);
-
-        assertThat(user.getEclipseData().publisherAgreement.isActive).isFalse();
     }
 
     private UserData mockUser() {
@@ -302,13 +270,12 @@ public class EclipseServiceTest {
         @Bean
         EclipseService eclipseService(
                 TokenService tokens,
-                TransactionTemplate transactions,
                 ExtensionService extensions,
                 EntityManager entityManager,
                 RestTemplate restTemplate,
                 ObservationRegistry observations
         ) {
-            return new EclipseService(tokens, transactions, extensions, entityManager, restTemplate, observations);
+            return new EclipseService(tokens, extensions, entityManager, restTemplate, observations);
         }
 
         @Bean
