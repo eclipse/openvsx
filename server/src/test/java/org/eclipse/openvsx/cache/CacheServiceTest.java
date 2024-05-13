@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
+import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.UserService;

@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.admin.AdminService;
@@ -60,7 +61,7 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
             }
 
             boolean fixTargetPlatform;
-            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
+            try (var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
                 fixTargetPlatform = !extProcessor.getMetadata().getTargetPlatform().equals(extVersion.getTargetPlatform());
             }
 

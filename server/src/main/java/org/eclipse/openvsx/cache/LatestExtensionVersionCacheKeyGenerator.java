@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -22,6 +21,7 @@ import java.util.List;
 
 @Component
 public class LatestExtensionVersionCacheKeyGenerator implements KeyGenerator {
+
     @Override
     public Object generate(Object target, Method method, Object... params) {
         Extension extension;

@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
@@ -46,6 +48,11 @@ public class ExtensionValidator {
     private final static int GALLERY_COLOR_SIZE = 16;
 
     private final Pattern namePattern = Pattern.compile("[\\w\\-\\+\\$~]+");
+    private final ObservationRegistry observations;
+
+    public ExtensionValidator(ObservationRegistry observations) {
+        this.observations = observations;
+    }
 
     public Optional<Issue> validateNamespace(String namespace) {
         if (StringUtils.isEmpty(namespace) || namespace.equals("-")) {
@@ -102,57 +109,63 @@ public class ExtensionValidator {
     }
 
     public Optional<Issue> validateExtensionName(String name) {
-        if (StringUtils.isEmpty(name)) {
-            return Optional.of(new Issue("Name must not be empty."));
-        }
-        if (!namePattern.matcher(name).matches()) {
-            return Optional.of(new Issue("Invalid extension name: " + name));
-        }
-        if (name.length() > DEFAULT_STRING_SIZE) {
-            return Optional.of(new Issue("The extension name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
-        }
-        return Optional.empty();
+        return Observation.createNotStarted("ExtensionValidator#validateExtensionName", observations).observe(() -> {
+            if (StringUtils.isEmpty(name)) {
+                return Optional.of(new Issue("Name must not be empty."));
+            }
+            if (!namePattern.matcher(name).matches()) {
+                return Optional.of(new Issue("Invalid extension name: " + name));
+            }
+            if (name.length() > DEFAULT_STRING_SIZE) {
+                return Optional.of(new Issue("The extension name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+            }
+            return Optional.empty();
+        });
     }
 
     public Optional<Issue> validateExtensionVersion(String version) {
-        var issues = new ArrayList<Issue>();
-        checkVersion(version, issues);
-        return issues.isEmpty()
-                ? Optional.empty()
-                : Optional.of(issues.get(0));
+        return Observation.createNotStarted("ExtensionValidator#validateExtensionVersion", observations).observe(() -> {
+            var issues = new ArrayList<Issue>();
+            checkVersion(version, issues);
+            return issues.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(issues.get(0));
+        });
     }
 
     public List<Issue> validateMetadata(ExtensionVersion extVersion) {
-        var issues = new ArrayList<Issue>();
-        checkVersion(extVersion.getVersion(), issues);
-        checkTargetPlatform(extVersion.getTargetPlatform(), issues);
-        checkCharacters(extVersion.getDisplayName(), "displayName", issues);
-        checkFieldSize(extVersion.getDisplayName(), DEFAULT_STRING_SIZE, "displayName", issues);
-        checkCharacters(extVersion.getDescription(), "description", issues);
-        checkFieldSize(extVersion.getDescription(), DESCRIPTION_SIZE, "description", issues);
-        checkCharacters(extVersion.getCategories(), "categories", issues);
-        checkFieldSize(extVersion.getCategories(), DEFAULT_STRING_SIZE, "categories", issues);
-        checkCharacters(extVersion.getTags(), "keywords", issues);
-        checkFieldSize(extVersion.getTags(), DEFAULT_STRING_SIZE, "keywords", issues);
-        checkCharacters(extVersion.getLicense(), "license", issues);
-        checkFieldSize(extVersion.getLicense(), DEFAULT_STRING_SIZE, "license", issues);
-        checkURL(extVersion.getHomepage(), "homepage", issues);
-        checkFieldSize(extVersion.getHomepage(), DEFAULT_STRING_SIZE, "homepage", issues);
-        checkURL(extVersion.getRepository(), "repository", issues);
-        checkFieldSize(extVersion.getRepository(), DEFAULT_STRING_SIZE, "repository", issues);
-        checkURL(extVersion.getBugs(), "bugs", issues);
-        checkFieldSize(extVersion.getBugs(), DEFAULT_STRING_SIZE, "bugs", issues);
-        checkInvalid(extVersion.getMarkdown(), s -> !MARKDOWN_VALUES.contains(s), "markdown", issues,
-                MARKDOWN_VALUES.toString());
-        checkCharacters(extVersion.getGalleryColor(), "galleryBanner.color", issues);
-        checkFieldSize(extVersion.getGalleryColor(), GALLERY_COLOR_SIZE, "galleryBanner.color", issues);
-        checkInvalid(extVersion.getGalleryTheme(), s -> !GALLERY_THEME_VALUES.contains(s), "galleryBanner.theme", issues,
-                GALLERY_THEME_VALUES.toString());
-        checkFieldSize(extVersion.getLocalizedLanguages(), DEFAULT_STRING_SIZE, "localizedLanguages", issues);
-        checkInvalid(extVersion.getQna(), s -> !QNA_VALUES.contains(s) && isInvalidURL(s), "qna", issues,
-                QNA_VALUES.toString() + " or a URL");
-        checkFieldSize(extVersion.getQna(), DEFAULT_STRING_SIZE, "qna", issues);
-        return issues;
+        return Observation.createNotStarted("ExtensionValidator#validateMetadata", observations).observe(() -> {
+            var issues = new ArrayList<Issue>();
+            checkVersion(extVersion.getVersion(), issues);
+            checkTargetPlatform(extVersion.getTargetPlatform(), issues);
+            checkCharacters(extVersion.getDisplayName(), "displayName", issues);
+            checkFieldSize(extVersion.getDisplayName(), DEFAULT_STRING_SIZE, "displayName", issues);
+            checkCharacters(extVersion.getDescription(), "description", issues);
+            checkFieldSize(extVersion.getDescription(), DESCRIPTION_SIZE, "description", issues);
+            checkCharacters(extVersion.getCategories(), "categories", issues);
+            checkFieldSize(extVersion.getCategories(), DEFAULT_STRING_SIZE, "categories", issues);
+            checkCharacters(extVersion.getTags(), "keywords", issues);
+            checkFieldSize(extVersion.getTags(), DEFAULT_STRING_SIZE, "keywords", issues);
+            checkCharacters(extVersion.getLicense(), "license", issues);
+            checkFieldSize(extVersion.getLicense(), DEFAULT_STRING_SIZE, "license", issues);
+            checkURL(extVersion.getHomepage(), "homepage", issues);
+            checkFieldSize(extVersion.getHomepage(), DEFAULT_STRING_SIZE, "homepage", issues);
+            checkURL(extVersion.getRepository(), "repository", issues);
+            checkFieldSize(extVersion.getRepository(), DEFAULT_STRING_SIZE, "repository", issues);
+            checkURL(extVersion.getBugs(), "bugs", issues);
+            checkFieldSize(extVersion.getBugs(), DEFAULT_STRING_SIZE, "bugs", issues);
+            checkInvalid(extVersion.getMarkdown(), s -> !MARKDOWN_VALUES.contains(s), "markdown", issues,
+                    MARKDOWN_VALUES.toString());
+            checkCharacters(extVersion.getGalleryColor(), "galleryBanner.color", issues);
+            checkFieldSize(extVersion.getGalleryColor(), GALLERY_COLOR_SIZE, "galleryBanner.color", issues);
+            checkInvalid(extVersion.getGalleryTheme(), s -> !GALLERY_THEME_VALUES.contains(s), "galleryBanner.theme", issues,
+                    GALLERY_THEME_VALUES.toString());
+            checkFieldSize(extVersion.getLocalizedLanguages(), DEFAULT_STRING_SIZE, "localizedLanguages", issues);
+            checkInvalid(extVersion.getQna(), s -> !QNA_VALUES.contains(s) && isInvalidURL(s), "qna", issues,
+                    QNA_VALUES.toString() + " or a URL");
+            checkFieldSize(extVersion.getQna(), DEFAULT_STRING_SIZE, "qna", issues);
+            return issues;
+        });
     }
 
     private void checkVersion(String version, List<Issue> issues) {
@@ -163,11 +176,14 @@ public class ExtensionValidator {
         if (version.equals(VersionAlias.LATEST) || version.equals(VersionAlias.PRE_RELEASE) || version.equals("reviews")) {
             issues.add(new Issue("The version string '" + version + "' is reserved."));
         }
-        try {
-            SemanticVersion.parse(version);
-        } catch (RuntimeException e) {
-            issues.add(new Issue(e.getMessage()));
-        }
+
+        Observation.createNotStarted("SemanticVersion#parse", observations).observe(() -> {
+            try {
+                SemanticVersion.parse(version);
+            } catch (RuntimeException e) {
+                issues.add(new Issue(e.getMessage()));
+            }
+        });
     }
 
     private void checkTargetPlatform(String targetPlatform, List<Issue> issues) {

@@ -9,17 +9,26 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+@ExtendWith(SpringExtension.class)
 public class ExtensionValidatorTest {
+
+    @Autowired
+    ExtensionValidator validator;
 
     @Test
     public void testInvalidVersion1() {
-        var validator = new ExtensionValidator();
         var issue = validator.validateExtensionVersion("latest");
         assertThat(issue).isPresent();
         assertThat(issue.get())
@@ -28,7 +37,6 @@ public class ExtensionValidatorTest {
 
     @Test
     public void testInvalidVersion2() {
-        var validator = new ExtensionValidator();
         var issue = validator.validateExtensionVersion("1/2");
         assertThat(issue).isPresent();
         assertThat(issue.get())
@@ -37,7 +45,6 @@ public class ExtensionValidatorTest {
 
     @Test
     public void testInvalidTargetPlatform() {
-        var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform("debian-x64");
         extension.setVersion("1.0.0");
@@ -49,7 +56,6 @@ public class ExtensionValidatorTest {
 
     @Test
     public void testInvalidURL() {
-        var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -62,7 +68,6 @@ public class ExtensionValidatorTest {
 
     @Test
     public void testInvalidURL2() {
-        var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -75,7 +80,6 @@ public class ExtensionValidatorTest {
 
     @Test
     public void testInvalidURL3() {
-        var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -88,7 +92,6 @@ public class ExtensionValidatorTest {
 
     @Test
     public void testMailtoURL() {
-        var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -99,7 +102,6 @@ public class ExtensionValidatorTest {
 
     @Test
     public void testGitProtocol() {
-        var validator = new ExtensionValidator();
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -107,5 +109,17 @@ public class ExtensionValidatorTest {
         var issues = validator.validateMetadata(extension);
         assertThat(issues).isEmpty();
     }
-    
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        ExtensionValidator extensionValidator(ObservationRegistry observations) {
+            return new ExtensionValidator(observations);
+        }
+
+        @Bean
+        ObservationRegistry observationRegistry() {
+            return ObservationRegistry.NOOP;
+        }
+    }
 }

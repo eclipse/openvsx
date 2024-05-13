@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.cache.interceptor.KeyGenerator;
@@ -19,6 +18,7 @@ import java.lang.reflect.Method;
 
 @Component
 public class ExtensionJsonCacheKeyGenerator implements KeyGenerator {
+
     @Override
     public Object generate(Object target, Method method, Object... params) {
         var version = params.length == 4 ? (String) params[3] : VersionAlias.LATEST;

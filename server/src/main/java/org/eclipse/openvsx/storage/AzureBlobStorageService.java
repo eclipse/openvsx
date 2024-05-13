@@ -16,7 +16,6 @@ import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobHttpHeaders;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
-import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
@@ -182,7 +181,6 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     @Override
-    @Observed
     public URI getNamespaceLogoLocation(Namespace namespace) {
         var blobName = getBlobName(namespace);
         if (StringUtils.isEmpty(serviceEndpoint)) {

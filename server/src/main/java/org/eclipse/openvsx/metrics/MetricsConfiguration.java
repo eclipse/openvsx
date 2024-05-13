@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @Profile("!test")
 public class MetricsConfiguration {
-    @Bean
+    //@Bean
     public ObservedAspect observedAspect(ObservationRegistry observationRegistry) {
         return new ObservedAspect(observationRegistry, new RegistryObservationConvention());
     }

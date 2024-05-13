@@ -10,6 +10,7 @@
 
 package org.eclipse.openvsx.search;
 
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
@@ -347,6 +348,11 @@ public class DatabaseSearchServiceTest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        ObservationRegistry observationRegistry() {
+            return ObservationRegistry.NOOP;
         }
     }
 }

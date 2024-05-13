@@ -9,10 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.util.Streamable;
 
 public interface PersonalAccessTokenRepository extends Repository<PersonalAccessToken, Long> {
 

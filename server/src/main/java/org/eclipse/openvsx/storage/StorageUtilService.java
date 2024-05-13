@@ -10,7 +10,8 @@
 package org.eclipse.openvsx.storage;
 
 import com.google.common.collect.Maps;
-import io.micrometer.observation.annotation.Observed;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +54,7 @@ public class StorageUtilService implements IStorageService {
     private final SearchUtilService search;
     private final CacheService cache;
     private final EntityManager entityManager;
+    private final ObservationRegistry observations;
 
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
@@ -69,7 +71,8 @@ public class StorageUtilService implements IStorageService {
             AzureDownloadCountService azureDownloadCountService,
             SearchUtilService search,
             CacheService cache,
-            EntityManager entityManager
+            EntityManager entityManager,
+            ObservationRegistry observations
     ) {
         this.repositories = repositories;
         this.googleStorage = googleStorage;
@@ -78,6 +81,7 @@ public class StorageUtilService implements IStorageService {
         this.search = search;
         this.cache = cache;
         this.entityManager = entityManager;
+        this.observations = observations;
     }
 
     public boolean shouldStoreExternally(FileResource resource) {
@@ -214,7 +218,6 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
-    @Observed
     public URI getNamespaceLogoLocation(Namespace namespace) {
         switch (namespace.getLogoStorageType()) {
             case STORAGE_GOOGLE:
@@ -259,17 +262,19 @@ public class StorageUtilService implements IStorageService {
      * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */
     public Map<Long, Map<String, String>> getFileUrls(Collection<ExtensionVersion> extVersions, String serverUrl, String... types) {
-        var type2Url = extVersions.stream()
-                .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return Observation.createNotStarted("StorageUtilService#getFileUrls", observations).observe(() -> {
+            var type2Url = extVersions.stream()
+                    .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
-        for (var resource : resources) {
-            var extVersion = resource.getExtension();
-            type2Url.get(extVersion.getId()).put(resource.getType(), getFileUrl(resource.getName(), extVersion, serverUrl));
-        }
+            var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
+            for (var resource : resources) {
+                var extVersion = resource.getExtension();
+                type2Url.get(extVersion.getId()).put(resource.getType(), getFileUrl(resource.getName(), extVersion, serverUrl));
+            }
 
-        return type2Url;
+            return type2Url;
+        });
     }
 
     @Transactional

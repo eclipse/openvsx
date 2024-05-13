@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.UserData;
@@ -26,7 +25,6 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Streamable<Extension> findByNamespace(Namespace namespace);
 
-    @Observed
     Streamable<Extension> findByNamespaceAndActiveTrueOrderByNameAsc(Namespace namespace);
 
     Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
