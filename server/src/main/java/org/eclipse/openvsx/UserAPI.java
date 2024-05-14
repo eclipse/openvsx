@@ -20,6 +20,8 @@ import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -43,6 +45,8 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 public class UserAPI {
 
     private final static int TOKEN_DESCRIPTION_SIZE = 255;
+
+    protected final Logger logger = LoggerFactory.getLogger(UserAPI.class);
 
     private final RepositoryService repositories;
     private final UserService users;
@@ -108,7 +112,11 @@ public class UserAPI {
         json.role = user.getRole();
         json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
         json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
-        eclipse.enrichUserJson(json, user);
+        try {
+            eclipse.enrichUserJson(json, user);
+        } catch (ErrorResultException e) {
+            logger.error("Failed to enrich UserJson", e);
+        }
         return json;
     }
 
