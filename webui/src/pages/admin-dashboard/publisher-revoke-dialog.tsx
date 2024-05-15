@@ -32,7 +32,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
     }, []);
 
     if (props.publisherInfo.user.publisherAgreement
-            && !(user && user.additionalLogins && user.additionalLogins.find(login => login.provider === 'eclipse'))) {
+            && !(user?.additionalLogins?.find(login => login.provider === 'eclipse'))) {
         // If a publisher agreement is required, the admin must be logged in with Eclipse to revoke it
         return <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
             <Button variant='contained' color='secondary'>

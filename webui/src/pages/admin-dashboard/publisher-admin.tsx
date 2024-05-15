@@ -49,7 +49,7 @@ export const PublisherAdmin: FunctionComponent = props => {
             }
             setLoading(false);
         } catch (err) {
-            if (err && err.status && err.status === 404) {
+            if (err?.status === 404) {
                 setNotFound(publisherName);
                 setPublisher(undefined);
             } else {

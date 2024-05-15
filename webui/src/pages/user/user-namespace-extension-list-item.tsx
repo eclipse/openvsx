@@ -63,7 +63,7 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     }}>
                     <Box
                         component='img'
-                        src={icon || (pageSettings && pageSettings.urls.extensionDefaultIcon) || ''}
+                        src={icon || (pageSettings?.urls.extensionDefaultIcon) || ''}
                         alt={extension.displayName || extension.name}
                         sx={{
                             flex: '0 0 15%',

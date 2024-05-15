@@ -35,7 +35,7 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     }
 
     // if the packagePath is a link to a vsix, don't need to package it
-    if (options.packagePath && options.packagePath.endsWith('.vsix')) {
+    if (options.packagePath?.endsWith('.vsix')) {
         options.extensionFile = options.packagePath;
         delete options.packagePath;
         delete options.target;

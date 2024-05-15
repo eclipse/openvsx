@@ -74,7 +74,7 @@ async function printMetadata(registry: Registry, extension: Extension, output?: 
     }
     let filePath: string | undefined;
     const stats = await optionalStat(output);
-    if (stats && stats.isDirectory() || !stats && output.endsWith(path.sep)) {
+    if (stats?.isDirectory() || !stats && output.endsWith(path.sep)) {
         const fileName = `${extension.namespace}.${extension.name}-${extension.version}.json`;
         filePath = path.resolve(process.cwd(), output, fileName);
     } else {
@@ -94,7 +94,7 @@ async function download(registry: Registry, extension: Extension, output?: strin
     let filePath: string | undefined;
     if (output) {
         const stats = await optionalStat(output);
-        if (stats && stats.isDirectory() || !stats && output.endsWith(path.sep)) {
+        if (stats?.isDirectory() || !stats && output.endsWith(path.sep)) {
             filePath = path.resolve(process.cwd(), output, fileName);
         } else {
             filePath = path.resolve(process.cwd(), output);
