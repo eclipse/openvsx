@@ -188,7 +188,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
 
             setDetailsUpdated(true);
             setCurrentDetails(copy(details));
-            setBannerNamespaceName(details.displayName || details.name);
+            setBannerNamespaceName(details.displayName ?? details.name);
         } catch (err) {
             context.handleError(err);
         } finally {

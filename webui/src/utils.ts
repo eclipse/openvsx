@@ -196,5 +196,5 @@ export function getTargetPlatformDisplayName(targetPlatform: string): string {
         [TargetPlatform.WEB, 'Web']
     ]);
 
-    return targetPlatformDisplayNames.get(targetPlatform) || '';
+    return targetPlatformDisplayNames.get(targetPlatform) ?? '';
 }

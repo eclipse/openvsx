@@ -34,8 +34,8 @@ export class Registry {
             this.url = options.registryUrl;
         else
             this.url = DEFAULT_URL;
-        this.maxNamespaceSize = options.maxNamespaceSize || DEFAULT_NAMESPACE_SIZE;
-        this.maxPublishSize = options.maxPublishSize || DEFAULT_PUBLISH_SIZE;
+        this.maxNamespaceSize = options.maxNamespaceSize ?? DEFAULT_NAMESPACE_SIZE;
+        this.maxPublishSize = options.maxPublishSize ?? DEFAULT_PUBLISH_SIZE;
         this.username = options.username;
         this.password = options.password;
     }

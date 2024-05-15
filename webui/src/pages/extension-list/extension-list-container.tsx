@@ -33,10 +33,10 @@ export const ExtensionListContainer: FunctionComponent = () => {
 
     useEffect(() => {
         const searchParams = new URLSearchParams(search);
-        setSearchQuery(searchParams.get('search') || '');
-        setCategory(searchParams.get('category') as ExtensionCategory || '');
-        setSortBy(searchParams.get('sortBy') as SortBy || 'relevance');
-        setSortOrder(searchParams.get('sortOrder') as SortOrder || 'desc');
+        setSearchQuery(searchParams.get('search') ?? '');
+        setCategory(searchParams.get('category') as ExtensionCategory ?? '');
+        setSortBy(searchParams.get('sortBy') as SortBy ?? 'relevance');
+        setSortOrder(searchParams.get('sortOrder') as SortOrder ?? 'desc');
     }, []);
 
     const onSearchChanged = (searchQuery: string): void => {

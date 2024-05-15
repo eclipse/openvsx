@@ -99,7 +99,7 @@ export function statusError(response: http.IncomingMessage): Error {
 export function readFile(name: string, packagePath?: string, encoding: BufferEncoding = 'utf-8'): Promise<string> {
     return new Promise((resolve, reject) => {
         fs.readFile(
-            path.join(packagePath || process.cwd(), name),
+            path.join(packagePath ?? process.cwd(), name),
             { encoding },
             (err, content) => {
                 if (err) {
@@ -132,7 +132,7 @@ export function validateManifest(manifest: Manifest): void {
 export function writeFile(name: string, content: string, packagePath?: string, encoding: BufferEncoding = 'utf-8'): Promise<void> {
     return new Promise((resolve, reject) => {
         fs.writeFile(
-            path.join(packagePath || process.cwd(), name),
+            path.join(packagePath ?? process.cwd(), name),
             content,
             { encoding },
             err => {
