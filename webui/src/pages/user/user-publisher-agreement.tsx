@@ -57,7 +57,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     };
 
     const openPublisherAgreement = () => {
-        if (!pageSettings || !pageSettings.urls.publisherAgreement) {
+        if (!pageSettings.urls.publisherAgreement) {
             handleError({ error: 'Publisher agreement text is not available.' });
         } else {
             setDialogOpen(true);
@@ -99,7 +99,19 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                         }
                     </Typography>
                     :
-                    !user.additionalLogins || !user.additionalLogins.find(login => login.provider === 'eclipse') ?
+                    user.additionalLogins?.find(login => login.provider === 'eclipse') ?
+                        <>
+                            <Typography variant='body1'>
+                                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                                any extension to this registry.
+                            </Typography>
+                            <Box mt={2} display='flex' justifyContent='flex-end'>
+                                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
+                                    Show Publisher Agreement
+                                </Button>
+                            </Box>
+                        </>
+                        :
                         <>
                             <Typography variant='body1'>
                                 You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
@@ -112,18 +124,6 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                                         Log in with Eclipse
                                     </Button>
                                 </Link>
-                            </Box>
-                        </>
-                        :
-                        <>
-                            <Typography variant='body1'>
-                                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
-                                any extension to this registry.
-                            </Typography>
-                            <Box mt={2} display='flex' justifyContent='flex-end'>
-                                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
-                                    Show Publisher Agreement
-                                </Button>
                             </Box>
                         </>}
         </Paper>

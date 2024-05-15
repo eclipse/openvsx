@@ -28,7 +28,7 @@ export class Registry {
     readonly password?: string;
 
     constructor(options: RegistryOptions = {}) {
-        if (options.registryUrl && options.registryUrl.endsWith('/'))
+        if (options.registryUrl?.endsWith('/'))
             this.url = options.registryUrl.substring(0, options.registryUrl.length - 1);
         else if (options.registryUrl)
             this.url = options.registryUrl;
