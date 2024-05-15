@@ -80,7 +80,6 @@ public class TokenService {
                 token.scopes = accessToken.getScopes();
                 token.issuedAt = accessToken.getIssuedAt();
                 token.expiresAt = accessToken.getExpiresAt();
-                
                 if (refreshToken != null) {
                     token.refreshToken = refreshToken.getTokenValue();
                     token.refreshExpiresAt = refreshToken.getExpiresAt();
@@ -143,16 +142,6 @@ public class TokenService {
         }
 
         return null;
-    }
-
-    public boolean isUsable(AuthToken token) {
-        if (token == null)
-            return false;
-        if (token.accessToken != null && !isExpired(token.expiresAt))
-            return true;
-        if (token.refreshToken != null && !isExpired(token.refreshExpiresAt))
-            return true;
-        return false;
     }
 
     private boolean isExpired(Instant instant) {

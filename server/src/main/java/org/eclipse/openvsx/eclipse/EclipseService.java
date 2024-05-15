@@ -150,9 +150,30 @@ public class EclipseService {
             return;
         }
 
-        // Report user as logged in only if there is a usabe token:
+        var usableToken = true;
+        ErrorResultException exception = null;
+        try {
+            // Add information on the publisher agreement
+            var agreement = getPublisherAgreement(user);
+            if (agreement == null || !agreement.isActive || agreement.version == null)
+                json.publisherAgreement.status = "none";
+            else if (publisherAgreementVersion.equals(agreement.version))
+                json.publisherAgreement.status = "signed";
+            else
+                json.publisherAgreement.status = "outdated";
+            if (agreement != null && agreement.timestamp != null)
+                json.publisherAgreement.timestamp = TimeUtil.toUTCString(agreement.timestamp);
+        } catch (ErrorResultException e) {
+            if(e.getStatus() == HttpStatus.FORBIDDEN) {
+                usableToken = false;
+            } else {
+                exception = e;
+            }
+        }
+
+        // Report user as logged in only if there is a usable token:
         // we need the token to access the Eclipse REST API
-        if (tokens.isUsable(user.getEclipseToken())) {
+        if(usableToken) {
             var eclipseLogin = new UserJson();
             eclipseLogin.provider = "eclipse";
             eclipseLogin.loginName = personId;
@@ -162,16 +183,10 @@ public class EclipseService {
                 json.additionalLogins.add(eclipseLogin);
         }
 
-        // Add information on the publisher agreement
-        var agreement = getPublisherAgreement(user);
-        if (agreement == null || !agreement.isActive || agreement.version == null)
-            json.publisherAgreement.status = "none";
-        else if (publisherAgreementVersion.equals(agreement.version))
-            json.publisherAgreement.status = "signed";
-        else
-            json.publisherAgreement.status = "outdated";
-        if (agreement != null && agreement.timestamp != null)
-            json.publisherAgreement.timestamp = TimeUtil.toUTCString(agreement.timestamp);
+        // Throw exception at end of method, so that JSON data is fully enriched
+        if(exception != null) {
+            throw exception;
+        }
     }
 
     /**
@@ -240,8 +255,9 @@ public class EclipseService {
             var json = restTemplate.exchange(urlTemplate, HttpMethod.GET, request, String.class, uriVariables);
             return parseAgreementResponse(json);
         } catch (RestClientException exc) {
+            HttpStatusCode status = HttpStatus.INTERNAL_SERVER_ERROR;
             if (exc instanceof HttpStatusCodeException) {
-                var status = ((HttpStatusCodeException) exc).getStatusCode();
+                status = ((HttpStatusCodeException) exc).getStatusCode();
                 // The endpoint yields 404 if the specified user has not signed a publisher agreement
                 if (status == HttpStatus.NOT_FOUND)
                     return null;
@@ -250,7 +266,7 @@ public class EclipseService {
             var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
             logger.error("Get request failed with URL: " + url, exc);
             throw new ErrorResultException("Request for retrieving publisher agreement failed: " + exc.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    status);
         }
     }
 

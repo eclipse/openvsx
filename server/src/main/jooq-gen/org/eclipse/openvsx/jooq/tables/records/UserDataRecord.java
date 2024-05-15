@@ -147,44 +147,44 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
     }
 
     /**
-     * Setter for <code>public.user_data.eclipse_data</code>.
-     */
-    public void setEclipseData(String value) {
-        set(9, value);
-    }
-
-    /**
-     * Getter for <code>public.user_data.eclipse_data</code>.
-     */
-    public String getEclipseData() {
-        return (String) get(9);
-    }
-
-    /**
      * Setter for <code>public.user_data.eclipse_token</code>.
      */
     public void setEclipseToken(String value) {
-        set(10, value);
+        set(9, value);
     }
 
     /**
      * Getter for <code>public.user_data.eclipse_token</code>.
      */
     public String getEclipseToken() {
-        return (String) get(10);
+        return (String) get(9);
     }
 
     /**
      * Setter for <code>public.user_data.github_token</code>.
      */
     public void setGithubToken(String value) {
-        set(11, value);
+        set(10, value);
     }
 
     /**
      * Getter for <code>public.user_data.github_token</code>.
      */
     public String getGithubToken() {
+        return (String) get(10);
+    }
+
+    /**
+     * Setter for <code>public.user_data.eclipse_person_id</code>.
+     */
+    public void setEclipsePersonId(String value) {
+        set(11, value);
+    }
+
+    /**
+     * Getter for <code>public.user_data.eclipse_person_id</code>.
+     */
+    public String getEclipsePersonId() {
         return (String) get(11);
     }
 
@@ -258,17 +258,17 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
 
     @Override
     public Field<String> field10() {
-        return UserData.USER_DATA.ECLIPSE_DATA;
-    }
-
-    @Override
-    public Field<String> field11() {
         return UserData.USER_DATA.ECLIPSE_TOKEN;
     }
 
     @Override
-    public Field<String> field12() {
+    public Field<String> field11() {
         return UserData.USER_DATA.GITHUB_TOKEN;
+    }
+
+    @Override
+    public Field<String> field12() {
+        return UserData.USER_DATA.ECLIPSE_PERSON_ID;
     }
 
     @Override
@@ -318,17 +318,17 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
 
     @Override
     public String component10() {
-        return getEclipseData();
-    }
-
-    @Override
-    public String component11() {
         return getEclipseToken();
     }
 
     @Override
-    public String component12() {
+    public String component11() {
         return getGithubToken();
+    }
+
+    @Override
+    public String component12() {
+        return getEclipsePersonId();
     }
 
     @Override
@@ -378,17 +378,17 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
 
     @Override
     public String value10() {
-        return getEclipseData();
-    }
-
-    @Override
-    public String value11() {
         return getEclipseToken();
     }
 
     @Override
-    public String value12() {
+    public String value11() {
         return getGithubToken();
+    }
+
+    @Override
+    public String value12() {
+        return getEclipsePersonId();
     }
 
     @Override
@@ -447,19 +447,19 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
 
     @Override
     public UserDataRecord value10(String value) {
-        setEclipseData(value);
-        return this;
-    }
-
-    @Override
-    public UserDataRecord value11(String value) {
         setEclipseToken(value);
         return this;
     }
 
     @Override
-    public UserDataRecord value12(String value) {
+    public UserDataRecord value11(String value) {
         setGithubToken(value);
+        return this;
+    }
+
+    @Override
+    public UserDataRecord value12(String value) {
+        setEclipsePersonId(value);
         return this;
     }
 
@@ -494,7 +494,7 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
     /**
      * Create a detached, initialised UserDataRecord
      */
-    public UserDataRecord(Long id, String avatarUrl, String email, String fullName, String loginName, String provider, String authId, String providerUrl, String role, String eclipseData, String eclipseToken, String githubToken) {
+    public UserDataRecord(Long id, String avatarUrl, String email, String fullName, String loginName, String provider, String authId, String providerUrl, String role, String eclipseToken, String githubToken, String eclipsePersonId) {
         super(UserData.USER_DATA);
 
         setId(id);
@@ -506,9 +506,9 @@ public class UserDataRecord extends UpdatableRecordImpl<UserDataRecord> implemen
         setAuthId(authId);
         setProviderUrl(providerUrl);
         setRole(role);
-        setEclipseData(eclipseData);
         setEclipseToken(eclipseToken);
         setGithubToken(githubToken);
+        setEclipsePersonId(eclipsePersonId);
         resetChangedOnNotNull();
     }
 }

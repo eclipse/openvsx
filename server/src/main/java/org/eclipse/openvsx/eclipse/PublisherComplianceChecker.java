@@ -89,7 +89,7 @@ public class PublisherComplianceChecker {
         var json = new UserJson();
         try {
             eclipseService.enrichUserJson(json, user);
-            return !json.publisherAgreement.status.equals("none");
+            return json.publisherAgreement.status == null || !json.publisherAgreement.status.equals("none");
         } catch(ErrorResultException e) {
             // no way to determine whether the user has a publisher agreement
             return true;
