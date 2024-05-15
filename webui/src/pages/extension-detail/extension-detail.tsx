@@ -216,12 +216,12 @@ export const ExtensionDetail: FunctionComponent = () => {
 
     const renderExtension = (extension: Extension): ReactNode => {
         const tab = versionPointsToTab(version) ? version as string : 'overview';
-        const headerTheme = extension.galleryTheme || pageSettings.themeType || 'light';
+        const headerTheme = extension.galleryTheme ?? pageSettings.themeType ?? 'light';
         const headerColor = headerTheme === 'dark' ? '#fff' : '#151515';
         return <>
             <Box
                 sx={{
-                    bgcolor: extension.galleryColor || 'neutral.dark',
+                    bgcolor: extension.galleryColor ?? 'neutral.dark',
                     color: headerColor
                 }}
             >
@@ -240,7 +240,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                             <Box
                                 component='img'
                                 src={icon || pageSettings.urls.extensionDefaultIcon }
-                                alt={extension.displayName || extension.name}
+                                alt={extension.displayName ?? extension.name}
                                 sx={{
                                     height: '7.5rem',
                                     maxWidth: '9rem',
@@ -289,7 +289,7 @@ export const ExtensionDetail: FunctionComponent = () => {
             >
                 <WarningIcon fontSize='large' />
                 <Box ml={1}>
-                    This version of the &ldquo;{extension.displayName || extension.name}&rdquo; extension was published
+                    This version of the &ldquo;{extension.displayName ?? extension.name}&rdquo; extension was published
                     by <Link href={extension.publishedBy.homepage}>
                         {extension.publishedBy.loginName}
                     </Link>. That user account is not a verified publisher of
@@ -320,7 +320,7 @@ export const ExtensionDetail: FunctionComponent = () => {
         <Box overflow='auto' sx={{ pt: 1, overflow: 'visible' }}>
             <Badge color='secondary' badgeContent='Preview' invisible={!extension.preview} sx={previewBadgeStyle}>
                 <Typography variant='h5' sx={{ fontWeight: 'bold', mb: 1 }}>
-                    { extension.displayName || extension.name}
+                    { extension.displayName ?? extension.name}
                 </Typography>
             </Badge>
             <Box
@@ -335,7 +335,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                     <StyledRouteLink
                         to={createRoute([NamespaceDetailRoutes.ROOT, extension.namespace])}
                         style={{ color: themeColor }}>
-                        {extension.namespaceDisplayName || extension.namespace}
+                        {extension.namespaceDisplayName ?? extension.namespace}
                     </StyledRouteLink>
                 </Box>
                 <TextDivider themeType={themeType} collapseSmall={true} />
@@ -373,7 +373,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                             `Average rating: ${getRoundedRating(extension.averageRating)} out of 5 (${extension.reviewCount} reviews)`
                             : 'Not rated yet'
                     }>
-                    <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
+                    <ExportRatingStars number={extension.averageRating ?? 0} fontSize='small' />
                     ({reviewCountFormatted})
                 </StyledLink>
                 </Box>
@@ -410,7 +410,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                 user.avatarUrl ?
                 <Avatar
                     src={user.avatarUrl}
-                    alt={user.fullName || user.loginName}
+                    alt={user.fullName ?? user.loginName}
                     variant='rounded'
                     sx={{ width: '60px', height: '60px' }} />
                 : null
@@ -449,7 +449,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                 href={extension.files.license}
                 sx={{ color: themeColor }}
                 title={extension.license ? 'License type' : undefined} >
-                {extension.license || 'Provided license'}
+                {extension.license ?? 'Provided license'}
             </StyledLink>;
         } else if (extension.license) {
             return extension.license;
