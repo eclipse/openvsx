@@ -11,6 +11,7 @@ package org.eclipse.openvsx.util;
 
 import org.eclipse.openvsx.json.ResultJson;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -26,7 +27,7 @@ public class ErrorResultException extends RuntimeException {
 
     private static final long serialVersionUID = 147466147310091931L;
 
-    private final HttpStatus status;
+    private final HttpStatusCode status;
 
     public ErrorResultException(String message) {
         super(message);
@@ -38,12 +39,12 @@ public class ErrorResultException extends RuntimeException {
         this.status = null;
     }
 
-    public ErrorResultException(String message, HttpStatus status) {
+    public ErrorResultException(String message, HttpStatusCode status) {
         super(message);
         this.status = status;
     }
 
-    public HttpStatus getStatus() {
+    public HttpStatusCode getStatus() {
         return status;
     }
 

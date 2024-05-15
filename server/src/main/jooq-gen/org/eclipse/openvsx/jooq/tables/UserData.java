@@ -96,11 +96,6 @@ public class UserData extends TableImpl<UserDataRecord> {
     public final TableField<UserDataRecord, String> ROLE = createField(DSL.name("role"), SQLDataType.VARCHAR(32), this, "");
 
     /**
-     * The column <code>public.user_data.eclipse_data</code>.
-     */
-    public final TableField<UserDataRecord, String> ECLIPSE_DATA = createField(DSL.name("eclipse_data"), SQLDataType.VARCHAR(4096), this, "");
-
-    /**
      * The column <code>public.user_data.eclipse_token</code>.
      */
     public final TableField<UserDataRecord, String> ECLIPSE_TOKEN = createField(DSL.name("eclipse_token"), SQLDataType.VARCHAR(4096), this, "");
@@ -109,6 +104,11 @@ public class UserData extends TableImpl<UserDataRecord> {
      * The column <code>public.user_data.github_token</code>.
      */
     public final TableField<UserDataRecord, String> GITHUB_TOKEN = createField(DSL.name("github_token"), SQLDataType.VARCHAR(4096), this, "");
+
+    /**
+     * The column <code>public.user_data.eclipse_person_id</code>.
+     */
+    public final TableField<UserDataRecord, String> ECLIPSE_PERSON_ID = createField(DSL.name("eclipse_person_id"), SQLDataType.VARCHAR(255), this, "");
 
     private UserData(Name alias, Table<UserDataRecord> aliased) {
         this(alias, aliased, null);
