@@ -114,16 +114,45 @@ public class EclipseService {
             if (personId == null) {
                 throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
             }
-            var agreement = getPublisherAgreement(user);
-            if (agreement == null || agreement.version == null) {
+            var profile = getPublicProfile(personId);
+            if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null
+                    || profile.publisherAgreements.openVsx.version == null) {
                 throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
             }
-            if (!publisherAgreementVersion.equals(agreement.version)) {
+            if (!publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version)) {
                 throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
-                        + agreement.version + "). The current version is "
+                        + profile.publisherAgreements.openVsx.version + "). The current version is "
                         + publisherAgreementVersion + ".");
             }
         });
+    }
+
+    /**
+     * Get the publicly available user profile.
+     */
+    public EclipseProfile getPublicProfile(String personId) {
+        checkApiUrl();
+        var urlTemplate = eclipseApiUrl + "account/profile/{personId}";
+        var uriVariables = Map.of("personId", personId);
+        var headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        var request = new HttpEntity<Void>(headers);
+
+        try {
+            var response = restTemplate.exchange(urlTemplate, HttpMethod.GET, request, String.class, uriVariables);
+            return parseEclipseProfile(response);
+        } catch (RestClientException exc) {
+            if (exc instanceof HttpStatusCodeException) {
+                var status = ((HttpStatusCodeException) exc).getStatusCode();
+                if (status == HttpStatus.NOT_FOUND)
+                    throw new ErrorResultException("No Eclipse profile data available for user: " + personId);
+            }
+
+            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+            logger.error("Get request failed with URL: " + url, exc);
+            throw new ErrorResultException("Request for retrieving user profile failed: " + exc.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -151,7 +180,6 @@ public class EclipseService {
         }
 
         var usableToken = true;
-        ErrorResultException exception = null;
         try {
             // Add information on the publisher agreement
             var agreement = getPublisherAgreement(user);
@@ -167,7 +195,7 @@ public class EclipseService {
             if(e.getStatus() == HttpStatus.FORBIDDEN) {
                 usableToken = false;
             } else {
-                exception = e;
+                logger.info("Failed to enrich UserJson", e);
             }
         }
 
@@ -182,10 +210,30 @@ public class EclipseService {
             else
                 json.additionalLogins.add(eclipseLogin);
         }
+    }
 
-        // Throw exception at end of method, so that JSON data is fully enriched
-        if(exception != null) {
-            throw exception;
+    public void adminEnrichUserJson(UserJson json, UserData user) {
+        if (!isActive()) {
+            return;
+        }
+
+        json.publisherAgreement = new UserJson.PublisherAgreement();
+        var personId = user.getEclipsePersonId();
+        if (personId == null) {
+            json.publisherAgreement.status = "none";
+            return;
+        }
+
+        try {
+            var profile = getPublicProfile(personId);
+            if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null || StringUtils.isEmpty(profile.publisherAgreements.openVsx.version))
+                json.publisherAgreement.status = "none";
+            else if (publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version))
+                json.publisherAgreement.status = "signed";
+            else
+                json.publisherAgreement.status = "outdated";
+        } catch (ErrorResultException e) {
+            logger.error("Failed to get public profile", e);
         }
     }
 
