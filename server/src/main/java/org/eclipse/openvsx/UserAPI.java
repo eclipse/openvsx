@@ -112,11 +112,7 @@ public class UserAPI {
         json.role = user.getRole();
         json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
         json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
-        try {
-            eclipse.enrichUserJson(json, user);
-        } catch (ErrorResultException e) {
-            logger.error("Failed to enrich UserJson", e);
-        }
+        eclipse.enrichUserJson(json, user);
         return json;
     }
 

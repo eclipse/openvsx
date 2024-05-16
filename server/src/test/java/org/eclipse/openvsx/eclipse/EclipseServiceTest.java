@@ -91,6 +91,22 @@ public class EclipseServiceTest {
     }
 
     @Test
+    public void testGetPublicProfile() throws Exception {
+        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
+        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
+                .thenReturn(mockProfileResponse());
+
+        var profile = eclipse.getPublicProfile("test");
+
+        assertThat(profile).isNotNull();
+        assertThat(profile.name).isEqualTo("test");
+        assertThat(profile.githubHandle).isEqualTo("test");
+        assertThat(profile.publisherAgreements).isNotNull();
+        assertThat(profile.publisherAgreements.openVsx).isNotNull();
+        assertThat(profile.publisherAgreements.openVsx.version).isEqualTo("1");
+    }
+
+    @Test
     public void testGetUserProfile() throws Exception {
         Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
             .thenReturn(mockProfileResponse());

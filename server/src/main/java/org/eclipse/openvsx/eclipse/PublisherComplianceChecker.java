@@ -86,14 +86,10 @@ public class PublisherComplianceChecker {
             return false;
         }
 
-        var json = new UserJson();
-        try {
-            eclipseService.enrichUserJson(json, user);
-            return json.publisherAgreement.status == null || !json.publisherAgreement.status.equals("none");
-        } catch(ErrorResultException e) {
-            // no way to determine whether the user has a publisher agreement
-            return true;
-        }
+        var profile = eclipseService.getPublicProfile(user.getEclipsePersonId());
+        return profile.publisherAgreements != null
+                && profile.publisherAgreements.openVsx != null
+                && profile.publisherAgreements.openVsx.version != null;
     }
 
     private void deactivateExtensions(Streamable<PersonalAccessToken> accessTokens) {

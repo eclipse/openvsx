@@ -265,12 +265,7 @@ public class AdminService {
 
         var userPublishInfo = new UserPublishInfoJson();
         userPublishInfo.user = user.toUserJson();
-        try {
-            eclipse.enrichUserJson(userPublishInfo.user, user);
-        } catch (ErrorResultException e) {
-            userPublishInfo.user.error = e.getMessage();
-        }
-
+        eclipse.adminEnrichUserJson(userPublishInfo.user, user);
         userPublishInfo.activeAccessTokenNum = (int) repositories.countActiveAccessTokens(user);
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[]{DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST};
