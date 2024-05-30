@@ -31,9 +31,13 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import static org.eclipse.openvsx.entities.SignatureKeyPair.KEYPAIR_MODE_CREATE;
 import static org.eclipse.openvsx.entities.SignatureKeyPair.KEYPAIR_MODE_RENEW;
@@ -106,12 +110,25 @@ public class ExtensionVersionIntegrityService {
         resource.setType(FileResource.DOWNLOAD_SIG);
 
         var privateKeyParameters = new Ed25519PrivateKeyParameters(keyPair.getPrivateKey(), 0);
-        try {
-            var signer = new Ed25519Signer();
-            signer.init(true,  privateKeyParameters);
-            var fileBytes = Files.readAllBytes(extensionFile.getPath());
-            signer.update(fileBytes, 0, fileBytes.length);
-            resource.setContent(signer.generateSignature());
+        try (var out = new ByteArrayOutputStream()) {
+            try (var zip = new ZipOutputStream(out)) {
+                var signer = new Ed25519Signer();
+                signer.init(true, privateKeyParameters);
+                var fileBytes = Files.readAllBytes(extensionFile.getPath());
+                signer.update(fileBytes, 0, fileBytes.length);
+                var sigEntry = new ZipEntry(".signature.sig");
+                zip.putNextEntry(sigEntry);
+                zip.write(signer.generateSignature());
+                zip.closeEntry();
+
+                // Add dummy file to the archive because VS Code checks if it exists
+                var dummyEntry = new ZipEntry(".signature.p7s");
+                zip.putNextEntry(dummyEntry);
+                zip.write(new byte[0]);
+                zip.closeEntry();
+            }
+
+            resource.setContent(out.toByteArray());
         } catch (IOException e) {
             throw new ErrorResultException("Failed to sign extension file", e);
         }

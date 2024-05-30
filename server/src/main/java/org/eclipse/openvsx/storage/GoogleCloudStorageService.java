@@ -88,7 +88,7 @@ public class GoogleCloudStorageService implements IStorageService {
     protected void uploadFile(byte[] content, String fileName, String objectId) {
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
                 .setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix")) {
+        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
             blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
             var cacheControl = StorageUtil.getCacheControl(fileName);
@@ -111,7 +111,7 @@ public class GoogleCloudStorageService implements IStorageService {
     protected void uploadFile(TempFile file, String fileName, String objectId) {
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
                 .setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix")) {
+        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
             blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
             var cacheControl = StorageUtil.getCacheControl(fileName);

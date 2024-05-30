@@ -298,7 +298,7 @@ public class StorageUtilService implements IStorageService {
     public HttpHeaders getFileResponseHeaders(String fileName) {
         var headers = new HttpHeaders();
         headers.setContentType(StorageUtil.getFileType(fileName));
-        if (fileName.endsWith(".vsix")) {
+        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
             headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
         } else {
             headers.setCacheControl(StorageUtil.getCacheControl(fileName));

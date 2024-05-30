@@ -11,6 +11,7 @@ package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -22,7 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Map;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -55,7 +58,24 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
             return;
         }
 
+        var entry = migrations.getDownload(extVersion);
+        if(entry == null) {
+            return;
+        }
+
         logger.info("Generating signature for: {}", NamingUtil.toLogFormat(extVersion));
+
+        var keyPair = repositories.findActiveKeyPair();
+        var signature = createSignature(entry, keyPair);
+        if(signature == null) {
+            return;
+        }
+
+        integrityService.setSignatureKeyPair(extVersion, keyPair);
+        var extension = extVersion.getExtension();
+        cache.evictExtensionJsons(extVersion);
+        cache.evictLatestExtensionVersion(extension);
+        cache.evictNamespaceDetails(extension);
 
         var existingSignature = migrations.getFileResource(extVersion, FileResource.DOWNLOAD_SIG);
         if(existingSignature != null) {
@@ -63,29 +83,20 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
             migrations.deleteFileResource(existingSignature);
         }
 
-        var entry = migrations.getDownload(extVersion);
-        if(entry == null) {
-            return;
-        }
+        migrations.uploadFileResource(signature);
+        migrations.persistFileResource(signature);
+    }
 
+    private FileResource createSignature(Map.Entry<FileResource, byte[]> entry, SignatureKeyPair keyPair) throws IOException {
         try(var extensionFile = migrations.getExtensionFile(entry)) {
             if(Files.size(extensionFile.getPath()) == 0) {
-                return;
+                return null;
             }
 
             var download = entry.getKey();
-            var keyPair = repositories.findActiveKeyPair();
             var signature = integrityService.generateSignature(download, extensionFile, keyPair);
             signature.setStorageType(download.getStorageType());
-            integrityService.setSignatureKeyPair(extVersion, keyPair);
-
-            var extension = extVersion.getExtension();
-            cache.evictExtensionJsons(extVersion);
-            cache.evictLatestExtensionVersion(extension);
-            cache.evictNamespaceDetails(extension);
-
-            migrations.uploadFileResource(signature);
-            migrations.persistFileResource(signature);
+            return signature;
         }
     }
 }

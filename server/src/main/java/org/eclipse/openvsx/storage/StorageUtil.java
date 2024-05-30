@@ -25,6 +25,8 @@ class StorageUtil {
             return MediaType.APPLICATION_OCTET_STREAM;
         if (fileName.endsWith(".json"))
             return MediaType.APPLICATION_JSON;
+        if (fileName.endsWith(".sigzip"))
+            return MediaType.valueOf("application/zip");
         var contentType = URLConnection.guessContentTypeFromName(fileName);
         if (contentType != null)
             return MediaType.parseMediaType(contentType);
