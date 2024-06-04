@@ -86,7 +86,7 @@ public class AzureBlobStorageService implements IStorageService {
         var blobClient = getContainerClient().getBlobClient(blobName);
         var headers = new BlobHttpHeaders();
         headers.setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix")) {
+        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
             headers.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
             var cacheControl = StorageUtil.getCacheControl(fileName);
@@ -115,7 +115,7 @@ public class AzureBlobStorageService implements IStorageService {
         var blobClient = getContainerClient().getBlobClient(blobName);
         var headers = new BlobHttpHeaders();
         headers.setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix")) {
+        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
             headers.setContentDisposition("attachment; filename=\"" + fileName + "\"");
         } else {
             var cacheControl = StorageUtil.getCacheControl(fileName);
