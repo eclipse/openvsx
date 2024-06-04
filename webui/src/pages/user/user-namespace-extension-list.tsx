@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UserExtensionList } from './user-extension-list';
@@ -19,10 +19,10 @@ export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespac
     const [loading, setLoading] = useState<boolean>(true);
     const context = useContext(MainContext);
 
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         updateExtensions();
-        return () => abortController.abort();
+        return () => abortController.current.abort();
     }, []);
 
     useEffect(() => {
@@ -37,7 +37,7 @@ export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespac
         const getExtension = async (url: string) => {
             let result: Extension | ErrorResult;
             try {
-                result = await context.service.getExtensionDetail(abortController, url);
+                result = await context.service.getExtensionDetail(abortController.current, url);
                 if (isError(result)) {
                     throw result;
                 }

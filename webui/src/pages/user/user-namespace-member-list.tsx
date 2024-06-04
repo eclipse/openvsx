@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useEffect, useState, useContext } from 'react';
+import React, { FunctionComponent, useEffect, useState, useContext, useRef } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { UserNamespaceMember } from './user-namespace-member-component';
 import { Namespace, NamespaceMembership, MembershipRole, isError, UserData } from '../../extension-registry-types';
@@ -18,18 +18,19 @@ import { MainContext } from '../../context';
 export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListProps> = props => {
     const { service, user, handleError } = useContext(MainContext);
     const [members, setMembers] = useState<NamespaceMembership[]>([]);
+    const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
+    const abortController = useRef<AbortController>(new AbortController());
+
     useEffect(() => {
         fetchMembers();
     }, [props.namespace]);
 
-    const abortController = new AbortController();
     useEffect(() => {
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
-    const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
     const handleCloseAddDialog = async () => {
         setAddDialogIsOpen(false);
         fetchMembers();
@@ -40,7 +41,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
 
     const fetchMembers = async () => {
         try {
-            const membershipList = await service.getNamespaceMembers(abortController, props.namespace);
+            const membershipList = await service.getNamespaceMembers(abortController.current, props.namespace);
             const members = membershipList.namespaceMemberships;
             setMembers(members);
         } catch (err) {
@@ -52,7 +53,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
         try {
             props.setLoadingState(true);
             const endpoint = props.namespace.roleUrl;
-            const result = await service.setNamespaceMember(abortController, endpoint, membership.user, role);
+            const result = await service.setNamespaceMember(abortController.current, endpoint, membership.user, role);
             if (isError(result)) {
                 throw result;
             }

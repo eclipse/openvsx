@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useContext, FunctionComponent, useState, useEffect } from 'react';
+import React, { useContext, FunctionComponent, useState, useEffect, useRef } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, styled } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
@@ -35,10 +35,10 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
     const { extension } = props;
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
     const inactive = extension.active === false;
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
     useEffect(() => {
@@ -46,7 +46,7 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
             URL.revokeObjectURL(icon);
         }
 
-        service.getExtensionIcon(abortController, extension).then(setIcon);
+        service.getExtensionIcon(abortController.current, extension).then(setIcon);
     }, [extension]);
 
     return (

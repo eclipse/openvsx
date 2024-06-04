@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import { Typography, Box, Container, Grid, Link, Divider } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
@@ -39,11 +39,11 @@ export const NamespaceDetail: FunctionComponent = () => {
     const { name } = useParams();
     const { pageSettings, service, handleError } = useContext(MainContext);
 
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         updateNamespaceDetails(name as string);
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -55,7 +55,7 @@ export const NamespaceDetail: FunctionComponent = () => {
 
     const updateNamespaceDetails = async(name: string): Promise<void> => {
         try {
-            const namespaceDetails = await service.getNamespaceDetails(abortController, name);
+            const namespaceDetails = await service.getNamespaceDetails(abortController.current, name);
             if (isError(namespaceDetails)) {
                 throw namespaceDetails;
             }

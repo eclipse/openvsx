@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useState, useEffect } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
 import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
 import { Box, Grid, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
@@ -19,6 +19,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
     const WILDCARD = '*';
     const { extension } = props;
     const { service } = useContext(MainContext);
+    const abortController = useRef<AbortController>(new AbortController());
 
     const getTargetPlatformVersions = () => {
         const versionMap: TargetPlatformVersion[] = [];
@@ -36,10 +37,9 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         return versionMap;
     };
 
-    const abortController = new AbortController();
     useEffect(() => {
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -50,7 +50,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
             URL.revokeObjectURL(icon);
         }
 
-        service.getExtensionIcon(abortController, props.extension).then(setIcon);
+        service.getExtensionIcon(abortController.current, props.extension).then(setIcon);
         setTargetPlatformVersions(getTargetPlatformVersions());
     }, [props.extension]);
 

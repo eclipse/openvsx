@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useEffect, useState } from 'react';
+import React, { FunctionComponent, ReactNode, useEffect, useState, useRef } from 'react';
 import { CssBaseline } from '@mui/material';
 import { Route, Routes } from 'react-router-dom';
 import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';
@@ -28,25 +28,25 @@ export const Main: FunctionComponent<MainProps> = props => {
     const [userLoading, setUserLoading] = useState<boolean>(true);
     const [error, setError] = useState<{message: string, code?: number | string}>();
     const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         // If there was an authentication error, get the message from the server and show it
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.has('auth-error')) {
-            props.service.getUserAuthError(abortController).then(onError);
+            props.service.getUserAuthError(abortController.current).then(onError);
         }
 
         // Get data of the currently logged in user
         updateUser();
 
-        return () => abortController.abort();
+        return () => abortController.current.abort();
     }, []);
 
     const updateUser = async () => {
         try {
             setUserLoading(true);
-            const user = await props.service.getUser(abortController);
+            const user = await props.service.getUser(abortController.current);
             if (isError(user)) {
                 // An error result with HTTP OK status indicates that the user is not logged in.
                 setUser(undefined);

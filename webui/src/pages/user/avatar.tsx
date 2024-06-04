@@ -37,15 +37,15 @@ export const UserAvatar: FunctionComponent = () => {
     const context = useContext(MainContext);
     const avatarButton = useRef<any>();
 
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         updateCsrf();
-        return () => abortController.abort();
+        return () => abortController.current.abort();
     }, []);
 
     const updateCsrf = async () => {
         try {
-            const csrfResponse = await context.service.getCsrfToken(abortController);
+            const csrfResponse = await context.service.getCsrfToken(abortController.current);
             if (!isError(csrfResponse)) {
                 const csrfToken = csrfResponse as CsrfTokenJson;
                 setCsrf(csrfToken.value);

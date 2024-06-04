@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect } from 'react';
+import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect, useRef } from 'react';
 import { Box, Typography, Divider, Link } from '@mui/material';
 import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';
@@ -25,16 +25,16 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     const [loading, setLoading] = useState<boolean>(true);
     const [revoked, setRevoked] = useState<boolean>(false);
     const context = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         updateReviews();
-        return () => abortController.abort();
+        return () => abortController.current.abort();
     }, []);
 
     const updateReviews = async () => {
         try {
-            const reviewList = await context.service.getExtensionReviews(abortController, props.extension);
+            const reviewList = await context.service.getExtensionReviews(abortController.current, props.extension);
             setReviewList(reviewList);
         } catch (err) {
             context.handleError(err);
@@ -53,7 +53,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     const handleRevokeButton = async () => {
         setRevoked(true);
         try {
-            const result = await context.service.deleteReview(abortController, reviewList!.deleteUrl);
+            const result = await context.service.deleteReview(abortController.current, reviewList!.deleteUrl);
             if (isError(result)) {
                 throw result;
             }

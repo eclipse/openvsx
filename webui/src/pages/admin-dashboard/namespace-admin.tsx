@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
 import { Typography, Box } from '@mui/material';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';
@@ -24,10 +24,10 @@ export const NamespaceAdmin: FunctionComponent = props => {
     const [currentNamespace, setCurrentNamespace] = useState<Namespace | undefined>();
     const [notFound, setNotFound] = useState('');
 
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -39,7 +39,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
         }
         try {
             setLoading(true);
-            const namespace = await service.admin.getNamespace(abortController, namespaceName);
+            const namespace = await service.admin.getNamespace(abortController.current, namespaceName);
             if (isError(namespace)) {
                 throw namespace;
             }
@@ -66,7 +66,7 @@ export const NamespaceAdmin: FunctionComponent = props => {
     const onCreate = async () => {
         try {
             setCreating(true);
-            await service.admin.createNamespace(abortController, {
+            await service.admin.createNamespace(abortController.current, {
                 name: inputValue
             });
             await fetchNamespace(inputValue);

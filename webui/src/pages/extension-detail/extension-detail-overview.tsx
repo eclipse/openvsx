@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
@@ -33,12 +33,12 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
     const { pageSettings, service, handleError } = useContext(MainContext);
     const params = useParams();
     const navigate = useNavigate();
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         updateReadme();
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -50,7 +50,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
     const updateReadme = async (): Promise<void> => {
         if (props.extension.files.readme) {
             try {
-                const readme = await service.getExtensionReadme(abortController, props.extension);
+                const readme = await service.getExtensionReadme(abortController.current, props.extension);
                 setReadme(readme);
                 setLoading(false);
             } catch (err) {

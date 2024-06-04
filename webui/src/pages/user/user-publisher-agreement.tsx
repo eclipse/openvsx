@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useState, useEffect } from 'react';
+import React, { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
 import {
     Box, Typography, Paper, Button, Dialog, DialogContent, DialogContentText, Link
 } from '@mui/material';
@@ -24,10 +24,12 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     const { service, pageSettings, updateUser, handleError } = useContext(MainContext);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
-    const abortController = new AbortController();
+    const [agreementText, setAgreementText] = useState('');
+    const abortController = useRef<AbortController>(new AbortController());
+
     useEffect(() => {
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -40,7 +42,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     const signPublisherAgreement = async (): Promise<void> => {
         try {
             setWorking(true);
-            const result = await service.signPublisherAgreement(abortController);
+            const result = await service.signPublisherAgreement(abortController.current);
             if (isError(result)) {
                 throw result;
             }
@@ -64,12 +66,11 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         }
     };
 
-    const [agreementText, setAgreementText] = useState('');
     const onDialogOpened = async () => {
         const agreementURL = pageSettings.urls.publisherAgreement;
         if (agreementURL) {
             try {
-                const agreementMd = await service.getStaticContent(abortController, agreementURL);
+                const agreementMd = await service.getStaticContent(abortController.current, agreementURL);
                 setAgreementText(agreementMd);
             } catch (err) {
                 handleError(err);
