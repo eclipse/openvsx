@@ -26,6 +26,8 @@ import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -46,6 +48,8 @@ public class RegistryAPI {
     private final static int REVIEW_TITLE_SIZE = 255;
     private final static int REVIEW_COMMENT_SIZE = 2048;
     private final static String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
+
+    protected final Logger logger = LoggerFactory.getLogger(RegistryAPI.class);
 
     private final LocalRegistryService local;
     private final UpstreamRegistryService upstream;
@@ -1548,6 +1552,7 @@ public class RegistryAPI {
                         .location(URI.create(url))
                         .body(json);
             } catch (ErrorResultException exc) {
+                logger.warn("Failed to publish extension", exc);
                 return exc.toResponseEntity(ExtensionJson.class);
             }
         });
@@ -1621,6 +1626,7 @@ public class RegistryAPI {
                         .location(URI.create(url))
                         .body(json);
             } catch (ErrorResultException exc) {
+                logger.warn("Failed to publish extension", exc);
                 return exc.toResponseEntity(ExtensionJson.class);
             }
         });
