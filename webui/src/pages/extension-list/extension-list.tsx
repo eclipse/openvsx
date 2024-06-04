@@ -39,7 +39,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
             clearTimeout(cancellationToken.timeout);
             enableLoadMore.current = false;
         };
-    }, []);
+    });
 
     useEffect(() => {
         filterSize.current = props.filter.size || filterSize.current;
