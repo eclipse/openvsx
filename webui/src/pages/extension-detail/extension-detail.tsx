@@ -216,12 +216,12 @@ export const ExtensionDetail: FunctionComponent = () => {
 
     const renderExtension = (extension: Extension): ReactNode => {
         const tab = versionPointsToTab(version) ? version as string : 'overview';
-        const headerTheme = extension.galleryTheme ?? pageSettings.themeType ?? 'light';
+        const headerTheme = (extension.galleryTheme || pageSettings.themeType) ?? 'light';
         const headerColor = headerTheme === 'dark' ? '#fff' : '#151515';
         return <>
             <Box
                 sx={{
-                    bgcolor: extension.galleryColor ?? 'neutral.dark',
+                    bgcolor: extension.galleryColor || 'neutral.dark',
                     color: headerColor
                 }}
             >
@@ -335,7 +335,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                     <StyledRouteLink
                         to={createRoute([NamespaceDetailRoutes.ROOT, extension.namespace])}
                         style={{ color: themeColor }}>
-                        {extension.namespaceDisplayName ?? extension.namespace}
+                        {extension.namespaceDisplayName}
                     </StyledRouteLink>
                 </Box>
                 <TextDivider themeType={themeType} collapseSmall={true} />
@@ -449,7 +449,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                 href={extension.files.license}
                 sx={{ color: themeColor }}
                 title={extension.license ? 'License type' : undefined} >
-                {extension.license ?? 'Provided license'}
+                {extension.license || 'Provided license'}
             </StyledLink>;
         } else if (extension.license) {
             return extension.license;

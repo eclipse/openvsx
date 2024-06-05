@@ -120,6 +120,7 @@ public class ExtensionJson extends ResultJson implements Serializable {
     public String displayName;
 
     @Schema(description = "Namespace name to be displayed in user interfaces")
+    @NotNull
     public String namespaceDisplayName;
 
     public String description;
