@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Box, Divider, Typography } from '@mui/material';
 import { MainContext } from '../../context';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
@@ -19,11 +19,11 @@ export const ExtensionDetailChanges: FunctionComponent<ExtensionDetailChangesPro
     const [changelog, setChangelog] = useState<string>();
     const [loading, setLoading] = useState<boolean>(true);
     const context = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         updateChanges();
-        return () => abortController.abort();
+        return () => abortController.current.abort();
     }, []);
 
     useEffect(() => {
@@ -34,7 +34,7 @@ export const ExtensionDetailChanges: FunctionComponent<ExtensionDetailChangesPro
     const updateChanges = async (): Promise<void> => {
         if (props.extension.files.changelog) {
             try {
-                const changelog = await context.service.getExtensionChangelog(abortController, props.extension);
+                const changelog = await context.service.getExtensionChangelog(abortController.current, props.extension);
                 setChangelog(changelog);
             } catch (err) {
                 context.handleError(err);

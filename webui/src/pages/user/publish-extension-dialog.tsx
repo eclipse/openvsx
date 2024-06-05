@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Paper } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
 import Dropzone from 'react-dropzone';
@@ -51,12 +51,12 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
     const [oldFileToPublish, setOldFileToPublish] = useState<File>();
 
     const context = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
         return () => {
-            abortController.abort();
+            abortController.current.abort();
             document.removeEventListener('keydown', handleEnter);
         };
     }, []);
@@ -73,7 +73,8 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
 
     const handleCancel = () => {
         if (publishing) {
-            abortController.abort();
+            abortController.current.abort();
+            abortController.current = new AbortController();
         }
 
         setOpen(false);
@@ -140,7 +141,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
 
     const tryPublishExtension = async (fileToPublish: File): Promise<boolean> => {
         let published = false;
-        const publishResponse = await context.service.publishExtension(abortController, fileToPublish);
+        const publishResponse = await context.service.publishExtension(abortController.current, fileToPublish);
         if (isError(publishResponse)) {
             throw publishResponse;
         }
@@ -161,7 +162,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
             };
             throw result;
         }
-        const namespaceResponse = await context.service.createNamespace(abortController, namespace);
+        const namespaceResponse = await context.service.createNamespace(abortController.current, namespace);
         if (isError(namespaceResponse)) {
             throw namespaceResponse;
         }

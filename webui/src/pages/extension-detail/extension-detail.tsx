@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { ChangeEvent, FunctionComponent, ReactElement, ReactNode, useContext, useEffect, useState } from 'react';
+import { ChangeEvent, FunctionComponent, ReactElement, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import { Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
@@ -78,11 +78,11 @@ export const ExtensionDetail: FunctionComponent = () => {
     const { namespace, name, target, version } = useParams();
     const { handleError, pageSettings, service } = useContext(MainContext);
 
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         updateExtension();
         return () => {
-            abortController.abort();
+            abortController.current.abort();
             if (icon) {
                 URL.revokeObjectURL(icon);
             }
@@ -101,7 +101,7 @@ export const ExtensionDetail: FunctionComponent = () => {
     const updateExtension = async (): Promise<void> => {
         const extensionUrl = getExtensionApiUrl();
         try {
-            const response = await service.getExtensionDetail(abortController, extensionUrl);
+            const response = await service.getExtensionDetail(abortController.current, extensionUrl);
             if (isError(response)) {
                 throw response;
             }
@@ -132,7 +132,7 @@ export const ExtensionDetail: FunctionComponent = () => {
             URL.revokeObjectURL(icon);
         }
 
-        return await service.getExtensionIcon(abortController, extension);
+        return await service.getExtensionIcon(abortController.current, extension);
     };
 
     const onVersionSelect = (version: string): void => {

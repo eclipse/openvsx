@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, Box, TextField, DialogActions } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { isError } from '../../extension-registry-types';
@@ -23,12 +23,12 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
     const [nameError, setNameError] = useState<string>();
 
     const context = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
         return () => {
-            abortController.abort();
+            abortController.current.abort();
             document.removeEventListener('keydown', handleEnter);
         };
     }, []);
@@ -61,7 +61,7 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
 
         setPosted(true);
         try {
-            const response = await context.service.createNamespace(abortController, name);
+            const response = await context.service.createNamespace(abortController.current, name);
             if (isError(response)) {
                 throw response;
             }

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
- import React, { ChangeEvent, FunctionComponent, useState, useContext, useEffect } from 'react';
+ import React, { ChangeEvent, FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
  import {
      Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, TextField
  } from '@mui/material';
@@ -34,10 +34,10 @@
      const [infoDialogIsOpen, setInfoDialogIsOpen] = useState(false);
      const [infoDialogMessage, setInfoDialogMessage] = useState('');
 
-     const abortController = new AbortController();
+     const abortController = useRef<AbortController>(new AbortController());
      useEffect(() => {
          return () => {
-             abortController.abort();
+             abortController.current.abort();
          };
      }, []);
 
@@ -70,7 +70,7 @@
             setWorking(true);
             props.setLoadingState(true);
             const oldNamespace = props.namespace.name;
-            const result = await service.admin.changeNamespace(abortController, { oldNamespace, newNamespace, removeOldNamespace, mergeIfNewNamespaceAlreadyExists });
+            const result = await service.admin.changeNamespace(abortController.current, { oldNamespace, newNamespace, removeOldNamespace, mergeIfNewNamespaceAlreadyExists });
             if (isError(result)) {
                 throw result;
             }

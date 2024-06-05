@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import { Theme, Typography, Box, Paper, Button, Link } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -48,11 +48,11 @@ export const UserSettingsTokens: FunctionComponent = () => {
     const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
     const [loading, setLoading] = useState(true);
 
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         updateTokens();
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -61,7 +61,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
             return;
         }
         try {
-            const tokens = await service.getAccessTokens(abortController, user);
+            const tokens = await service.getAccessTokens(abortController.current, user);
             setTokens(tokens);
             setLoading(false);
         } catch (err) {
@@ -73,7 +73,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
     const handleDelete = async (token: PersonalAccessToken) => {
         setLoading(true);
         try {
-            await service.deleteAccessToken(abortController, token);
+            await service.deleteAccessToken(abortController.current, token);
             updateTokens();
         } catch (err) {
             handleError(err);
@@ -83,7 +83,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
     const handleDeleteAll = async () => {
         setLoading(true);
         try {
-            await service.deleteAllAccessTokens(abortController, tokens);
+            await service.deleteAllAccessTokens(abortController.current, tokens);
             updateTokens();
         } catch (err) {
             handleError(err);

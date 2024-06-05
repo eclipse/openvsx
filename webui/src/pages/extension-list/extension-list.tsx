@@ -19,8 +19,8 @@ import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
-    const abortController = new AbortController();
-    const cancellationToken: { timeout?: number } = {};
+    const abortController = useRef<AbortController>(new AbortController());
+    const cancellationToken = useRef<{ timeout?: number }>({});
     const enableLoadMore = useRef(false);
     const lastRequestedPage = useRef(0);
     const pageOffset = useRef(0);
@@ -35,18 +35,18 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     useEffect(() => {
         enableLoadMore.current = true;
         return () => {
-            abortController.abort();
-            clearTimeout(cancellationToken.timeout);
+            abortController.current.abort();
+            clearTimeout(cancellationToken.current.timeout);
             enableLoadMore.current = false;
         };
-    });
+    }, []);
 
     useEffect(() => {
         filterSize.current = props.filter.size || filterSize.current;
         debounce(
             async () => {
                 try {
-                    const result = await context.service.search(abortController, props.filter);
+                    const result = await context.service.search(abortController.current, props.filter);
                     if (isError(result)) {
                         throw result;
                     }
@@ -70,7 +70,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
                     setLoading(false);
                 }
             },
-            cancellationToken,
+            cancellationToken.current,
             props.debounceTime
         );
     }, [props.filter.category, props.filter.query, props.filter.sortBy, props.filter.sortOrder, props.debounceTime]);
@@ -85,7 +85,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
         }
         try {
             filter.offset = (p - pageOffset.current) * filterSize.current;
-            const result = await context.service.search(abortController, filter);
+            const result = await context.service.search(abortController.current, filter);
             if (isError(result)) {
                 throw result;
             }

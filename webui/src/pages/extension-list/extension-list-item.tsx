@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useState, useEffect } from 'react';
+import React, { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Grid, Fade } from '@mui/material';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
@@ -21,12 +21,12 @@ import { createRoute } from '../../utils';
 export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = props => {
     const [icon, setIcon] = useState<string>();
     const context = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         updateChanges();
         return () => {
-            abortController.abort();
+            abortController.current.abort();
             if (icon) {
                 URL.revokeObjectURL(icon);
             }
@@ -42,7 +42,7 @@ export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = prop
             URL.revokeObjectURL(icon);
         }
         try {
-            const icon = await context.service.getExtensionIcon(abortController, props.extension);
+            const icon = await context.service.getExtensionIcon(abortController.current, props.extension);
             setIcon(icon);
         } catch (err) {
             context.handleError(err);

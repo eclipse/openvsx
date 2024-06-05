@@ -80,7 +80,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     const LINKED_IN_PERSONAL = 'in';
     const LINKED_IN_COMPANY = 'company';
 
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     const editor = useRef<AvatarEditor>(null);
 
     const context = useContext(MainContext);
@@ -103,7 +103,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
 
     useEffect(() => {
         getNamespaceDetails();
-        return () => abortController.abort();
+        return () => abortController.current.abort();
     }, []);
 
     useEffect(() => {
@@ -121,7 +121,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
         }
 
         try {
-            const details = await context.service.getNamespaceDetails(abortController, props.namespace.name);
+            const details = await context.service.getNamespaceDetails(abortController.current, props.namespace.name);
             if (isError(details)) {
                 throw details;
             }
@@ -181,7 +181,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 ? 'https://twitter.com/' + details.socialLinks.twitter
                 : undefined;
 
-            const result = await context.service.setNamespaceDetails(abortController, details);
+            const result = await context.service.setNamespaceDetails(abortController.current, details);
             if (isError(result)) {
                 throw result;
             }

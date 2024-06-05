@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
 import {
     Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Link
 } from '@mui/material';
@@ -24,10 +24,10 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -45,7 +45,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
         try {
             setWorking(true);
             const user = props.publisherInfo.user;
-            const result = await service.admin.revokePublisherContributions(abortController, user.provider!, user.loginName);
+            const result = await service.admin.revokePublisherContributions(abortController.current, user.provider!, user.loginName);
             if (isError(result)) {
                 throw result;
             }

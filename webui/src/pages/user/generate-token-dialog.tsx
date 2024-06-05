@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { CopyToClipboard } from '../../components/copy-to-clipboard';
@@ -25,12 +25,12 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
     const [token, setToken] = useState<PersonalAccessToken>();
 
     const context = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
         return () => {
-            abortController.abort();
+            abortController.current.abort();
             document.removeEventListener('keydown', handleEnter);
         };
     }, []);
@@ -61,7 +61,7 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
         }
         setPosted(true);
         try {
-            const token = await context.service.createAccessToken(abortController, context.user, description);
+            const token = await context.service.createAccessToken(abortController.current, context.user, description);
             if (isError(token)) {
                 throw token;
             }

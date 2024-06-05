@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Box, Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Extension, StarRating, isError } from '../../extension-registry-types';
@@ -24,12 +24,12 @@ export const ExtensionReviewDialog: FunctionComponent<ExtensionReviewDialogProps
     const [comment, setComment] = useState<string>('');
     const [commentError, setCommentError] = useState<string>();
     const context = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
         return () => {
-            abortController.abort();
+            abortController.current.abort();
             document.removeEventListener('keydown', handleEnter);
         };
     }, []);
@@ -46,7 +46,7 @@ export const ExtensionReviewDialog: FunctionComponent<ExtensionReviewDialogProps
     const handlePost = async () => {
         setPosted(true);
         try {
-            const result = await context.service.postReview(abortController, { rating, comment }, props.reviewPostUrl);
+            const result = await context.service.postReview(abortController.current, { rating, comment }, props.reviewPostUrl);
             if (isError(result)) {
                 throw result;
             }

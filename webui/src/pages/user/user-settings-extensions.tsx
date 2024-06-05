@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Box, Typography } from '@mui/material';
 import { PublishExtensionDialog } from './publish-extension-dialog';
@@ -22,12 +22,12 @@ export const UserSettingsExtensions: FunctionComponent = () => {
     const [loading, setLoading] = useState(true);
     const [extensions, setExtensions] = useState(Array<Extension>());
     const { user, service, handleError } = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         updateExtensions();
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -41,7 +41,7 @@ export const UserSettingsExtensions: FunctionComponent = () => {
             return;
         }
         try {
-            const response = await service.getExtensions(abortController);
+            const response = await service.getExtensions(abortController.current);
             if (isError(response)) {
                 throw response;
             }

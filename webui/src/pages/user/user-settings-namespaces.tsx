@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Box, Typography, Tabs, Tab, useTheme, useMediaQuery, Link } from '@mui/material';
 import { Namespace, UserData } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -60,12 +60,12 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
     const [namespaces, setNamespaces] = useState<Array<Namespace>>([]);
     const [chosenNamespace, setChosenNamespace] = useState<Namespace>();
     const { pageSettings, service, user, handleError } = useContext(MainContext);
-    const abortController = new AbortController();
+    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
         initNamespaces();
         return () => {
-            abortController.abort();
+            abortController.current.abort();
         };
     }, []);
 
@@ -79,7 +79,7 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
 
     const initNamespaces = async(): Promise<void> => {
         try {
-            const namespaces = await service.getNamespaces(abortController);
+            const namespaces = await service.getNamespaces(abortController.current);
             const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
             setNamespaces(namespaces);
             setChosenNamespace(chosenNamespace);
