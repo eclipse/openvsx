@@ -86,7 +86,7 @@ export interface Extension {
     timestamp: TimestampString;
     preview?: boolean;
     displayName?: string;
-    namespaceDisplayName?: string;
+    namespaceDisplayName: string;
     description?: string;
 
     // key: engine, value: version constraint
@@ -98,8 +98,8 @@ export interface Extension {
     repository?: string;
     bugs?: string;
     markdown?: 'github' | 'standard';
-    galleryColor?: string;
-    galleryTheme?: 'light' | 'dark';
+    galleryColor: string;
+    galleryTheme: 'light' | 'dark' | '';
     qna?: UrlString | 'marketplace' | 'false';
     badges?: Badge[];
     dependencies?: ExtensionReference[];
@@ -216,7 +216,7 @@ export interface Namespace {
 
 export interface NamespaceDetails {
     name: string;
-    displayName?: string;
+    displayName: string;
     description?: string;
     logo?: UrlString;
     logoBytes?: string;

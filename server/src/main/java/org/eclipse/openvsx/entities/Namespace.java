@@ -179,7 +179,7 @@ public class Namespace implements Serializable {
 	public NamespaceDetailsJson toNamespaceDetailsJson() {
 		var details = new NamespaceDetailsJson();
 		details.name = name;
-		details.displayName = displayName;
+		details.displayName = StringUtils.isNotEmpty(displayName) ? displayName : name;
 		details.description = description;
 		details.website = website;
 		details.supportLink = supportLink;

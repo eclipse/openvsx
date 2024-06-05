@@ -28,6 +28,7 @@ public class NamespaceDetailsJson extends ResultJson implements Serializable {
     public String name;
 
     @Schema(description = "Display name of the namespace")
+    @NotNull
     public String displayName;
 
     @Schema(description = "Description of the namespace")

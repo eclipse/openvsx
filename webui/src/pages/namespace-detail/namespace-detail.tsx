@@ -127,12 +127,12 @@ export const NamespaceDetail: FunctionComponent = () => {
                                         mr: { xs: 0, sm: 0, md: '2rem', lg: '2rem', xl: '2rem' },
                                         pt: 1
                                     }}
-                                    alt={namespaceDetails.displayName ?? namespaceDetails.name} />
+                                    alt={namespaceDetails.displayName} />
                             </Grid>
                             <Grid item xs={7}>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12}>
-                                        <Typography variant='h5'>{namespaceDetails.displayName ?? namespaceDetails.name}</Typography>
+                                        <Typography variant='h5'>{namespaceDetails.displayName}</Typography>
                                     </Grid>
                                     <Grid item xs={12} sx={{ pr: '0 !important' }}>
                                         {
