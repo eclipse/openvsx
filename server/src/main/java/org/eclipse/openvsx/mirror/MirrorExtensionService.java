@@ -31,6 +31,8 @@ import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
 import static org.eclipse.openvsx.entities.FileResource.PUBLIC_KEY;
@@ -174,10 +176,11 @@ public class MirrorExtensionService {
         try (var extensionFile = downloadToFile(download, "extension_", ".vsix")) {
             if(json.files.containsKey(DOWNLOAD_SIG)) {
                 try(
-                        var signatureFile = downloadToFile(json.files.get(DOWNLOAD_SIG), "extension_", ".sigzip");
-                        var publicKeyFile = downloadToFile(json.files.get(PUBLIC_KEY), "public_", ".pem")
+                    var signatureZip = downloadToFile(json.files.get(DOWNLOAD_SIG), "extension_", ".sigzip");
+                    var signature = extractSignature(signatureZip);
+                    var publicKeyFile = downloadToFile(json.files.get(PUBLIC_KEY), "public_", ".pem");
                 ) {
-                    var verified = integrityService.verifyExtensionVersion(extensionFile, signatureFile, publicKeyFile);
+                    var verified = integrityService.verifyExtensionVersion(extensionFile, signature, publicKeyFile);
                     if (!verified) {
                         throw new RuntimeException("Unverified vsix package");
                     }
@@ -213,5 +216,28 @@ public class MirrorExtensionService {
         }, Map.of("url", url));
 
         return file;
+    }
+
+    private TempFile extractSignature(TempFile signatureZip) throws RuntimeException, IOException {
+        var signature = new TempFile("extension_",".signature.sig");
+        try(var zipInput = new ZipInputStream(Files.newInputStream(signatureZip.getPath()))) {
+            ZipEntry zipEntry = zipInput.getNextEntry();
+            while (zipEntry != null) {
+                if (zipEntry.getName().endsWith(".signature.sig")) {
+                    try (var out  = Files.newOutputStream(signature.getPath())) {
+                        int len;
+                        byte[] buffer = new byte[1024];
+                        while ((len = zipInput.read(buffer)) > 0) {
+                            out.write(buffer, 0, len);
+                        }
+                        return signature;
+                    }
+                }
+
+                zipEntry = zipInput.getNextEntry();
+            }
+        }
+
+        throw new RuntimeException("No extension signature found");
     }
 }
