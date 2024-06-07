@@ -9,8 +9,13 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -21,6 +26,7 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
+import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
@@ -34,6 +40,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -121,6 +128,11 @@ public class ExtensionVersionIntegrityService {
                 zip.write(signer.generateSignature());
                 zip.closeEntry();
 
+                var manifestEntry = new ZipEntry(".signature.manifest");
+                zip.putNextEntry(manifestEntry);
+                zip.write(generateSignatureManifest(extensionFile));
+                zip.closeEntry();
+
                 // Add dummy file to the archive because VS Code checks if it exists
                 var dummyEntry = new ZipEntry(".signature.p7s");
                 zip.putNextEntry(dummyEntry);
@@ -134,5 +146,36 @@ public class ExtensionVersionIntegrityService {
         }
 
         return resource;
+    }
+
+    private byte[] generateSignatureManifest(TempFile extensionFile) throws IOException {
+        var base64 = new Base64();
+        var mapper = new ObjectMapper();
+        var manifestEntries = mapper.createObjectNode();
+        try(var zip = new ZipFile(extensionFile.getPath().toFile())) {
+            zip.stream()
+                    .filter(entry -> !entry.isDirectory())
+                    .forEach(entry -> {
+                        var content = ArchiveUtil.readEntry(zip, entry, ObservationRegistry.NOOP);
+                        var manifestEntry = generateManifestEntry(content, mapper, base64);
+                        manifestEntries.set(new String(base64.encode(entry.getName().getBytes(StandardCharsets.UTF_8))), manifestEntry);
+                    });
+        }
+
+        var manifest = mapper.createObjectNode();
+        manifest.set("package", generateManifestEntry(Files.readAllBytes(extensionFile.getPath()), mapper, base64));
+        manifest.set("entries", manifestEntries);
+        return mapper.writeValueAsBytes(manifest);
+    }
+
+    private JsonNode generateManifestEntry(byte[] content, ObjectMapper mapper, Base64 base64) {
+        var manifestEntry = mapper.createObjectNode();
+        manifestEntry.put("size", content.length);
+
+        var manifestEntryDigests = mapper.createObjectNode();
+        var sha256 = new String(base64.encode(DigestUtils.sha256(content)));
+        manifestEntryDigests.put("sha256", sha256);
+        manifestEntry.set("digests", manifestEntryDigests);
+        return manifestEntry;
     }
 }
