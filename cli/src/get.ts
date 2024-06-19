@@ -19,10 +19,6 @@ import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions } fr
  */
 export async function getExtension(options: GetOptions): Promise<void> {
     addEnvOptions(options);
-    if (!options.target) {
-        options.target = 'universal';
-    }
-
     const registry = new Registry(options);
     const match = matchExtensionId(options.extensionId);
     if (!match) {
