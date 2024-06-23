@@ -63,19 +63,16 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
 
     private void createKeyPair() {
         var activeKeyPair = repositories.findActiveKeyPair();
-        Streamable<ExtensionVersion> extVersions;
         if(activeKeyPair == null) {
-            service.generateKeyPair();
-            extVersions = repositories.findVersions();
+            renewKeyPair();
         } else {
-            extVersions = repositories.findVersionsWithout(activeKeyPair);
+            repositories.findVersionsWithout(activeKeyPair).forEach(this::enqueueCreateSignatureJob);
         }
-
-        extVersions.forEach(this::enqueueCreateSignatureJob);
     }
 
     private void renewKeyPair() {
-        service.renewKeyPair();
+        var keyPair = service.generateKeyPair();
+        service.updateKeyPair(keyPair);
         repositories.findVersions().forEach(this::enqueueCreateSignatureJob);
     }
 

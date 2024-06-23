@@ -202,7 +202,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findLatestVersion(extension, "targetPlatform", false, false),
                 () -> repositories.findLatestVersions(namespace),
                 () -> repositories.findLatestVersions(userData),
-                () -> repositories.findExtensionTargetPlatforms(extension)
+                () -> repositories.findExtensionTargetPlatforms(extension),
+                () -> repositories.deactivateKeyPairs()
         );
 
         // check that we did not miss anything

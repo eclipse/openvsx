@@ -23,6 +23,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +97,8 @@ public class StorageMigration {
                             + migrations.get(i) + " to " + storageType + ".");
                 }
             }
-            scheduledFuture = taskScheduler.scheduleWithFixedDelay(this::migrateResources, migrationDelay);
+            var duration = Duration.of(migrationDelay, ChronoUnit.MILLIS);
+            scheduledFuture = taskScheduler.scheduleWithFixedDelay(this::migrateResources, duration);
         }
     }
 

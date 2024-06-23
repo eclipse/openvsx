@@ -609,4 +609,8 @@ public class RepositoryService {
     public List<String> findExtensionTargetPlatforms(Extension extension) {
         return extensionVersionJooqRepo.findDistinctTargetPlatforms(extension);
     }
+
+    public void deactivateKeyPairs() {
+        signatureKeyPairRepo.updateActiveSetFalse();
+    }
 }
