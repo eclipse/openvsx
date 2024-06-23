@@ -15,7 +15,9 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 public class MigrationScheduler {
@@ -25,6 +27,9 @@ public class MigrationScheduler {
     @Value("${ovsx.migrations.delay.seconds:0}")
     long delay;
 
+    @Value("${ovsx.registry.version:}")
+    String registryVersion;
+
     public MigrationScheduler(JobRequestScheduler scheduler) {
         this.scheduler = scheduler;
     }
@@ -32,6 +37,8 @@ public class MigrationScheduler {
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
         var instant = Instant.now().plusSeconds(delay);
-        scheduler.schedule(instant, new HandlerJobRequest<>(MigrationRunner.class));
+        var jobIdText = "MigrationRunner::" + registryVersion;
+        var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+        scheduler.schedule(jobId, instant, new HandlerJobRequest<>(MigrationRunner.class));
     }
 }

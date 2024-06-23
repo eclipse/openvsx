@@ -12,15 +12,16 @@ package org.eclipse.openvsx.publish;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.migration.GenerateKeyPairJobService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -34,11 +35,8 @@ import java.util.zip.ZipFile;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@MockBean({ CacheService.class, RepositoryService.class })
+@MockBean({ CacheService.class, RepositoryService.class, EntityManager.class })
 public class ExtensionVersionIntegrityServiceTest {
-
-    @MockBean
-    EntityManager entityManager;
 
     @Autowired
     ExtensionVersionIntegrityService integrityService;
@@ -48,10 +46,7 @@ public class ExtensionVersionIntegrityServiceTest {
 
     @Test
     public void testGenerateSignature() throws IOException {
-        keyPairService.generateKeyPair();
-        var keyPairCaptor = ArgumentCaptor.forClass(SignatureKeyPair.class);
-        Mockito.verify(entityManager).persist(keyPairCaptor.capture());
-        var keyPair = keyPairCaptor.getValue();
+        var keyPair = keyPairService.generateKeyPair();
 
         var namespace = new Namespace();
         namespace.setName("foo");

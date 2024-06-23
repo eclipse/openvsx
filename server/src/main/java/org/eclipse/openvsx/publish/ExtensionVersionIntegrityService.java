@@ -156,9 +156,12 @@ public class ExtensionVersionIntegrityService {
             zip.stream()
                     .filter(entry -> !entry.isDirectory())
                     .forEach(entry -> {
-                        var content = ArchiveUtil.readEntry(zip, entry, ObservationRegistry.NOOP);
-                        var manifestEntry = generateManifestEntry(content, mapper, base64);
-                        manifestEntries.set(new String(base64.encode(entry.getName().getBytes(StandardCharsets.UTF_8))), manifestEntry);
+                        try {
+                            var manifestEntry = generateManifestEntry(zip.getInputStream(entry).readAllBytes(), mapper, base64);
+                            manifestEntries.set(new String(base64.encode(entry.getName().getBytes(StandardCharsets.UTF_8))), manifestEntry);
+                        } catch (IOException e) {
+                            logger.warn("Failed to add entry to manifest", e);
+                        }
                     });
         }
 
