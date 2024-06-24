@@ -50,6 +50,7 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         fixTargetPlatformMigration();
         generateSha256ChecksumMigration();
         extensionVersionSignatureMigration();
+        checkPotentiallyMaliciousExtensionVersions();
     }
 
     private void extractResourcesMigration() {
@@ -92,5 +93,11 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         if(!mirrorEnabled) {
             scheduler.enqueue(new HandlerJobRequest<>(GenerateKeyPairJobRequestHandler.class));
         }
+    }
+
+    private void checkPotentiallyMaliciousExtensionVersions() {
+        var jobName = "CheckPotentiallyMaliciousExtensionVersions";
+        var handler = PotentiallyMaliciousJobRequestHandler.class;
+        repositories.findNotMigratedPotentiallyMalicious().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
     }
 }

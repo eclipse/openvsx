@@ -224,6 +224,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, Boolean> UNIVERSAL_TARGET_PLATFORM = createField(DSL.name("universal_target_platform"), SQLDataType.BOOLEAN, this, "");
 
+    /**
+     * The column <code>publc.extension_version.potentially_malicious</code>.
+     */
+    public final TableField<ExtensionVersionRecord, Boolean> POTENTIALLY_MALICIOUS = createField(DSL.name("potentially_malicious"), SQLDataType.BOOLEAN, this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, null);
     }

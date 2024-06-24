@@ -68,7 +68,7 @@ public class ExtensionService {
         return download.getExtension();
     }
 
-    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
+    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) throws ErrorResultException {
         return Observation.createNotStarted("ExtensionService#publishVersion", observations).observe(() -> {
             var extensionFile = createExtensionFile(content);
             var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);

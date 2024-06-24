@@ -72,6 +72,9 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @Schema(hidden = true)
     public Boolean active;
 
+    @Schema(description = "The value 'true' means that the extension contains potentially malicious content.")
+    public Boolean potentiallyMalicious;
+
     @Schema(description = "The value 'true' means the publishing user is a privileged user or the publishing user is a member of the extension's namespace and the namespace has at least one owner.")
     @NotNull
     public Boolean verified;
