@@ -46,6 +46,7 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION.NAME,
                     EXTENSION_VERSION.ID,
                     EXTENSION_VERSION.VERSION,
+                    EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                     EXTENSION_VERSION.TARGET_PLATFORM,
                     EXTENSION_VERSION.PREVIEW,
                     EXTENSION_VERSION.PRE_RELEASE,
@@ -411,6 +412,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.PROVIDER,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -531,6 +533,7 @@ public class ExtensionVersionJooqRepository {
         extVersion.setDependencies(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.DEPENDENCIES)), converter));
         extVersion.setBundledExtensions(toList(record.get(extensionVersionMapper.map(EXTENSION_VERSION.BUNDLED_EXTENSIONS)), converter));
         extVersion.setSponsorLink(record.get(extensionVersionMapper.map(EXTENSION_VERSION.SPONSOR_LINK)));
+        extVersion.setPotentiallyMalicious(record.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS)));
 
         if(extension == null) {
             var namespace = new Namespace();
@@ -637,6 +640,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.PROVIDER,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -736,6 +740,7 @@ public class ExtensionVersionJooqRepository {
         latestQuery.addSelect(
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -780,6 +785,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.LAST_UPDATED_DATE,
                 EXTENSION.ACTIVE,
                 latest.field(EXTENSION_VERSION.ID),
+                latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
                 latest.field(EXTENSION_VERSION.PREVIEW),
@@ -909,6 +915,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.LAST_UPDATED_DATE,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
