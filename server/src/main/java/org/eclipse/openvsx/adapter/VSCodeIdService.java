@@ -15,6 +15,7 @@ import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
@@ -49,6 +50,9 @@ public class VSCodeIdService {
     @Value("${ovsx.vscode.upstream.update-on-start:false}")
     boolean updateOnStart;
 
+    @Value("${ovsx.migrations.delay.seconds:0}")
+    long delay;
+
     public VSCodeIdService(
             RestTemplate vsCodeIdRestTemplate,
             UrlConfigService urlConfigService,
@@ -65,7 +69,7 @@ public class VSCodeIdService {
             return;
         }
         if(updateOnStart) {
-            scheduler.enqueue(new HandlerJobRequest<>(VSCodeIdDailyUpdateJobRequestHandler.class));
+            scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(delay), new HandlerJobRequest<>(VSCodeIdDailyUpdateJobRequestHandler.class));
         }
 
         scheduler.scheduleRecurrently("VSCodeIdDailyUpdate", Cron.daily(3), ZoneId.of("UTC"), new HandlerJobRequest<>(VSCodeIdDailyUpdateJobRequestHandler.class));

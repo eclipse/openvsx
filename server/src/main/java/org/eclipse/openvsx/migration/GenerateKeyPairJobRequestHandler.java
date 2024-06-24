@@ -83,13 +83,12 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
 
     private void enqueueCreateSignatureJob(ExtensionVersion extVersion) {
         var handler = ExtensionVersionSignatureJobRequestHandler.class;
-        var jobRequest = new MigrationJobRequest<>(handler, extVersion.getId());
-        scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(30), jobRequest);
+        scheduler.enqueue(new MigrationJobRequest<>(handler, extVersion.getId()));
     }
 
     private void enqueueDeleteSignatureJob(FileResource resource) {
         if(!resource.getStorageType().equals(STORAGE_DB)) {
-            scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(30), new RemoveFileJobRequest(resource));
+            scheduler.enqueue(new RemoveFileJobRequest(resource));
         }
     }
 }

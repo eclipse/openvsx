@@ -66,9 +66,10 @@ public class ExtensionVersionIntegrityServiceTest {
         var sigzipContent = new byte[0];
         try (
                 var stream = getClass().getResource("ms-python.python-2024.7.11511013.vsix").openStream();
-                var extensionFile = new TempFile("ms-python", ".vsix")
+                var extensionFile = new TempFile("ms-python", ".vsix");
+                var out = Files.newOutputStream(extensionFile.getPath())
         ) {
-            Files.write(extensionFile.getPath(), stream.readAllBytes());
+            stream.transferTo(out);
             var signature = integrityService.generateSignature(download, extensionFile, keyPair);
             sigzipContent = signature.getContent();
         }
