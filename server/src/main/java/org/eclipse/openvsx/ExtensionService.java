@@ -140,6 +140,8 @@ public class ExtensionService {
             extension.setActive(false);
             search.removeSearchEntry(extension);
         }
+
+        extension.setLastUpdatedDate(TimeUtil.getCurrentUTC());
     }
 
     /**
