@@ -194,7 +194,7 @@ public class PublishExtensionVersionHandler {
 
     @Async
     @Retryable
-    public void publishAsync(FileResource download, TempFile extensionFile, ExtensionService extensionService) {
+    public void publishAsync(FileResource download, TempFile extensionFile, ExtensionService extensionService) throws ErrorResultException {
         var extVersion = download.getExtension();
 
         // Delete file resources in case publishAsync is retried
@@ -204,6 +204,12 @@ public class PublishExtensionVersionHandler {
         service.storeDownload(download, extensionFile);
         service.persistResource(download);
         try(var processor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+            extVersion.setPotentiallyMalicious(processor.isPotentiallyMalicious());
+            if (extVersion.isPotentiallyMalicious()) {
+                logger.warn("Extension version is potentially malicious: {}", NamingUtil.toLogFormat(extVersion));
+                return;
+            }
+
             Consumer<FileResource> consumer = resource -> {
                 service.storeResource(resource);
                 service.persistResource(resource);

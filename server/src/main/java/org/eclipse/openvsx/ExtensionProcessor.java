@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
@@ -561,5 +562,19 @@ public class ExtensionProcessor implements AutoCloseable {
         vsixManifest.setType(FileResource.VSIXMANIFEST);
         vsixManifest.setContent(ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST, ObservationRegistry.NOOP));
         return vsixManifest;
+    }
+
+    public boolean isPotentiallyMalicious() {
+        readInputStream();
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            if (entry.getExtra() != null) {
+                logger.warn("Potentially harmful zip entry with extra fields detected: {}", entry.getName());
+                return true;
+            }
+        }
+
+        return false;
     }
 }
