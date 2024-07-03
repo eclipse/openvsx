@@ -142,7 +142,7 @@ public class UserService {
         String value;
         do {
             value = UUID.randomUUID().toString();
-        } while (repositories.findAccessToken(value) != null);
+        } while (repositories.hasAccessToken(value));
         return value;
     }
 
@@ -154,22 +154,14 @@ public class UserService {
                 return true;
             }
 
-            var membership = repositories.findMembership(user, namespace);
-            if (membership == null) {
-                // The requesting user is not a member of the namespace.
-                return false;
-            }
-            var role = membership.getRole();
-            return NamespaceMembership.ROLE_CONTRIBUTOR.equalsIgnoreCase(role)
-                    || NamespaceMembership.ROLE_OWNER.equalsIgnoreCase(role);
+            return repositories.canPublishInNamespace(user, namespace);
         });
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson setNamespaceMember(UserData requestingUser, String namespaceName, String provider, String userLogin, String role) {
         var namespace = repositories.findNamespace(namespaceName);
-        var userMembership = repositories.findMembership(requestingUser, namespace);
-        if (userMembership == null || !userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
+        if (!repositories.isNamespaceOwner(requestingUser, namespace)) {
             throw new ErrorResultException("You must be an owner of this namespace.");
         }
         var targetUser = repositories.findUserByLoginName(provider, userLogin);

@@ -12,6 +12,8 @@ package org.eclipse.openvsx;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.openvsx.json.*;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -29,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public class IntegrationTest {
+
+    protected final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
 
     @LocalServerPort
     int port;
@@ -178,6 +182,7 @@ public class IntegrationTest {
     }
 
     private void getFile(String path) {
+        logger.info(path);
         var response = restTemplate.getForEntity(apiCall(path), byte[].class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotEmpty();
@@ -202,7 +207,7 @@ public class IntegrationTest {
         var path = "/vscode/gallery/publishers/editorconfig/vsextensions/editorconfig/0.16.6/vspackage";
         var response = restTemplate.getForEntity(apiCall(path), String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
-        var expectedPath = "/vscode/asset/editorconfig/editorconfig/0.16.6/Microsoft.VisualStudio.Services.VSIXPackage";
+        var expectedPath = "/vscode/asset/EditorConfig/EditorConfig/0.16.6/Microsoft.VisualStudio.Services.VSIXPackage";
         assertThat(response.getHeaders().getLocation()).isEqualTo(new URI(apiCall(expectedPath)));
     }
 }

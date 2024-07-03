@@ -18,15 +18,12 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
     Streamable<ExtensionVersion> findByExtension(Extension extension);
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
-
-    List<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension, Pageable page);
 
     Streamable<ExtensionVersion> findByVersionAndExtension(String version, Extension extension);
 
@@ -36,11 +33,9 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
 
-    Streamable<ExtensionVersion> findByPublishedWithUser(UserData user);
-
-    Streamable<ExtensionVersion> findByPublishedWith(PersonalAccessToken publishedWith);
-
     Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
+
+    Streamable<ExtensionVersion> findByPublishedWithUserAndActive(UserData user, boolean active);
 
     Streamable<ExtensionVersion> findAll();
 

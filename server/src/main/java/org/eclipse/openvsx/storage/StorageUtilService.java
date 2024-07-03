@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
+import static org.eclipse.openvsx.util.UrlUtil.createApiFileUrl;
 
 /**
  * Provides utility around storing file resources and acts as a composite storage
@@ -50,6 +51,7 @@ public class StorageUtilService implements IStorageService {
     private final RepositoryService repositories;
     private final GoogleCloudStorageService googleStorage;
     private final AzureBlobStorageService azureStorage;
+    private final LocalStorageService localStorage;
     private final AzureDownloadCountService azureDownloadCountService;
     private final SearchUtilService search;
     private final CacheService cache;
@@ -69,6 +71,7 @@ public class StorageUtilService implements IStorageService {
             GoogleCloudStorageService googleStorage,
             AzureBlobStorageService azureStorage,
             AzureDownloadCountService azureDownloadCountService,
+            LocalStorageService localStorage,
             SearchUtilService search,
             CacheService cache,
             EntityManager entityManager,
@@ -77,6 +80,7 @@ public class StorageUtilService implements IStorageService {
         this.repositories = repositories;
         this.googleStorage = googleStorage;
         this.azureStorage = azureStorage;
+        this.localStorage = localStorage;
         this.azureDownloadCountService = azureDownloadCountService;
         this.search = search;
         this.cache = cache;
@@ -211,7 +215,7 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_AZURE:
                 return azureStorage.getLocation(resource);
             case STORAGE_DB:
-                return URI.create(getFileUrl(resource.getName(), resource.getExtension(), UrlUtil.getBaseUrl()));
+                return localStorage.getLocation(resource);
             default:
                 return null;
         }
@@ -225,37 +229,10 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_AZURE:
                 return azureStorage.getNamespaceLogoLocation(namespace);
             case STORAGE_DB:
-                return URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api", namespace.getName(), "logo", namespace.getLogoName()));
+                return localStorage.getNamespaceLogoLocation(namespace);
             default:
                 return null;
         }
-    }
-
-    public TempFile downloadNamespaceLogo(Namespace namespace) throws IOException {
-        if(namespace.getLogoStorageType() == null) {
-            return createNamespaceLogoFile();
-        }
-
-        switch (namespace.getLogoStorageType()) {
-            case STORAGE_GOOGLE:
-                return googleStorage.downloadNamespaceLogo(namespace);
-            case STORAGE_AZURE:
-                return azureStorage.downloadNamespaceLogo(namespace);
-            case STORAGE_DB:
-                var logoFile = createNamespaceLogoFile();
-                Files.write(logoFile.getPath(), namespace.getLogoBytes());
-                return logoFile;
-            default:
-                return createNamespaceLogoFile();
-        }
-    }
-
-    private TempFile createNamespaceLogoFile() throws IOException {
-        return new TempFile("namespace-logo", ".png");
-    }
-
-    private String getFileUrl(String name, ExtensionVersion extVersion, String serverUrl) {
-        return UrlUtil.createApiFileUrl(serverUrl, extVersion, name);
     }
 
     /**
@@ -270,7 +247,7 @@ public class StorageUtilService implements IStorageService {
             var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
             for (var resource : resources) {
                 var extVersion = resource.getExtension();
-                type2Url.get(extVersion.getId()).put(resource.getType(), getFileUrl(resource.getName(), extVersion, serverUrl));
+                type2Url.get(extVersion.getId()).put(resource.getType(), createApiFileUrl(serverUrl, extVersion, resource.getName()));
             }
 
             return type2Url;
@@ -284,8 +261,8 @@ public class StorageUtilService implements IStorageService {
             return;
         }
 
-        resource = entityManager.merge(resource);
-        var extension = resource.getExtension().getExtension();
+        var managedResource = entityManager.find(FileResource.class, resource.getId());
+        var extension = managedResource.getExtension().getExtension();
         extension.setDownloadCount(extension.getDownloadCount() + 1);
 
         cache.evictNamespaceDetails(extension);
@@ -296,22 +273,12 @@ public class StorageUtilService implements IStorageService {
     }
 
     public HttpHeaders getFileResponseHeaders(String fileName) {
-        var headers = new HttpHeaders();
-        headers.setContentType(StorageUtil.getFileType(fileName));
-        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
-            headers.add("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        } else {
-            headers.setCacheControl(StorageUtil.getCacheControl(fileName));
-        }
-        return headers;
+        return localStorage.getFileResponseHeaders(fileName);
     }
 
-    @Transactional
     public ResponseEntity<byte[]> getFileResponse(FileResource resource) {
-        resource = entityManager.merge(resource);
         if (resource.getStorageType().equals(STORAGE_DB)) {
-            var headers = getFileResponseHeaders(resource.getName());
-            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
+           return localStorage.getFileResponse(resource);
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(getLocation(resource))
@@ -320,12 +287,9 @@ public class StorageUtilService implements IStorageService {
         }
     }
 
-    @Transactional
     public ResponseEntity<byte[]> getNamespaceLogo(Namespace namespace) {
-        namespace = entityManager.merge(namespace);
         if (namespace.getLogoStorageType().equals(STORAGE_DB)) {
-            var headers = getFileResponseHeaders(namespace.getLogoName());
-            return new ResponseEntity<>(namespace.getLogoBytes(), headers, HttpStatus.OK);
+            return localStorage.getNamespaceLogo(namespace);
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(getNamespaceLogoLocation(namespace))

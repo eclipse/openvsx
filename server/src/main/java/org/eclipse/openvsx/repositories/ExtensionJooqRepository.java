@@ -56,12 +56,11 @@ public class ExtensionJooqRepository {
     public Extension findActiveByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespaceName) {
         var query = findAllActive();
         query.addConditions(
-                DSL.upper(EXTENSION.NAME).eq(DSL.upper(name)),
-                DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespaceName))
+                EXTENSION.NAME.equalIgnoreCase(name),
+                NAMESPACE.NAME.equalIgnoreCase(namespaceName)
         );
 
-        var record = query.fetchOne();
-        return record != null ? toExtension(record) : null;
+        return query.fetchOne(this::toExtension);
     }
 
     public List<Extension> findAllPublicIds() {
@@ -71,29 +70,24 @@ public class ExtensionJooqRepository {
     public Extension findPublicId(String namespace, String extension) {
         var query = findPublicId();
         query.addConditions(
-                DSL.upper(EXTENSION.NAME).eq(DSL.upper(extension)),
-                DSL.upper(NAMESPACE.NAME).eq(DSL.upper(namespace))
+                EXTENSION.NAME.equalIgnoreCase(extension),
+                NAMESPACE.NAME.equalIgnoreCase(namespace)
         );
 
-        var record = query.fetchOne();
-        return record != null ? toPublicId(record) : null;
+        return query.fetchOne(this::toPublicId);
     }
 
     public Extension findPublicId(String publicId) {
         var query = findPublicId();
         query.addConditions(EXTENSION.PUBLIC_ID.eq(publicId));
-
-        var record = query.fetchOne();
-        return record != null ? toPublicId(record) : null;
+        return query.fetchOne(this::toPublicId);
     }
 
     public Extension findNamespacePublicId(String publicId) {
         var query = findPublicId();
         query.addConditions(NAMESPACE.PUBLIC_ID.eq(publicId));
         query.addLimit(1);
-
-        var record = query.fetchOne();
-        return record != null ? toPublicId(record) : null;
+        return query.fetchOne(this::toPublicId);
     }
 
     private SelectQuery<Record> findPublicId() {
@@ -224,6 +218,47 @@ public class ExtensionJooqRepository {
                             record.get(EXTENSION.NAME),
                             record.get(LAST_UPDATED)
                     );
+                });
+    }
+
+    public List<String> findActiveExtensionNames(Namespace namespace) {
+        return dsl.select(EXTENSION.NAME)
+                .from(EXTENSION)
+                .where(EXTENSION.NAMESPACE_ID.eq(namespace.getId()))
+                .and(EXTENSION.ACTIVE.eq(true))
+                .orderBy(EXTENSION.NAME.asc())
+                .fetch(EXTENSION.NAME);
+    }
+
+    public String findFirstUnresolvedDependency(List<String[]> dependencies) {
+        if(dependencies.isEmpty()) {
+            return null;
+        }
+
+        var ids = DSL.values(dependencies.stream().map(d -> DSL.row(d[0], d[1])).toArray(Row2[]::new)).as("ids", "namespace", "extension");
+        var namespace = ids.field("namespace", String.class);
+        var extension = ids.field("extension", String.class);
+        var unresolvedDependency = DSL.concat(namespace, DSL.value("."), extension).as("unresolved_dependency");
+        return dsl.select(unresolvedDependency)
+                .from(ids)
+                .leftJoin(NAMESPACE).on(NAMESPACE.NAME.eq(namespace))
+                .leftJoin(EXTENSION).on(EXTENSION.NAME.eq(extension))
+                .where(NAMESPACE.NAME.isNull()).or(EXTENSION.NAME.isNull())
+                .limit(1)
+                .fetchOne(unresolvedDependency);
+    }
+
+    public List<Extension> findActiveExtensionsForUrls(Namespace namespace) {
+        return dsl.select(EXTENSION.ID, EXTENSION.NAME)
+                .from(EXTENSION)
+                .where(EXTENSION.NAMESPACE_ID.eq(namespace.getId()))
+                .and(EXTENSION.ACTIVE.eq(true))
+                .fetch(record -> {
+                    var extension = new Extension();
+                    extension.setId(record.get(EXTENSION.ID));
+                    extension.setName(record.get(EXTENSION.NAME));
+                    extension.setNamespace(namespace);
+                    return extension;
                 });
     }
 }

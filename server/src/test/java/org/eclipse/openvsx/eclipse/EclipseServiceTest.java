@@ -34,10 +34,7 @@ import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.TokenService;
-import org.eclipse.openvsx.storage.AzureBlobStorageService;
-import org.eclipse.openvsx.storage.AzureDownloadCountService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
-import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.junit.jupiter.api.BeforeEach;
@@ -165,7 +162,7 @@ public class EclipseServiceTest {
         var user = mockUser();
         Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
             .thenReturn(mockAgreementResponse());
-        Mockito.when(repositories.findAccessTokens(user))
+        Mockito.when(repositories.findVersionsByUser(user, false))
             .thenReturn(Streamable.empty());
 
         var agreement = eclipse.signPublisherAgreement(user);
@@ -181,11 +178,6 @@ public class EclipseServiceTest {
         var user = mockUser();
         Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
             .thenReturn(mockAgreementResponse());
-        var accessToken = new PersonalAccessToken();
-        accessToken.setUser(user);
-        accessToken.setActive(true);
-        Mockito.when(repositories.findAccessTokens(user))
-            .thenReturn(Streamable.of(accessToken));
         var namespace = new Namespace();
         namespace.setName("foo");
         var extension = new Extension();
@@ -196,7 +188,7 @@ public class EclipseServiceTest {
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
         extension.getVersions().add(extVersion);
-        Mockito.when(repositories.findVersionsByAccessToken(accessToken, false))
+        Mockito.when(repositories.findVersionsByUser(user, false))
             .thenReturn(Streamable.of(extVersion));
 
         var agreement = eclipse.signPublisherAgreement(user);
@@ -315,6 +307,7 @@ public class EclipseServiceTest {
                 RepositoryService repositories,
                 GoogleCloudStorageService googleStorage,
                 AzureBlobStorageService azureStorage,
+                LocalStorageService localStorage,
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
@@ -326,11 +319,17 @@ public class EclipseServiceTest {
                     googleStorage,
                     azureStorage,
                     azureDownloadCountService,
+                    localStorage,
                     search,
                     cache,
                     entityManager,
                     observations
             );
+        }
+
+        @Bean
+        LocalStorageService localStorageService(EntityManager entityManager) {
+            return new LocalStorageService(entityManager);
         }
 
         @Bean

@@ -16,7 +16,11 @@ import org.springframework.data.util.Streamable;
 
 public interface PersonalAccessTokenRepository extends Repository<PersonalAccessToken, Long> {
 
+    Streamable<PersonalAccessToken> findAll();
+
     Streamable<PersonalAccessToken> findByUser(UserData user);
+
+    Streamable<PersonalAccessToken> findByUserAndActiveTrue(UserData user);
 
     long countByUserAndActiveTrue(UserData user);
 
@@ -24,4 +28,5 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     PersonalAccessToken findByValue(String value);
 
+    PersonalAccessToken findByUserAndDescriptionAndActiveTrue(UserData user, String description);
 }

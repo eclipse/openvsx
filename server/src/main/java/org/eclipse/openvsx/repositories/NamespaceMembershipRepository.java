@@ -19,15 +19,11 @@ public interface NamespaceMembershipRepository extends Repository<NamespaceMembe
 
     NamespaceMembership findByUserAndNamespace(UserData user, Namespace namespace);
 
-    long countByUserAndNamespace(UserData user, Namespace namespace);
-
     Streamable<NamespaceMembership> findByNamespaceAndRoleIgnoreCase(Namespace namespace, String role);
-
-    long countByNamespaceAndRoleIgnoreCase(Namespace namespace, String role);
 
     Streamable<NamespaceMembership> findByNamespace(Namespace namespace);
 
-    Streamable<NamespaceMembership> findByUser(UserData user);
+    Streamable<NamespaceMembership> findByUserOrderByNamespaceName(UserData user);
 
-    Streamable<NamespaceMembership> findByUserAndRoleIgnoreCaseOrderByNamespaceName(UserData user, String role);
+    NamespaceMembership findFirstByNamespaceNameIgnoreCase(String namespaceName);
 }

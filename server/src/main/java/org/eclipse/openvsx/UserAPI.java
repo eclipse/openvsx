@@ -11,12 +11,13 @@ package org.eclipse.openvsx;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.eclipse.EclipseService;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
@@ -141,8 +142,7 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var serverUrl = UrlUtil.getBaseUrl();
-        return repositories.findAccessTokens(user)
-                .filter(token -> token.isActive())
+        return repositories.findActiveAccessTokens(user)
                 .map(token -> {
                     var json = token.toAccessTokenJson();
                     json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId()));
@@ -219,22 +219,19 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        var memberships = repositories.findMemberships(user, NamespaceMembership.ROLE_OWNER)
-                .and(repositories.findMemberships(user, NamespaceMembership.ROLE_CONTRIBUTOR));
-
-        return memberships.map(membership -> {
+        return repositories.findMemberships(user).map(membership -> {
             var namespace = membership.getNamespace();
             var json = new NamespaceJson();
             json.name = namespace.getName();
             json.extensions = new LinkedHashMap<>();
             var serverUrl = UrlUtil.getBaseUrl();
-            for (var ext : repositories.findActiveExtensions(namespace)) {
-                String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
-                json.extensions.put(ext.getName(), url);
-            }
+            repositories.findActiveExtensionsForUrls(namespace).forEach(extension -> {
+                String url = createApiUrl(serverUrl, "api", namespace.getName(), extension.getName());
+                json.extensions.put(extension.getName(), url);
+            });
 
             var isOwner = membership.getRole().equals(NamespaceMembership.ROLE_OWNER);
-            json.verified = isOwner || repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0;
+            json.verified = isOwner || repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER);
             if(isOwner) {
                 json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
                 json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
@@ -271,12 +268,10 @@ public class UserAPI {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        var namespace = repositories.findNamespace(name);
-        var userMembership = repositories.findMembership(user, namespace);
-        if (userMembership != null && userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
-            var memberships = repositories.findMemberships(namespace);
+        var memberships = repositories.findMembershipsForOwner(user, name);
+        if (!memberships.isEmpty()) {
             var membershipList = new NamespaceMembershipListJson();
-            membershipList.namespaceMemberships = memberships.map(membership -> membership.toJson()).toList();
+            membershipList.namespaceMemberships = memberships.stream().map(NamespaceMembership::toJson).toList();
             return new ResponseEntity<>(membershipList, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN); 
@@ -310,9 +305,9 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        var users = repositories.findUsersByLoginNameStartingWith(name)
-                .map(user -> user.toUserJson());
-        return CollectionUtil.limit(users, 5);
+        return repositories.findUsersByLoginNameStartingWith(name, 5).stream()
+                .map(UserData::toUserJson)
+                .toList();
     }
 
     @PostMapping(

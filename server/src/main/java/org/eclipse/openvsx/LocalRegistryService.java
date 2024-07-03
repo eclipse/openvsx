@@ -40,7 +40,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -105,11 +104,11 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.name = namespace.getName();
         json.extensions = new LinkedHashMap<>();
         var serverUrl = UrlUtil.getBaseUrl();
-        for (var ext : repositories.findActiveExtensions(namespace)) {
-            String url = createApiUrl(serverUrl, "api", namespace.getName(), ext.getName());
-            json.extensions.put(ext.getName(), url);
+        for (var name : repositories.findActiveExtensionNames(namespace)) {
+            String url = createApiUrl(serverUrl, "api", namespace.getName(), name);
+            json.extensions.put(name, url);
         }
-        json.verified = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0;
+        json.verified = repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER);
         json.access = "restricted";
         return json;
     }
@@ -210,8 +209,10 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Override
     public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
-        var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
-        var resource = isType(fileName) ? repositories.findFileByType(extVersion, fileName.toLowerCase()) : repositories.findFileByName(extVersion, fileName);
+        var resource = isType(fileName)
+                ? repositories.findFileByType(namespace, extensionName, targetPlatform, version, fileName.toLowerCase())
+                : repositories.findFileByName(namespace, extensionName, targetPlatform, version, fileName);
+
         if (resource == null)
             throw new NotFoundException();
         if (resource.getType().equals(DOWNLOAD))
@@ -230,8 +231,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ReviewListJson getReviews(String namespace, String extensionName) {
-        var extension = repositories.findExtension(extensionName, namespace);
+    public ReviewListJson getReviews(String namespaceName, String extensionName) {
+        var extension = repositories.findExtension(extensionName, namespaceName);
         if (extension == null || !extension.isActive())
             throw new NotFoundException();
         var list = new ReviewListJson();
@@ -399,7 +400,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var json = namespace.toNamespaceDetailsJson();
-        json.verified = repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER) > 0;
+        json.verified = repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER);
         json.logo = namespace.getLogoStorageType() != null
                 ? storageUtil.getNamespaceLogoLocation(namespace).toString()
                 : null;
@@ -501,12 +502,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private Map<Long, Boolean> getPreviews(Set<Long> extensionIds) {
-        return repositories.findActiveExtensionVersions(extensionIds, null).stream()
-                .collect(Collectors.groupingBy(ev -> ev.getExtension().getId()))
-                .values()
-                .stream()
-                .map(list -> versions.getLatest(list, false))
-                .collect(Collectors.toMap(ev -> ev.getExtension().getId(), ExtensionVersion::isPreview));
+        return repositories.findLatestVersionsIsPreview(extensionIds);
     }
 
     private Map<Long, List<FileResource>> getFileResources(List<ExtensionVersion> extensionVersions) {
@@ -556,13 +552,13 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         eclipse.checkPublisherAgreement(user);
-        var namespace = repositories.findNamespace(json.name);
-        if (namespace != null) {
-            throw new ErrorResultException("Namespace already exists: " + namespace.getName());
+        var namespaceName = repositories.findNamespaceName(json.name);
+        if (namespaceName != null) {
+            throw new ErrorResultException("Namespace already exists: " + namespaceName);
         }
 
         // Create the requested namespace
-        namespace = new Namespace();
+        var namespace = new Namespace();
         namespace.setName(json.name);
         entityManager.persist(namespace);
 
@@ -589,7 +585,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var user = token.getUser();
         if (!users.hasPublishPermission(user, namespace)) {
-            throw new ErrorResultException("Insufficient access rights for namespace: " + namespaceName);
+            throw new ErrorResultException("Insufficient access rights for namespace: " + namespace.getName());
         }
 
         return ResultJson.success("Valid token");
@@ -618,8 +614,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             var json = toExtensionVersionJson(extVersion, null, true);
             json.success = "It can take a couple minutes before the extension version is available";
 
-            var sameVersions = repositories.findVersions(extVersion.getVersion(), extVersion.getExtension());
-            if (sameVersions.stream().anyMatch(ev -> ev.isPreRelease() != extVersion.isPreRelease())) {
+            if(repositories.hasSameVersion(extVersion)) {
                 var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
                 var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
                 var extension = extVersion.getExtension();
@@ -645,8 +640,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             var extensionId = NamingUtil.toExtensionId(namespace, extensionName);
             return ResultJson.error("Extension not found: " + extensionId);
         }
-        var activeReviews = repositories.findActiveReviews(extension, user);
-        if (!activeReviews.isEmpty()) {
+        if (repositories.hasActiveReview(extension, user)) {
             return ResultJson.error("You must not submit more than one review for an extension.");
         }
 
@@ -694,58 +688,41 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Deleted review for " + NamingUtil.toExtensionId(extension));
     }
 
-    private List<Extension> getExtensions(SearchHits<ExtensionSearch> searchHits) {
+    private LinkedHashMap<Long, ExtensionVersion> getLatestVersions(SearchHits<ExtensionSearch> searchHits) {
         var ids = searchHits.stream()
                 .map(searchHit -> searchHit.getContent().id)
                 .distinct()
                 .collect(Collectors.toList());
 
-        var extensions = findExtensions(ids).collect(Collectors.toList());
-        var extensionIds = extensions.stream()
-                .map(Extension::getId)
-                .collect(Collectors.toSet());
-
-        ids.removeAll(extensionIds);
+        var versions = findLatestVersions(ids);
+        ids.removeAll(versions.keySet());
         if(!ids.isEmpty()) {
             search.removeSearchEntries(ids);
         }
 
-        var inactiveExtensions = extensions.stream()
-                .filter(extension -> !extension.isActive())
-                .collect(Collectors.toList());
-
-        if(!inactiveExtensions.isEmpty()) {
-            var inactiveIds = inactiveExtensions.stream()
-                    .map(Extension::getId)
-                    .collect(Collectors.toList());
-
-            search.removeSearchEntries(inactiveIds);
-            extensions.removeAll(inactiveExtensions);
-        }
-
-        return extensions;
+        return versions;
     }
 
-    private Stream<Extension> findExtensions(Collection<Long> ids) {
-        var extById = new HashMap<Long, Extension>();
-        repositories.findExtensions(ids)
-                .forEach(ext -> extById.put(ext.getId(), ext));
-        return ids.stream()
-                .map(extById::get)
-                .filter(Objects::nonNull);
+    private LinkedHashMap<Long, ExtensionVersion> findLatestVersions(Collection<Long> ids) {
+        var extById = repositories.findLatestVersions(ids).stream()
+                .collect(Collectors.toMap(ev -> ev.getExtension().getId(), ev -> ev));
+
+        // use LinkedHashMap to order latest versions by extension id
+        var map = new LinkedHashMap<Long, ExtensionVersion>();
+        ids.forEach(id -> {
+            var latest = extById.get(id);
+            if(latest != null) {
+                map.put(id, latest);
+            }
+        });
+
+        return map;
     }
 
 
     private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> searchHits, ISearchService.Options options) {
         var serverUrl = UrlUtil.getBaseUrl();
-        var extensions = getExtensions(searchHits);
-        var latestVersions = extensions.stream()
-                .map(e -> {
-                    var latest = repositories.findLatestVersion(e, null, false, true);
-                    return new AbstractMap.SimpleEntry<>(e.getId(), latest);
-                })
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
+        var latestVersions = getLatestVersions(searchHits);
         var membershipsByNamespaceId = getMemberships(latestVersions.values());
         var searchEntries = latestVersions.entrySet().stream()
                 .map(e -> {
@@ -765,19 +742,18 @@ public class LocalRegistryService implements IExtensionRegistry {
             }
         });
         if (options.includeAllVersions) {
-            var activeVersions = repositories.findActiveVersionReferencesSorted(extensions);
+            var activeVersions = repositories.findActiveVersionReferencesSorted(latestVersions.keySet());
             var activeVersionsByExtensionId = activeVersions.stream().collect(Collectors.groupingBy(ev -> ev.getExtension().getId()));
             var versionFileUrls = storageUtil.getFileUrls(activeVersions, serverUrl, withFileTypes(DOWNLOAD));
-            for(var extension : extensions) {
-                var extVersions = activeVersionsByExtensionId.get(extension.getId());
-                var searchEntry = searchEntries.get(extension.getId());
+            for(var extensionId : latestVersions.keySet()) {
+                var extVersions = activeVersionsByExtensionId.get(extensionId);
+                var searchEntry = searchEntries.get(extensionId);
                 searchEntry.allVersions = getAllVersionReferences(extVersions, versionFileUrls, serverUrl);
                 searchEntry.allVersionsUrl = UrlUtil.createAllVersionsUrl(searchEntry.namespace, searchEntry.name, options.targetPlatform, "version-references");
             }
         }
 
-        return extensions.stream()
-                .map(Extension::getId)
+        return latestVersions.keySet().stream()
                 .map(searchEntries::get)
                 .collect(Collectors.toList());
     }

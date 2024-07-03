@@ -314,9 +314,6 @@ public class DatabaseSearchServiceTest {
         var namespace = new Namespace();
         namespace.setName(namespaceName);
         extension.setNamespace(namespace);
-        var isUnverified = false;
-        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(isUnverified ? 0l : 1l);
         var extVer = new ExtensionVersion();
         extVer.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVer.setCategories(categories);

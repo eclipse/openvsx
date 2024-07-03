@@ -60,7 +60,5 @@ public interface IStorageService {
      */
     URI getNamespaceLogoLocation(Namespace namespace);
 
-    TempFile downloadNamespaceLogo(Namespace namespace) throws IOException;
-
     void copyFiles(List<Pair<FileResource, FileResource>> pairs);
 }
