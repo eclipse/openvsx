@@ -75,6 +75,8 @@ public class ExtensionVersion implements Serializable {
 
     boolean active;
 
+    boolean potentiallyMalicious;
+
     String displayName;
 
     @Column(length = 2048)
@@ -318,6 +320,14 @@ public class ExtensionVersion implements Serializable {
         this.active = active;
     }
 
+    public boolean isPotentiallyMalicious() {
+        return potentiallyMalicious;
+    }
+
+    public void setPotentiallyMalicious(boolean potentiallyMalicious) {
+        this.potentiallyMalicious = potentiallyMalicious;
+    }
+
 	public String getDisplayName() {
 		return displayName;
 	}
@@ -487,6 +497,7 @@ public class ExtensionVersion implements Serializable {
                 && preRelease == that.preRelease
                 && preview == that.preview
                 && active == that.active
+                && potentiallyMalicious == that.potentiallyMalicious
                 && Objects.equals(getId(extension), getId(that.extension)) // use id to prevent infinite recursion
                 && Objects.equals(version, that.version)
                 && Objects.equals(targetPlatform, that.targetPlatform)
@@ -517,7 +528,7 @@ public class ExtensionVersion implements Serializable {
     public int hashCode() {
         return Objects.hash(
                 id, getId(extension), version, targetPlatform, semver, preRelease, preview, timestamp, getId(publishedWith),
-                active, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
+                active, potentiallyMalicious, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
                 sponsorLink, bugs, markdown, galleryColor, galleryTheme, localizedLanguages, qna, dependencies,
                 bundledExtensions, signatureKeyPair, type
         );

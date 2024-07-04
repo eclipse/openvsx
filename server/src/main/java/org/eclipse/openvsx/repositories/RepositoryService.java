@@ -495,6 +495,10 @@ public class RepositoryService {
         return findNotMigratedItems("V1_35__FileResource_Generate_Sha256_Checksum.sql");
     }
 
+    public Streamable<MigrationItem> findNotMigratedPotentiallyMalicious() {
+        return findNotMigratedItems("V1_46__ExtensionVersion_PotentiallyMalicious.sql");
+    }
+
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
         return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript);
     }

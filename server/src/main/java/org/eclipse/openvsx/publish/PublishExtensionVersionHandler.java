@@ -204,6 +204,12 @@ public class PublishExtensionVersionHandler {
         service.storeDownload(download, extensionFile);
         service.persistResource(download);
         try(var processor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+            extVersion.setPotentiallyMalicious(processor.isPotentiallyMalicious());
+            if (extVersion.isPotentiallyMalicious()) {
+                logger.warn("Extension version is potentially malicious: {}", NamingUtil.toLogFormat(extVersion));
+                return;
+            }
+
             Consumer<FileResource> consumer = resource -> {
                 service.storeResource(resource);
                 service.persistResource(resource);
