@@ -83,18 +83,8 @@ public class TokenService {
                 if (refreshToken != null) {
                     token.refreshToken = refreshToken.getTokenValue();
                     token.refreshExpiresAt = refreshToken.getExpiresAt();
-                } else {
-                    // Request a new token to get the refresh token
-                    var tokens = refreshEclipseToken(token);
-                    if (tokens != null) {
-                        token.accessToken = tokens.getFirst().getTokenValue();
-                        token.scopes = tokens.getFirst().getScopes();
-                        token.issuedAt = tokens.getFirst().getIssuedAt();
-                        token.expiresAt = tokens.getFirst().getExpiresAt();
-                        token.refreshToken = tokens.getSecond().getTokenValue();
-                        token.refreshExpiresAt = tokens.getSecond().getExpiresAt();
-                    }
                 }
+
                 return updateEclipseToken(userData, token);
             }
         }
@@ -128,13 +118,12 @@ public class TokenService {
                 if (token != null && isExpired(token.expiresAt)) {
                     OAuth2AccessToken newAccessToken = null;
                     OAuth2RefreshToken newRefreshToken = null;
-                    if (!isExpired(token.refreshExpiresAt)) {
-                        var newTokens = refreshEclipseToken(token);
-                        if (newTokens != null) {
-                            newAccessToken = newTokens.getFirst();
-                            newRefreshToken = newTokens.getSecond();
-                        }
+                    var newTokens = refreshEclipseToken(token);
+                    if (newTokens != null) {
+                        newAccessToken = newTokens.getFirst();
+                        newRefreshToken = newTokens.getSecond();
                     }
+
                     return updateTokens(userData.getId(), "eclipse", newAccessToken, newRefreshToken);
                 }
                 return token;
@@ -149,6 +138,10 @@ public class TokenService {
     }
 
     protected Pair<OAuth2AccessToken, OAuth2RefreshToken> refreshEclipseToken(AuthToken token) {
+        if(token.refreshToken == null || isExpired(token.refreshExpiresAt)) {
+            return null;
+        }
+
         var reg = clientRegistrationRepository.findByRegistrationId("eclipse");
         var tokenUri = reg.getProviderDetails().getTokenUri();
 
@@ -161,7 +154,7 @@ public class TokenService {
                 .put("grant_type", "refresh_token")
                 .put("client_id", reg.getClientId())
                 .put("client_secret", reg.getClientSecret())
-                .put("refresh_token", token.refreshToken != null ? token.refreshToken : token.accessToken);
+                .put("refresh_token", token.refreshToken);
 
         try {
             var request = new HttpEntity<>(objectMapper.writeValueAsString(data), headers);
