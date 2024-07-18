@@ -4,6 +4,10 @@ logging:
 
 server:
   port: 8080
+  jetty:
+    threads:
+      max-queue-capacity: 1
+    max-http-post-size: 536870912
 
 spring:
   application:
