@@ -13,6 +13,7 @@ const { Registry, DEFAULT_URL } = require('../lib/registry');
 const { makeDirs } = require('../lib/util');
 const path = require('path');
 const fs = require('fs');
+const { RateLimiter } = require('limiter');
 
 let searchSize = 100;
 if (process.argv.length >= 3) {
@@ -24,10 +25,13 @@ if (process.argv.length >= 4) {
     accessToken = process.argv[3];
 }
 
+const rateLimiter = new RateLimiter({ tokensPerInterval: 15, interval: 'second' });
+
 async function loadTestExtensions() {
     const publicReg = new Registry();
-    const localReg = new Registry({registryUrl: process.env.OVSX_REGISTRY_URL ?? 'http://localhost:8080'});
+    const localReg = new Registry({ registryUrl: process.env.OVSX_REGISTRY_URL ?? 'http://localhost:8080' });
     /** @type {{ extensions: import('../lib/registry').Extension[] } & import('../lib/registry').Response} */
+    await rateLimiter.removeTokens(1);
     const search = await publicReg.getJson(new URL(`${DEFAULT_URL}/api/-/search?size=${searchSize}`));
     if (search.error) {
         console.error(search.error);
@@ -35,6 +39,7 @@ async function loadTestExtensions() {
     }
     console.log(`Found ${search.extensions.length} extensions in ${DEFAULT_URL}`);
     for (const ext of search.extensions) {
+        await rateLimiter.removeTokens(1);
         const meta = await publicReg.getMetadata(ext.namespace, ext.name);
         if (meta.error) {
             console.error(`\u274c  ${meta.error}`);
@@ -42,24 +47,26 @@ async function loadTestExtensions() {
         }
         const fileName = await download(publicReg, meta);
         try {
-          const nsResult = await localReg.createNamespace(meta.namespace, accessToken);
-          console.log(nsResult.success);
+            await rateLimiter.removeTokens(1);
+            const nsResult = await localReg.createNamespace(meta.namespace, accessToken);
+            console.log(nsResult.success);
         } catch (error) {
-          if (!error.message.startsWith('Namespace already exists')) {
-            console.error(error);
-            process.exit(1);
-          }
+            if (!error.message.startsWith('Namespace already exists')) {
+                console.error(error);
+                process.exit(1);
+            }
         }
 
         try {
-          const published = await localReg.publish(fileName, accessToken);
-          if (published.namespace && published.name) {
-            console.log(`\u2713  Published ${published.namespace}.${published.name}@${published.version}`);
-          }
+            await rateLimiter.removeTokens(1);
+            const published = await localReg.publish(fileName, accessToken);
+            if (published.namespace && published.name) {
+                console.log(`\u2713  Published ${published.namespace}.${published.name}@${published.version}`);
+            }
         } catch (error) {
-          if (!error.message.endsWith('is already published.')) {
-              console.error(`\u274c  ${error}`);
-          }
+            if (!error.message.endsWith('is already published.')) {
+                console.error(`\u274c  ${error}`);
+            }
         }
     }
 }
@@ -78,6 +85,7 @@ async function download(registry, extension) {
     }
     await makeDirs(path.dirname(filePath));
     console.log(`Downloading ${extension.namespace}.${extension.name}@${extension.version} to ${filePath}`);
+    await rateLimiter.removeTokens(1);
     await registry.download(filePath, new URL(downloadUrl));
     return filePath;
 }
