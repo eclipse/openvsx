@@ -2,6 +2,18 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.9.2 (July 2024)
+
+#### Bug Fixes
+
+- Remove default universal for get operation ([#944](https://github.com/eclipse/openvsx/pull/944))
+
+#### Dependencies
+
+- Upgrade `braces` from `3.0.2` to `3.0.3` ([#953](https://github.com/eclipse/openvsx/pull/953))
+
+---
+
 ### v0.9.1 (Apr. 2024)
 
 #### Bug Fixes
