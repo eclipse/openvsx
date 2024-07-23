@@ -10,7 +10,7 @@ plugins {
     id 'jacoco'
     id 'nu.studer.jooq' version '8.2.1'
     id 'de.undercouch.download' version '5.4.0'
-    id 'org.springframework.boot' version '3.1.0'
+    id 'org.springframework.boot' version '3.2.1'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.9.5'
     id 'java'
@@ -24,7 +24,7 @@ def versions = [
     springdoc: '2.1.0',
     gcloud: '2.36.1',
     azure: '12.23.0',
-    junit: '5.7.1',
+    junit: '5.9.2',
     testcontainers: '1.15.2',
     jackson: '2.15.2',
     woodstox: '6.4.0',
@@ -66,10 +66,13 @@ configurations {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web") {
-        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation 'org.springframework.boot:spring-boot-starter-jetty'
+    modules {
+        module("org.springframework.boot:spring-boot-starter-tomcat") {
+            replacedBy("org.springframework.boot:spring-boot-starter-jetty")
+        }
     }
-    implementation "org.springframework.boot:spring-boot-starter-jetty"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-jooq"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
