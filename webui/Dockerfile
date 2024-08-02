@@ -26,7 +26,8 @@ COPY --chown=node:node --from=builder /home/node/builder/lib/default/server.js /
 WORKDIR /home/node/webui
 
 # Install Express server
-RUN yarn add express@4.17.1
+RUN yarn add express@4.18.2
+RUN yarn add express-rate-limit@7.2.0
 
 EXPOSE 3000
 ENTRYPOINT ["node", "lib/default/server"]
