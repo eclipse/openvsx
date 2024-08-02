@@ -64,5 +64,5 @@
         "publish:latest": "yarn npm publish --tag latest",
         "load-extensions": "node scripts/load-test-extensions.js"
     },
-    "packageManager": "yarn@4.1.0"
+    "packageManager": "yarn@4.3.1"
 }
