@@ -24,6 +24,9 @@ spring:
               client-id: dummy-client-id
               client-secret: dummy-client-secret
 
+bucket4j:
+  enabled: false
+
 org:
   jobrunr:
     job-scheduler:
