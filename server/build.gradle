@@ -29,7 +29,7 @@ def versions = [
     jackson: '2.15.2',
     woodstox: '6.4.0',
     jobrunr: '6.2.0',
-    bucket4j: '0.9.0',
+    bucket4j: '0.12.7',
     ehcache: '3.10.8',
     tika: '2.6.0',
     bouncycastle: '1.77',
