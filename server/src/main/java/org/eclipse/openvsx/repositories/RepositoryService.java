@@ -18,6 +18,7 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
@@ -27,8 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
+import static org.eclipse.openvsx.entities.FileResource.*;
 
 @Component
 public class RepositoryService {
@@ -50,16 +50,19 @@ public class RepositoryService {
     private final UserDataRepository userDataRepo;
     private final NamespaceMembershipRepository membershipRepo;
     private final PersonalAccessTokenRepository tokenRepo;
+    private final PersonalAccessTokenJooqRepository tokenJooqRepo;
     private final PersistedLogRepository persistedLogRepo;
     private final AzureDownloadCountProcessedItemRepository downloadCountRepo;
     private final ExtensionJooqRepository extensionJooqRepo;
     private final ExtensionVersionJooqRepository extensionVersionJooqRepo;
     private final FileResourceJooqRepository fileResourceJooqRepo;
+    private final ExtensionReviewJooqRepository extensionReviewJooqRepo;
     private final NamespaceMembershipJooqRepository membershipJooqRepo;
     private final AdminStatisticsRepository adminStatisticsRepo;
     private final AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
     private final MigrationItemRepository migrationItemRepo;
     private final SignatureKeyPairRepository signatureKeyPairRepo;
+    private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
 
     public RepositoryService(
             ObservationRegistry observations,
@@ -72,16 +75,19 @@ public class RepositoryService {
             UserDataRepository userDataRepo,
             NamespaceMembershipRepository membershipRepo,
             PersonalAccessTokenRepository tokenRepo,
+            PersonalAccessTokenJooqRepository tokenJooqRepo,
             PersistedLogRepository persistedLogRepo,
             AzureDownloadCountProcessedItemRepository downloadCountRepo,
             ExtensionJooqRepository extensionJooqRepo,
             ExtensionVersionJooqRepository extensionVersionJooqRepo,
             FileResourceJooqRepository fileResourceJooqRepo,
+            ExtensionReviewJooqRepository extensionReviewJooqRepo,
             NamespaceMembershipJooqRepository membershipJooqRepo,
             AdminStatisticsRepository adminStatisticsRepo,
             AdminStatisticCalculationsRepository adminStatisticCalculationsRepo,
             MigrationItemRepository migrationItemRepo,
-            SignatureKeyPairRepository signatureKeyPairRepo
+            SignatureKeyPairRepository signatureKeyPairRepo,
+            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo
     ) {
         this.observations = observations;
         this.namespaceRepo = namespaceRepo;
@@ -93,24 +99,27 @@ public class RepositoryService {
         this.userDataRepo = userDataRepo;
         this.membershipRepo = membershipRepo;
         this.tokenRepo = tokenRepo;
+        this.tokenJooqRepo = tokenJooqRepo;
         this.persistedLogRepo = persistedLogRepo;
         this.downloadCountRepo = downloadCountRepo;
         this.extensionJooqRepo = extensionJooqRepo;
         this.extensionVersionJooqRepo = extensionVersionJooqRepo;
         this.fileResourceJooqRepo = fileResourceJooqRepo;
+        this.extensionReviewJooqRepo = extensionReviewJooqRepo;
         this.membershipJooqRepo = membershipJooqRepo;
         this.adminStatisticsRepo = adminStatisticsRepo;
         this.adminStatisticCalculationsRepo = adminStatisticCalculationsRepo;
         this.migrationItemRepo = migrationItemRepo;
         this.signatureKeyPairRepo = signatureKeyPairRepo;
+        this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
     }
 
     public Namespace findNamespace(String name) {
         return Observation.createNotStarted("RepositoryService#findNamespace", observations).observe(() -> namespaceRepo.findByNameIgnoreCase(name));
     }
 
-    public Namespace findNamespaceByPublicId(String publicId) {
-        return namespaceRepo.findByPublicId(publicId);
+    public String findNamespaceName(String name) {
+        return namespaceJooqRepo.findNameByNameIgnoreCase(name);
     }
 
     public Streamable<Namespace> findOrphanNamespaces() {
@@ -163,10 +172,6 @@ public class RepositoryService {
         return extensionRepo.count();
     }
 
-    public long countExtensions(String name, String namespace) {
-        return Observation.createNotStarted("RepositoryService#countExtensions", observations).observe(() -> extensionRepo.countByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespace));
-    }
-
     public int getMaxExtensionDownloadCount() {
         return extensionRepo.getMaxDownloadCount();
     }
@@ -211,8 +216,8 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findActiveVersionStringsSorted(extensionIds, targetPlatform, MAX_VERSIONS);
     }
 
-    public List<ExtensionVersion> findActiveVersionReferencesSorted(Collection<Extension> extensions) {
-        return extensionVersionJooqRepo.findActiveVersionReferencesSorted(extensions, MAX_VERSIONS);
+    public List<ExtensionVersion> findActiveVersionReferencesSorted(Collection<Long> extensionIds) {
+        return extensionVersionJooqRepo.findActiveVersionReferencesSorted(extensionIds, MAX_VERSIONS);
     }
 
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
@@ -231,24 +236,32 @@ public class RepositoryService {
         return extensionVersionRepo.findByPublishedWithAndActive(publishedWith, active);
     }
 
+    public Streamable<ExtensionVersion> findVersionsByUser(UserData user, boolean active) {
+        return extensionVersionRepo.findByPublishedWithUserAndActive(user, active);
+    }
+
     public LocalDateTime getOldestExtensionTimestamp() {
         return extensionVersionRepo.getOldestTimestamp();
     }
 
     public Streamable<FileResource> findFiles(ExtensionVersion extVersion) {
-        return fileResourceRepo.findByExtension(extVersion);
+        return fileResourceRepo.findByExtensionAndStorageTypeNot(extVersion, STORAGE_DB);
+    }
+
+    public void deleteFiles(ExtensionVersion extVersion) {
+        fileResourceRepo.deleteByExtension(extVersion);
     }
 
     public Streamable<FileResource> findFilesByStorageType(String storageType) {
         return fileResourceRepo.findByStorageType(storageType);
     }
 
-    public FileResource findFileByName(ExtensionVersion extVersion, String name) {
-        return fileResourceRepo.findFirstByExtensionAndNameIgnoreCaseOrderByType(extVersion, name);
+    public FileResource findFileByName(String namespace, String extension, String targetPlatform, String version, String name) {
+        return fileResourceJooqRepo.findByName(namespace, extension, targetPlatform, version, name);
     }
 
-    public FileResource findFileByTypeAndName(ExtensionVersion extVersion, String type, String name) {
-        return fileResourceRepo.findByExtensionAndTypeAndNameIgnoreCase(extVersion, type, name);
+    public FileResource findFileByTypeAndName(String namespace, String extension, String targetPlatform, String version, String type, String name) {
+        return fileResourceJooqRepo.findByTypeAndName(namespace, extension, targetPlatform, version, type, name);
     }
 
     public Streamable<FileResource> findDownloadsByStorageTypeAndName(String storageType, Collection<String> names) {
@@ -267,6 +280,14 @@ public class RepositoryService {
         }
 
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
+    }
+
+    public FileResource findFileByType(String namespace, String extension, String targetPlatform, String version, String type) {
+        if(FileResource.RESOURCE.equals(type)) {
+            throw new IllegalArgumentException("There are multiple files of type: " + FileResource.RESOURCE);
+        }
+
+        return fileResourceJooqRepo.findByType(namespace, extension, targetPlatform, version, type);
     }
 
     public List<FileResource> findFilesByType(Collection<ExtensionVersion> extVersions, Collection<String> types) {
@@ -293,12 +314,8 @@ public class RepositoryService {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
 
-    public Streamable<UserData> findUsersByLoginNameStartingWith(String loginNameStart) {
-        return userDataRepo.findByLoginNameStartingWith(loginNameStart);
-    }
-
-    public Streamable<UserData> findAllUsers() {
-        return userDataRepo.findAll();
+    public Page<UserData> findUsersByLoginNameStartingWith(String loginNameStart, int limit) {
+        return userDataRepo.findByLoginNameStartingWith(loginNameStart, Pageable.ofSize(limit));
     }
 
     public long countUsers() {
@@ -309,6 +326,10 @@ public class RepositoryService {
         return Observation.createNotStarted("RepositoryService#findMembership", observations).observe(() -> membershipRepo.findByUserAndNamespace(user, namespace));
     }
 
+    public boolean hasMembership(UserData user, Namespace namespace) {
+        return membershipJooqRepo.hasMembership(user, namespace);
+    }
+
     public boolean isVerified(Namespace namespace, UserData user) {
         return Observation.createNotStarted("RepositoryService#isVerified", observations).observe(() -> membershipJooqRepo.isVerified(namespace, user));
     }
@@ -317,20 +338,32 @@ public class RepositoryService {
         return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
     }
 
-    public long countMemberships(Namespace namespace, String role) {
-        return membershipRepo.countByNamespaceAndRoleIgnoreCase(namespace, role);
+    public boolean hasMemberships(Namespace namespace, String role) {
+        return membershipJooqRepo.hasRole(namespace, role);
     }
 
-    public Streamable<NamespaceMembership> findMemberships(UserData user, String role) {
-        return membershipRepo.findByUserAndRoleIgnoreCaseOrderByNamespaceName(user, role);
+    public Streamable<NamespaceMembership> findMemberships(UserData user) {
+        return membershipRepo.findByUserOrderByNamespaceName(user);
     }
 
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace) {
         return membershipRepo.findByNamespace(namespace);
     }
 
+    public List<NamespaceMembership> findMemberships(String namespaceName) {
+        return membershipJooqRepo.findByNamespaceName(namespaceName);
+    }
+
     public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {
         return tokenRepo.findByUser(user);
+    }
+
+    public Streamable<PersonalAccessToken> findAllAccessTokens() {
+        return tokenRepo.findAll();
+    }
+
+    public Streamable<PersonalAccessToken> findActiveAccessTokens(UserData user) {
+        return tokenRepo.findByUserAndActiveTrue(user);
     }
 
     public long countActiveAccessTokens(UserData user) {
@@ -339,6 +372,10 @@ public class RepositoryService {
 
     public PersonalAccessToken findAccessToken(String value) {
         return Observation.createNotStarted("RepositoryService#findAccessToken", observations).observe(() -> tokenRepo.findByValue(value));
+    }
+
+    public boolean isAdminToken(String value) {
+        return tokenJooqRepo.isAdminToken(value);
     }
 
     public PersonalAccessToken findAccessToken(long id) {
@@ -379,20 +416,8 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
     }
 
-    public List<ExtensionVersion> findActiveExtensionVersionsByVersion(String version, String extensionName, String namespaceName) {
-        return extensionVersionJooqRepo.findAllActiveByVersionAndExtensionNameAndNamespaceName(version, extensionName, namespaceName);
-    }
-
-    public List<ExtensionVersion> findActiveExtensionVersionsByExtensionName(String targetPlatform, String extensionName, String namespaceName) {
-        return extensionVersionJooqRepo.findAllActiveByExtensionNameAndNamespaceName(targetPlatform, extensionName, namespaceName);
-    }
-
-    public List<ExtensionVersion> findActiveExtensionVersionsByNamespaceName(String targetPlatform, String namespaceName) {
-        return extensionVersionJooqRepo.findAllActiveByNamespaceName(targetPlatform, namespaceName);
-    }
-
-    public List<ExtensionVersion> findActiveExtensionVersionsByExtensionName(String targetPlatform, String extensionName) {
-        return extensionVersionJooqRepo.findAllActiveByExtensionName(targetPlatform, extensionName);
+    public ExtensionVersion findActiveExtensionVersion(String version, String extensionName, String namespaceName) {
+        return extensionVersionJooqRepo.findActiveByVersionAndExtensionNameAndNamespaceName(version, extensionName, namespaceName);
     }
 
     public List<FileResource> findFileResourcesByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
@@ -457,10 +482,6 @@ public class RepositoryService {
 
     public Streamable<ExtensionVersion> findTargetPlatformVersions(String version, String extensionName, String namespaceName) {
         return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespaceName);
-    }
-
-    public Streamable<ExtensionVersion> findVersions(UserData user) {
-        return extensionVersionRepo.findByPublishedWithUser(user);
     }
 
     public void deleteFileResources(ExtensionVersion extVersion, String type) {
@@ -560,10 +581,6 @@ public class RepositoryService {
         extensionJooqRepo.updatePublicIds(publicIds);
     }
 
-    public void updateExtensionPublicId(long id, String publicId) {
-        extensionJooqRepo.updatePublicId(id, publicId);
-    }
-
     public void updateNamespacePublicIds(Map<Long, String> publicIds) {
         namespaceJooqRepo.updatePublicIds(publicIds);
     }
@@ -588,6 +605,10 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findVersionsForUrls(extension, targetPlatform, version);
     }
 
+    public List<Extension> findActiveExtensionsForUrls(Namespace namespace) {
+        return extensionJooqRepo.findActiveExtensionsForUrls(namespace);
+    }
+
     public ExtensionVersion findExtensionVersion(String namespace, String extension, String targetPlatform, String version) {
         return extensionVersionJooqRepo.find(namespace, extension, targetPlatform, version);
     }
@@ -602,8 +623,20 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findLatest(extension, targetPlatform, onlyPreRelease, onlyActive);
     }
 
+    public ExtensionVersion findLatestVersion(String namespaceName, String extensionName, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
+        return extensionVersionJooqRepo.findLatest(namespaceName, extensionName, targetPlatform, onlyPreRelease, onlyActive);
+    }
+
     public List<ExtensionVersion> findLatestVersions(Namespace namespace) {
         return extensionVersionJooqRepo.findLatest(namespace);
+    }
+
+    public List<ExtensionVersion> findLatestVersions(Collection<Long> extensionIds) {
+        return extensionVersionJooqRepo.findLatest(extensionIds);
+    }
+
+    public Map<Long, Boolean> findLatestVersionsIsPreview(Collection<Long> extensionIds) {
+        return extensionVersionJooqRepo.findLatestIsPreview(extensionIds);
     }
 
     public List<ExtensionVersion> findLatestVersions(UserData user) {
@@ -616,5 +649,53 @@ public class RepositoryService {
 
     public void deactivateKeyPairs() {
         signatureKeyPairRepo.updateActiveSetFalse();
+    }
+
+    public List<String> findActiveExtensionNames(Namespace namespace) {
+        return extensionJooqRepo.findActiveExtensionNames(namespace);
+    }
+
+    public List<NamespaceMembership> findMembershipsForOwner(UserData user, String namespaceName) {
+        return membershipJooqRepo.findMembershipsForOwner(user, namespaceName);
+    }
+
+    public boolean isNamespaceOwner(UserData user, Namespace namespace) {
+        return membershipJooqRepo.isOwner(user, namespace);
+    }
+
+    public boolean namespaceExists(String namespaceName) {
+        return namespaceJooqRepo.exists(namespaceName);
+    }
+
+    public boolean hasSameVersion(ExtensionVersion extVersion) {
+        return extensionVersionJooqRepo.hasSameVersion(extVersion);
+    }
+
+    public boolean hasActiveReview(Extension extension, UserData user) {
+        return extensionReviewJooqRepo.hasActiveReview(extension, user);
+    }
+
+    public boolean hasAccessToken(String value) {
+        return tokenJooqRepo.hasToken(value);
+    }
+
+    public boolean canPublishInNamespace(UserData user, Namespace namespace) {
+        return membershipJooqRepo.canPublish(user, namespace);
+    }
+
+    public String findSignatureKeyPairPublicId(String namespace, String extension, String targetPlatform, String version) {
+        return signatureKeyPairJooqRepo.findPublicId(namespace, extension, targetPlatform, version);
+    }
+
+    public String findFirstUnresolvedDependency(List<String[]> dependencies) {
+        return extensionJooqRepo.findFirstUnresolvedDependency(dependencies);
+    }
+
+    public PersonalAccessToken findAccessToken(UserData user, String description) {
+        return tokenRepo.findByUserAndDescriptionAndActiveTrue(user, description);
+    }
+
+    public NamespaceMembership findFirstMembership(String namespaceName) {
+        return membershipRepo.findFirstByNamespaceNameIgnoreCase(namespaceName);
     }
 }

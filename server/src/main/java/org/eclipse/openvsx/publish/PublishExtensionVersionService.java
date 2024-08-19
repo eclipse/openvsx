@@ -47,7 +47,7 @@ public class PublishExtensionVersionService {
 
     @Transactional
     public void deleteFileResources(ExtensionVersion extVersion) {
-        repositories.findFiles(extVersion).forEach(entityManager::remove);
+        repositories.deleteFiles(extVersion);
     }
 
     @Retryable

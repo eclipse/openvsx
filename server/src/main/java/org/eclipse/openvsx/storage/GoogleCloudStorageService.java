@@ -188,19 +188,6 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    public TempFile downloadNamespaceLogo(Namespace namespace) throws IOException {
-        var logoFile = new TempFile("namespace-logo", ".png");
-        try (
-                var reader = getStorage().reader(BlobId.of(bucketId, getObjectId(namespace)));
-                var output = new FileOutputStream(logoFile.getPath().toFile())
-        ) {
-            output.getChannel().transferFrom(reader, 0, Long.MAX_VALUE);
-        }
-
-        return logoFile;
-    }
-
-    @Override
     public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
         for(var pair : pairs) {
             var source = getObjectId(pair.getFirst());

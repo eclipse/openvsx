@@ -25,6 +25,6 @@ public class BuiltInExtensionUtil {
     }
 
     public static boolean isBuiltIn(Extension extension) {
-        return BUILT_IN_EXTENSION_NAMESPACE.equals(extension.getNamespace().getName());
+        return BUILT_IN_EXTENSION_NAMESPACE.equalsIgnoreCase(extension.getNamespace().getName());
     }
 }

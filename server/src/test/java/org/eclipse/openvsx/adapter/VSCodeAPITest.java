@@ -9,28 +9,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import static org.eclipse.openvsx.entities.FileResource.*;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import io.micrometer.observation.ObservationRegistry;
-import jakarta.persistence.EntityManager;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
+import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
@@ -46,10 +31,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
-import org.eclipse.openvsx.storage.AzureBlobStorageService;
-import org.eclipse.openvsx.storage.AzureDownloadCountService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
-import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
@@ -69,6 +51,19 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.eclipse.openvsx.entities.FileResource.*;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(VSCodeAPI.class)
 @AutoConfigureWebClient
@@ -249,22 +244,12 @@ public class VSCodeAPITest {
 
     @Test
     public void testAssetNotFound() throws Exception {
-        var extVersion = mockExtensionVersion();
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.MANIFEST))
+        mockExtensionVersion();
+        Mockito.when(repositories.findFileByType("redhat", "vscode-yaml", "universal", "0.5.2", FileResource.MANIFEST))
                 .thenReturn(null);
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
                     "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    public void testGetItem() throws Exception {
-        var extension = mockExtension();
-        extension.setActive(true);
-        Mockito.when(repositories.findExtension("vscode-yaml", "redhat")).thenReturn(extension);
-        mockMvc.perform(get("/vscode/item?itemName={itemName}", "redhat.vscode-yaml"))
-                .andExpect(status().isFound())
-                .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
     }
 
     @Test
@@ -290,6 +275,16 @@ public class VSCodeAPITest {
                 "vscode", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Built-in extension namespace 'vscode' not allowed"));
+    }
+
+    @Test
+    public void testGetItem() throws Exception {
+        var extension = mockExtension();
+        extension.setActive(true);
+        Mockito.when(repositories.findActiveExtension("vscode-yaml", "redhat")).thenReturn(extension);
+        mockMvc.perform(get("/vscode/item?itemName={itemName}", "redhat.vscode-yaml"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/extension/redhat/vscode-yaml"));
     }
 
     @Test
@@ -323,8 +318,8 @@ public class VSCodeAPITest {
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         Mockito.when(repositories.findResourceFileResources(1L, "extension/img"))
                 .thenReturn(Collections.emptyList());
@@ -357,8 +352,8 @@ public class VSCodeAPITest {
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var vsixResource = mockFileResource(15, extVersion, "extension.vsixmanifest", RESOURCE, STORAGE_DB, "<xml></xml>".getBytes(StandardCharsets.UTF_8));
         var manifestResource = mockFileResource(16, extVersion, "extension/package.json", RESOURCE, STORAGE_DB, "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8));
@@ -393,8 +388,8 @@ public class VSCodeAPITest {
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var content = "<xml></xml>".getBytes(StandardCharsets.UTF_8);
         var vsixResource = mockFileResource(15, extVersion, "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
@@ -417,22 +412,17 @@ public class VSCodeAPITest {
         extension.setId(0L);
         extension.setName(extensionName);
         extension.setNamespace(namespace);
-        var targetPlatforms = List.of(TargetPlatform.NAME_UNIVERSAL, TargetPlatform.NAME_WIN32_X64, TargetPlatform.NAME_LINUX_X64);
-        var extVersions = new ArrayList<ExtensionVersion>(targetPlatforms.size());
-        for(var i = 0; i < targetPlatforms.size(); i++) {
-            var extVersion = new ExtensionVersion();
-            extVersion.setId(i + 1);
-            extVersion.setVersion(version);
-            extVersion.setTargetPlatform(targetPlatforms.get(i));
-            extVersion.setExtension(extension);
-            extVersions.add(extVersion);
-        }
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersions);
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var content = "<xml></xml>".getBytes(StandardCharsets.UTF_8);
-        var vsixResource = mockFileResource(15, extVersions.get(0), "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
+        var vsixResource = mockFileResource(15, extVersion, "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
         Mockito.when(repositories.findResourceFileResources(1L, "extension.vsixmanifest"))
                 .thenReturn(List.of(vsixResource));
 
@@ -452,22 +442,17 @@ public class VSCodeAPITest {
         extension.setId(0L);
         extension.setName(extensionName);
         extension.setNamespace(namespace);
-        var targetPlatforms = List.of(TargetPlatform.NAME_DARWIN_X64, TargetPlatform.NAME_LINUX_X64, TargetPlatform.NAME_WIN32_X64);
-        var extVersions = new ArrayList<ExtensionVersion>(targetPlatforms.size());
-        for(var i = 0; i < targetPlatforms.size(); i++) {
-            var extVersion = new ExtensionVersion();
-            extVersion.setId(i + 2);
-            extVersion.setVersion(version);
-            extVersion.setTargetPlatform(targetPlatforms.get(i));
-            extVersion.setExtension(extension);
-            extVersions.add(extVersion);
-        }
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(2);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(TargetPlatform.NAME_DARWIN_X64);
+        extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersions);
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var content = "<xml></xml>".getBytes(StandardCharsets.UTF_8);
-        var vsixResource = mockFileResource(15, extVersions.get(0), "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
+        var vsixResource = mockFileResource(15, extVersion, "extension.vsixmanifest", RESOURCE, STORAGE_DB, content);
         Mockito.when(repositories.findResourceFileResources(2L, "extension.vsixmanifest"))
                 .thenReturn(List.of(vsixResource));
 
@@ -493,8 +478,8 @@ public class VSCodeAPITest {
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var manifestResource =  mockFileResource(16, extVersion, "extension/package.json", RESOURCE, STORAGE_DB, "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8));
         var readmeResource = mockFileResource(17, extVersion, "extension/README.md", RESOURCE, STORAGE_DB, "README".getBytes(StandardCharsets.UTF_8));
@@ -532,8 +517,8 @@ public class VSCodeAPITest {
         extVersion.setVersion(version);
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var content = "{\"package\":\"json\"}".getBytes(StandardCharsets.UTF_8);
         var manifestResource = mockFileResource(16, extVersion, "extension/package.json", RESOURCE, STORAGE_DB, content);
@@ -561,8 +546,8 @@ public class VSCodeAPITest {
         extVersion.setVersion(version);
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var content = "ICON128".getBytes(StandardCharsets.UTF_8);
         var iconResource = mockFileResource(20, extVersion, "extension/images/icon128.png", RESOURCE, STORAGE_DB, content);
@@ -591,8 +576,8 @@ public class VSCodeAPITest {
         extVersion.setVersion(version);
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
-        Mockito.when(repositories.findActiveExtensionVersionsByVersion(version, extensionName, namespaceName))
-                .thenReturn(List.of(extVersion));
+        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
+                .thenReturn(extVersion);
 
         var content = "ICON128".getBytes(StandardCharsets.UTF_8);
         var iconResource = mockFileResource(20, extVersion, "extension/images/icon128.png", RESOURCE, STORAGE_DB, content);
@@ -792,6 +777,7 @@ public class VSCodeAPITest {
         extension.setNamespace(namespace);
         var extVersion = new ExtensionVersion();
         extension.getVersions().add(extVersion);
+        extVersion.setExtension(extension);
         extVersion.setTargetPlatform(targetPlatform);
         extVersion.setVersion("0.5.2");
         extVersion.setPreRelease(true);
@@ -811,17 +797,18 @@ public class VSCodeAPITest {
                 .thenReturn(extVersion);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(extVersion));
-        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(0L);
         var extensionFile = new FileResource();
+        extensionFile.setId(10L);
         extensionFile.setExtension(extVersion);
         extensionFile.setName("redhat.vscode-yaml-0.5.2.vsix");
         extensionFile.setType(FileResource.DOWNLOAD);
         extensionFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(extensionFile)).thenReturn(extensionFile);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD))
+        Mockito.when(entityManager.find(FileResource.class, extensionFile.getId())).thenReturn(extensionFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), DOWNLOAD))
                 .thenReturn(extensionFile);
+
         var manifestFile = new FileResource();
+        manifestFile.setId(11L);
         manifestFile.setExtension(extVersion);
         manifestFile.setName("package.json");
         manifestFile.setType(FileResource.MANIFEST);
@@ -831,56 +818,56 @@ public class VSCodeAPITest {
             manifestContent.put("target", targetPlatform);
         manifestFile.setContent(new ObjectMapper().writeValueAsBytes(manifestContent));
         manifestFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(manifestFile)).thenReturn(manifestFile);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.MANIFEST))
+        Mockito.when(entityManager.find(FileResource.class, manifestFile.getId())).thenReturn(manifestFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), FileResource.MANIFEST))
                 .thenReturn(manifestFile);
         var readmeFile = new FileResource();
         readmeFile.setExtension(extVersion);
         readmeFile.setName("README.md");
         readmeFile.setType(FileResource.README);
         readmeFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(readmeFile)).thenReturn(readmeFile);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.README))
+        Mockito.when(entityManager.find(FileResource.class, readmeFile.getId())).thenReturn(readmeFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), README))
                 .thenReturn(readmeFile);
         var changelogFile = new FileResource();
         changelogFile.setExtension(extVersion);
         changelogFile.setName("CHANGELOG.md");
         changelogFile.setType(FileResource.CHANGELOG);
         changelogFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(changelogFile)).thenReturn(changelogFile);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.CHANGELOG))
+        Mockito.when(entityManager.find(FileResource.class, changelogFile.getId())).thenReturn(changelogFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), CHANGELOG))
                 .thenReturn(changelogFile);
         var licenseFile = new FileResource();
         licenseFile.setExtension(extVersion);
         licenseFile.setName("LICENSE.txt");
         licenseFile.setType(FileResource.LICENSE);
         licenseFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(licenseFile)).thenReturn(licenseFile);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.LICENSE))
+        Mockito.when(entityManager.find(FileResource.class, licenseFile.getId())).thenReturn(licenseFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), LICENSE))
                 .thenReturn(licenseFile);
         var iconFile = new FileResource();
         iconFile.setExtension(extVersion);
         iconFile.setName("icon128.png");
         iconFile.setType(FileResource.ICON);
         iconFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(iconFile)).thenReturn(iconFile);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.ICON))
+        Mockito.when(entityManager.find(FileResource.class, iconFile.getId())).thenReturn(iconFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), ICON))
                 .thenReturn(iconFile);
         var vsixManifestFile = new FileResource();
         vsixManifestFile.setExtension(extVersion);
         vsixManifestFile.setName("extension.vsixmanifest");
         vsixManifestFile.setType(VSIXMANIFEST);
         vsixManifestFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(vsixManifestFile)).thenReturn(vsixManifestFile);
-        Mockito.when(repositories.findFileByType(extVersion, VSIXMANIFEST))
+        Mockito.when(entityManager.find(FileResource.class, vsixManifestFile.getId())).thenReturn(vsixManifestFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), VSIXMANIFEST))
                 .thenReturn(vsixManifestFile);
         var signatureFile = new FileResource();
         signatureFile.setExtension(extVersion);
         signatureFile.setName("redhat.vscode-yaml-0.5.2.sigzip");
         signatureFile.setType(FileResource.DOWNLOAD_SIG);
         signatureFile.setStorageType(FileResource.STORAGE_DB);
-        Mockito.when(entityManager.merge(signatureFile)).thenReturn(signatureFile);
-        Mockito.when(repositories.findFileByType(extVersion, FileResource.DOWNLOAD_SIG))
+        Mockito.when(entityManager.find(FileResource.class, signatureFile.getId())).thenReturn(signatureFile);
+        Mockito.when(repositories.findFileByType(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), DOWNLOAD_SIG))
                 .thenReturn(signatureFile);
         var webResourceFile = new FileResource();
         webResourceFile.setExtension(extVersion);
@@ -888,8 +875,8 @@ public class VSCodeAPITest {
         webResourceFile.setType(FileResource.RESOURCE);
         webResourceFile.setStorageType(STORAGE_DB);
         webResourceFile.setContent("logo.png".getBytes());
-        Mockito.when(entityManager.merge(webResourceFile)).thenReturn(webResourceFile);
-        Mockito.when(repositories.findFileByTypeAndName(extVersion, FileResource.RESOURCE, "extension/img/logo.png"))
+        Mockito.when(entityManager.find(FileResource.class, webResourceFile.getId())).thenReturn(webResourceFile);
+        Mockito.when(repositories.findFileByTypeAndName(namespace.getName(), extension.getName(), targetPlatform, extVersion.getVersion(), FileResource.RESOURCE, "extension/img/logo.png"))
                 .thenReturn(webResourceFile);
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection())).thenAnswer(invocation -> {
             Collection<ExtensionVersion> extVersions = invocation.getArgument(0);
@@ -970,6 +957,7 @@ public class VSCodeAPITest {
                 RepositoryService repositories,
                 GoogleCloudStorageService googleStorage,
                 AzureBlobStorageService azureStorage,
+                LocalStorageService localStorage,
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
@@ -981,11 +969,17 @@ public class VSCodeAPITest {
                     googleStorage,
                     azureStorage,
                     azureDownloadCountService,
+                    localStorage,
                     search,
                     cache,
                     entityManager,
                     observations
             );
+        }
+
+        @Bean
+        LocalStorageService localStorage(EntityManager entityManager) {
+            return new LocalStorageService(entityManager);
         }
 
         @Bean

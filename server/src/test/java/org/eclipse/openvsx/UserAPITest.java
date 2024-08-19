@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -280,6 +281,8 @@ public class UserAPITest {
         namespace.setName("foobar");
         Mockito.when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
+        Mockito.when(repositories.isNamespaceOwner(userData1, namespace))
+                .thenReturn(true);
         var membership = new NamespaceMembership();
         membership.setUser(userData1);
         membership.setNamespace(namespace);
@@ -316,6 +319,8 @@ public class UserAPITest {
         namespace.setName("foobar");
         Mockito.when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
+        Mockito.when(repositories.isNamespaceOwner(userData1, namespace))
+                .thenReturn(true);
         var membership1 = new NamespaceMembership();
         membership1.setUser(userData1);
         membership1.setNamespace(namespace);
@@ -348,6 +353,8 @@ public class UserAPITest {
         namespace.setName("foobar");
         Mockito.when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
+        Mockito.when(repositories.isNamespaceOwner(userData1, namespace))
+                .thenReturn(true);
         var membership1 = new NamespaceMembership();
         membership1.setUser(userData1);
         membership1.setNamespace(namespace);
@@ -402,6 +409,8 @@ public class UserAPITest {
         namespace.setName("foobar");
         Mockito.when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
+        Mockito.when(repositories.isNamespaceOwner(userData1, namespace))
+                .thenReturn(true);
         var membership1 = new NamespaceMembership();
         membership1.setUser(userData1);
         membership1.setNamespace(namespace);
@@ -465,8 +474,8 @@ public class UserAPITest {
         token3.setDescription("This is token 3");
         token3.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token3.setActive(true);
-        Mockito.when(repositories.findAccessTokens(userData))
-                .thenReturn(Streamable.of(token1, token2, token3));
+        Mockito.when(repositories.findActiveAccessTokens(userData))
+                .thenReturn(Streamable.of(token1, token3));
     }
 
     private String accessTokenJson(Consumer<AccessTokenJson> content) throws JsonProcessingException {
@@ -485,6 +494,7 @@ public class UserAPITest {
         var userData = mockUserData();
         var namespace1 = new Namespace();
         namespace1.setName("foo");
+        namespace1.setExtensions(Collections.emptyList());
         Mockito.when(repositories.findActiveExtensions(namespace1)).thenReturn(Streamable.empty());
         var membership1 = new NamespaceMembership();
         membership1.setUser(userData);
@@ -492,15 +502,14 @@ public class UserAPITest {
         membership1.setRole(NamespaceMembership.ROLE_OWNER);
         var namespace2 = new Namespace();
         namespace2.setName("bar");
+        namespace2.setExtensions(Collections.emptyList());
         Mockito.when(repositories.findActiveExtensions(namespace2)).thenReturn(Streamable.empty());
         var membership2 = new NamespaceMembership();
         membership2.setUser(userData);
         membership2.setNamespace(namespace2);
         membership2.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMemberships(userData, NamespaceMembership.ROLE_OWNER))
+        Mockito.when(repositories.findMemberships(userData))
                 .thenReturn(Streamable.of(membership1, membership2));
-        Mockito.when(repositories.findMemberships(userData, NamespaceMembership.ROLE_CONTRIBUTOR))
-                .thenReturn(Streamable.empty());
     }
 
     private String namespacesJson(Consumer<List<NamespaceJson>> content) throws JsonProcessingException {
@@ -513,22 +522,21 @@ public class UserAPITest {
         var userData = mockUserData();
         var namespace = new Namespace();
         namespace.setName("foobar");
-        Mockito.when(repositories.findNamespace("foobar"))
-                .thenReturn(namespace);
+
         var membership1 = new NamespaceMembership();
         membership1.setUser(userData);
         membership1.setNamespace(namespace);
         membership1.setRole(userRole);
-        Mockito.when(repositories.findMembership(userData, namespace))
-                .thenReturn(membership1);
+
         var userData2 = new UserData();
         userData2.setLoginName("other_user");
         var membership2 = new NamespaceMembership();
         membership2.setUser(userData2);
         membership2.setNamespace(namespace);
         membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
-        Mockito.when(repositories.findMemberships(namespace))
-                .thenReturn(Streamable.of(membership1, membership2));
+
+        Mockito.when(repositories.findMembershipsForOwner(userData, "foobar"))
+                .thenReturn(userRole.equals(NamespaceMembership.ROLE_OWNER) ? List.of(membership1, membership2) : Collections.emptyList());
     }
 
     private String membershipsJson(Consumer<NamespaceMembershipListJson> content) throws JsonProcessingException {

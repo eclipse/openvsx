@@ -7,6 +7,8 @@ cd ../../..
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetExtensionTargetPlatformSimulation
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetExtensionVersionSimulation
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetExtensionVersionTargetPlatformSimulation
+./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetVersionReferencesSimulation
+./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetVersionReferencesTargetPlatformSimulation
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetFileSimulation
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetFileTargetPlatformSimulation
 ./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetQuerySimulation

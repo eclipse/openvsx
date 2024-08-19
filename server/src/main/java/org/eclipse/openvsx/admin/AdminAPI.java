@@ -12,6 +12,7 @@ package org.eclipse.openvsx.admin;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
+import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -90,8 +91,7 @@ public class AdminAPI {
     }
 
     private void validateToken(String tokenValue) {
-        var accessToken = repositories.findAccessToken(tokenValue);
-        if(accessToken == null || !accessToken.isActive() || accessToken.getUser() == null || !ROLE_ADMIN.equals(accessToken.getUser().getRole())) {
+        if(!repositories.isAdminToken(tokenValue)) {
             throw new ErrorResultException("Invalid access token", HttpStatus.FORBIDDEN);
         }
     }
@@ -179,26 +179,26 @@ public class AdminAPI {
                                                       @PathVariable String extensionName) {
         try {
             admins.checkAdminUser();
-
-            var extension = repositories.findExtension(extensionName, namespaceName);
-            if (extension == null) {
-                var json = ExtensionJson.error("Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName));
-                return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
-            }
-
             ExtensionJson json;
-            var latest = repositories.findLatestVersion(extension, null, false, false);
-            if (latest == null) {
+            var latest = repositories.findLatestVersion(namespaceName, extensionName, null, false, false);
+            if (latest != null) {
+                json = local.toExtensionVersionJson(latest, null, false);
+                json.allTargetPlatformVersions = repositories.findTargetPlatformsGroupedByVersion(latest.getExtension());
+                json.active = latest.getExtension().isActive();
+            } else {
+                var extension = repositories.findExtension(extensionName, namespaceName);
+                if (extension == null) {
+                    var error = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
+                    throw new ErrorResultException(error, HttpStatus.NOT_FOUND);
+                }
+
                 json = new ExtensionJson();
                 json.namespace = extension.getNamespace().getName();
                 json.name = extension.getName();
                 json.allVersions = Collections.emptyMap();
                 json.allTargetPlatformVersions = Collections.emptyList();
-            } else {
-                json = local.toExtensionVersionJson(latest, null, false);
-                json.allTargetPlatformVersions = repositories.findTargetPlatformsGroupedByVersion(extension);
+                json.active = extension.isActive();
             }
-            json.active = extension.isActive();
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ExtensionJson.class);
@@ -296,10 +296,9 @@ public class AdminAPI {
     public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String namespaceName) {
         try{
             admins.checkAdminUser();
-            var namespace = repositories.findNamespace(namespaceName);
-            var memberships = repositories.findMemberships(namespace);
+            var memberships = repositories.findMemberships(namespaceName);
             var membershipList = new NamespaceMembershipListJson();
-            membershipList.namespaceMemberships = memberships.map(membership -> membership.toJson()).toList();
+            membershipList.namespaceMemberships = memberships.stream().map(NamespaceMembership::toJson).toList();
             return ResponseEntity.ok(membershipList);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(NamespaceMembershipListJson.class);

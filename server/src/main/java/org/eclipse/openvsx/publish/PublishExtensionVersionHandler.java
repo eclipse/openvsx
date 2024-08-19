@@ -34,8 +34,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Component
 public class PublishExtensionVersionHandler {
@@ -79,12 +79,14 @@ public class PublishExtensionVersionHandler {
             var dependencies = processor.getExtensionDependencies();
             var bundledExtensions = processor.getBundledExtensions();
             if (checkDependencies) {
-                dependencies = dependencies.stream()
-                        .map(this::checkDependency)
-                        .collect(Collectors.toList());
-                bundledExtensions = bundledExtensions.stream()
-                        .map(this::checkBundledExtension)
-                        .collect(Collectors.toList());
+                var parsedDependencies = dependencies.stream()
+                        .map(id -> parseExtensionId(id, "extensionDependencies"))
+                        .toList();
+
+                if(!parsedDependencies.isEmpty()) {
+                    checkDependencies(parsedDependencies);
+                }
+                bundledExtensions.forEach(id -> parseExtensionId(id, "extensionPack"));
             }
 
             extVersion.setDependencies(dependencies);
@@ -166,30 +168,22 @@ public class PublishExtensionVersionHandler {
         });
     }
 
-    private String checkDependency(String dependency) {
-        return Observation.createNotStarted("PublishExtensionVersionHandler#checkDependency", observations).observe(() -> {
-            var split = dependency.split("\\.");
-            if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
-                throw new ErrorResultException("Invalid 'extensionDependencies' format. Expected: '${namespace}.${name}'");
+    private void checkDependencies(List<String[]> dependencies) {
+        Observation.createNotStarted("PublishExtensionVersionHandler#checkDependencies", observations).observe(() -> {
+            var unresolvedDependency = repositories.findFirstUnresolvedDependency(dependencies);
+            if (unresolvedDependency != null) {
+                throw new ErrorResultException("Cannot resolve dependency: " + unresolvedDependency);
             }
-            var extensionCount = repositories.countExtensions(split[1], split[0]);
-            if (extensionCount == 0) {
-                throw new ErrorResultException("Cannot resolve dependency: " + dependency);
-            }
-
-            return dependency;
         });
     }
 
-    private String checkBundledExtension(String bundledExtension) {
-        return Observation.createNotStarted("PublishExtensionVersionHandler#checkBundledExtension", observations).observe(() -> {
-            var split = bundledExtension.split("\\.");
-            if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
-                throw new ErrorResultException("Invalid 'extensionPack' format. Expected: '${namespace}.${name}'");
-            }
+    private String[] parseExtensionId(String extensionId, String formatType) {
+        var split = extensionId.split("\\.");
+        if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
+            throw new ErrorResultException("Invalid '" + formatType + "' format. Expected: '${namespace}.${name}'");
+        }
 
-            return bundledExtension;
-        });
+        return split;
     }
 
     @Async

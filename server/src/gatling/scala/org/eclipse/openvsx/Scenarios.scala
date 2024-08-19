@@ -46,8 +46,8 @@ object Scenarios {
           .exec(http("RegistryAPI.createNamespace")
             .post(s"/api/-/namespace/create")
             .headers(headers())
-            .queryParam("token", """${access_token}""")
-            .body(StringBody("""{"name":"${namespace}"}""")).asJson
+            .queryParam("token", """#{access_token}""")
+            .body(StringBody("""{"name":"#{namespace}"}""")).asJson
             .requestTimeout(3.minutes)
             .check(status.is(201)))
         //      useful for debugging responses
@@ -95,7 +95,7 @@ object Scenarios {
           .exec(http("RegistryAPI.publish")
             .post("/api/-/publish")
             .headers(headers())
-            .queryParam("token", """${access_token}""")
+            .queryParam("token", """#{access_token}""")
             .body(ByteArrayBody(session => {
               val path = extensionDir + "\\" + session("extension_file").as[String]
               File(path).toByteArray()
@@ -123,10 +123,10 @@ object Scenarios {
             !File(extensionFile).exists
           }) {
             exec(http("getExtensionDownloadLink")
-              .get("""/api/${namespace}/${name}/${version}""")
+              .get("""/api/#{namespace}/#{name}/#{version}""")
               .check(jsonPath("$.files.download").find.saveAs("download")))
               .exec(http("downloadExtension")
-                .get("""${download}""")
+                .get("""#{download}""")
                 .check(bodyBytes.saveAs("file_bytes")))
               .pause(30, 60)
               .exec {session =>
@@ -142,7 +142,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("extensions.csv").circular)
           .exec(http("RegistryAPI.getExtension")
-            .get("""/api/${namespace}/${name}""")
+            .get("""/api/#{namespace}/#{name}""")
             .headers(headers()))
         //          .check(status.is(200)))
       }
@@ -154,7 +154,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("extensions.csv").circular)
           .exec(http("RegistryAPI.getExtension")
-            .get("""/api/${namespace}/${name}/universal""")
+            .get("""/api/#{namespace}/#{name}/universal""")
             .headers(headers()))
         //          .check(status.is(200)))
       }
@@ -165,7 +165,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("extension-versions.csv").circular)
           .exec(http("RegistryAPI.getExtension")
-            .get("""/api/${namespace}/${name}/${version}""")
+            .get("""/api/#{namespace}/#{name}/#{version}""")
             .headers(headers()))
         //          .check(status.is(200)))
       }
@@ -177,7 +177,30 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("extension-versions.csv").circular)
           .exec(http("RegistryAPI.getExtension")
-            .get("""/api/${namespace}/${name}/universal/${version}""")
+            .get("""/api/#{namespace}/#{name}/universal/#{version}""")
+            .headers(headers()))
+        //          .check(status.is(200)))
+      }
+  }
+
+  def getVersionReferencesScenario(): ScenarioBuilder = {
+    scenario("RegistryAPI: Get Version References")
+      .repeat(1000) {
+        feed(csv("extensions.csv").circular)
+          .exec(http("RegistryAPI.getVersionReferences")
+            .get("""/api/#{namespace}/#{name}/version-references""")
+            .headers(headers()))
+        //          .check(status.is(200)))
+      }
+  }
+
+  def getVersionReferencesTargetPlatformScenario(): ScenarioBuilder = {
+    // TODO add more target platforms besides 'universal'
+    scenario("RegistryAPI: Get Version References by Target Platform")
+      .repeat(1000) {
+        feed(csv("extensions.csv").circular)
+          .exec(http("RegistryAPI.getVersionReferences")
+            .get("""/api/#{namespace}/#{name}/universal/version-references""")
             .headers(headers()))
         //          .check(status.is(200)))
       }
@@ -188,7 +211,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("namespaces.csv").circular)
           .exec(http("RegistryAPI.getNamespace")
-            .get("""/api/${namespace}""")
+            .get("""/api/#{namespace}""")
             .headers(headers())
             .check(status.is(200)))
       }
@@ -199,7 +222,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("namespaces.csv").circular)
           .exec(http("RegistryAPI.getNamespaceDetails")
-            .get("""/api/${namespace}/details""")
+            .get("""/api/#{namespace}/details""")
             .headers(headers())
             .check(status.is(200)))
       }
@@ -210,7 +233,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("query-strings.csv").circular)
           .exec(http("RegistryAPI.getQuery")
-            .get("""/api/-/query?${query}""")
+            .get("""/api/-/query?#{query}""")
             .headers(headers())
             .check(status.is(200)))
       }
@@ -221,7 +244,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("query-v2-strings.csv").circular)
           .exec(http("RegistryAPI.getQueryV2")
-            .get("""/api/v2/-/query?${query}""")
+            .get("""/api/v2/-/query?#{query}""")
             .headers(headers())
             .check(status.is(200)))
       }
@@ -260,7 +283,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("extension-versions.csv").circular)
           .feed(Array(
-            Map("file" -> """${namespace}.${name}-${version}.vsix"""),
+            Map("file" -> """#{namespace}.#{name}-#{version}.vsix"""),
             Map("file" -> "package.json"),
             Map("file" -> "extension.vsixmanifest"),
             Map("file" -> "CHANGELOG.md"),
@@ -347,7 +370,7 @@ object Scenarios {
       .repeat(1000) {
         feed(this.searchQueryFeeder().circular)
           .exec(http("RegistryAPI.search")
-            .get("""/api/-/search?${query}""")
+            .get("""/api/-/search?#{query}""")
             .headers(headers()))
         //          .check(status.is(200)))
       }
@@ -359,7 +382,7 @@ object Scenarios {
         feed(csv("namespaces.csv").circular)
           .feed(csv("access-tokens.csv").circular)
           .exec(http("RegistryAPI.verifyToken")
-            .get("""/api/${namespace}/verify-pat?token=${access_token}""")
+            .get("""/api/#{namespace}/verify-pat?token=#{access_token}""")
             .headers(headers())
             .requestTimeout(3.minutes))
       }
@@ -375,7 +398,7 @@ object Scenarios {
            |    {
            |      "criteria":[
            |        {"filterType":8,"value":"Microsoft.VisualStudio.Code"},
-           |        {"filterType":10,"value":"${query}"},
+           |        {"filterType":10,"value":"#{query}"},
            |        {"filterType":12,"value":"4096"}
            |      ],
            |      "pageNumber":1,
@@ -409,7 +432,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("extension-versions.csv").circular)
           .exec(http("VSCodeAdapter.download")
-            .get("""/vscode/gallery/publishers/${namespace}/vsextensions/${name}/${version}/vspackage""")
+            .get("""/vscode/gallery/publishers/#{namespace}/vsextensions/#{name}/#{version}/vspackage""")
             .headers(headers())
             .requestTimeout(3.minutes)
             .check(status.is(200)))
@@ -421,7 +444,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv("extensions.csv").circular)
           .exec(http("VSCodeAdapter.getItemUrl")
-            .get("""/vscode/item?itemName=${namespace}.${name}""")
+            .get("""/vscode/item?itemName=#{namespace}.#{name}""")
             .headers(headers())
             .requestTimeout(3.minutes)
             .check(status.is(200)))
@@ -434,7 +457,7 @@ object Scenarios {
         feed(csv("extension-versions.csv").circular)
           .feed(Array(Map("file" -> "extension.vsixmanifest"), Map("file" -> "extension")).circular)
           .exec(http("VSCodeAdapter.browse")
-            .get("""/vscode/unpkg/${namespace}/${name}/${version}/${file}""")
+            .get("""/vscode/unpkg/#{namespace}/#{name}/#{version}/#{file}""")
             .headers(headers())
             .requestTimeout(3.minutes)
             .check(status.is(200)))
@@ -455,7 +478,7 @@ object Scenarios {
             Map("asset" -> "Microsoft.VisualStudio.Code.WebResources/extension/package.json")
           ).circular)
           .exec(http("VSCodeAdapter.getAsset")
-            .get("""/vscode/asset/${namespace}/${name}/${version}/${asset}""")
+            .get("""/vscode/asset/#{namespace}/#{name}/#{version}/#{asset}""")
             .headers(headers())
             .requestTimeout(3.minutes)
             .check(status.is(200)))

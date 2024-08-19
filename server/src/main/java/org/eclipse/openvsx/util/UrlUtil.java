@@ -235,7 +235,10 @@ public final class UrlUtil {
     }
 
     public static String getPublicKeyUrl(ExtensionVersion extVersion) {
-        var publicId = extVersion.getSignatureKeyPair().getPublicId();
+        return getPublicKeyUrl(extVersion.getSignatureKeyPair().getPublicId());
+    }
+
+    public static String getPublicKeyUrl(String publicId) {
         return createApiUrl(getBaseUrl(), "api", "-", "public-key", publicId);
     }
 

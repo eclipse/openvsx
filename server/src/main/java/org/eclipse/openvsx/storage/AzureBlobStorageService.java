@@ -198,13 +198,6 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     @Override
-    public TempFile downloadNamespaceLogo(Namespace namespace) throws IOException {
-        var logoFile = new TempFile("namespace-logo", ".png");
-        getContainerClient().getBlobClient(getBlobName(namespace)).downloadToFile(logoFile.getPath().toString(), true);
-        return logoFile;
-    }
-
-    @Override
     public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
         var copyOperations = new ArrayList<SyncPoller<BlobCopyInfo, Void>>();
         for(var pair : pairs) {

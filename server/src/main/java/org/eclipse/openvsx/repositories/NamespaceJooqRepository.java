@@ -53,4 +53,15 @@ public class NamespaceJooqRepository {
                 .fetch()
                 .isNotEmpty();
     }
+
+    public String findNameByNameIgnoreCase(String name) {
+        return dsl.select(NAMESPACE.NAME)
+                .from(NAMESPACE)
+                .where(NAMESPACE.NAME.equalIgnoreCase(name))
+                .fetchOne(NAMESPACE.NAME);
+    }
+
+    public boolean exists(String name) {
+        return dsl.fetchExists(dsl.selectOne().from(NAMESPACE).where(NAMESPACE.NAME.equalIgnoreCase(name)));
+    }
 }

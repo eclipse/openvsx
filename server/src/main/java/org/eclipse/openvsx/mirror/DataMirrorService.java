@@ -145,8 +145,6 @@ public class DataMirrorService {
     public UserData getOrAddUser(UserJson json) {
         var user = repositories.findUserByLoginName(json.provider, json.loginName);
         if (user == null) {
-            // TODO do we need all of the data?
-            // TODO Is this legal (GDPR, other laws)? I'm not a lawyer.
             user = new UserData();
             user.setLoginName(json.loginName);
             user.setFullName(json.fullName);
@@ -160,13 +158,10 @@ public class DataMirrorService {
     }
 
     public String getOrAddAccessTokenValue(UserData user, String description) {
-        return repositories.findAccessTokens(user)
-                .filter(PersonalAccessToken::isActive)
-                .filter(token -> token.getDescription().equals(description))
-                .stream()
-                .findFirst()
-                .map(PersonalAccessToken::getValue)
-                .orElse(users.createAccessToken(user, description).value);
+        var token = repositories.findAccessToken(user, description);
+        return token == null
+                ? users.createAccessToken(user, description).value
+                : token.getValue();
     }
 
     @Transactional
@@ -245,9 +240,8 @@ public class DataMirrorService {
         var localVerified = local.getNamespace(namespaceName).verified;
         if(!localVerified && remoteVerified) {
             // verify the namespace by adding an owner to it
-            var namespace = repositories.findNamespace(namespaceName);
-            var memberships = repositories.findMemberships(namespace);
-            users.addNamespaceMember(namespace, memberships.toList().get(0).getUser(), NamespaceMembership.ROLE_OWNER);
+            var membership = repositories.findFirstMembership(namespaceName);
+            users.addNamespaceMember(membership.getNamespace(), membership.getUser(), NamespaceMembership.ROLE_OWNER);
         }
         if(localVerified && !remoteVerified) {
             // unverify namespace by changing owner(s) back to contributor
@@ -258,14 +252,13 @@ public class DataMirrorService {
     }
 
     public void ensureNamespaceMembership(UserData user, Namespace namespace) {
-        var membership = repositories.findMembership(user, namespace);
-        if (membership == null) {
+        if (!repositories.hasMembership(user, namespace)) {
             users.addNamespaceMember(namespace, user, NamespaceMembership.ROLE_CONTRIBUTOR);
         }
     }
 
     public void ensureNamespace(String namespaceName) {
-        if(repositories.findNamespace(namespaceName) == null) {
+        if(!repositories.namespaceExists(namespaceName)) {
             var json = new NamespaceJson();
             json.name = namespaceName;
             admin.createNamespace(json);

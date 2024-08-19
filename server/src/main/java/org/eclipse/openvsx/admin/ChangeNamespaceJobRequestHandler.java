@@ -80,7 +80,6 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
             return;
         }
 
-        var oldResources = repositories.findFileResources(oldNamespace);
         var newNamespaceOptional = Optional.ofNullable(repositories.findNamespace(json.newNamespace));
         var createNewNamespace = newNamespaceOptional.isEmpty();
         var newNamespace = newNamespaceOptional.orElseGet(() -> {
@@ -90,6 +89,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
             return namespace;
         });
 
+        var oldResources = repositories.findFileResources(oldNamespace);
         var copyResources = oldResources.stream()
                 .findFirst()
                 .map(storageUtil::shouldStoreExternally)

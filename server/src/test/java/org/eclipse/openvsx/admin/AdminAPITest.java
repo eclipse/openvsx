@@ -27,10 +27,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
-import org.eclipse.openvsx.storage.AzureBlobStorageService;
-import org.eclipse.openvsx.storage.AzureDownloadCountService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
-import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -385,8 +382,8 @@ public class AdminAPITest {
         membership1.setNamespace(namespace);
         membership1.setUser(user);
         membership1.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMemberships(namespace))
-                .thenReturn(Streamable.of(membership1));
+        Mockito.when(repositories.findMemberships(namespace.getName()))
+                .thenReturn(List.of(membership1));
         
         mockMvc.perform(get("/admin/namespace/{namespace}/members", "foobar")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
@@ -438,10 +435,8 @@ public class AdminAPITest {
     @Test
     public void testCreateExistingNamespace() throws Exception {
         mockAdminUser();
-        var namespace = new Namespace();
-        namespace.setName("foobar");
-        Mockito.when(repositories.findNamespace("foobar"))
-                .thenReturn(namespace);
+        Mockito.when(repositories.findNamespaceName("foobar"))
+                .thenReturn("foobar");
  
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -534,7 +529,7 @@ public class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user))
                 .thenReturn(Streamable.of(token));
         versions.forEach(v -> v.setPublishedWith(token));
-        Mockito.when(repositories.findVersionsByAccessToken(token, true))
+        Mockito.when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions));
 
         mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/revoke", "github", "test")
@@ -1030,7 +1025,7 @@ public class AdminAPITest {
         token.setActive(true);
         token.setValue(tokenValue);
         token.setUser(user);
-        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
+        Mockito.when(repositories.isAdminToken(tokenValue)).thenReturn(true);
 
         return token;
     }
@@ -1044,7 +1039,7 @@ public class AdminAPITest {
         token.setActive(true);
         token.setValue(tokenValue);
         token.setUser(user);
-        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
+        Mockito.when(repositories.isAdminToken(tokenValue)).thenReturn(false);
 
         return token;
     }
@@ -1073,8 +1068,8 @@ public class AdminAPITest {
                 .thenReturn(namespace);
         Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.empty());
-        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(0l);
+        Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                .thenReturn(false);
         return namespace;
     }
 
@@ -1120,7 +1115,7 @@ public class AdminAPITest {
 
         extension.getVersions().addAll(versions);
         Mockito.when(repositories.countVersions(extension)).thenReturn(numberOfVersions);
-        Mockito.when(repositories.findLatestVersion(extension, null, false, false))
+        Mockito.when(repositories.findLatestVersion(namespace.getName(), extension.getName(), null, false, false))
                 .thenReturn(versions.get(numberOfVersions - 1));
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
@@ -1306,6 +1301,7 @@ public class AdminAPITest {
                 RepositoryService repositories,
                 GoogleCloudStorageService googleStorage,
                 AzureBlobStorageService azureStorage,
+                LocalStorageService localStorage,
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
@@ -1317,11 +1313,17 @@ public class AdminAPITest {
                     googleStorage,
                     azureStorage,
                     azureDownloadCountService,
+                    localStorage,
                     search,
                     cache,
                     entityManager,
                     observations
             );
+        }
+
+        @Bean
+        LocalStorageService localStorage(EntityManager entityManager) {
+            return new LocalStorageService(entityManager);
         }
 
         @Bean

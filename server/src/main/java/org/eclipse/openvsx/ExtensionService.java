@@ -147,14 +147,11 @@ public class ExtensionService {
      */
     @Transactional
     public void reactivateExtensions(UserData user) {
-        var accessTokens = repositories.findAccessTokens(user);
         var affectedExtensions = new LinkedHashSet<Extension>();
-        for (var accessToken : accessTokens) {
-            var versions = repositories.findVersionsByAccessToken(accessToken, false);
-            for (var version : versions) {
-                version.setActive(true);
-                affectedExtensions.add(version.getExtension());
-            }
+        var versions = repositories.findVersionsByUser(user, false);
+        for (var version : versions) {
+            version.setActive(true);
+            affectedExtensions.add(version.getExtension());
         }
         for (var extension : affectedExtensions) {
             updateExtension(extension);

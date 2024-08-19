@@ -9,19 +9,16 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
 import org.eclipse.openvsx.entities.UserData;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.Repository;
 
 public interface UserDataRepository extends Repository<UserData, Long> {
 
-    UserData findByProviderAndAuthId(String provider, String authId);
-
     UserData findByProviderAndLoginName(String provider, String loginName);
 
-    Streamable<UserData> findByLoginNameStartingWith(String loginNameStart);
-
-    Streamable<UserData> findAll();
+    Page<UserData> findByLoginNameStartingWith(String loginNameStart, Pageable page);
 
     long count();
 
