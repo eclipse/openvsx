@@ -123,7 +123,7 @@ public class AzureDownloadCountService {
                     response = iterator.next();
                     var blobNames = getBlobNames(response.getValue());
                     var processedItems = processor.processedItems(blobNames);
-//                    processedItems.forEach(this::deleteBlob);
+                    processedItems.forEach(this::deleteBlob);
                     blobNames.removeAll(processedItems);
                     for (var name : blobNames) {
                         if (LocalDateTime.now().isAfter(maxExecutionTime)) {
