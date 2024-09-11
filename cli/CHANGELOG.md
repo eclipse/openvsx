@@ -2,6 +2,14 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.9.3 (Sep. 2024)
+
+#### Dependencies
+
+- Upgrade `micromatch` from `4.0.5` to `4.0.8` ([#978](https://github.com/eclipse/openvsx/pull/978))
+
+---
+
 ### v0.9.2 (July 2024)
 
 #### Bug Fixes
