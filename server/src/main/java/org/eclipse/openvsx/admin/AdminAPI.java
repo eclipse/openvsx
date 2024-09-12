@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
-
 @RestController
 public class AdminAPI {
 
@@ -197,6 +195,7 @@ public class AdminAPI {
                 json.name = extension.getName();
                 json.allVersions = Collections.emptyMap();
                 json.allTargetPlatformVersions = Collections.emptyList();
+                json.deprecated = extension.isDeprecated();
                 json.active = extension.isActive();
             }
             return ResponseEntity.ok(json);

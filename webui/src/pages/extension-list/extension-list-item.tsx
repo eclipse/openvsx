@@ -66,7 +66,9 @@ export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = prop
                                 '&:not(:last-child)': {
                                     marginBottom: '.5rem',
                                 }
-                            }
+                            },
+                            opacity: extension.deprecated ? 0.5 : undefined,
+                            filter: extension.deprecated ? 'grayscale(100%)' : undefined
                         }}
                     >
                         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>

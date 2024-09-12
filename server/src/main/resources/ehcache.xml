@@ -70,4 +70,14 @@
             <disk unit="MB">8</disk>
         </resources>
     </cache>
+    <cache alias="malicious.extensions">
+        <expiry>
+            <ttl unit="days">1</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">1</heap>
+            <offheap unit="MB">2</offheap>
+            <disk unit="MB">8</disk>
+        </resources>
+    </cache>
 </config>

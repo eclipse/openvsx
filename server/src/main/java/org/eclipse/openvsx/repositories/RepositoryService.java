@@ -14,6 +14,7 @@ import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
+import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
 import org.springframework.data.domain.Page;
@@ -687,7 +688,7 @@ public class RepositoryService {
         return signatureKeyPairJooqRepo.findPublicId(namespace, extension, targetPlatform, version);
     }
 
-    public String findFirstUnresolvedDependency(List<String[]> dependencies) {
+    public String findFirstUnresolvedDependency(List<ExtensionId> dependencies) {
         return extensionJooqRepo.findFirstUnresolvedDependency(dependencies);
     }
 
@@ -697,5 +698,17 @@ public class RepositoryService {
 
     public NamespaceMembership findFirstMembership(String namespaceName) {
         return membershipRepo.findFirstByNamespaceNameIgnoreCase(namespaceName);
+    }
+
+    public ExtensionVersion findLatestReplacement(long extensionId, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
+        return extensionVersionJooqRepo.findLatestReplacement(extensionId, targetPlatform, onlyPreRelease, onlyActive);
+    }
+
+    public boolean hasExtension(String namespace, String extension) {
+        return extensionJooqRepo.hasExtension(namespace, extension);
+    }
+
+    public Streamable<Extension> findDeprecatedExtensions(Extension replacement) {
+        return extensionRepo.findByReplacement(replacement);
     }
 }

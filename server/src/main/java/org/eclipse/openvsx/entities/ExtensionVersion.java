@@ -181,6 +181,9 @@ public class ExtensionVersion implements Serializable {
         if (this.getBundledExtensions() != null) {
             json.bundledExtensions = toExtensionReferenceJson(this.getBundledExtensions());
         }
+
+        json.deprecated = extension.isDeprecated();
+        json.downloadable = extension.isDownloadable();
         return json;
     }
 
@@ -213,6 +216,7 @@ public class ExtensionVersion implements Serializable {
         entry.timestamp = TimeUtil.toUTCString(this.getTimestamp());
         entry.displayName = this.getDisplayName();
         entry.description = this.getDescription();
+        entry.deprecated = extension.isDeprecated();
         return entry;
     }
 

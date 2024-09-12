@@ -114,14 +114,10 @@ public class LocalVSCodeService implements IVSCodeService {
             extensionsList = repositories.findActiveExtensionsByPublicId(extensionIds, BuiltInExtensionUtil.getBuiltInNamespace());
         } else if (!extensionNames.isEmpty()) {
             extensionsList = extensionNames.stream()
-                    .map(name -> name.split("\\."))
-                    .filter(split -> split.length == 2)
-                    .filter(split -> !BuiltInExtensionUtil.isBuiltIn(split[0]))
-                    .map(split -> {
-                        var name = split[1];
-                        var namespaceName = split[0];
-                        return repositories.findActiveExtension(name, namespaceName);
-                    })
+                    .map(NamingUtil::fromExtensionId)
+                    .filter(Objects::nonNull)
+                    .filter(extensionId -> !BuiltInExtensionUtil.isBuiltIn(extensionId.namespace()))
+                    .map(extensionId -> repositories.findActiveExtension(extensionId.extension(), extensionId.namespace()))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         } else if (!search.isEnabled()) {

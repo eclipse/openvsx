@@ -11,6 +11,7 @@
 import React, { ChangeEvent, FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
 import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
 import { Box, Grid, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
+import WarningIcon from '@mui/icons-material/Warning';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
 import { getTargetPlatformDisplayName } from '../../utils';
 import { MainContext } from '../../context';
@@ -98,7 +99,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
 
     return <>
         <Grid container direction='column' sx={{ height: '100%' }}>
-            <Grid item container>
+            <Grid item container sx={{ filter: extension.deprecated ? 'grayscale(100%)' : null }}>
                 {
                     icon ?
                         <Grid item xs={12} md={4}>
@@ -121,6 +122,16 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                                 {extension.displayName || extension.name}
                             </Typography>
                         </Grid>
+                        { extension.deprecated &&
+                            <Grid item container direction='row'>
+                                <Grid item>
+                                    <WarningIcon fontSize='small' />
+                                </Grid>
+                                <Grid item>
+                                    <Typography>&nbsp;This extension has been deprecated.</Typography>
+                                </Grid>
+                            </Grid>
+                        }
                         <Grid item>
                             <Typography sx={{ fontFamily: 'Monaco, monospace' }}>{extension.namespace}.{extension.name}</Typography>
                         </Grid>

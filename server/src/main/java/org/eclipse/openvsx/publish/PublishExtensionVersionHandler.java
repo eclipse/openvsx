@@ -21,8 +21,10 @@ import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -49,6 +51,7 @@ public class PublishExtensionVersionHandler {
     private final JobRequestScheduler scheduler;
     private final UserService users;
     private final ExtensionValidator validator;
+    private final ExtensionControlService extensionControl;
     private final ObservationRegistry  observations;
 
     public PublishExtensionVersionHandler(
@@ -59,6 +62,7 @@ public class PublishExtensionVersionHandler {
             JobRequestScheduler scheduler,
             UserService users,
             ExtensionValidator validator,
+            ExtensionControlService extensionControl,
             ObservationRegistry  observations
     ) {
         this.service = service;
@@ -68,6 +72,7 @@ public class PublishExtensionVersionHandler {
         this.scheduler = scheduler;
         this.users = users;
         this.validator = validator;
+        this.extensionControl = extensionControl;
         this.observations = observations;
     }
 
@@ -116,6 +121,9 @@ public class PublishExtensionVersionHandler {
             if (nameIssue.isPresent()) {
                 throw new ErrorResultException(nameIssue.get().toString());
             }
+            if(isMalicious(namespaceName, extensionName)) {
+                throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
+            }
 
             var version = processor.getVersion();
             var versionIssue = validator.validateExtensionVersion(version);
@@ -138,6 +146,8 @@ public class PublishExtensionVersionHandler {
                 extension.setName(extensionName);
                 extension.setNamespace(namespace);
                 extension.setPublishedDate(extVersion.getTimestamp());
+                extension.setDeprecated(false);
+                extension.setDownloadable(true);
 
                 entityManager.persist(extension);
             } else {
@@ -168,7 +178,17 @@ public class PublishExtensionVersionHandler {
         });
     }
 
-    private void checkDependencies(List<String[]> dependencies) {
+    private boolean isMalicious(String namespace, String extension) {
+        try {
+            var maliciousExtensionIds = extensionControl.getMaliciousExtensionIds();
+            return maliciousExtensionIds.contains(NamingUtil.toExtensionId(namespace, extension));
+        } catch(IOException e) {
+            logger.warn("Failed to check whether extension is malicious or not", e);
+            return false;
+        }
+    }
+
+    private void checkDependencies(List<ExtensionId> dependencies) {
         Observation.createNotStarted("PublishExtensionVersionHandler#checkDependencies", observations).observe(() -> {
             var unresolvedDependency = repositories.findFirstUnresolvedDependency(dependencies);
             if (unresolvedDependency != null) {
@@ -177,13 +197,13 @@ public class PublishExtensionVersionHandler {
         });
     }
 
-    private String[] parseExtensionId(String extensionId, String formatType) {
-        var split = extensionId.split("\\.");
-        if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty()) {
+    private ExtensionId parseExtensionId(String extensionIdText, String formatType) {
+        var extensionId = NamingUtil.fromExtensionId(extensionIdText);
+        if (extensionId == null) {
             throw new ErrorResultException("Invalid '" + formatType + "' format. Expected: '${namespace}.${name}'");
         }
 
-        return split;
+        return extensionId;
     }
 
     @Async

@@ -92,6 +92,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.observations = observations;
     }
 
+    @Value("${ovsx.webui.url:}")
+    String webuiUrl;
+
     @Value("${ovsx.registry.version:}")
     String registryVersion;
 
@@ -269,15 +272,16 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public QueryResultJson query(QueryRequest request) {
         if (!StringUtils.isEmpty(request.extensionId)) {
-            var split = request.extensionId.split("\\.");
-            if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty())
+            var extensionId = NamingUtil.fromExtensionId(request.extensionId);
+            if(extensionId == null)
                 throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
-            if (!StringUtils.isEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
+            if (!StringUtils.isEmpty(request.namespaceName) && !request.namespaceName.equals(extensionId.namespace()))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
-            if (!StringUtils.isEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
+            if (!StringUtils.isEmpty(request.extensionName) && !request.extensionName.equals(extensionId.extension()))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
-            request.namespaceName = split[0];
-            request.extensionName = split[1];
+
+            request.namespaceName = extensionId.namespace();
+            request.extensionName = extensionId.extension();
             request.extensionId = null;
         }
 
@@ -320,15 +324,16 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Override
     public QueryResultJson queryV2(QueryRequestV2 request) {
         if (!StringUtils.isEmpty(request.extensionId)) {
-            var split = request.extensionId.split("\\.");
-            if (split.length != 2 || split[0].isEmpty() || split[1].isEmpty())
+            var extensionId = NamingUtil.fromExtensionId(request.extensionId);
+            if (extensionId == null)
                 throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
-            if (!StringUtils.isEmpty(request.namespaceName) && !request.namespaceName.equals(split[0]))
+            if (!StringUtils.isEmpty(request.namespaceName) && !request.namespaceName.equals(extensionId.namespace()))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
-            if (!StringUtils.isEmpty(request.extensionName) && !request.extensionName.equals(split[1]))
+            if (!StringUtils.isEmpty(request.extensionName) && !request.extensionName.equals(extensionId.extension()))
                 throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
-            request.namespaceName = split[0];
-            request.extensionName = split[1];
+
+            request.namespaceName = extensionId.namespace();
+            request.extensionName = extensionId.extension();
             request.extensionId = null;
         }
 
@@ -785,6 +790,18 @@ public class LocalRegistryService implements IExtensionRegistry {
             var latestPreRelease = repositories.findLatestVersionForAllUrls(extension, targetPlatform, true, onlyActive);
 
             var json = extVersion.toExtensionJson();
+            if(extension.getReplacement() != null) {
+                var replacementId = extension.getReplacement().getId();
+                var replacement = repositories.findLatestReplacement(replacementId, targetPlatform, false, onlyActive);
+                if(replacement != null) {
+                    json.replacement = new ExtensionReplacementJson();
+                    json.replacement.url = UrlUtil.createApiUrl(webuiUrl, "extension", replacement.getExtension().getNamespace().getName(), replacement.getExtension().getName());
+                    json.replacement.displayName = StringUtils.isNotEmpty(replacement.getDisplayName())
+                            ? replacement.getDisplayName()
+                            : replacement.getExtension().getName();
+                }
+            }
+
             json.preview = latest != null && latest.isPreview();
             json.versionAlias = new ArrayList<>(2);
             if (latest != null && extVersion.getVersion().equals(latest.getVersion()))
@@ -852,6 +869,19 @@ public class LocalRegistryService implements IExtensionRegistry {
         var serverUrl = UrlUtil.getBaseUrl();
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
+
+        var extension = extVersion.getExtension();
+        if(extension.getReplacement() != null) {
+            var replacementId = extension.getReplacement().getId();
+            var replacement = repositories.findLatestReplacement(replacementId, targetPlatformParam, false, true);
+            if(replacement != null) {
+                json.replacement = new ExtensionReplacementJson();
+                json.replacement.url = UrlUtil.createApiUrl(serverUrl, "api", replacement.getExtension().getNamespace().getName(), replacement.getExtension().getName());
+                json.replacement.displayName = StringUtils.isNotEmpty(replacement.getDisplayName())
+                        ? replacement.getDisplayName()
+                        : replacement.getExtension().getName();
+            }
+        }
 
         json.versionAlias = new ArrayList<>(2);
         if (extVersion.equals(latest)) {
@@ -925,6 +955,19 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.namespaceUrl = createApiUrl(serverUrl, "api", json.namespace);
         json.reviewsUrl = createApiUrl(serverUrl, "api", json.namespace, json.name, "reviews");
         json.url = createApiVersionUrl(serverUrl, json);
+
+        var extension = extVersion.getExtension();
+        if(extension.getReplacement() != null) {
+            var replacementId = extension.getReplacement().getId();
+            var replacement = repositories.findLatestReplacement(replacementId, targetPlatformParam, false, true);
+            if(replacement != null) {
+                json.replacement = new ExtensionReplacementJson();
+                json.replacement.url = UrlUtil.createApiUrl(serverUrl, "api", replacement.getExtension().getNamespace().getName(), replacement.getExtension().getName());
+                json.replacement.displayName = StringUtils.isNotEmpty(replacement.getDisplayName())
+                        ? replacement.getDisplayName()
+                        : replacement.getExtension().getName();
+            }
+        }
 
         json.versionAlias = new ArrayList<>(2);
         if (extVersion.equals(latest)) {
