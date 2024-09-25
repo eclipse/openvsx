@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TempFile;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,7 @@ class ExtensionProcessorTest {
     void testTodoTree() throws Exception {
         try (
                 var file = writeToTempFile("util/todo-tree.zip");
-                var processor = new ExtensionProcessor(file, ObservationRegistry.NOOP)
+                var processor = new ExtensionProcessor(file)
         ) {
             assertThat(processor.getNamespace()).isEqualTo("Gruntfuggly");
             assertThat(processor.getExtensionName()).isEqualTo("todo-tree");
@@ -51,7 +50,7 @@ class ExtensionProcessorTest {
     void testChangelog() throws Exception {
         try (
                 var file = writeToTempFile("util/changelog.zip");
-                var processor = new ExtensionProcessor(file, ObservationRegistry.NOOP)
+                var processor = new ExtensionProcessor(file)
         ) {
             checkResource(processor, FileResource.CHANGELOG, "CHANGELOG.md");
         }
@@ -61,7 +60,7 @@ class ExtensionProcessorTest {
     void testCapitalizedCaseForResources() throws Exception {
         try (
                 var file = writeToTempFile("util/with-capitalized-case.zip");
-                var processor = new ExtensionProcessor(file, ObservationRegistry.NOOP)
+                var processor = new ExtensionProcessor(file)
         ) {
             checkResource(processor, FileResource.CHANGELOG, "Changelog.md");
             checkResource(processor, FileResource.README, "Readme.md");
@@ -73,7 +72,7 @@ class ExtensionProcessorTest {
     void testMinorCaseForResources() throws Exception {
         try (
                 var file = writeToTempFile("util/with-minor-case.zip");
-                var processor = new ExtensionProcessor(file, ObservationRegistry.NOOP)
+                var processor = new ExtensionProcessor(file)
         ) {
             checkResource(processor, FileResource.CHANGELOG, "changelog.md");
             checkResource(processor, FileResource.README, "readme.md");

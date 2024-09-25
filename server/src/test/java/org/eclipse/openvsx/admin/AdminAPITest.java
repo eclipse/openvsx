@@ -12,7 +12,6 @@ package org.eclipse.openvsx.admin;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.*;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
@@ -1258,8 +1257,7 @@ public class AdminAPITest {
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
-                ExtensionVersionIntegrityService integrityService,
-                ObservationRegistry observations
+                ExtensionVersionIntegrityService integrityService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -1272,14 +1270,8 @@ public class AdminAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService,
-                    observations
+                    integrityService
             );
-        }
-
-        @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
         }
 
         @Bean
@@ -1287,15 +1279,14 @@ public class AdminAPITest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
-                PublishExtensionVersionHandler publishHandler,
-                ObservationRegistry observations
+                PublishExtensionVersionHandler publishHandler
         ) {
-            return new ExtensionService(repositories, search, cache, publishHandler, observations);
+            return new ExtensionService(repositories, search, cache, publishHandler);
         }
 
         @Bean
-        ExtensionValidator extensionValidator(ObservationRegistry observations) {
-            return new ExtensionValidator(observations);
+        ExtensionValidator extensionValidator() {
+            return new ExtensionValidator();
         }
 
         @Bean
@@ -1307,8 +1298,7 @@ public class AdminAPITest {
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager,
-                ObservationRegistry observations
+                EntityManager entityManager
         ) {
             return new StorageUtilService(
                     repositories,
@@ -1318,8 +1308,7 @@ public class AdminAPITest {
                     localStorage,
                     search,
                     cache,
-                    entityManager,
-                    observations
+                    entityManager
             );
         }
 

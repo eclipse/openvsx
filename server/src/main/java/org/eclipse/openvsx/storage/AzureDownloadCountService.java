@@ -88,7 +88,7 @@ public class AzureDownloadCountService {
      * Indicates whether the download service is enabled by application config.
      */
     public boolean isEnabled() {
-//        return Observation.createNotStarted("AzureDownloadCountService#isEnabled", observations).observe(() -> {
+        return Observation.createNotStarted("AzureDownloadCountService#isEnabled", observations).observe(() -> {
             var logsEnabled = !StringUtils.isEmpty(logsServiceEndpoint);
             var storageEnabled = !StringUtils.isEmpty(storageServiceEndpoint);
             if (logsEnabled && !storageEnabled) {
@@ -96,7 +96,7 @@ public class AzureDownloadCountService {
             }
 
             return logsEnabled && storageEnabled;
-//        });
+        });
     }
 
     /**
@@ -105,7 +105,7 @@ public class AzureDownloadCountService {
     @Job(name = "Update Download Counts", retries = 0)
     @Recurring(id = "update-download-counts", cron = "0 5 * * * *", zoneId = "UTC")
     public void updateDownloadCounts() {
-//        Observation.createNotStarted("AzureDownloadCountService#updateDownloadCounts", observations).observe(() -> {
+        Observation.createNotStarted("AzureDownloadCountService#updateDownloadCounts", observations).observe(() -> {
             if (!isEnabled()) {
                 return;
             }
@@ -153,9 +153,9 @@ public class AzureDownloadCountService {
                         stopWatch.stop();
                         var executionTime = (int) stopWatch.getLastTaskTimeMillis();
                         processor.persistProcessedItem(name, processedOn, executionTime, success);
-//                        if(success) {
-//                            deleteBlob(name);
-//                        }
+                        if(success) {
+                            deleteBlob(name);
+                        }
                     }
                 }
 
@@ -164,7 +164,7 @@ public class AzureDownloadCountService {
             }
 
             logger.info("<< updateDownloadCounts");
-//        });
+        });
     }
 
     private void deleteBlob(String blobName) {
@@ -180,7 +180,7 @@ public class AzureDownloadCountService {
     }
 
     private Map<String, Integer> processBlobItem(String blobName) {
-//        return Observation.createNotStarted("AzureDownloadCountService#processBlobItem", observations).observe(() -> {
+        return Observation.createNotStarted("AzureDownloadCountService#processBlobItem", observations).observe(() -> {
             try (
                     var downloadsTempFile = downloadBlobItem(blobName);
                     var reader = Files.newBufferedReader(downloadsTempFile.getPath())
@@ -213,26 +213,26 @@ public class AzureDownloadCountService {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-//        });
+        });
     }
 
-    private TempFile downloadBlobItem(String blobName) throws IOException {
-//        return Observation.createNotStarted("AzureDownloadCountService#downloadBlobItem", observations).observe(() -> {
-//            TempFile downloadsTempFile = null;
-//            try {
-                var downloadsTempFile = new TempFile("azure-downloads-", ".json");
-//            } catch (IOException e) {
-//                // TODO add `throws IOException` to `downloadBlobItem` method signature when reverting Observations
-//                // TODO remove try catch around `downloadsTempFile`
-//                throw new RuntimeException(e);
-//            }
+    private TempFile downloadBlobItem(String blobName) /*throws IOException*/ {
+        return Observation.createNotStarted("AzureDownloadCountService#downloadBlobItem", observations).observe(() -> {
+            TempFile downloadsTempFile;
+            try {
+                downloadsTempFile = new TempFile("azure-downloads-", ".json");
+            } catch (IOException e) {
+                // TODO add `throws IOException` to `downloadBlobItem` method signature when reverting Observations
+                // TODO remove try catch around `downloadsTempFile`
+                throw new RuntimeException(e);
+            }
             getContainerClient().getBlobClient(blobName).downloadToFile(downloadsTempFile.getPath().toAbsolutePath().toString(), true);
             return downloadsTempFile;
-//        });
+        });
     }
 
     private List<String> getBlobNames(List<BlobItem> items) {
-//        return Observation.createNotStarted("AzureDownloadCountService#getBlobNames", observations).observe(() -> {
+        return Observation.createNotStarted("AzureDownloadCountService#getBlobNames", observations).observe(() -> {
             var blobNames = new ArrayList<String>();
             for (var item : items) {
                 var name = item.getName();
@@ -242,11 +242,11 @@ public class AzureDownloadCountService {
             }
 
             return blobNames;
-//        });
+        });
     }
 
     private PagedIterable<BlobItem> listBlobs() {
-//        return Observation.createNotStarted("AzureDownloadCountService#listBlobs", observations).observe(() -> {
+        return Observation.createNotStarted("AzureDownloadCountService#listBlobs", observations).observe(() -> {
             var details = new BlobListDetails()
                     .setRetrieveCopy(false)
                     .setRetrieveMetadata(false)
@@ -258,7 +258,7 @@ public class AzureDownloadCountService {
 
             var options = new ListBlobsOptions().setMaxResultsPerPage(100).setDetails(details);
             return getContainerClient().listBlobs(options, Duration.ofMinutes(5));
-//        });
+        });
     }
 
     private BlobContainerClient getContainerClient() {

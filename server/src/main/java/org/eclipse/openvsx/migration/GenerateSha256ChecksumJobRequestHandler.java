@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -53,7 +52,7 @@ public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandle
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }
-            try (var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
                 var checksum = extProcessor.generateSha256Checksum(extVersion);
                 checksum.setStorageType(download.getStorageType());
                 migrations.uploadFileResource(checksum);

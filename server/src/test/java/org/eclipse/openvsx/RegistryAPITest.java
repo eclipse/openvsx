@@ -12,7 +12,6 @@ package org.eclipse.openvsx;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
@@ -2332,8 +2331,7 @@ public class RegistryAPITest {
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
-                ExtensionVersionIntegrityService integrityService,
-                ObservationRegistry observations
+                ExtensionVersionIntegrityService integrityService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -2346,8 +2344,7 @@ public class RegistryAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService,
-                    observations
+                    integrityService
             );
         }
 
@@ -2356,15 +2353,14 @@ public class RegistryAPITest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
-                PublishExtensionVersionHandler publishHandler,
-                ObservationRegistry observations
+                PublishExtensionVersionHandler publishHandler
         ) {
-            return new ExtensionService(repositories, search, cache, publishHandler, observations);
+            return new ExtensionService(repositories, search, cache, publishHandler);
         }
 
         @Bean
-        ExtensionValidator extensionValidator(ObservationRegistry observations) {
-            return new ExtensionValidator(observations);
+        ExtensionValidator extensionValidator() {
+            return new ExtensionValidator();
         }
 
         @Bean
@@ -2376,8 +2372,7 @@ public class RegistryAPITest {
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager,
-                ObservationRegistry observations
+                EntityManager entityManager
         ) {
             return new StorageUtilService(
                     repositories,
@@ -2387,8 +2382,7 @@ public class RegistryAPITest {
                     localStorage,
                     search,
                     cache,
-                    entityManager,
-                    observations
+                    entityManager
             );
         }
 
@@ -2411,11 +2405,6 @@ public class RegistryAPITest {
         }
 
         @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
-        }
-
-        @Bean
         PublishExtensionVersionHandler publishExtensionVersionHandler(
                 PublishExtensionVersionService service,
                 ExtensionVersionIntegrityService integrityService,
@@ -2424,8 +2413,7 @@ public class RegistryAPITest {
                 JobRequestScheduler scheduler,
                 UserService users,
                 ExtensionValidator validator,
-                ExtensionControlService extensionControl,
-                ObservationRegistry observations
+                ExtensionControlService extensionControl
         ) {
             return new PublishExtensionVersionHandler(
                     service,
@@ -2435,8 +2423,7 @@ public class RegistryAPITest {
                     scheduler,
                     users,
                     validator,
-                    extensionControl,
-                    observations
+                    extensionControl
             );
         }
     }

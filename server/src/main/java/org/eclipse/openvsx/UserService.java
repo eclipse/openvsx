@@ -10,8 +10,6 @@
 package org.eclipse.openvsx;
 
 import com.google.common.base.Joiner;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.cache.CacheService;
@@ -45,35 +43,30 @@ public class UserService {
     private final StorageUtilService storageUtil;
     private final CacheService cache;
     private final ExtensionValidator validator;
-    private final ObservationRegistry observations;
 
     public UserService(
             EntityManager entityManager,
             RepositoryService repositories,
             StorageUtilService storageUtil,
             CacheService cache,
-            ExtensionValidator validator,
-            ObservationRegistry observations
+            ExtensionValidator validator
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.storageUtil = storageUtil;
         this.cache = cache;
         this.validator = validator;
-        this.observations = observations;
     }
 
     public UserData findLoggedInUser() {
-        return Observation.createNotStarted("UserService#findLoggedInUser", observations).observe(() -> {
-            var authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null) {
-                if (authentication.getPrincipal() instanceof IdPrincipal) {
-                    var principal = (IdPrincipal) authentication.getPrincipal();
-                    return entityManager.find(UserData.class, principal.getId());
-                }
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            if (authentication.getPrincipal() instanceof IdPrincipal) {
+                var principal = (IdPrincipal) authentication.getPrincipal();
+                return entityManager.find(UserData.class, principal.getId());
             }
-            return null;
-        });
+        }
+        return null;
     }
 
     @Transactional
@@ -128,14 +121,12 @@ public class UserService {
 
     @Transactional
     public PersonalAccessToken useAccessToken(String tokenValue) {
-        return Observation.createNotStarted("UserService#useAccessToken", observations).observe(() -> {
-            var token = repositories.findAccessToken(tokenValue);
-            if (token == null || !token.isActive()) {
-                return null;
-            }
-            token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
-            return token;
-        });
+        var token = repositories.findAccessToken(tokenValue);
+        if (token == null || !token.isActive()) {
+            return null;
+        }
+        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+        return token;
     }
 
     public String generateTokenValue() {
@@ -147,15 +138,12 @@ public class UserService {
     }
 
     public boolean hasPublishPermission(UserData user, Namespace namespace) {
-        return Observation.createNotStarted("UserService#hasPublishPermission", observations).observe(() -> {
+        if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+            // Privileged users can publish to every namespace.
+            return true;
+        }
 
-            if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
-                // Privileged users can publish to every namespace.
-                return true;
-            }
-
-            return repositories.canPublishInNamespace(user, namespace);
-        });
+        return repositories.canPublishInNamespace(user, namespace);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -276,21 +264,19 @@ public class UserService {
     }
     @Transactional
     public AccessTokenJson createAccessToken(UserData user, String description) {
-        return Observation.createNotStarted("UserService#createAccessToken", observations).observe(() -> {
-            var token = new PersonalAccessToken();
-            token.setUser(user);
-            token.setValue(generateTokenValue());
-            token.setActive(true);
-            token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
-            token.setDescription(description);
-            entityManager.persist(token);
-            var json = token.toAccessTokenJson();
-            // Include the token value after creation so the user can copy it
-            json.value = token.getValue();
-            json.deleteTokenUrl = createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId()));
+        var token = new PersonalAccessToken();
+        token.setUser(user);
+        token.setValue(generateTokenValue());
+        token.setActive(true);
+        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
+        token.setDescription(description);
+        entityManager.persist(token);
+        var json = token.toAccessTokenJson();
+        // Include the token value after creation so the user can copy it
+        json.value = token.getValue();
+        json.deleteTokenUrl = createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId()));
 
-            return json;
-        });
+        return json;
     }
 
     @Transactional

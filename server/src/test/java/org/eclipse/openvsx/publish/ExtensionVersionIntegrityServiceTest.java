@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
@@ -86,15 +85,15 @@ public class ExtensionVersionIntegrityServiceTest {
                             assertNotNull(entry);
                             if(expectedEntry.getName().equals(".signature.manifest")) {
                                 assertEquals(
-                                        new String(ArchiveUtil.readEntry(expectedSigZip, expectedEntry, ObservationRegistry.NOOP)),
-                                        new String(ArchiveUtil.readEntry(sigzip, entry, ObservationRegistry.NOOP))
+                                        new String(ArchiveUtil.readEntry(expectedSigZip, expectedEntry)),
+                                        new String(ArchiveUtil.readEntry(sigzip, entry))
                                 );
                             }
                         });
 
                 var entry = sigzip.getEntry(".signature.sig");
                 assertNotNull(entry);
-                assertTrue(ArchiveUtil.readEntry(sigzip, entry, ObservationRegistry.NOOP).length > 0);
+                assertTrue(ArchiveUtil.readEntry(sigzip, entry).length > 0);
             }
         }
     }

@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
@@ -705,7 +704,6 @@ public class ExtensionVersionJooqRepository {
         return query.fetchOne((record) -> toExtensionVersionFull(record, extension, null));
     }
 
-    @Observed
     public ExtensionVersion findLatest(
             String namespaceName,
             String extensionName,

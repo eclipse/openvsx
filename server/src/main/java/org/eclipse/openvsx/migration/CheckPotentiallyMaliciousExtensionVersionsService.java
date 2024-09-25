@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.migration;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
@@ -34,7 +33,7 @@ public class CheckPotentiallyMaliciousExtensionVersionsService {
 
     @Transactional
     public void checkPotentiallyMaliciousExtensionVersion(ExtensionVersion extVersion, TempFile extensionFile) {
-        try(var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
             boolean isMalicious = extProcessor.isPotentiallyMalicious();
             extVersion.setPotentiallyMalicious(isMalicious);
             if (isMalicious) {

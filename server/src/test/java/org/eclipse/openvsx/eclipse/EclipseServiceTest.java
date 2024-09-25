@@ -19,7 +19,6 @@ import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 
 import org.eclipse.openvsx.ExtensionService;
@@ -271,19 +270,13 @@ public class EclipseServiceTest {
         }
 
         @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
-        }
-
-        @Bean
         EclipseService eclipseService(
                 TokenService tokens,
                 ExtensionService extensions,
                 EntityManager entityManager,
-                RestTemplate restTemplate,
-                ObservationRegistry observations
+                RestTemplate restTemplate
         ) {
-            return new EclipseService(tokens, extensions, entityManager, restTemplate, observations);
+            return new EclipseService(tokens, extensions, entityManager, restTemplate);
         }
 
         @Bean
@@ -291,15 +284,14 @@ public class EclipseServiceTest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
-                PublishExtensionVersionHandler publishHandler,
-                ObservationRegistry observations
+                PublishExtensionVersionHandler publishHandler
         ) {
-            return new ExtensionService(repositories, search, cache, publishHandler, observations);
+            return new ExtensionService(repositories, search, cache, publishHandler);
         }
 
         @Bean
-        ExtensionValidator extensionValidator(ObservationRegistry observations) {
-            return new ExtensionValidator(observations);
+        ExtensionValidator extensionValidator() {
+            return new ExtensionValidator();
         }
 
         @Bean
@@ -311,8 +303,7 @@ public class EclipseServiceTest {
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager,
-                ObservationRegistry observations
+                EntityManager entityManager
         ) {
             return new StorageUtilService(
                     repositories,
@@ -322,8 +313,7 @@ public class EclipseServiceTest {
                     localStorage,
                     search,
                     cache,
-                    entityManager,
-                    observations
+                    entityManager
             );
         }
 

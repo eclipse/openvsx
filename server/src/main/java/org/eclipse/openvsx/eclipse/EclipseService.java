@@ -14,8 +14,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -68,7 +66,6 @@ public class EclipseService {
     private final EntityManager entityManager;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final ObservationRegistry observations;
 
     @Value("${ovsx.eclipse.base-url:}")
     String eclipseApiUrl;
@@ -80,8 +77,7 @@ public class EclipseService {
             TokenService tokens,
             ExtensionService extensions,
             EntityManager entityManager,
-            RestTemplate restTemplate,
-            ObservationRegistry observations
+            RestTemplate restTemplate
     ) {
         this.tokens = tokens;
         this.extensions = extensions;
@@ -89,7 +85,6 @@ public class EclipseService {
         this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.observations = observations;
     }
 
     public boolean isActive() {
@@ -101,30 +96,28 @@ public class EclipseService {
      * @throws ErrorResultException if the user has no active agreement
      */
     public void checkPublisherAgreement(UserData user) {
-        Observation.createNotStarted("EclipseService#checkPublisherAgreement", observations).observe(() -> {
-            if (!isActive()) {
-                return;
-            }
-            // Users without authentication provider have been created directly in the DB,
-            // so we skip the agreement check in this case.
-            if (user.getProvider() == null) {
-                return;
-            }
-            var personId = user.getEclipsePersonId();
-            if (personId == null) {
-                throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
-            }
-            var profile = getPublicProfile(personId);
-            if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null
-                    || profile.publisherAgreements.openVsx.version == null) {
-                throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
-            }
-            if (!publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version)) {
-                throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
-                        + profile.publisherAgreements.openVsx.version + "). The current version is "
-                        + publisherAgreementVersion + ".");
-            }
-        });
+        if (!isActive()) {
+            return;
+        }
+        // Users without authentication provider have been created directly in the DB,
+        // so we skip the agreement check in this case.
+        if (user.getProvider() == null) {
+            return;
+        }
+        var personId = user.getEclipsePersonId();
+        if (personId == null) {
+            throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
+        }
+        var profile = getPublicProfile(personId);
+        if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null
+                || profile.publisherAgreements.openVsx.version == null) {
+            throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
+        }
+        if (!publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version)) {
+            throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
+                    + profile.publisherAgreements.openVsx.version + "). The current version is "
+                    + publisherAgreementVersion + ".");
+        }
     }
 
     /**

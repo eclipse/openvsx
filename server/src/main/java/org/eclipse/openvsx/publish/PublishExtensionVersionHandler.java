@@ -10,8 +10,6 @@
 package org.eclipse.openvsx.publish;
 
 import com.google.common.base.Joiner;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -52,7 +50,6 @@ public class PublishExtensionVersionHandler {
     private final UserService users;
     private final ExtensionValidator validator;
     private final ExtensionControlService extensionControl;
-    private final ObservationRegistry  observations;
 
     public PublishExtensionVersionHandler(
             PublishExtensionVersionService service,
@@ -62,8 +59,7 @@ public class PublishExtensionVersionHandler {
             JobRequestScheduler scheduler,
             UserService users,
             ExtensionValidator validator,
-            ExtensionControlService extensionControl,
-            ObservationRegistry  observations
+            ExtensionControlService extensionControl
     ) {
         this.service = service;
         this.integrityService = integrityService;
@@ -73,109 +69,104 @@ public class PublishExtensionVersionHandler {
         this.users = users;
         this.validator = validator;
         this.extensionControl = extensionControl;
-        this.observations = observations;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionVersion createExtensionVersion(ExtensionProcessor processor, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
-        return Observation.createNotStarted("PublishExtensionVersionHandler#createExtensionVersion", observations).observe(() -> {
-            // Extract extension metadata from its manifest
-            var extVersion = createExtensionVersion(processor, token.getUser(), token, timestamp);
-            var dependencies = processor.getExtensionDependencies();
-            var bundledExtensions = processor.getBundledExtensions();
-            if (checkDependencies) {
-                var parsedDependencies = dependencies.stream()
-                        .map(id -> parseExtensionId(id, "extensionDependencies"))
-                        .toList();
+        // Extract extension metadata from its manifest
+        var extVersion = createExtensionVersion(processor, token.getUser(), token, timestamp);
+        var dependencies = processor.getExtensionDependencies();
+        var bundledExtensions = processor.getBundledExtensions();
+        if (checkDependencies) {
+            var parsedDependencies = dependencies.stream()
+                    .map(id -> parseExtensionId(id, "extensionDependencies"))
+                    .toList();
 
-                if(!parsedDependencies.isEmpty()) {
-                    checkDependencies(parsedDependencies);
-                }
-                bundledExtensions.forEach(id -> parseExtensionId(id, "extensionPack"));
+            if(!parsedDependencies.isEmpty()) {
+                checkDependencies(parsedDependencies);
             }
+            bundledExtensions.forEach(id -> parseExtensionId(id, "extensionPack"));
+        }
 
-            extVersion.setDependencies(dependencies);
-            extVersion.setBundledExtensions(bundledExtensions);
-            if(integrityService.isEnabled()) {
-                extVersion.setSignatureKeyPair(repositories.findActiveKeyPair());
-            }
+        extVersion.setDependencies(dependencies);
+        extVersion.setBundledExtensions(bundledExtensions);
+        if(integrityService.isEnabled()) {
+            extVersion.setSignatureKeyPair(repositories.findActiveKeyPair());
+        }
 
-            return extVersion;
-        });
+        return extVersion;
     }
 
     private ExtensionVersion createExtensionVersion(ExtensionProcessor processor, UserData user, PersonalAccessToken token, LocalDateTime timestamp) {
-        return Observation.createNotStarted("PublishExtensionVersionHandler#createExtensionVersion", observations).observe(() -> {
-            var namespaceName = processor.getNamespace();
-            var namespace = repositories.findNamespace(namespaceName);
-            if (namespace == null) {
-                throw new ErrorResultException("Unknown publisher: " + namespaceName
-                        + "\nUse the 'create-namespace' command to create a namespace corresponding to your publisher name.");
-            }
-            if (!users.hasPublishPermission(user, namespace)) {
-                throw new ErrorResultException("Insufficient access rights for publisher: " + namespace.getName());
-            }
+        var namespaceName = processor.getNamespace();
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new ErrorResultException("Unknown publisher: " + namespaceName
+                    + "\nUse the 'create-namespace' command to create a namespace corresponding to your publisher name.");
+        }
+        if (!users.hasPublishPermission(user, namespace)) {
+            throw new ErrorResultException("Insufficient access rights for publisher: " + namespace.getName());
+        }
 
-            var extensionName = processor.getExtensionName();
-            var nameIssue = validator.validateExtensionName(extensionName);
-            if (nameIssue.isPresent()) {
-                throw new ErrorResultException(nameIssue.get().toString());
+        var extensionName = processor.getExtensionName();
+        var nameIssue = validator.validateExtensionName(extensionName);
+        if (nameIssue.isPresent()) {
+            throw new ErrorResultException(nameIssue.get().toString());
+        }
+        if(isMalicious(namespaceName, extensionName)) {
+            throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
+        }
+
+        var version = processor.getVersion();
+        var versionIssue = validator.validateExtensionVersion(version);
+        if (versionIssue.isPresent()) {
+            throw new ErrorResultException(versionIssue.get().toString());
+        }
+
+        var extVersion = processor.getMetadata();
+        if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
+            extVersion.setDisplayName(null);
+        }
+        extVersion.setTimestamp(timestamp);
+        extVersion.setPublishedWith(token);
+        extVersion.setActive(false);
+
+        var extension = repositories.findExtension(extensionName, namespace);
+        if (extension == null) {
+            extension = new Extension();
+            extension.setActive(false);
+            extension.setName(extensionName);
+            extension.setNamespace(namespace);
+            extension.setPublishedDate(extVersion.getTimestamp());
+            extension.setDeprecated(false);
+            extension.setDownloadable(true);
+
+            entityManager.persist(extension);
+        } else {
+            var existingVersion = repositories.findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
+            if (existingVersion != null) {
+                var extVersionId = NamingUtil.toLogFormat(namespaceName, extensionName, extVersion.getTargetPlatform(), extVersion.getVersion());
+                var message = "Extension " + extVersionId + " is already published";
+                message += existingVersion.isActive() ? "." : ", but currently isn't active and therefore not visible.";
+                throw new ErrorResultException(message);
             }
-            if(isMalicious(namespaceName, extensionName)) {
-                throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
+        }
+
+        extension.setLastUpdatedDate(extVersion.getTimestamp());
+        extension.getVersions().add(extVersion);
+        extVersion.setExtension(extension);
+
+        var metadataIssues = validator.validateMetadata(extVersion);
+        if (!metadataIssues.isEmpty()) {
+            if (metadataIssues.size() == 1) {
+                throw new ErrorResultException(metadataIssues.get(0).toString());
             }
+            throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
+                    + Joiner.on("\n").join(metadataIssues));
+        }
 
-            var version = processor.getVersion();
-            var versionIssue = validator.validateExtensionVersion(version);
-            if (versionIssue.isPresent()) {
-                throw new ErrorResultException(versionIssue.get().toString());
-            }
-
-            var extVersion = processor.getMetadata();
-            if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
-                extVersion.setDisplayName(null);
-            }
-            extVersion.setTimestamp(timestamp);
-            extVersion.setPublishedWith(token);
-            extVersion.setActive(false);
-
-            var extension = repositories.findExtension(extensionName, namespace);
-            if (extension == null) {
-                extension = new Extension();
-                extension.setActive(false);
-                extension.setName(extensionName);
-                extension.setNamespace(namespace);
-                extension.setPublishedDate(extVersion.getTimestamp());
-                extension.setDeprecated(false);
-                extension.setDownloadable(true);
-
-                entityManager.persist(extension);
-            } else {
-                var existingVersion = repositories.findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
-                if (existingVersion != null) {
-                    var extVersionId = NamingUtil.toLogFormat(namespaceName, extensionName, extVersion.getTargetPlatform(), extVersion.getVersion());
-                    var message = "Extension " + extVersionId + " is already published";
-                    message += existingVersion.isActive() ? "." : ", but currently isn't active and therefore not visible.";
-                    throw new ErrorResultException(message);
-                }
-            }
-
-            extension.setLastUpdatedDate(extVersion.getTimestamp());
-            extension.getVersions().add(extVersion);
-            extVersion.setExtension(extension);
-
-            var metadataIssues = validator.validateMetadata(extVersion);
-            if (!metadataIssues.isEmpty()) {
-                if (metadataIssues.size() == 1) {
-                    throw new ErrorResultException(metadataIssues.get(0).toString());
-                }
-                throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
-                        + Joiner.on("\n").join(metadataIssues));
-            }
-
-            entityManager.persist(extVersion);
-            return extVersion;
-        });
+        entityManager.persist(extVersion);
+        return extVersion;
     }
 
     private boolean isMalicious(String namespace, String extension) {
@@ -189,12 +180,10 @@ public class PublishExtensionVersionHandler {
     }
 
     private void checkDependencies(List<ExtensionId> dependencies) {
-        Observation.createNotStarted("PublishExtensionVersionHandler#checkDependencies", observations).observe(() -> {
-            var unresolvedDependency = repositories.findFirstUnresolvedDependency(dependencies);
-            if (unresolvedDependency != null) {
-                throw new ErrorResultException("Cannot resolve dependency: " + unresolvedDependency);
-            }
-        });
+        var unresolvedDependency = repositories.findFirstUnresolvedDependency(dependencies);
+        if (unresolvedDependency != null) {
+            throw new ErrorResultException("Cannot resolve dependency: " + unresolvedDependency);
+        }
     }
 
     private ExtensionId parseExtensionId(String extensionIdText, String formatType) {
@@ -217,7 +206,7 @@ public class PublishExtensionVersionHandler {
 
         service.storeDownload(download, extensionFile);
         service.persistResource(download);
-        try(var processor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+        try(var processor = new ExtensionProcessor(extensionFile)) {
             extVersion.setPotentiallyMalicious(processor.isPotentiallyMalicious());
             if (extVersion.isPotentiallyMalicious()) {
                 logger.warn("Extension version is potentially malicious: {}", NamingUtil.toLogFormat(extVersion));
@@ -262,7 +251,7 @@ public class PublishExtensionVersionHandler {
         if(signatureName != null) {
             service.mirrorResource(getSignatureResource(signatureName, extVersion));
         }
-        try(var processor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+        try(var processor = new ExtensionProcessor(extensionFile)) {
             processor.getFileResources(extVersion).forEach(service::mirrorResource);
             service.mirrorResource(processor.generateSha256Checksum(extVersion));
             // don't store file resources, they can be generated on the fly to avoid traversing entire zip file
@@ -278,12 +267,10 @@ public class PublishExtensionVersionHandler {
     }
 
     public void schedulePublicIdJob(FileResource download) {
-        Observation.createNotStarted("PublishExtensionVersionHandler#schedulePublicIdJob", observations).observe(() -> {
-            var extension = download.getExtension().getExtension();
-            if (StringUtils.isEmpty(extension.getPublicId())) {
-                var namespace = extension.getNamespace();
-                scheduler.enqueue(new VSCodeIdNewExtensionJobRequest(namespace.getName(), extension.getName()));
-            }
-        });
+        var extension = download.getExtension().getExtension();
+        if (StringUtils.isEmpty(extension.getPublicId())) {
+            var namespace = extension.getNamespace();
+            scheduler.enqueue(new VSCodeIdNewExtensionJobRequest(namespace.getName(), extension.getName()));
+        }
     }
 }

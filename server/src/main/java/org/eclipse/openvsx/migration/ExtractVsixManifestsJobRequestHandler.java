@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -55,7 +54,7 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }
-            try (var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
                 var vsixManifest = extProcessor.getVsixManifest(extVersion);
                 vsixManifest.setStorageType(download.getStorageType());
                 migrations.uploadFileResource(vsixManifest);
