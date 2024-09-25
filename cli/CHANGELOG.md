@@ -2,6 +2,20 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.9.5 (Sep. 2024)
+
+#### Breaking Changes
+
+- The minimum version of Node.js required is now `20` because of the newer `@vscode/vsce`
+
+#### Dependencies
+
+- Upgrade `@vscode/vsce` from `2.25.0` to `3.1.0` ([#994](https://github.com/eclipse/openvsx/pull/994))
+- Upgrade `commander` from `6.1.0` to `6.2.1` ([#994](https://github.com/eclipse/openvsx/pull/994))
+- Upgrade `tmp` from `0.2.1` to `0.2.3` ([#994](https://github.com/eclipse/openvsx/pull/994))
+
+---
+
 ### v0.9.4 (Sep. 2024)
 
 #### Dependencies
