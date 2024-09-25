@@ -13,6 +13,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.util.ExtensionId;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.Invocation;
@@ -217,12 +218,16 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.canPublishInNamespace(userData, namespace),
                 () -> repositories.findLatestVersion("namespaceName", "extensionName", "targetPlatform", false, false),
                 () -> repositories.hasMembership(userData, namespace),
-                () -> repositories.findFirstUnresolvedDependency(List.<String[]>of(new String[]{"namespaceName", "extensionName"})),
+                () -> repositories.findFirstUnresolvedDependency(List.of(new ExtensionId("namespaceName", "extensionName"))),
                 () -> repositories.findAllAccessTokens(),
                 () -> repositories.hasAccessToken("tokenValue"),
                 () -> repositories.findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findFirstMembership("namespaceName"),
-                () -> repositories.findActiveExtensionsForUrls(namespace)
+                () -> repositories.findActiveExtensionsForUrls(namespace),
+                () -> repositories.deactivateKeyPairs(),
+                () -> repositories.hasExtension("namespaceName", "extensionName"),
+                () -> repositories.findDeprecatedExtensions(extension),
+                () -> repositories.findLatestReplacement(1L, null, false, false)
         );
 
         // check that we did not miss anything

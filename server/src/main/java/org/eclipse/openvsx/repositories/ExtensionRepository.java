@@ -48,4 +48,6 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     @Query("select e from Extension e where concat(e.namespace.name, '.', e.name) not in(?1)")
     Streamable<Extension> findAllNotMatchingByExtensionId(List<String> extensionIds);
+
+    Streamable<Extension> findByReplacement(Extension replacement);
 }

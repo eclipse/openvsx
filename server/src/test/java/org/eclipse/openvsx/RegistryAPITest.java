@@ -20,6 +20,7 @@ import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
@@ -84,7 +85,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
-    EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class, JobRequestScheduler.class
+    EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class, JobRequestScheduler.class,
+    ExtensionControlService.class
 })
 public class RegistryAPITest {
 
@@ -1382,6 +1384,7 @@ public class RegistryAPITest {
                         u.loginName = "test_user";
                         e.publishedBy = u;
                         e.verified = true;
+                        e.downloadable = true;
                     })));
         } finally {
             extensions.requireLicense = previousRequireLicense;
@@ -1428,6 +1431,7 @@ public class RegistryAPITest {
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = true;
+                    e.downloadable = true;
                 })));
     }
 
@@ -1448,6 +1452,7 @@ public class RegistryAPITest {
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = true;
+                    e.downloadable = true;
                 })));
     }
 
@@ -1468,6 +1473,7 @@ public class RegistryAPITest {
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = false;
+                    e.downloadable = true;
                 })));
     }
 
@@ -1488,6 +1494,7 @@ public class RegistryAPITest {
                     u.loginName = "test_user";
                     e.publishedBy = u;
                     e.verified = true;
+                    e.downloadable = true;
                 })));
     }
 
@@ -2417,6 +2424,7 @@ public class RegistryAPITest {
                 JobRequestScheduler scheduler,
                 UserService users,
                 ExtensionValidator validator,
+                ExtensionControlService extensionControl,
                 ObservationRegistry observations
         ) {
             return new PublishExtensionVersionHandler(
@@ -2427,6 +2435,7 @@ public class RegistryAPITest {
                     scheduler,
                     users,
                     validator,
+                    extensionControl,
                     observations
             );
         }

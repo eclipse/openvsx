@@ -17,6 +17,16 @@ import { createRoute } from '../../utils';
 import { Timestamp } from '../../components/timestamp';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 
+const getOpacity = (extension: Extension) => {
+    if (extension.deprecated) {
+        return 0.5;
+    } else if (extension.active === false) {
+        return 0.75;
+    } else {
+        return 1;
+    }
+};
+
 const noOverflow = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -59,7 +69,8 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                         display: 'flex',
                         alignItems: 'center',
                         p: 1,
-                        opacity: (inactive ? 0.75 : 1)
+                        opacity: getOpacity(extension),
+                        filter: extension.deprecated ? 'grayscale(100%)' : null
                     }}>
                     <Box
                         component='img'

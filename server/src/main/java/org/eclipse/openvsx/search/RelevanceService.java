@@ -45,6 +45,8 @@ public class RelevanceService {
     double timestampRelevance;
     @Value("${ovsx.search.relevance.unverified:0.5}")
     double unverifiedRelevance;
+    @Value("${ovsx.search.relevance.deprecated:0.5}")
+    double deprecatedRelevance;
 
     @Value("${ovsx.elasticsearch.relevance.rating:-1.0}")
     double deprecatedElasticSearchRatingRelevance;
@@ -115,6 +117,11 @@ public class RelevanceService {
         // Reduce the relevance value of unverified extensions
         if (!isVerified(latest)) {
             relevance *= unverifiedRelevance;
+        }
+
+        // Reduce the relevance value of deprecated extensions
+        if (extension.isDeprecated()) {
+            relevance *= deprecatedRelevance;
         }
 
         if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {

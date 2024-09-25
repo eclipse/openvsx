@@ -15,12 +15,12 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function10;
+import org.jooq.Function13;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Records;
-import org.jooq.Row10;
+import org.jooq.Row13;
 import org.jooq.Schema;
 import org.jooq.SelectField;
 import org.jooq.Table;
@@ -103,6 +103,21 @@ public class Extension extends TableImpl<ExtensionRecord> {
      */
     public final TableField<ExtensionRecord, Long> REVIEW_COUNT = createField(DSL.name("review_count"), SQLDataType.BIGINT, this, "");
 
+    /**
+     * The column <code>public.extension.deprecated</code>.
+     */
+    public final TableField<ExtensionRecord, Boolean> DEPRECATED = createField(DSL.name("deprecated"), SQLDataType.BOOLEAN.nullable(false), this, "");
+
+    /**
+     * The column <code>public.extension.replacement_id</code>.
+     */
+    public final TableField<ExtensionRecord, Long> REPLACEMENT_ID = createField(DSL.name("replacement_id"), SQLDataType.BIGINT, this, "");
+
+    /**
+     * The column <code>public.extension.downloadable</code>.
+     */
+    public final TableField<ExtensionRecord, Boolean> DOWNLOADABLE = createField(DSL.name("downloadable"), SQLDataType.BOOLEAN.nullable(false), this, "");
+
     private Extension(Name alias, Table<ExtensionRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -158,10 +173,11 @@ public class Extension extends TableImpl<ExtensionRecord> {
 
     @Override
     public List<ForeignKey<ExtensionRecord, ?>> getReferences() {
-        return Arrays.asList(Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN);
+        return Arrays.asList(Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN, Keys.EXTENSION__EXTENSION_REPLACEMENT_ID_FKEY);
     }
 
     private transient Namespace _namespace;
+    private transient Extension _extension;
 
     /**
      * Get the implicit join path to the <code>public.namespace</code> table.
@@ -171,6 +187,16 @@ public class Extension extends TableImpl<ExtensionRecord> {
             _namespace = new Namespace(this, Keys.EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN);
 
         return _namespace;
+    }
+
+    /**
+     * Get the implicit join path to the <code>public.extension</code> table.
+     */
+    public Extension extension() {
+        if (_extension == null)
+            _extension = new Extension(this, Keys.EXTENSION__EXTENSION_REPLACEMENT_ID_FKEY);
+
+        return _extension;
     }
 
     @Override
@@ -213,18 +239,18 @@ public class Extension extends TableImpl<ExtensionRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row10 type methods
+    // Row13 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row10<Long, Double, Integer, String, Long, String, Boolean, LocalDateTime, LocalDateTime, Long> fieldsRow() {
-        return (Row10) super.fieldsRow();
+    public Row13<Long, Double, Integer, String, Long, String, Boolean, LocalDateTime, LocalDateTime, Long, Boolean, Long, Boolean> fieldsRow() {
+        return (Row13) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function10<? super Long, ? super Double, ? super Integer, ? super String, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? super LocalDateTime, ? super Long, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function13<? super Long, ? super Double, ? super Integer, ? super String, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? super LocalDateTime, ? super Long, ? super Boolean, ? super Long, ? super Boolean, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -232,7 +258,7 @@ public class Extension extends TableImpl<ExtensionRecord> {
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function10<? super Long, ? super Double, ? super Integer, ? super String, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? super LocalDateTime, ? super Long, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function13<? super Long, ? super Double, ? super Integer, ? super String, ? super Long, ? super String, ? super Boolean, ? super LocalDateTime, ? super LocalDateTime, ? super Long, ? super Boolean, ? super Long, ? super Boolean, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }

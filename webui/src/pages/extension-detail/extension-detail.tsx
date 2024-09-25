@@ -10,7 +10,7 @@
 
 import * as React from 'react';
 import { ChangeEvent, FunctionComponent, ReactElement, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab } from '@mui/material';
+import { Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab, Stack } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
@@ -222,7 +222,8 @@ export const ExtensionDetail: FunctionComponent = () => {
             <Box
                 sx={{
                     bgcolor: extension.galleryColor || 'neutral.dark',
-                    color: headerColor
+                    color: headerColor,
+                    filter: extension.deprecated ? 'grayscale(100%)' : undefined
                 }}
             >
                 <Container maxWidth='xl'>
@@ -323,6 +324,16 @@ export const ExtensionDetail: FunctionComponent = () => {
                     { extension.displayName ?? extension.name}
                 </Typography>
             </Badge>
+            { extension.deprecated &&
+                <Stack direction='row' alignItems='center'>
+                    <WarningIcon fontSize='small' />
+                    <Typography>
+                        This extension has been deprecated.{extension.replacement && <>&nbsp;Use <StyledLink sx={{ color: themeColor }} href={extension.replacement.url}>
+                            {extension.replacement.displayName}
+                        </StyledLink> instead.</>}
+                    </Typography>
+                </Stack>
+            }
             <Box
                 sx={{
                     ...alignVertically,

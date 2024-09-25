@@ -57,6 +57,7 @@ export interface SearchEntry {
     downloadCount?: number;
     displayName?: string;
     description?: string;
+    deprecated: boolean;
 }
 
 export const VERSION_ALIASES = ['latest', 'pre-release'];
@@ -108,6 +109,13 @@ export interface Extension {
     // key: target platform, value: download link
     downloads: { [targetPlatform: string]: UrlString };
     allTargetPlatformVersions?: VersionTargetPlatforms[];
+
+    deprecated: boolean
+    replacement?: {
+        url: string
+        displayName: string
+    }
+    downloadable: boolean
 }
 
 export interface Badge {

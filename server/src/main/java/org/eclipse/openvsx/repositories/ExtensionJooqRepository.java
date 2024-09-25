@@ -11,6 +11,7 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.web.SitemapRow;
 import org.jooq.Record;
 import org.jooq.*;
@@ -230,12 +231,12 @@ public class ExtensionJooqRepository {
                 .fetch(EXTENSION.NAME);
     }
 
-    public String findFirstUnresolvedDependency(List<String[]> dependencies) {
+    public String findFirstUnresolvedDependency(List<ExtensionId> dependencies) {
         if(dependencies.isEmpty()) {
             return null;
         }
 
-        var ids = DSL.values(dependencies.stream().map(d -> DSL.row(d[0], d[1])).toArray(Row2[]::new)).as("ids", "namespace", "extension");
+        var ids = DSL.values(dependencies.stream().map(d -> DSL.row(d.namespace(), d.extension())).toArray(Row2[]::new)).as("ids", "namespace", "extension");
         var namespace = ids.field("namespace", String.class);
         var extension = ids.field("extension", String.class);
         var unresolvedDependency = DSL.concat(namespace, DSL.value("."), extension).as("unresolved_dependency");
@@ -260,5 +261,15 @@ public class ExtensionJooqRepository {
                     extension.setNamespace(namespace);
                     return extension;
                 });
+    }
+
+    public boolean hasExtension(String namespace, String extension) {
+        return dsl.fetchExists(
+                dsl.selectOne()
+                        .from(NAMESPACE)
+                        .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
+                        .where(NAMESPACE.NAME.equalIgnoreCase(namespace))
+                        .and(EXTENSION.NAME.equalIgnoreCase(extension))
+        );
     }
 }

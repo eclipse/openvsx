@@ -81,4 +81,7 @@ public class SearchEntryJson implements Serializable {
     public String displayName;
 
     public String description;
+
+    @Schema(description = "Indicates whether the extension is deprecated")
+    public boolean deprecated;
 }

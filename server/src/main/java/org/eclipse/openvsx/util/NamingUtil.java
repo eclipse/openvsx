@@ -85,4 +85,12 @@ public class NamingUtil {
     public static String toExtensionId(String namespace, String extension) {
         return namespace + "." + extension;
     }
+
+    public static ExtensionId fromExtensionId(String text) {
+        var split = text.split("\\.");
+        return split.length == 2 && !split[0].isEmpty() && !split[1].isEmpty()
+                ? new ExtensionId(split[0], split[1])
+                : null;
+    }
+
 }

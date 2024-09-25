@@ -183,6 +183,15 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @Schema(description = "version metadata URL")
     public String url;
 
+    @Schema(description = "Indicates whether the extension is deprecated")
+    public boolean deprecated;
+
+    @Schema(description = "Reference to extension that replaces this extension when it's deprecated")
+    public ExtensionReplacementJson replacement;
+
+    @Schema(description = "Whether to show downloads in user interfaces")
+    public boolean downloadable;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -228,7 +237,10 @@ public class ExtensionJson extends ResultJson implements Serializable {
                 && Objects.equals(bundledExtensions, that.bundledExtensions)
                 && Objects.equals(downloads, that.downloads)
                 && Objects.equals(allTargetPlatformVersions, that.allTargetPlatformVersions)
-                && Objects.equals(url, that.url);
+                && Objects.equals(url, that.url)
+                && Objects.equals(deprecated, that.deprecated)
+                && Objects.equals(replacement, that.replacement)
+                && Objects.equals(downloadable, that.downloadable);
     }
 
     @Override
@@ -238,7 +250,7 @@ public class ExtensionJson extends ResultJson implements Serializable {
                 active, verified, unrelatedPublisher, namespaceAccess, allVersions, allVersionsUrl, averageRating,
                 downloadCount, reviewCount, versionAlias, timestamp, preview, displayName, description, engines, categories,
                 extensionKind, tags, license, homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna, badges,
-                dependencies, bundledExtensions, downloads, allTargetPlatformVersions, url
+                dependencies, bundledExtensions, downloads, allTargetPlatformVersions, url, deprecated, replacement, downloadable
         );
     }
 }

@@ -131,6 +131,12 @@ public class AdminService {
             entityManager.remove(review);
         }
 
+        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
+        for(var deprecatedExtension : deprecatedExtensions) {
+            deprecatedExtension.setReplacement(null);
+            cache.evictExtensionJsons(deprecatedExtension);
+        }
+
         entityManager.remove(extension);
         search.removeSearchEntry(extension);
 

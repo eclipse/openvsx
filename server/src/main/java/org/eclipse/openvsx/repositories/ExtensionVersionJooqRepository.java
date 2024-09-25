@@ -337,12 +337,26 @@ public class ExtensionVersionJooqRepository {
         }
 
         totalQuery.addConditions(conditions);
+        query.addSelect(EXTENSION.DEPRECATED, EXTENSION.DOWNLOADABLE, EXTENSION.REPLACEMENT_ID);
         query.addConditions(conditions);
         query.addOffset(request.offset);
         query.addLimit(request.size);
 
+        var content = query.fetch().map(record -> {
+            var extVersion = toExtensionVersionFull(record);
+            extVersion.getExtension().setDeprecated(record.get(EXTENSION.DEPRECATED));
+            extVersion.getExtension().setDownloadable(record.get(EXTENSION.DOWNLOADABLE));
+
+            var replacementId = record.get(EXTENSION.REPLACEMENT_ID);
+            if(replacementId != null) {
+                var replacement = new Extension();
+                replacement.setId(replacementId);
+                extVersion.getExtension().setReplacement(replacement);
+            }
+            return extVersion;
+        });
         var total = totalQuery.fetchOne(totalCol, Integer.class);
-        return new PageImpl<>(fetch(query), PageRequest.of(request.offset / request.size, request.size), total);
+        return new PageImpl<>(content, PageRequest.of(request.offset / request.size, request.size), total);
     }
 
     public ExtensionVersion findActiveByVersionAndExtensionNameAndNamespaceName(String version, String extensionName, String namespaceName) {
@@ -605,6 +619,43 @@ public class ExtensionVersionJooqRepository {
                 });
     }
 
+    public ExtensionVersion findLatestReplacement(
+            long extensionId,
+            String targetPlatform,
+            boolean onlyPreRelease,
+            boolean onlyActive
+    ) {
+        var query = findLatestQuery(targetPlatform, onlyPreRelease, onlyActive);
+        query.addSelect(
+                NAMESPACE.ID,
+                NAMESPACE.NAME,
+                EXTENSION.NAME,
+                EXTENSION.ACTIVE,
+                EXTENSION_VERSION.ID,
+                EXTENSION_VERSION.DISPLAY_NAME
+        );
+        query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
+        query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+        query.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(extensionId));
+        return query.fetchOne((record) -> {
+            var namespace = new Namespace();
+            namespace.setId(record.get(NAMESPACE.ID));
+            namespace.setName(record.get(NAMESPACE.NAME));
+
+            var extension = new Extension();
+            extension.setId(extensionId);
+            extension.setName(record.get(EXTENSION.NAME));
+            extension.setActive(record.get(EXTENSION.ACTIVE));
+            extension.setNamespace(namespace);
+
+            var extVersion = new ExtensionVersion();
+            extVersion.setId(record.get(EXTENSION_VERSION.ID));
+            extVersion.setDisplayName(record.get(EXTENSION_VERSION.DISPLAY_NAME));
+            extVersion.setExtension(extension);
+            return extVersion;
+        });
+    }
+
     public ExtensionVersion findLatest(
             Extension extension,
             String targetPlatform,
@@ -677,6 +728,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.PUBLISHED_DATE,
                 EXTENSION.LAST_UPDATED_DATE,
                 EXTENSION.ACTIVE,
+                EXTENSION.DEPRECATED,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
                 USER_DATA.LOGIN_NAME,
@@ -723,6 +775,7 @@ public class ExtensionVersionJooqRepository {
         return query.fetchOne(record -> {
             var extVersion = toExtensionVersionFull(record);
             extVersion.getExtension().setActive(record.get(EXTENSION.ACTIVE));
+            extVersion.getExtension().setDeprecated(record.get(EXTENSION.DEPRECATED));
             extVersion.getExtension().getNamespace().setDisplayName(record.get(NAMESPACE.DISPLAY_NAME));
             return extVersion;
         });
@@ -798,6 +851,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.DOWNLOAD_COUNT,
                 EXTENSION.PUBLISHED_DATE,
                 EXTENSION.LAST_UPDATED_DATE,
+                EXTENSION.DEPRECATED,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
                 latest.field(EXTENSION_VERSION.VERSION),
@@ -839,7 +893,11 @@ public class ExtensionVersionJooqRepository {
         query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_WITH_ID)));
         query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
         query.addConditions(EXTENSION.ID.in(extensionIds));
-        return query.fetch(record -> toExtensionVersionFull(record, null, new TableFieldMapper(latest)));
+        return query.fetch(record -> {
+            var extVersion = toExtensionVersionFull(record, null, new TableFieldMapper(latest));
+            extVersion.getExtension().setDeprecated(record.get(EXTENSION.DEPRECATED));
+            return extVersion;
+        });
     }
 
     public List<ExtensionVersion> findLatest(Namespace namespace) {
@@ -864,6 +922,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.AVERAGE_RATING,
                 EXTENSION.REVIEW_COUNT,
                 EXTENSION.DOWNLOAD_COUNT,
+                EXTENSION.DEPRECATED,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
@@ -886,6 +945,7 @@ public class ExtensionVersionJooqRepository {
             extension.setAverageRating(record.get(EXTENSION.AVERAGE_RATING));
             extension.setReviewCount(record.get(EXTENSION.REVIEW_COUNT));
             extension.setDownloadCount(record.get(EXTENSION.DOWNLOAD_COUNT));
+            extension.setDeprecated(record.get(EXTENSION.DEPRECATED));
             extension.setNamespace(namespace);
 
             var extVersion = new ExtensionVersion();
@@ -954,6 +1014,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.PUBLISHED_DATE,
                 EXTENSION.LAST_UPDATED_DATE,
                 EXTENSION.ACTIVE,
+                EXTENSION.DEPRECATED,
+                EXTENSION.DOWNLOADABLE,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
                 latest.field(EXTENSION_VERSION.VERSION),
@@ -999,6 +1061,8 @@ public class ExtensionVersionJooqRepository {
             var extVersion = toExtensionVersionFull(record, null, new TableFieldMapper(latest));
             extVersion.getExtension().getNamespace().setDisplayName(record.get(NAMESPACE.DISPLAY_NAME));
             extVersion.getExtension().setActive(record.get(EXTENSION.ACTIVE));
+            extVersion.getExtension().setDeprecated(record.get(EXTENSION.DEPRECATED));
+            extVersion.getExtension().setDownloadable(record.get(EXTENSION.DOWNLOADABLE));
             return extVersion;
         });
     }
@@ -1083,6 +1147,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.DOWNLOAD_COUNT,
                 EXTENSION.PUBLISHED_DATE,
                 EXTENSION.LAST_UPDATED_DATE,
+                EXTENSION.DEPRECATED,
+                EXTENSION.DOWNLOADABLE,
+                EXTENSION.REPLACEMENT_ID,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
@@ -1125,7 +1192,16 @@ public class ExtensionVersionJooqRepository {
 
         return query.fetchOne((record) -> {
             var extVersion = toExtensionVersionFull(record);
+            extVersion.getExtension().setDeprecated(record.get(EXTENSION.DEPRECATED));
+            extVersion.getExtension().setDownloadable(record.get(EXTENSION.DOWNLOADABLE));
             extVersion.getExtension().getNamespace().setDisplayName(record.get(NAMESPACE.DISPLAY_NAME));
+
+            var replacementId = record.get(EXTENSION.REPLACEMENT_ID);
+            if(replacementId != null) {
+                var replacement = new Extension();
+                replacement.setId(replacementId);
+                extVersion.getExtension().setReplacement(replacement);
+            }
             return extVersion;
         });
     }

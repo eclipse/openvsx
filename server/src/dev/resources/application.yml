@@ -143,6 +143,8 @@ ovsx:
     base-url: https://api.eclipse.org
     publisher-agreement:
       timezone: US/Eastern
+  extension-control:
+    update-on-start: true
   integrity:
     key-pair: create # create, renew, delete, 'undefined'
   registry:

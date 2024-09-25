@@ -1154,6 +1154,8 @@ public class AdminAPITest {
 
         Mockito.when(repositories.findAllReviews(extension))
                 .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findDeprecatedExtensions(extension))
+                .thenReturn(Streamable.empty());
         return versions;
     }
 

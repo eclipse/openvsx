@@ -308,9 +308,9 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         {renderResourceLink('Bugs', resourceLink, extension.bugs)}
                         {renderResourceLink('Q\'n\'A', resourceLink, extension.qna)}
                         {
-                            extension.downloads && Object.keys(extension.downloads).length > 1 ?
+                            extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 1 ?
                             <ExtensionDetailDownloadsMenu downloads={extension.downloads}/>
-                            : extension.downloads && Object.keys(extension.downloads).length == 1 ?
+                            : extension.downloadable && extension.downloads && Object.keys(extension.downloads).length == 1 ?
                             <Button variant='contained' color='secondary' sx={{ mt: 2 }}
                                 href={extension.downloads[Object.keys(extension.downloads)[0]]}
                             >
@@ -319,7 +319,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                             : null
                         }
                         {
-                            DownloadTerms && extension.downloads && Object.keys(extension.downloads).length > 0
+                            DownloadTerms && extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 0
                             ? <DownloadTerms/>
                             : null
                         }
