@@ -10,6 +10,8 @@
 package org.eclipse.openvsx;
 
 import com.google.common.collect.Maps;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -216,6 +218,16 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (resource.getType().equals(DOWNLOAD))
             storageUtil.increaseDownloadCount(resource);
 
+        var extVersion = resource.getExtension();
+        var extension = extVersion.getExtension();
+        Metrics.counter("ovsx.file", List.of(
+                Tag.of("namespace", extension.getNamespace().getName()),
+                Tag.of("extension", extension.getName()),
+                Tag.of("target", extVersion.getTargetPlatform()),
+                Tag.of("version", extVersion.getVersion()),
+                Tag.of("filename", resource.getName()),
+                Tag.of("type", resource.getType())
+        )).increment();
         return storageUtil.getFileResponse(resource);
     }
 
