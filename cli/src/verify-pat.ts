@@ -9,39 +9,42 @@
  ********************************************************************************/
 
 import { Registry, RegistryOptions } from './registry';
-import { readManifest, addEnvOptions } from './util';
+import { readManifest, addEnvOptions, getPAT } from './util';
 
 /**
  * Validates that a Personal Access Token can publish to a namespace.
  */
 export async function verifyPat(options: VerifyPatOptions): Promise<void> {
     addEnvOptions(options);
-    if (!options.pat) {
-        throw new Error("A personal access token must be given with the option '--pat'.");
-    }
-
     if (!options.namespace) {
-      let error;
-      try {
-        options.namespace = (await readManifest()).publisher;
-      } catch (e) {
-        error = e;
-      }
+        let error;
+        try {
+            options.namespace = (await readManifest()).publisher;
+        } catch (e) {
+            error = e;
+        }
 
-      if (!options.namespace) {
-        throw new Error(
-          `Unable to read the namespace's name. Please supply it as an argument or run ovsx from the extension folder.` +
-          (error ? `\n\n${error}` : '')
-        );
-      }
+        if (!options.namespace) {
+            throw new Error(
+                `Unable to read the namespace's name. Please supply it as an argument or run ovsx from the extension folder.` +
+                (error ? `\n\n${error}` : '')
+            );
+        }
     }
 
+    options.pat = await getPAT(options.namespace, options, false);
+    await doVerifyPat(options);
+}
+
+export async function doVerifyPat(options: VerifyPatOptions) {
     const registry = new Registry(options);
-    const result = await registry.verifyPat(options.namespace, options.pat);
+    const namespace = options.namespace as string;
+    const pat = options.pat as string;
+    const result = await registry.verifyPat(namespace, pat);
     if (result.error) {
         throw new Error(result.error);
     }
-    console.log(`\ud83d\ude80  PAT valid to publish at ${options.namespace}`);
+    console.log(`\ud83d\ude80  PAT valid to publish at ${namespace}`);
 }
 
 export interface VerifyPatOptions extends RegistryOptions {

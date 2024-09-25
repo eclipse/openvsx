@@ -8,32 +8,29 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 import { createVSIX, IPackageOptions } from '@vscode/vsce';
-import { createTempFile, addEnvOptions } from './util';
+import { createTempFile, addEnvOptions, getPAT } from './util';
 import { Extension, Registry, RegistryOptions } from './registry';
 import { checkLicense } from './check-license';
+import { readVSIXPackage } from './zip';
 
 /**
  * Publishes an extension.
  */
 export async function publish(options: PublishOptions = {}): Promise<PromiseSettledResult<void>[]> {
-        addEnvOptions(options);
-        const internalPublishOptions: InternalPublishOptions[] = [];
-        const packagePaths = options.packagePath || [undefined];
-        const targets = options.targets || [undefined];
-        for (const packagePath of packagePaths) {
-            for (const target of targets) {
-                internalPublishOptions.push({ ... options, packagePath: packagePath, target: target });
-            }
+    addEnvOptions(options);
+    const internalPublishOptions: InternalPublishOptions[] = [];
+    const packagePaths = options.packagePath || [undefined];
+    const targets = options.targets || [undefined];
+    for (const packagePath of packagePaths) {
+        for (const target of targets) {
+            internalPublishOptions.push({ ...options, packagePath: packagePath, target: target });
         }
+    }
 
-        return Promise.allSettled(internalPublishOptions.map(publishOptions => doPublish(publishOptions)));
+    return Promise.allSettled(internalPublishOptions.map(publishOptions => doPublish(publishOptions)));
 }
 
 async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
-    if (!options.pat) {
-        throw new Error("A personal access token must be given with the option '--pat'.");
-    }
-
     // if the packagePath is a link to a vsix, don't need to package it
     if (options.packagePath?.endsWith('.vsix')) {
         options.extensionFile = options.packagePath;
@@ -46,6 +43,11 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
         console.log(); // new line
     } else if (options.preRelease) {
         console.warn("Ignoring option '--pre-release' for prepackaged extension.");
+    }
+
+    if (!options.pat) {
+        const namespace = (await readVSIXPackage(options.extensionFile!)).publisher;
+        options.pat = await getPAT(namespace, options);
     }
 
     let extension: Extension | undefined;
@@ -141,7 +143,7 @@ interface InternalPublishOptions extends PublishCommonOptions {
     /**
      * Whether to do dependency detection via npm or yarn
      */
-     dependencies?: boolean;
+    dependencies?: boolean;
 }
 
 async function packageExtension(options: InternalPublishOptions, registry: Registry): Promise<void> {
