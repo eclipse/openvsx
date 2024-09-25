@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.zip.ZipFile;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.Test;
 
 public class ArchiveUtilTest {
@@ -25,9 +24,9 @@ public class ArchiveUtilTest {
         try (
             var archive = new ZipFile(packageUrl.getPath());
         ) {
-            var packageJson = ArchiveUtil.readEntry(archive, "extension/package.json", ObservationRegistry.NOOP);
+            var packageJson = ArchiveUtil.readEntry(archive, "extension/package.json");
             assertThat(packageJson.length).isEqualTo(44712);
-            var icon = ArchiveUtil.readEntry(archive, "extension/resources/todo-tree.png", ObservationRegistry.NOOP);
+            var icon = ArchiveUtil.readEntry(archive, "extension/resources/todo-tree.png");
             assertThat(icon.length).isEqualTo(8854);
         }
     }

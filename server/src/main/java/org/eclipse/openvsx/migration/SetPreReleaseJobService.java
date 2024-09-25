@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.ExtensionProcessor;
@@ -40,7 +39,7 @@ public class SetPreReleaseJobService {
 
     @Transactional
     public void updatePreviewAndPreRelease(ExtensionVersion extVersion, TempFile extensionFile) {
-        try(var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+        try(var extProcessor = new ExtensionProcessor(extensionFile)) {
             extVersion.setPreRelease(extProcessor.isPreRelease());
             extVersion.setPreview(extProcessor.isPreview());
         }

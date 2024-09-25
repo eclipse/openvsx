@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.annotations.Job;
@@ -53,7 +52,7 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }
-            try (var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
                 extProcessor.processEachResource(download.getExtension(), (resource) -> {
                     resource.setStorageType(download.getStorageType());
                     migrations.uploadFileResource(resource);

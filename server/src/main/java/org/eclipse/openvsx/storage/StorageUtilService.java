@@ -10,8 +10,6 @@
 package org.eclipse.openvsx.storage;
 
 import com.google.common.collect.Maps;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +20,6 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.TempFile;
-import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.http.CacheControl;
@@ -31,9 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -56,7 +51,6 @@ public class StorageUtilService implements IStorageService {
     private final SearchUtilService search;
     private final CacheService cache;
     private final EntityManager entityManager;
-    private final ObservationRegistry observations;
 
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
@@ -74,8 +68,7 @@ public class StorageUtilService implements IStorageService {
             LocalStorageService localStorage,
             SearchUtilService search,
             CacheService cache,
-            EntityManager entityManager,
-            ObservationRegistry observations
+            EntityManager entityManager
     ) {
         this.repositories = repositories;
         this.googleStorage = googleStorage;
@@ -85,7 +78,6 @@ public class StorageUtilService implements IStorageService {
         this.search = search;
         this.cache = cache;
         this.entityManager = entityManager;
-        this.observations = observations;
     }
 
     public boolean shouldStoreExternally(FileResource resource) {
@@ -239,19 +231,17 @@ public class StorageUtilService implements IStorageService {
      * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */
     public Map<Long, Map<String, String>> getFileUrls(Collection<ExtensionVersion> extVersions, String serverUrl, String... types) {
-        return Observation.createNotStarted("StorageUtilService#getFileUrls", observations).observe(() -> {
-            var type2Url = extVersions.stream()
-                    .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        var type2Url = extVersions.stream()
+                .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
-            for (var resource : resources) {
-                var extVersion = resource.getExtension();
-                type2Url.get(extVersion.getId()).put(resource.getType(), createApiFileUrl(serverUrl, extVersion, resource.getName()));
-            }
+        var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
+        for (var resource : resources) {
+            var extVersion = resource.getExtension();
+            type2Url.get(extVersion.getId()).put(resource.getType(), createApiFileUrl(serverUrl, extVersion, resource.getName()));
+        }
 
-            return type2Url;
-        });
+        return type2Url;
     }
 
     @Transactional

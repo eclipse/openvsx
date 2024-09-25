@@ -9,7 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import io.micrometer.observation.ObservationRegistry;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.UserService;
@@ -33,8 +34,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;

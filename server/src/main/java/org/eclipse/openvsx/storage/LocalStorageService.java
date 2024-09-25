@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.storage;
 
-import io.micrometer.observation.annotation.Observed;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.FileResource;
@@ -38,7 +37,6 @@ public class LocalStorageService {
         return URI.create(UrlUtil.createApiFileUrl(UrlUtil.getBaseUrl(), resource.getExtension(), resource.getName()));
     }
 
-    @Observed
     public URI getNamespaceLogoLocation(Namespace namespace) {
         return URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api", namespace.getName(), "logo", namespace.getLogoName()));
     }

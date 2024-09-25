@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 
 import org.eclipse.openvsx.cache.CacheService;
@@ -587,11 +586,6 @@ public class UserAPITest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
-        }
-
-        @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
         }
     }
     

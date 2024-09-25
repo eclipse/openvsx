@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
@@ -946,10 +945,9 @@ public class VSCodeAPITest {
                 RepositoryService repositories,
                 StorageUtilService storageUtil,
                 CacheService cache,
-                ExtensionValidator validator,
-                ObservationRegistry observations
+                ExtensionValidator validator
         ) {
-            return new UserService(entityManager, repositories, storageUtil, cache, validator, observations);
+            return new UserService(entityManager, repositories, storageUtil, cache, validator);
         }
 
         @Bean
@@ -961,8 +959,7 @@ public class VSCodeAPITest {
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager,
-                ObservationRegistry observations
+                EntityManager entityManager
         ) {
             return new StorageUtilService(
                     repositories,
@@ -972,8 +969,7 @@ public class VSCodeAPITest {
                     localStorage,
                     search,
                     cache,
-                    entityManager,
-                    observations
+                    entityManager
             );
         }
 
@@ -990,11 +986,6 @@ public class VSCodeAPITest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
-        }
-
-        @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
         }
     }
 

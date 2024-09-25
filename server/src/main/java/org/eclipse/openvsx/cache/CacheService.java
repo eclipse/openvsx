@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.UserData;
@@ -40,20 +39,17 @@ public class CacheService {
     private final RepositoryService repositories;
     private final ExtensionJsonCacheKeyGenerator extensionJsonCacheKey;
     private final LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
-    private final ObservationRegistry observations;
 
     public CacheService(
             CacheManager cacheManager,
             RepositoryService repositories,
             ExtensionJsonCacheKeyGenerator extensionJsonCacheKey,
-            LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey,
-            ObservationRegistry observations
+            LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey
     ) {
         this.cacheManager = cacheManager;
         this.repositories = repositories;
         this.extensionJsonCacheKey = extensionJsonCacheKey;
         this.latestExtensionVersionCacheKey = latestExtensionVersionCacheKey;
-        this.observations = observations;
     }
 
     public void evictNamespaceDetails() {
@@ -79,30 +75,28 @@ public class CacheService {
     }
 
     public void evictExtensionJsons(Extension extension) {
-//        Observation.createNotStarted("CacheService#evictExtensionJsons", observations).observe(() -> {
-            var cache = cacheManager.getCache(CACHE_EXTENSION_JSON);
-            if (cache == null) {
-                return; // cache is not created
-            }
-            if (extension.getVersions() == null) {
-                return;
-            }
+        var cache = cacheManager.getCache(CACHE_EXTENSION_JSON);
+        if (cache == null) {
+            return; // cache is not created
+        }
+        if (extension.getVersions() == null) {
+            return;
+        }
 
-            var versions = new ArrayList<>(VersionAlias.ALIAS_NAMES);
-            extension.getVersions().stream()
-                    .map(ExtensionVersion::getVersion)
-                    .forEach(versions::add);
+        var versions = new ArrayList<>(VersionAlias.ALIAS_NAMES);
+        extension.getVersions().stream()
+                .map(ExtensionVersion::getVersion)
+                .forEach(versions::add);
 
-            var namespaceName = extension.getNamespace().getName();
-            var extensionName = extension.getName();
-            var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
-            targetPlatforms.add("null");
-            for (var version : versions) {
-                for (var targetPlatform : targetPlatforms) {
-                    cache.evictIfPresent(extensionJsonCacheKey.generate(namespaceName, extensionName, targetPlatform, version));
-                }
+        var namespaceName = extension.getNamespace().getName();
+        var extensionName = extension.getName();
+        var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
+        targetPlatforms.add("null");
+        for (var version : versions) {
+            for (var targetPlatform : targetPlatforms) {
+                cache.evictIfPresent(extensionJsonCacheKey.generate(namespaceName, extensionName, targetPlatform, version));
             }
-//        });
+        }
     }
 
     public void evictExtensionJsons(ExtensionVersion extVersion) {
@@ -130,25 +124,23 @@ public class CacheService {
     }
 
     public void evictLatestExtensionVersion(Extension extension) {
-//        Observation.createNotStarted("CacheService#evictLatestExtensionVersion", observations).observe(() -> {
-            var cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION);
-            if(cache == null) {
-                return;
-            }
+        var cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION);
+        if(cache == null) {
+            return;
+        }
 
-            var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
-            targetPlatforms.add(null);
-            for (var targetPlatform : targetPlatforms) {
-                for (var preRelease : List.of(true, false)) {
-                    for (var onlyActive : List.of(true, false)) {
-                        for(var type : ExtensionVersion.Type.values()) {
-                            var key = latestExtensionVersionCacheKey.generate(extension, targetPlatform, preRelease, onlyActive, type);
-                            cache.evictIfPresent(key);
-                        }
+        var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
+        targetPlatforms.add(null);
+        for (var targetPlatform : targetPlatforms) {
+            for (var preRelease : List.of(true, false)) {
+                for (var onlyActive : List.of(true, false)) {
+                    for(var type : ExtensionVersion.Type.values()) {
+                        var key = latestExtensionVersionCacheKey.generate(extension, targetPlatform, preRelease, onlyActive, type);
+                        cache.evictIfPresent(key);
                     }
                 }
             }
-//        });
+        }
     }
 
     private void invalidateCache(String cacheName) {

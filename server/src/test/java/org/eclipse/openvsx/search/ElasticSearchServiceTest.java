@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -298,11 +297,6 @@ public class ElasticSearchServiceTest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
-        }
-
-        @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
         }
     }
     

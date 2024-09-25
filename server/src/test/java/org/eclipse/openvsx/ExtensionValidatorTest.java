@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.junit.jupiter.api.Test;
@@ -113,13 +112,8 @@ public class ExtensionValidatorTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        ExtensionValidator extensionValidator(ObservationRegistry observations) {
-            return new ExtensionValidator(observations);
-        }
-
-        @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
+        ExtensionValidator extensionValidator() {
+            return new ExtensionValidator();
         }
     }
 }

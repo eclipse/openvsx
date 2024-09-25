@@ -9,9 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
-
 import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -31,27 +28,22 @@ public final class ArchiveUtil {
                 .orElse(null);
     }
 
-    public static byte[] readEntry(ZipFile archive, String entryName, ObservationRegistry observations) {
-        return Observation.createNotStarted("ArchiveUtil#readEntry", observations).observe(() -> {
-            var entry = archive.getEntry(entryName);
-            if (entry == null)
-                return null;
-            return readEntry(archive, entry, observations);
-        });
+    public static byte[] readEntry(ZipFile archive, String entryName) {
+        var entry = archive.getEntry(entryName);
+        if (entry == null)
+            return null;
+        return readEntry(archive, entry);
     }
 
-    public static byte[] readEntry(ZipFile archive, ZipEntry entry, ObservationRegistry observations) {
-        return Observation.createNotStarted("ArchiveUtil#readEntry", observations).observe(() -> {
-            try {
-                if (entry.getSize() > MAX_ENTRY_SIZE)
-                    throw new ErrorResultException("The file " + entry.getName() + " exceeds the size limit of 32 MB.");
-                return archive.getInputStream(entry).readAllBytes();
-            } catch (ZipException exc) {
-                throw new ErrorResultException("Could not read zip file: " + exc.getMessage(), exc);
-            } catch (IOException exc) {
-                throw new RuntimeException(exc);
-            }
-        });
+    public static byte[] readEntry(ZipFile archive, ZipEntry entry) {
+        try {
+            if (entry.getSize() > MAX_ENTRY_SIZE)
+                throw new ErrorResultException("The file " + entry.getName() + " exceeds the size limit of 32 MB.");
+            return archive.getInputStream(entry).readAllBytes();
+        } catch (ZipException exc) {
+            throw new ErrorResultException("Could not read zip file: " + exc.getMessage(), exc);
+        } catch (IOException exc) {
+            throw new RuntimeException(exc);
+        }
     }
-
 }
