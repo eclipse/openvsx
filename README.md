@@ -8,6 +8,9 @@ Open VSX is a [vendor-neutral](https://projects.eclipse.org/projects/ecd.openvsx
 
 A public instance of Open VSX is running at [open-vsx.org](https://open-vsx.org/). Please report issues related to that instance at [EclipseFdn/open-vsx.org](https://github.com/EclipseFdn/open-vsx.org).
 
+For information on publishing and managing extensions at open-vsx.org, please see 
+the [EclipseFdn/open-vsx.org wiki](https://github.com/EclipseFdn/open-vsx.org/wiki).
+
 ## Getting Started
 
 See the [openvsx Wiki](https://github.com/eclipse/openvsx/wiki) for documentation of general concepts and usage of this project.
