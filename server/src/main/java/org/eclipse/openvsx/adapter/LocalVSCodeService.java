@@ -413,6 +413,15 @@ public class LocalVSCodeService implements IVSCodeService {
 
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
+
+        Metrics.counter("vscode.unpkg", List.of(
+                Tag.of("namespace", namespace.getName()),
+                Tag.of("extension", extension.getName()),
+                Tag.of("version", extVersion.getVersion()),
+                Tag.of("file", String.valueOf(exactMatch != null)),
+                Tag.of("path", path)
+        )).increment();
+
         return exactMatch != null
                 ? browseFile(exactMatch, extVersion)
                 : browseDirectory(resources, namespace.getName(), extension.getName(), extVersion.getVersion(), path);
