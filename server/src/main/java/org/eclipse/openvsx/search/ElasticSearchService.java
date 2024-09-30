@@ -64,15 +64,6 @@ public class ElasticSearchService implements ISearchService {
     @Value("${ovsx.elasticsearch.clear-on-start:false}")
     boolean clearOnStart;
 
-    @Value("${ovsx.elasticsearch.relevance.rating:1.0}")
-    double ratingRelevance;
-    @Value("${ovsx.elasticsearch.relevance.downloads:1.0}")
-    double downloadsRelevance;
-    @Value("${ovsx.elasticsearch.relevance.timestamp:1.0}")
-    double timestampRelevance;
-    @Value("${ovsx.elasticsearch.relevance.unverified:0.5}")
-    double unverifiedRelevance;
-
     private Long maxResultWindow;
 
     public ElasticSearchService(

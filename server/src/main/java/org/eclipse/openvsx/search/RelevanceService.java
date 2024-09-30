@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -48,37 +47,8 @@ public class RelevanceService {
     @Value("${ovsx.search.relevance.deprecated:0.5}")
     double deprecatedRelevance;
 
-    @Value("${ovsx.elasticsearch.relevance.rating:-1.0}")
-    double deprecatedElasticSearchRatingRelevance;
-    @Value("${ovsx.elasticsearch.relevance.downloads:-1.0}")
-    double deprecatedElasticSearchDownloadsRelevance;
-    @Value("${ovsx.elasticsearch.relevance.timestamp:-1.0}")
-    double deprecatedElasticSearchTimestampRelevance;
-    @Value("${ovsx.elasticsearch.relevance.unverified:-1.0}")
-    double deprecatedElasticSearchUnverifiedRelevance;
-
     public RelevanceService(RepositoryService repositories) {
         this.repositories = repositories;
-    }
-
-    @PostConstruct
-    void init() {
-        if (deprecatedElasticSearchRatingRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.rating property. It has been renamed to ovsx.search.relevance.rating.");
-            this.ratingRelevance = deprecatedElasticSearchRatingRelevance;
-        }
-        if (deprecatedElasticSearchDownloadsRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.downloads property. It has been renamed to ovsx.search.relevance.rating.");
-            this.downloadsRelevance = deprecatedElasticSearchDownloadsRelevance;
-        }
-        if (deprecatedElasticSearchTimestampRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.timestamp property. It has been renamed to ovsx.search.relevance.rating.");
-            this.timestampRelevance = deprecatedElasticSearchTimestampRelevance;
-        }
-        if (deprecatedElasticSearchUnverifiedRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.unverified property. It has been renamed to ovsx.search.relevance.rating.");
-            this.unverifiedRelevance = deprecatedElasticSearchUnverifiedRelevance;
-        }
     }
 
     public ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
