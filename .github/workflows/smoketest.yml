@@ -49,12 +49,18 @@ jobs:
           echo "read version: ${{ steps.read_version.outputs.version }}"
           echo "is_version=${{ steps.running_version.outputs.status == 200 && fromJson(steps.running_version.outputs.response).version == steps.read_version.outputs.version }}" >> "$GITHUB_OUTPUT"
       - name: Run Playwright tests
-        if: steps.check_version.outputs.is_version == true
+        if: steps.check_version.outputs.is_version == 'true'
         working-directory: ./openvsx/webui
         run: yarn smoke-tests
       - uses: actions/upload-artifact@v4
-        if: steps.check_version.outputs.is_version == true
+        if: steps.check_version.outputs.is_version == 'true'
         with:
           name: playwright-report
           path: openvsx/webui/playwright-report/
           retention-days: 30
+      - name: Fail smoke test
+        if: steps.check_version.outputs.is_version != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.setFailed('Deployed version is not ${{ steps.read_version.outputs.version }}')
