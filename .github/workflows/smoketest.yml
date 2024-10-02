@@ -44,6 +44,9 @@ jobs:
       - name: Check new server deployment is running
         id: check_version
         run: |
+          echo "status: ${{ steps.running_version.outputs.status }}"
+          echo "response version: ${{ fromJson(steps.running_version.outputs.response).version }}"
+          echo "read version: ${{ steps.read_version.outputs.version }}"
           echo "is_version=${{ steps.running_version.outputs.status == 200 && fromJson(steps.running_version.outputs.response).version == steps.read_version.outputs.version }}" >> "$GITHUB_OUTPUT"
       - name: Run Playwright tests
         if: steps.check_version.outputs.is_version
