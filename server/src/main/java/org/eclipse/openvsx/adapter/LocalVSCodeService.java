@@ -12,12 +12,12 @@ package org.eclipse.openvsx.adapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -291,19 +291,11 @@ public class LocalVSCodeService implements IVSCodeService {
             throw new NotFoundException();
         }
 
-        var tags = new ArrayList<>(List.of(
-                Tag.of("namespace", namespace.toLowerCase()),
-                Tag.of("extension", extensionName.toLowerCase()),
-                Tag.of("target", targetPlatform.toLowerCase()),
-                Tag.of("version", version.toLowerCase())
-        ));
         if(asset.equals(FILE_PUBLIC_KEY)) {
             var publicId = repositories.findSignatureKeyPairPublicId(namespace, extensionName, targetPlatform, version);
             if(publicId == null) {
                 throw new NotFoundException();
             } else {
-                tags.add(Tag.of("type", "publicKey"));
-                Metrics.counter("vscode.assets", tags).increment();
                 return ResponseEntity
                         .status(HttpStatus.FOUND)
                         .location(URI.create(UrlUtil.getPublicKeyUrl(publicId)))
@@ -341,10 +333,6 @@ public class LocalVSCodeService implements IVSCodeService {
         if (resource.getType().equals(FileResource.DOWNLOAD)) {
             storageUtil.increaseDownloadCount(resource);
         }
-
-        tags.add(Tag.of("type", resource.getType()));
-        tags.add(Tag.of("filename", resource.getName()));
-        Metrics.counter("vscode.assets", tags).increment();
 
         return storageUtil.getFileResponse(resource);
     }
@@ -415,9 +403,7 @@ public class LocalVSCodeService implements IVSCodeService {
         var namespace = extension.getNamespace();
 
         Metrics.counter("vscode.unpkg", List.of(
-                Tag.of("namespace", namespace.getName()),
-                Tag.of("extension", extension.getName()),
-                Tag.of("version", extVersion.getVersion()),
+                Tag.of("extension", NamingUtil.toLogFormat(extVersion)),
                 Tag.of("file", String.valueOf(exactMatch != null)),
                 Tag.of("path", path)
         )).increment();
