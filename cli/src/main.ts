@@ -15,6 +15,8 @@ import { verifyPat } from './verify-pat';
 import { publish } from './publish';
 import { handleError } from './util';
 import { getExtension } from './get';
+import login from './login';
+import logout from './logout';
 
 const pkg = require('../package.json');
 
@@ -76,7 +78,7 @@ module.exports = function (argv: string[]): void {
 
                     if (reasons.length > 0) {
                         const message = 'See the documentation for more information:\n'
-                        + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions';
+                            + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions';
                         const errorHandler = handleError(program.debug, message, false);
                         for (const reason of reasons) {
                             errorHandler(reason);
@@ -97,6 +99,19 @@ module.exports = function (argv: string[]): void {
             const { registryUrl } = program.opts();
             getExtension({ extensionId, target: target, version: versionRange, registryUrl, output, metadata })
                 .catch(handleError(program.debug));
+        });
+
+    const loginCmd = program.command('login <namespace>');
+    loginCmd.description('Adds a namespace to the list of known namespaces')
+        .action((namespace: string) => {
+            const { registryUrl, pat } = program.opts();
+            login({ namespace, registryUrl, pat }).catch(handleError(program.debug));
+        });
+
+    const logoutCmd = program.command('logout <namespace>');
+    logoutCmd.description('Removes a namespace from the list of known namespaces')
+        .action((namespace: string) => {
+            logout(namespace).catch(handleError(program.debug));
         });
 
     program

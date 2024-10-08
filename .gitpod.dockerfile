@@ -1,5 +1,7 @@
 FROM gitpod/workspace-postgres:latest
 
+ENV NODE_VERSION=20.17.0
+
 # the following env variable is solely here to invalidate the docker image. We want to rebuild the image from time to time to get the latest base image (which is cached).
 ENV DOCKER_BUMP=2
 

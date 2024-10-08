@@ -14,6 +14,10 @@ import * as tmp from 'tmp';
 import * as http from 'http';
 import * as readline from 'readline';
 import { RegistryOptions } from './registry';
+import { VerifyPatOptions, doVerifyPat } from './verify-pat';
+import { PublishOptions } from './publish';
+import { openDefaultStore } from './store';
+import { CreateNamespaceOptions } from './create-namespace';
 
 export { promisify } from 'util';
 
@@ -182,4 +186,30 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
         }
     }
     return defaultValue;
+}
+
+export async function requestPAT(namespace: string, options: CreateNamespaceOptions | PublishOptions | VerifyPatOptions, verify: boolean = true): Promise<string> {
+    const pat = await getUserInput(`Personal Access Token for namespace '${namespace}':`);
+    if (verify) {
+        await doVerifyPat({ ...options, namespace, pat });
+    }
+
+    return pat;
+}
+
+export async function getPAT(namespace: string, options: CreateNamespaceOptions | PublishOptions | VerifyPatOptions, verify: boolean = true): Promise<string> {
+    if (options?.pat) {
+        return options.pat;
+    }
+
+    const store = await openDefaultStore();
+    let pat = store.get(namespace);
+    if (pat) {
+        return pat;
+    }
+
+    pat = await requestPAT(namespace, options, verify);
+    await store.add(namespace, pat);
+
+    return pat;
 }

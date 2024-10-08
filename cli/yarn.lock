@@ -350,6 +350,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/yauzl@npm:^2.10.3":
+  version: 2.10.3
+  resolution: "@types/yauzl@npm:2.10.3"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10/5ee966ea7bd6b2802f31ad4281c92c4c0b6dfa593c378a2582c58541fa113bec3d70eb0696b34ad95e8e6861a884cba6c3e351285816693ed176222f840a8c08
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:^5.44.0":
   version: 5.62.0
   resolution: "@typescript-eslint/eslint-plugin@npm:5.62.0"
@@ -2624,6 +2633,7 @@ __metadata:
     "@types/node": "npm:^20.14.8"
     "@types/semver": "npm:^7.5.8"
     "@types/tmp": "npm:^0.2.2"
+    "@types/yauzl": "npm:^2.10.3"
     "@typescript-eslint/eslint-plugin": "npm:^5.44.0"
     "@typescript-eslint/parser": "npm:^5.44.0"
     "@vscode/vsce": "npm:^3.1.0"
@@ -2636,6 +2646,7 @@ __metadata:
     semver: "npm:^7.6.0"
     tmp: "npm:^0.2.3"
     typescript: "npm:^4.3.2"
+    yauzl: "npm:^3.1.3"
   bin:
     ovsx: lib/ovsx
   languageName: unknown
@@ -3501,6 +3512,16 @@ __metadata:
     buffer-crc32: "npm:~0.2.3"
     fd-slicer: "npm:~1.1.0"
   checksum: 10/1e4c311050dc0cf2ee3dbe8854fe0a6cde50e420b3e561a8d97042526b4cf7a0718d6c8d89e9e526a152f4a9cec55bcea9c3617264115f48bd6704cf12a04445
+  languageName: node
+  linkType: hard
+
+"yauzl@npm:^3.1.3":
+  version: 3.1.3
+  resolution: "yauzl@npm:3.1.3"
+  dependencies:
+    buffer-crc32: "npm:~0.2.3"
+    pend: "npm:~1.2.0"
+  checksum: 10/09997308801dbb4ae32483bb17d6c49fa8bf0c6adad308d9ce8babb214c60d504f4b88d8ae4d3083326becffed723384ab2b91c9c86e7b2b9b76a373e6c7b5c2
   languageName: node
   linkType: hard
 
