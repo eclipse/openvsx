@@ -113,7 +113,7 @@ export class KeytarStore implements Store {
 }
 
 export async function openDefaultStore(): Promise<Store> {
-	if (/^file$/i.test(process.env['VSCE_STORE'] ?? '')) {
+	if (/^file$/i.test(process.env['OVSX_STORE'] ?? '')) {
 		return await FileStore.open();
 	}
 

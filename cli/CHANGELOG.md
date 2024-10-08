@@ -2,6 +2,20 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.10.0 (Oct. 2024)
+
+#### New Features
+
+- Added `login` command to add a namespace to the list of known namespaces ([#1012](https://github.com/eclipse/openvsx/pull/1012))
+- Added `logout` command to remove a namespace from the list of known namespaces ([#1012](https://github.com/eclipse/openvsx/pull/1012))
+- Added CLI parameter `--packageVersion` to set the version of the provided VSIX packages ([#1013](https://github.com/eclipse/openvsx/pull/1013))
+
+#### Dependencies
+
+- Added dependency to `yauzl` ([#1012](https://github.com/eclipse/openvsx/pull/1012))
+
+---
+
 ### v0.9.5 (Sep. 2024)
 
 #### Breaking Changes
