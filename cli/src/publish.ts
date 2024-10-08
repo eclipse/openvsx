@@ -102,6 +102,10 @@ interface PublishCommonOptions extends RegistryOptions {
      * Whether to fail silently if version already exists on the marketplace
      */
     skipDuplicate?: boolean;
+    /**
+     * Extension version. Only valid with `packagePath`.
+     */
+    packageVersion?: string;
 }
 
 // Interface used by top level CLI
@@ -160,7 +164,8 @@ async function packageExtension(options: InternalPublishOptions, registry: Regis
         baseImagesUrl: options.baseImagesUrl,
         useYarn: options.yarn,
         dependencies: options.dependencies,
-        preRelease: options.preRelease
+        preRelease: options.preRelease,
+        version: options.packageVersion
     };
     await createVSIX(packageOptions);
 }
