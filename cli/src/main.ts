@@ -54,7 +54,8 @@ module.exports = function (argv: string[]): void {
         .option('--pre-release', 'Mark this package as a pre-release')
         .option('--no-dependencies', 'Disable dependency detection via npm or yarn')
         .option('--skip-duplicate', 'Fail silently if version already exists on the marketplace')
-        .action((extensionFile: string, { target, packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate }) => {
+        .option('--packageVersion <version>', 'Version of the provided VSIX packages.')
+        .action((extensionFile: string, { target, packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate, packageVersion }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -69,8 +70,10 @@ module.exports = function (argv: string[]): void {
                 console.warn("Ignoring option '--baseImagesUrl' for prepackaged extension.");
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
+            if (extensionFile !== undefined && packageVersion !== undefined)
+                console.warn("Ignoring option '--packageVersion' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
-            publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate })
+            publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate, packageVersion })
                 .then(results => {
                     const reasons = results.filter(result => result.status === 'rejected')
                         .map(result => result as PromiseRejectedResult)
