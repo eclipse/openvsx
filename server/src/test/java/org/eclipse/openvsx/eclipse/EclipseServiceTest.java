@@ -66,7 +66,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
     UserService.class, PublishExtensionVersionHandler.class,
     SimpleMeterRegistry.class
 })
-public class EclipseServiceTest {
+class EclipseServiceTest {
 
     @MockBean
     RepositoryService repositories;
@@ -81,13 +81,13 @@ public class EclipseServiceTest {
     EclipseService eclipse;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         eclipse.publisherAgreementVersion = "1";
         eclipse.eclipseApiUrl = "https://test.openvsx.eclipse.org/";
     }
 
     @Test
-    public void testGetPublicProfile() throws Exception {
+    void testGetPublicProfile() throws Exception {
         var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
         Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
                 .thenReturn(mockProfileResponse());
@@ -103,7 +103,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testGetUserProfile() throws Exception {
+    void testGetUserProfile() throws Exception {
         Mockito.when(restTemplate.exchange(any(RequestEntity.class), eq(String.class)))
             .thenReturn(mockProfileResponse());
 
@@ -118,7 +118,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testGetPublisherAgreement() throws Exception {
+    void testGetPublisherAgreement() throws Exception {
         var user = mockUser();
         user.setEclipsePersonId("test");
 
@@ -135,7 +135,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testGetPublisherAgreementNotFound() throws Exception {
+    void testGetPublisherAgreementNotFound() throws Exception {
         var user = mockUser();
         user.setEclipsePersonId("test");
 
@@ -148,7 +148,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testGetPublisherAgreementNotAuthenticated() throws Exception {
+    void testGetPublisherAgreementNotAuthenticated() throws Exception {
         var user = mockUser();
 
         var agreement = eclipse.getPublisherAgreement(user);
@@ -157,7 +157,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testSignPublisherAgreement() throws Exception {
+    void testSignPublisherAgreement() throws Exception {
         var user = mockUser();
         Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
             .thenReturn(mockAgreementResponse());
@@ -173,7 +173,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testSignPublisherAgreementReactivateExtension() throws Exception {
+    void testSignPublisherAgreementReactivateExtension() throws Exception {
         var user = mockUser();
         Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
             .thenReturn(mockAgreementResponse());
@@ -202,7 +202,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testPublisherAgreementAlreadySigned() throws Exception {
+    void testPublisherAgreementAlreadySigned() throws Exception {
         var user = mockUser();
         Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
             .thenThrow(new HttpClientErrorException(HttpStatus.CONFLICT));
@@ -216,7 +216,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testRevokePublisherAgreement() {
+    void testRevokePublisherAgreement() {
         var user = mockUser();
         user.setEclipsePersonId("test");
 
@@ -224,7 +224,7 @@ public class EclipseServiceTest {
     }
 
     @Test
-    public void testRevokePublisherAgreementByAdmin() {
+    void testRevokePublisherAgreementByAdmin() {
         var user = mockUser();
         user.setEclipsePersonId("test");
 

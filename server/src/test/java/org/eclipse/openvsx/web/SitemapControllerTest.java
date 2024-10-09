@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockBean({
         EclipseService.class, SimpleMeterRegistry.class, UserService.class, TokenService.class, EntityManager.class
 })
-public class SitemapControllerTest {
+class SitemapControllerTest {
 
     @MockBean
     RepositoryService repositories;
@@ -48,7 +48,7 @@ public class SitemapControllerTest {
     MockMvc mockMvc;
 
     @Test
-    public void testSitemap() throws Exception {
+    void testSitemap() throws Exception {
         var expected = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

@@ -23,7 +23,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class AdminStatisticsJobRequestHandlerTest {
+class AdminStatisticsJobRequestHandlerTest {
 
     @MockBean
     RepositoryService repositories;
@@ -35,7 +35,7 @@ public class AdminStatisticsJobRequestHandlerTest {
     AdminStatisticsJobRequestHandler handler;
 
     @Test
-    public void testAdminStatisticsJobRequestHandler() throws Exception {
+    void testAdminStatisticsJobRequestHandler() throws Exception {
         var expectedStatistics = mockAdminStatistics();
 
         var request = new AdminStatisticsJobRequest(2023, 11);
@@ -44,7 +44,7 @@ public class AdminStatisticsJobRequestHandlerTest {
     }
 
     @Test
-    public void testAdminStatisticsJobRequestHandlerWithPreviousStatistics() throws Exception {
+    void testAdminStatisticsJobRequestHandlerWithPreviousStatistics() throws Exception {
         var expectedStatistics = mockAdminStatistics();
         expectedStatistics.setDownloads(678L);
 

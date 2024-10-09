@@ -32,7 +32,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-public class DatabaseSearchServiceTest {
+class DatabaseSearchServiceTest {
 
     @MockBean
     EntityManager entityManager;
@@ -44,7 +44,7 @@ public class DatabaseSearchServiceTest {
     DatabaseSearchService search;
 
     @Test
-    public void testCategory() {
+    void testCategory() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
@@ -57,7 +57,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testRelevance() {
+    void testRelevance() {
         var ext1 = mockExtension("yaml", 1.0, 100, 100, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 10000, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 1.0, 100, 10, "redhat", List.of("Snippets", "Other"));
@@ -76,7 +76,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testReverse() {
+    void testReverse() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2)));
@@ -92,7 +92,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSimplePageSize() {
+    void testSimplePageSize() {
         var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -120,7 +120,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testPages() {
+    void testPages() {
         var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -145,7 +145,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringPublisherName() {
+    void testQueryStringPublisherName() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
@@ -165,7 +165,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringExtensionName() {
+    void testQueryStringExtensionName() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
@@ -183,7 +183,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringDescription() {
+    void testQueryStringDescription() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         ext2.getVersions().get(0).setDescription("another desc");
@@ -203,7 +203,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringDisplayName() {
+    void testQueryStringDisplayName() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         ext1.getVersions().get(0).setDisplayName("This is a YAML extension");
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -224,7 +224,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByTimeStamp() {
+    void testSortByTimeStamp() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         ext1.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-10T00:00"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -249,7 +249,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByDownloadCount() {
+    void testSortByDownloadCount() {
         var ext1 = mockExtension("yaml", 3.0, 100, 100, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 1000, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 300, "redhat", List.of("Snippets", "Other"));
@@ -270,7 +270,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByRating() {
+    void testSortByRating() {
         var ext1 = mockExtension("yaml", 4.0, 1, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 5.0, 1, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 2.0, 1, 0, "redhat", List.of("Snippets", "Other"));

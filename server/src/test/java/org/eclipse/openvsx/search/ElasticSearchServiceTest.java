@@ -40,7 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(SpringExtension.class)
 @MockBean({JobRequestScheduler.class})
-public class ElasticSearchServiceTest {
+class ElasticSearchServiceTest {
 
     @MockBean
     EntityManager entityManager;
@@ -55,7 +55,7 @@ public class ElasticSearchServiceTest {
     ElasticSearchService search;
 
     @Test
-    public void testRelevanceAverageRating() {
+    void testRelevanceAverageRating() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",3.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext2 = mockExtension( "bar", "n2", "u2", 4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
@@ -67,7 +67,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceReviewCount() {
+    void testRelevanceReviewCount() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",4.0, 2, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext2 = mockExtension("bar", "n2", "u2",4.0, 100, 0, LocalDateTime.parse("2020-01-01T00:00"), false, false);
@@ -79,7 +79,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceDownloadCount() {
+    void testRelevanceDownloadCount() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",0.0, 0, 1, LocalDateTime.parse("2020-01-01T00:00"), false, false);
         var ext2 = mockExtension("bar", "n2", "u2",0.0, 0, 10, LocalDateTime.parse("2020-01-01T00:00"), false, false);
@@ -91,7 +91,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceTimestamp() {
+    void testRelevanceTimestamp() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n2", "u2",0.0, 0, 0, LocalDateTime.parse("2020-02-01T00:00"), false, false);
         var ext2 = mockExtension("bar", "n1", "u1",0.0, 0, 0, LocalDateTime.parse("2020-10-01T00:00"), false, false);
@@ -103,7 +103,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceUnverified1() {
+    void testRelevanceUnverified1() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, true);
         var ext2 = mockExtension("bar", "n2", "u2",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
@@ -115,7 +115,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testRelevanceUnverified2() {
+    void testRelevanceUnverified2() {
         var index = mockIndex(true);
         var ext1 = mockExtension("foo", "n1", "u1",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), true, false);
         var ext2 = mockExtension("bar", "n2", "u2",4.0, 10, 10, LocalDateTime.parse("2020-10-01T00:00"), false, false);
@@ -127,7 +127,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testSoftUpdateExists() {
+    void testSoftUpdateExists() {
         var index = mockIndex(true);
         mockExtensions();
         search.updateSearchIndex(false);
@@ -138,7 +138,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testSoftUpdateNotExists() {
+    void testSoftUpdateNotExists() {
         var index = mockIndex(false);
         mockExtensions();
         search.updateSearchIndex(false);
@@ -149,7 +149,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testHardUpdateExists() {
+    void testHardUpdateExists() {
         var index = mockIndex(true);
         mockExtensions();
         search.updateSearchIndex(true);
@@ -160,7 +160,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testHardUpdateNotExists() {
+    void testHardUpdateNotExists() {
         var index = mockIndex(false);
         mockExtensions();
         search.updateSearchIndex(true);
@@ -171,7 +171,7 @@ public class ElasticSearchServiceTest {
     }
 
     @Test
-    public void testSearchResultWindowTooLarge() {
+    void testSearchResultWindowTooLarge() {
         mockIndex(true);
 
         var options = new ISearchService.Options("foo", "bar", "universal", 50, 10000, null, null, false);
