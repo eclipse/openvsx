@@ -13,12 +13,10 @@ import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;

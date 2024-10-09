@@ -14,7 +14,6 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.data.util.Pair;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
