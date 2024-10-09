@@ -11,7 +11,6 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
 
 public interface AdminStatisticsRepository extends Repository<AdminStatistics, Long> {
 

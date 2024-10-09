@@ -11,7 +11,6 @@ package org.eclipse.openvsx;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
