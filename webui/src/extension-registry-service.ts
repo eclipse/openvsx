@@ -20,8 +20,8 @@ export class ExtensionRegistryService {
 
     readonly admin: AdminService;
 
-    constructor(readonly serverUrl: string = '', admin?: AdminService) {
-        this.admin = admin ?? new AdminService(this);
+    constructor(readonly serverUrl: string = '', AdminConstructor: AdminServiceConstructor = AdminServiceImpl) {
+        this.admin = new AdminConstructor(this);
     }
 
     getLoginUrl(): string {
@@ -402,9 +402,23 @@ export class ExtensionRegistryService {
     }
 }
 
-export class AdminService {
+export interface AdminService {
+    getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>>
+    deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>>
+    getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>>
+    createNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
+    changeNamespace(abortController: AbortController, req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>>
+    getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
+    revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
+}
 
-    constructor(readonly registry: ExtensionRegistryService) { }
+export interface AdminServiceConstructor {
+    new (registry: ExtensionRegistryService): AdminService
+}
+
+export class AdminServiceImpl implements AdminService {
+
+    constructor(readonly registry: ExtensionRegistryService) {}
 
     getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
         return sendRequest({
