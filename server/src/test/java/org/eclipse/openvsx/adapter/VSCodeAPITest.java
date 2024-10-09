@@ -72,7 +72,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     VSCodeIdService.class, EntityManager.class, EclipseService.class, ExtensionValidator.class,
     SimpleMeterRegistry.class
 })
-public class VSCodeAPITest {
+class VSCodeAPITest {
 
     @MockBean
     EntityManager entityManager;
@@ -90,7 +90,7 @@ public class VSCodeAPITest {
     MockMvc mockMvc;
 
     @Test
-    public void testSearch() throws Exception {
+    void testSearch() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersions(extension, null, "universal");
 
@@ -102,7 +102,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testSearchMacOSXTarget() throws Exception {
+    void testSearchMacOSXTarget() throws Exception {
         var targetPlatform = "darwin-x64";
         var extension = mockSearch(targetPlatform, true);
         mockExtensionVersions(extension, targetPlatform, targetPlatform);
@@ -115,7 +115,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testSearchExcludeBuiltInExtensions() throws Exception {
+    void testSearchExcludeBuiltInExtensions() throws Exception {
         var extension = mockSearch(null, "vscode", true);
         mockExtensionVersions(extension, null,"universal");
 
@@ -127,7 +127,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testSearchMultipleTargetsResponse() throws Exception {
+    void testSearchMultipleTargetsResponse() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersions(extension, null, "darwin-x64", "linux-x64", "alpine-arm64");
 
@@ -139,7 +139,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testFindById() throws Exception {
+    void testFindById() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersions(extension, null, "universal");
 
@@ -151,7 +151,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testFindByIdAlpineTarget() throws Exception {
+    void testFindByIdAlpineTarget() throws Exception {
         var targetPlatform = "alpine-arm64";
         var extension = mockSearch(targetPlatform, true);
         mockExtensionVersions(extension, targetPlatform, targetPlatform);
@@ -164,7 +164,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testFindByIdDuplicate() throws Exception {
+    void testFindByIdDuplicate() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersions(extension, null, "universal");
 
@@ -176,7 +176,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testFindByIdInactive() throws Exception {
+    void testFindByIdInactive() throws Exception {
         mockSearch(false);
         mockMvc.perform(post("/vscode/gallery/extensionquery")
                 .content(file("findid-yaml-query.json"))
@@ -186,7 +186,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testFindByName() throws Exception {
+    void testFindByName() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersions(extension, null, "universal");
 
@@ -198,7 +198,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testFindByNameLinuxTarget() throws Exception {
+    void testFindByNameLinuxTarget() throws Exception {
         var targetPlatform = "linux-x64";
         var extension = mockSearch(targetPlatform, true);
         mockExtensionVersions(extension, targetPlatform, targetPlatform);
@@ -211,7 +211,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testFindByNameDuplicate() throws Exception {
+    void testFindByNameDuplicate() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersions(extension, null,"universal");
 
@@ -223,7 +223,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testAsset() throws Exception {
+    void testAsset() throws Exception {
         mockExtensionVersion();
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
                     "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
@@ -232,7 +232,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testAssetMacOSX() throws Exception {
+    void testAssetMacOSX() throws Exception {
         var target = "darwin-arm64";
         mockExtensionVersion(target);
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}?targetPlatform={target}",
@@ -242,7 +242,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testAssetNotFound() throws Exception {
+    void testAssetNotFound() throws Exception {
         mockExtensionVersion();
         Mockito.when(repositories.findFileByType("redhat", "vscode-yaml", "universal", "0.5.2", FileResource.MANIFEST))
                 .thenReturn(null);
@@ -252,7 +252,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testWebResourceAsset() throws Exception {
+    void testWebResourceAsset() throws Exception {
         mockExtensionVersion();
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
                 "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.WebResources/extension/img/logo.png"))
@@ -261,7 +261,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testNotWebResourceAsset() throws Exception {
+    void testNotWebResourceAsset() throws Exception {
         mockExtensionVersion();
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
                 "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.WebResources/img/logo.png"))
@@ -269,7 +269,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testAssetExcludeBuiltInExtensions() throws Exception {
+    void testAssetExcludeBuiltInExtensions() throws Exception {
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
                 "vscode", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.Manifest"))
                 .andExpect(status().isBadRequest())
@@ -277,7 +277,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testGetItem() throws Exception {
+    void testGetItem() throws Exception {
         var extension = mockExtension();
         extension.setActive(true);
         Mockito.when(repositories.findActiveExtension("vscode-yaml", "redhat")).thenReturn(extension);
@@ -287,21 +287,21 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testGetItemExcludeBuiltInExtensions() throws Exception {
+    void testGetItemExcludeBuiltInExtensions() throws Exception {
         mockMvc.perform(get("/vscode/item?itemName={itemName}", "vscode.vscode-yaml"))
                 .andExpect(status().isBadRequest())
                 .andExpect(status().reason("Built-in extension namespace 'vscode' not allowed"));
     }
 
     @Test
-    public void testGetItemBadRequest() throws Exception {
+    void testGetItemBadRequest() throws Exception {
         mockMvc.perform(get("/vscode/item?itemName={itemName}", "vscode-yaml"))
                 .andExpect(status().isBadRequest())
                 .andExpect(status().reason("Expecting an item of the form `{publisher}.{name}`"));
     }
 
     @Test
-    public void testBrowseNotFound() throws Exception {
+    void testBrowseNotFound() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -328,14 +328,14 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowseExcludeBuiltInExtensions() throws Exception {
+    void testBrowseExcludeBuiltInExtensions() throws Exception {
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", "vscode", "bar", "1.3.4", "extension/img"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Built-in extension namespace 'vscode' not allowed"));
     }
 
     @Test
-    public void testBrowseTopDir() throws Exception {
+    void testBrowseTopDir() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -371,7 +371,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowseVsixManifest() throws Exception {
+    void testBrowseVsixManifest() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -401,7 +401,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowseVsixManifestUniversal() throws Exception {
+    void testBrowseVsixManifestUniversal() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -431,7 +431,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowseVsixManifestWindows() throws Exception {
+    void testBrowseVsixManifestWindows() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -461,7 +461,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowseExtensionDir() throws Exception {
+    void testBrowseExtensionDir() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -501,7 +501,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowsePackageJson() throws Exception {
+    void testBrowsePackageJson() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -530,7 +530,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowseImagesDir() throws Exception {
+    void testBrowseImagesDir() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -560,7 +560,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testBrowseIcon() throws Exception {
+    void testBrowseIcon() throws Exception {
         var version = "1.3.4";
         var extensionName = "bar";
         var namespaceName = "foo";
@@ -589,7 +589,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testDownload() throws Exception {
+    void testDownload() throws Exception {
         mockExtensionVersion();
         mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage",
                 "redhat", "vscode-yaml", "0.5.2"))
@@ -598,7 +598,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testDownloadMacOSX() throws Exception {
+    void testDownloadMacOSX() throws Exception {
         mockExtensionVersion("darwin-arm64");
         mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage?targetPlatform={target}",
                 "redhat", "vscode-yaml", "0.5.2", "darwin-arm64"))
@@ -607,7 +607,7 @@ public class VSCodeAPITest {
     }
 
     @Test
-    public void testDownloadExcludeBuiltInExtensions() throws Exception {
+    void testDownloadExcludeBuiltInExtensions() throws Exception {
         mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage",
                 "vscode", "vscode-yaml", "0.5.2"))
                 .andExpect(status().isBadRequest())

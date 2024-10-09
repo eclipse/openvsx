@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-public class IntegrationTest {
+class IntegrationTest {
 
     protected final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
 
@@ -48,7 +48,7 @@ public class IntegrationTest {
     }
 
     @Test
-    public void testPublishExtension() throws Exception {
+    void testPublishExtension() throws Exception {
         testService.createUser();
         createNamespace();
         getNamespaceMetadata("/api/editorconfig");
@@ -203,7 +203,7 @@ public class IntegrationTest {
                 .isEqualTo("EditorConfig Support for Visual Studio Code");
     }
 
-    public void getVscodeDownloadLink() throws URISyntaxException {
+    void getVscodeDownloadLink() throws URISyntaxException {
         var path = "/vscode/gallery/publishers/editorconfig/vsextensions/editorconfig/0.16.6/vspackage";
         var response = restTemplate.getForEntity(apiCall(path), String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);

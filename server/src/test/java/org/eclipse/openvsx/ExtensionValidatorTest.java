@@ -21,13 +21,13 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-public class ExtensionValidatorTest {
+class ExtensionValidatorTest {
 
     @Autowired
     ExtensionValidator validator;
 
     @Test
-    public void testInvalidVersion1() {
+    void testInvalidVersion1() {
         var issue = validator.validateExtensionVersion("latest");
         assertThat(issue).isPresent();
         assertThat(issue.get())
@@ -35,7 +35,7 @@ public class ExtensionValidatorTest {
     }
 
     @Test
-    public void testInvalidVersion2() {
+    void testInvalidVersion2() {
         var issue = validator.validateExtensionVersion("1/2");
         assertThat(issue).isPresent();
         assertThat(issue.get())
@@ -43,7 +43,7 @@ public class ExtensionValidatorTest {
     }
 
     @Test
-    public void testInvalidTargetPlatform() {
+    void testInvalidTargetPlatform() {
         var extension = new ExtensionVersion();
         extension.setTargetPlatform("debian-x64");
         extension.setVersion("1.0.0");
@@ -54,7 +54,7 @@ public class ExtensionValidatorTest {
     }
 
     @Test
-    public void testInvalidURL() {
+    void testInvalidURL() {
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -66,7 +66,7 @@ public class ExtensionValidatorTest {
     }
 
     @Test
-    public void testInvalidURL2() {
+    void testInvalidURL2() {
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -78,7 +78,7 @@ public class ExtensionValidatorTest {
     }
 
     @Test
-    public void testInvalidURL3() {
+    void testInvalidURL3() {
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -90,7 +90,7 @@ public class ExtensionValidatorTest {
     }
 
     @Test
-    public void testMailtoURL() {
+    void testMailtoURL() {
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");
@@ -100,7 +100,7 @@ public class ExtensionValidatorTest {
     }
 
     @Test
-    public void testGitProtocol() {
+    void testGitProtocol() {
         var extension = new ExtensionVersion();
         extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extension.setVersion("1.0.0");

@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-public class CacheServiceTest {
+class CacheServiceTest {
 
     @Autowired
     CacheManager cache;
@@ -72,7 +72,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testGetExtension() {
+    void testGetExtension() {
         setRequest();
         var extVersion = insertExtensionVersion();
         var extension = extVersion.getExtension();
@@ -87,7 +87,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testUpdateExistingUser() {
+    void testUpdateExistingUser() {
         setRequest();
         var extVersion = insertExtensionVersion();
         var extension = extVersion.getExtension();
@@ -129,7 +129,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testPostReview() {
+    void testPostReview() {
         setRequest();
         var extVersion = insertExtensionVersion();
         var extension = extVersion.getExtension();
@@ -164,7 +164,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testDeleteReview() {
+    void testDeleteReview() {
         setRequest();
         var extVersion = insertExtensionVersion();
         var extension = extVersion.getExtension();
@@ -200,7 +200,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testDeleteExtension() {
+    void testDeleteExtension() {
         setRequest();
         var admin = insertAdmin();
         var extVersion = insertExtensionVersion();
@@ -217,7 +217,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testDeleteExtensionVersion() {
+    void testDeleteExtensionVersion() {
         setRequest();
         var admin = insertAdmin();
         var extVersion = insertExtensionVersion();
@@ -247,7 +247,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testUpdateExtension() {
+    void testUpdateExtension() {
         setRequest();
         var extVersion = insertExtensionVersion();
         var extension = extVersion.getExtension();
@@ -276,7 +276,7 @@ public class CacheServiceTest {
 
     @Test
     @Transactional
-    public void testAverageReviewRating() {
+    void testAverageReviewRating() {
         var user = insertAdmin();
         var extVersion = insertExtensionVersion();
         // no reviews in database

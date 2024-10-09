@@ -68,7 +68,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
         ExtensionValidator.class, SimpleMeterRegistry.class
 })
-public class UserAPITest {
+class UserAPITest {
 
     @SpyBean
     UserService users;
@@ -83,7 +83,7 @@ public class UserAPITest {
     MockMvc mockMvc;
 
     @Test
-    public void testLoggedIn() throws Exception {
+    void testLoggedIn() throws Exception {
         mockUserData();
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
@@ -95,7 +95,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testNotLoggedIn() throws Exception {
+    void testNotLoggedIn() throws Exception {
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(userJson(u -> {
@@ -104,7 +104,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testAccessTokens() throws Exception {
+    void testAccessTokens() throws Exception {
         mockAccessTokens();
         mockMvc.perform(get("/user/tokens")
                 .with(user("test_user")))
@@ -122,14 +122,14 @@ public class UserAPITest {
     }
 
     @Test
-    public void testAccessTokensNotLoggedIn() throws Exception {
+    void testAccessTokensNotLoggedIn() throws Exception {
         mockAccessTokens();
         mockMvc.perform(get("/user/tokens"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    public void testCreateAccessToken() throws Exception {
+    void testCreateAccessToken() throws Exception {
         mockUserData();
         Mockito.doReturn("foobar").when(users).generateTokenValue();
         mockMvc.perform(post("/user/token/create?description={description}", "This is my token")
@@ -143,14 +143,14 @@ public class UserAPITest {
     }
 
     @Test
-    public void testCreateAccessTokenNotLoggedIn() throws Exception {
+    void testCreateAccessTokenNotLoggedIn() throws Exception {
         mockMvc.perform(post("/user/token/create?description={description}", "This is my token")
                 .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    public void testDeleteAccessToken() throws Exception {
+    void testDeleteAccessToken() throws Exception {
         var userData = mockUserData();
         var token = new PersonalAccessToken();
         token.setId(100);
@@ -169,14 +169,14 @@ public class UserAPITest {
     }
 
     @Test
-    public void testDeleteAccessTokenNotLoggedIn() throws Exception {
+    void testDeleteAccessTokenNotLoggedIn() throws Exception {
         mockMvc.perform(post("/user/token/delete/{id}", 100)
                 .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    public void testDeleteAccessTokenInactive() throws Exception {
+    void testDeleteAccessTokenInactive() throws Exception {
         var userData = mockUserData();
         var token = new PersonalAccessToken();
         token.setId(100);
@@ -193,7 +193,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testDeleteAccessTokenWrongUser() throws Exception {
+    void testDeleteAccessTokenWrongUser() throws Exception {
         mockUserData();
         var userData = new UserData();
         userData.setLoginName("wrong_user");
@@ -212,7 +212,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testOwnNamespaces() throws Exception {
+    void testOwnNamespaces() throws Exception {
         mockOwnMemberships();
         mockMvc.perform(get("/user/namespaces")
                 .with(user("test_user")))
@@ -228,14 +228,14 @@ public class UserAPITest {
     }
 
     @Test
-    public void testOwnNamespacesNotLoggedIn() throws Exception {
+    void testOwnNamespacesNotLoggedIn() throws Exception {
         mockOwnMemberships();
         mockMvc.perform(get("/user/namespaces"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    public void testNamespaceMembers() throws Exception {
+    void testNamespaceMembers() throws Exception {
         mockNamespaceMemberships(NamespaceMembership.ROLE_OWNER);
         mockMvc.perform(get("/user/namespace/{name}/members", "foobar")
                 .with(user("test_user")))
@@ -259,14 +259,14 @@ public class UserAPITest {
     }
 
     @Test
-    public void testNamespaceMembersNotLoggedIn() throws Exception {
+    void testNamespaceMembersNotLoggedIn() throws Exception {
         mockNamespaceMemberships(NamespaceMembership.ROLE_OWNER);
         mockMvc.perform(get("/user/namespace/{name}/members", "foobar"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    public void testNamespaceMembersNotOwner() throws Exception {
+    void testNamespaceMembersNotOwner() throws Exception {
         mockNamespaceMemberships(NamespaceMembership.ROLE_CONTRIBUTOR);
         mockMvc.perform(get("/user/namespace/{name}/members", "foobar")
                 .with(user("test_user")))
@@ -274,7 +274,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testAddNamespaceMember() throws Exception {
+    void testAddNamespaceMember() throws Exception {
         var userData1 = mockUserData();
         var namespace = new Namespace();
         namespace.setName("foobar");
@@ -304,7 +304,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testAddNamespaceMemberNotLoggedIn() throws Exception {
+    void testAddNamespaceMemberNotLoggedIn() throws Exception {
         mockMvc.perform(post("/user/namespace/{namespace}/role?user={user}&role={role}", "foobar",
                     "other_user", "contributor")
                 .with(csrf().asHeader()))
@@ -312,7 +312,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testChangeNamespaceMember() throws Exception {
+    void testChangeNamespaceMember() throws Exception {
         var userData1 = mockUserData();
         var namespace = new Namespace();
         namespace.setName("foobar");
@@ -346,7 +346,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testRemoveNamespaceMember() throws Exception {
+    void testRemoveNamespaceMember() throws Exception {
         var userData1 = mockUserData();
         var namespace = new Namespace();
         namespace.setName("foobar");
@@ -380,7 +380,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testAddNamespaceMemberNotOwner() throws Exception {
+    void testAddNamespaceMemberNotOwner() throws Exception {
         var userData1 = mockUserData();
         var namespace = new Namespace();
         namespace.setName("foobar");
@@ -402,7 +402,7 @@ public class UserAPITest {
     }
 
     @Test
-    public void testChangeNamespaceMemberSameRole() throws Exception {
+    void testChangeNamespaceMemberSameRole() throws Exception {
         var userData1 = mockUserData();
         var namespace = new Namespace();
         namespace.setName("foobar");

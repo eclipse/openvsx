@@ -27,13 +27,13 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 @MockBean({ StorageUtilService.class })
-public class AzureBlobStorageServiceTest {
+class AzureBlobStorageServiceTest {
 
     @Autowired
     AzureBlobStorageService service;
 
     @Test
-    public void testGetLocation() {
+    void testGetLocation() {
         service.serviceEndpoint = "http://azure.blob.storage/";
         service.blobContainer = "blob-container";
         var namespace = new Namespace();

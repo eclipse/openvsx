@@ -71,7 +71,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class,
     EclipseService.class, SimpleMeterRegistry.class
 })
-public class AdminAPITest {
+class AdminAPITest {
     
     @SpyBean
     UserService users;
@@ -92,7 +92,7 @@ public class AdminAPITest {
     MockMvc mockMvc;
 
     @Test
-    public void testGetExtensionNotLoggedIn() throws Exception {
+    void testGetExtensionNotLoggedIn() throws Exception {
         mockExtension(2, 0, 0);
         mockMvc.perform(get("/admin/extension/{namespace}/{extension}", "foobar", "baz")
                 .with(csrf().asHeader()))
@@ -100,7 +100,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetExtensionNotAdmin() throws Exception {
+    void testGetExtensionNotAdmin() throws Exception {
         mockNormalUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(get("/admin/extension/{namespace}/{extension}", "foobar", "baz")
@@ -110,7 +110,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetExtension() throws Exception {
+    void testGetExtension() throws Exception {
         mockAdminUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(get("/admin/extension/{namespace}/{extension}", "foobar", "baz")
@@ -126,7 +126,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetInactiveExtension() throws Exception {
+    void testGetInactiveExtension() throws Exception {
         mockAdminUser();
         mockExtension(2, 0, 0).forEach(ev -> {
             ev.setActive(false);
@@ -146,14 +146,14 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testAddNamespaceMemberNotLoggedIn() throws Exception {
+    void testAddNamespaceMemberNotLoggedIn() throws Exception {
         mockMvc.perform(post("/admin/namespace/{namespace}/change-member?user={user}&role={role}", "foobar", "other_user", "owner")
                 .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    public void testAddNamespaceMemberNotAdmin() throws Exception {
+    void testAddNamespaceMemberNotAdmin() throws Exception {
         mockNormalUser();
         mockMvc.perform(post("/admin/namespace/{namespace}/change-member?user={user}&role={role}", "foobar", "other_user", "owner")
                 .with(user("test_user"))
@@ -162,7 +162,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testAddNamespaceMember() throws Exception {
+    void testAddNamespaceMember() throws Exception {
         mockAdminUser();
         var namespace = mockNamespace();
         var userData2 = new UserData();
@@ -180,7 +180,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceMember() throws Exception {
+    void testChangeNamespaceMember() throws Exception {
         mockAdminUser();
         var namespace = mockNamespace();
         var userData2 = new UserData();
@@ -202,7 +202,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testRemoveNamespaceMember() throws Exception {
+    void testRemoveNamespaceMember() throws Exception {
         mockAdminUser();
         var namespace = mockNamespace();
         var userData2 = new UserData();
@@ -224,7 +224,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceMemberSameRole() throws Exception {
+    void testChangeNamespaceMemberSameRole() throws Exception {
         mockAdminUser();
         var namespace = mockNamespace();
         var userData2 = new UserData();
@@ -246,7 +246,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testDeleteExtensionNotLoggedIn() throws Exception {
+    void testDeleteExtensionNotLoggedIn() throws Exception {
         mockExtension(2, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
                 .with(csrf().asHeader()))
@@ -254,7 +254,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testDeleteExtensionNotAdmin() throws Exception {
+    void testDeleteExtensionNotAdmin() throws Exception {
         mockNormalUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
@@ -264,7 +264,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testDeleteExtension() throws Exception {
+    void testDeleteExtension() throws Exception {
         mockAdminUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
@@ -275,7 +275,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testDeleteExtensionVersion() throws Exception {
+    void testDeleteExtensionVersion() throws Exception {
         mockAdminUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
@@ -288,7 +288,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testDeleteLastExtensionVersion() throws Exception {
+    void testDeleteLastExtensionVersion() throws Exception {
         mockAdminUser();
         mockExtension(1, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
@@ -301,7 +301,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testDeleteBundledExtension() throws Exception {
+    void testDeleteBundledExtension() throws Exception {
         mockAdminUser();
         mockExtension(2, 1, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
@@ -312,7 +312,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testDeleteDependingExtension() throws Exception {
+    void testDeleteDependingExtension() throws Exception {
         mockAdminUser();
         mockExtension(2, 0, 1);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
@@ -323,7 +323,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetNamespaceNotLoggedIn() throws Exception {
+    void testGetNamespaceNotLoggedIn() throws Exception {
         mockNamespace();
         mockMvc.perform(get("/admin/namespace/{namespace}", "foobar")
                 .with(csrf().asHeader()))
@@ -331,7 +331,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetNamespaceNotAdmin() throws Exception {
+    void testGetNamespaceNotAdmin() throws Exception {
         mockNormalUser();
         mockNamespace();
         mockMvc.perform(get("/admin/namespace/{namespace}", "foobar")
@@ -341,7 +341,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetNamespace() throws Exception {
+    void testGetNamespace() throws Exception {
         mockAdminUser();
         mockNamespace();
         mockMvc.perform(get("/admin/namespace/{namespace}", "foobar")
@@ -354,7 +354,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetNamespaceMembersNotLoggedIn() throws Exception {
+    void testGetNamespaceMembersNotLoggedIn() throws Exception {
         mockNamespace();
         mockMvc.perform(get("/admin/namespace/{namespace}/members", "foobar")
                 .with(csrf().asHeader()))
@@ -362,7 +362,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetNamespaceMembersNotAdmin() throws Exception {
+    void testGetNamespaceMembersNotAdmin() throws Exception {
         mockNormalUser();
         mockNamespace();
         mockMvc.perform(get("/admin/namespace/{namespace}/members", "foobar")
@@ -372,7 +372,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetNamespaceMembers() throws Exception {
+    void testGetNamespaceMembers() throws Exception {
         mockAdminUser();
         var namespace = mockNamespace();
         var user = new UserData();
@@ -399,7 +399,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testCreateNamespaceNotLoggedIn() throws Exception {
+    void testCreateNamespaceNotLoggedIn() throws Exception {
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.name = "foobar"; }))
@@ -408,7 +408,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testCreateNamespaceNotAdmin() throws Exception {
+    void testCreateNamespaceNotAdmin() throws Exception {
         mockNormalUser();
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -419,7 +419,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testCreateNamespace() throws Exception {
+    void testCreateNamespace() throws Exception {
         mockAdminUser();
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -432,7 +432,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testCreateExistingNamespace() throws Exception {
+    void testCreateExistingNamespace() throws Exception {
         mockAdminUser();
         Mockito.when(repositories.findNamespaceName("foobar"))
                 .thenReturn("foobar");
@@ -447,7 +447,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetUserPublishInfoNotLoggedIn() throws Exception {
+    void testGetUserPublishInfoNotLoggedIn() throws Exception {
         mockNamespace();
         mockMvc.perform(get("/admin/publisher/{provider}/{loginName}", "github", "test")
                 .with(csrf().asHeader()))
@@ -455,7 +455,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetUserPublishInfoNotAdmin() throws Exception {
+    void testGetUserPublishInfoNotAdmin() throws Exception {
         mockNormalUser();
         mockMvc.perform(get("/admin/publisher/{provider}/{loginName}", "github", "test")
                 .with(user("test_user"))
@@ -464,7 +464,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testGetUserPublishInfo() throws Exception {
+    void testGetUserPublishInfo() throws Exception {
         mockAdminUser();
         var versions = mockExtension(1, 0, 0);
         var user = new UserData();
@@ -497,7 +497,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testRevokePublisherAgreementNotLoggedIn() throws Exception {
+    void testRevokePublisherAgreementNotLoggedIn() throws Exception {
         mockNamespace();
         mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/revoke", "github", "test")
                 .with(csrf().asHeader()))
@@ -505,7 +505,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testRevokePublisherAgreementNotAdmin() throws Exception {
+    void testRevokePublisherAgreementNotAdmin() throws Exception {
         mockNormalUser();
         mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/revoke", "github", "test")
                 .with(user("test_user"))
@@ -514,7 +514,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testRevokePublisherAgreement() throws Exception {
+    void testRevokePublisherAgreement() throws Exception {
         mockAdminUser();
         var versions = mockExtension(1, 0, 0);
         var user = new UserData();
@@ -542,7 +542,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportUnsupportedMediaType() throws Exception {
+    void testReportUnsupportedMediaType() throws Exception {
         var token = mockNonAdminToken();
         mockMvc.perform(get("/admin/report?token={token}&year=2021&month=3", token.getValue())
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_XML_VALUE))
@@ -550,7 +550,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportNoAdminTokenCsv() throws Exception {
+    void testReportNoAdminTokenCsv() throws Exception {
         var token = mockNonAdminToken();
         mockMvc.perform(get("/admin/report?token={token}&year=2021&month=3", token.getValue())
                 .header(HttpHeaders.ACCEPT, "text/csv"))
@@ -558,7 +558,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportNoAdminTokenJson() throws Exception {
+    void testReportNoAdminTokenJson() throws Exception {
         var token = mockNonAdminToken();
         mockMvc.perform(get("/admin/report?token={token}&year=2021&month=3", token.getValue())
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
@@ -566,7 +566,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportNegativeYearCsv() throws Exception {
+    void testReportNegativeYearCsv() throws Exception {
         var token = mockAdminToken();
         mockMvc.perform(get("/admin/report?token={token}&year=-1&month=3", token.getValue())
                 .header(HttpHeaders.ACCEPT, "text/csv"))
@@ -575,7 +575,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportNegativeYearJson() throws Exception {
+    void testReportNegativeYearJson() throws Exception {
         var token = mockAdminToken();
         mockMvc.perform(get("/admin/report?token={token}&year=-1&month=3", token.getValue())
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
@@ -584,7 +584,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportFutureYearCsv() throws Exception {
+    void testReportFutureYearCsv() throws Exception {
         var token = mockAdminToken();
         var future = LocalDateTime.now().plusYears(1);
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month=3", token.getValue(), future.getYear())
@@ -594,7 +594,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportFutureYearJson() throws Exception {
+    void testReportFutureYearJson() throws Exception {
         var token = mockAdminToken();
         var future = LocalDateTime.now().plusYears(1);
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month=3", token.getValue(), future.getYear())
@@ -604,7 +604,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportMonthLessThanOneCsv() throws Exception {
+    void testReportMonthLessThanOneCsv() throws Exception {
         var token = mockAdminToken();
         var now = LocalDateTime.now();
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month=0", token.getValue(), now.getYear())
@@ -614,7 +614,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportMonthLessThanOneJson() throws Exception {
+    void testReportMonthLessThanOneJson() throws Exception {
         var token = mockAdminToken();
         var now = LocalDateTime.now();
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month=0", token.getValue(), now.getYear())
@@ -624,7 +624,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportMonthGreaterThanTwelveCsv() throws Exception {
+    void testReportMonthGreaterThanTwelveCsv() throws Exception {
         var token = mockAdminToken();
         var now = LocalDateTime.now();
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month=13", token.getValue(), now.getYear())
@@ -634,7 +634,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportMonthGreaterThanTwelveJson() throws Exception {
+    void testReportMonthGreaterThanTwelveJson() throws Exception {
         var token = mockAdminToken();
         var now = LocalDateTime.now();
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month=13", token.getValue(), now.getYear())
@@ -644,7 +644,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportFutureMonthCsv() throws Exception {
+    void testReportFutureMonthCsv() throws Exception {
         var token = mockAdminToken();
         var future = LocalDateTime.now().plusMonths(1);
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), future.getYear(), future.getMonthValue())
@@ -654,7 +654,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testReportFutureMonthJson() throws Exception {
+    void testReportFutureMonthJson() throws Exception {
         var token = mockAdminToken();
         var future = LocalDateTime.now().plusMonths(1);
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), future.getYear(), future.getMonthValue())
@@ -664,7 +664,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testArchivedReportCsv() throws Exception {
+    void testArchivedReportCsv() throws Exception {
         var token = mockAdminToken();
         var past = LocalDateTime.now().minusMonths(1);
         var year = past.getYear();
@@ -712,7 +712,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testArchivedReportJson() throws Exception {
+    void testArchivedReportJson() throws Exception {
         var token = mockAdminToken();
         var past = LocalDateTime.now().minusMonths(1);
         var year = past.getYear();
@@ -832,7 +832,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testCurrentMonthAdminReportCsv() throws Exception {
+    void testCurrentMonthAdminReportCsv() throws Exception {
         var token = mockAdminToken();
         var now = LocalDateTime.now();
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), now.getYear(), now.getMonthValue())
@@ -842,7 +842,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testCurrentMonthAdminReportJson() throws Exception {
+    void testCurrentMonthAdminReportJson() throws Exception {
         var token = mockAdminToken();
         var now = LocalDateTime.now();
         mockMvc.perform(get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), now.getYear(), now.getMonthValue())
@@ -852,7 +852,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespace() throws Exception {
+    void testChangeNamespace() throws Exception {
         mockAdminUser();
         var foo = new Namespace();
         foo.setName("foo");
@@ -886,7 +886,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceOldNamespaceNull() throws Exception {
+    void testChangeNamespaceOldNamespaceNull() throws Exception {
         mockAdminUser();
         var content = "{" +
                 "\"oldNamespace\": null, " +
@@ -905,7 +905,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceOldNamespaceEmpty() throws Exception {
+    void testChangeNamespaceOldNamespaceEmpty() throws Exception {
         mockAdminUser();
         var content = "{" +
                 "\"oldNamespace\": \"\", " +
@@ -924,7 +924,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceOldNamespaceDoesNotExist() throws Exception {
+    void testChangeNamespaceOldNamespaceDoesNotExist() throws Exception {
         mockAdminUser();
         Mockito.when(repositories.findNamespace("foo")).thenReturn(null);
 
@@ -949,7 +949,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceNewNamespaceNull() throws Exception {
+    void testChangeNamespaceNewNamespaceNull() throws Exception {
         mockAdminUser();
         var content = "{" +
                 "\"oldNamespace\": \"foo\", " +
@@ -968,7 +968,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceNewNamespaceEmpty() throws Exception {
+    void testChangeNamespaceNewNamespaceEmpty() throws Exception {
         mockAdminUser();
         var content = "{" +
                 "\"oldNamespace\": \"foo\", " +
@@ -987,7 +987,7 @@ public class AdminAPITest {
     }
 
     @Test
-    public void testChangeNamespaceAbortOnNewNamespaceExists() throws Exception {
+    void testChangeNamespaceAbortOnNewNamespaceExists() throws Exception {
         mockAdminUser();
         var foo = new Namespace();
         foo.setName("foo");

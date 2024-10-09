@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class UrlUtilTest {
+class UrlUtilTest {
 
     @Mock
     private HttpServletRequest request;
@@ -30,52 +30,52 @@ public class UrlUtilTest {
     private AutoCloseable closeable;
     
     @BeforeEach
-    public void openMocks() {
+    void openMocks() {
      closeable = MockitoAnnotations.openMocks(this);
     }
     
     @AfterEach
-    public void releaseMocks() throws Exception {
+    void releaseMocks() throws Exception {
         closeable.close();
     }
 
     @Test
-    public void testCreateApiFileUrl() throws Exception {
+    void testCreateApiFileUrl() throws Exception {
         var baseUrl = "http://localhost/";
         assertThat(UrlUtil.createApiFileUrl(baseUrl, "foo", "bar", "linux-x64", "0.1.0", "foo.bar-0.1.0@linux-x64.vsix"))
                 .isEqualTo("http://localhost/api/foo/bar/linux-x64/0.1.0/file/foo.bar-0.1.0@linux-x64.vsix");
     }
 
     @Test
-    public void testCreateApiFileUrlUniversalTarget() throws Exception {
+    void testCreateApiFileUrlUniversalTarget() throws Exception {
         var baseUrl = "http://localhost/";
         assertThat(UrlUtil.createApiFileUrl(baseUrl, "foo", "bar", "universal", "0.1.0", "foo.bar-0.1.0.vsix"))
                 .isEqualTo("http://localhost/api/foo/bar/0.1.0/file/foo.bar-0.1.0.vsix");
     }
 
     @Test
-    public void testCreateApiVersionUrl() throws Exception {
+    void testCreateApiVersionUrl() throws Exception {
         var baseUrl = "http://localhost/";
         assertThat(UrlUtil.createApiVersionUrl(baseUrl, "foo", "bar", "universal", "1.0.0"))
                 .isEqualTo("http://localhost/api/foo/bar/universal/1.0.0");
     }
 
     @Test
-    public void testCreateApiVersionUrlNoTarget() throws Exception {
+    void testCreateApiVersionUrlNoTarget() throws Exception {
         var baseUrl = "http://localhost/";
         assertThat(UrlUtil.createApiVersionUrl(baseUrl, "foo", "bar", null, "1.0.0"))
                 .isEqualTo("http://localhost/api/foo/bar/1.0.0");
     }
 
     @Test
-    public void testApiUrl() throws Exception {
+    void testApiUrl() throws Exception {
         var baseUrl = "http://localhost/";
         assertThat(UrlUtil.createApiUrl(baseUrl, "api", "foo", "b\ta/r"))
                 .isEqualTo("http://localhost/api/foo/b%09a%2Fr");
     }
 
     @Test
-    public void testQuery() throws Exception {
+    void testQuery() throws Exception {
         var url = "http://localhost/api/foo";
         assertThat(UrlUtil.addQuery(url, "a", "1", "b", null, "c", "b\ta/r"))
                 .isEqualTo("http://localhost/api/foo?a=1&c=b%09a/r");
@@ -83,7 +83,7 @@ public class UrlUtilTest {
 
     // Check base URL is localhost:8080 if there is no XForwarded headers
     @Test
-    public void testWithoutXForwarded() throws Exception {
+    void testWithoutXForwarded() throws Exception {
         doReturn("http").when(request).getScheme();
         doReturn("localhost").when(request).getServerName();
         doReturn(8080).when(request).getServerPort();
@@ -93,7 +93,7 @@ public class UrlUtilTest {
 
     // Check base URL is using XForwarded headers
     @Test
-    public void testWithXForwarded() throws Exception {
+    void testWithXForwarded() throws Exception {
         // basic request
         doReturn("http").when(request).getScheme();
         doReturn("localhost").when(request).getServerName();
@@ -111,7 +111,7 @@ public class UrlUtilTest {
 
     // Check base URL is using array X-Forwarded-Host headers
     @Test
-    public void testWithXForwardedHostArray() throws Exception {
+    void testWithXForwardedHostArray() throws Exception {
         // basic request
         doReturn("http").when(request).getScheme();
         doReturn("localhost").when(request).getServerName();
@@ -131,7 +131,7 @@ public class UrlUtilTest {
 
     // Check base URL is using comma separated X-Forwarded-Host headers
     @Test
-    public void testWithXForwardedHostCommaSeparated() throws Exception {
+    void testWithXForwardedHostCommaSeparated() throws Exception {
         // basic request
         doReturn("http").when(request).getScheme();
         doReturn("localhost").when(request).getServerName();

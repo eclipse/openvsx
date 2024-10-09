@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @MockBean({ CacheService.class, RepositoryService.class, EntityManager.class })
-public class ExtensionVersionIntegrityServiceTest {
+class ExtensionVersionIntegrityServiceTest {
 
     @Autowired
     ExtensionVersionIntegrityService integrityService;
@@ -44,7 +44,7 @@ public class ExtensionVersionIntegrityServiceTest {
     GenerateKeyPairJobService keyPairService;
 
     @Test
-    public void testGenerateSignature() throws IOException {
+    void testGenerateSignature() throws IOException {
         var keyPair = keyPairService.generateKeyPair();
 
         var namespace = new Namespace();

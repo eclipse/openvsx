@@ -15,10 +15,10 @@ import java.util.zip.ZipFile;
 
 import org.junit.jupiter.api.Test;
 
-public class ArchiveUtilTest {
+class ArchiveUtilTest {
 
     @Test
-    public void testTodoTree() throws Exception {
+    void testTodoTree() throws Exception {
         var packageUrl = getClass().getResource("todo-tree.zip");
         assertThat(packageUrl.getProtocol()).isEqualTo("file");
         try (

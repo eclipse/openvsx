@@ -14,10 +14,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SemanticVersionTest {
+class SemanticVersionTest {
 
     @Test
-    public void testParseFullVersion() {
+    void testParseFullVersion() {
         var semver = SemanticVersion.parse("1.2.31-rc1+armhf");
         assertEquals(1, semver.getMajor());
         assertEquals(2, semver.getMinor());
@@ -27,7 +27,7 @@ public class SemanticVersionTest {
     }
 
     @Test
-    public void testParseNumbersVersion() {
+    void testParseNumbersVersion() {
         var semver = SemanticVersion.parse("1.2.3");
         assertEquals(1, semver.getMajor());
         assertEquals(2, semver.getMinor());
@@ -37,13 +37,13 @@ public class SemanticVersionTest {
     }
 
     @Test
-    public void testParseInvalidVersion() {
+    void testParseInvalidVersion() {
         var exception = assertThrows(RuntimeException.class, () -> SemanticVersion.parse("9.2"));
         assertEquals("Invalid semantic version. See https://semver.org/.", exception.getMessage());
     }
 
     @Test
-    public void testCompare() {
+    void testCompare() {
         assertThat(SemanticVersion.parse("2.0.0").compareTo(SemanticVersion.parse("1.2.3")))
                 .isEqualTo(-1);
         assertThat(SemanticVersion.parse("1.2.3").compareTo(SemanticVersion.parse("1.2.4")))
