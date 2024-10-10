@@ -54,14 +54,12 @@ public class ExtensionVersion implements Serializable {
     boolean universalTargetPlatform;
 
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "major", column = @Column(name = "semver_major")),
-            @AttributeOverride(name = "minor", column = @Column(name = "semver_minor")),
-            @AttributeOverride(name = "patch", column = @Column(name = "semver_patch")),
-            @AttributeOverride(name = "preRelease", column = @Column(name = "semver_pre_release")),
-            @AttributeOverride(name = "isPreRelease", column = @Column(name = "semver_is_pre_release")),
-            @AttributeOverride(name = "buildMetadata", column = @Column(name = "semver_build_metadata"))
-    })
+    @AttributeOverride(name = "major", column = @Column(name = "semver_major"))
+    @AttributeOverride(name = "minor", column = @Column(name = "semver_minor"))
+    @AttributeOverride(name = "patch", column = @Column(name = "semver_patch"))
+    @AttributeOverride(name = "preRelease", column = @Column(name = "semver_pre_release"))
+    @AttributeOverride(name = "isPreRelease", column = @Column(name = "semver_is_pre_release"))
+    @AttributeOverride(name = "buildMetadata", column = @Column(name = "semver_build_metadata"))
     SemanticVersion semver;
 
     boolean preRelease;
