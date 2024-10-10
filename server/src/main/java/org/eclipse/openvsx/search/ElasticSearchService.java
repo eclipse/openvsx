@@ -246,7 +246,7 @@ public class ElasticSearchService implements ISearchService {
     }
 
     public SearchHits<ExtensionSearch> search(Options options) {
-        var resultWindow = options.requestedOffset + options.requestedSize;
+        var resultWindow = options.requestedOffset() + options.requestedSize();
         if(resultWindow > getMaxResultWindow()) {
             return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, null, null, Collections.emptyList(), null, null);
         }
@@ -255,11 +255,11 @@ public class ElasticSearchService implements ISearchService {
         queryBuilder.withQuery(builder -> builder.bool(boolQuery -> createSearchQuery(boolQuery, options)));
 
         // Sort search results according to 'sortOrder' and 'sortBy' options
-        sortResults(queryBuilder, options.sortOrder, options.sortBy);
+        sortResults(queryBuilder, options.sortOrder(), options.sortBy());
 
         var pages = new ArrayList<Pageable>();
-        pages.add(PageRequest.of(options.requestedOffset / options.requestedSize, options.requestedSize));
-        if(options.requestedOffset % options.requestedSize > 0) {
+        pages.add(PageRequest.of(options.requestedOffset() / options.requestedSize(), options.requestedSize()));
+        if(options.requestedOffset() % options.requestedSize() > 0) {
             // size is not exact multiple of offset; this means we need to get two pages
             // e.g. when offset is 20 and size is 50, you want results 20 to 70 which span pages 0 and 1 of a 50 item page
             pages.add(pages.get(0).next());
@@ -283,8 +283,8 @@ public class ElasticSearchService implements ISearchService {
 
             List<SearchHit<ExtensionSearch>> searchHits = new ArrayList<>(firstSearchHitsPage.getSearchHits());
             searchHits.addAll(secondSearchHitsPage.getSearchHits());
-            var endIndex = Math.min(searchHits.size(), options.requestedOffset + options.requestedSize);
-            var startIndex = Math.min(endIndex, options.requestedOffset);
+            var endIndex = Math.min(searchHits.size(), options.requestedOffset() + options.requestedSize());
+            var startIndex = Math.min(endIndex, options.requestedOffset());
             searchHits = searchHits.subList(startIndex, endIndex);
             return new SearchHitsImpl<>(
                     firstSearchHitsPage.getTotalHits(),
@@ -302,17 +302,17 @@ public class ElasticSearchService implements ISearchService {
     }
 
     private ObjectBuilder<BoolQuery> createSearchQuery(BoolQuery.Builder boolQuery, Options options) {
-        if (!StringUtils.isEmpty(options.queryString)) {
+        if (!StringUtils.isEmpty(options.queryString())) {
             boolQuery.should(QueryBuilders.term(builder ->
                     builder.field("extensionId.keyword")
-                            .value(options.queryString)
+                            .value(options.queryString())
                             .caseInsensitive(true)
                             .boost(10f)
             ));
 
             // Fuzzy matching of search query in multiple fields
             var multiMatchQuery = QueryBuilders.multiMatch(builder ->
-                    builder.query(options.queryString)
+                    builder.query(options.queryString())
                             .fields("name").boost(5f)
                             .fields("displayName").boost(5f)
                             .fields("tags").boost(3f)
@@ -325,24 +325,24 @@ public class ElasticSearchService implements ISearchService {
             boolQuery.should(multiMatchQuery).boost(5f);
 
             // Prefix matching of search query in display name and namespace
-            var prefixString = options.queryString.trim().toLowerCase();
+            var prefixString = options.queryString().trim().toLowerCase();
             var namePrefixQuery = QueryBuilders.prefix(builder -> builder.field("displayName").value(prefixString));
             boolQuery.should(namePrefixQuery).boost(2f);
             var namespacePrefixQuery = QueryBuilders.prefix(builder -> builder.field("namespace").value(prefixString));
             boolQuery.should(namespacePrefixQuery);
         }
 
-        if (!StringUtils.isEmpty(options.category)) {
+        if (!StringUtils.isEmpty(options.category())) {
             // Filter by selected category
-            boolQuery.must(QueryBuilders.matchPhrase(builder -> builder.field("categories").query(options.category)));
+            boolQuery.must(QueryBuilders.matchPhrase(builder -> builder.field("categories").query(options.category())));
         }
-        if (TargetPlatform.isValid(options.targetPlatform)) {
+        if (TargetPlatform.isValid(options.targetPlatform())) {
             // Filter by selected target platform
-            boolQuery.must(QueryBuilders.matchPhrase(builder -> builder.field("targetPlatforms").query(options.targetPlatform)));
+            boolQuery.must(QueryBuilders.matchPhrase(builder -> builder.field("targetPlatforms").query(options.targetPlatform())));
         }
-        if (options.namespacesToExclude != null) {
+        if (options.namespacesToExclude() != null) {
             // Exclude namespaces
-            for(var namespaceToExclude : options.namespacesToExclude) {
+            for(var namespaceToExclude : options.namespacesToExclude()) {
                 boolQuery.mustNot(QueryBuilders.term(builder -> builder.field("namespace.keyword").value(namespaceToExclude)));
             }
         }

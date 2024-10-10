@@ -28,22 +28,62 @@ public class ReviewJson {
 
     @Schema(description = "Data of the user who posted this review")
     @NotNull
-    public UserJson user;
+    private UserJson user;
 
     @Schema(description = "Date and time when this review was posted (ISO-8601)")
     @NotNull
-    public String timestamp;
+    private String timestamp;
 
     @Schema(hidden = true)
-    public String title;
+    private String title;
 
-    public String comment;
+    private String comment;
 
     @Schema(description = "Number of stars")
     @NotNull
     @Min(0)
     @Max(5)
-    public int rating;
+    private int rating;
+
+    public UserJson getUser() {
+        return user;
+    }
+
+    public void setUser(UserJson user) {
+        this.user = user;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
+    }
 
     @Override
     public boolean equals(Object o) {

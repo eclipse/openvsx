@@ -142,48 +142,48 @@ public class ExtensionVersion implements Serializable {
      */
     public ExtensionJson toExtensionJson() {
         var json = new ExtensionJson();
-        json.targetPlatform = this.getTargetPlatform();
+        json.setTargetPlatform(this.getTargetPlatform());
         var namespace = extension.getNamespace();
-        json.namespace = namespace.getName();
-        json.namespaceDisplayName = StringUtils.isNotEmpty(namespace.getDisplayName())
+        json.setNamespace(namespace.getName());
+        json.setNamespaceDisplayName(StringUtils.isNotEmpty(namespace.getDisplayName())
                 ? namespace.getDisplayName()
-                : json.namespace;
-        json.name = extension.getName();
-        json.averageRating = extension.getAverageRating();
-        json.downloadCount = extension.getDownloadCount();
-        json.version = this.getVersion();
-        json.preRelease = this.isPreRelease();
+                : json.getNamespace());
+        json.setName(extension.getName());
+        json.setAverageRating(extension.getAverageRating());
+        json.setDownloadCount(extension.getDownloadCount());
+        json.setVersion(this.getVersion());
+        json.setPreRelease(this.isPreRelease());
         if (this.getTimestamp() != null) {
-            json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
+            json.setTimestamp(TimeUtil.toUTCString(this.getTimestamp()));
         }
-        json.displayName = this.getDisplayName();
-        json.description = this.getDescription();
-        json.engines = this.getEnginesMap();
-        json.categories = this.getCategories();
-        json.extensionKind = this.getExtensionKind();
-        json.tags = this.getTags();
-        json.license = this.getLicense();
-        json.homepage = this.getHomepage();
-        json.repository = this.getRepository();
-        json.sponsorLink = this.getSponsorLink();
-        json.bugs = this.getBugs();
-        json.markdown = this.getMarkdown();
-        json.galleryColor = this.getGalleryColor();
-        json.galleryTheme = this.getGalleryTheme();
-        json.localizedLanguages = this.getLocalizedLanguages();
-        json.qna = this.getQna();
+        json.setDisplayName(this.getDisplayName());
+        json.setDescription(this.getDescription());
+        json.setEngines(this.getEnginesMap());
+        json.setCategories(this.getCategories());
+        json.setExtensionKind(this.getExtensionKind());
+        json.setTags(this.getTags());
+        json.setLicense(this.getLicense());
+        json.setHomepage(this.getHomepage());
+        json.setRepository(this.getRepository());
+        json.setSponsorLink(this.getSponsorLink());
+        json.setBugs(this.getBugs());
+        json.setMarkdown(this.getMarkdown());
+        json.setGalleryColor(this.getGalleryColor());
+        json.setGalleryTheme(this.getGalleryTheme());
+        json.setLocalizedLanguages(this.getLocalizedLanguages());
+        json.setQna(this.getQna());
         if (this.getPublishedWith() != null) {
-            json.publishedBy = this.getPublishedWith().getUser().toUserJson();
+            json.setPublishedBy(this.getPublishedWith().getUser().toUserJson());
         }
         if (this.getDependencies() != null) {
-            json.dependencies = toExtensionReferenceJson(this.getDependencies());
+            json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
         }
         if (this.getBundledExtensions() != null) {
-            json.bundledExtensions = toExtensionReferenceJson(this.getBundledExtensions());
+            json.setBundledExtensions(toExtensionReferenceJson(this.getBundledExtensions()));
         }
 
-        json.deprecated = extension.isDeprecated();
-        json.downloadable = extension.isDownloadable();
+        json.setDeprecated(extension.isDeprecated());
+        json.setDownloadable(extension.isDownloadable());
         return json;
     }
 
@@ -195,8 +195,8 @@ public class ExtensionVersion implements Serializable {
                 return null;
             }
             var ref = new ExtensionReferenceJson();
-            ref.namespace = fqn.substring(0, startIndex);
-            ref.extension = fqn.substring(startIndex + 1);
+            ref.setNamespace(fqn.substring(0, startIndex));
+            ref.setExtension(fqn.substring(startIndex + 1));
             return ref;
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
@@ -207,16 +207,16 @@ public class ExtensionVersion implements Serializable {
     public SearchEntryJson toSearchEntryJson() {
         var entry = new SearchEntryJson();
         var extension = this.getExtension();
-        entry.name = extension.getName();
-        entry.namespace = extension.getNamespace().getName();
-        entry.averageRating = extension.getAverageRating();
-        entry.reviewCount = extension.getReviewCount();
-        entry.downloadCount = extension.getDownloadCount();
-        entry.version = this.getVersion();
-        entry.timestamp = TimeUtil.toUTCString(this.getTimestamp());
-        entry.displayName = this.getDisplayName();
-        entry.description = this.getDescription();
-        entry.deprecated = extension.isDeprecated();
+        entry.setName(extension.getName());
+        entry.setNamespace(extension.getNamespace().getName());
+        entry.setAverageRating(extension.getAverageRating());
+        entry.setReviewCount(extension.getReviewCount());
+        entry.setDownloadCount(extension.getDownloadCount());
+        entry.setVersion(this.getVersion());
+        entry.setTimestamp(TimeUtil.toUTCString(this.getTimestamp()));
+        entry.setDisplayName(this.getDisplayName());
+        entry.setDescription(this.getDescription());
+        entry.setDeprecated(extension.isDeprecated());
         return entry;
     }
 

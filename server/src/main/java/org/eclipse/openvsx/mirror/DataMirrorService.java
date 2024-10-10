@@ -143,14 +143,14 @@ public class DataMirrorService {
 
     @Transactional
     public UserData getOrAddUser(UserJson json) {
-        var user = repositories.findUserByLoginName(json.provider, json.loginName);
+        var user = repositories.findUserByLoginName(json.getProvider(), json.getLoginName());
         if (user == null) {
             user = new UserData();
-            user.setLoginName(json.loginName);
-            user.setFullName(json.fullName);
-            user.setAvatarUrl(json.avatarUrl);
-            user.setProviderUrl(json.homepage);
-            user.setProvider(json.provider);
+            user.setLoginName(json.getLoginName());
+            user.setFullName(json.getFullName());
+            user.setAvatarUrl(json.getAvatarUrl());
+            user.setProviderUrl(json.getHomepage());
+            user.setProvider(json.getProvider());
             entityManager.persist(user);
         }
 
@@ -160,7 +160,7 @@ public class DataMirrorService {
     public String getOrAddAccessTokenValue(UserData user, String description) {
         var token = repositories.findAccessToken(user, description);
         return token == null
-                ? users.createAccessToken(user, description).value
+                ? users.createAccessToken(user, description).getValue()
                 : token.getValue();
     }
 
@@ -194,20 +194,20 @@ public class DataMirrorService {
     @Transactional
     public void updateMetadata(String namespaceName, String extensionName, ExtensionJson latest) {
         var extension = repositories.findExtension(extensionName, namespaceName);
-        extension.setDownloadCount(latest.downloadCount);
-        extension.setAverageRating(latest.averageRating);
-        extension.setReviewCount(latest.reviewCount);
+        extension.setDownloadCount(latest.getDownloadCount());
+        extension.setAverageRating(latest.getAverageRating());
+        extension.setReviewCount(latest.getReviewCount());
 
         var remoteReviews = upstream.getReviews(namespaceName, extensionName);
         var localReviews = repositories.findAllReviews(extension)
                 .map(review -> new AbstractMap.SimpleEntry<>(review.toReviewJson(), review));
 
-        remoteReviews.reviews.stream()
+        remoteReviews.getReviews().stream()
                 .filter(review -> localReviews.stream().noneMatch(entry -> entry.getKey().equals(review)))
                 .forEach(review -> addReview(review, extension));
 
         localReviews.stream()
-                .filter(entry -> remoteReviews.reviews.stream().noneMatch(review -> review.equals(entry.getKey())))
+                .filter(entry -> remoteReviews.getReviews().stream().noneMatch(review -> review.equals(entry.getKey())))
                 .map(Map.Entry::getValue)
                 .forEach(entityManager::remove);
     }
@@ -216,11 +216,11 @@ public class DataMirrorService {
         var review = new ExtensionReview();
         review.setExtension(extension);
         review.setActive(true);
-        review.setTimestamp(TimeUtil.fromUTCString(json.timestamp));
-        review.setUser(getOrAddUser(json.user));
-        review.setTitle(json.title);
-        review.setComment(json.comment);
-        review.setRating(json.rating);
+        review.setTimestamp(TimeUtil.fromUTCString(json.getTimestamp()));
+        review.setUser(getOrAddUser(json.getUser()));
+        review.setTitle(json.getTitle());
+        review.setComment(json.getComment());
+        review.setRating(json.getRating());
         entityManager.persist(review);
     }
 
@@ -236,8 +236,8 @@ public class DataMirrorService {
     }
 
     public void mirrorNamespaceMetadata(String namespaceName) {
-        var remoteVerified = upstream.getNamespace(namespaceName).verified;
-        var localVerified = local.getNamespace(namespaceName).verified;
+        var remoteVerified = upstream.getNamespace(namespaceName).getVerified();
+        var localVerified = local.getNamespace(namespaceName).getVerified();
         if(!localVerified && remoteVerified) {
             // verify the namespace by adding an owner to it
             var membership = repositories.findFirstMembership(namespaceName);
@@ -260,7 +260,7 @@ public class DataMirrorService {
     public void ensureNamespace(String namespaceName) {
         if(!repositories.namespaceExists(namespaceName)) {
             var json = new NamespaceJson();
-            json.name = namespaceName;
+            json.setName(namespaceName);
             admin.createNamespace(json);
         }
     }

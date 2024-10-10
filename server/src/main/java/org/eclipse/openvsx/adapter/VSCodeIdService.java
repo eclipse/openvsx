@@ -31,6 +31,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -84,11 +86,9 @@ public class VSCodeIdService {
         String namespacePublicId = null;
         var upstream = getUpstreamExtension(extension);
         if (upstream != null) {
-            if (upstream.extensionId != null) {
-                extensionPublicId = upstream.extensionId;
-            }
-            if (upstream.publisher != null && upstream.publisher.publisherId != null) {
-                namespacePublicId = upstream.publisher.publisherId;
+            extensionPublicId = upstream.extensionId();
+            if (upstream.publisher() != null) {
+                namespacePublicId = upstream.publisher().publisherId();
             }
         }
 
@@ -108,10 +108,10 @@ public class VSCodeIdService {
         headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + API_VERSION);
         var result = vsCodeIdRestTemplate.postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
 
-        if (result.results != null && result.results.size() > 0) {
-            var item = result.results.get(0);
-            if (item.extensions != null && item.extensions.size() > 0) {
-                return item.extensions.get(0);
+        if (result.results() != null && result.results().size() > 0) {
+            var item = result.results().get(0);
+            if (item.extensions() != null && item.extensions().size() > 0) {
+                return item.extensions().get(0);
             }
         }
 
@@ -119,20 +119,20 @@ public class VSCodeIdService {
     }
 
     private ExtensionQueryParam createRequestData(Extension extension) {
-        var request = new ExtensionQueryParam();
-        var filter = new ExtensionQueryParam.Filter();
-        filter.criteria = Lists.newArrayList();
-        var targetCriterion = new ExtensionQueryParam.Criterion();
-        targetCriterion.filterType = ExtensionQueryParam.Criterion.FILTER_TARGET;
-        targetCriterion.value = "Microsoft.VisualStudio.Code";
-        filter.criteria.add(targetCriterion);
-        var nameCriterion = new ExtensionQueryParam.Criterion();
-        nameCriterion.filterType = ExtensionQueryParam.Criterion.FILTER_EXTENSION_NAME;
-        nameCriterion.value = NamingUtil.toExtensionId(extension);
-        filter.criteria.add(nameCriterion);
-        filter.pageNumber = 1;
-        filter.pageSize = 1;
-        request.filters = Lists.newArrayList(filter);
-        return request;
+        var criteria = List.of(
+                new ExtensionQueryParam.Criterion(
+                        ExtensionQueryParam.Criterion.FILTER_TARGET,
+                        "Microsoft.VisualStudio.Code"
+                ),
+                new ExtensionQueryParam.Criterion(
+                        ExtensionQueryParam.Criterion.FILTER_EXTENSION_NAME,
+                        NamingUtil.toExtensionId(extension)
+                )
+        );
+
+        return new ExtensionQueryParam(
+                List.of(new ExtensionQueryParam.Filter(criteria, 1, 1, 0, 0)),
+            0
+        );
     }
 }

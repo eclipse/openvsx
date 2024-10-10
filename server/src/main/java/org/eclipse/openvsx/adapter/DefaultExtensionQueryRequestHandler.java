@@ -38,7 +38,7 @@ public class DefaultExtensionQueryRequestHandler implements IExtensionQueryReque
                 var service = services.next();
                 if(extensions.isEmpty()) {
                     var subResult = service.extensionQuery(param, defaultPageSize);
-                    var subExtensions = subResult.results.get(0).extensions;
+                    var subExtensions = subResult.results().get(0).extensions();
                     if(subExtensions != null) {
                         extensions.addAll(subExtensions);
                     }
@@ -47,7 +47,7 @@ public class DefaultExtensionQueryRequestHandler implements IExtensionQueryReque
                 } else {
                     var extensionCount = extensions.size();
                     var subResult = service.extensionQuery(param, defaultPageSize);
-                    var subExtensions = subResult.results.get(0).extensions;
+                    var subExtensions = subResult.results().get(0).extensions();
                     var subExtensionsCount = subExtensions != null ? subExtensions.size() : 0;
                     if (subExtensionsCount > 0) {
                         int limit = pageSize - extensionCount;
@@ -95,15 +95,15 @@ public class DefaultExtensionQueryRequestHandler implements IExtensionQueryReque
     }
 
     private long getTotalCount(ExtensionQueryResult subResult) {
-        return subResult.results.get(0).resultMetadata.stream()
-                .filter(metadata -> metadata.metadataType.equals("ResultCount"))
+        return subResult.results().get(0).resultMetadata().stream()
+                .filter(metadata -> metadata.metadataType().equals("ResultCount"))
                 .findFirst()
-                .map(metadata -> metadata.metadataItems)
+                .map(metadata -> metadata.metadataItems())
                 .orElseGet(Collections::emptyList)
                 .stream()
-                .filter(item -> item.name.equals("TotalCount"))
+                .filter(item -> item.name().equals("TotalCount"))
                 .findFirst()
-                .map(item -> item.count)
+                .map(item -> item.count())
                 .orElse(0L);
     }
 }

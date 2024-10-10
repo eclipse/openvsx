@@ -17,22 +17,9 @@ import java.util.Objects;
  * Used to change a namespace
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChangeNamespaceJson {
-    public String oldNamespace;
-    public String newNamespace;
-    public boolean removeOldNamespace;
-    public boolean mergeIfNewNamespaceAlreadyExists;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ChangeNamespaceJson that = (ChangeNamespaceJson) o;
-        return removeOldNamespace == that.removeOldNamespace && mergeIfNewNamespaceAlreadyExists == that.mergeIfNewNamespaceAlreadyExists && Objects.equals(oldNamespace, that.oldNamespace) && Objects.equals(newNamespace, that.newNamespace);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(oldNamespace, newNamespace, removeOldNamespace, mergeIfNewNamespaceAlreadyExists);
-    }
-}
+public record ChangeNamespaceJson(
+        String oldNamespace,
+        String newNamespace,
+        boolean removeOldNamespace,
+        boolean mergeIfNewNamespaceAlreadyExists
+) {}

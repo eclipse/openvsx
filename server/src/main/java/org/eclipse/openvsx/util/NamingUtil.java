@@ -50,7 +50,7 @@ public class NamingUtil {
     }
 
     public static String toLogFormat(ExtensionJson json) {
-        return toLogFormat(json.namespace, json.name, json.targetPlatform, json.version);
+        return toLogFormat(json.getNamespace(), json.getName(), json.getTargetPlatform(), json.getVersion());
     }
 
     public static String toLogFormat(String namespace, String extension, String version) {
@@ -75,11 +75,11 @@ public class NamingUtil {
     }
 
     public static String toExtensionId(ExtensionQueryResult.Extension extension) {
-        return toExtensionId(extension.publisher.publisherName, extension.extensionName);
+        return toExtensionId(extension.publisher().publisherName(), extension.extensionName());
     }
 
     public static String toExtensionId(ExtensionSearch search) {
-        return toExtensionId(search.namespace, search.name);
+        return toExtensionId(search.getNamespace(), search.getName());
     }
 
     public static String toExtensionId(String namespace, String extension) {

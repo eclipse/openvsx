@@ -17,14 +17,37 @@ public class StatsJson extends ResultJson {
 
     public static StatsJson error(String message) {
         var user = new StatsJson();
-        user.error = message;
+        user.setError(message);
         return user;
     }
 
-    public long userCount;
+    private long userCount;
 
-    public long extensionCount;
+    private long extensionCount;
 
-    public long namespaceCount;
+    private long namespaceCount;
 
+    public long getUserCount() {
+        return userCount;
+    }
+
+    public void setUserCount(long userCount) {
+        this.userCount = userCount;
+    }
+
+    public long getExtensionCount() {
+        return extensionCount;
+    }
+
+    public void setExtensionCount(long extensionCount) {
+        this.extensionCount = extensionCount;
+    }
+
+    public long getNamespaceCount() {
+        return namespaceCount;
+    }
+
+    public void setNamespaceCount(long namespaceCount) {
+        this.namespaceCount = namespaceCount;
+    }
 }

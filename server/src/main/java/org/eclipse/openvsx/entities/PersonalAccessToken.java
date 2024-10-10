@@ -53,13 +53,13 @@ public class PersonalAccessToken implements Serializable {
      */
     public AccessTokenJson toAccessTokenJson() {
         var json = new AccessTokenJson();
-        json.id = this.getId();
+        json.setId(this.getId());
         // The value is not included: it is displayed only when the token is created
         if (this.getCreatedTimestamp() != null)
-            json.createdTimestamp = TimeUtil.toUTCString(this.getCreatedTimestamp());
+            json.setCreatedTimestamp(TimeUtil.toUTCString(this.getCreatedTimestamp()));
         if (this.getAccessedTimestamp() != null)
-            json.accessedTimestamp = TimeUtil.toUTCString(this.getAccessedTimestamp());
-        json.description = this.getDescription();
+            json.setAccessedTimestamp(TimeUtil.toUTCString(this.getAccessedTimestamp()));
+        json.setDescription(this.getDescription());
         return json;
     }
 

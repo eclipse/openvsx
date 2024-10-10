@@ -27,19 +27,42 @@ public class ReviewListJson extends ResultJson {
 
     public static ReviewListJson error(String message) {
         var info = new ReviewListJson();
-        info.error = message;
+        info.setError(message);
         return info;
     }
 
     @Schema(hidden = true)
     @NotNull
-    public String postUrl;
+    private String postUrl;
 
     @Schema(hidden = true)
     @NotNull
-    public String deleteUrl;
+    private String deleteUrl;
 
     @NotNull
-    public List<ReviewJson> reviews;
+    private List<ReviewJson> reviews;
 
+    public String getPostUrl() {
+        return postUrl;
+    }
+
+    public void setPostUrl(String postUrl) {
+        this.postUrl = postUrl;
+    }
+
+    public String getDeleteUrl() {
+        return deleteUrl;
+    }
+
+    public void setDeleteUrl(String deleteUrl) {
+        this.deleteUrl = deleteUrl;
+    }
+
+    public List<ReviewJson> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<ReviewJson> reviews) {
+        this.reviews = reviews;
+    }
 }

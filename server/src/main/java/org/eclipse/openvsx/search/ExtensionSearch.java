@@ -23,38 +23,143 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 public class ExtensionSearch implements Serializable {
 
     @Field(index = false)
-    public long id;
+    private long id;
 
     @Field(index = false, type = FieldType.Float)
-    public double relevance;
+    private double relevance;
 
-    public String name;
+    private String name;
 
-    public String namespace;
-
-    @Field(index = false)
-    public String extensionId;
-
-    public List<String> targetPlatforms;
-
-    public String displayName;
-
-    public String description;
+    private String namespace;
 
     @Field(index = false)
-    public long timestamp;
+    private String extensionId;
+
+    private List<String> targetPlatforms;
+
+    private String displayName;
+
+    private String description;
+
+    @Field(index = false)
+    private long timestamp;
 
     @Nullable
     @Field(index = false, type = FieldType.Float)
-    public Double rating;
+    private Double rating;
 
     @Field(index = false)
-    public int downloadCount;
+    private int downloadCount;
 
     @Field(index = false)
-    public List<String> categories;
+    private List<String> categories;
 
-    public List<String> tags;
+    private List<String> tags;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public double getRelevance() {
+        return relevance;
+    }
+
+    public void setRelevance(double relevance) {
+        this.relevance = relevance;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public List<String> getTargetPlatforms() {
+        return targetPlatforms;
+    }
+
+    public void setTargetPlatforms(List<String> targetPlatforms) {
+        this.targetPlatforms = targetPlatforms;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    @Nullable
+    public Double getRating() {
+        return rating;
+    }
+
+    public void setRating(@Nullable Double rating) {
+        this.rating = rating;
+    }
+
+    public int getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(int downloadCount) {
+        this.downloadCount = downloadCount;
+    }
+
+    public List<String> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(List<String> categories) {
+        this.categories = categories;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
 
     @Override
     public boolean equals(Object o) {

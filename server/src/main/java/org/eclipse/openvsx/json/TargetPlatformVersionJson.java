@@ -11,15 +11,9 @@ package org.eclipse.openvsx.json;
 
 import jakarta.validation.constraints.NotNull;
 
-public class TargetPlatformVersionJson {
-    /***
-     * Name of the target platform
-     */
-    public String targetPlatform;
-
-    /***
-     * Selected version, or the latest version if none was specified
-     */
-    @NotNull
-    public String version;
-}
+/**
+ *
+ * @param targetPlatform Name of the target platform
+ * @param version Selected version, or the latest version if none was specified
+ */
+public record TargetPlatformVersionJson(String targetPlatform, @NotNull String version) {}

@@ -18,19 +18,14 @@ import java.util.Set;
  * This class is not mapped to a database entity, but parsed / serialized to
  * JSON via a column converter.
  */
-public class AuthToken implements Serializable {
-
-    public String accessToken;
-
-    public Instant issuedAt;
-
-    public Instant expiresAt;
-
-    public Set<String> scopes;
-    
-    public String refreshToken;
-
-    public Instant refreshExpiresAt;
+public record AuthToken(
+        String accessToken,
+        Instant issuedAt,
+        Instant expiresAt,
+        Set<String> scopes,
+        String refreshToken,
+        Instant refreshExpiresAt
+) implements Serializable {
 
     @Override
     public boolean equals(Object o) {

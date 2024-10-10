@@ -14,13 +14,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;;
 
 /**
  * Used to describe an error situation as JSON response.
+ * @param message Error message
+ * @param code Error code, see constants in {@link org.eclipse.openvsx.security.CodedAuthException}.
  */
 @JsonInclude(Include.NON_NULL)
-public class ErrorJson {
-
-    public String message;
-
-    /** See constants in {@link org.eclipse.openvsx.security.CodedAuthException}. */
-    public String code;
-
-}
+public record ErrorJson(String message, String code) {}

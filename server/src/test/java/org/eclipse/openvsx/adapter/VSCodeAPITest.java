@@ -626,7 +626,7 @@ class VSCodeAPITest {
     private Extension mockSearch(String targetPlatform, String namespaceName, boolean active) {
         var builtInExtensionNamespace = "vscode";
         var entry1 = new ExtensionSearch();
-        entry1.id = 1;
+        entry1.setId(1);
         List<SearchHit<ExtensionSearch>> searchResults = !builtInExtensionNamespace.equals(namespaceName)
                 ? Collections.singletonList(new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1))
                 : Collections.emptyList();
@@ -637,13 +637,13 @@ class VSCodeAPITest {
                 .thenReturn(true);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new ISearchService.Options("yaml", null, targetPlatform, 50, 0, "desc", "relevance", false, builtInExtensionNamespace);
+        var searchOptions = new ISearchService.Options("yaml", null, targetPlatform, 50, 0, "desc", "relevance", false, new String[]{builtInExtensionNamespace});
         Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
 
         var extension = mockExtension();
         List<Extension> results = active ? List.of(extension) : Collections.emptyList();
-        Mockito.when(repositories.findActiveExtensionsById(List.of(entry1.id)))
+        Mockito.when(repositories.findActiveExtensionsById(List.of(entry1.getId())))
                 .thenReturn(results);
 
         var publicIds = Set.of(extension.getPublicId());

@@ -28,21 +28,44 @@ public class QueryResultJson extends ResultJson {
 
     public static QueryResultJson error(String message) {
         var result = new QueryResultJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "Number of skipped entries according to the query")
     @NotNull
     @Min(0)
-    public int offset;
+    private int offset;
 
     @Schema(description = "Total number of entries that match the query")
     @NotNull
     @Min(0)
-    public int totalSize;
+    private int totalSize;
 
     @Schema(description = "Extensions that match the given query (may be empty)")
-    public List<ExtensionJson> extensions;
-    
+    private List<ExtensionJson> extensions;
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public int getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
+    }
+
+    public List<ExtensionJson> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(List<ExtensionJson> extensions) {
+        this.extensions = extensions;
+    }
 }

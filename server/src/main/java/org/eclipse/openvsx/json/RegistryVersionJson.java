@@ -22,11 +22,19 @@ import jakarta.validation.constraints.NotNull;
 public class RegistryVersionJson extends ResultJson {
     public static RegistryVersionJson error(String message) {
         var result = new RegistryVersionJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "Registry version")
     @NotNull
-    public String version;
+    private String version;
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
 }

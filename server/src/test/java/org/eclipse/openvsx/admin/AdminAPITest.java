@@ -118,10 +118,10 @@ class AdminAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foobar";
-                    e.name = "baz";
-                    e.version = "2.0.0";
-                    e.active = true;
+                    e.setNamespace("foobar");
+                    e.setName("baz");
+                    e.setVersion("2.0.0");
+                    e.setActive(true);
                 })));
     }
 
@@ -138,10 +138,10 @@ class AdminAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foobar";
-                    e.name = "baz";
-                    e.version = "2.0.0";
-                    e.active = false;
+                    e.setNamespace("foobar");
+                    e.setName("baz");
+                    e.setVersion("2.0.0");
+                    e.setActive(false);
                 })));
     }
 
@@ -349,7 +349,7 @@ class AdminAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespaceJson(n -> {
-                    n.name = "foobar";
+                    n.setName("foobar");
                 })));
     }
 
@@ -389,12 +389,10 @@ class AdminAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespaceMemberJson(nml -> {
-                    var m = new NamespaceMembershipJson();
-                    m.namespace = "foobar";
-                    m.user = new UserJson();
-                    m.user.loginName = "other_user";
-                    m.role = "owner";
-                    nml.namespaceMemberships = Arrays.asList(m);
+                    var u = new UserJson();
+                    u.setLoginName("other_user");
+                    var m = new NamespaceMembershipJson("foobar", "owner", u);
+                    nml.setNamespaceMemberships(List.of(m));
                 })));
     }
 
@@ -402,7 +400,7 @@ class AdminAPITest {
     void testCreateNamespaceNotLoggedIn() throws Exception {
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foobar"; }))
+                .content(namespaceJson(n -> { n.setName("foobar"); }))
                 .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
@@ -412,7 +410,7 @@ class AdminAPITest {
         mockNormalUser();
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foobar"; }))
+                .content(namespaceJson(n -> { n.setName("foobar"); }))
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
@@ -423,7 +421,7 @@ class AdminAPITest {
         mockAdminUser();
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foobar"; }))
+                .content(namespaceJson(n -> { n.setName("foobar"); }))
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isCreated())
@@ -439,7 +437,7 @@ class AdminAPITest {
  
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foobar"; }))
+                .content(namespaceJson(n -> { n.setName("foobar"); }))
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
@@ -485,14 +483,14 @@ class AdminAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(publishInfoJson(upi -> {
-                    upi.user = new UserJson();
-                    upi.user.loginName = "test";
-                    upi.activeAccessTokenNum = 1;
+                    upi.setUser(new UserJson());
+                    upi.getUser().setLoginName("test");
+                    upi.setActiveAccessTokenNum(1);
                     var ext1 = new ExtensionJson();
-                    ext1.namespace = "foobar";
-                    ext1.name = "baz";
-                    ext1.version = "1.0.0";
-                    upi.extensions = Arrays.asList(ext1);
+                    ext1.setNamespace("foobar");
+                    ext1.setName("baz");
+                    ext1.setVersion("1.0.0");
+                    upi.setExtensions(List.of(ext1));
                 })));
     }
 
@@ -745,89 +743,89 @@ class AdminAPITest {
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(content().json(adminStatisticsJson(s -> {
-                    s.year = year;
-                    s.month = month;
-                    s.extensions = extensions;
-                    s.downloads = downloads;
-                    s.downloadsTotal = downloadsTotal;
-                    s.publishers = publishers;
-                    s.averageReviewsPerExtension = averageReviewsPerExtension;
-                    s.namespaceOwners = namespaceOwners;
+                    s.setYear(year);
+                    s.setMonth(month);
+                    s.setExtensions(extensions);
+                    s.setDownloads(downloads);
+                    s.setDownloadsTotal(downloadsTotal);
+                    s.setPublishers(publishers);
+                    s.setAverageReviewsPerExtension(averageReviewsPerExtension);
+                    s.setNamespaceOwners(namespaceOwners);
 
                     var rating5 = new AdminStatisticsJson.ExtensionsByRating();
-                    rating5.rating = 5;
-                    rating5.extensions = 136;
+                    rating5.setRating(5);
+                    rating5.setExtensions(136);
                     var rating4 = new AdminStatisticsJson.ExtensionsByRating();
-                    rating4.rating = 4;
-                    rating4.extensions = 427;
+                    rating4.setRating(4);
+                    rating4.setExtensions(427);
                     var rating3 = new AdminStatisticsJson.ExtensionsByRating();
-                    rating3.rating = 3;
-                    rating3.extensions = 560;
+                    rating3.setRating(3);
+                    rating3.setExtensions(560);
                     var rating2 = new AdminStatisticsJson.ExtensionsByRating();
-                    rating2.rating = 2;
-                    rating2.extensions = 16;
+                    rating2.setRating(2);
+                    rating2.setExtensions(16);
                     var rating1 = new AdminStatisticsJson.ExtensionsByRating();
-                    rating1.rating = 1;
-                    rating1.extensions = 7;
-                    s.extensionsByRating = List.of(rating5, rating4, rating3, rating2, rating1);
+                    rating1.setRating(1);
+                    rating1.setExtensions(7);
+                    s.setExtensionsByRating(List.of(rating5, rating4, rating3, rating2, rating1));
 
                     var publishers4 = new AdminStatisticsJson.PublishersByExtensionsPublished();
-                    publishers4.extensionsPublished = 4;
-                    publishers4.publishers = 52;
+                    publishers4.setExtensionsPublished(4);
+                    publishers4.setPublishers(52);
                     var publishers3 = new AdminStatisticsJson.PublishersByExtensionsPublished();
-                    publishers3.extensionsPublished = 3;
-                    publishers3.publishers = 70;
+                    publishers3.setExtensionsPublished(3);
+                    publishers3.setPublishers(70);
                     var publishers2 = new AdminStatisticsJson.PublishersByExtensionsPublished();
-                    publishers2.extensionsPublished = 2;
-                    publishers2.publishers = 99;
+                    publishers2.setExtensionsPublished(2);
+                    publishers2.setPublishers(99);
                     var publishers1 = new AdminStatisticsJson.PublishersByExtensionsPublished();
-                    publishers1.extensionsPublished = 1;
-                    publishers1.publishers = 670;
-                    s.publishersByExtensionsPublished = List.of(publishers4, publishers3, publishers2, publishers1);
+                    publishers1.setExtensionsPublished(1);
+                    publishers1.setPublishers(670);
+                    s.setPublishersByExtensionsPublished(List.of(publishers4, publishers3, publishers2, publishers1));
 
                     var activePublisher1 = new AdminStatisticsJson.TopMostActivePublishingUsers();
-                    activePublisher1.userLoginName = "u_bar";
-                    activePublisher1.publishedExtensionVersions = 543;
+                    activePublisher1.setUserLoginName("u_bar");
+                    activePublisher1.setPublishedExtensionVersions(543);
                     var activePublisher2 = new AdminStatisticsJson.TopMostActivePublishingUsers();
-                    activePublisher2.userLoginName = "u_foo";
-                    activePublisher2.publishedExtensionVersions = 93;
+                    activePublisher2.setUserLoginName("u_foo");
+                    activePublisher2.setPublishedExtensionVersions(93);
                     var activePublisher3 = new AdminStatisticsJson.TopMostActivePublishingUsers();
-                    activePublisher3.userLoginName = "u_baz";
-                    activePublisher3.publishedExtensionVersions = 82;
-                    s.topMostActivePublishingUsers = List.of(activePublisher1, activePublisher2, activePublisher3);
+                    activePublisher3.setUserLoginName("u_baz");
+                    activePublisher3.setPublishedExtensionVersions(82);
+                    s.setTopMostActivePublishingUsers(List.of(activePublisher1, activePublisher2, activePublisher3));
 
                     var namespaceExtensions1 = new AdminStatisticsJson.TopNamespaceExtensions();
-                    namespaceExtensions1.namespace = "n_baz";
-                    namespaceExtensions1.extensions = 1239;
+                    namespaceExtensions1.setNamespace("n_baz");
+                    namespaceExtensions1.setExtensions(1239);
                     var namespaceExtensions2 = new AdminStatisticsJson.TopNamespaceExtensions();
-                    namespaceExtensions2.namespace = "n_bar";
-                    namespaceExtensions2.extensions = 48;
+                    namespaceExtensions2.setNamespace("n_bar");
+                    namespaceExtensions2.setExtensions(48);
                     var namespaceExtensions3 = new AdminStatisticsJson.TopNamespaceExtensions();
-                    namespaceExtensions3.namespace = "n_foo";
-                    namespaceExtensions3.extensions = 9;
-                    s.topNamespaceExtensions = List.of(namespaceExtensions1, namespaceExtensions2, namespaceExtensions3);
+                    namespaceExtensions3.setNamespace("n_foo");
+                    namespaceExtensions3.setExtensions(9);
+                    s.setTopNamespaceExtensions(List.of(namespaceExtensions1, namespaceExtensions2, namespaceExtensions3));
 
                     var namespaceExtensionVersions1 = new AdminStatisticsJson.TopNamespaceExtensionVersions();
-                    namespaceExtensionVersions1.namespace = "nv_baz";
-                    namespaceExtensionVersions1.extensionVersions = 932;
+                    namespaceExtensionVersions1.setNamespace("nv_baz");
+                    namespaceExtensionVersions1.setExtensionVersions(932);
                     var namespaceExtensionVersions2 = new AdminStatisticsJson.TopNamespaceExtensionVersions();
-                    namespaceExtensionVersions2.namespace = "nv_foo";
-                    namespaceExtensionVersions2.extensionVersions = 234;
+                    namespaceExtensionVersions2.setNamespace("nv_foo");
+                    namespaceExtensionVersions2.setExtensionVersions(234);
                     var namespaceExtensionVersions3 = new AdminStatisticsJson.TopNamespaceExtensionVersions();
-                    namespaceExtensionVersions3.namespace = "nv_bar";
-                    namespaceExtensionVersions3.extensionVersions = 67;
-                    s.topNamespaceExtensionVersions = List.of(namespaceExtensionVersions1, namespaceExtensionVersions2, namespaceExtensionVersions3);
+                    namespaceExtensionVersions3.setNamespace("nv_bar");
+                    namespaceExtensionVersions3.setExtensionVersions(67);
+                    s.setTopNamespaceExtensionVersions(List.of(namespaceExtensionVersions1, namespaceExtensionVersions2, namespaceExtensionVersions3));
 
                     var mostDownloadedExtensions1 = new AdminStatisticsJson.TopMostDownloadedExtensions();
-                    mostDownloadedExtensions1.extensionIdentifier = "foo.baz";
-                    mostDownloadedExtensions1.downloads = 4378L;
+                    mostDownloadedExtensions1.setExtensionIdentifier("foo.baz");
+                    mostDownloadedExtensions1.setDownloads(4378L);
                     var mostDownloadedExtensions2 = new AdminStatisticsJson.TopMostDownloadedExtensions();
-                    mostDownloadedExtensions2.extensionIdentifier = "foo.bar";
-                    mostDownloadedExtensions2.downloads = 3847L;
+                    mostDownloadedExtensions2.setExtensionIdentifier("foo.bar");
+                    mostDownloadedExtensions2.setDownloads(3847L);
                     var mostDownloadedExtensions3 = new AdminStatisticsJson.TopMostDownloadedExtensions();
-                    mostDownloadedExtensions3.extensionIdentifier = "bar.foo";
-                    mostDownloadedExtensions3.downloads = 1237L;
-                    s.topMostDownloadedExtensions = List.of(mostDownloadedExtensions1, mostDownloadedExtensions2, mostDownloadedExtensions3);
+                    mostDownloadedExtensions3.setExtensionIdentifier("bar.foo");
+                    mostDownloadedExtensions3.setDownloads(1237L);
+                    s.setTopMostDownloadedExtensions(List.of(mostDownloadedExtensions1, mostDownloadedExtensions2, mostDownloadedExtensions3));
                 })));
     }
 
@@ -869,12 +867,7 @@ class AdminAPITest {
                 "\"mergeIfNewNamespaceAlreadyExists\": true" +
             "}";
 
-        var json = new ChangeNamespaceJson();
-        json.oldNamespace = "foo";
-        json.newNamespace = "bar";
-        json.removeOldNamespace = false;
-        json.mergeIfNewNamespaceAlreadyExists = true;
-
+        var json = new ChangeNamespaceJson("foo", "bar", false, true);
         mockMvc.perform(post("/admin/change-namespace")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader())

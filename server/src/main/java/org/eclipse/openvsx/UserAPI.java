@@ -86,11 +86,9 @@ public class UserAPI {
         var authException = request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
         if (!(authException instanceof AuthenticationException))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        var json = new ErrorJson();
-        json.message = ((AuthenticationException) authException).getMessage();
-        if (authException instanceof CodedAuthException)
-            json.code = ((CodedAuthException) authException).getCode();
-        return json;
+
+        var code = authException instanceof CodedAuthException ? ((CodedAuthException) authException).getCode() : null;
+        return new ErrorJson(((AuthenticationException) authException).getMessage(), code);
     }
 
     /**
@@ -109,9 +107,9 @@ public class UserAPI {
         }
         var json = user.toUserJson();
         var serverUrl = UrlUtil.getBaseUrl();
-        json.role = user.getRole();
-        json.tokensUrl = createApiUrl(serverUrl, "user", "tokens");
-        json.createTokenUrl = createApiUrl(serverUrl, "user", "token", "create");
+        json.setRole(user.getRole());
+        json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
+        json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
         eclipse.enrichUserJson(json, user);
         return json;
     }
@@ -122,13 +120,9 @@ public class UserAPI {
     )
     public CsrfTokenJson getCsrfToken(HttpServletRequest request) {
         var csrfToken = (CsrfToken) request.getAttribute("_csrf");
-        if (csrfToken == null) {
-            return CsrfTokenJson.error("Token is not available.");
-        }
-        var json = new CsrfTokenJson();
-        json.value = csrfToken.getToken();
-        json.header = csrfToken.getHeaderName();
-        return json;
+        return csrfToken != null
+                ? new CsrfTokenJson(csrfToken.getToken(), csrfToken.getHeaderName())
+                : CsrfTokenJson.error("Token is not available.");
     }
 
     @GetMapping(
@@ -144,7 +138,7 @@ public class UserAPI {
         return repositories.findActiveAccessTokens(user)
                 .map(token -> {
                     var json = token.toAccessTokenJson();
-                    json.deleteTokenUrl = createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId()));
+                    json.setDeleteTokenUrl(createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId())));
                     return json;
                 })
                 .toList();
@@ -200,9 +194,9 @@ public class UserAPI {
         return extVersions.stream()
                 .map(latest -> {
                     var json = latest.toExtensionJson();
-                    json.preview = latest.isPreview();
-                    json.active = latest.getExtension().isActive();
-                    json.files = fileUrls.get(latest.getId());
+                    json.setPreview(latest.isPreview());
+                    json.setActive(latest.getExtension().isActive());
+                    json.setFiles(fileUrls.get(latest.getId()));
                     return json;
                 })
                 .toList();
@@ -220,20 +214,21 @@ public class UserAPI {
 
         return repositories.findMemberships(user).map(membership -> {
             var namespace = membership.getNamespace();
-            var json = new NamespaceJson();
-            json.name = namespace.getName();
-            json.extensions = new LinkedHashMap<>();
+            var extensions = new LinkedHashMap<String, String>();
             var serverUrl = UrlUtil.getBaseUrl();
             repositories.findActiveExtensionsForUrls(namespace).forEach(extension -> {
                 String url = createApiUrl(serverUrl, "api", namespace.getName(), extension.getName());
-                json.extensions.put(extension.getName(), url);
+                extensions.put(extension.getName(), url);
             });
 
+            var json = new NamespaceJson();
+            json.setName(namespace.getName());
+            json.setExtensions(extensions);
             var isOwner = membership.getRole().equals(NamespaceMembership.ROLE_OWNER);
-            json.verified = isOwner || repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER);
+            json.setVerified(isOwner || repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
             if(isOwner) {
-                json.membersUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members");
-                json.roleUrl = createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role");
+                json.setMembersUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members"));
+                json.setRoleUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role"));
             }
 
             return json;
@@ -250,7 +245,7 @@ public class UserAPI {
                     .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                     .body(users.updateNamespaceDetails(details));
         } catch (NotFoundException exc) {
-            var json = NamespaceDetailsJson.error("Namespace not found: " + details.name);
+            var json = NamespaceDetailsJson.error("Namespace not found: " + details.getName());
             return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
@@ -270,7 +265,7 @@ public class UserAPI {
         var memberships = repositories.findMembershipsForOwner(user, name);
         if (!memberships.isEmpty()) {
             var membershipList = new NamespaceMembershipListJson();
-            membershipList.namespaceMemberships = memberships.stream().map(NamespaceMembership::toJson).toList();
+            membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
             return new ResponseEntity<>(membershipList, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN); 

@@ -57,7 +57,7 @@ public class ErrorResultException extends RuntimeException {
     public <T extends ResultJson> ResponseEntity<T> toResponseEntity(Class<T> resultType) {
         try {
             var json = resultType.getDeclaredConstructor().newInstance();
-            json.error = getMessage();
+            json.setError(getMessage());
             var responseStatus = status != null ? status : HttpStatus.BAD_REQUEST;
             return new ResponseEntity<>(json, responseStatus);
         } catch (ReflectiveOperationException exc) {

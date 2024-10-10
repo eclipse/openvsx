@@ -67,17 +67,17 @@ public class Extension implements Serializable {
      */
     public ExtensionSearch toSearch(ExtensionVersion latest, List<String> targetPlatforms) {
         var search = new ExtensionSearch();
-        search.id = this.getId();
-        search.name = this.getName();
-        search.namespace = this.getNamespace().getName();
-        search.extensionId = NamingUtil.toExtensionId(search);
-        search.downloadCount = this.getDownloadCount();
-        search.targetPlatforms = targetPlatforms;
-        search.displayName = latest.getDisplayName();
-        search.description = latest.getDescription();
-        search.timestamp = latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
-        search.categories = latest.getCategories();
-        search.tags = latest.getTags();
+        search.setId(this.getId());
+        search.setName(this.getName());
+        search.setNamespace(this.getNamespace().getName());
+        search.setExtensionId(NamingUtil.toExtensionId(search));
+        search.setDownloadCount(this.getDownloadCount());
+        search.setTargetPlatforms(targetPlatforms);
+        search.setDisplayName(latest.getDisplayName());
+        search.setDescription(latest.getDescription());
+        search.setTimestamp(latest.getTimestamp().toEpochSecond(ZoneOffset.UTC));
+        search.setCategories(latest.getCategories());
+        search.setTags(latest.getTags());
 
         return search;
     }

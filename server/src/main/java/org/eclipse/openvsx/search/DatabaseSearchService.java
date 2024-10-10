@@ -66,35 +66,35 @@ public class DatabaseSearchService implements ISearchService {
         }
 
         // exlude namespaces
-        if(options.namespacesToExclude != null) {
-            for(var namespaceToExclude : options.namespacesToExclude) {
+        if(options.namespacesToExclude() != null) {
+            for(var namespaceToExclude : options.namespacesToExclude()) {
                 matchingExtensions = matchingExtensions.filter(extension -> !extension.getNamespace().getName().equals(namespaceToExclude));
             }
         }
 
         // filter target platform
-        if(TargetPlatform.isValid(options.targetPlatform)) {
-            matchingExtensions = matchingExtensions.filter(extension -> extension.getVersions().stream().anyMatch(ev -> ev.getTargetPlatform().equals(options.targetPlatform)));
+        if(TargetPlatform.isValid(options.targetPlatform())) {
+            matchingExtensions = matchingExtensions.filter(extension -> extension.getVersions().stream().anyMatch(ev -> ev.getTargetPlatform().equals(options.targetPlatform())));
         }
 
         // filter category
-        if (options.category != null) {
+        if (options.category() != null) {
             matchingExtensions = matchingExtensions.filter(extension -> {
                 var latest = repositories.findLatestVersion(extension, null, false, true);
-                return latest.getCategories().stream().anyMatch(category -> category.equalsIgnoreCase(options.category));
+                return latest.getCategories().stream().anyMatch(category -> category.equalsIgnoreCase(options.category()));
             });
         }
 
         // filter text
-        if (options.queryString != null) {
+        if (options.queryString() != null) {
             matchingExtensions = matchingExtensions.filter(extension -> {
                 var latest = repositories.findLatestVersion(extension, null, false, true);
-                return extension.getName().toLowerCase().contains(options.queryString.toLowerCase())
-                    || extension.getNamespace().getName().contains(options.queryString.toLowerCase())
+                return extension.getName().toLowerCase().contains(options.queryString().toLowerCase())
+                    || extension.getNamespace().getName().contains(options.queryString().toLowerCase())
                     || (latest.getDescription() != null && latest.getDescription()
-                        .toLowerCase().contains(options.queryString.toLowerCase()))
+                        .toLowerCase().contains(options.queryString().toLowerCase()))
                     || (latest.getDisplayName() != null && latest.getDisplayName()
-                        .toLowerCase().contains(options.queryString.toLowerCase()));
+                        .toLowerCase().contains(options.queryString().toLowerCase()));
             });
         }
 
@@ -102,7 +102,7 @@ public class DatabaseSearchService implements ISearchService {
         // 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 
         Stream<ExtensionSearch> searchEntries;
-        if("relevance".equals(options.sortBy) || "rating".equals(options.sortBy)) {
+        if("relevance".equals(options.sortBy()) || "rating".equals(options.sortBy())) {
             var searchStats = new SearchStats(repositories);
             searchEntries = matchingExtensions.stream().map(extension -> relevanceService.toSearchEntry(extension, searchStats));
         } else {
@@ -120,7 +120,7 @@ public class DatabaseSearchService implements ISearchService {
                 "downloadCount", new DownloadedCountComparator()
         ));
 
-        var comparator = comparators.get(options.sortBy);
+        var comparator = comparators.get(options.sortBy());
         if(comparator != null) {
             searchEntries = searchEntries.sorted(comparator);
         }
@@ -129,15 +129,15 @@ public class DatabaseSearchService implements ISearchService {
 
         // need to do sortOrder
         // 'asc' | 'desc';
-        if ("desc".equals(options.sortOrder)) {
+        if ("desc".equals(options.sortOrder())) {
             // reverse the order
             Collections.reverse(sortedExtensions);
         }
 
         // Paging
         var totalHits = sortedExtensions.size();
-        var endIndex = Math.min(sortedExtensions.size(), options.requestedOffset + options.requestedSize);
-        var startIndex = Math.min(endIndex, options.requestedOffset);
+        var endIndex = Math.min(sortedExtensions.size(), options.requestedOffset() + options.requestedSize());
+        var startIndex = Math.min(endIndex, options.requestedOffset());
         sortedExtensions = sortedExtensions.subList(startIndex, endIndex);
 
         List<SearchHit<ExtensionSearch>> searchHits;
@@ -200,7 +200,7 @@ public class DatabaseSearchService implements ISearchService {
         @Override
         public int compare(ExtensionSearch ext1, ExtensionSearch ext2) {
             // download count
-            return Integer.compare(ext1.downloadCount, ext2.downloadCount);
+            return Integer.compare(ext1.getDownloadCount(), ext2.getDownloadCount());
         }
     }
 
@@ -211,13 +211,13 @@ public class DatabaseSearchService implements ISearchService {
 
         @Override
         public int compare(ExtensionSearch ext1, ExtensionSearch ext2) {
-            if (ext1.rating == null) {
+            if (ext1.getRating() == null) {
                 return -1;
-            } else if (ext2.rating == null) {
+            } else if (ext2.getRating() == null) {
                 return 1;
             }
             // rating
-            return Double.compare(ext1.rating, ext2.rating);
+            return Double.compare(ext1.getRating(), ext2.getRating());
         }
     }
 
@@ -229,7 +229,7 @@ public class DatabaseSearchService implements ISearchService {
         @Override
         public int compare(ExtensionSearch ext1, ExtensionSearch ext2) {
             // timestamp
-            return Long.compare(ext1.timestamp, ext2.timestamp);
+            return Long.compare(ext1.getTimestamp(), ext2.getTimestamp());
         }
     }
 
@@ -240,7 +240,7 @@ public class DatabaseSearchService implements ISearchService {
 
         @Override
         public int compare(ExtensionSearch ext1, ExtensionSearch ext2) {
-            return Double.compare(ext1.relevance, ext2.relevance);
+            return Double.compare(ext1.getRelevance(), ext2.getRelevance());
         }
     }
 }

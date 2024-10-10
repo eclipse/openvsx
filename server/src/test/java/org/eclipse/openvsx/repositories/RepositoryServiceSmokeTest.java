@@ -71,8 +71,7 @@ class RepositoryServiceSmokeTest {
         Stream.of(extension, namespace, userData, extVersion, personalAccessToken, keyPair).forEach(em::persist);
         em.flush();
 
-        var queryRequest = new QueryRequest();
-        queryRequest.size = 1;
+        var queryRequest = new QueryRequest(null, null, null, null, null, null, false, null, 1, 0);
 
         // record executed queries
         var methodsToBeCalled = Stream.of(repositories.getClass().getDeclaredMethods())

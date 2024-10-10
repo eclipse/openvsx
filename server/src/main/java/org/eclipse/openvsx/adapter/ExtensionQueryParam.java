@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ExtensionQueryParam {
+public record ExtensionQueryParam(List<Filter> filters, int flags) {
 
 	public static final int FLAG_INCLUDE_VERSIONS = 0x1;
 	public static final int FLAG_INCLUDE_FILES = 0x2;
@@ -27,15 +27,7 @@ public class ExtensionQueryParam {
 	public static final int FLAG_INCLUDE_LATEST_VERSION_ONLY = 0x200;
 	public static final int FLAG_UNPUBLISHED = 0x1000;
 
-    public List<Filter> filters;
-    public int flags;
-
-    public static class Filter {
-        public List<Criterion> criteria;
-        public int pageNumber;
-        public int pageSize;
-        public int sortBy;
-        public int sortOrder;
+    public record Filter(List<Criterion> criteria, int pageNumber, int pageSize, int sortBy, int sortOrder) {
 
         public String findCriterion(int type) {
             if (criteria == null || criteria.isEmpty())
@@ -57,7 +49,7 @@ public class ExtensionQueryParam {
         }
     }
 
-    public static class Criterion {
+    public static record Criterion(int filterType, String value) {
         public static final int FILTER_TAG = 1;
         public static final int FILTER_EXTENSION_ID = 4;
         public static final int FILTER_CATEGORY = 5;
@@ -66,9 +58,5 @@ public class ExtensionQueryParam {
         public static final int FILTER_FEATURED = 9;
         public static final int FILTER_SEARCH_TEXT = 10;
         public static final int FILTER_EXCLUDE_WITH_FLAGS = 12;
-
-        public int filterType;
-        public String value;
     }
-
 }

@@ -103,7 +103,7 @@ public class MirrorExtensionService {
         }
 
         var lastUpdated = extension.getLastUpdatedDate();
-        return lastUpdated.toLocalDate().isBefore(lastModified) || lastUpdated.isBefore(TimeUtil.fromUTCString(latest.timestamp));
+        return lastUpdated.toLocalDate().isBefore(lastModified) || lastUpdated.isBefore(TimeUtil.fromUTCString(latest.getTimestamp()));
     }
 
     private void mirrorExtensionVersions(String namespaceName, String extensionName, UserData mirrorUser, JobContext jobContext) {
@@ -114,7 +114,7 @@ public class MirrorExtensionService {
             Set<String> versions;
             try {
                 var json = upstream.getExtension(namespaceName, extensionName, targetPlatform);
-                versions = json.allVersions.keySet();
+                versions = json.getAllVersions().keySet();
                 VersionAlias.ALIAS_NAMES.forEach(versions::remove);
             } catch (NotFoundException e) {
                 // combination of extension and target platform doesn't exist, try next
@@ -134,7 +134,7 @@ public class MirrorExtensionService {
                     .collect(Collectors.toList())
             );
         }
-        toAdd.sort(Comparator.comparing(extensionJson -> TimeUtil.fromUTCString(extensionJson.timestamp)));
+        toAdd.sort(Comparator.comparing(extensionJson -> TimeUtil.fromUTCString(extensionJson.getTimestamp())));
         
         for(var i = 0; i < toAdd.size(); i++) {
             var json = toAdd.get(i);
@@ -150,14 +150,14 @@ public class MirrorExtensionService {
     }
 
     private void mirrorExtensionVersion(ExtensionJson json) throws RuntimeException {
-        var download = json.files.get("download");
+        var download = json.getFiles().get("download");
         var userJson = new UserJson();
-        userJson.provider = json.publishedBy.provider;
-        userJson.loginName = json.publishedBy.loginName;
-        userJson.fullName = json.publishedBy.fullName;
-        userJson.avatarUrl = json.publishedBy.avatarUrl;
-        userJson.homepage = json.publishedBy.homepage;
-        var namespaceName = json.namespace;
+        userJson.setProvider(json.getPublishedBy().getProvider());
+        userJson.setLoginName(json.getPublishedBy().getLoginName());
+        userJson.setFullName(json.getPublishedBy().getFullName());
+        userJson.setAvatarUrl(json.getPublishedBy().getAvatarUrl());
+        userJson.setHomepage(json.getPublishedBy().getHomepage());
+        var namespaceName = json.getNamespace();
 
         var vsixResourceHeaders = backgroundNonRedirectingRestTemplate.headForHeaders("{resolveVsixLocation}", Map.of("resolveVsixLocation", download));
         var vsixLocation = vsixResourceHeaders.getLocation();
@@ -173,11 +173,11 @@ public class MirrorExtensionService {
 
         String signatureName = null;
         try (var extensionFile = downloadToFile(download, "extension_", ".vsix")) {
-            if(json.files.containsKey(DOWNLOAD_SIG)) {
+            if(json.getFiles().containsKey(DOWNLOAD_SIG)) {
                 try(
-                    var signatureZip = downloadToFile(json.files.get(DOWNLOAD_SIG), "extension_", ".sigzip");
+                    var signatureZip = downloadToFile(json.getFiles().get(DOWNLOAD_SIG), "extension_", ".sigzip");
                     var signatureFile = extractSignature(signatureZip);
-                    var publicKeyFile = downloadToFile(json.files.get(PUBLIC_KEY), "public_", ".pem");
+                    var publicKeyFile = downloadToFile(json.getFiles().get(PUBLIC_KEY), "public_", ".pem");
                 ) {
                     var verified = integrityService.verifyExtensionVersion(extensionFile, signatureFile, publicKeyFile);
                     if (!verified) {
@@ -185,7 +185,7 @@ public class MirrorExtensionService {
                     }
                 }
 
-                var signaturePathParams = URI.create(json.files.get("signature")).getPath().split("/");
+                var signaturePathParams = URI.create(json.getFiles().get("signature")).getPath().split("/");
                 signatureName = signaturePathParams[signaturePathParams.length - 1];
             }
 
@@ -197,7 +197,7 @@ public class MirrorExtensionService {
             var accessTokenValue = data.getOrAddAccessTokenValue(user, description);
 
             var token = users.useAccessToken(accessTokenValue);
-            extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.timestamp);
+            extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.getTimestamp());
             logger.debug("completed mirroring of extension version: {}", NamingUtil.toLogFormat(json));
         } catch (IOException e) {
             throw new RuntimeException(e);

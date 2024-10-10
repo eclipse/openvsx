@@ -994,24 +994,25 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions);
-        var result = new SearchResultJson();
-        result.extensions = new ArrayList<>(size);
+        var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions, null);
+        var resultOffset = 0;
+        var resultSize = 0;
+        var resultExtensions = new ArrayList<SearchEntryJson>(size);
         for (var registry : getRegistries()) {
-            if (result.extensions.size() >= size) {
-                return ResponseEntity.ok(result);
+            if (resultExtensions.size() >= size) {
+                break;
             }
             try {
                 var subResult = registry.search(options);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeSearchResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
+                if(resultExtensions.isEmpty() && subResult.getExtensions() != null) {
+                    resultExtensions.addAll(subResult.getExtensions());
+                } else if (subResult.getExtensions() != null && !subResult.getExtensions().isEmpty()) {
+                    int limit = size - resultExtensions.size();
+                    var subResultSize = mergeSearchResults(resultExtensions, subResult.getExtensions(), limit);
+                    resultOffset += subResult.getOffset();
+                    offset = Math.max(offset - subResult.getOffset() - subResultSize, 0);
                 }
-                result.totalSize += subResult.totalSize;
+                resultSize += subResult.getTotalSize();
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
@@ -1019,19 +1020,23 @@ public class RegistryAPI {
             }
         }
 
+        var result = new SearchResultJson();
+        result.setOffset(resultOffset);
+        result.setTotalSize(resultSize);
+        result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noCache().cachePublic())
                 .body(result);
     }
 
-    private int mergeSearchResults(SearchResultJson result, List<SearchEntryJson> entries, int limit) {
-        var previousResult = Iterables.limit(result.extensions, result.extensions.size());
+    private int mergeSearchResults(List<SearchEntryJson> extensions, List<SearchEntryJson> entries, int limit) {
+        var previousResult = Iterables.limit(extensions, extensions.size());
         var entriesIter = entries.iterator();
         int mergedEntries = 0;
-        while (entriesIter.hasNext() && result.extensions.size() < limit) {
+        while (entriesIter.hasNext() && extensions.size() < limit) {
             var next = entriesIter.next();
-            if (!Iterables.any(previousResult, ext -> ext.namespace.equals(next.namespace) && ext.name.equals(next.name))) {
-                result.extensions.add(next);
+            if (!Iterables.any(previousResult, ext -> ext.getNamespace().equals(next.getNamespace()) && ext.getName().equals(next.getName()))) {
+                extensions.add(next);
                 mergedEntries++;
             }
         }
@@ -1112,39 +1117,45 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var request = new QueryRequestV2();
-        request.namespaceName = namespaceName;
-        request.extensionName = extensionName;
-        request.extensionVersion = extensionVersion;
-        request.extensionId = extensionId;
-        request.extensionUuid = extensionUuid;
-        request.namespaceUuid = namespaceUuid;
-        request.includeAllVersions = includeAllVersions;
-        request.targetPlatform = targetPlatform;
-        request.size = size;
-        request.offset = offset;
+        var request = new QueryRequestV2(
+                namespaceName,
+                extensionName,
+                extensionVersion,
+                extensionId,
+                extensionUuid,
+                namespaceUuid,
+                includeAllVersions,
+                targetPlatform,
+                size,
+                offset
+        );
 
-        var result = new QueryResultJson();
-        result.offset = request.offset;
-        result.extensions = new ArrayList<>(size);
+        var resultSize = 0;
+        var resultOffset = request.offset();
+        var resultExtensions = new ArrayList<ExtensionJson>(size);
         for (var registry : getRegistries()) {
             try {
                 var subResult = registry.queryV2(request);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
+                if(resultExtensions.isEmpty() && subResult.getExtensions() != null) {
+                    resultExtensions.addAll(subResult.getExtensions());
+                } else if (subResult.getExtensions() != null && !subResult.getExtensions().isEmpty()) {
+                    int limit = size - resultExtensions.size();
+                    var subResultSize = mergeQueryResults(resultExtensions, subResult.getExtensions(), limit);
+                    resultOffset += subResult.getOffset();
+                    offset = Math.max(offset - subResult.getOffset() - subResultSize, 0);
                 }
-                result.totalSize += subResult.totalSize;
+                resultSize += subResult.getTotalSize();
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
                 return exc.toResponseEntity(QueryResultJson.class);
             }
         }
+
+        var result = new QueryResultJson();
+        result.setOffset(resultOffset);
+        result.setTotalSize(resultSize);
+        result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                 .body(result);
@@ -1238,52 +1249,58 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         
-        var request = new QueryRequest();
-        request.namespaceName = namespaceName;
-        request.extensionName = extensionName;
-        request.extensionVersion = extensionVersion;
-        request.extensionId = extensionId;
-        request.extensionUuid = extensionUuid;
-        request.namespaceUuid = namespaceUuid;
-        request.includeAllVersions = includeAllVersions;
-        request.targetPlatform = targetPlatform;
-        request.size = size;
-        request.offset = offset;
+        var request = new QueryRequest(
+                namespaceName,
+                extensionName,
+                extensionVersion,
+                extensionId,
+                extensionUuid,
+                namespaceUuid,
+                includeAllVersions,
+                targetPlatform,
+                size,
+                offset
+        );
 
-        var result = new QueryResultJson();
-        result.offset = request.offset;
-        result.extensions = new ArrayList<>(size);
+        var resultSize = 0;
+        var resultOffset = request.offset();
+        var resultExtensions = new ArrayList<ExtensionJson>(size);
         for (var registry : getRegistries()) {
             try {
                 var subResult = registry.query(request);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
+                if(resultExtensions.isEmpty() && subResult.getExtensions() != null) {
+                    resultExtensions.addAll(subResult.getExtensions());
+                } else if (subResult.getExtensions() != null && !subResult.getExtensions().isEmpty()) {
+                    int limit = size - resultExtensions.size();
+                    var subResultSize = mergeQueryResults(resultExtensions, subResult.getExtensions(), limit);
+                    resultOffset += subResult.getOffset();
+                    offset = Math.max(offset - subResult.getOffset() - subResultSize, 0);
                 }
-                result.totalSize += subResult.totalSize;
+                resultSize += subResult.getTotalSize();
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
                 return exc.toResponseEntity(QueryResultJson.class);
             }
         }
+
+        var result = new QueryResultJson();
+        result.setTotalSize(resultSize);
+        result.setOffset(resultOffset);
+        result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                 .body(result);
     }
 
-    private int mergeQueryResults(QueryResultJson result, List<ExtensionJson> entries, int limit) {
-        var previousResult = Iterables.limit(result.extensions, result.extensions.size());
+    private int mergeQueryResults(List<ExtensionJson> extensions, List<ExtensionJson> entries, int limit) {
+        var previousResult = Iterables.limit(extensions, extensions.size());
         var entriesIter = entries.iterator();
         int mergedEntries = 0;
-        while (entriesIter.hasNext() && result.extensions.size() < limit) {
+        while (entriesIter.hasNext() && extensions.size() < limit) {
             var next = entriesIter.next();
-            if (!Iterables.any(previousResult, ext -> ext.namespace.equals(next.namespace) && ext.name.equals(next.name))) {
-                result.extensions.add(next);
+            if (!Iterables.any(previousResult, ext -> ext.getNamespace().equals(next.getNamespace()) && ext.getName().equals(next.getName()))) {
+                extensions.add(next);
                 mergedEntries++;
             }
         }
@@ -1387,13 +1404,13 @@ public class RegistryAPI {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error("No JSON input."));
         }
-        if (StringUtils.isEmpty(namespace.name)) {
+        if (StringUtils.isEmpty(namespace.getName())) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
         }
         try {
             var json = local.createNamespace(namespace, token);
             var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.name);
+            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);
@@ -1470,13 +1487,13 @@ public class RegistryAPI {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error("No JSON input."));
         }
-        if (StringUtils.isEmpty(namespace.name)) {
+        if (StringUtils.isEmpty(namespace.getName())) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
         }
         try {
             var json = local.createNamespace(namespace, user);
             var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.name);
+            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);
@@ -1613,7 +1630,7 @@ public class RegistryAPI {
 
             var json = local.publish(content, user);
             var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "api", json.namespace, json.name, json.version);
+            var url = UrlUtil.createApiUrl(serverUrl, "api", json.getNamespace(), json.getName(), json.getVersion());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);
@@ -1638,20 +1655,20 @@ public class RegistryAPI {
             var json = ResultJson.error("No JSON input.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
-        if (review.rating < 0 || review.rating > 5) {
+        if (review.getRating() < 0 || review.getRating() > 5) {
             var json = ResultJson.error("The rating must be an integer number between 0 and 5.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
-        if (review.title != null && review.title.length() > REVIEW_TITLE_SIZE) {
+        if (review.getTitle() != null && review.getTitle().length() > REVIEW_TITLE_SIZE) {
             var json = ResultJson.error("The title must not be longer than " + REVIEW_TITLE_SIZE + " characters.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
-        if (review.comment != null && review.comment.length() > REVIEW_COMMENT_SIZE) {
+        if (review.getComment() != null && review.getComment().length() > REVIEW_COMMENT_SIZE) {
             var json = ResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         var json = local.postReview(review, namespace, extension);
-        if (json.error == null) {
+        if (json.getError() == null) {
             return new ResponseEntity<>(json, HttpStatus.CREATED);
         } else {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
@@ -1665,7 +1682,7 @@ public class RegistryAPI {
     @Operation(hidden = true)
     public ResponseEntity<ResultJson> deleteReview(@PathVariable String namespace, @PathVariable String extension) {
         var json = local.deleteReview(namespace, extension);
-        if (json.error == null) {
+        if (json.getError() == null) {
             return ResponseEntity.ok(json);
         } else {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
