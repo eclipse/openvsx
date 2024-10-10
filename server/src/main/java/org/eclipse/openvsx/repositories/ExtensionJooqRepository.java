@@ -107,16 +107,16 @@ public class ExtensionJooqRepository {
         return query;
     }
 
-    private Extension toPublicId(Record record) {
+    private Extension toPublicId(Record row) {
         var namespace = new Namespace();
-        namespace.setId(record.get(NAMESPACE.ID));
-        namespace.setPublicId(record.get(NAMESPACE.PUBLIC_ID));
-        namespace.setName(record.get(NAMESPACE.NAME));
+        namespace.setId(row.get(NAMESPACE.ID));
+        namespace.setPublicId(row.get(NAMESPACE.PUBLIC_ID));
+        namespace.setName(row.get(NAMESPACE.NAME));
 
         var extension = new Extension();
-        extension.setId(record.get(EXTENSION.ID));
-        extension.setPublicId(record.get(EXTENSION.PUBLIC_ID));
-        extension.setName(record.get(EXTENSION.NAME));
+        extension.setId(row.get(EXTENSION.ID));
+        extension.setPublicId(row.get(EXTENSION.PUBLIC_ID));
+        extension.setName(row.get(EXTENSION.NAME));
         extension.setNamespace(namespace);
         return extension;
     }
@@ -148,22 +148,22 @@ public class ExtensionJooqRepository {
         return query.fetch().map(this::toExtension);
     }
 
-    private Extension toExtension(Record record) {
+    private Extension toExtension(Record row) {
         var extension = new Extension();
-        extension.setId(record.get(EXTENSION.ID));
-        extension.setPublicId(record.get(EXTENSION.PUBLIC_ID));
-        extension.setName(record.get(EXTENSION.NAME));
-        extension.setAverageRating(record.get(EXTENSION.AVERAGE_RATING));
-        extension.setReviewCount(record.get(EXTENSION.REVIEW_COUNT));
-        extension.setDownloadCount(record.get(EXTENSION.DOWNLOAD_COUNT));
-        extension.setPublishedDate(record.get(EXTENSION.PUBLISHED_DATE));
-        extension.setLastUpdatedDate(record.get(EXTENSION.LAST_UPDATED_DATE));
+        extension.setId(row.get(EXTENSION.ID));
+        extension.setPublicId(row.get(EXTENSION.PUBLIC_ID));
+        extension.setName(row.get(EXTENSION.NAME));
+        extension.setAverageRating(row.get(EXTENSION.AVERAGE_RATING));
+        extension.setReviewCount(row.get(EXTENSION.REVIEW_COUNT));
+        extension.setDownloadCount(row.get(EXTENSION.DOWNLOAD_COUNT));
+        extension.setPublishedDate(row.get(EXTENSION.PUBLISHED_DATE));
+        extension.setLastUpdatedDate(row.get(EXTENSION.LAST_UPDATED_DATE));
 
         var namespace = new Namespace();
-        namespace.setId(record.get(NAMESPACE.ID));
-        namespace.setPublicId(record.get(NAMESPACE.PUBLIC_ID));
-        namespace.setName(record.get(NAMESPACE.NAME));
-        namespace.setDisplayName(record.get(NAMESPACE.DISPLAY_NAME));
+        namespace.setId(row.get(NAMESPACE.ID));
+        namespace.setPublicId(row.get(NAMESPACE.PUBLIC_ID));
+        namespace.setName(row.get(NAMESPACE.NAME));
+        namespace.setDisplayName(row.get(NAMESPACE.DISPLAY_NAME));
         extension.setNamespace(namespace);
 
         return extension;
@@ -213,11 +213,11 @@ public class ExtensionJooqRepository {
                 .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
                 .where(EXTENSION.ACTIVE.eq(true))
                 .fetch()
-                .map((record) -> {
+                .map((row) -> {
                     return new SitemapRow(
-                            record.get(NAMESPACE.NAME),
-                            record.get(EXTENSION.NAME),
-                            record.get(LAST_UPDATED)
+                            row.get(NAMESPACE.NAME),
+                            row.get(EXTENSION.NAME),
+                            row.get(LAST_UPDATED)
                     );
                 });
     }
@@ -254,10 +254,10 @@ public class ExtensionJooqRepository {
                 .from(EXTENSION)
                 .where(EXTENSION.NAMESPACE_ID.eq(namespace.getId()))
                 .and(EXTENSION.ACTIVE.eq(true))
-                .fetch(record -> {
+                .fetch(row -> {
                     var extension = new Extension();
-                    extension.setId(record.get(EXTENSION.ID));
-                    extension.setName(record.get(EXTENSION.NAME));
+                    extension.setId(row.get(EXTENSION.ID));
+                    extension.setName(row.get(EXTENSION.NAME));
                     extension.setNamespace(namespace);
                     return extension;
                 });

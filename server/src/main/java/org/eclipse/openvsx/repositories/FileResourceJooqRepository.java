@@ -47,7 +47,7 @@ public class FileResourceJooqRepository {
                 .from(FILE_RESOURCE)
                 .where(FILE_RESOURCE.EXTENSION_ID.in(extVersionsById.keySet())).and(FILE_RESOURCE.TYPE.in(types))
                 .fetch()
-                .map(record -> toFileResource(record, extVersionsById));
+                .map(row -> toFileResource(row, extVersionsById));
     }
 
     public List<FileResource> findAll(Collection<Long> extensionIds, Collection<String> types) {
@@ -72,32 +72,32 @@ public class FileResourceJooqRepository {
                 .and(FILE_RESOURCE.EXTENSION_ID.eq(extVersionId))
                 .and(FILE_RESOURCE.NAME.startsWith(prefix))
                 .fetch()
-                .map(record -> {
-                    var fileResource = toFileResource(record);
-                    fileResource.setStorageType(record.get(FILE_RESOURCE.STORAGE_TYPE));
-                    fileResource.setContent(record.get(FILE_RESOURCE.CONTENT));
+                .map(row -> {
+                    var fileResource = toFileResource(row);
+                    fileResource.setStorageType(row.get(FILE_RESOURCE.STORAGE_TYPE));
+                    fileResource.setContent(row.get(FILE_RESOURCE.CONTENT));
 
                     return fileResource;
                 });
     }
 
-    private FileResource toFileResource(Record record) {
+    private FileResource toFileResource(Record row) {
         var extVersion = new ExtensionVersion();
-        extVersion.setId(record.get(FILE_RESOURCE.EXTENSION_ID));
+        extVersion.setId(row.get(FILE_RESOURCE.EXTENSION_ID));
 
-        return toFileResource(record, extVersion);
+        return toFileResource(row, extVersion);
     }
 
-    private FileResource toFileResource(Record record, Map<Long, ExtensionVersion> extVersionsById) {
-        var extVersion = extVersionsById.get(record.get(FILE_RESOURCE.EXTENSION_ID));
-        return toFileResource(record, extVersion);
+    private FileResource toFileResource(Record row, Map<Long, ExtensionVersion> extVersionsById) {
+        var extVersion = extVersionsById.get(row.get(FILE_RESOURCE.EXTENSION_ID));
+        return toFileResource(row, extVersion);
     }
 
-    private FileResource toFileResource(Record record, ExtensionVersion extVersion) {
+    private FileResource toFileResource(Record row, ExtensionVersion extVersion) {
         var fileResource = new FileResource();
-        fileResource.setId(record.get(FILE_RESOURCE.ID));
-        fileResource.setName(record.get(FILE_RESOURCE.NAME));
-        fileResource.setType(record.get(FILE_RESOURCE.TYPE));
+        fileResource.setId(row.get(FILE_RESOURCE.ID));
+        fileResource.setName(row.get(FILE_RESOURCE.NAME));
+        fileResource.setType(row.get(FILE_RESOURCE.TYPE));
         fileResource.setExtension(extVersion);
 
         return fileResource;
@@ -183,27 +183,27 @@ public class FileResourceJooqRepository {
         return query;
     }
 
-    private FileResource mapFindByQueryResult(Record record) {
+    private FileResource mapFindByQueryResult(Record row) {
         var namespace = new Namespace();
-        namespace.setId(record.get(NAMESPACE.ID));
-        namespace.setName(record.get(NAMESPACE.NAME));
+        namespace.setId(row.get(NAMESPACE.ID));
+        namespace.setName(row.get(NAMESPACE.NAME));
 
         var extension = new Extension();
-        extension.setId(record.get(EXTENSION.ID));
-        extension.setName(record.get(EXTENSION.NAME));
+        extension.setId(row.get(EXTENSION.ID));
+        extension.setName(row.get(EXTENSION.NAME));
         extension.setNamespace(namespace);
 
         var extVersion = new ExtensionVersion();
-        extVersion.setId(record.get(EXTENSION_VERSION.ID));
-        extVersion.setTargetPlatform(record.get(EXTENSION_VERSION.TARGET_PLATFORM));
-        extVersion.setVersion(record.get(EXTENSION_VERSION.VERSION));
+        extVersion.setId(row.get(EXTENSION_VERSION.ID));
+        extVersion.setTargetPlatform(row.get(EXTENSION_VERSION.TARGET_PLATFORM));
+        extVersion.setVersion(row.get(EXTENSION_VERSION.VERSION));
         extVersion.setExtension(extension);
 
         var resource = new FileResource();
-        resource.setId(record.get(FILE_RESOURCE.ID));
-        resource.setName(record.get(FILE_RESOURCE.NAME));
-        resource.setType(record.get(FILE_RESOURCE.TYPE));
-        resource.setStorageType(record.get(FILE_RESOURCE.STORAGE_TYPE));
+        resource.setId(row.get(FILE_RESOURCE.ID));
+        resource.setName(row.get(FILE_RESOURCE.NAME));
+        resource.setType(row.get(FILE_RESOURCE.TYPE));
+        resource.setStorageType(row.get(FILE_RESOURCE.STORAGE_TYPE));
         resource.setExtension(extVersion);
         return resource;
     }
