@@ -25,21 +25,45 @@ public class VersionReferencesJson extends ResultJson{
 
     public static VersionReferencesJson error(String message) {
         var result = new VersionReferencesJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "Number of skipped entries according to the version references request")
     @NotNull
     @Min(0)
-    public int offset;
+    private int offset;
 
     @Schema(description = "Total number of version references the extension has")
     @NotNull
     @Min(0)
-    public int totalSize;
+    private int totalSize;
 
     @Schema(description = "Essential metadata of all available versions, limited to the size specified in the version references request")
     @NotNull
-    public List<VersionReferenceJson> versions;
+    private List<VersionReferenceJson> versions;
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public int getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
+    }
+
+    public List<VersionReferenceJson> getVersions() {
+        return versions;
+    }
+
+    public void setVersions(List<VersionReferenceJson> versions) {
+        this.versions = versions;
+    }
 }

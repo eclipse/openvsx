@@ -58,8 +58,8 @@ public class VSCodeAPI {
     @CrossOrigin
     public ExtensionQueryResult extensionQuery(@RequestBody ExtensionQueryParam param) {
         var size = 0;
-        if(param.filters != null && !param.filters.isEmpty()) {
-            size = param.filters.get(0).pageSize;
+        if(param.filters() != null && !param.filters().isEmpty()) {
+            size = param.filters().get(0).pageSize();
         }
         if(size <= 0) {
             size = DEFAULT_PAGE_SIZE;

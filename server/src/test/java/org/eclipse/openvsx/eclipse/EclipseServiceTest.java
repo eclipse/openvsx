@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.eq;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -95,11 +96,11 @@ class EclipseServiceTest {
         var profile = eclipse.getPublicProfile("test");
 
         assertThat(profile).isNotNull();
-        assertThat(profile.name).isEqualTo("test");
-        assertThat(profile.githubHandle).isEqualTo("test");
-        assertThat(profile.publisherAgreements).isNotNull();
-        assertThat(profile.publisherAgreements.openVsx).isNotNull();
-        assertThat(profile.publisherAgreements.openVsx.version).isEqualTo("1");
+        assertThat(profile.getName()).isEqualTo("test");
+        assertThat(profile.getGithubHandle()).isEqualTo("test");
+        assertThat(profile.getPublisherAgreements()).isNotNull();
+        assertThat(profile.getPublisherAgreements().getOpenVsx()).isNotNull();
+        assertThat(profile.getPublisherAgreements().getOpenVsx().getVersion()).isEqualTo("1");
     }
 
     @Test
@@ -110,11 +111,12 @@ class EclipseServiceTest {
         var profile = eclipse.getUserProfile("12345");
 
         assertThat(profile).isNotNull();
-        assertThat(profile.name).isEqualTo("test");
-        assertThat(profile.githubHandle).isEqualTo("test");
-        assertThat(profile.publisherAgreements).isNotNull();
-        assertThat(profile.publisherAgreements.openVsx).isNotNull();
-        assertThat(profile.publisherAgreements.openVsx.version).isEqualTo("1");
+
+        assertThat(profile.getName()).isEqualTo("test");
+        assertThat(profile.getGithubHandle()).isEqualTo("test");
+        assertThat(profile.getPublisherAgreements()).isNotNull();
+        assertThat(profile.getPublisherAgreements().getOpenVsx()).isNotNull();
+        assertThat(profile.getPublisherAgreements().getOpenVsx().getVersion()).isEqualTo("1");
     }
 
     @Test
@@ -128,10 +130,10 @@ class EclipseServiceTest {
 
         var agreement = eclipse.getPublisherAgreement(user);
         assertThat(agreement).isNotNull();
-        assertThat(agreement.isActive).isEqualTo(true);
-        assertThat(agreement.documentId).isEqualTo("abcd");
-        assertThat(agreement.version).isEqualTo("1");
-        assertThat(agreement.timestamp).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
+        assertThat(agreement.isActive()).isEqualTo(true);
+        assertThat(agreement.documentId()).isEqualTo("abcd");
+        assertThat(agreement.version()).isEqualTo("1");
+        assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
     }
 
     @Test
@@ -166,10 +168,10 @@ class EclipseServiceTest {
 
         var agreement = eclipse.signPublisherAgreement(user);
         assertThat(agreement).isNotNull();
-        assertThat(agreement.isActive).isEqualTo(true);
-        assertThat(agreement.documentId).isEqualTo("abcd");
-        assertThat(agreement.version).isEqualTo("1");
-        assertThat(agreement.timestamp).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
+        assertThat(agreement.isActive()).isEqualTo(true);
+        assertThat(agreement.documentId()).isEqualTo("abcd");
+        assertThat(agreement.version()).isEqualTo("1");
+        assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
     }
 
     @Test
@@ -193,10 +195,10 @@ class EclipseServiceTest {
         var agreement = eclipse.signPublisherAgreement(user);
 
         assertThat(agreement).isNotNull();
-        assertThat(agreement.isActive).isEqualTo(true);
-        assertThat(agreement.documentId).isEqualTo("abcd");
-        assertThat(agreement.version).isEqualTo("1");
-        assertThat(agreement.timestamp).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
+        assertThat(agreement.isActive()).isEqualTo(true);
+        assertThat(agreement.documentId()).isEqualTo("abcd");
+        assertThat(agreement.version()).isEqualTo("1");
+        assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
         assertThat(extVersion.isActive()).isTrue();
         assertThat(extension.isActive()).isTrue();
     }
@@ -230,8 +232,7 @@ class EclipseServiceTest {
 
         var admin = new UserData();
         admin.setLoginName("admin");
-        admin.setEclipseToken(new AuthToken());
-        admin.getEclipseToken().accessToken = "67890";
+        admin.setEclipseToken(new AuthToken("67890", null, null, null, null, null));
         Mockito.when(tokens.getActiveToken(admin, "eclipse"))
             .thenReturn(admin.getEclipseToken());
 
@@ -241,8 +242,7 @@ class EclipseServiceTest {
     private UserData mockUser() {
         var user = new UserData();
         user.setLoginName("test");
-        user.setEclipseToken(new AuthToken());
-        user.getEclipseToken().accessToken = "12345";
+        user.setEclipseToken(new AuthToken("12345", null, null, null, null, null));
         Mockito.when(tokens.getActiveToken(user, "eclipse"))
             .thenReturn(user.getEclipseToken());
         return user;

@@ -266,14 +266,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 	public SearchResultJson search(ISearchService.Options options) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/search";
         var uriVariables = new HashMap<String,String>();
-        uriVariables.put("size", Integer.toString(options.requestedSize));
-        uriVariables.put("offset", Integer.toString(options.requestedOffset));
-        uriVariables.put("includeAllVersions", Boolean.toString(options.includeAllVersions));
-        uriVariables.put("query", options.queryString);
-        uriVariables.put("category", options.category);
-        uriVariables.put("sortOrder", options.sortOrder);
-        uriVariables.put("sortBy", options.sortBy);
-        uriVariables.put("targetPlatform", options.targetPlatform);
+        uriVariables.put("size", Integer.toString(options.requestedSize()));
+        uriVariables.put("offset", Integer.toString(options.requestedOffset()));
+        uriVariables.put("includeAllVersions", Boolean.toString(options.includeAllVersions()));
+        uriVariables.put("query", options.queryString());
+        uriVariables.put("category", options.category());
+        uriVariables.put("sortOrder", options.sortOrder());
+        uriVariables.put("sortBy", options.sortBy());
+        uriVariables.put("targetPlatform", options.targetPlatform());
 
         var queryString = uriVariables.entrySet().stream()
                 .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
@@ -300,17 +300,16 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     public QueryResultJson query(QueryRequest request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/query";
         var queryParams = new HashMap<String,String>();
-        queryParams.put("namespaceName", request.namespaceName);
-        queryParams.put("extensionName", request.extensionName);
-        queryParams.put("extensionVersion", request.extensionVersion);
-        queryParams.put("extensionId", request.extensionId);
-        queryParams.put("extensionUuid", request.extensionUuid);
-        queryParams.put("namespaceUuid", request.namespaceUuid);
-        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
-        queryParams.put("targetPlatform", request.targetPlatform);
-        queryParams.put("size", String.valueOf(request.size));
-        queryParams.put("offset", String.valueOf(request.offset));
-
+        queryParams.put("namespaceName", request.namespaceName());
+        queryParams.put("extensionName", request.extensionName());
+        queryParams.put("extensionVersion", request.extensionVersion());
+        queryParams.put("extensionId", request.extensionId());
+        queryParams.put("extensionUuid", request.extensionUuid());
+        queryParams.put("namespaceUuid", request.namespaceUuid());
+        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions()));
+        queryParams.put("targetPlatform", request.targetPlatform());
+        queryParams.put("size", String.valueOf(request.size()));
+        queryParams.put("offset", String.valueOf(request.offset()));
 
         var queryString = queryParams.entrySet().stream()
             .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
@@ -337,16 +336,16 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     public QueryResultJson queryV2(QueryRequestV2 request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/v2/-/query";
         var queryParams = new HashMap<String,String>();
-        queryParams.put("namespaceName", request.namespaceName);
-        queryParams.put("extensionName", request.extensionName);
-        queryParams.put("extensionVersion", request.extensionVersion);
-        queryParams.put("extensionId", request.extensionId);
-        queryParams.put("extensionUuid", request.extensionUuid);
-        queryParams.put("namespaceUuid", request.namespaceUuid);
-        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
-        queryParams.put("targetPlatform", request.targetPlatform);
-        queryParams.put("size", String.valueOf(request.size));
-        queryParams.put("offset", String.valueOf(request.offset));
+        queryParams.put("namespaceName", request.namespaceName());
+        queryParams.put("extensionName", request.extensionName());
+        queryParams.put("extensionVersion", request.extensionVersion());
+        queryParams.put("extensionId", request.extensionId());
+        queryParams.put("extensionUuid", request.extensionUuid());
+        queryParams.put("namespaceUuid", request.namespaceUuid());
+        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions()));
+        queryParams.put("targetPlatform", request.targetPlatform());
+        queryParams.put("size", String.valueOf(request.size()));
+        queryParams.put("offset", String.valueOf(request.offset()));
 
         var queryString = queryParams.entrySet().stream()
                 .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
@@ -421,9 +420,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     private void makeDownloadsCompatible(ExtensionJson json) {
-        if (json.downloads == null && json.files.containsKey("download")) {
-            json.downloads = new HashMap<>();
-            json.downloads.put(TargetPlatform.NAME_UNIVERSAL, json.files.get("download"));
+        if (json.getDownloads() == null && json.getFiles().containsKey("download")) {
+            var downloads = new HashMap<String, String>();
+            downloads.put(TargetPlatform.NAME_UNIVERSAL, json.getFiles().get("download"));
+            json.setDownloads(downloads);
         }
     }
 

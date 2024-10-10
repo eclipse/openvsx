@@ -98,22 +98,22 @@ class IntegrationTest {
 
     private void createNamespace() {
         var requestBody = new NamespaceJson();
-        requestBody.name = "EditorConfig";
+        requestBody.setName("EditorConfig");
         var response = restTemplate.postForEntity(apiCall("/api/-/namespace/create?token={token}"), requestBody,
                 ResultJson.class, "test_token");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody().error).isNull();
-        assertThat(response.getBody().success).isEqualTo("Created namespace " + requestBody.name);
+        assertThat(response.getBody().getError()).isNull();
+        assertThat(response.getBody().getSuccess()).isEqualTo("Created namespace " + requestBody.getName());
     }
 
     private void duplicateNamespaceLowercase() {
         var requestBody = new NamespaceJson();
-        requestBody.name = "editorconfig";
+        requestBody.setName("editorconfig");
         var response = restTemplate.postForEntity(apiCall("/api/-/namespace/create?token={token}"), requestBody,
                 ResultJson.class, "test_token");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody().success).isNull();
-        assertThat(response.getBody().error).isEqualTo("Namespace already exists: EditorConfig");
+        assertThat(response.getBody().getSuccess()).isNull();
+        assertThat(response.getBody().getError()).isEqualTo("Namespace already exists: EditorConfig");
     }
 
     private void getNamespaceMetadata(String path) {
@@ -128,8 +128,8 @@ class IntegrationTest {
         var response = restTemplate.getForEntity(apiCall("/api/editorconfig/verify-pat?token=test_token"), ResultJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         var json = response.getBody();
-        assertThat(json.error).isNull();
-        assertThat(json.success).isEqualTo("Valid token");
+        assertThat(json.getError()).isNull();
+        assertThat(json.getSuccess()).isEqualTo("Valid token");
     }
 
     private void publishExtension() throws IOException {
@@ -138,8 +138,8 @@ class IntegrationTest {
             var response = restTemplate.postForEntity(apiCall("/api/-/publish?token={token}"),
                     bytes, ExtensionJson.class, "test_token");
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-            assertThat(response.getBody().error).isNull();
-            assertThat(response.getBody().name).isEqualTo("EditorConfig");
+            assertThat(response.getBody().getError()).isNull();
+            assertThat(response.getBody().getName()).isEqualTo("EditorConfig");
         }
     }
 
@@ -149,14 +149,14 @@ class IntegrationTest {
             var response = restTemplate.postForEntity(apiCall("/api/-/publish?token={token}"),
                     bytes, ExtensionJson.class, "test_token");
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(response.getBody().error).isEqualTo("Extension editorconfig.editorconfig 0.16.6 is already published.");
+            assertThat(response.getBody().getError()).isEqualTo("Extension editorconfig.editorconfig 0.16.6 is already published.");
         }
     }
 
     private void getExtensionMetadata(String url) {
         var response = restTemplate.getForEntity(apiCall(url), ExtensionJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().description).isEqualTo("EditorConfig Support for Visual Studio Code");
+        assertThat(response.getBody().getDescription()).isEqualTo("EditorConfig Support for Visual Studio Code");
     }
 
     private void getVersionsMetadata(String namespace, String extension, String target) {
@@ -167,18 +167,18 @@ class IntegrationTest {
 
         var response = restTemplate.getForEntity(apiCall(path + "/versions"), VersionsJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().versions.size()).isEqualTo(1);
+        assertThat(response.getBody().getVersions().size()).isEqualTo(1);
 
         var version = "0.16.6";
         var versionPath = path + "/" + version;
-        assertThat(response.getBody().versions.get(version)).isEqualTo(apiCall(versionPath));
+        assertThat(response.getBody().getVersions().get(version)).isEqualTo(apiCall(versionPath));
     }
 
     private void getVersionReferencesMetadata(String path) {
         var response = restTemplate.getForEntity(apiCall(path), VersionReferencesJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().versions.size()).isEqualTo(1);
-        assertThat(response.getBody().versions.get(0).version).isEqualTo("0.16.6");
+        assertThat(response.getBody().getVersions().size()).isEqualTo(1);
+        assertThat(response.getBody().getVersions().get(0).getVersion()).isEqualTo("0.16.6");
     }
 
     private void getFile(String path) {
@@ -191,15 +191,15 @@ class IntegrationTest {
     private void getReviews() {
         var response = restTemplate.getForEntity(apiCall("/api/editorconfig/editorconfig/reviews"), ReviewListJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().error).isNull();
-        assertThat(response.getBody().reviews.size()).isEqualTo(0);
+        assertThat(response.getBody().getError()).isNull();
+        assertThat(response.getBody().getReviews().size()).isEqualTo(0);
     }
 
     private void searchExtension() {
         var response = restTemplate.getForEntity(apiCall("/api/-/search?query=editorconfig"), SearchResultJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().extensions.size()).isEqualTo(1);
-        assertThat(response.getBody().extensions.get(0).description)
+        assertThat(response.getBody().getExtensions().size()).isEqualTo(1);
+        assertThat(response.getBody().getExtensions().get(0).getDescription())
                 .isEqualTo("EditorConfig Support for Visual Studio Code");
     }
 

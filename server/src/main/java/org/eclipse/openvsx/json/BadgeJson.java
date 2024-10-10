@@ -24,12 +24,36 @@ import java.util.Objects;
 public class BadgeJson implements Serializable {
 
     @Schema(description = "Image URL of the badge")
-    public String url;
+    private String url;
 
     @Schema(description = "The link users will follow when clicking the badge")
-    public String href;
+    private String href;
 
-    public String description;
+    private String description;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getHref() {
+        return href;
+    }
+
+    public void setHref(String href) {
+        this.href = href;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     @Override
     public boolean equals(Object o) {

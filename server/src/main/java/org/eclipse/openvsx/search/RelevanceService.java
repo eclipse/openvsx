@@ -55,8 +55,8 @@ public class RelevanceService {
         var latest = repositories.findLatestVersion(extension,  null, false, true);
         var targetPlatforms = repositories.findExtensionTargetPlatforms(extension);
         var entry = extension.toSearch(latest, targetPlatforms);
-        entry.rating = calculateRating(extension, stats);
-        entry.relevance = calculateRelevance(extension, latest, stats, entry);
+        entry.setRating(calculateRating(extension, stats));
+        entry.setRelevance(calculateRelevance(extension, latest, stats, entry));
 
         return entry;
     }
@@ -78,7 +78,7 @@ public class RelevanceService {
             var countRelevance = saturate(reviewCount, 0.25);
             ratingValue = (extension.getAverageRating() / 5.0) * countRelevance;
         }
-        var downloadsValue = entry.downloadCount / stats.downloadRef;
+        var downloadsValue = entry.getDownloadCount() / stats.downloadRef;
         var timestamp = latest.getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
         var relevance = ratingRelevance * limit(ratingValue) + downloadsRelevance * limit(downloadsValue)
@@ -94,7 +94,7 @@ public class RelevanceService {
             relevance *= deprecatedRelevance;
         }
 
-        if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
+        if (Double.isNaN(entry.getRelevance()) || Double.isInfinite(entry.getRelevance())) {
             var message = "Invalid relevance for entry " + NamingUtil.toExtensionId(entry);
             try {
                 message += " " + new ObjectMapper().writeValueAsString(stats);

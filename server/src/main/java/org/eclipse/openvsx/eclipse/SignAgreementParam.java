@@ -19,21 +19,35 @@ public class SignAgreementParam {
     /**
      * The version number of the document/agreement.
      */
-    public String version;
+    private String version;
 
     /**
      * The GitHub username of the user. This must match what the Eclipse Foundation has on file
      * for the user to successfully sign the publisher agreement.
      */
     @JsonProperty("github_handle")
-    public String githubHandle;
+    private String githubHandle;
 
-    public SignAgreementParam() {
-    }
+    public SignAgreementParam() {}
 
     public SignAgreementParam(String version, String githubHandle) {
         this.version = version;
         this.githubHandle = githubHandle;
     }
 
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getGithubHandle() {
+        return githubHandle;
+    }
+
+    public void setGithubHandle(String githubHandle) {
+        this.githubHandle = githubHandle;
+    }
 }

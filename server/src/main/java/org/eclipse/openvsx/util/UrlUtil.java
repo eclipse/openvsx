@@ -57,7 +57,7 @@ public final class UrlUtil {
     }
 
     public static String createApiVersionUrl(String baseUrl, ExtensionJson json) {
-        return createApiVersionUrl(baseUrl, json.namespace, json.name, json.targetPlatform, json.version);
+        return createApiVersionUrl(baseUrl, json.getNamespace(), json.getName(), json.getTargetPlatform(), json.getVersion());
     }
 
     public static String createApiVersionUrl(String baseUrl, ExtensionVersion extVersion) {

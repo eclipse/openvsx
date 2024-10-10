@@ -26,6 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -87,9 +88,11 @@ public class PublisherComplianceChecker {
         }
 
         var profile = eclipseService.getPublicProfile(user.getEclipsePersonId());
-        return profile.publisherAgreements != null
-                && profile.publisherAgreements.openVsx != null
-                && profile.publisherAgreements.openVsx.version != null;
+        return Optional.of(profile)
+                .map(EclipseProfile::getPublisherAgreements)
+                .map(EclipseProfile.PublisherAgreements::getOpenVsx)
+                .map(EclipseProfile.PublisherAgreement::getVersion)
+                .isPresent();
     }
 
     private void deactivateExtensions(List<PersonalAccessToken> accessTokens) {

@@ -29,48 +29,144 @@ public class UserJson extends ResultJson implements Serializable {
 
     public static UserJson error(String message) {
         var user = new UserJson();
-        user.error = message;
+        user.setError(message);
         return user;
     }
 
     @Schema(description = "Login name")
     @NotNull
-    public String loginName;
+    private String loginName;
 
     @Schema(hidden = true)
-    public String tokensUrl;
+    private String tokensUrl;
 
     @Schema(hidden = true)
-    public String createTokenUrl;
+    private String createTokenUrl;
 
     @Schema(hidden = true)
-    public String role;
+    private String role;
 
     @Schema(description = "Full name")
-    public String fullName;
+    private String fullName;
 
     @Schema(description = "URL to the user's avatar image")
-    public String avatarUrl;
+    private String avatarUrl;
 
     @Schema(description = "URL to the user's profile page")
-    public String homepage;
+    private String homepage;
 
     @Schema(description = "Authentication provider (e.g. github)")
-    public String provider;
+    private String provider;
 
     @Schema(hidden = true)
-    public PublisherAgreement publisherAgreement;
+    private PublisherAgreement publisherAgreement;
 
     @Schema(hidden = true)
-    public List<UserJson> additionalLogins;
+    private List<UserJson> additionalLogins;
+
+    public String getLoginName() {
+        return loginName;
+    }
+
+    public void setLoginName(String loginName) {
+        this.loginName = loginName;
+    }
+
+    public String getTokensUrl() {
+        return tokensUrl;
+    }
+
+    public void setTokensUrl(String tokensUrl) {
+        this.tokensUrl = tokensUrl;
+    }
+
+    public String getCreateTokenUrl() {
+        return createTokenUrl;
+    }
+
+    public void setCreateTokenUrl(String createTokenUrl) {
+        this.createTokenUrl = createTokenUrl;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getHomepage() {
+        return homepage;
+    }
+
+    public void setHomepage(String homepage) {
+        this.homepage = homepage;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public PublisherAgreement getPublisherAgreement() {
+        return publisherAgreement;
+    }
+
+    public void setPublisherAgreement(PublisherAgreement publisherAgreement) {
+        this.publisherAgreement = publisherAgreement;
+    }
+
+    public List<UserJson> getAdditionalLogins() {
+        return additionalLogins;
+    }
+
+    public void setAdditionalLogins(List<UserJson> additionalLogins) {
+        this.additionalLogins = additionalLogins;
+    }
 
     @JsonInclude(Include.NON_NULL)
     public static class PublisherAgreement implements Serializable {
 
         /* 'none' | 'signed' | 'outdated' */
-        public String status;
+        private String status;
 
-        public String timestamp;
+        private String timestamp;
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(String timestamp) {
+            this.timestamp = timestamp;
+        }
 
         @Override
         public boolean equals(Object o) {

@@ -39,11 +39,11 @@ public class NamespaceMembership implements Serializable {
     String role;
 
     public NamespaceMembershipJson toJson() {
-        var json = new NamespaceMembershipJson();
-        json.namespace = this.namespace.name;
-        json.role = this.role;
-        json.user = this.user.toUserJson();
-        return json;
+        return new NamespaceMembershipJson(
+                this.namespace.name,
+                this.role,
+                this.user.toUserJson()
+        );
     }
 
     public long getId() {

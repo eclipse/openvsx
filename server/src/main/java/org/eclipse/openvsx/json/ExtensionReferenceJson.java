@@ -27,18 +27,51 @@ public class ExtensionReferenceJson implements Serializable {
 
     @Schema(description = "URL to get metadata of the referenced extension")
     @NotNull
-    public String url;
+    private String url;
 
     @Schema(description = "Namespace of the referenced extension")
     @NotNull
-    public String namespace;
+    private String namespace;
 
     @Schema(description = "Name of the referenced extension")
     @NotNull
-    public String extension;
+    private String extension;
 
     @Schema(hidden = true)
-    public String version;
+    private String version;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

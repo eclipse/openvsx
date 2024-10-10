@@ -63,7 +63,7 @@ class ElasticSearchServiceTest {
         search.updateSearchEntry(ext2);
 
         assertThat(index.entries).hasSize(2);
-        assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
+        assertThat(index.entries.get(0).getRelevance()).isLessThan(index.entries.get(1).getRelevance());
     }
 
     @Test
@@ -75,7 +75,7 @@ class ElasticSearchServiceTest {
         search.updateSearchEntry(ext2);
 
         assertThat(index.entries).hasSize(2);
-        assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
+        assertThat(index.entries.get(0).getRelevance()).isLessThan(index.entries.get(1).getRelevance());
     }
 
     @Test
@@ -87,7 +87,7 @@ class ElasticSearchServiceTest {
         search.updateSearchEntry(ext2);
 
         assertThat(index.entries).hasSize(2);
-        assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
+        assertThat(index.entries.get(0).getRelevance()).isLessThan(index.entries.get(1).getRelevance());
     }
 
     @Test
@@ -99,7 +99,7 @@ class ElasticSearchServiceTest {
         search.updateSearchEntry(ext2);
 
         assertThat(index.entries).hasSize(2);
-        assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
+        assertThat(index.entries.get(0).getRelevance()).isLessThan(index.entries.get(1).getRelevance());
     }
 
     @Test
@@ -111,7 +111,7 @@ class ElasticSearchServiceTest {
         search.updateSearchEntry(ext2);
 
         assertThat(index.entries).hasSize(2);
-        assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
+        assertThat(index.entries.get(0).getRelevance()).isLessThan(index.entries.get(1).getRelevance());
     }
 
     @Test
@@ -123,7 +123,7 @@ class ElasticSearchServiceTest {
         search.updateSearchEntry(ext2);
 
         assertThat(index.entries).hasSize(2);
-        assertThat(index.entries.get(0).relevance).isLessThan(index.entries.get(1).relevance);
+        assertThat(index.entries.get(0).getRelevance()).isLessThan(index.entries.get(1).getRelevance());
     }
 
     @Test
@@ -174,7 +174,7 @@ class ElasticSearchServiceTest {
     void testSearchResultWindowTooLarge() {
         mockIndex(true);
 
-        var options = new ISearchService.Options("foo", "bar", "universal", 50, 10000, null, null, false);
+        var options = new ISearchService.Options("foo", "bar", "universal", 50, 10000, null, null, false, null);
         var searchHits = search.search(options);
         assertThat(searchHits.getSearchHits()).isEmpty();
         assertThat(searchHits.getTotalHits()).isEqualTo(0L);

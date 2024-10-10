@@ -27,32 +27,79 @@ public class NamespaceJson extends ResultJson {
 
     public static NamespaceJson error(String message) {
         var result = new NamespaceJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "Name of the namespace")
     @NotNull
-    public String name;
+    private String name;
 
     @Schema(description = "Map of extension names to their metadata URLs (not required for creating)")
-    public Map<String, String> extensions;
+    private Map<String, String> extensions;
 
     @Schema(description = "Indicates whether the namespace has an owner (not required for creating)")
     @NotNull
-    public Boolean verified;
+    private Boolean verified;
 
     @Schema(
         description = "Access level of the namespace. Deprecated: namespaces are now always restricted",
         allowableValues = {"public", "restricted"}
     )
     @Deprecated
-    public String access;
+    private String access;
 
     @Schema(hidden = true)
-    public String membersUrl;
+    private String membersUrl;
 
     @Schema(hidden = true)
-    public String roleUrl;
+    private String roleUrl;
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Map<String, String> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(Map<String, String> extensions) {
+        this.extensions = extensions;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
+    }
+
+    public String getAccess() {
+        return access;
+    }
+
+    public void setAccess(String access) {
+        this.access = access;
+    }
+
+    public String getMembersUrl() {
+        return membersUrl;
+    }
+
+    public void setMembersUrl(String membersUrl) {
+        this.membersUrl = membersUrl;
+    }
+
+    public String getRoleUrl() {
+        return roleUrl;
+    }
+
+    public void setRoleUrl(String roleUrl) {
+        this.roleUrl = roleUrl;
+    }
 }

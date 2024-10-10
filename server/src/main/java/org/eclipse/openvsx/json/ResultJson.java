@@ -44,12 +44,35 @@ public class ResultJson {
     }
 
     @Schema(description = "Indicates success of the operation (omitted if a more specific result type is returned)")
-    public String success;
+    private String success;
 
     @Schema(description = "Indicates a warning; when this is present, other properties can still be used")
-    public String warning;
+    private String warning;
 
     @Schema(description = "Indicates an error; when this is present, all other properties should be ignored")
-    public String error;
+    private String error;
 
+    public String getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(String success) {
+        this.success = success;
+    }
+
+    public String getWarning() {
+        return warning;
+    }
+
+    public void setWarning(String warning) {
+        this.warning = warning;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
 }

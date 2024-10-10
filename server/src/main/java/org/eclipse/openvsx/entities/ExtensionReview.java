@@ -47,11 +47,11 @@ public class ExtensionReview {
      */
     public ReviewJson toReviewJson() {
         var json = new ReviewJson();
-        json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
-        json.user = this.getUser().toUserJson();
-        json.title = this.getTitle();
-        json.comment = this.getComment();
-        json.rating = this.getRating();
+        json.setTimestamp(TimeUtil.toUTCString(this.getTimestamp()));
+        json.setUser(this.getUser().toUserJson());
+        json.setTitle(this.getTitle());
+        json.setComment(this.getComment());
+        json.setRating(this.getRating());
         return json;
     }
 

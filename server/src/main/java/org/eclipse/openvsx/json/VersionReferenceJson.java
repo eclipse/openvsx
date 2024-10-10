@@ -20,16 +20,56 @@ import java.util.Map;
 public class VersionReferenceJson {
 
     @Schema(description = "URL to get the full metadata of this version")
-    public String url;
+    private String url;
 
     @Schema(description = "Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
-    public Map<String, String> files;
+    private Map<String, String> files;
 
-    public String version;
+    private String version;
 
     @Schema(description = "Name of the target platform")
-    public String targetPlatform;
+    private String targetPlatform;
 
     @Schema(description = "Map of engine names to the respective version constraints")
-    public Map<String, String> engines;
+    private Map<String, String> engines;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public Map<String, String> getFiles() {
+        return files;
+    }
+
+    public void setFiles(Map<String, String> files) {
+        this.files = files;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getTargetPlatform() {
+        return targetPlatform;
+    }
+
+    public void setTargetPlatform(String targetPlatform) {
+        this.targetPlatform = targetPlatform;
+    }
+
+    public Map<String, String> getEngines() {
+        return engines;
+    }
+
+    public void setEngines(Map<String, String> engines) {
+        this.engines = engines;
+    }
 }

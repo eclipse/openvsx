@@ -22,8 +22,24 @@ import java.io.Serializable;
 public class ExtensionReplacementJson implements Serializable {
 
     @Schema(description = "URL of the extension replacement")
-    public String url;
+    private String url;
 
     @Schema(description = "Name to be displayed in user interfaces")
-    public String displayName;
+    private String displayName;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 }

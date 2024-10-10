@@ -20,12 +20,34 @@ public class CsrfTokenJson extends ResultJson {
 
     public static CsrfTokenJson error(String message) {
         var info = new CsrfTokenJson();
-        info.error = message;
+        info.setError(message);
         return info;
     }
 
-    public String value;
+    public CsrfTokenJson() {}
 
-    public String header;
+    public CsrfTokenJson(String value, String header) {
+        this.value = value;
+        this.header = header;
+    }
 
+    private String value;
+
+    private String header;
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
+    }
 }

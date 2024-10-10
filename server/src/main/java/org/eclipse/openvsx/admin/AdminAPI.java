@@ -108,9 +108,9 @@ public class AdminAPI {
             admins.checkAdminUser();
 
             var json = new StatsJson();
-            json.userCount = repositories.countUsers();
-            json.extensionCount = repositories.countExtensions();
-            json.namespaceCount = repositories.countNamespaces();
+            json.setUserCount(repositories.countUsers());
+            json.setExtensionCount(repositories.countExtensions());
+            json.setNamespaceCount(repositories.countNamespaces());
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(StatsJson.class);
@@ -181,8 +181,8 @@ public class AdminAPI {
             var latest = repositories.findLatestVersion(namespaceName, extensionName, null, false, false);
             if (latest != null) {
                 json = local.toExtensionVersionJson(latest, null, false);
-                json.allTargetPlatformVersions = repositories.findTargetPlatformsGroupedByVersion(latest.getExtension());
-                json.active = latest.getExtension().isActive();
+                json.setAllTargetPlatformVersions(repositories.findTargetPlatformsGroupedByVersion(latest.getExtension()));
+                json.setActive(latest.getExtension().isActive());
             } else {
                 var extension = repositories.findExtension(extensionName, namespaceName);
                 if (extension == null) {
@@ -191,12 +191,12 @@ public class AdminAPI {
                 }
 
                 json = new ExtensionJson();
-                json.namespace = extension.getNamespace().getName();
-                json.name = extension.getName();
-                json.allVersions = Collections.emptyMap();
-                json.allTargetPlatformVersions = Collections.emptyList();
-                json.deprecated = extension.isDeprecated();
-                json.active = extension.isActive();
+                json.setNamespace(extension.getNamespace().getName());
+                json.setName(extension.getName());
+                json.setAllVersions(Collections.emptyMap());
+                json.setAllTargetPlatformVersions(Collections.emptyList());
+                json.setDeprecated(extension.isDeprecated());
+                json.setActive(extension.isActive());
             }
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
@@ -219,12 +219,12 @@ public class AdminAPI {
             } else {
                 var results = new ArrayList<ResultJson>();
                 for(var targetVersion : targetVersions) {
-                    results.add(admins.deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform, targetVersion.version, adminUser));
+                    results.add(admins.deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
                 }
 
                 result = new ResultJson();
-                result.error = results.stream().map(r -> r.error).filter(Objects::nonNull).collect(Collectors.joining("\n"));
-                result.success = results.stream().map(r -> r.success).filter(Objects::nonNull).collect(Collectors.joining("\n"));
+                result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+                result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
             }
 
             return ResponseEntity.ok(result);
@@ -243,8 +243,8 @@ public class AdminAPI {
 
             var namespace = local.getNamespace(namespaceName);
             var serverUrl = UrlUtil.getBaseUrl();
-            namespace.membersUrl = UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.name, "members");
-            namespace.roleUrl = UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.name, "change-member");
+            namespace.setMembersUrl(UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.getName(), "members"));
+            namespace.setRoleUrl(UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.getName(), "change-member"));
             return ResponseEntity.ok(namespace);
         } catch (NotFoundException exc) {
             var json = NamespaceJson.error("Namespace not found: " + namespaceName);
@@ -264,7 +264,7 @@ public class AdminAPI {
             admins.checkAdminUser();
             var json = admins.createNamespace(namespace);
             var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.name);
+            var url = UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);
@@ -282,7 +282,7 @@ public class AdminAPI {
         try {
             admins.checkAdminUser();
             admins.changeNamespace(json);
-            return ResponseEntity.ok(ResultJson.success("Scheduled namespace change from '" + json.oldNamespace + "' to '" + json.newNamespace + "'.\nIt can take 15 minutes to a couple hours for the change to become visible."));
+            return ResponseEntity.ok(ResultJson.success("Scheduled namespace change from '" + json.oldNamespace() + "' to '" + json.newNamespace() + "'.\nIt can take 15 minutes to a couple hours for the change to become visible."));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }
@@ -297,7 +297,7 @@ public class AdminAPI {
             admins.checkAdminUser();
             var memberships = repositories.findMemberships(namespaceName);
             var membershipList = new NamespaceMembershipListJson();
-            membershipList.namespaceMemberships = memberships.stream().map(NamespaceMembership::toJson).toList();
+            membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
             return ResponseEntity.ok(membershipList);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(NamespaceMembershipListJson.class);

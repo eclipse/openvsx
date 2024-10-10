@@ -66,7 +66,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
 
     @Override
     public void run(ChangeNamespaceJobRequest jobRequest) throws Exception {
-        var oldNamespace = jobRequest.getData().oldNamespace;
+        var oldNamespace = jobRequest.getData().oldNamespace();
         synchronized (LOCKS.computeIfAbsent(oldNamespace, key -> new Object())) {
             execute(jobRequest);
         }
@@ -74,18 +74,18 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
 
     private void execute(ChangeNamespaceJobRequest jobRequest) {
         var json = jobRequest.getData();
-        LOGGER.info(">> Change namespace from {} to {}", json.oldNamespace, json.newNamespace);
-        var oldNamespace = repositories.findNamespace(json.oldNamespace);
+        LOGGER.info(">> Change namespace from {} to {}", json.oldNamespace(), json.newNamespace());
+        var oldNamespace = repositories.findNamespace(json.oldNamespace());
         if(oldNamespace == null) {
             return;
         }
 
-        var newNamespaceOptional = Optional.ofNullable(repositories.findNamespace(json.newNamespace));
+        var newNamespaceOptional = Optional.ofNullable(repositories.findNamespace(json.newNamespace()));
         var createNewNamespace = newNamespaceOptional.isEmpty();
         var newNamespace = newNamespaceOptional.orElseGet(() -> {
-            validateNamespace(json.newNamespace);
+            validateNamespace(json.newNamespace());
             var namespace = new Namespace();
-            namespace.setName(json.newNamespace);
+            namespace.setName(json.newNamespace());
             return namespace;
         });
 
@@ -129,14 +129,14 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                     .toList();
         }
 
-        service.changeNamespaceInDatabase(newNamespace, oldNamespace, updatedResources, createNewNamespace, json.removeOldNamespace);
+        service.changeNamespaceInDatabase(newNamespace, oldNamespace, updatedResources, createNewNamespace, json.removeOldNamespace());
         if(copyResources) {
             // remove the old resources from external storage
             pairs.stream()
                     .map(Pair::getFirst)
                     .forEach(storageUtil::removeFile);
         }
-        LOGGER.info("<< Changed namespace from {} to {}", json.oldNamespace, json.newNamespace);
+        LOGGER.info("<< Changed namespace from {} to {}", json.oldNamespace(), json.newNamespace());
     }
 
     private void validateNamespace(String namespace) {

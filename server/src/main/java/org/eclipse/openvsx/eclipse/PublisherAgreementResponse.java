@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * https://eclipsefdn.github.io/openvsx-publisher-agreement-specs/#/paths/~1publisher_agreement/post
  */
-public class PublisherAgreementResponse {
+class PublisherAgreementResponse {
 
     /** Unique identifier for an addressable object in the API. */
     @JsonProperty("PersonID")

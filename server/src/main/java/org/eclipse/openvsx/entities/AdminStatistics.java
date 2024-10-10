@@ -111,20 +111,20 @@ public class AdminStatistics {
 
     public AdminStatisticsJson toJson() {
         var json = new AdminStatisticsJson();
-        json.year = year;
-        json.month = month;
-        json.extensions = extensions;
-        json.downloads = downloads;
-        json.downloadsTotal = downloadsTotal;
-        json.publishers = publishers;
-        json.averageReviewsPerExtension = averageReviewsPerExtension;
-        json.namespaceOwners = namespaceOwners;
-        json.extensionsByRating = mapExtensionsByRating();
-        json.publishersByExtensionsPublished = mapPublishersByExtensionsPublished();
-        json.topMostActivePublishingUsers = mapTopMostActivePublishingUsers();
-        json.topNamespaceExtensions = mapTopNamespaceExtensions();
-        json.topNamespaceExtensionVersions = mapTopNamespaceExtensionVersions();
-        json.topMostDownloadedExtensions = mapTopMostDownloadedExtensions();
+        json.setYear(year);
+        json.setMonth(month);
+        json.setExtensions(extensions);
+        json.setDownloads(downloads);
+        json.setDownloadsTotal(downloadsTotal);
+        json.setPublishers(publishers);
+        json.setAverageReviewsPerExtension(averageReviewsPerExtension);
+        json.setNamespaceOwners(namespaceOwners);
+        json.setExtensionsByRating(mapExtensionsByRating());
+        json.setPublishersByExtensionsPublished(mapPublishersByExtensionsPublished());
+        json.setTopMostActivePublishingUsers(mapTopMostActivePublishingUsers());
+        json.setTopNamespaceExtensions(mapTopNamespaceExtensions());
+        json.setTopNamespaceExtensionVersions(mapTopNamespaceExtensionVersions());
+        json.setTopMostDownloadedExtensions(mapTopMostDownloadedExtensions());
 
         return json;
     }
@@ -133,11 +133,11 @@ public class AdminStatistics {
         return extensionsByRating.entrySet().stream()
                 .map(entry -> {
                     var mapping = new AdminStatisticsJson.ExtensionsByRating();
-                    mapping.rating = entry.getKey();
-                    mapping.extensions = entry.getValue();
+                    mapping.setRating(entry.getKey());
+                    mapping.setExtensions(entry.getValue());
                     return mapping;
                 })
-                .sorted(Comparator.<AdminStatisticsJson.ExtensionsByRating>comparingInt(er -> er.rating).reversed())
+                .sorted(Comparator.<AdminStatisticsJson.ExtensionsByRating>comparingInt(er -> er.getRating()).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -145,11 +145,11 @@ public class AdminStatistics {
         return publishersByExtensionsPublished.entrySet().stream()
                 .map(entry -> {
                     var mapping = new AdminStatisticsJson.PublishersByExtensionsPublished();
-                    mapping.extensionsPublished = entry.getKey();
-                    mapping.publishers = entry.getValue();
+                    mapping.setExtensionsPublished(entry.getKey());
+                    mapping.setPublishers(entry.getValue());
                     return mapping;
                 })
-                .sorted(Comparator.<AdminStatisticsJson.PublishersByExtensionsPublished>comparingInt(pe -> pe.extensionsPublished).reversed())
+                .sorted(Comparator.<AdminStatisticsJson.PublishersByExtensionsPublished>comparingInt(pe -> pe.getExtensionsPublished()).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -157,11 +157,11 @@ public class AdminStatistics {
         return topMostActivePublishingUsers.entrySet().stream()
                 .map(entry -> {
                     var mapping = new AdminStatisticsJson.TopMostActivePublishingUsers();
-                    mapping.userLoginName = entry.getKey();
-                    mapping.publishedExtensionVersions = entry.getValue();
+                    mapping.setUserLoginName(entry.getKey());
+                    mapping.setPublishedExtensionVersions(entry.getValue());
                     return mapping;
                 })
-                .sorted(Comparator.<AdminStatisticsJson.TopMostActivePublishingUsers>comparingInt(pe -> pe.publishedExtensionVersions).reversed())
+                .sorted(Comparator.<AdminStatisticsJson.TopMostActivePublishingUsers>comparingInt(pe -> pe.getPublishedExtensionVersions()).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -169,28 +169,23 @@ public class AdminStatistics {
         return topNamespaceExtensions.entrySet().stream()
                 .map(entry -> {
                     var mapping = new AdminStatisticsJson.TopNamespaceExtensions();
-                    mapping.namespace = entry.getKey();
-                    mapping.extensions = entry.getValue();
+                    mapping.setNamespace(entry.getKey());
+                    mapping.setExtensions(entry.getValue());
                     return mapping;
                 })
-                .sorted(Comparator.<AdminStatisticsJson.TopNamespaceExtensions>comparingInt(pe -> pe.extensions).reversed())
+                .sorted(Comparator.<AdminStatisticsJson.TopNamespaceExtensions>comparingInt(pe -> pe.getExtensions()).reversed())
                 .collect(Collectors.toList());
     }
 
-    public static class TopNamespaceExtensionVersions {
-        public String namespace;
-
-        public int extensionVersions;
-    }
     private List<AdminStatisticsJson.TopNamespaceExtensionVersions> mapTopNamespaceExtensionVersions() {
         return topNamespaceExtensionVersions.entrySet().stream()
                 .map(entry -> {
                     var mapping = new AdminStatisticsJson.TopNamespaceExtensionVersions();
-                    mapping.namespace = entry.getKey();
-                    mapping.extensionVersions = entry.getValue();
+                    mapping.setNamespace(entry.getKey());
+                    mapping.setExtensionVersions(entry.getValue());
                     return mapping;
                 })
-                .sorted(Comparator.<AdminStatisticsJson.TopNamespaceExtensionVersions>comparingInt(pe -> pe.extensionVersions).reversed())
+                .sorted(Comparator.<AdminStatisticsJson.TopNamespaceExtensionVersions>comparingInt(pe -> pe.getExtensionVersions()).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -198,11 +193,11 @@ public class AdminStatistics {
         return topMostDownloadedExtensions.entrySet().stream()
                 .map(entry -> {
                     var mapping = new AdminStatisticsJson.TopMostDownloadedExtensions();
-                    mapping.extensionIdentifier = entry.getKey();
-                    mapping.downloads = entry.getValue();
+                    mapping.setExtensionIdentifier(entry.getKey());
+                    mapping.setDownloads(entry.getValue());
                     return mapping;
                 })
-                .sorted(Comparator.<AdminStatisticsJson.TopMostDownloadedExtensions>comparingLong(pe -> pe.downloads).reversed())
+                .sorted(Comparator.<AdminStatisticsJson.TopMostDownloadedExtensions>comparingLong(pe -> pe.getDownloads()).reversed())
                 .collect(Collectors.toList());
     }
 

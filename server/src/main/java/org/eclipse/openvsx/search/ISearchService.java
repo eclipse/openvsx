@@ -63,30 +63,17 @@ public interface ISearchService {
      */
     void removeSearchEntries(Collection<Long> ids);
 
-    public static class Options {
-        public final String queryString;
-        public final String category;
-        public final String targetPlatform;
-        public final int requestedSize;
-        public final int requestedOffset;
-        public final String sortOrder;
-        public final String sortBy;
-        public final boolean includeAllVersions;
-        public final String[] namespacesToExclude;
-
-        public Options(String queryString, String category, String targetPlatform, int size, int offset,
-                       String sortOrder, String sortBy, boolean includeAllVersions, String... namespacesToExclude) {
-            this.queryString = queryString;
-            this.category = category;
-            this.targetPlatform = targetPlatform;
-            this.requestedSize = size;
-            this.requestedOffset = offset;
-            this.sortOrder = sortOrder;
-            this.sortBy = sortBy;
-            this.includeAllVersions = includeAllVersions;
-            this.namespacesToExclude = namespacesToExclude;
-        }
-
+    public record Options(
+            String queryString,
+            String category,
+            String targetPlatform,
+            int requestedSize,
+            int requestedOffset,
+            String sortOrder,
+            String sortBy,
+            boolean includeAllVersions,
+            String[] namespacesToExclude
+    ) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

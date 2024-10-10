@@ -21,17 +21,40 @@ public class UserPublishInfoJson extends ResultJson {
 
     public static UserPublishInfoJson error(String message) {
         var userPublishInfo = new UserPublishInfoJson();
-        userPublishInfo.error = message;
+        userPublishInfo.setError(message);
         return userPublishInfo;
     }
 
     @NotNull
-    public UserJson user;
+    private UserJson user;
 
     @NotNull
-    public List<ExtensionJson> extensions;
+    private List<ExtensionJson> extensions;
 
     @NotNull
-    public Integer activeAccessTokenNum;
+    private Integer activeAccessTokenNum;
 
+    public UserJson getUser() {
+        return user;
+    }
+
+    public void setUser(UserJson user) {
+        this.user = user;
+    }
+
+    public List<ExtensionJson> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(List<ExtensionJson> extensions) {
+        this.extensions = extensions;
+    }
+
+    public Integer getActiveAccessTokenNum() {
+        return activeAccessTokenNum;
+    }
+
+    public void setActiveAccessTokenNum(Integer activeAccessTokenNum) {
+        this.activeAccessTokenNum = activeAccessTokenNum;
+    }
 }

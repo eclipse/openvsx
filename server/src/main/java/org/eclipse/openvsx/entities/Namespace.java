@@ -178,16 +178,16 @@ public class Namespace implements Serializable {
 
 	public NamespaceDetailsJson toNamespaceDetailsJson() {
 		var details = new NamespaceDetailsJson();
-		details.name = name;
-		details.displayName = StringUtils.isNotEmpty(displayName) ? displayName : name;
-		details.description = description;
-		details.website = website;
-		details.supportLink = supportLink;
-		details.socialLinks = Map.of(
+		details.setName(name);
+		details.setDisplayName(StringUtils.isNotEmpty(displayName) ? displayName : name);
+		details.setDescription(description);
+		details.setWebsite(website);
+		details.setSupportLink(supportLink);
+		details.setSocialLinks(Map.of(
 				SL_LINKEDIN, socialLinks.getOrDefault(SL_LINKEDIN, ""),
 				SL_GITHUB, socialLinks.getOrDefault(SL_GITHUB, ""),
 				SL_TWITTER, socialLinks.getOrDefault(SL_TWITTER, "")
-		);
+		));
 
 		return details;
 	}

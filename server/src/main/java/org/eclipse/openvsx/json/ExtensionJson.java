@@ -32,165 +32,541 @@ public class ExtensionJson extends ResultJson implements Serializable {
 
     public static ExtensionJson error(String message) {
         var info = new ExtensionJson();
-        info.error = message;
+        info.setError(message);
         return info;
     }
 
     @Schema(description = "URL to get metadata of the extension's namespace")
     @NotNull
-    public String namespaceUrl;
+    private String namespaceUrl;
 
     @Schema(description = "URL to get the list of reviews of this extension")
     @NotNull
-    public String reviewsUrl;
+    private String reviewsUrl;
 
     @Schema(description = "Map of file types (download, manifest, icon, readme, license, changelog) to their respective URLs")
-    public Map<String, String> files;
+    private Map<String, String> files;
 
     @Schema(description = "Name of the extension")
     @NotNull
-    public String name;
+    private String name;
 
     @Schema(description = "Namespace of the extension")
     @NotNull
-    public String namespace;
+    private String namespace;
 
     @Schema(description = "Name of the target platform")
-    public String targetPlatform;
+    private String targetPlatform;
 
     @Schema(description = "Selected version, or the latest version if none was specified")
     @NotNull
-    public String version;
+    private String version;
 
     @Schema(description = "Indicates whether this is a pre-release version")
-    public Boolean preRelease;
+    private Boolean preRelease;
 
     @Schema(description = "Data of the user who published this version")
     @NotNull
-    public UserJson publishedBy;
+    private UserJson publishedBy;
 
     @Schema(hidden = true)
-    public Boolean active;
+    private Boolean active;
 
     @Schema(description = "The value 'true' means the publishing user is a privileged user or the publishing user is a member of the extension's namespace and the namespace has at least one owner.")
     @NotNull
-    public Boolean verified;
+    private Boolean verified;
 
     @Schema(description = "Deprecated: use 'verified' instead (this property is just the negation of 'verified')")
     @NotNull
     @Deprecated
-    public Boolean unrelatedPublisher;
+    private Boolean unrelatedPublisher;
 
     @Schema(description = "Access level of the extension's namespace. Deprecated: namespaces are now always restricted", allowableValues = {"public", "restricted"})
     @NotNull
     @Deprecated
-    public String namespaceAccess;
+    private String namespaceAccess;
 
     @Schema(description = "Map of available versions to their metadata URLs. Deprecated: only returns the last 100 versions. Use allVersionsUrl instead.")
     @Deprecated
-    public Map<String, String> allVersions;
+    private Map<String, String> allVersions;
 
     @Schema(description = "URL to get a map of available versions to their metadata URLs.")
-    public String allVersionsUrl;
+    private String allVersionsUrl;
 
     @Schema(description = "Average rating")
     @Min(0)
     @Max(5)
-    public Double averageRating;
+    private Double averageRating;
 
     @Schema(description = "Number of downloads of the extension package")
     @Min(0)
-    public Integer downloadCount;
+    private Integer downloadCount;
 
     @Schema(description = "Number of reviews")
     @Min(0)
-    public Long reviewCount;
+    private Long reviewCount;
 
     @Schema(description = "Available version aliases ('latest' or 'pre-release')")
-    public List<String> versionAlias;
+    private List<String> versionAlias;
 
     @Schema(description = "Date and time when this version was published (ISO-8601)")
     @NotNull
-    public String timestamp;
+    private String timestamp;
 
     @Schema(description = "Indicates whether this is a preview extension")
-    public Boolean preview;
+    private Boolean preview;
 
     @Schema(description = "Name to be displayed in user interfaces")
-    public String displayName;
+    private String displayName;
 
     @Schema(description = "Namespace name to be displayed in user interfaces")
     @NotNull
-    public String namespaceDisplayName;
+    private String namespaceDisplayName;
 
-    public String description;
+    private String description;
 
     @Schema(description = "Map of engine names to the respective version constraints")
-    public Map<String, String> engines;
+    private Map<String, String> engines;
 
-    public List<String> categories;
+    private List<String> categories;
 
     @Schema(description = "A list that indicates where the extension should run in remote configurations. Values are \"ui\" (run locally), \"workspace\" (run on remote machine) and \"web\"")
-    public List<String> extensionKind;
+    private List<String> extensionKind;
 
-    public List<String> tags;
+    private List<String> tags;
 
     @Schema(description = "License identifier")
-    public String license;
+    private String license;
 
     @Schema(description = "URL of the extension's homepage")
-    public String homepage;
+    private String homepage;
 
     @Schema(description = "URL of the extension's source repository")
-    public String repository;
+    private String repository;
 
     @Schema(description = "URL to sponsor the extension")
-    public String sponsorLink;
+    private String sponsorLink;
 
     @Schema(description = "URL of the extension's bug tracker")
-    public String bugs;
+    private String bugs;
 
     @Schema(description = "Markdown rendering engine to use in user interfaces", allowableValues = {"standard", "github"})
-    public String markdown;
+    private String markdown;
 
     @Schema(description = "CSS color to use as background in user interfaces")
-    public String galleryColor;
+    private String galleryColor;
 
     @Schema(description = "Theme type for user interfaces", allowableValues = {"light", "dark"})
-    public String galleryTheme;
+    private String galleryTheme;
 
     @Schema(description = "Languages the extension has been translated in")
-    public List<String> localizedLanguages;
+    private List<String> localizedLanguages;
 
     @Schema(description = "URL of the extension's Q&A page")
-    public String qna;
+    private String qna;
 
     @Schema(description = "List of badges to display in user interfaces")
-    public List<BadgeJson> badges;
+    private List<BadgeJson> badges;
 
     @Schema(description = "List of dependencies to other extensions")
-    public List<ExtensionReferenceJson> dependencies;
+    private List<ExtensionReferenceJson> dependencies;
 
     @Schema(description = "List of extensions bundled with this extension")
-    public List<ExtensionReferenceJson> bundledExtensions;
+    private List<ExtensionReferenceJson> bundledExtensions;
 
     @Schema(description = "Map of download links by target platform")
-    public Map<String, String> downloads;
+    private Map<String, String> downloads;
 
     @Schema(description = "Map of target platforms by extension version")
-    public List<VersionTargetPlatformsJson> allTargetPlatformVersions;
+    private List<VersionTargetPlatformsJson> allTargetPlatformVersions;
 
     @Schema(description = "version metadata URL")
-    public String url;
+    private String url;
 
     @Schema(description = "Indicates whether the extension is deprecated")
-    public boolean deprecated;
+    private boolean deprecated;
 
     @Schema(description = "Reference to extension that replaces this extension when it's deprecated")
-    public ExtensionReplacementJson replacement;
+    private ExtensionReplacementJson replacement;
 
     @Schema(description = "Whether to show downloads in user interfaces")
-    public boolean downloadable;
+    private boolean downloadable;
+
+    public String getNamespaceUrl() {
+        return namespaceUrl;
+    }
+
+    public void setNamespaceUrl(String namespaceUrl) {
+        this.namespaceUrl = namespaceUrl;
+    }
+
+    public String getReviewsUrl() {
+        return reviewsUrl;
+    }
+
+    public void setReviewsUrl(String reviewsUrl) {
+        this.reviewsUrl = reviewsUrl;
+    }
+
+    public Map<String, String> getFiles() {
+        return files;
+    }
+
+    public void setFiles(Map<String, String> files) {
+        this.files = files;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public String getTargetPlatform() {
+        return targetPlatform;
+    }
+
+    public void setTargetPlatform(String targetPlatform) {
+        this.targetPlatform = targetPlatform;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public Boolean getPreRelease() {
+        return preRelease;
+    }
+
+    public void setPreRelease(Boolean preRelease) {
+        this.preRelease = preRelease;
+    }
+
+    public UserJson getPublishedBy() {
+        return publishedBy;
+    }
+
+    public void setPublishedBy(UserJson publishedBy) {
+        this.publishedBy = publishedBy;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
+    }
+
+    public Boolean getUnrelatedPublisher() {
+        return unrelatedPublisher;
+    }
+
+    public void setUnrelatedPublisher(Boolean unrelatedPublisher) {
+        this.unrelatedPublisher = unrelatedPublisher;
+    }
+
+    public String getNamespaceAccess() {
+        return namespaceAccess;
+    }
+
+    public void setNamespaceAccess(String namespaceAccess) {
+        this.namespaceAccess = namespaceAccess;
+    }
+
+    public Map<String, String> getAllVersions() {
+        return allVersions;
+    }
+
+    public void setAllVersions(Map<String, String> allVersions) {
+        this.allVersions = allVersions;
+    }
+
+    public String getAllVersionsUrl() {
+        return allVersionsUrl;
+    }
+
+    public void setAllVersionsUrl(String allVersionsUrl) {
+        this.allVersionsUrl = allVersionsUrl;
+    }
+
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+
+    public Integer getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(Integer downloadCount) {
+        this.downloadCount = downloadCount;
+    }
+
+    public Long getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(Long reviewCount) {
+        this.reviewCount = reviewCount;
+    }
+
+    public List<String> getVersionAlias() {
+        return versionAlias;
+    }
+
+    public void setVersionAlias(List<String> versionAlias) {
+        this.versionAlias = versionAlias;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public Boolean getPreview() {
+        return preview;
+    }
+
+    public void setPreview(Boolean preview) {
+        this.preview = preview;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getNamespaceDisplayName() {
+        return namespaceDisplayName;
+    }
+
+    public void setNamespaceDisplayName(String namespaceDisplayName) {
+        this.namespaceDisplayName = namespaceDisplayName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Map<String, String> getEngines() {
+        return engines;
+    }
+
+    public void setEngines(Map<String, String> engines) {
+        this.engines = engines;
+    }
+
+    public List<String> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(List<String> categories) {
+        this.categories = categories;
+    }
+
+    public List<String> getExtensionKind() {
+        return extensionKind;
+    }
+
+    public void setExtensionKind(List<String> extensionKind) {
+        this.extensionKind = extensionKind;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public String getLicense() {
+        return license;
+    }
+
+    public void setLicense(String license) {
+        this.license = license;
+    }
+
+    public String getHomepage() {
+        return homepage;
+    }
+
+    public void setHomepage(String homepage) {
+        this.homepage = homepage;
+    }
+
+    public String getRepository() {
+        return repository;
+    }
+
+    public void setRepository(String repository) {
+        this.repository = repository;
+    }
+
+    public String getSponsorLink() {
+        return sponsorLink;
+    }
+
+    public void setSponsorLink(String sponsorLink) {
+        this.sponsorLink = sponsorLink;
+    }
+
+    public String getBugs() {
+        return bugs;
+    }
+
+    public void setBugs(String bugs) {
+        this.bugs = bugs;
+    }
+
+    public String getMarkdown() {
+        return markdown;
+    }
+
+    public void setMarkdown(String markdown) {
+        this.markdown = markdown;
+    }
+
+    public String getGalleryColor() {
+        return galleryColor;
+    }
+
+    public void setGalleryColor(String galleryColor) {
+        this.galleryColor = galleryColor;
+    }
+
+    public String getGalleryTheme() {
+        return galleryTheme;
+    }
+
+    public void setGalleryTheme(String galleryTheme) {
+        this.galleryTheme = galleryTheme;
+    }
+
+    public List<String> getLocalizedLanguages() {
+        return localizedLanguages;
+    }
+
+    public void setLocalizedLanguages(List<String> localizedLanguages) {
+        this.localizedLanguages = localizedLanguages;
+    }
+
+    public String getQna() {
+        return qna;
+    }
+
+    public void setQna(String qna) {
+        this.qna = qna;
+    }
+
+    public List<BadgeJson> getBadges() {
+        return badges;
+    }
+
+    public void setBadges(List<BadgeJson> badges) {
+        this.badges = badges;
+    }
+
+    public List<ExtensionReferenceJson> getDependencies() {
+        return dependencies;
+    }
+
+    public void setDependencies(List<ExtensionReferenceJson> dependencies) {
+        this.dependencies = dependencies;
+    }
+
+    public List<ExtensionReferenceJson> getBundledExtensions() {
+        return bundledExtensions;
+    }
+
+    public void setBundledExtensions(List<ExtensionReferenceJson> bundledExtensions) {
+        this.bundledExtensions = bundledExtensions;
+    }
+
+    public Map<String, String> getDownloads() {
+        return downloads;
+    }
+
+    public void setDownloads(Map<String, String> downloads) {
+        this.downloads = downloads;
+    }
+
+    public List<VersionTargetPlatformsJson> getAllTargetPlatformVersions() {
+        return allTargetPlatformVersions;
+    }
+
+    public void setAllTargetPlatformVersions(List<VersionTargetPlatformsJson> allTargetPlatformVersions) {
+        this.allTargetPlatformVersions = allTargetPlatformVersions;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public boolean isDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+    }
+
+    public ExtensionReplacementJson getReplacement() {
+        return replacement;
+    }
+
+    public void setReplacement(ExtensionReplacementJson replacement) {
+        this.replacement = replacement;
+    }
+
+    public boolean isDownloadable() {
+        return downloadable;
+    }
+
+    public void setDownloadable(boolean downloadable) {
+        this.downloadable = downloadable;
+    }
 
     @Override
     public boolean equals(Object o) {

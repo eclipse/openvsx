@@ -199,7 +199,7 @@ public class UserService {
     @Transactional(rollbackOn = { ErrorResultException.class, NotFoundException.class })
     @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#details.name")
     public ResultJson updateNamespaceDetails(NamespaceDetailsJson details) {
-        var namespace = repositories.findNamespace(details.name);
+        var namespace = repositories.findNamespace(details.getName());
         if (namespace == null) {
             throw new NotFoundException();
         }
@@ -213,34 +213,34 @@ public class UserService {
             throw new ErrorResultException(message);
         }
 
-        if(!Objects.equals(details.displayName, namespace.getDisplayName())) {
-            namespace.setDisplayName(details.displayName);
+        if(!Objects.equals(details.getDisplayName(), namespace.getDisplayName())) {
+            namespace.setDisplayName(details.getDisplayName());
         }
-        if(!Objects.equals(details.description, namespace.getDescription())) {
-            namespace.setDescription(details.description);
+        if(!Objects.equals(details.getDescription(), namespace.getDescription())) {
+            namespace.setDescription(details.getDescription());
         }
-        if(!Objects.equals(details.website, namespace.getWebsite())) {
-            namespace.setWebsite(details.website);
+        if(!Objects.equals(details.getWebsite(), namespace.getWebsite())) {
+            namespace.setWebsite(details.getWebsite());
         }
-        if(!Objects.equals(details.supportLink, namespace.getSupportLink())) {
-            namespace.setSupportLink(details.supportLink);
+        if(!Objects.equals(details.getSupportLink(), namespace.getSupportLink())) {
+            namespace.setSupportLink(details.getSupportLink());
         }
-        if(!Objects.equals(details.socialLinks, namespace.getSocialLinks())) {
-            namespace.setSocialLinks(details.socialLinks);
+        if(!Objects.equals(details.getSocialLinks(), namespace.getSocialLinks())) {
+            namespace.setSocialLinks(details.getSocialLinks());
         }
 
         var logo = namespace.getLogoStorageType() != null
                 ? storageUtil.getNamespaceLogoLocation(namespace).toString()
                 : null;
 
-        if(!Objects.equals(details.logo, logo)) {
-            if (details.logoBytes != null && details.logoBytes.length > 0) {
+        if(!Objects.equals(details.getLogo(), logo)) {
+            if (details.getLogoBytes() != null && details.getLogoBytes().length > 0) {
                 if (namespace.getLogoStorageType() != null) {
                     storageUtil.removeNamespaceLogo(namespace);
                 }
 
-                namespace.setLogoName(details.logo);
-                namespace.setLogoBytes(details.logoBytes);
+                namespace.setLogoName(details.getLogo());
+                namespace.setLogoBytes(details.getLogoBytes());
                 storeNamespaceLogo(namespace);
             } else if (namespace.getLogoStorageType() != null) {
                 storageUtil.removeNamespaceLogo(namespace);
@@ -250,7 +250,7 @@ public class UserService {
             }
         }
 
-        return ResultJson.success("Updated details for namespace " + details.name);
+        return ResultJson.success("Updated details for namespace " + details.getName());
     }
 
     private void storeNamespaceLogo(Namespace namespace) {
@@ -273,8 +273,8 @@ public class UserService {
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
         // Include the token value after creation so the user can copy it
-        json.value = token.getValue();
-        json.deleteTokenUrl = createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId()));
+        json.setValue(token.getValue());
+        json.setDeleteTokenUrl(createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
 
         return json;
     }

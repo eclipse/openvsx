@@ -189,37 +189,37 @@ public class AdminService {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json) {
-        var namespaceIssue = validator.validateNamespace(json.name);
+        var namespaceIssue = validator.validateNamespace(json.getName());
         if (namespaceIssue.isPresent()) {
             throw new ErrorResultException(namespaceIssue.get().toString());
         }
 
-        var namespaceName = repositories.findNamespaceName(json.name);
+        var namespaceName = repositories.findNamespaceName(json.getName());
         if (namespaceName != null) {
             throw new ErrorResultException("Namespace already exists: " + namespaceName);
         }
         var namespace = new Namespace();
-        namespace.setName(json.name);
+        namespace.setName(json.getName());
         entityManager.persist(namespace);
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
     public void changeNamespace(ChangeNamespaceJson json) {
-        if (StringUtils.isEmpty(json.oldNamespace)) {
+        if (StringUtils.isEmpty(json.oldNamespace())) {
             throw new ErrorResultException("Old namespace must have a value");
         }
-        if (StringUtils.isEmpty(json.newNamespace)) {
+        if (StringUtils.isEmpty(json.newNamespace())) {
             throw new ErrorResultException("New namespace must have a value");
         }
 
-        var oldNamespace = repositories.findNamespace(json.oldNamespace);
+        var oldNamespace = repositories.findNamespace(json.oldNamespace());
         if (oldNamespace == null) {
-            throw new ErrorResultException("Old namespace doesn't exists: " + json.oldNamespace);
+            throw new ErrorResultException("Old namespace doesn't exists: " + json.oldNamespace());
         }
 
-        var newNamespace = repositories.findNamespace(json.newNamespace);
-        if (newNamespace != null && !json.mergeIfNewNamespaceAlreadyExists) {
-            throw new ErrorResultException("New namespace already exists: " + json.newNamespace);
+        var newNamespace = repositories.findNamespace(json.newNamespace());
+        if (newNamespace != null && !json.mergeIfNewNamespaceAlreadyExists()) {
+            throw new ErrorResultException("New namespace already exists: " + json.newNamespace());
         }
         if (newNamespace != null) {
             var newExtensions = repositories.findExtensions(newNamespace).stream()
@@ -232,9 +232,9 @@ public class AdminService {
                     .collect(Collectors.joining("','"));
             if(!duplicateExtensions.isEmpty()) {
                 var message = "Can't merge namespaces, because new namespace '" +
-                        json.newNamespace +
+                        json.newNamespace() +
                         "' and old namespace '" +
-                        json.oldNamespace +
+                        json.oldNamespace() +
                         "' have " +
                         (duplicateExtensions.indexOf(',') == -1 ? "a " : "") +
                         "duplicate extension" +
@@ -257,26 +257,26 @@ public class AdminService {
         }
 
         var userPublishInfo = new UserPublishInfoJson();
-        userPublishInfo.user = user.toUserJson();
-        eclipse.adminEnrichUserJson(userPublishInfo.user, user);
-        userPublishInfo.activeAccessTokenNum = (int) repositories.countActiveAccessTokens(user);
+        userPublishInfo.setUser(user.toUserJson());
+        eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
+        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActiveAccessTokens(user));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[]{DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST};
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
-        userPublishInfo.extensions = extVersions.stream()
+        userPublishInfo.setExtensions(extVersions.stream()
                 .map(latest -> {
                     var json = latest.toExtensionJson();
-                    json.preview = latest.isPreview();
-                    json.active = latest.getExtension().isActive();
-                    json.files = fileUrls.get(latest.getId());
+                    json.setPreview(latest.isPreview());
+                    json.setActive(latest.getExtension().isActive());
+                    json.setFiles(fileUrls.get(latest.getId()));
 
                     return json;
                 })
-                .sorted(Comparator.<ExtensionJson, String>comparing(j -> j.namespace)
-                                .thenComparing(j -> j.name)
-                                .thenComparing(j -> j.version)
+                .sorted(Comparator.<ExtensionJson, String>comparing(ExtensionJson::getNamespace)
+                                .thenComparing(ExtensionJson::getName)
+                                .thenComparing(ExtensionJson::getVersion)
                 )
-                .collect(Collectors.toList());
+                .toList());
 
         return userPublishInfo;
     }
@@ -335,11 +335,11 @@ public class AdminService {
 
     @Transactional
     public void logAdminAction(UserData admin, ResultJson result) {
-        if (result.success != null) {
+        if (result.getSuccess() != null) {
             var log = new PersistedLog();
             log.setUser(admin);
             log.setTimestamp(TimeUtil.getCurrentUTC());
-            log.setMessage(result.success);
+            log.setMessage(result.getSuccess());
             entityManager.persist(log);
         }
     }

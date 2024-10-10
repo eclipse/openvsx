@@ -68,11 +68,11 @@ public class UserData implements Serializable {
      */
     public UserJson toUserJson() {
         var json = new UserJson();
-        json.loginName = this.getLoginName();
-        json.fullName = this.getFullName();
-        json.avatarUrl = this.getAvatarUrl();
-        json.homepage = this.getProviderUrl();
-        json.provider = this.getProvider();
+        json.setLoginName(this.getLoginName());
+        json.setFullName(this.getFullName());
+        json.setAvatarUrl(this.getAvatarUrl());
+        json.setHomepage(this.getProviderUrl());
+        json.setProvider(this.getProvider());
         return json;
     }
 

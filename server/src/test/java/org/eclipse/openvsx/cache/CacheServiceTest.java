@@ -117,11 +117,11 @@ class CacheServiceTest {
         assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
         var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-        assertEquals(loginName, json.publishedBy.loginName);
-        assertEquals(fullName, json.publishedBy.fullName);
-        assertEquals(htmlUrl, json.publishedBy.homepage);
-        assertEquals(authority, json.publishedBy.provider);
-        assertEquals(avatarUrl, json.publishedBy.avatarUrl);
+        assertEquals(loginName, json.getPublishedBy().getLoginName());
+        assertEquals(fullName, json.getPublishedBy().getFullName());
+        assertEquals(htmlUrl, json.getPublishedBy().getHomepage());
+        assertEquals(authority, json.getPublishedBy().getProvider());
+        assertEquals(avatarUrl, json.getPublishedBy().getAvatarUrl());
 
         var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
         assertEquals(json, cachedJson);
@@ -138,8 +138,8 @@ class CacheServiceTest {
                 extVersion.getTargetPlatform(), extVersion.getVersion());
 
         var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-        assertEquals(Long.valueOf(0), json.reviewCount);
-        assertNull(json.averageRating);
+        assertEquals(Long.valueOf(0), json.getReviewCount());
+        assertNull(json.getAverageRating());
 
         var poster = new UserData();
         poster.setLoginName("user1");
@@ -147,16 +147,16 @@ class CacheServiceTest {
         setLoggedInUser(poster);
 
         var review = new ReviewJson();
-        review.rating = 3;
-        review.comment = "Somewhat ok";
-        review.timestamp = "2000-01-01T10:00Z";
+        review.setRating(3);
+        review.setComment("Somewhat ok");
+        review.setTimestamp("2000-01-01T10:00Z");
 
         registry.postReview(review, namespace.getName(), extension.getName());
         assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
         json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-        assertEquals(Long.valueOf(1), json.reviewCount);
-        assertEquals(Double.valueOf(3), json.averageRating);
+        assertEquals(Long.valueOf(1), json.getReviewCount());
+        assertEquals(Double.valueOf(3), json.getAverageRating());
 
         var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
         assertEquals(json, cachedJson);
@@ -178,21 +178,21 @@ class CacheServiceTest {
         setLoggedInUser(poster);
 
         var review = new ReviewJson();
-        review.rating = 3;
-        review.comment = "Somewhat ok";
-        review.timestamp = "2000-01-01T10:00Z";
+        review.setRating(3);
+        review.setComment("Somewhat ok");
+        review.setTimestamp("2000-01-01T10:00Z");
 
         registry.postReview(review, namespace.getName(), extension.getName());
         var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-        assertEquals(Long.valueOf(1), json.reviewCount);
-        assertEquals(Double.valueOf(3), json.averageRating);
+        assertEquals(Long.valueOf(1), json.getReviewCount());
+        assertEquals(Double.valueOf(3), json.getAverageRating());
 
         registry.deleteReview(namespace.getName(), extension.getName());
         assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
         json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-        assertEquals(Long.valueOf(0), json.reviewCount);
-        assertNull(json.averageRating);
+        assertEquals(Long.valueOf(0), json.getReviewCount());
+        assertNull(json.getAverageRating());
 
         var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
         assertEquals(json, cachedJson);
@@ -231,15 +231,15 @@ class CacheServiceTest {
         insertNewVersion(extension, extVersion.getPublishedWith(), newVersion);
 
         var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), newVersion);
-        assertTrue(json.allVersions.containsKey(newVersion));
-        assertTrue(json.allVersions.containsKey(oldVersion));
+        assertTrue(json.getAllVersions().containsKey(newVersion));
+        assertTrue(json.getAllVersions().containsKey(oldVersion));
 
         admins.deleteExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), newVersion, admin);
         assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
         json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-        assertFalse(json.allVersions.containsKey(newVersion));
-        assertTrue(json.allVersions.containsKey(oldVersion));
+        assertFalse(json.getAllVersions().containsKey(newVersion));
+        assertTrue(json.getAllVersions().containsKey(oldVersion));
 
         var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
         assertEquals(json, cachedJson);
@@ -265,10 +265,10 @@ class CacheServiceTest {
         assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
         var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), oldVersion);
-        assertTrue(json.allVersions.containsKey(oldVersion));
-        assertTrue(json.allVersions.containsKey(newVersion));
-        assertTrue(json.allVersions.containsKey("latest"));
-        assertTrue(json.allVersions.containsKey("pre-release"));
+        assertTrue(json.getAllVersions().containsKey(oldVersion));
+        assertTrue(json.getAllVersions().containsKey(newVersion));
+        assertTrue(json.getAllVersions().containsKey("latest"));
+        assertTrue(json.getAllVersions().containsKey("pre-release"));
 
         var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
         assertEquals(json, cachedJson);

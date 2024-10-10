@@ -88,9 +88,9 @@ class UserAPITest {
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(userJson(u -> {
-                    u.loginName = "test_user";
-                    u.fullName = "Test User";
-                    u.homepage = "http://example.com/test";
+                    u.setLoginName("test_user");
+                    u.setFullName("Test User");
+                    u.setHomepage("http://example.com/test");
                 })));
     }
 
@@ -99,7 +99,7 @@ class UserAPITest {
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(userJson(u -> {
-                    u.error = "Not logged in.";
+                    u.setError("Not logged in.");
                 })));
     }
 
@@ -111,12 +111,12 @@ class UserAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(accessTokensJson(a -> {
                     var t1 = new AccessTokenJson();
-                    t1.description = "This is token 1";
-                    t1.createdTimestamp = "2000-01-01T10:00Z";
+                    t1.setDescription("This is token 1");
+                    t1.setCreatedTimestamp("2000-01-01T10:00Z");
                     a.add(t1);
                     var t3 = new AccessTokenJson();
-                    t3.description = "This is token 3";
-                    t3.createdTimestamp = "2000-01-01T10:00Z";
+                    t3.setDescription("This is token 3");
+                    t3.setCreatedTimestamp("2000-01-01T10:00Z");
                     a.add(t3);
                 })));
     }
@@ -137,8 +137,8 @@ class UserAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(accessTokenJson(t -> {
-                    t.value = "foobar";
-                    t.description = "This is my token";
+                    t.setValue("foobar");
+                    t.setDescription("This is my token");
                 })));
     }
 
@@ -219,10 +219,10 @@ class UserAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespacesJson(a -> {
                     var ns1 = new NamespaceJson();
-                    ns1.name = "foo";
+                    ns1.setName("foo");
                     a.add(ns1);
                     var ns2 = new NamespaceJson();
-                    ns2.name = "bar";
+                    ns2.setName("bar");
                     a.add(ns2);
                 })));
     }
@@ -242,19 +242,13 @@ class UserAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(membershipsJson(a -> {
                     var u1 = new UserJson();
-                    u1.loginName = "test_user";
-                    var m1 = new NamespaceMembershipJson();
-                    m1.user = u1;
-                    m1.namespace = "foobar";
-                    m1.role = NamespaceMembership.ROLE_OWNER;
-                    a.namespaceMemberships.add(m1);
+                    u1.setLoginName("test_user");
+                    var m1 = new NamespaceMembershipJson("foobar", NamespaceMembership.ROLE_OWNER, u1);
+                    a.getNamespaceMemberships().add(m1);
                     var u2 = new UserJson();
-                    u2.loginName = "other_user";
-                    var m2 = new NamespaceMembershipJson();
-                    m2.user = u2;
-                    m2.namespace = "foobar";
-                    m2.role = NamespaceMembership.ROLE_CONTRIBUTOR;
-                    a.namespaceMemberships.add(m2);
+                    u2.setLoginName("other_user");
+                    var m2 = new NamespaceMembershipJson("foobar", NamespaceMembership.ROLE_CONTRIBUTOR, u2);
+                    a.getNamespaceMemberships().add(m2);
                 })));
     }
 
@@ -540,7 +534,7 @@ class UserAPITest {
 
     private String membershipsJson(Consumer<NamespaceMembershipListJson> content) throws JsonProcessingException {
         var json = new NamespaceMembershipListJson();
-        json.namespaceMemberships = new ArrayList<>();
+        json.setNamespaceMemberships(new ArrayList<>());
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }

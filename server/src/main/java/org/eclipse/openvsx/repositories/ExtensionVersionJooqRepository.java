@@ -275,23 +275,23 @@ public class ExtensionVersionJooqRepository {
 
     public Page<ExtensionVersion> findActiveVersions(QueryRequest request) {
         var conditions = new ArrayList<Condition>();
-        if (!StringUtils.isEmpty(request.namespaceUuid)) {
-            conditions.add(NAMESPACE.PUBLIC_ID.eq(request.namespaceUuid));
+        if (!StringUtils.isEmpty(request.namespaceUuid())) {
+            conditions.add(NAMESPACE.PUBLIC_ID.eq(request.namespaceUuid()));
         }
-        if (!StringUtils.isEmpty(request.namespaceName)) {
-            conditions.add(NAMESPACE.NAME.equalIgnoreCase(request.namespaceName));
+        if (!StringUtils.isEmpty(request.namespaceName())) {
+            conditions.add(NAMESPACE.NAME.equalIgnoreCase(request.namespaceName()));
         }
-        if (!StringUtils.isEmpty(request.extensionUuid)) {
-            conditions.add(EXTENSION.PUBLIC_ID.eq(request.extensionUuid));
+        if (!StringUtils.isEmpty(request.extensionUuid())) {
+            conditions.add(EXTENSION.PUBLIC_ID.eq(request.extensionUuid()));
         }
-        if (!StringUtils.isEmpty(request.extensionName)) {
-            conditions.add(EXTENSION.NAME.equalIgnoreCase(request.extensionName));
+        if (!StringUtils.isEmpty(request.extensionName())) {
+            conditions.add(EXTENSION.NAME.equalIgnoreCase(request.extensionName()));
         }
-        if(request.targetPlatform != null) {
-            conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(request.targetPlatform));
+        if(request.targetPlatform() != null) {
+            conditions.add(EXTENSION_VERSION.TARGET_PLATFORM.eq(request.targetPlatform()));
         }
-        if (!StringUtils.isEmpty(request.extensionVersion)) {
-            conditions.add(EXTENSION_VERSION.VERSION.eq(request.extensionVersion));
+        if (!StringUtils.isEmpty(request.extensionVersion())) {
+            conditions.add(EXTENSION_VERSION.VERSION.eq(request.extensionVersion()));
         }
 
         var totalCol = "total";
@@ -302,7 +302,7 @@ public class ExtensionVersionJooqRepository {
         totalQuery.addConditions(EXTENSION_VERSION.ACTIVE.eq(true));
 
         var query = findAllActive();
-        if(!request.includeAllVersions) {
+        if(!request.includeAllVersions()) {
             var distinctOn = new Field[] {
                     EXTENSION_VERSION.EXTENSION_ID,
                     EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM,
@@ -338,8 +338,8 @@ public class ExtensionVersionJooqRepository {
         totalQuery.addConditions(conditions);
         query.addSelect(EXTENSION.DEPRECATED, EXTENSION.DOWNLOADABLE, EXTENSION.REPLACEMENT_ID);
         query.addConditions(conditions);
-        query.addOffset(request.offset);
-        query.addLimit(request.size);
+        query.addOffset(request.offset());
+        query.addLimit(request.size());
 
         var content = query.fetch().map(record -> {
             var extVersion = toExtensionVersionFull(record);
@@ -355,7 +355,7 @@ public class ExtensionVersionJooqRepository {
             return extVersion;
         });
         var total = totalQuery.fetchOne(totalCol, Integer.class);
-        return new PageImpl<>(content, PageRequest.of(request.offset / request.size, request.size), total);
+        return new PageImpl<>(content, PageRequest.of(request.offset() / request.size(), request.size()), total);
     }
 
     public ExtensionVersion findActiveByVersionAndExtensionNameAndNamespaceName(String version, String extensionName, String namespaceName) {

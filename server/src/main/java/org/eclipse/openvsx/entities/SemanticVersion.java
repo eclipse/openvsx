@@ -44,12 +44,12 @@ public class SemanticVersion implements Comparable<SemanticVersion>, Serializabl
         }
     }
 
-    int major;
-    int minor;
-    int patch;
-    String preRelease;
-    boolean isPreRelease;
-    String buildMetadata;
+    private int major;
+    private int minor;
+    private int patch;
+    private String preRelease;
+    private boolean isPreRelease;
+    private String buildMetadata;
 
     public int getMajor() {
         return major;

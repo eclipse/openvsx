@@ -62,33 +62,33 @@ public class ExtensionValidator {
 
     public List<Issue> validateNamespaceDetails(NamespaceDetailsJson json) {
         var issues = new ArrayList<Issue>();
-        checkCharacters(json.displayName, "displayName", issues);
-        checkFieldSize(json.displayName, 32, "displayName", issues);
-        checkCharacters(json.description, "description", issues);
-        checkFieldSize(json.description, DEFAULT_STRING_SIZE, "description", issues);
-        checkURL(json.website, "website", issues);
-        checkURL(json.supportLink, "supportLink", issues);
+        checkCharacters(json.getDisplayName(), "displayName", issues);
+        checkFieldSize(json.getDisplayName(), 32, "displayName", issues);
+        checkCharacters(json.getDescription(), "description", issues);
+        checkFieldSize(json.getDescription(), DEFAULT_STRING_SIZE, "description", issues);
+        checkURL(json.getWebsite(), "website", issues);
+        checkURL(json.getSupportLink(), "supportLink", issues);
 
-        var githubLink = json.socialLinks.get("github");
+        var githubLink = json.getSocialLinks().get("github");
         if(githubLink != null && !githubLink.matches("https:\\/\\/github\\.com\\/[^\\/]+")) {
             issues.add(new Issue("Invalid GitHub URL"));
         }
-        var linkedinLink = json.socialLinks.get("linkedin");
+        var linkedinLink = json.getSocialLinks().get("linkedin");
         if(linkedinLink != null && !linkedinLink.matches("https:\\/\\/www\\.linkedin\\.com\\/(company|in)\\/[^\\/]+")) {
             issues.add(new Issue("Invalid LinkedIn URL"));
         }
-        var twitterLink = json.socialLinks.get("twitter");
+        var twitterLink = json.getSocialLinks().get("twitter");
         if(twitterLink != null && !twitterLink.matches("https:\\/\\/twitter\\.com\\/[^\\/]+")) {
             issues.add(new Issue("Invalid Twitter URL"));
         }
 
-        if(json.logoBytes != null) {
-            try (var in = new ByteArrayInputStream(json.logoBytes)) {
+        if(json.getLogoBytes() != null) {
+            try (var in = new ByteArrayInputStream(json.getLogoBytes())) {
                 var tika = new Tika();
-                var detectedType = tika.detect(in, json.logo);
+                var detectedType = tika.detect(in, json.getLogo());
                 var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
                 if(logoType != null) {
-                    json.logo = "logo-" + json.name + "-" + System.currentTimeMillis() + logoType.getExtension();
+                    json.setLogo("logo-" + json.getName() + "-" + System.currentTimeMillis() + logoType.getExtension());
                     if(!logoType.getType().equals(MediaType.image("png")) && !logoType.getType().equals(MediaType.image("jpg"))) {
                         issues.add(new Issue("Namespace logo should be of png or jpg type"));
                     }

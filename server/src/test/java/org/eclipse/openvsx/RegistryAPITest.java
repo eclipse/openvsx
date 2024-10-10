@@ -119,8 +119,8 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}", "foobar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespaceJson(n -> {
-                    n.name = "foobar";
-                    n.verified = false;
+                    n.setName("foobar");
+                    n.setVerified(false);
                 })));
     }
 
@@ -135,8 +135,8 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}", "foobar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(namespaceJson(n -> {
-                    n.name = "foobar";
-                    n.verified = true;
+                    n.setName("foobar");
+                    n.setVerified(true);
                 })));
     }
 
@@ -156,12 +156,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -177,10 +177,10 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.files = Map.of("publicKey", "http://localhost/api/-/public-key/" + keyPair.getPublicId());
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setFiles(Map.of("publicKey", "http://localhost/api/-/public-key/" + keyPair.getPublicId()));
                 })));
     }
 
@@ -193,13 +193,13 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (alpine x64)";
-                    e.targetPlatform = "alpine-x64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (alpine x64)");
+                    e.setTargetPlatform("alpine-x64");
                 })));
     }
 
@@ -212,13 +212,13 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}", "foo", "bar", "linux-x64"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.targetPlatform = "linux-x64";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (linux x64)";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (linux x64)");
+                    e.setTargetPlatform("linux-x64");
                 })));
     }
 
@@ -257,12 +257,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -275,12 +275,13 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (darwin arm64)";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (darwin arm64)");
+                    e.setTargetPlatform("darwin-arm64");
                 })));
     }
 
@@ -293,12 +294,13 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "darwin-arm64", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (darwin arm64)";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (darwin arm64)");
+                    e.setTargetPlatform("darwin-arm64");
                 })));
     }
 
@@ -311,13 +313,13 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "latest"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.versionAlias = List.of("latest");
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setVersionAlias(List.of("latest"));
                 })));
     }
 
@@ -331,14 +333,14 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "latest"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (alpine arm64)";
-                    e.versionAlias = List.of("latest");
-                    e.targetPlatform = "alpine-arm64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (alpine arm64)");
+                    e.setTargetPlatform("alpine-arm64");
+                    e.setVersionAlias(List.of("latest"));
                 })));
     }
 
@@ -352,14 +354,14 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "alpine-arm64", "latest"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (alpine arm64)";
-                    e.versionAlias = List.of("latest");
-                    e.targetPlatform = "alpine-arm64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (alpine arm64)");
+                    e.setTargetPlatform("alpine-arm64");
+                    e.setVersionAlias(List.of("latest"));
                 })));
     }
 
@@ -373,14 +375,14 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "pre-release"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.versionAlias = List.of("pre-release", "latest");
-                    e.preRelease = true;
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setVersionAlias(List.of("pre-release", "latest"));
+                    e.setPreRelease(true);
                 })));
     }
 
@@ -395,14 +397,15 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}", "foo", "bar", "pre-release"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (web)";
-                    e.versionAlias = List.of("pre-release", "latest");
-                    e.preRelease = true;
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (web)");
+                    e.setTargetPlatform("web");
+                    e.setVersionAlias(List.of("pre-release", "latest"));
+                    e.setPreRelease(true);
                 })));
     }
 
@@ -417,14 +420,15 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}", "foo", "bar", "web", "pre-release"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar (web)";
-                    e.versionAlias = List.of("pre-release", "latest");
-                    e.preRelease = true;
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar (web)");
+                    e.setTargetPlatform("web");
+                    e.setVersionAlias(List.of("pre-release", "latest"));
+                    e.setPreRelease(true);
                 })));
     }
 
@@ -535,21 +539,21 @@ class RegistryAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(reviewsJson(rs -> {
                     var u1 = new UserJson();
-                    u1.loginName = "user1";
+                    u1.setLoginName("user1");
                     var r1 = new ReviewJson();
-                    r1.user = u1;
-                    r1.rating = 3;
-                    r1.comment = "Somewhat ok";
-                    r1.timestamp = "2000-01-01T10:00Z";
-                    rs.reviews.add(r1);
+                    r1.setUser(u1);
+                    r1.setRating(3);
+                    r1.setComment("Somewhat ok");
+                    r1.setTimestamp("2000-01-01T10:00Z");
+                    rs.getReviews().add(r1);
                     var u2 = new UserJson();
-                    u2.loginName = "user2";
+                    u2.setLoginName("user2");
                     var r2 = new ReviewJson();
-                    r2.user = u2;
-                    r2.rating = 4;
-                    r2.comment = "Quite good";
-                    r2.timestamp = "2000-01-01T10:00Z";
-                    rs.reviews.add(r2);
+                    r2.setUser(u2);
+                    r2.setRating(4);
+                    r2.setComment("Quite good");
+                    r2.setTimestamp("2000-01-01T10:00Z");
+                    rs.getReviews().add(r2);
                 })));
     }
 
@@ -563,15 +567,15 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "10", "0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(searchJson(s -> {
-                    s.offset = 0;
-                    s.totalSize = 1;
+                    s.setOffset(0);
+                    s.setTotalSize(1);
                     var e1 = new SearchEntryJson();
-                    e1.namespace = "foo";
-                    e1.name = "bar";
-                    e1.version = "1.0.0";
-                    e1.timestamp = "2000-01-01T10:00Z";
-                    e1.displayName = "Foo Bar";
-                    s.extensions.add(e1);
+                    e1.setNamespace("foo");
+                    e1.setName("bar");
+                    e1.setVersion("1.0.0");
+                    e1.setTimestamp("2000-01-01T10:00Z");
+                    e1.setDisplayName("Foo Bar");
+                    s.getExtensions().add(e1);
                 })));
     }
 
@@ -597,12 +601,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/query?extensionName={extensionName}", "bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -612,12 +616,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/query?namespaceName={namespaceName}", "foo"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -646,12 +650,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/query?extensionId={extensionId}", "foo.bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -661,12 +665,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/query?extensionId={id}&extensionVersion={version}", "foo.bar", "1.0.0"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -676,12 +680,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/query?extensionUuid={extensionUuid}", "5678"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -691,53 +695,61 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/query?namespaceUuid={namespaceUuid}", "1234"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
     @Test
     void testGetQueryMultipleTargets() throws Exception {
         var versions = mockExtensionVersionTargetPlatforms();
-        var query = new QueryRequest();
-        query.namespaceUuid = "1234";
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                null,
+                null,
+                null,
+                null,
+                null,
+                "1234",
+                false,
+                null,
+                100,
+                0
+        );
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/-/query?namespaceUuid={namespaceUuid}", "1234"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.targetPlatform = "darwin-x64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("darwin-x64");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.targetPlatform = "linux-x64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("linux-x64");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.targetPlatform = "alpine-arm64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("alpine-arm64");
                 })));
     }
 
@@ -747,12 +759,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionName={extensionName}", "bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -762,12 +774,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?namespaceName={namespaceName}", "foo"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -796,84 +808,92 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}", "foo.bar"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
     @Test
     void testGetQueryV2IncludeAllVersionsTrue() throws Exception {
         var versions = mockExtensionVersionVersionsTargetPlatforms();
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.includeAllVersions = true;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                null,
+                null,
+                null,
+                null,
+                true,
+                null,
+                100,
+                0
+        );
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "true"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.targetPlatform = "darwin-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/darwin-x64/1.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("darwin-x64");
+                    e.setUrl("http://localhost/api/foo/bar/darwin-x64/1.0.0");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.targetPlatform = "darwin-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/darwin-x64/2.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("darwin-x64");
+                    e.setUrl("http://localhost/api/foo/bar/darwin-x64/2.0.0");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.targetPlatform = "linux-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/linux-x64/1.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("linux-x64");
+                    e.setUrl("http://localhost/api/foo/bar/linux-x64/1.0.0");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.targetPlatform = "linux-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/linux-x64/2.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("linux-x64");
+                    e.setUrl("http://localhost/api/foo/bar/linux-x64/2.0.0");
                 })));
     }
 
     @Test
     void testGetQueryV2IncludeAllVersionsFalse() throws Exception {
         var versions = mockExtensionVersionVersions();
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.includeAllVersions = false;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                100,
+                0
+        );
         versions = versions.stream().filter(ev -> ev.getVersion().equals("3.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
@@ -881,27 +901,32 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "false"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "3.0.0";
-                    e.versionAlias = List.of("latest");
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/universal/3.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("3.0.0");
+                    e.setVersionAlias(List.of("latest"));
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setUrl("http://localhost/api/foo/bar/universal/3.0.0");
                 })));
     }
 
     @Test
     void testGetQueryV2IncludeAllVersionsLinks() throws Exception {
         var versions = mockExtensionVersionVersions();
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.includeAllVersions = false;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                100,
+                0
+        );
         versions = versions.stream().filter(ev -> ev.getVersion().equals("3.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
@@ -909,32 +934,38 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "links"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "3.0.0";
-                    e.versionAlias = List.of("latest");
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = Map.of(
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("3.0.0");
+                    e.setVersionAlias(List.of("latest"));
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setAllVersions(Map.of(
                             "latest", "http://localhost/api/foo/bar/latest",
                             "3.0.0", "http://localhost/api/foo/bar/3.0.0",
                             "2.0.0", "http://localhost/api/foo/bar/2.0.0",
                             "1.0.0", "http://localhost/api/foo/bar/1.0.0"
-                    );
-                    e.url = "http://localhost/api/foo/bar/universal/3.0.0";
+                    ));
+                    e.setUrl("http://localhost/api/foo/bar/universal/3.0.0");
                 })));
     }
 
     @Test
     void testGetQueryV2MultipleTargetsIncludeAllVersionsLinks() throws Exception {
         var versions = mockExtensionVersionVersionsTargetPlatforms();
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.includeAllVersions = false;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                100,
+                0
+        );
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
@@ -942,88 +973,96 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&includeAllVersions={includeAllVersions}", "foo.bar", "links"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.targetPlatform = "darwin-x64";
-                    e.versionAlias = List.of("latest");
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = Map.of(
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setTargetPlatform("darwin-x64");
+                    e.setVersionAlias(List.of("latest"));
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setAllVersions(Map.of(
                             "latest", "http://localhost/api/foo/bar/latest",
                             "2.0.0", "http://localhost/api/foo/bar/2.0.0",
                             "1.0.0", "http://localhost/api/foo/bar/1.0.0"
-                    );
-                    e.url = "http://localhost/api/foo/bar/darwin-x64/2.0.0";
+                    ));
+                    e.setUrl("http://localhost/api/foo/bar/darwin-x64/2.0.0");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.targetPlatform = "linux-x64";
-                    e.versionAlias = List.of("latest");
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = Map.of(
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setTargetPlatform("linux-x64");
+                    e.setVersionAlias(List.of("latest"));
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setAllVersions(Map.of(
                             "latest", "http://localhost/api/foo/bar/latest",
                             "2.0.0", "http://localhost/api/foo/bar/2.0.0",
                             "1.0.0", "http://localhost/api/foo/bar/1.0.0"
-                    );
-                    e.url = "http://localhost/api/foo/bar/linux-x64/2.0.0";
+                    ));
+                    e.setUrl("http://localhost/api/foo/bar/linux-x64/2.0.0");
                 })));
     }
 
     @Test
     void testGetQueryV2TargetPlatformIncludeAllVersionsTrue() throws Exception {
         var versions = mockExtensionVersionVersionsTargetPlatforms("linux-x64");
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.targetPlatform = "linux-x64";
-        query.includeAllVersions = true;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                null,
+                null,
+                null,
+                null,
+                true,
+                "linux-x64",
+                100,
+                0
+        );
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&targetPlatform={targetPlatform}&includeAllVersions={includeAllVersions}", "foo.bar", "linux-x64", "true"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.targetPlatform = "linux-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/linux-x64/1.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setTargetPlatform("linux-x64");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setUrl("http://localhost/api/foo/bar/linux-x64/1.0.0");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.targetPlatform = "linux-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/linux-x64/2.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setTargetPlatform("linux-x64");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setUrl("http://localhost/api/foo/bar/linux-x64/2.0.0");
                 })));
     }
 
     @Test
     void testGetQueryV2ExtensionVersionIncludeAllVersionsTrue() throws Exception {
         var versions = mockExtensionVersionVersionsTargetPlatforms();
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.extensionVersion = "2.0.0";
-        query.includeAllVersions = false;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                "2.0.0",
+                null,
+                null,
+                null,
+                false,
+                null,
+                100,
+                0
+        );
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
@@ -1031,39 +1070,42 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&extensionVersion={extensionVersion}&includeAllVersions={includeAllVersions}", "foo.bar", "2.0.0", "true"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.targetPlatform = "darwin-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/darwin-x64/2.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setTargetPlatform("darwin-x64");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setUrl("http://localhost/api/foo/bar/darwin-x64/2.0.0");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.targetPlatform = "linux-x64";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/linux-x64/2.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setTargetPlatform("linux-x64");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setUrl("http://localhost/api/foo/bar/linux-x64/2.0.0");
                 })));
     }
 
     @Test
     void testGetQueryV2ExtensionVersionIncludeAllVersionsFalse() throws Exception {
         var versions = mockExtensionVersionVersions();
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.extensionVersion = "2.0.0";
-        query.includeAllVersions = false;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                "2.0.0",
+                null,
+                null,
+                null,
+                false,
+                null,
+                100,
+                0
+        );
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
@@ -1071,27 +1113,31 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&extensionVersion={extensionVersion}&includeAllVersions={includeAllVersions}", "foo.bar", "2.0.0", "false"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = null;
-                    e.url = "http://localhost/api/foo/bar/universal/2.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setUrl("http://localhost/api/foo/bar/universal/2.0.0");
                 })));
     }
 
     @Test
     void testGetQueryV2ExtensionVersionIncludeAllVersionsLinks() throws Exception {
         var versions = mockExtensionVersionVersions();
-        var query = new QueryRequest();
-        query.namespaceName = "foo";
-        query.extensionName = "bar";
-        query.extensionVersion = "2.0.0";
-        query.includeAllVersions = false;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                "foo",
+                "bar",
+                "2.0.0",
+                null,
+                null,
+                null,
+                false,
+                null,
+                100,
+                0
+        );
         versions = versions.stream().filter(ev -> ev.getVersion().equals("2.0.0")).collect(Collectors.toList());
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
@@ -1099,19 +1145,19 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionId={extensionId}&extensionVersion={extensionVersion}&includeAllVersions={includeAllVersions}", "foo.bar", "2.0.0", "links"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "2.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.allVersions = Map.of(
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("2.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setAllVersions(Map.of(
                             "latest", "http://localhost/api/foo/bar/latest",
                             "3.0.0", "http://localhost/api/foo/bar/3.0.0",
                             "2.0.0", "http://localhost/api/foo/bar/2.0.0",
                             "1.0.0", "http://localhost/api/foo/bar/1.0.0"
-                    );
-                    e.url = "http://localhost/api/foo/bar/universal/2.0.0";
+                    ));
+                    e.setUrl("http://localhost/api/foo/bar/universal/2.0.0");
                 })));
     }
 
@@ -1121,12 +1167,12 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?extensionUuid={extensionUuid}", "5678"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
@@ -1136,54 +1182,61 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/v2/-/query?namespaceUuid={namespaceUuid}", "1234"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
                 })));
     }
 
     @Test
     void testGetQueryV2MultipleTargets() throws Exception {
         var versions = mockExtensionVersionTargetPlatforms();
-        var query = new QueryRequest();
-        query.namespaceUuid = "1234";
-        query.includeAllVersions = false;
-        query.offset = 0;
-        query.size = 100;
+        var query = new QueryRequest(
+                null,
+                null,
+                null,
+                null,
+                null,
+                "1234",
+                false,
+                null,
+                100,
+                0
+        );
         Mockito.when(repositories.findActiveVersions(query))
                 .thenReturn(new PageImpl<>(versions, Pageable.ofSize(100), versions.size()));
 
         mockMvc.perform(get("/api/v2/-/query?namespaceUuid={namespaceUuid}", "1234"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(queryResultJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.targetPlatform = "darwin-x64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("darwin-x64");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.targetPlatform = "linux-x64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("linux-x64");
                 },
                 e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
-                    e.verified = false;
-                    e.timestamp = "2000-01-01T10:00Z";
-                    e.displayName = "Foo Bar";
-                    e.targetPlatform = "alpine-arm64";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    e.setVerified(false);
+                    e.setTimestamp("2000-01-01T10:00Z");
+                    e.setDisplayName("Foo Bar");
+                    e.setTargetPlatform("alpine-arm64");
                 })));
     }
 
@@ -1242,7 +1295,7 @@ class RegistryAPITest {
         mockAccessToken();
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foobar"; })))
+                .content(namespaceJson(n -> { n.setName("foobar"); })))
                 .andExpect(status().isCreated())
                 .andExpect(redirectedUrl("http://localhost/api/foobar"))
                 .andExpect(content().json(successJson("Created namespace foobar")));
@@ -1263,7 +1316,7 @@ class RegistryAPITest {
         mockAccessToken();
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foo.bar"; })))
+                .content(namespaceJson(n -> { n.setName("foo.bar"); })))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid namespace name: foo.bar")));
     }
@@ -1274,7 +1327,7 @@ class RegistryAPITest {
         token.setActive(false);
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foobar"; })))
+                .content(namespaceJson(n -> { n.setName("foobar"); })))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
@@ -1287,7 +1340,7 @@ class RegistryAPITest {
 
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(namespaceJson(n -> { n.name = "foobar"; })))
+                .content(namespaceJson(n -> { n.setName("foobar"); })))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errorJson("Namespace already exists: foobar")));
     }
@@ -1376,14 +1429,14 @@ class RegistryAPITest {
                     .content(bytes))
                     .andExpect(status().isCreated())
                     .andExpect(content().json(extensionJson(e -> {
-                        e.namespace = "foo";
-                        e.name = "bar";
-                        e.version = "1.0.0";
+                        e.setNamespace("foo");
+                        e.setName("bar");
+                        e.setVersion("1.0.0");
                         var u = new UserJson();
-                        u.loginName = "test_user";
-                        e.publishedBy = u;
-                        e.verified = true;
-                        e.downloadable = true;
+                        u.setLoginName("test_user");
+                        e.setPublishedBy(u);
+                        e.setVerified(true);
+                        e.setDownloadable(true);
                     })));
         } finally {
             extensions.requireLicense = previousRequireLicense;
@@ -1423,14 +1476,14 @@ class RegistryAPITest {
                 .content(bytes))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
                     var u = new UserJson();
-                    u.loginName = "test_user";
-                    e.publishedBy = u;
-                    e.verified = true;
-                    e.downloadable = true;
+                    u.setLoginName("test_user");
+                    e.setPublishedBy(u);
+                    e.setVerified(true);
+                    e.setDownloadable(true);
                 })));
     }
 
@@ -1444,14 +1497,14 @@ class RegistryAPITest {
                 .content(bytes))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
                     var u = new UserJson();
-                    u.loginName = "test_user";
-                    e.publishedBy = u;
-                    e.verified = true;
-                    e.downloadable = true;
+                    u.setLoginName("test_user");
+                    e.setPublishedBy(u);
+                    e.setVerified(true);
+                    e.setDownloadable(true);
                 })));
     }
 
@@ -1465,14 +1518,14 @@ class RegistryAPITest {
                 .content(bytes))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
                     var u = new UserJson();
-                    u.loginName = "test_user";
-                    e.publishedBy = u;
-                    e.verified = false;
-                    e.downloadable = true;
+                    u.setLoginName("test_user");
+                    e.setPublishedBy(u);
+                    e.setVerified(false);
+                    e.setDownloadable(true);
                 })));
     }
 
@@ -1486,14 +1539,14 @@ class RegistryAPITest {
                 .content(bytes))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(extensionJson(e -> {
-                    e.namespace = "foo";
-                    e.name = "bar";
-                    e.version = "1.0.0";
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
                     var u = new UserJson();
-                    u.loginName = "test_user";
-                    e.publishedBy = u;
-                    e.verified = true;
-                    e.downloadable = true;
+                    u.setLoginName("test_user");
+                    e.setPublishedBy(u);
+                    e.setVerified(true);
+                    e.setDownloadable(true);
                 })));
     }
 
@@ -1600,7 +1653,7 @@ class RegistryAPITest {
         mockMvc.perform(post("/api/{namespace}/{extension}/review", "foo", "bar")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
-                    r.rating = 3;
+                    r.setRating(3);
                 }))
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
@@ -1613,7 +1666,7 @@ class RegistryAPITest {
         mockMvc.perform(post("/api/{namespace}/{extension}/review", "foo", "bar")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
-                    r.rating = 3;
+                    r.setRating(3);
                 })).with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
@@ -1623,7 +1676,7 @@ class RegistryAPITest {
         mockMvc.perform(post("/api/{namespace}/{extension}/review", "foo", "bar")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
-                    r.rating = 100;
+                    r.setRating(100);
                 }))
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
@@ -1637,7 +1690,7 @@ class RegistryAPITest {
         mockMvc.perform(post("/api/{namespace}/{extension}/review", "foo", "bar")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
-                    r.rating = 3;
+                    r.setRating(3);
                 }))
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
@@ -1658,7 +1711,7 @@ class RegistryAPITest {
         mockMvc.perform(post("/api/{namespace}/{extension}/review", "foo", "bar")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reviewJson(r -> {
-                    r.rating = 3;
+                    r.setRating(3);
                 }))
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
@@ -1758,13 +1811,21 @@ class RegistryAPITest {
     }
 
     private void mockInactiveExtensionVersion(String namespaceName, String extensionName) {
-        var request = new QueryRequest();
-        request.namespaceName = namespaceName;
-        request.extensionName = extensionName;
-        request.size = 100;
+        var query = new QueryRequest(
+                namespaceName,
+                extensionName,
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                100,
+                0
+        );
 
-        Mockito.when(repositories.findActiveVersions(request))
-                .thenReturn(new PageImpl<>(Collections.emptyList(), Pageable.ofSize(request.size), 0));
+        Mockito.when(repositories.findActiveVersions(query))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), Pageable.ofSize(query.size()), 0));
     }
 
     private List<ExtensionVersion> mockExtensionVersionVersionsTargetPlatforms() {
@@ -1885,10 +1946,10 @@ class RegistryAPITest {
         Mockito.when(repositories.findActiveVersions(any(QueryRequest.class)))
                 .then((Answer<Page<ExtensionVersion>>) invocation -> {
                     var request = invocation.getArgument(0, QueryRequest.class);
-                    var versions = namespace.getPublicId().equals(request.namespaceUuid)
-                            || namespace.getName().equals(request.namespaceName)
-                            || extension.getPublicId().equals(request.extensionUuid)
-                            || extension.getName().equals(request.extensionName)
+                    var versions = namespace.getPublicId().equals(request.namespaceUuid())
+                            || namespace.getName().equals(request.namespaceName())
+                            || extension.getPublicId().equals(request.extensionUuid())
+                            || extension.getName().equals(request.extensionName())
                             ? List.of(extVersion)
                             : Collections.<ExtensionVersion>emptyList();
 
@@ -2080,7 +2141,7 @@ class RegistryAPITest {
 
     private String reviewsJson(Consumer<ReviewListJson> content) throws JsonProcessingException {
         var json = new ReviewListJson();
-        json.reviews = new ArrayList<>();
+        json.setReviews(new ArrayList<>());
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
@@ -2090,12 +2151,12 @@ class RegistryAPITest {
         var extension = extVersion.getExtension();
         extension.setId(1L);
         var entry1 = new ExtensionSearch();
-        entry1.id = 1;
+        entry1.setId(1);
         var searchHit = new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1);
         var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1", null, List.of(searchHit), null, null);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false);
+        var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false, null);
         Mockito.when(search.search(searchOptions))
                 .thenReturn(searchHits);
         return List.of(extVersion);
@@ -2103,7 +2164,7 @@ class RegistryAPITest {
 
     private String searchJson(Consumer<SearchResultJson> content) throws JsonProcessingException {
         var json = new SearchResultJson();
-        json.extensions = new ArrayList<>();
+        json.setExtensions(new ArrayList<>());
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
