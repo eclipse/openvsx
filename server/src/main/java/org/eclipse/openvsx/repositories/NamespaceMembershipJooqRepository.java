@@ -40,17 +40,17 @@ public class NamespaceMembershipJooqRepository {
                 )
                 .from(NAMESPACE_MEMBERSHIP)
                 .where(NAMESPACE_MEMBERSHIP.NAMESPACE.in(namespaceIds))
-                .fetch(record -> {
+                .fetch(row -> {
                     var namespaceMembership = new NamespaceMembership();
-                    namespaceMembership.setId(record.get(NAMESPACE_MEMBERSHIP.ID));
-                    namespaceMembership.setRole(record.get(NAMESPACE_MEMBERSHIP.ROLE));
+                    namespaceMembership.setId(row.get(NAMESPACE_MEMBERSHIP.ID));
+                    namespaceMembership.setRole(row.get(NAMESPACE_MEMBERSHIP.ROLE));
 
                     var namespace = new Namespace();
-                    namespace.setId(record.get(NAMESPACE_MEMBERSHIP.NAMESPACE));
+                    namespace.setId(row.get(NAMESPACE_MEMBERSHIP.NAMESPACE));
                     namespaceMembership.setNamespace(namespace);
 
                     var user = new UserData();
-                    user.setId(record.get(NAMESPACE_MEMBERSHIP.USER_DATA));
+                    user.setId(row.get(NAMESPACE_MEMBERSHIP.USER_DATA));
                     namespaceMembership.setUser(user);
 
                     return namespaceMembership;
@@ -126,22 +126,22 @@ public class NamespaceMembershipJooqRepository {
         return query;
     }
 
-    private NamespaceMembership toNamespaceMembership(Record record) {
+    private NamespaceMembership toNamespaceMembership(Record row) {
         var namespace = new Namespace();
-        namespace.setId(record.get(NAMESPACE.ID));
-        namespace.setName(record.get(NAMESPACE.NAME));
+        namespace.setId(row.get(NAMESPACE.ID));
+        namespace.setName(row.get(NAMESPACE.NAME));
 
         var user = new UserData();
-        user.setId(record.get(USER_DATA.ID));
-        user.setLoginName(record.get(USER_DATA.LOGIN_NAME));
-        user.setFullName(record.get(USER_DATA.FULL_NAME));
-        user.setAvatarUrl(record.get(USER_DATA.AVATAR_URL));
-        user.setProvider(record.get(USER_DATA.PROVIDER));
-        user.setProviderUrl(record.get(USER_DATA.PROVIDER_URL));
+        user.setId(row.get(USER_DATA.ID));
+        user.setLoginName(row.get(USER_DATA.LOGIN_NAME));
+        user.setFullName(row.get(USER_DATA.FULL_NAME));
+        user.setAvatarUrl(row.get(USER_DATA.AVATAR_URL));
+        user.setProvider(row.get(USER_DATA.PROVIDER));
+        user.setProviderUrl(row.get(USER_DATA.PROVIDER_URL));
 
         var membership = new NamespaceMembership();
-        membership.setId(record.get(NAMESPACE_MEMBERSHIP.ID));
-        membership.setRole(record.get(NAMESPACE_MEMBERSHIP.ROLE));
+        membership.setId(row.get(NAMESPACE_MEMBERSHIP.ID));
+        membership.setRole(row.get(NAMESPACE_MEMBERSHIP.ROLE));
         membership.setNamespace(namespace);
         membership.setUser(user);
 
