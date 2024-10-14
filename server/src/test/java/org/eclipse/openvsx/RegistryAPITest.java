@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
@@ -59,10 +60,13 @@ import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -460,49 +464,54 @@ class RegistryAPITest {
 
     @Test
     void testReadmeUniversalTarget() throws Exception {
-        var resource = mockReadme();
-        Mockito.when(repositories.findFileByType("foo", "bar", "universal", "1.0.0", README)).thenReturn(resource);
-
+        var filePath = mockReadme();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "README"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("Please read me"));
+                .andExpect(content().string("Please read me"))
+                .andDo(result -> Files.delete(filePath));
     }
 
     @Test
     void testReadmeWindowsTarget() throws Exception {
-        var resource = mockReadme("win32-x64");
-        Mockito.when(repositories.findFileByType("foo", "bar", "win32-x64", "1.0.0", README)).thenReturn(resource);
-
+        var filePath = mockReadme("win32-x64");
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}/file/{fileName}", "foo", "bar", "win32-x64", "1.0.0", "README"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("Please read me"));
+                .andExpect(content().string("Please read me"))
+                .andDo(result -> Files.delete(filePath));
     }
 
     @Test
     void testReadmeUnknownTarget() throws Exception {
-        mockReadme();
+        var filePath = mockReadme();
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}/file/{fileName}", "foo", "bar", "darwin-x64", "1.0.0", "README"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andDo(result -> Files.delete(filePath));
     }
 
     @Test
     void testChangelog() throws Exception {
-        var resource = mockChangelog();
-        Mockito.when(repositories.findFileByType("foo", "bar", "universal", "1.0.0", CHANGELOG)).thenReturn(resource);
-
+        var filePath = mockChangelog();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "CHANGELOG"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("All notable changes is documented here"));
+                .andExpect(content().string("All notable changes is documented here"))
+                .andDo(result -> Files.delete(filePath));
     }
 
     @Test
     void testLicense() throws Exception {
-        var resource = mockLicense();
-        Mockito.when(repositories.findFileByType("foo", "bar", "universal", "1.0.0", LICENSE)).thenReturn(resource);
-
+        var filePath = mockLicense();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "LICENSE"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("I never broke the Law! I am the law!"));
+                .andExpect(content().string("I never broke the Law! I am the law!"))
+                .andDo(result -> Files.delete(filePath));
     }
 
     @Test
@@ -523,13 +532,13 @@ class RegistryAPITest {
 
     @Test
     void testLatestFile() throws Exception {
-        var resource = mockLatest();
-        Mockito.when(repositories.findFileByType("foo", "bar", "universal", "latest", FileResource.DOWNLOAD))
-                .thenReturn(resource);
-
+        var filePath = mockLatest();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "latest", "DOWNLOAD"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("latest download"));
+                .andExpect(content().string("latest download"))
+                .andDo(result -> Files.delete(filePath));
     }
 
     @Test
@@ -2016,13 +2025,13 @@ class RegistryAPITest {
         var download = new FileResource();
         download.setExtension(extVersion);
         download.setType(DOWNLOAD);
-        download.setStorageType(STORAGE_DB);
+        download.setStorageType(STORAGE_LOCAL);
         download.setName("extension-1.0.0.vsix");
         var signature = new FileResource();
         if(withSignature) {
             signature.setExtension(extVersion);
             signature.setType(DOWNLOAD_SIG);
-            signature.setStorageType(STORAGE_DB);
+            signature.setStorageType(STORAGE_LOCAL);
             signature.setName("extension-1.0.0.sigzip");
         }
         Mockito.when(entityManager.merge(download)).thenReturn(download);
@@ -2062,56 +2071,80 @@ class RegistryAPITest {
         return "{\"extensions\":[" + String.join(",", extensionJsons) + "]}";
     }
 
-    private FileResource mockReadme() {
+    private Path mockReadme() throws IOException {
         return mockReadme(TargetPlatform.NAME_UNIVERSAL);
     }
 
-    private FileResource mockReadme(String targetPlatform) {
+    private Path mockReadme(String targetPlatform) throws IOException {
         var extVersion = mockExtension(targetPlatform);
         var resource = new FileResource();
         resource.setExtension(extVersion);
         resource.setName("README");
         resource.setType(FileResource.README);
-        resource.setContent("Please read me".getBytes());
-        resource.setStorageType(FileResource.STORAGE_DB);
+        resource.setStorageType(STORAGE_LOCAL);
         Mockito.when(entityManager.find(FileResource.class, resource.getId())).thenReturn(resource);
-        return resource;
+        Mockito.when(repositories.findFileByType("foo", "bar", targetPlatform, "1.0.0", README)).thenReturn(resource);
+
+        var segments = new String[]{ "foo", "bar" };
+        if(!targetPlatform.equals(TargetPlatform.NAME_UNIVERSAL)) {
+            segments = ArrayUtils.add(segments, targetPlatform);
+        }
+
+        segments = ArrayUtils.add(segments, "1.0.0");
+        segments = ArrayUtils.add(segments, "README");
+        var path = Path.of("/tmp", segments);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "Please read me");
+        return path;
     }
 
-    private FileResource mockChangelog() {
+    private Path mockChangelog() throws IOException {
         var extVersion = mockExtension();
         var resource = new FileResource();
         resource.setExtension(extVersion);
         resource.setName("CHANGELOG");
         resource.setType(FileResource.CHANGELOG);
-        resource.setContent("All notable changes is documented here".getBytes());
-        resource.setStorageType(FileResource.STORAGE_DB);
+        resource.setStorageType(FileResource.STORAGE_LOCAL);
         Mockito.when(entityManager.find(FileResource.class, resource.getId())).thenReturn(resource);
-        return resource;
+        Mockito.when(repositories.findFileByType("foo", "bar", "universal", "1.0.0", CHANGELOG)).thenReturn(resource);
+
+        var path = Path.of("/tmp", "foo", "bar", "1.0.0", "CHANGELOG");
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "All notable changes is documented here");
+        return path;
     }
 
-    private FileResource mockLicense() {
+    private Path mockLicense() throws IOException {
         var extVersion = mockExtension();
         var resource = new FileResource();
         resource.setExtension(extVersion);
         resource.setName("LICENSE");
         resource.setType(FileResource.LICENSE);
-        resource.setContent("I never broke the Law! I am the law!".getBytes());
-        resource.setStorageType(FileResource.STORAGE_DB);
+        resource.setStorageType(FileResource.STORAGE_LOCAL);
         Mockito.when(entityManager.find(FileResource.class, resource.getId())).thenReturn(resource);
-        return resource;
+        Mockito.when(repositories.findFileByType("foo", "bar", "universal", "1.0.0", LICENSE)).thenReturn(resource);
+
+        var path = Path.of("/tmp", "foo", "bar", "1.0.0", "LICENSE");
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "I never broke the Law! I am the law!");
+        return path;
     }
 
-    private FileResource mockLatest() {
+    private Path mockLatest() throws IOException {
         var extVersion = mockExtension();
         var resource = new FileResource();
         resource.setExtension(extVersion);
         resource.setName("DOWNLOAD");
         resource.setType(FileResource.DOWNLOAD);
-        resource.setContent("latest download".getBytes());
-        resource.setStorageType(FileResource.STORAGE_DB);
+        resource.setStorageType(STORAGE_LOCAL);
         Mockito.when(entityManager.find(FileResource.class, resource.getId())).thenReturn(resource);
-        return resource;
+        Mockito.when(repositories.findFileByType("foo", "bar", "universal", "latest", FileResource.DOWNLOAD))
+                .thenReturn(resource);
+
+        var path = Path.of("/tmp", "foo", "bar", "1.0.0", "DOWNLOAD");
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "latest download");
+        return path;
     }
 
     private void mockReviews() {
@@ -2439,8 +2472,8 @@ class RegistryAPITest {
                     repositories,
                     googleStorage,
                     azureStorage,
-                    azureDownloadCountService,
                     localStorage,
+                    azureDownloadCountService,
                     search,
                     cache,
                     entityManager
@@ -2448,8 +2481,8 @@ class RegistryAPITest {
         }
 
         @Bean
-        LocalStorageService localStorageService(EntityManager entityManager) {
-            return new LocalStorageService(entityManager);
+        LocalStorageService localStorageService() {
+            return new LocalStorageService();
         }
 
         @Bean

@@ -28,7 +28,7 @@ public class FileResource {
     public static final String VSIXMANIFEST = "vsixmanifest";
 
     // Storage types
-    public static final String STORAGE_DB = "database";
+    public static final String STORAGE_LOCAL = "local";
     public static final String STORAGE_GOOGLE = "google-cloud";
     public static final String STORAGE_AZURE = "azure-blob";
 
@@ -83,13 +83,14 @@ public class FileResource {
         this.type = type;
     }
 
-	public byte[] getContent() {
-		return content;
-	}
+    @Deprecated
+    public byte[] getContent() {
+        return content;
+    }
 
-	public void setContent(byte[] content) {
-		this.content = content;
-	}
+    public void clearContent() {
+        this.content = null;
+    }
 
     public String getStorageType() {
         return storageType;

@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.util.AbstractMap;
 
 @Component
 public class PotentiallyMaliciousJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
@@ -40,9 +39,7 @@ public class PotentiallyMaliciousJobRequestHandler implements JobRequestHandler<
         var extVersion = download.getExtension();
         logger.info("Checking extension version for potentially malicious vsix file: {}", NamingUtil.toLogFormat(extVersion));
 
-        var content = migrations.getContent(download);
-        var entry = new AbstractMap.SimpleEntry<>(download, content);
-        try(var extensionFile = migrations.getExtensionFile(entry)) {
+        try(var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {
                 logger.info("Extension file is empty, skipping: {}", download.getName());
                 return;
@@ -51,7 +48,6 @@ public class PotentiallyMaliciousJobRequestHandler implements JobRequestHandler<
             logger.info("Checking vsix file for potentially malicious metadata: {}", download.getName());
             service.checkPotentiallyMaliciousExtensionVersion(extVersion, extensionFile);
         }
-
     }
 
 }
