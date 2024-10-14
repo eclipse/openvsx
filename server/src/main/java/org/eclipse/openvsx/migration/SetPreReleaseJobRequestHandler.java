@@ -38,9 +38,9 @@ public class SetPreReleaseJobRequestHandler implements JobRequestHandler<Migrati
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var extVersions = service.getExtensionVersions(jobRequest, logger);
         for(var extVersion : extVersions) {
-            var entry = migrations.getDownload(extVersion);
-            if(entry != null) {
-                try (var extensionFile = migrations.getExtensionFile(entry)) {
+            var download = migrations.getDownload(extVersion);
+            if(download != null) {
+                try (var extensionFile = migrations.getExtensionFile(download)) {
                     if(Files.size(extensionFile.getPath()) > 0) {
                         service.updatePreviewAndPreRelease(extVersion, extensionFile);
                     }

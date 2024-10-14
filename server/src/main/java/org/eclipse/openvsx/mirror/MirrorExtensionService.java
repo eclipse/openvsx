@@ -205,16 +205,14 @@ public class MirrorExtensionService {
     }
 
     private TempFile downloadToFile(String url, String prefix, String suffix) throws IOException {
-        var file = new TempFile(prefix, suffix);
-        backgroundRestTemplate.execute("{url}", HttpMethod.GET, null, response -> {
+        return backgroundRestTemplate.execute("{url}", HttpMethod.GET, null, response -> {
+            var file = new TempFile(prefix, suffix);
             try(var out = Files.newOutputStream(file.getPath())) {
                 response.getBody().transferTo(out);
             }
 
             return file;
         }, Map.of("url", url));
-
-        return file;
     }
 
     private TempFile extractSignature(TempFile signatureZip) throws RuntimeException, IOException {

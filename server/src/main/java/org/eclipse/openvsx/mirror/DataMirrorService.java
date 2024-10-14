@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -182,7 +181,7 @@ public class DataMirrorService {
 
         var url = storageUtil.getLocation(resource);
         try {
-            backgroundRestTemplate.exchange("{canGetVsixUri}", HttpMethod.HEAD, null, byte[].class, Map.of("canGetVsixUri", url));
+            backgroundRestTemplate.headForHeaders("{canGetVsixUri}", Map.of("canGetVsixUri", url));
         } catch(Throwable t) {
             logger.error("failed to activate extension, vsix is invalid: "+ url, t);
             return false;

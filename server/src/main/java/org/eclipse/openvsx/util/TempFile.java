@@ -9,6 +9,9 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
+import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +19,8 @@ import java.nio.file.Path;
 public class TempFile implements AutoCloseable {
 
     private final Path path;
+    private FileResource resource;
+    private Namespace namespace;
 
     public TempFile(String prefix, String suffix) throws IOException {
         path = Files.createTempFile(prefix, suffix);
@@ -23,6 +28,22 @@ public class TempFile implements AutoCloseable {
 
     public Path getPath() {
         return path;
+    }
+
+    public FileResource getResource() {
+        return resource;
+    }
+
+    public void setResource(FileResource resource) {
+        this.resource = resource;
+    }
+
+    public Namespace getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(Namespace namespace) {
+        this.namespace = namespace;
     }
 
     @Override

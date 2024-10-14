@@ -51,6 +51,8 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         generateSha256ChecksumMigration();
         extensionVersionSignatureMigration();
         checkPotentiallyMaliciousExtensionVersions();
+        migrateLocalNamespaceLogos();
+        migrateLocalFileResourceContent();
     }
 
     private void extractResourcesMigration() {
@@ -99,5 +101,17 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         var jobName = "CheckPotentiallyMaliciousExtensionVersions";
         var handler = PotentiallyMaliciousJobRequestHandler.class;
         repositories.findNotMigratedPotentiallyMalicious().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+    }
+
+    private void migrateLocalNamespaceLogos() {
+        var jobName = "LocalNamespaceLogoMigration";
+        var handler = NamespaceLogoFileResourceJobRequestHandler.class;
+        repositories.findNotMigratedLocalNamespaceLogos().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+    }
+
+    private void migrateLocalFileResourceContent() {
+        var jobName = "LocalFileResourceContentMigration";
+        var handler = FileResourceContentJobRequestHandler.class;
+        repositories.findNotMigratedLocalFileResourceContent().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
     }
 }

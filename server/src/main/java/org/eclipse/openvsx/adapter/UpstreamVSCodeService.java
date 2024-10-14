@@ -15,18 +15,22 @@ import org.eclipse.openvsx.UpstreamProxyService;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -81,8 +85,8 @@ public class UpstreamVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path) {
-        var urlTemplate = urlConfigService.getUpstreamUrl() + "/vscode/unpkg/{namespace}/{extension}/{version}";
+    public ResponseEntity<StreamingResponseBody> browse(String namespaceName, String extensionName, String version, String path) {
+        var urlBuilder = new StringBuilder(urlConfigService.getUpstreamUrl() + "/vscode/unpkg/{namespace}/{extension}/{version}");
         var uriVariables = new HashMap<>(Map.of(
             "namespace", namespaceName,
             "extension", extensionName,
@@ -93,49 +97,67 @@ public class UpstreamVSCodeService implements IVSCodeService {
             var segments = path.split("/");
             for (var i = 0; i < segments.length; i++) {
                 var varName = "seg" + i;
-                urlTemplate = urlTemplate + "/{" + varName + "}";
+                urlBuilder.append("/{").append(varName).append("}");
                 uriVariables.put(varName, segments[i]);
             }
         }
 
-        ResponseEntity<byte[]> response;
         var method = HttpMethod.GET;
-        try {
-            response = nonRedirectingRestTemplate.exchange(urlTemplate, method, null, byte[].class, uriVariables);
-        } catch(RestClientException exc) {
-            throw propagateRestException(exc, method, urlTemplate, uriVariables);
-        }
+        var urlTemplate = urlBuilder.toString();
+        var responseHandler = new ResponseExtractor<ResponseEntity<StreamingResponseBody>>() {
+            @Override
+            public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
+                var statusCode = response.getStatusCode();
+                if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
+                    var headers = new HttpHeaders();
+                    headers.addAll(response.getHeaders());
+                    headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+                    headers.remove(HttpHeaders.VARY);
 
-        var statusCode = response.getStatusCode();
-        if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
-            var headers = new HttpHeaders();
-            headers.addAll(response.getHeaders());
-            headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
-            headers.remove(HttpHeaders.VARY);
+                    if(proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
+                        var mapper = new ObjectMapper();
+                        var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
+                        return ResponseEntity.status(statusCode)
+                                .headers(headers)
+                                .body(outputStream -> {
+                                    mapper.writeValue(outputStream, json);
+                                });
+                    } else {
+                        var tempFile = new TempFile("browse", null);
+                        try {
+                            try (var out = Files.newOutputStream(tempFile.getPath())) {
+                                response.getBody().transferTo(out);
+                            }
 
-            if(proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
-                try {
-                    var mapper = new ObjectMapper();
-                    var json = mapper.readTree(response.getBody());
-                    json = proxy.rewriteUrls(json);
-                    response = ResponseEntity.status(statusCode)
-                            .headers(headers)
-                            .body(mapper.writeValueAsString(json).getBytes(StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    logger.error("Failed to read/write JSON", e);
+                            return ResponseEntity.status(response.getStatusCode())
+                                    .headers(headers)
+                                    .body(outputStream -> {
+                                        try (var in = Files.newInputStream(tempFile.getPath())) {
+                                            in.transferTo(outputStream);
+                                        }
+
+                                        tempFile.close();
+                                    });
+                        } catch (IOException e) {
+                            tempFile.close();
+                            throw e;
+                        }
+                    }
                 }
-            } else {
-                response = new ResponseEntity<>(response.getBody(), headers, response.getStatusCode());
+                if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
+                    var url = UriComponentsBuilder.fromUriString(urlBuilder.toString()).build(uriVariables);
+                    logger.error("GET {}: {}", url, response);
+                }
+
+                throw new NotFoundException();
             }
+        };
 
-            return response;
+        try {
+            return nonRedirectingRestTemplate.execute(urlBuilder.toString(), method, null, responseHandler, uriVariables);
+        } catch(RestClientException exc) {
+            throw propagateRestException(exc, method, urlBuilder.toString(), uriVariables);
         }
-        if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-            logger.error("GET {}: {}", url, response);
-        }
-
-        throw new NotFoundException();
     }
 
     @Override
@@ -204,8 +226,10 @@ public class UpstreamVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<byte[]> getAsset(String namespace, String extensionName, String version, String assetType, String targetPlatform, String restOfTheUrl) {
-        var urlTemplate = urlConfigService.getUpstreamUrl() + "/vscode/asset/{namespace}/{extension}/{version}/{assetType}";
+    public ResponseEntity<StreamingResponseBody> getAsset(String namespace, String extensionName, String version, String assetType, String targetPlatform, String restOfTheUrl) {
+        var urlBuilder = new StringBuilder()
+                .append(urlConfigService.getUpstreamUrl())
+                .append("/vscode/asset/{namespace}/{extension}/{version}/{assetType}");
         var uriVariables = new HashMap<>(Map.of(
             "namespace", namespace,
             "extension", extensionName,
@@ -218,45 +242,69 @@ public class UpstreamVSCodeService implements IVSCodeService {
             var segments = restOfTheUrl.split("/");
             for (var i = 0; i < segments.length; i++) {
                 var varName = "seg" + i;
-                urlTemplate = urlTemplate + "/{" + varName + "}";
+                urlBuilder.append("/{").append(varName).append("}");
                 uriVariables.put(varName, segments[i]);
             }
         }
 
-        urlTemplate = urlTemplate + "?targetPlatform={targetPlatform}";
-        ResponseEntity<byte[]> response;
+        urlBuilder.append("?targetPlatform={targetPlatform}");
+        var urlTemplate = urlBuilder.toString();
         var method = HttpMethod.GET;
+        var responseHandler = new ResponseExtractor<ResponseEntity<StreamingResponseBody>>() {
+            @Override
+            public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
+                var statusCode = response.getStatusCode();
+                if(statusCode.is2xxSuccessful()) {
+                    var headers = new HttpHeaders();
+                    headers.addAll(response.getHeaders());
+                    headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+                    headers.remove(HttpHeaders.VARY);
+
+                    var tempFile = new TempFile("asset", null);
+                    try {
+                        try (var out = Files.newOutputStream(tempFile.getPath())) {
+                            response.getBody().transferTo(out);
+                        }
+
+                        return ResponseEntity.status(response.getStatusCode())
+                                .headers(headers)
+                                .body(outputStream -> {
+                                    try (var in = Files.newInputStream(tempFile.getPath())) {
+                                        in.transferTo(outputStream);
+                                    }
+
+                                    tempFile.close();
+                                });
+                    } catch (IOException e) {
+                       tempFile.close();
+                       throw e;
+                    }
+                }
+                if(statusCode.is3xxRedirection()) {
+                    var location = response.getHeaders().getLocation();
+                    if(proxy != null) {
+                        location = proxy.rewriteUrl(location);
+                    }
+
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .headers(response.getHeaders())
+                            .location(location)
+                            .build();
+                }
+                if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
+                    var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+                    logger.error("GET {}: {}", url, response);
+                }
+
+                throw new NotFoundException();
+            }
+        };
+
         try {
-            response = nonRedirectingRestTemplate.exchange(urlTemplate, method, null, byte[].class, uriVariables);
+            return nonRedirectingRestTemplate.execute(urlTemplate, method, null, responseHandler, uriVariables);
         } catch (RestClientException exc) {
             throw propagateRestException(exc, method, urlTemplate, uriVariables);
         }
-
-        var statusCode = response.getStatusCode();
-        if(statusCode.is2xxSuccessful()) {
-            var headers = new HttpHeaders();
-            headers.addAll(response.getHeaders());
-            headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
-            headers.remove(HttpHeaders.VARY);
-            return new ResponseEntity<>(response.getBody(), headers, response.getStatusCode());
-        }
-        if(statusCode.is3xxRedirection()) {
-            var location = response.getHeaders().getLocation();
-            if(proxy != null) {
-                location = proxy.rewriteUrl(location);
-            }
-
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .headers(response.getHeaders())
-                    .location(location)
-                    .build();
-        }
-        if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-            logger.error("GET {}: {}", url, response);
-        }
-
-        throw new NotFoundException();
     }
 
     private NotFoundException propagateRestException(RestClientException exc, HttpMethod method, String urlTemplate,

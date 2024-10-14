@@ -90,52 +90,25 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
         });
 
         var oldResources = repositories.findFileResources(oldNamespace);
-        var copyResources = oldResources.stream()
-                .findFirst()
-                .map(storageUtil::shouldStoreExternally)
-                .orElse(false);
-
-        List<Pair<FileResource, FileResource>> pairs = null;
-        List<FileResource> updatedResources;
-        if(copyResources) {
-            pairs = copyResources(oldResources, newNamespace);
-            storageUtil.copyFiles(pairs);
-            updatedResources = pairs.stream()
-                    .filter(pair -> RENAME_TYPES.contains(pair.getFirst().getType()))
-                    .map(pair -> {
-                        var oldResource = pair.getFirst();
-                        var newResource = pair.getSecond();
-                        oldResource.setName(newResource.getName());
-                        return oldResource;
-                    })
-                    .collect(Collectors.toList());
-        } else {
-            var newBinaryNames = oldResources.stream()
-                    .map(FileResource::getExtension)
-                    .collect(Collectors.groupingBy(ExtensionVersion::getId))
-                    .entrySet().stream()
-                    .map(entry -> {
-                        var newBinaryName = newBinaryName(newNamespace, entry.getValue().get(0));
-                        return new AbstractMap.SimpleEntry<>(entry.getKey(), newBinaryName);
-                    })
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            updatedResources = oldResources
-                    .filter(resource -> RENAME_TYPES.contains(resource.getType()))
-                    .map(resource -> {
-                        resource.setName(getNewResourceName(resource, newBinaryNames));
-                        return resource;
-                    })
-                    .toList();
-        }
+        var pairs = copyResources(oldResources, newNamespace);
+        storageUtil.copyFiles(pairs);
+        var updatedResources = pairs.stream()
+                .filter(pair -> RENAME_TYPES.contains(pair.getFirst().getType()))
+                .map(pair -> {
+                    var oldResource = pair.getFirst();
+                    var newResource = pair.getSecond();
+                    oldResource.setName(newResource.getName());
+                    return oldResource;
+                })
+                .collect(Collectors.toList());
 
         service.changeNamespaceInDatabase(newNamespace, oldNamespace, updatedResources, createNewNamespace, json.removeOldNamespace());
-        if(copyResources) {
-            // remove the old resources from external storage
-            pairs.stream()
-                    .map(Pair::getFirst)
-                    .forEach(storageUtil::removeFile);
-        }
+
+        // remove the old resources from external storage
+        pairs.stream()
+                .map(Pair::getFirst)
+                .forEach(storageUtil::removeFile);
+
         LOGGER.info("<< Changed namespace from {} to {}", json.oldNamespace(), json.newNamespace());
     }
 

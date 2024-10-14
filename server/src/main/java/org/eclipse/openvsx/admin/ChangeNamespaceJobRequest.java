@@ -38,6 +38,7 @@ public class ChangeNamespaceJobRequest implements JobRequest {
         this.data = data;
     }
 
+    // equals and hashCode are used to make AdminAPITest.testChangeNamespace test succeed
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

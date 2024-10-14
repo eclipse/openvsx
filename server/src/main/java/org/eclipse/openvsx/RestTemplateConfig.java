@@ -18,7 +18,6 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -81,7 +80,6 @@ public class RestTemplateConfig {
                     return f;
                 })
                 .messageConverters(
-                        new ByteArrayHttpMessageConverter(),
                         new StringHttpMessageConverter(),
                         new MappingJackson2HttpMessageConverter())
                 .build();
@@ -107,7 +105,6 @@ public class RestTemplateConfig {
         return builder
                 .uriTemplateHandler(defaultUriBuilderFactory)
                 .messageConverters(
-                        new ByteArrayHttpMessageConverter(),
                         new StringHttpMessageConverter(),
                         new MappingJackson2HttpMessageConverter())
                 .requestFactory(() -> {

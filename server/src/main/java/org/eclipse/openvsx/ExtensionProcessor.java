@@ -22,16 +22,14 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.util.Pair;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -91,12 +89,13 @@ public class ExtensionProcessor implements AutoCloseable {
         readInputStream();
 
         // Read package.json
-        var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
-        if (bytes == null)
-            throw new ErrorResultException("Entry not found: " + PACKAGE_JSON);
-        try {
+        try (var entryFile = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON)) {
+            if (entryFile == null) {
+                throw new ErrorResultException("Entry not found: " + PACKAGE_JSON);
+            }
+
             var mapper = new ObjectMapper();
-            packageJson = mapper.readTree(bytes);
+            packageJson = mapper.readTree(entryFile.getPath().toFile());
         } catch (JsonParseException exc) {
             throw new ErrorResultException("Invalid JSON format in " + PACKAGE_JSON
                     + ": " + exc.getMessage());
@@ -113,13 +112,13 @@ public class ExtensionProcessor implements AutoCloseable {
         readInputStream();
 
         // Read extension.vsixmanifest
-        var bytes = ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST);
-        if (bytes == null)
-            throw new ErrorResultException("Entry not found: " + VSIX_MANIFEST);
+        try (var entryFile = ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST)) {
+            if (entryFile == null) {
+                throw new ErrorResultException("Entry not found: " + VSIX_MANIFEST);
+            }
 
-        try {
             var mapper = new XmlMapper();
-            vsixManifest = mapper.readTree(bytes);
+            vsixManifest = mapper.readTree(entryFile.getPath().toFile());
         } catch (JsonParseException exc) {
             throw new ErrorResultException("Invalid JSON format in " + VSIX_MANIFEST
                     + ": " + exc.getMessage());
@@ -292,40 +291,40 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    public List<FileResource> getFileResources(ExtensionVersion extVersion) {
-        var resources = new ArrayList<FileResource>();
-        var mappers = List.<Function<ExtensionVersion, FileResource>>of(
-                this::getManifest, this::getReadme, this::getChangelog, this::getLicense, this::getIcon, this::getVsixManifest
-        );
-
-        mappers.forEach(mapper -> Optional.of(extVersion).map(mapper).ifPresent(resources::add));
-        return resources;
+    public void getFileResources(ExtensionVersion extVersion, Consumer<TempFile> processor) {
+        try (
+                var manifestFile = getManifest(extVersion);
+                var readmeFile = getReadme(extVersion);
+                var changelogFile = getChangelog(extVersion);
+                var licenseFile = getLicense(extVersion);
+                var iconFile = getIcon(extVersion);
+                var vsixManifestFile = getVsixManifest(extVersion)
+        ) {
+            Stream.of(manifestFile, readmeFile, changelogFile, licenseFile, iconFile, vsixManifestFile)
+                    .filter(Objects::nonNull)
+                    .forEach(processor);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void processEachResource(ExtensionVersion extVersion, Consumer<FileResource> processor) {
+    public void processEachResource(ExtensionVersion extVersion, Consumer<TempFile> processor) {
         readInputStream();
         zipFile.stream()
                 .filter(zipEntry -> !zipEntry.isDirectory())
-                .map(zipEntry -> {
-                    byte[] bytes;
-                    try {
-                        bytes = ArchiveUtil.readEntry(zipFile, zipEntry);
-                    } catch(ErrorResultException exc) {
+                .forEach(zipEntry -> {
+                    try (var resourceFile = ArchiveUtil.readEntry(zipFile, zipEntry)) {
+                        var resource = new FileResource();
+                        resource.setExtension(extVersion);
+                        resource.setName(zipEntry.getName());
+                        resource.setType(FileResource.RESOURCE);
+                        resourceFile.setResource(resource);
+
+                        processor.accept(resourceFile);
+                    } catch (IOException | ErrorResultException exc) {
                         logger.warn(exc.getMessage());
-                        bytes = null;
                     }
-                    if (bytes == null) {
-                        return null;
-                    }
-                    var resource = new FileResource();
-                    resource.setExtension(extVersion);
-                    resource.setName(zipEntry.getName());
-                    resource.setType(FileResource.RESOURCE);
-                    resource.setContent(bytes);
-                    return resource;
-                })
-                .filter(Objects::nonNull)
-                .forEach(processor);
+                });
     }
 
     public FileResource getBinary(ExtensionVersion extVersion, String binaryName) {
@@ -333,113 +332,118 @@ public class ExtensionProcessor implements AutoCloseable {
         binary.setExtension(extVersion);
         binary.setName(Optional.ofNullable(binaryName).orElse(NamingUtil.toFileFormat(extVersion, ".vsix")));
         binary.setType(FileResource.DOWNLOAD);
-        binary.setContent(null);
         return binary;
     }
 
-    public FileResource generateSha256Checksum(ExtensionVersion extVersion) {
-        String hash = null;
+    public TempFile generateSha256Checksum(ExtensionVersion extVersion) throws IOException {
+        String hash;
         try(var input = Files.newInputStream(extensionFile.getPath())) {
             hash = DigestUtils.sha256Hex(input);
-        } catch (IOException e) {
-            logger.error("Failed to read extensionFile", e);
         }
 
-        if(hash == null) {
-            return null;
-        }
+        var sha256File = new TempFile("extension_", ".sha256");
+        Files.writeString(sha256File.getPath(), hash);
 
         var sha256 = new FileResource();
         sha256.setExtension(extVersion);
         sha256.setName(NamingUtil.toFileFormat(extVersion, ".sha256"));
         sha256.setType(FileResource.DOWNLOAD_SHA256);
-        sha256.setContent(hash.getBytes(StandardCharsets.UTF_8));
-        return sha256;
+        sha256File.setResource(sha256);
+        return sha256File;
     }
 
-    protected FileResource getManifest(ExtensionVersion extVersion) {
+    protected TempFile getManifest(ExtensionVersion extVersion) throws IOException {
         readInputStream();
-        var bytes = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
-        if (bytes == null) {
-            return null;
+        var entryFile = ArchiveUtil.readEntry(zipFile, PACKAGE_JSON);
+        if (entryFile == null) {
+            throw new ErrorResultException("Entry not found: " + PACKAGE_JSON);
         }
         var manifest = new FileResource();
         manifest.setExtension(extVersion);
         manifest.setName("package.json");
         manifest.setType(FileResource.MANIFEST);
-        manifest.setContent(bytes);
-        return manifest;
+        entryFile.setResource(manifest);
+        return entryFile;
     }
 
-    protected FileResource getReadme(ExtensionVersion extVersion) {
+    protected TempFile getReadme(ExtensionVersion extVersion) throws IOException {
         var result = readFromVsixPackage(ExtensionQueryResult.ExtensionFile.FILE_DETAILS, README);
         if (result == null) {
             return null;
         }
 
-        var readme = new FileResource();
+        var readme = result.getResource();
         readme.setExtension(extVersion);
-        readme.setName(result.getSecond());
         readme.setType(FileResource.README);
-        readme.setContent(result.getFirst());
-        return readme;
+        return result;
     }
 
-    public FileResource getChangelog(ExtensionVersion extVersion) {
+    public TempFile getChangelog(ExtensionVersion extVersion) throws IOException {
         var result = readFromVsixPackage(ExtensionQueryResult.ExtensionFile.FILE_CHANGELOG, CHANGELOG);
         if (result == null) {
             return null;
         }
 
-        var changelog = new FileResource();
+        var changelog = result.getResource();
         changelog.setExtension(extVersion);
-        changelog.setName(result.getSecond());
         changelog.setType(FileResource.CHANGELOG);
-        changelog.setContent(result.getFirst());
-        return changelog;
+        return result;
     }
 
-    public FileResource getLicense(ExtensionVersion extVersion) {
+    public TempFile getLicense(ExtensionVersion extVersion) throws IOException {
         readInputStream();
         var license = new FileResource();
         license.setExtension(extVersion);
         license.setType(FileResource.LICENSE);
 
         var assetPath = tryGetLicensePath();
-        if (StringUtils.isNotEmpty(assetPath)) {
-            var bytes = ArchiveUtil.readEntry(zipFile, assetPath);
-            var lastSegmentIndex = assetPath.lastIndexOf('/');
-            var lastSegment = assetPath.substring(lastSegmentIndex + 1);
-
-            license.setName(lastSegment);
-            license.setContent(bytes);
-            return license;
+        if(StringUtils.isEmpty(assetPath)) {
+            return null;
         }
 
-        return null;
+        var entryFile = ArchiveUtil.readEntry(zipFile, assetPath);
+        if(entryFile == null) {
+            throw new ErrorResultException("Entry not found: " + assetPath);
+        }
+
+        var lastSegmentIndex = assetPath.lastIndexOf('/');
+        var lastSegment = assetPath.substring(lastSegmentIndex + 1);
+        license.setName(lastSegment);
+        entryFile.setResource(license);
+        return entryFile;
     }
 
-    private Pair<byte[], String> readFromVsixPackage(String assetType, String[] alternateNames) {
+    private TempFile readFromVsixPackage(String assetType, String[] alternateNames) throws IOException {
         var assetPath = tryGetAssetPath(assetType);
         if(StringUtils.isNotEmpty(assetPath)) {
-            var bytes = ArchiveUtil.readEntry(zipFile, assetPath);
+            var entryFile = ArchiveUtil.readEntry(zipFile, assetPath);
+            if(entryFile == null) {
+                throw new ErrorResultException("Entry not found: " + assetPath);
+            }
+
             var lastSegmentIndex = assetPath.lastIndexOf('/');
             var lastSegment = assetPath.substring(lastSegmentIndex + 1);
-            return Pair.of(bytes, lastSegment);
+            var resource = new FileResource();
+            resource.setName(lastSegment);
+            entryFile.setResource(resource);
+            return entryFile;
         } else {
             readInputStream();
             return readFromAlternateNames(alternateNames);
         }
     }
 
-    private Pair<byte[], String> readFromAlternateNames(String[] names) {
+    private TempFile readFromAlternateNames(String[] names) throws IOException {
         for (var name : names) {
             var entry = ArchiveUtil.getEntryIgnoreCase(zipFile, name);
             if (entry != null) {
-                var bytes = ArchiveUtil.readEntry(zipFile, entry);
+                var entryFile = ArchiveUtil.readEntry(zipFile, entry);
                 var lastSegmentIndex = entry.getName().lastIndexOf('/');
                 var lastSegment = entry.getName().substring(lastSegmentIndex + 1);
-                return Pair.of(bytes, lastSegment);
+                var resource = new FileResource();
+                resource.setName(lastSegment);
+                entryFile.setResource(resource);
+                return entryFile;
             }
         }
         return null;
@@ -466,7 +470,7 @@ public class ExtensionProcessor implements AutoCloseable {
         return null;
     }
 
-    protected FileResource getIcon(ExtensionVersion extVersion) {
+    protected TempFile getIcon(ExtensionVersion extVersion) throws IOException {
         var iconPath = tryGetAssetPath(ExtensionQueryResult.ExtensionFile.FILE_ICON);
         if(StringUtils.isEmpty(iconPath)) {
             loadPackageJson();
@@ -480,9 +484,9 @@ public class ExtensionProcessor implements AutoCloseable {
             return null;
         }
 
-        var bytes = ArchiveUtil.readEntry(zipFile, iconPath);
-        if (bytes == null) {
-            return null;
+        var entryFile = ArchiveUtil.readEntry(zipFile, iconPath);
+        if (entryFile == null) {
+            throw new ErrorResultException("Entry not found: " + iconPath);
         }
 
         var icon = new FileResource();
@@ -494,18 +498,24 @@ public class ExtensionProcessor implements AutoCloseable {
 
         icon.setName(iconName);
         icon.setType(FileResource.ICON);
-        icon.setContent(bytes);
-        return icon;
+        entryFile.setResource(icon);
+        return entryFile;
     }
 
-    public FileResource getVsixManifest(ExtensionVersion extVersion) {
+    public TempFile getVsixManifest(ExtensionVersion extVersion) throws IOException {
         readInputStream();
         var vsixManifest = new FileResource();
         vsixManifest.setExtension(extVersion);
         vsixManifest.setName(VSIX_MANIFEST);
         vsixManifest.setType(FileResource.VSIXMANIFEST);
-        vsixManifest.setContent(ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST));
-        return vsixManifest;
+
+        var entryFile = ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST);
+        if(entryFile == null) {
+            throw new ErrorResultException("Entry not found: " + VSIX_MANIFEST);
+        }
+
+        entryFile.setResource(vsixManifest);
+        return entryFile;
     }
 
     public boolean isPotentiallyMalicious() {
