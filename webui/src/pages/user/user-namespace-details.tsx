@@ -111,9 +111,16 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
         getNamespaceDetails();
     }, [props.namespace]);
 
-    const getNamespaceDetails = async (): Promise<void> => {
+    const resetLogoPreview = () => {
+        if (logoPreview) {
+            URL.revokeObjectURL(logoPreview);
+        }
         setLogoPreview(undefined);
+    };
+
+    const getNamespaceDetails = async (): Promise<void> => {
         if (!props.namespace.name) {
+            resetLogoPreview();
             setCurrentDetails(undefined);
             setNewDetails(undefined);
             setLoading(false);
@@ -147,6 +154,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
             setCurrentDetails(copy(details));
             setNewDetails(copy(details));
             setLinkedInAccountType(linkedInAccountType);
+            resetLogoPreview();
             setLoading(false);
         } catch (err) {
             context.handleError(err);
@@ -276,7 +284,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
 
     const handleFileDialogOpen = () => {
         setDropzoneFile(undefined);
-        setLogoPreview(undefined);
+        resetLogoPreview();
     };
 
     const rotateLeft = () => setEditorRotation(editorRotation - 90);
@@ -298,16 +306,17 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     const handleSaveLogo = () => {
         const canvasScaled = editor.current?.getImageScaledToCanvas();
         if (canvasScaled) {
-            const dataUrl = canvasScaled.toDataURL();
-            setLogoPreview(dataUrl);
+            canvasScaled.toBlob(async (blob) => {
+                if (blob) {
+                    if (logoPreview) {
+                        URL.revokeObjectURL(logoPreview);
+                    }
+                    setLogoPreview(URL.createObjectURL(blob));
+                    await context.service.setNamespaceLogo(abortController.current, props.namespace.name, blob, dropzoneFile!.name);
+                    await getNamespaceDetails();
+                }
+            });
             setEditing(false);
-            if (newDetails) {
-                const details = copy(newDetails);
-                details.logo = dropzoneFile!.name;
-                const prefix = 'data:image/png;base64,';
-                details.logoBytes = dataUrl.substring(prefix.length);
-                setNewDetails(details);
-            }
         }
     };
 
@@ -320,11 +329,10 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     };
 
     const deleteLogo = () => {
-        setLogoPreview(undefined);
+        resetLogoPreview();
         if (newDetails) {
             const details = copy(newDetails);
             details.logo = undefined;
-            details.logoBytes = undefined;
             setNewDetails(details);
         }
     };

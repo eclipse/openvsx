@@ -10,17 +10,18 @@
 package org.eclipse.openvsx.adapter;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 public interface IVSCodeService {
 
     ExtensionQueryResult extensionQuery(ExtensionQueryParam param, int defaultPageSize);
 
-    ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path);
+    ResponseEntity<StreamingResponseBody> browse(String namespaceName, String extensionName, String version, String path);
 
     String download(String namespace, String extension, String version, String targetPlatform);
 
     String getItemUrl(String namespace, String extension);
 
-    ResponseEntity<byte[]> getAsset(String namespace, String extensionName, String version, String assetType,
-                                    String targetPlatform, String restOfTheUrl);
+    ResponseEntity<StreamingResponseBody> getAsset(String namespace, String extensionName, String version, String assetType,
+                                                   String targetPlatform, String restOfTheUrl);
 }

@@ -32,7 +32,7 @@ public class ScheduleDataMirrorJobs {
         if (data != null) {
             scheduler.scheduleRecurrently("DataMirror", data.getSchedule(), new DataMirrorJobRequest());
         } else {
-            scheduler.delete("DataMirror");
+            scheduler.deleteRecurringJob("DataMirror");
         }
     }
 }

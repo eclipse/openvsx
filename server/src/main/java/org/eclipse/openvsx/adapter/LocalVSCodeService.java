@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.micrometer.core.instrument.Metrics;
@@ -30,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -268,12 +268,15 @@ public class LocalVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<byte[]> getAsset(
+    public ResponseEntity<StreamingResponseBody> getAsset(
             String namespace, String extensionName, String version, String assetType, String targetPlatform,
             String restOfTheUrl
     ) {
         if(BuiltInExtensionUtil.isBuiltIn(namespace)) {
-            return new ResponseEntity<>(("Built-in extension namespace '" + namespace + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(outputStream -> {
+                var message = "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
+                outputStream.write(message.getBytes(StandardCharsets.UTF_8));
+            });
         }
 
         var asset = (restOfTheUrl != null && !restOfTheUrl.isEmpty()) ? (assetType + "/" + restOfTheUrl) : assetType;
@@ -304,19 +307,15 @@ public class LocalVSCodeService implements IVSCodeService {
                 FILE_SIGNATURE, DOWNLOAD_SIG
         );
 
-        FileResource resource;
+        FileResource resource = null;
         var type = assets.get(assetType);
         if(type != null) {
             resource = repositories.findFileByType(namespace, extensionName, targetPlatform, version, type);
-        } else {
-            var name = asset.startsWith(FILE_WEB_RESOURCES)
-                    ? asset.substring((FILE_WEB_RESOURCES.length()))
-                    : null;
-
-            resource = name != null && name.startsWith("extension/") // is web resource
-                    ? repositories.findFileByTypeAndName(namespace, extensionName, targetPlatform, version, FileResource.RESOURCE, name)
-                    : null;
+        } else if(asset.startsWith(FILE_WEB_RESOURCES + "extension/")) {
+            var name = asset.substring((FILE_WEB_RESOURCES.length()));
+            resource = repositories.findFileByTypeAndName(namespace, extensionName, targetPlatform, version, FileResource.RESOURCE, name);
         }
+
         if (resource == null) {
             throw new NotFoundException();
         }
@@ -330,7 +329,7 @@ public class LocalVSCodeService implements IVSCodeService {
     @Override
     public String getItemUrl(String namespaceName, String extensionName) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + namespaceName + "' not allowed");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed");
         }
 
         var extension = repositories.findActiveExtension(extensionName, namespaceName);
@@ -352,7 +351,7 @@ public class LocalVSCodeService implements IVSCodeService {
             throw new NotFoundException();
         }
 
-        if(resource.getStorageType().equals(STORAGE_DB)) {
+        if(resource.getStorageType().equals(STORAGE_LOCAL)) {
             var extVersion = resource.getExtension();
             var extension = extVersion.getExtension();
             var namespace = extension.getNamespace();
@@ -369,9 +368,12 @@ public class LocalVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<byte[]> browse(String namespaceName, String extensionName, String version, String path) {
+    public ResponseEntity<StreamingResponseBody> browse(String namespaceName, String extensionName, String version, String path) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            return new ResponseEntity<>(("Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed").getBytes(StandardCharsets.UTF_8), null, HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(outputStream -> {
+                var message = "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
+                outputStream.write(message.getBytes(StandardCharsets.UTF_8));
+            });
         }
 
         var extVersion = repositories.findActiveExtensionVersion(version, extensionName, namespaceName);
@@ -379,47 +381,32 @@ public class LocalVSCodeService implements IVSCodeService {
             throw new NotFoundException();
         }
 
-        var resources = repositories.findResourceFileResources(extVersion.getId(), path);
-        if(resources.isEmpty()) {
+        var matches = repositories.findResourceFileResources(extVersion, path);
+        if(matches.isEmpty()) {
             throw new NotFoundException();
         }
 
-        var exactMatch = resources.stream()
-                .filter(r -> r.getName().equals(path))
-                .findFirst()
-                .orElse(null);
-
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-
+        var firstMatch = matches.get(0);
         Metrics.counter("vscode.unpkg", List.of(
                 Tag.of("extension", NamingUtil.toLogFormat(extVersion)),
-                Tag.of("file", String.valueOf(exactMatch != null)),
+                Tag.of("file", String.valueOf(matches.size() == 1 && firstMatch.getName().equals(path))),
                 Tag.of("path", path)
         )).increment();
 
-        return exactMatch != null
-                ? browseFile(exactMatch, extVersion)
-                : browseDirectory(resources, namespace.getName(), extension.getName(), extVersion.getVersion(), path);
-    }
-
-    private ResponseEntity<byte[]> browseFile(
-            FileResource resource,
-            ExtensionVersion extVersion
-    ) {
-        if (resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            var headers = storageUtil.getFileResponseHeaders(resource.getName());
-            return new ResponseEntity<>(resource.getContent(), headers, HttpStatus.OK);
+        if (matches.size() == 1 && firstMatch.getName().equals(path)) {
+            return storageUtil.getFileResponse(firstMatch);
         } else {
-            resource.setExtension(extVersion);
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(storageUtil.getLocation(resource))
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
                     .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
-                    .build();
+                    .body(outputStream -> {
+                        var urls = browseDirectory(matches, namespaceName, extensionName, version, path);
+                        new ObjectMapper().writeValue(outputStream, urls);
+                    });
         }
     }
 
-    private ResponseEntity<byte[]> browseDirectory(
+    private Set<String> browseDirectory(
             List<FileResource> resources,
             String namespaceName,
             String extensionName,
@@ -450,17 +437,7 @@ public class LocalVSCodeService implements IVSCodeService {
             }
         }
 
-        String json;
-        try {
-            json = new ObjectMapper().writeValueAsString(urls);
-        } catch (JsonProcessingException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate JSON: " + e.getMessage());
-        }
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
-                .body(json.getBytes(StandardCharsets.UTF_8));
+        return urls;
     }
 
     private ExtensionQueryResult.Extension toQueryExtension(Extension extension, ExtensionVersion latest, List<ExtensionQueryResult.ExtensionVersion> versions, int flags) {
@@ -601,10 +578,6 @@ public class LocalVSCodeService implements IVSCodeService {
 
     private boolean isWebExtension(ExtensionVersion extVer) {
         return extVer.getExtensionKind() != null && extVer.getExtensionKind().contains("web");
-    }
-
-    private boolean isWebResource(FileResource resource) {
-        return resource.getType().equals(FileResource.RESOURCE) && resource.getName().startsWith("extension/");
     }
 
     private boolean test(int flags, int flag) {

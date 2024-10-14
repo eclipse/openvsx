@@ -21,7 +21,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.util.AbstractMap;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -48,17 +47,18 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
             migrations.deleteFileResource(existingVsixManifest);
         }
 
-        var content = migrations.getContent(download);
-        var entry = new AbstractMap.SimpleEntry<>(download, content);
-        try(var extensionFile = migrations.getExtensionFile(entry)) {
+        try(var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }
-            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
-                var vsixManifest = extProcessor.getVsixManifest(extVersion);
-                vsixManifest.setStorageType(download.getStorageType());
-                migrations.uploadFileResource(vsixManifest);
-                migrations.persistFileResource(vsixManifest);
+            try (
+                    var extProcessor = new ExtensionProcessor(extensionFile);
+                    var vsixManifestFile = extProcessor.getVsixManifest(extVersion)
+            ) {
+                migrations.uploadFileResource(vsixManifestFile);
+                var resource = vsixManifestFile.getResource();
+                resource.setStorageType(download.getStorageType());
+                migrations.persistFileResource(resource);
             }
         }
     }
