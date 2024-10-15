@@ -64,8 +64,7 @@ public class FileResourceJooqRepository {
                     FILE_RESOURCE.EXTENSION_ID,
                     FILE_RESOURCE.NAME,
                     FILE_RESOURCE.TYPE,
-                    FILE_RESOURCE.STORAGE_TYPE,
-                    FILE_RESOURCE.CONTENT
+                    FILE_RESOURCE.STORAGE_TYPE
                 )
                 .from(FILE_RESOURCE)
                 .where(FILE_RESOURCE.TYPE.eq(FileResource.RESOURCE))
@@ -75,8 +74,6 @@ public class FileResourceJooqRepository {
                 .map(row -> {
                     var fileResource = toFileResource(row);
                     fileResource.setStorageType(row.get(FILE_RESOURCE.STORAGE_TYPE));
-                    fileResource.setContent(row.get(FILE_RESOURCE.CONTENT));
-
                     return fileResource;
                 });
     }

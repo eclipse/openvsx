@@ -20,7 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
-import static org.eclipse.openvsx.entities.FileResource.STORAGE_DB;
+import static org.eclipse.openvsx.entities.FileResource.STORAGE_LOCAL;
 import static org.eclipse.openvsx.entities.SignatureKeyPair.*;
 
 @Component
@@ -85,7 +85,7 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
     }
 
     private void enqueueDeleteSignatureJob(FileResource resource) {
-        if(!resource.getStorageType().equals(STORAGE_DB)) {
+        if(!resource.getStorageType().equals(STORAGE_LOCAL)) {
             scheduler.enqueue(new RemoveFileJobRequest(resource));
         }
     }

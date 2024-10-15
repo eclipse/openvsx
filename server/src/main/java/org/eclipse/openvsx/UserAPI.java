@@ -31,6 +31,7 @@ import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -247,6 +248,24 @@ public class UserAPI {
         } catch (NotFoundException exc) {
             var json = NamespaceDetailsJson.error("Namespace not found: " + details.getName());
             return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ResultJson.class);
+        }
+    }
+
+    @PostMapping(
+            path = "/user/namespace/{namespace}/details/logo",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ResultJson> updateNamespaceDetailsLogo(
+            @PathVariable String namespace,
+            @RequestParam MultipartFile file
+    ) {
+        try {
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                    .body(users.updateNamespaceDetailsLogo(namespace, file));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
         }

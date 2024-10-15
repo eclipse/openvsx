@@ -20,6 +20,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.ArrayList;
 
@@ -70,7 +71,7 @@ public class VSCodeAPI {
 
     @GetMapping("/vscode/asset/{namespaceName}/{extensionName}/{version}/{assetType}/**")
     @CrossOrigin
-    public ResponseEntity<byte[]> getAsset(
+    public ResponseEntity<StreamingResponseBody> getAsset(
             HttpServletRequest request, @PathVariable String namespaceName, @PathVariable String extensionName,
             @PathVariable String version, @PathVariable String assetType,
             @RequestParam(defaultValue = TargetPlatform.NAME_UNIVERSAL) String targetPlatform
@@ -129,7 +130,7 @@ public class VSCodeAPI {
 
     @GetMapping("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/**")
     @CrossOrigin
-    public ResponseEntity<byte[]> browse(
+    public ResponseEntity<StreamingResponseBody> browse(
             HttpServletRequest request,
             @PathVariable String namespaceName,
             @PathVariable String extensionName,

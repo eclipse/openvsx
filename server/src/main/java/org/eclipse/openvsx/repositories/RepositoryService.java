@@ -239,7 +239,7 @@ public class RepositoryService {
     }
 
     public Streamable<FileResource> findFiles(ExtensionVersion extVersion) {
-        return fileResourceRepo.findByExtensionAndStorageTypeNot(extVersion, STORAGE_DB);
+        return fileResourceRepo.findByExtensionAndStorageTypeNot(extVersion, STORAGE_LOCAL);
     }
 
     public void deleteFiles(ExtensionVersion extVersion) {
@@ -508,6 +508,14 @@ public class RepositoryService {
 
     public Streamable<MigrationItem> findNotMigratedPotentiallyMalicious() {
         return findNotMigratedItems("V1_46__ExtensionVersion_PotentiallyMalicious.sql");
+    }
+
+    public Iterable<MigrationItem> findNotMigratedLocalNamespaceLogos() {
+        return findNotMigratedItems("V1_48__Local_Storage_Namespace.sql");
+    }
+
+    public Iterable<MigrationItem> findNotMigratedLocalFileResourceContent() {
+        return findNotMigratedItems("V1_48__Local_Storage_FileResource.sql");
     }
 
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {

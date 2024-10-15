@@ -11,6 +11,7 @@ package org.eclipse.openvsx.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.file.Files;
 import java.util.zip.ZipFile;
 
 import org.junit.jupiter.api.Test;
@@ -23,11 +24,13 @@ class ArchiveUtilTest {
         assertThat(packageUrl.getProtocol()).isEqualTo("file");
         try (
             var archive = new ZipFile(packageUrl.getPath());
+            var packageFile = ArchiveUtil.readEntry(archive, "extension/package.json");
+            var iconFile = ArchiveUtil.readEntry(archive, "extension/resources/todo-tree.png")
         ) {
-            var packageJson = ArchiveUtil.readEntry(archive, "extension/package.json");
-            assertThat(packageJson.length).isEqualTo(44712);
-            var icon = ArchiveUtil.readEntry(archive, "extension/resources/todo-tree.png");
-            assertThat(icon.length).isEqualTo(8854);
+            assertThat(packageFile).isNotNull();
+            assertThat(Files.size(packageFile.getPath())).isEqualTo(44712);
+            assertThat(iconFile).isNotNull();
+            assertThat(Files.size(iconFile.getPath())).isEqualTo(8854);
         }
     }
 
