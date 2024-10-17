@@ -6,6 +6,22 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/eclipse/openvsx)
 
+### Using Red Hat OpenShift Dev Spaces
+
+Open a development environment in Red Hat OpenShift Dev Spaces. 
+
+[![Open in Dev Spaces](https://www.eclipse.org/che/contribute.svg)](https://workspaces.openshift.com#https://github.com/eclipse/openvsx)
+
+In the workspace, you'll find a set of predefined commands from the devfile.yaml that will assist you in building, running, and testing the application:
+* 1.1. Build OVSX CLI
+* 1.2. Build UI Component
+* 1.3. Build Server Component
+* 1.4. Run OpenVSX Server
+* 1.5. Run OpenVSX WebUI
+* 1.6. Publish extensions by OVSX CLI
+
+To execute any of these commands within your workspace, navigate to Terminal -> Run Task -> devfile.
+
 ### Using Docker Compose
 
 To run the Open VSX registry in a development environment, you can use `docker compose` by following these steps:
