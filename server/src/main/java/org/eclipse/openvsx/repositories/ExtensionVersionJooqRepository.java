@@ -481,6 +481,7 @@ public class ExtensionVersionJooqRepository {
 
         var user = new UserData();
         user.setId(row.get(USER_DATA.ID));
+        user.setRole(row.get(USER_DATA.ROLE));
         user.setLoginName(row.get(USER_DATA.LOGIN_NAME));
         user.setFullName(row.get(USER_DATA.FULL_NAME));
         user.setAvatarUrl(row.get(USER_DATA.AVATAR_URL));
