@@ -168,9 +168,26 @@ commands:
           -p OPENVSX_CLI_IMAGE=image-registry.openshift-image-registry.svc:5000/$OPENVSX_NAMESPACE/openvsx-cli \
           | oc apply -f -
 
+  - id: add-openvsx-user-with-pat
+    exec:
+      label: "2.4. Add OpenVSX user with PAT to the DB"
+      component: tool
+      commandLine: |
+          read -p "Please enter OpenVSX user name (default: eclipse-che): " OPENVSX_USER_NAME
+          OPENVSX_USER_NAME=${OPENVSX_USER_NAME:-eclipse-che}
+          export OPENVSX_USER_NAME
+          echo "OPENVSX_USER_NAME is set to $OPENVSX_USER_NAME"
+          read -p "Please enter the value for OpenVSX user PAT (default: eclipse_che_token): " OPENVSX_USER_PAT
+          OPENVSX_USER_PAT=${OPENVSX_USER_PAT:-eclipse_che_token}
+          export OPENVSX_USER_PAT
+          echo "OPENVSX_USER_PAT is set to $OPENVSX_USER_PAT"
+          export POSTGRESQL_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^postgresql) &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${POSTGRESQL_POD_NAME}" -- bash -c "psql -d openvsx -c \"INSERT INTO user_data (id, login_name, role) VALUES (1001, '$OPENVSX_USER_NAME', 'admin');\"" &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${POSTGRESQL_POD_NAME}" -- bash -c "psql -d openvsx -c \"INSERT INTO personal_access_token (id, user_data, value, active, created_timestamp, accessed_timestamp, description) VALUES (1001, 1001, '$OPENVSX_USER_PAT', true, current_timestamp, current_timestamp, 'extensions publisher');\""
+
   - id: enable-internal-openvsx
     exec:
-      label: "2.4. Configure Che to use the internal Open VSX registry"
+      label: "2.5. Configure Che to use the internal Open VSX registry"
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/openshift
       commandLine: |

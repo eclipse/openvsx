@@ -9,12 +9,6 @@ This guide provides the necessary steps to deploy a private OpenVSX registry on 
 ## Step-by-Step Instructions
 In the workspace, you'll find a set of predefined commands from the `devfile.yaml` that will assist you in preparing and deploying a private OpenVSX registry. To execute any of these commands within your workspace, navigate to Terminal -> Run Task -> devfile:
 
-* 2.1. OC log-in
-
-Make sure you are logged in to your OpenShift cluster as a cluster admin:
-```
-oc login --username=your-admin-username --password=your-admin-password
-```
 * 2.1. Build and Publish OpenVSX Image
 
 Build the OpenVSX image and push it to the OpenShift internal registry. You'll ask to enter the OpenVSX version to deploy (default is v0.17.0).
@@ -24,7 +18,11 @@ Build the OpenVSX CLI image and push it to the OpenShift internal registry.
 * 2.3. Deploy OpenVSX
 
 Deploy the OpenVSX registry using the provided `openvsx-deployment.yml` template
-* 2.4. Configure Che to use the internal Open VSX registry
+* 2.4. Add OpenVSX user with PAT to the DB
+
+This command adds a new OpenVSX user along with a Personal Access Token (PAT) to the PostgreSQL database.
+
+* 2.5. Configure Che to use the internal Open VSX registry
 
 In case you have deployed Eclipse Che on the cluster, you can patch it to use your private OpenVSX registry.
 
@@ -38,4 +36,5 @@ You can find the deployment YAML configuration in the `openvsx-deployment.yml` f
 * `OPENVSX_ELASTICSEARCH_IMAGE`: The image for Elasticsearch (default: docker.elastic.co/elasticsearch/elasticsearch:8.7.1).
 * `OPENVSX_SERVER_IMAGE`: The image for the OpenVSX Server.
 * `OPENVSX_CLI_IMAGE`: The image for the OpenVSX CLI.
+* `OVSX_PAT_BASE64`: Base64 encoded OVSX personal access token.
 * `GITHUB_CLIENT_ID_BASE64` and `GITHUB_CLIENT_SECRET_BASE64`: Base64 encoded GitHub Client ID and Secret to setup GitHub OAuth.

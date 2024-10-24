@@ -216,8 +216,8 @@ objects:
                 cpu: 100m
                 memory: 512Mi
               limits:
-                cpu: 200m
-                memory: 1024Mi
+                cpu: '1'
+                memory: 4Gi
             env:
               - name: GITHUB_CLIENT_ID
                 valueFrom:
@@ -272,6 +272,14 @@ objects:
   data:
     client-id: "${GITHUB_CLIENT_ID_BASE64}"
     client-secret: "${GITHUB_CLIENT_SECRET_BASE64}"
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ovsx-pat
+    namespace: "${NAMESPACE}"
+  type: Opaque
+  data:
+    token: "${OVSX_PAT_BASE64}"
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -299,7 +307,10 @@ objects:
               - name: OVSX_REGISTRY_URL
                 value: http://openvsx-server:8080
               - name: OVSX_PAT
-                value: eclipse_che_token
+                valueFrom:
+                  secretKeyRef:
+                    name: ovsx-pat
+                    key: token
             resources:
               requests:
                 cpu: 20m
@@ -331,6 +342,10 @@ parameters:
   value: docker.elastic.co/elasticsearch/elasticsearch:8.7.1
   displayName: OpenVSX Elasticsearch image
   description: OpenVSX Elasticsearch image to use for the deployment of the OpenVSX Elasticsearch
+- name: OVSX_PAT_BASE64
+  value: ZWNsaXBzZV9jaGVfdG9rZW4=
+  displayName: OVSX personal access token
+  description: Base64 encoded OVSX token
 - name: GITHUB_CLIENT_ID_BASE64
   value: "ZHVtbXlfdmFsdWU="
   displayName: GitHub Client ID
