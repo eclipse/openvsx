@@ -12,19 +12,26 @@ In the workspace, you'll find a set of predefined commands from the `devfile.yam
 * 2.1. Build and Publish OpenVSX Image
 
 Build the OpenVSX image and push it to the OpenShift internal registry. You'll ask to enter the OpenVSX version to deploy (default is v0.17.0).
+
 * 2.2. Build and Publish OpenVSX CLI Image
 
 Build the OpenVSX CLI image and push it to the OpenShift internal registry.
+
 * 2.3. Deploy OpenVSX
 
 Deploy the OpenVSX registry using the provided `openvsx-deployment.yml` template
+
 * 2.4. Add OpenVSX user with PAT to the DB
 
 This command adds a new OpenVSX user along with a Personal Access Token (PAT) to the PostgreSQL database.
 
-* 2.5. Configure Che to use the internal Open VSX registry
+* 2.5. Configure Che to use the internal OpenVSX registry
 
 In case you have deployed Eclipse Che on the cluster, you can patch it to use your private OpenVSX registry.
+
+* 2.6. Publish VS Code Extension to the internal OpenVSX
+
+This command facilitates publishing a VS Code extension to the local OpenVSX registry. It prompts the user to provide the extension's namespace name and download URL. The extension is then downloaded into a temporary folder inside the ovsx-cli pod, a namespace is created (if not already present), and the extension is published to the OpenVSX registry. Afterward, the temporary file is deleted. This command is ideal for adding custom or internal extensions to a local OpenVSX instance.
 
 ## OpenShift Template (openvsx-deployment.yml)
 You can find the deployment YAML configuration in the `openvsx-deployment.yml` file. This template defines the deployments, services, and route for the PostgreSQL database, Elasticsearch, OpenVSX Server, and OpenVSX CLI.

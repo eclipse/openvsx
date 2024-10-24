@@ -187,7 +187,7 @@ commands:
 
   - id: enable-internal-openvsx
     exec:
-      label: "2.5. Configure Che to use the internal Open VSX registry"
+      label: "2.5. Configure Che to use the internal OpenVSX registry"
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/openshift
       commandLine: |
@@ -196,3 +196,22 @@ commands:
           export OPENVSX_ROUTE_URL="$(oc get route internal -n "$OPENVSX_NAMESPACE" -o jsonpath='{.spec.host}')" && 
           export PATCH='{"spec":{"components":{"pluginRegistry":{"openVSXURL":"https://'"$OPENVSX_ROUTE_URL"'"}}}}' &&
           kubectl patch checluster "${CHECLUSTER_NAME}" --type=merge --patch "${PATCH}" -n "${CHECLUSTER_NAMESPACE}"
+
+  - id: publish-extension
+    exec:
+      label: "2.6. Publish VS Code Extension to the internal OpenVSX"
+      component: tool
+      commandLine: |
+          read -p "Please enter extension's namespace name: " EXTENSION_NAMESPACE_NAME
+          EXTENSION_NAMESPACE_NAME=${EXTENSION_NAMESPACE_NAME}
+          export EXTENSION_NAMESPACE_NAME
+          echo "EXTENSION_NAMESPACE_NAME is set to $EXTENSION_NAMESPACE_NAME"
+          read -p "Please enter extension's download URL: " EXTENSION_DOWNLOAD_URL
+          EXTENSION_DOWNLOAD_URL=${EXTENSION_DOWNLOAD_URL}
+          export EXTENSION_DOWNLOAD_URL
+          echo "EXTENSION_DOWNLOAD_URL is set to $EXTENSION_DOWNLOAD_URL"
+          export OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^ovsx-cli) &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "wget -O /tmp/extension.vsix '$EXTENSION_DOWNLOAD_URL' " &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx create-namespace '$EXTENSION_NAMESPACE_NAME'" || true &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx publish /tmp/extension.vsix" &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "rm /tmp/extension.vsix"
