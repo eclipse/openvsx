@@ -1,6 +1,7 @@
 # Eclipse Open VSX
 
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse/openvsx)
+[![Contribute](https://www.eclipse.org/che/contribute.svg)](https://workspaces.openshift.com#https://github.com/eclipse/openvsx)
 [![Join the chat at https://gitter.im/eclipse/openvsx](https://badges.gitter.im/eclipse/openvsx.svg)](https://gitter.im/eclipse/openvsx)
 [![CI](https://github.com/eclipse/openvsx/workflows/CI/badge.svg)](https://github.com/eclipse/openvsx/actions?query=workflow%3ACI)
 
@@ -14,11 +15,15 @@ See the [openvsx Wiki](https://github.com/eclipse/openvsx/wiki) for documentatio
 
 ## Development
 
-The easiest way to get a development environment for this project is to open it in [Gitpod](https://gitpod.io/).
+- The easiest way to get a development environment for this project is to open it in [Gitpod](https://gitpod.io/).
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/eclipse/openvsx)
 
 Click _Open Browser_ on port 3000 to see the running web application.
+
+- Open a development environment in [Red Hat OpenShift Dev Spaces](https://docs.redhat.com/en/documentation/red_hat_openshift_dev_spaces), it is an open source product based on Eclipse Che that is running on [OpenShift Dedicated](https://www.redhat.com/en/technologies/cloud-computing/openshift/dedicated).
+
+[![Open in Dev Spaces](https://www.eclipse.org/che/contribute.svg)](https://workspaces.openshift.com#https://github.com/eclipse/openvsx)
 
 ### cli
 
