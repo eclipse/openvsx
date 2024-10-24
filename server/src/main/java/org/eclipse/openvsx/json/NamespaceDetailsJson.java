@@ -2,10 +2,9 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,9 +35,6 @@ public class NamespaceDetailsJson extends ResultJson implements Serializable {
 
     @Schema(description = "Logo URL of the namespace")
     private String logo;
-
-    @Schema(hidden = true)
-    private byte[] logoBytes;
 
     @Schema(description = "Website URL of the namespace")
     private String website;
@@ -86,14 +82,6 @@ public class NamespaceDetailsJson extends ResultJson implements Serializable {
 
     public void setLogo(String logo) {
         this.logo = logo;
-    }
-
-    public byte[] getLogoBytes() {
-        return logoBytes;
-    }
-
-    public void setLogoBytes(byte[] logoBytes) {
-        this.logoBytes = logoBytes;
     }
 
     public String getWebsite() {
@@ -146,7 +134,6 @@ public class NamespaceDetailsJson extends ResultJson implements Serializable {
                 && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
                 && Objects.equals(logo, that.logo)
-                && Arrays.equals(logoBytes, that.logoBytes)
                 && Objects.equals(website, that.website)
                 && Objects.equals(supportLink, that.supportLink)
                 && Objects.equals(socialLinks, that.socialLinks)
@@ -155,8 +142,6 @@ public class NamespaceDetailsJson extends ResultJson implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(name, displayName, description, logo, website, supportLink, socialLinks, extensions, verified);
-        result = 31 * result + Arrays.hashCode(logoBytes);
-        return result;
+        return Objects.hash(name, displayName, description, logo, website, supportLink, socialLinks, extensions, verified);
     }
 }

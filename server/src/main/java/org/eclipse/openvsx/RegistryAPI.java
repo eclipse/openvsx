@@ -17,7 +17,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.SemanticVersion;
@@ -32,6 +31,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -252,7 +252,7 @@ public class RegistryAPI {
             )
         }
     )
-    public ResponseEntity<byte[]> getNamespaceLogo(
+    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(
             @PathVariable @Parameter(description = "Namespace name", example = "redhat")
             String namespace,
             @PathVariable @Parameter(description = "Logo file name", example = "logo-redhat.png")
@@ -800,7 +800,7 @@ public class RegistryAPI {
             )
         }
     )
-    public ResponseEntity<byte[]> getFile(
+    public ResponseEntity<StreamingResponseBody> getFile(
             HttpServletRequest request,
             @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
             String namespace,
@@ -859,7 +859,7 @@ public class RegistryAPI {
             )
         }
     )
-    public ResponseEntity<byte[]> getFile(
+    public ResponseEntity<StreamingResponseBody> getFile(
             HttpServletRequest request,
             @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
             String namespace,

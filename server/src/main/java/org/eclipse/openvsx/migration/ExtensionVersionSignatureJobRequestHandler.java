@@ -15,6 +15,7 @@ import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -25,7 +26,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Map;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -52,51 +52,51 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
 
     @Override
     @Job(name = "Generate signature for extension version", retries = 3)
-    public void run(MigrationJobRequest jobRequest) throws Exception {
+    public void run(MigrationJobRequest jobRequest) throws IOException {
         var extVersion = migrations.getExtension(jobRequest.getEntityId());
         if(extVersion == null) {
             return;
         }
 
-        var entry = migrations.getDownload(extVersion);
-        if(entry == null) {
+        var download = migrations.getDownload(extVersion);
+        if(download == null) {
             return;
         }
 
         logger.info("Generating signature for: {}", NamingUtil.toLogFormat(extVersion));
 
         var keyPair = repositories.findActiveKeyPair();
-        var signature = createSignature(entry, keyPair);
-        if(signature == null) {
-            return;
+        try (var signatureFile = createSignature(download, keyPair)) {
+            if (signatureFile == null) {
+                return;
+            }
+
+            integrityService.setSignatureKeyPair(extVersion, keyPair);
+            var extension = extVersion.getExtension();
+            cache.evictExtensionJsons(extVersion);
+            cache.evictLatestExtensionVersion(extension);
+            cache.evictNamespaceDetails(extension);
+
+            var existingSignature = migrations.getFileResource(extVersion, FileResource.DOWNLOAD_SIG);
+            if (existingSignature != null) {
+                migrations.removeFile(existingSignature);
+                migrations.deleteFileResource(existingSignature);
+            }
+
+            migrations.uploadFileResource(signatureFile);
+            migrations.persistFileResource(signatureFile.getResource());
         }
-
-        integrityService.setSignatureKeyPair(extVersion, keyPair);
-        var extension = extVersion.getExtension();
-        cache.evictExtensionJsons(extVersion);
-        cache.evictLatestExtensionVersion(extension);
-        cache.evictNamespaceDetails(extension);
-
-        var existingSignature = migrations.getFileResource(extVersion, FileResource.DOWNLOAD_SIG);
-        if(existingSignature != null) {
-            migrations.removeFile(existingSignature);
-            migrations.deleteFileResource(existingSignature);
-        }
-
-        migrations.uploadFileResource(signature);
-        migrations.persistFileResource(signature);
     }
 
-    private FileResource createSignature(Map.Entry<FileResource, byte[]> entry, SignatureKeyPair keyPair) throws IOException {
-        try(var extensionFile = migrations.getExtensionFile(entry)) {
+    private TempFile createSignature(FileResource download, SignatureKeyPair keyPair) throws IOException {
+        try(var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {
                 return null;
             }
 
-            var download = entry.getKey();
-            var signature = integrityService.generateSignature(download, extensionFile, keyPair);
-            signature.setStorageType(download.getStorageType());
-            return signature;
+            var signatureFile = integrityService.generateSignature(extensionFile, keyPair);
+            signatureFile.getResource().setStorageType(download.getStorageType());
+            return signatureFile;
         }
     }
 }

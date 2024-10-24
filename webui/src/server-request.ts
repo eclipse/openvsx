@@ -44,7 +44,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         signal: req.abortController.signal
     };
     if (req.payload) {
-        param.body = (req.payload instanceof File) ? req.payload : JSON.stringify(req.payload);
+        param.body = (req.payload instanceof File || req.payload instanceof FormData) ? req.payload : JSON.stringify(req.payload);
     }
     param.headers = req.headers;
     if (req.followRedirect) {

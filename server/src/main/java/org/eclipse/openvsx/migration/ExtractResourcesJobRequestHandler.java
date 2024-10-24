@@ -42,21 +42,19 @@ public class ExtractResourcesJobRequestHandler implements JobRequestHandler<Migr
         logger.info("Extracting resources for: {}", NamingUtil.toLogFormat(extVersion));
 
         service.deleteResources(extVersion);
-        var entry = migrations.getDownload(extVersion);
-        if(entry == null) {
+        var download = migrations.getDownload(extVersion);
+        if(download == null) {
             return;
         }
 
-        var download = entry.getKey();
-        try(var extensionFile = migrations.getExtensionFile(entry)) {
+        try(var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }
             try (var extProcessor = new ExtensionProcessor(extensionFile)) {
-                extProcessor.processEachResource(download.getExtension(), (resource) -> {
-                    resource.setStorageType(download.getStorageType());
-                    migrations.uploadFileResource(resource);
-                    migrations.persistFileResource(resource);
+                extProcessor.processEachResource(download.getExtension(), (tempFile) -> {
+                    migrations.uploadFileResource(tempFile);
+                    migrations.persistFileResource(tempFile.getResource());
                 });
             }
         }

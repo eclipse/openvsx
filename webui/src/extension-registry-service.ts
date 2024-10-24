@@ -70,6 +70,27 @@ export class ExtensionRegistryService {
         });
     }
 
+    async setNamespaceLogo(abortController: AbortController, namespace: string, logoFile: Blob, logoName: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.getCsrfToken(abortController);
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        const form = new FormData();
+        form.append('file', logoFile, logoName);
+        const endpoint = createAbsoluteURL([this.serverUrl, 'user', 'namespace', namespace, 'details', 'logo']);
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            payload: form,
+            credentials: true,
+            endpoint,
+            headers
+        });
+    }
+
     search(abortController: AbortController, filter?: ExtensionFilter): Promise<Readonly<SearchResult | ErrorResult>> {
         const query: { key: string, value: string | number }[] = [];
         if (filter) {

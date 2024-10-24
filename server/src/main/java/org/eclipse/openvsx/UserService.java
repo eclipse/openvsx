@@ -12,23 +12,32 @@ package org.eclipse.openvsx;
 import com.google.common.base.Joiner;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -229,39 +238,47 @@ public class UserService {
             namespace.setSocialLinks(details.getSocialLinks());
         }
 
-        var logo = namespace.getLogoStorageType() != null
-                ? storageUtil.getNamespaceLogoLocation(namespace).toString()
-                : null;
-
-        if(!Objects.equals(details.getLogo(), logo)) {
-            if (details.getLogoBytes() != null && details.getLogoBytes().length > 0) {
-                if (namespace.getLogoStorageType() != null) {
-                    storageUtil.removeNamespaceLogo(namespace);
-                }
-
-                namespace.setLogoName(details.getLogo());
-                namespace.setLogoBytes(details.getLogoBytes());
-                storeNamespaceLogo(namespace);
-            } else if (namespace.getLogoStorageType() != null) {
-                storageUtil.removeNamespaceLogo(namespace);
-                namespace.setLogoName(null);
-                namespace.setLogoBytes(null);
-                namespace.setLogoStorageType(null);
-            }
-        }
-
         return ResultJson.success("Updated details for namespace " + details.getName());
     }
 
-    private void storeNamespaceLogo(Namespace namespace) {
-        if (storageUtil.shouldStoreLogoExternally(namespace)) {
-            storageUtil.uploadNamespaceLogo(namespace);
-            // Don't store the binary content in the DB - it's now stored externally
-            namespace.setLogoBytes(null);
-        } else {
-            namespace.setLogoStorageType(FileResource.STORAGE_DB);
+    @Transactional
+    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#namespaceName")
+    public ResultJson updateNamespaceDetailsLogo(String namespaceName, MultipartFile file) {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new NotFoundException();
         }
+
+        var oldNamespace = SerializationUtils.clone(namespace);
+        try (
+                var logoFile = new TempFile("namespace-logo", ".png");
+                var out = Files.newOutputStream(logoFile.getPath())
+        ) {
+            var tika = new Tika();
+            var detectedType = tika.detect(file.getInputStream(), file.getOriginalFilename());
+            var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
+            if(logoType != null) {
+                if(!logoType.getType().equals(MediaType.image("png")) && !logoType.getType().equals(MediaType.image("jpg"))) {
+                    throw new ErrorResultException("Namespace logo should be of png or jpg type");
+                }
+
+                var logoName = "logo-" + namespace.getName() + "-" + System.currentTimeMillis() + logoType.getExtension();
+                namespace.setLogoName(logoName);
+            }
+
+            file.getInputStream().transferTo(out);
+            logoFile.setNamespace(namespace);
+            storageUtil.uploadNamespaceLogo(logoFile);
+            if(StringUtils.isNotEmpty(oldNamespace.getLogoName())) {
+                storageUtil.removeNamespaceLogo(oldNamespace);
+            }
+        } catch (IOException | MimeTypeException e) {
+            throw new RuntimeException(e);
+        }
+
+        return ResultJson.success("Updated logo for namespace " + namespace.getName());
     }
+
     @Transactional
     public AccessTokenJson createAccessToken(UserData user, String description) {
         var token = new PersonalAccessToken();
