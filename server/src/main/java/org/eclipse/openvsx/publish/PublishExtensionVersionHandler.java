@@ -197,14 +197,15 @@ public class PublishExtensionVersionHandler {
 
     @Async
     @Retryable
-    public void publishAsync(FileResource download, TempFile extensionFile, ExtensionService extensionService) {
+    public void publishAsync(TempFile extensionFile, ExtensionService extensionService) {
+        var download = extensionFile.getResource();
         var extVersion = download.getExtension();
 
         // Delete file resources in case publishAsync is retried
         service.deleteFileResources(extVersion);
         download.setId(0L);
 
-        service.storeDownload(download, extensionFile);
+        service.storeResource(extensionFile);
         service.persistResource(download);
         try(var processor = new ExtensionProcessor(extensionFile)) {
             extVersion.setPotentiallyMalicious(processor.isPotentiallyMalicious());
@@ -213,16 +214,17 @@ public class PublishExtensionVersionHandler {
                 return;
             }
 
-            Consumer<FileResource> consumer = resource -> {
-                service.storeResource(resource);
-                service.persistResource(resource);
+            Consumer<TempFile> consumer = tempFile -> {
+                service.storeResource(tempFile);
+                service.persistResource(tempFile.getResource());
             };
 
             if(integrityService.isEnabled()) {
                 var keyPair = extVersion.getSignatureKeyPair();
                 if(keyPair != null) {
-                    var signature = integrityService.generateSignature(download, extensionFile, keyPair);
-                    consumer.accept(signature);
+                    try(var signature = integrityService.generateSignature(extensionFile, keyPair)) {
+                        consumer.accept(signature);
+                    }
                 } else {
                     // Can happen when GenerateKeyPairJobRequestHandler hasn't run yet and there is no active SignatureKeyPair.
                     // This extension version should be assigned a SignatureKeyPair and a signature FileResource should be created
@@ -232,29 +234,39 @@ public class PublishExtensionVersionHandler {
             }
 
             processor.processEachResource(extVersion, consumer);
-            processor.getFileResources(extVersion).forEach(consumer);
-            consumer.accept(processor.generateSha256Checksum(extVersion));
+            processor.getFileResources(extVersion, consumer);
+            try (var sha256File = processor.generateSha256Checksum(extVersion)) {
+                consumer.accept(sha256File);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                extensionFile.close();
+            } catch (IOException e) {
+                logger.error("failed to delete temp file", e);
+            }
         }
 
         // Update whether extension is active, the search index and evict cache
         service.activateExtension(extVersion, extensionService);
-        try {
-            extensionFile.close();
-        } catch (IOException e) {
-            logger.error("failed to delete temp file", e);
-        }
     }
 
-    public void mirror(FileResource download, TempFile extensionFile, String signatureName) {
+    public void mirror(TempFile extensionFile, String signatureName) {
+        var download = extensionFile.getResource();
         var extVersion = download.getExtension();
-        service.mirrorResource(download);
+        service.mirrorResource(extensionFile);
         if(signatureName != null) {
             service.mirrorResource(getSignatureResource(signatureName, extVersion));
         }
         try(var processor = new ExtensionProcessor(extensionFile)) {
-            processor.getFileResources(extVersion).forEach(service::mirrorResource);
-            service.mirrorResource(processor.generateSha256Checksum(extVersion));
             // don't store file resources, they can be generated on the fly to avoid traversing entire zip file
+            processor.getFileResources(extVersion, service::mirrorResource);
+            try (var sha256File = processor.generateSha256Checksum(extVersion)) {
+                service.mirrorResource(sha256File);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

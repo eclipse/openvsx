@@ -62,21 +62,16 @@ class ExtensionVersionIntegrityServiceTest {
         var download = new FileResource();
         download.setExtension(extVersion);
 
-        var sigzipContent = new byte[0];
         try (
                 var stream = getClass().getResource("ms-python.python-2024.7.11511013.vsix").openStream();
                 var extensionFile = new TempFile("ms-python", ".vsix");
                 var out = Files.newOutputStream(extensionFile.getPath())
         ) {
             stream.transferTo(out);
-            var signature = integrityService.generateSignature(download, extensionFile, keyPair);
-            sigzipContent = signature.getContent();
-        }
-
-        try(var temp = new TempFile("ms-python", ".sigzip")) {
-            Files.write(temp.getPath(), sigzipContent);
-            try (
-                    var sigzip = new ZipFile(temp.getPath().toFile());
+            extensionFile.setResource(download);
+            try(
+                    var signatureFile = integrityService.generateSignature(extensionFile, keyPair);
+                    var sigzip = new ZipFile(signatureFile.getPath().toFile());
                     var expectedSigZip = new ZipFile(getClass().getResource("ms-python.python-2024.7.11511013.sigzip").getPath())
             ) {
                 expectedSigZip.stream()
@@ -84,16 +79,22 @@ class ExtensionVersionIntegrityServiceTest {
                             var entry = sigzip.getEntry(expectedEntry.getName());
                             assertNotNull(entry);
                             if(expectedEntry.getName().equals(".signature.manifest")) {
-                                assertEquals(
-                                        new String(ArchiveUtil.readEntry(expectedSigZip, expectedEntry)),
-                                        new String(ArchiveUtil.readEntry(sigzip, entry))
-                                );
+                                try (
+                                        var expectedFile = ArchiveUtil.readEntry(expectedSigZip, expectedEntry);
+                                        var actualFile = ArchiveUtil.readEntry(sigzip, entry)
+                                ) {
+                                    assertEquals(Files.readString(expectedFile.getPath()),Files.readString(actualFile.getPath()));
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         });
 
                 var entry = sigzip.getEntry(".signature.sig");
                 assertNotNull(entry);
-                assertTrue(ArchiveUtil.readEntry(sigzip, entry).length > 0);
+                try(var entryFile = ArchiveUtil.readEntry(sigzip, entry)) {
+                    assertTrue(Files.size(entryFile.getPath()) > 0);
+                }
             }
         }
     }

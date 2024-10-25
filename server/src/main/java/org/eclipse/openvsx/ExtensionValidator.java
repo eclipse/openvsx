@@ -10,10 +10,6 @@
 package org.eclipse.openvsx;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.Tika;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
@@ -21,8 +17,6 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -80,22 +74,6 @@ public class ExtensionValidator {
         var twitterLink = json.getSocialLinks().get("twitter");
         if(twitterLink != null && !twitterLink.matches("https:\\/\\/twitter\\.com\\/[^\\/]+")) {
             issues.add(new Issue("Invalid Twitter URL"));
-        }
-
-        if(json.getLogoBytes() != null) {
-            try (var in = new ByteArrayInputStream(json.getLogoBytes())) {
-                var tika = new Tika();
-                var detectedType = tika.detect(in, json.getLogo());
-                var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
-                if(logoType != null) {
-                    json.setLogo("logo-" + json.getName() + "-" + System.currentTimeMillis() + logoType.getExtension());
-                    if(!logoType.getType().equals(MediaType.image("png")) && !logoType.getType().equals(MediaType.image("jpg"))) {
-                        issues.add(new Issue("Namespace logo should be of png or jpg type"));
-                    }
-                }
-            } catch (IOException | MimeTypeException e) {
-                issues.add(new Issue("Failed to read namespace logo"));
-            }
         }
 
         return issues;

@@ -58,25 +58,23 @@ public class FileResourceJooqRepository {
                 .map(this::toFileResource);
     }
 
-    public List<FileResource> findAllResources(long extVersionId, String prefix) {
+    public List<FileResource> findAllResources(ExtensionVersion extVersion, String prefix) {
         return dsl.select(
                     FILE_RESOURCE.ID,
                     FILE_RESOURCE.EXTENSION_ID,
                     FILE_RESOURCE.NAME,
                     FILE_RESOURCE.TYPE,
-                    FILE_RESOURCE.STORAGE_TYPE,
-                    FILE_RESOURCE.CONTENT
+                    FILE_RESOURCE.STORAGE_TYPE
                 )
                 .from(FILE_RESOURCE)
                 .where(FILE_RESOURCE.TYPE.eq(FileResource.RESOURCE))
-                .and(FILE_RESOURCE.EXTENSION_ID.eq(extVersionId))
+                .and(FILE_RESOURCE.EXTENSION_ID.eq(extVersion.getId()))
                 .and(FILE_RESOURCE.NAME.startsWith(prefix))
                 .fetch()
                 .map(row -> {
                     var fileResource = toFileResource(row);
                     fileResource.setStorageType(row.get(FILE_RESOURCE.STORAGE_TYPE));
-                    fileResource.setContent(row.get(FILE_RESOURCE.CONTENT));
-
+                    fileResource.setExtension(extVersion);
                     return fileResource;
                 });
     }

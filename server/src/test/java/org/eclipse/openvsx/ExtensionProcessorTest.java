@@ -40,9 +40,9 @@ class ExtensionProcessorTest {
             assertThat(metadata.getLicense()).isEqualTo("MIT");
             assertThat(metadata.getRepository()).isEqualTo("https://github.com/Gruntfuggly/todo-tree");
 
-            checkResource(processor, FileResource.README, "README.md");
-            checkResource(processor, FileResource.ICON, "todo-tree.png");
-            checkResource(processor, FileResource.LICENSE, "License.txt");
+            checkReadme(processor, "README.md");
+            checkIcon(processor, "todo-tree.png");
+            checkLicense(processor, "License.txt");
         }
     }
 
@@ -52,7 +52,7 @@ class ExtensionProcessorTest {
                 var file = writeToTempFile("util/changelog.zip");
                 var processor = new ExtensionProcessor(file)
         ) {
-            checkResource(processor, FileResource.CHANGELOG, "CHANGELOG.md");
+            checkChangelog(processor, "CHANGELOG.md");
         }
     }
 
@@ -62,9 +62,9 @@ class ExtensionProcessorTest {
                 var file = writeToTempFile("util/with-capitalized-case.zip");
                 var processor = new ExtensionProcessor(file)
         ) {
-            checkResource(processor, FileResource.CHANGELOG, "Changelog.md");
-            checkResource(processor, FileResource.README, "Readme.md");
-            checkResource(processor, FileResource.LICENSE, "License.txt");
+            checkChangelog(processor, "Changelog.md");
+            checkReadme(processor, "Readme.md");
+            checkLicense(processor, "License.txt");
         }
     }
 
@@ -74,9 +74,9 @@ class ExtensionProcessorTest {
                 var file = writeToTempFile("util/with-minor-case.zip");
                 var processor = new ExtensionProcessor(file)
         ) {
-            checkResource(processor, FileResource.CHANGELOG, "changelog.md");
-            checkResource(processor, FileResource.README, "readme.md");
-            checkResource(processor, FileResource.LICENSE, "license.txt");
+            checkChangelog(processor, "changelog.md");
+            checkReadme(processor, "readme.md");
+            checkLicense(processor, "license.txt");
         }
     }
 
@@ -92,13 +92,36 @@ class ExtensionProcessorTest {
         return file;
     }
 
-    private void checkResource(ExtensionProcessor processor, String type, String expectedName) {
+    private void checkChangelog(ExtensionProcessor processor, String expectedName) throws IOException {
         var metadata = processor.getMetadata();
-        var resources = processor.getFileResources(metadata);
-        var fileOfType = resources.stream()
-                .filter(res -> type.equals(res.getType()))
-                .findAny();
-        assertThat(fileOfType).isPresent();
-        assertThat(fileOfType.get().getName()).isEqualTo(expectedName);
+        try (var changelogFile = processor.getChangelog(metadata)) {
+            checkResource(changelogFile.getResource(), FileResource.CHANGELOG, expectedName);
+        }
+    }
+
+    private void checkIcon(ExtensionProcessor processor, String expectedName) throws IOException {
+        var metadata = processor.getMetadata();
+        try (var iconFile = processor.getIcon(metadata)) {
+            checkResource(iconFile.getResource(), FileResource.ICON, expectedName);
+        }
+    }
+
+    private void checkLicense(ExtensionProcessor processor, String expectedName) throws IOException {
+        var metadata = processor.getMetadata();
+        try (var licenseFile = processor.getLicense(metadata)) {
+            checkResource(licenseFile.getResource(), FileResource.LICENSE, expectedName);
+        }
+    }
+
+    private void checkReadme(ExtensionProcessor processor, String expectedName) throws IOException {
+        var metadata = processor.getMetadata();
+        try (var readmeFile = processor.getReadme(metadata)) {
+            checkResource(readmeFile.getResource(), FileResource.README, expectedName);
+        }
+    }
+
+    private void checkResource(FileResource resource, String expectedType, String expectedName) {
+        assertThat(resource.getType()).isEqualTo(expectedType);
+        assertThat(resource.getName()).isEqualTo(expectedName);
     }
 }

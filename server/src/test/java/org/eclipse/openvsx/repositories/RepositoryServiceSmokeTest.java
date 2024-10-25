@@ -150,7 +150,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.topNamespaceExtensions(1),
                 () -> repositories.topNamespaceExtensionVersions(1),
                 () -> repositories.findFileResourcesByExtensionVersionIdAndType(LONG_LIST, STRING_LIST),
-                () -> repositories.findResourceFileResources(1L, "prefix"),
+                () -> repositories.findResourceFileResources(extVersion, "prefix"),
                 () -> repositories.findActiveExtensionVersions(LONG_LIST, "targetPlatform"),
                 () -> repositories.findActiveExtension("name", "namespaceName"),
                 () -> repositories.findActiveExtensionsById(LONG_LIST),
@@ -226,7 +226,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.deactivateKeyPairs(),
                 () -> repositories.hasExtension("namespaceName", "extensionName"),
                 () -> repositories.findDeprecatedExtensions(extension),
-                () -> repositories.findLatestReplacement(1L, null, false, false)
+                () -> repositories.findLatestReplacement(1L, null, false, false),
+                () -> repositories.findNotMigratedLocalNamespaceLogos(),
+                () -> repositories.findNotMigratedLocalFileResourceContent()
         );
 
         // check that we did not miss anything

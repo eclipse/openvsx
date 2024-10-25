@@ -34,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
 import java.util.*;
@@ -208,7 +209,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<byte[]> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
+    public ResponseEntity<StreamingResponseBody> getFile(String namespace, String extensionName, String targetPlatform, String version, String fileName) {
         var resource = isType(fileName)
                 ? repositories.findFileByType(namespace, extensionName, targetPlatform, version, fileName.toLowerCase())
                 : repositories.findFileByName(namespace, extensionName, targetPlatform, version, fileName);
@@ -497,7 +498,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName) {
+    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(String namespaceName, String fileName) {
         if(fileName == null) {
             fileName = "";
         }
@@ -859,7 +860,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         json.setPreview(latest != null && latest.isPreview());
-        json.setVersionAlias(new ArrayList<>(2));
         var versionAlias = new ArrayList<String>();
         if (latest != null && extVersion.getVersion().equals(latest.getVersion()))
             versionAlias.add(VersionAlias.LATEST);

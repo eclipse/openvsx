@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.util;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -28,22 +29,25 @@ public final class ArchiveUtil {
                 .orElse(null);
     }
 
-    public static byte[] readEntry(ZipFile archive, String entryName) {
+    public static TempFile readEntry(ZipFile archive, String entryName) throws IOException {
         var entry = archive.getEntry(entryName);
         if (entry == null)
             return null;
         return readEntry(archive, entry);
     }
 
-    public static byte[] readEntry(ZipFile archive, ZipEntry entry) {
-        try {
+    public static TempFile readEntry(ZipFile archive, ZipEntry entry) throws IOException {
+        var fileNameIndex = entry.getName().lastIndexOf('/');
+        var fileName = fileNameIndex == -1 ? entry.getName() : entry.getName().substring(fileNameIndex + 1);
+        var suffixIndex = fileName.lastIndexOf('.');
+        var suffix = suffixIndex == -1 ? null : fileName.substring(suffixIndex);
+        var prefix = suffixIndex == -1 ? fileName : fileName.substring(0, suffixIndex);
+        var file = new TempFile(prefix, suffix);
+        try (var out = Files.newOutputStream(file.getPath())){
             if (entry.getSize() > MAX_ENTRY_SIZE)
                 throw new ErrorResultException("The file " + entry.getName() + " exceeds the size limit of 32 MB.");
-            return archive.getInputStream(entry).readAllBytes();
-        } catch (ZipException exc) {
-            throw new ErrorResultException("Could not read zip file: " + exc.getMessage(), exc);
-        } catch (IOException exc) {
-            throw new RuntimeException(exc);
+            archive.getInputStream(entry).transferTo(out);
         }
+        return file;
     }
 }

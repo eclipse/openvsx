@@ -23,7 +23,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.util.AbstractMap;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -53,8 +52,7 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        var content = migrations.getContent(download);
-        try (var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content))) {
+        try (var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }

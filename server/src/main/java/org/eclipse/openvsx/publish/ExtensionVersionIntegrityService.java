@@ -35,7 +35,6 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -93,8 +92,14 @@ public class ExtensionVersionIntegrityService {
         try {
             var signer = new Ed25519Signer();
             signer.init(false,  publicKeyParameters);
-            var fileBytes = Files.readAllBytes(extensionFile.getPath());
-            signer.update(fileBytes, 0, fileBytes.length);
+            try (var in = Files.newInputStream(extensionFile.getPath())) {
+                int len;
+                var buffer = new byte[1024];
+                while ((len = in.read(buffer)) > 0) {
+                    signer.update(buffer, 0, len);
+                }
+            }
+
             verified = signer.verifySignature(Files.readAllBytes(signatureFile.getPath()));
         } catch (IOException e) {
             throw new ErrorResultException("Failed to verify extension file", e);
@@ -109,21 +114,28 @@ public class ExtensionVersionIntegrityService {
         extVersion.setSignatureKeyPair(keyPair);
     }
 
-    public FileResource generateSignature(FileResource download, TempFile extensionFile, SignatureKeyPair keyPair) {
+    public TempFile generateSignature(TempFile extensionFile, SignatureKeyPair keyPair) throws IOException {
+        var download = extensionFile.getResource();
         var resource = new FileResource();
         resource.setExtension(download.getExtension());
         resource.setName(NamingUtil.toFileFormat(download.getExtension(), ".sigzip"));
         resource.setType(FileResource.DOWNLOAD_SIG);
-        try (var out = new ByteArrayOutputStream()) {
+        var sigzipFile = new TempFile("signature", ".sigzip");
+        sigzipFile.setResource(resource);
+        try (var out = Files.newOutputStream(sigzipFile.getPath())) {
             try (var zip = new ZipOutputStream(out)) {
                 var sigEntry = new ZipEntry(".signature.sig");
                 zip.putNextEntry(sigEntry);
-                zip.write(generateSignature(extensionFile, keyPair));
+                try(var signatureFile = createSignatureFile(extensionFile, keyPair)) {
+                    writeZipEntry(signatureFile, zip);
+                }
                 zip.closeEntry();
 
                 var manifestEntry = new ZipEntry(".signature.manifest");
                 zip.putNextEntry(manifestEntry);
-                zip.write(generateSignatureManifest(extensionFile));
+                try(var manifestFile = generateSignatureManifest(extensionFile)) {
+                    writeZipEntry(manifestFile, zip);
+                }
                 zip.closeEntry();
 
                 // Add dummy file to the archive because VS Code checks if it exists
@@ -132,16 +144,14 @@ public class ExtensionVersionIntegrityService {
                 zip.write(new byte[0]);
                 zip.closeEntry();
             }
-
-            resource.setContent(out.toByteArray());
         } catch (IOException e) {
             throw new ErrorResultException("Failed to sign extension file", e);
         }
 
-        return resource;
+        return sigzipFile;
     }
 
-    private byte[] generateSignature(TempFile extensionFile, SignatureKeyPair keyPair) throws IOException {
+    private TempFile createSignatureFile(TempFile extensionFile, SignatureKeyPair keyPair) throws IOException {
         var privateKeyParameters = new Ed25519PrivateKeyParameters(keyPair.getPrivateKey(), 0);
         var signer = new Ed25519Signer();
         signer.init(true, privateKeyParameters);
@@ -153,10 +163,12 @@ public class ExtensionVersionIntegrityService {
             }
         }
 
-        return signer.generateSignature();
+        var signatureFile = new TempFile("signature", ".sig");
+        Files.write(signatureFile.getPath(), signer.generateSignature());
+        return signatureFile;
     }
 
-    private byte[] generateSignatureManifest(TempFile extensionFile) throws IOException {
+    private TempFile generateSignatureManifest(TempFile extensionFile) throws IOException {
         var base64 = new Base64();
         var mapper = new ObjectMapper();
         var manifestEntries = mapper.createObjectNode();
@@ -178,7 +190,10 @@ public class ExtensionVersionIntegrityService {
             manifest.set("package", generateManifestEntry(extensionStream, Files.size(extensionFile.getPath()), mapper, base64));
         }
         manifest.set("entries", manifestEntries);
-        return mapper.writeValueAsBytes(manifest);
+
+        var manifestFile = new TempFile("signature", ".manifest");
+        mapper.writeValue(manifestFile.getPath().toFile(), manifest);
+        return manifestFile;
     }
 
     private JsonNode generateManifestEntry(InputStream stream, long size, ObjectMapper mapper, Base64 base64) throws IOException {
@@ -190,5 +205,15 @@ public class ExtensionVersionIntegrityService {
         manifestEntryDigests.put("sha256", sha256);
         manifestEntry.set("digests", manifestEntryDigests);
         return manifestEntry;
+    }
+
+    private void writeZipEntry(TempFile file, ZipOutputStream out) throws IOException {
+        try(var in = Files.newInputStream(file.getPath())) {
+            int length;
+            var buffer = new byte[1024];
+            while((length = in.read(buffer)) >= 0) {
+                out.write(buffer, 0, length);
+            }
+        }
     }
 }

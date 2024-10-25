@@ -28,7 +28,7 @@ def versions = [
     testcontainers: '1.15.2',
     jackson: '2.15.2',
     woodstox: '6.4.0',
-    jobrunr: '6.2.0',
+    jobrunr: '7.3.1',
     bucket4j: '0.12.7',
     ehcache: '3.10.8',
     tika: '2.6.0',

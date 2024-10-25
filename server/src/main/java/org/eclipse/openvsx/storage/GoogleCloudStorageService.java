@@ -63,48 +63,27 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    public void uploadFile(FileResource resource) {
+    public void uploadFile(TempFile tempFile) {
+        var resource = tempFile.getResource();
         var objectId = getObjectId(resource);
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot upload file "
                     + objectId + ": missing Google bucket id");
         }
 
-        uploadFile(resource.getContent(), resource.getName(), objectId);
+        uploadFile(tempFile, resource.getName(), objectId);
     }
 
     @Override
-    public void uploadNamespaceLogo(Namespace namespace) {
+    public void uploadNamespaceLogo(TempFile logoFile) {
+        var namespace = logoFile.getNamespace();
         var objectId = getObjectId(namespace);
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException("Cannot upload file "
                     + objectId + ": missing Google bucket id");
         }
 
-        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), objectId);
-    }
-
-    protected void uploadFile(byte[] content, String fileName, String objectId) {
-        var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
-                .setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
-            blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
-        } else {
-            var cacheControl = StorageUtil.getCacheControl(fileName);
-            blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
-        }
-        getStorage().create(blobInfoBuilder.build(), content);
-    }
-
-    @Override
-    public void uploadFile(FileResource resource, TempFile file) {
-        var objectId = getObjectId(resource);
-        if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot upload file "
-                    + objectId + ": missing Google bucket id");
-        }
-
-        uploadFile(file, resource.getName(), objectId);
+        uploadFile(logoFile, namespace.getLogoName(), objectId);
     }
 
     protected void uploadFile(TempFile file, String fileName, String objectId) {
@@ -180,6 +159,20 @@ public class GoogleCloudStorageService implements IStorageService {
                     + namespace.getLogoName() + ": missing Google bucket id");
         }
         return URI.create(BASE_URL + bucketId + "/" + getObjectId(namespace));
+    }
+
+    @Override
+    public TempFile downloadFile(FileResource resource) throws IOException {
+        if (StringUtils.isEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot determine location of file "
+                    + resource.getName() + ": missing Google bucket id");
+        }
+
+        var tempFile = new TempFile("temp_file_", "");
+        var objectId = getObjectId(resource);
+        getStorage().downloadTo(BlobId.of(bucketId, objectId), tempFile.getPath());
+        tempFile.setResource(resource);
+        return tempFile;
     }
 
     protected String getObjectId(Namespace namespace) {

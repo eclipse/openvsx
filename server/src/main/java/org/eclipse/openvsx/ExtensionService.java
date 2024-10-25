@@ -58,29 +58,34 @@ public class ExtensionService {
 
     @Transactional
     public ExtensionVersion mirrorVersion(TempFile extensionFile, String signatureName, PersonalAccessToken token, String binaryName, String timestamp) {
-        var download = doPublish(extensionFile, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
-        publishHandler.mirror(download, extensionFile, signatureName);
-        return download.getExtension();
+        doPublish(extensionFile, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
+        publishHandler.mirror(extensionFile, signatureName);
+        return extensionFile.getResource().getExtension();
     }
 
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) throws ErrorResultException {
         var extensionFile = createExtensionFile(content);
-        var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-        publishHandler.publishAsync(download, extensionFile, this);
+        doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+        publishHandler.publishAsync(extensionFile, this);
+        var download = extensionFile.getResource();
         publishHandler.schedulePublicIdJob(download);
         return download.getExtension();
     }
 
-    private FileResource doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
+    private void doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         try (var processor = new ExtensionProcessor(extensionFile)) {
             var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
             if (requireLicense) {
                 // Check the extension's license
-                var license = processor.getLicense(extVersion);
-                checkLicense(extVersion, license);
+                try(var licenseFile = processor.getLicense(extVersion)) {
+                    checkLicense(extVersion, licenseFile);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
-            return processor.getBinary(extVersion, binaryName);
+            var download = processor.getBinary(extVersion, binaryName);
+            extensionFile.setResource(download);
         }
     }
 
@@ -104,8 +109,8 @@ public class ExtensionService {
         }
     }
 
-    private void checkLicense(ExtensionVersion extVersion, FileResource license) {
-        if (StringUtils.isEmpty(extVersion.getLicense()) && (license == null || !license.getType().equals(FileResource.LICENSE))) {
+    private void checkLicense(ExtensionVersion extVersion, TempFile licenseFile) {
+        if (StringUtils.isEmpty(extVersion.getLicense()) && (licenseFile == null || !licenseFile.getResource().getType().equals(FileResource.LICENSE))) {
             throw new ErrorResultException("This extension cannot be accepted because it has no license.");
         }
     }

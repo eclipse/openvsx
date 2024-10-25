@@ -1297,8 +1297,8 @@ class AdminAPITest {
                     repositories,
                     googleStorage,
                     azureStorage,
-                    azureDownloadCountService,
                     localStorage,
+                    azureDownloadCountService,
                     search,
                     cache,
                     entityManager
@@ -1306,8 +1306,8 @@ class AdminAPITest {
         }
 
         @Bean
-        LocalStorageService localStorage(EntityManager entityManager) {
-            return new LocalStorageService(entityManager);
+        LocalStorageService localStorage() {
+            return new LocalStorageService();
         }
 
         @Bean

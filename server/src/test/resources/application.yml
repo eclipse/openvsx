@@ -40,3 +40,8 @@ org:
       type: sql
     miscellaneous:
       allow-anonymous-data-usage: false
+
+ovsx:
+  storage:
+    local:
+      directory: /tmp

@@ -9,19 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Map;
-
+import com.google.common.io.CharStreams;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
-
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
@@ -46,19 +36,21 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.util.Streamable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import com.google.common.io.CharStreams;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.time.LocalDateTime;
+import java.util.Map;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(SpringExtension.class)
 @MockBean({
@@ -309,8 +301,8 @@ class EclipseServiceTest {
                     repositories,
                     googleStorage,
                     azureStorage,
-                    azureDownloadCountService,
                     localStorage,
+                    azureDownloadCountService,
                     search,
                     cache,
                     entityManager
@@ -318,8 +310,8 @@ class EclipseServiceTest {
         }
 
         @Bean
-        LocalStorageService localStorageService(EntityManager entityManager) {
-            return new LocalStorageService(entityManager);
+        LocalStorageService localStorageService() {
+            return new LocalStorageService();
         }
 
         @Bean
