@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.util.polling.SyncPoller;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
@@ -23,19 +24,27 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_FILES;
+import static org.eclipse.openvsx.cache.CacheService.GENERATOR_FILES;
+
 @Component
 public class AzureBlobStorageService implements IStorageService {
+
+    public static final String AZURE_USER_AGENT = "OpenVSX";
 
     @Value("${ovsx.storage.azure.service-endpoint:}")
     String serviceEndpoint;
@@ -59,6 +68,7 @@ public class AzureBlobStorageService implements IStorageService {
                     .endpoint(serviceEndpoint)
                     .sasToken(sasToken)
                     .containerName(blobContainer)
+                    .addPolicy(new UserAgentPolicy(AZURE_USER_AGENT))
                     .buildClient();
         }
         return containerClient;
@@ -200,5 +210,19 @@ public class AzureBlobStorageService implements IStorageService {
                 throw new RuntimeException(response.getValue().getError());
             }
         }
+    }
+
+    @Override
+    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
+    public Path getCachedFile(FileResource resource) throws IOException {
+        var blobName = getBlobName(resource);
+        if (StringUtils.isEmpty(serviceEndpoint)) {
+            throw new IllegalStateException("Cannot determine location of file "
+                    + blobName + ": missing Azure blob service endpoint");
+        }
+
+        var path = Files.createTempFile("cached_file", null);
+        getContainerClient().getBlobClient(blobName).downloadToFile(path.toAbsolutePath().toString(), true);
+        return path;
     }
 }

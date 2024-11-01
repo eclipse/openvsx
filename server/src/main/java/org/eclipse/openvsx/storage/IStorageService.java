@@ -16,6 +16,7 @@ import org.springframework.data.util.Pair;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 
 public interface IStorageService {
@@ -58,4 +59,6 @@ public interface IStorageService {
     TempFile downloadFile(FileResource resource) throws IOException;
 
     void copyFiles(List<Pair<FileResource, FileResource>> pairs);
+
+    Path getCachedFile(FileResource resource) throws IOException;
 }

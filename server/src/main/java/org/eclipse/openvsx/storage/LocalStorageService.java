@@ -174,4 +174,9 @@ public class LocalStorageService implements IStorageService {
         var path = storageDirectory + "/" + namespace.getName() + "/logo/" + namespace.getLogoName();
         return Path.of(path).toAbsolutePath();
     }
+
+    @Override
+    public Path getCachedFile(FileResource resource) {
+        return getPath(resource);
+    }
 }

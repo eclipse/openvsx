@@ -18,6 +18,7 @@ import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -32,6 +33,8 @@ import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,15 +53,21 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -271,26 +280,23 @@ class VSCodeAPITest {
 
     @Test
     void testWebResourceAsset() throws Exception {
-        var extVersion = mockExtensionVersion();
-
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName("extension/img/logo.png");
-        resource.setType(RESOURCE);
-        resource.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findFileByTypeAndName("redhat", "vscode-yaml", TargetPlatform.NAME_UNIVERSAL,"0.5.2", FileResource.RESOURCE, "extension/img/logo.png")).thenReturn(resource);
-
-        var path = Path.of("/tmp", "redhat", "vscode-yaml", "0.5.2", "extension", "img", "logo.png");
-        Files.createDirectories(path.getParent());
-        Files.writeString(path, "logo.png");
-
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockWebResourceAsset(namespaceName, extensionName, TargetPlatform.NAME_UNIVERSAL, version);
+        var bytes = new byte[0];
+        try(var zip = new ZipFile(path.toFile())) {
+            var entry = zip.getEntry("extension/EditorConfig_icon.png");
+            try(var in = zip.getInputStream(entry)) {
+                bytes = in.readAllBytes();
+            }
+        }
         mockMvc.perform(get("/vscode/asset/{namespace}/{extensionName}/{version}/{assetType}",
-                "redhat", "vscode-yaml", "0.5.2", "Microsoft.VisualStudio.Code.WebResources/extension/img/logo.png"))
+                namespaceName, extensionName, version, "Microsoft.VisualStudio.Code.WebResources/extension/EditorConfig_icon.png"))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("logo.png"))
+                .andExpect(content().bytes(bytes))
                 .andDo(result -> Files.delete(path));
     }
 
@@ -337,27 +343,37 @@ class VSCodeAPITest {
     }
 
     @Test
-    void testBrowseNotFound() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1L);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
+    void testBrowseDownloadNotFound() throws Exception {
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        Mockito.when(repositories.findFileByType(namespaceName, extensionName, null, version, FileResource.DOWNLOAD))
+                .thenReturn(null);
 
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/img"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testBrowseDirectoryNotFound() throws Exception {
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, version);
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/img"))
+                .andExpect(status().isNotFound())
+                .andDo(result -> Files.delete(path));
+    }
+
+    @Test
+    void testBrowseFileNotFound() throws Exception {
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, version);
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/syntaxes/editorconfig.tmLanguage"))
+                .andExpect(status().isNotFound())
+                .andDo(result -> Files.delete(path));
     }
 
     @Test
@@ -371,341 +387,178 @@ class VSCodeAPITest {
 
     @Test
     void testBrowseTopDir() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1L);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-
-        var vsixManifest = new FileResource();
-        vsixManifest.setExtension(extVersion);
-        vsixManifest.setName("extension.vsixmanifest");
-        vsixManifest.setType(RESOURCE);
-        vsixManifest.setStorageType(STORAGE_LOCAL);
-
-        var packageJson = new FileResource();
-        packageJson.setExtension(extVersion);
-        packageJson.setName("extension/package.json");
-        packageJson.setType(RESOURCE);
-        packageJson.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findResourceFileResources(extVersion, "")).thenReturn(List.of(vsixManifest, packageJson));
-
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, version);
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}", namespaceName, extensionName, version))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json("[\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension.vsixmanifest\",\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/\"]"));
+                .andExpect(content().json("[" +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension.vsixmanifest\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/[Content_Types].xml\"" +
+                        "]"
+                ))
+                .andDo(result -> Files.delete(path));
     }
 
     @Test
     void testBrowseVsixManifest() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1L);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName("extension.vsixmanifest");
-        resource.setType(RESOURCE);
-        resource.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findResourceFileResources(extVersion, "extension.vsixmanifest")).thenReturn(List.of(resource));
-
-        var path = Path.of("/tmp", namespaceName, extensionName, version, "extension.vsixmanifest");
-        Files.createDirectories(path.getParent());
-        Files.writeString(path, "<xml></xml>");
-
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, version);
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension.vsixmanifest"))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("<xml></xml>"))
+                .andExpect(content().string(new BaseMatcher<String>() {
+                    @Override
+                    public boolean matches(Object o) {
+                        return ((String) o).startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">");
+                    }
+
+                    @Override
+                    public void describeTo(Description description) {}
+                }))
                 .andDo(result -> Files.delete(path));
     }
 
     @Test
     void testBrowseVsixManifestUniversal() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName("extension.vsixmanifest");
-        resource.setType(RESOURCE);
-        resource.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findResourceFileResources(extVersion, "extension.vsixmanifest")).thenReturn(List.of(resource));
-
-        var path = Path.of("/tmp", namespaceName, extensionName, version, "extension.vsixmanifest");
-        Files.createDirectories(path.getParent());
-        Files.writeString(path, "<xml></xml>");
-
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, TargetPlatform.NAME_UNIVERSAL, version);
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension.vsixmanifest"))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("<xml></xml>"))
+                .andExpect(content().string(new BaseMatcher<String>() {
+                    @Override
+                    public boolean matches(Object o) {
+                        return ((String) o).startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">");
+                    }
+
+                    @Override
+                    public void describeTo(Description description) {}
+                }))
                 .andDo(result -> Files.delete(path));
     }
 
     @Test
     void testBrowseVsixManifestWindows() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(2);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_WIN32_X64);
-        extVersion.setExtension(extension);
-
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName("extension.vsixmanifest");
-        resource.setType(RESOURCE);
-        resource.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findResourceFileResources(extVersion, "extension.vsixmanifest")).thenReturn(List.of(resource));
-
-        var path = Path.of("/tmp", namespaceName, extensionName, "win32-x64", version, "extension.vsixmanifest");
-        Files.createDirectories(path.getParent());
-        Files.writeString(path, "<xml></xml>");
-
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, TargetPlatform.NAME_WIN32_X64, version);
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension.vsixmanifest"))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("<xml></xml>"));
+                .andExpect(content().string(new BaseMatcher<String>() {
+                    @Override
+                    public boolean matches(Object o) {
+                        return ((String) o).startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">");
+                    }
+
+                    @Override
+                    public void describeTo(Description description) {}
+                }))
+                .andDo(result -> Files.delete(path));
     }
 
     @Test
     void testBrowseExtensionDir() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1L);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-
-        var packageJson = new FileResource();
-        packageJson.setExtension(extVersion);
-        packageJson.setName("extension/package.json");
-        packageJson.setType(RESOURCE);
-        packageJson.setStorageType(STORAGE_LOCAL);
-
-        var readme = new FileResource();
-        readme.setExtension(extVersion);
-        readme.setName("extension/README.md");
-        readme.setType(RESOURCE);
-        readme.setStorageType(STORAGE_LOCAL);
-
-        var changelog = new FileResource();
-        changelog.setExtension(extVersion);
-        changelog.setName("extension/CHANGELOG.md");
-        changelog.setType(RESOURCE);
-        changelog.setStorageType(STORAGE_LOCAL);
-
-        var license = new FileResource();
-        license.setExtension(extVersion);
-        license.setName("extension/LICENSE.txt");
-        license.setType(RESOURCE);
-        license.setStorageType(STORAGE_LOCAL);
-
-        var icon = new FileResource();
-        icon.setExtension(extVersion);
-        icon.setName("extension/images/icon.png");
-        icon.setType(RESOURCE);
-        icon.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findResourceFileResources(extVersion, "extension")).thenReturn(List.of(packageJson, readme, changelog, license, icon));
-
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, TargetPlatform.NAME_UNIVERSAL, version);
         mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/"))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("[" +
-                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/package.json\"," +
-                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/README.md\"," +
-                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/CHANGELOG.md\"," +
-                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/LICENSE.txt\"," +
-                        "\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/images/\"" +
-                        "]"));
-    }
-
-    @Test
-    void testBrowsePackageJson() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1L);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName("extension/package.json");
-        resource.setType(RESOURCE);
-        resource.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findResourceFileResources(extVersion, "extension/package.json")).thenReturn(List.of(resource));
-
-        var path = Path.of("/tmp", namespaceName, extensionName, version, "extension", "package.json");
-        Files.createDirectories(path.getParent());
-        Files.writeString(path, "{\"package\":\"json\"}");
-
-        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/package.json"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
-                .andExpect(status().isOk())
-                .andExpect(content().string("{\"package\":\"json\"}"))
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/node_modules/\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/out/\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/syntaxes/\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/CHANGELOG.md\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/editorconfig.language-configuration.json\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/EditorConfig_icon.png\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/LICENSE.md\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/package.json\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/README.md\"," +
+                        "\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/ThirdPartyNotices.txt\"" +
+                        "]"))
                 .andDo(result -> Files.delete(path));
     }
 
     @Test
-    void testBrowseImagesDir() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1L);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
+    void testBrowsePackageJson() throws Exception {
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, TargetPlatform.NAME_UNIVERSAL, version);
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/package.json"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
+                .andExpect(status().isOk())
+                .andExpect(content().string(new BaseMatcher<String>() {
+                    @Override
+                    public boolean matches(Object o) {
+                        var mapper = new ObjectMapper();
+                        try {
+                            var json = mapper.readTree((String) o);
+                            return json.get("name").asText().equals(extensionName)
+                                    && json.get("publisher").asText().equals(namespaceName)
+                                    && json.get("version").asText().equals(version);
+                        } catch (IOException e) {
+                            return false;
+                        }
+                    }
 
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName("extension/images/icon128.png");
-        resource.setType(RESOURCE);
-        resource.setStorageType(STORAGE_LOCAL);
+                    @Override
+                    public void describeTo(Description description) {}
+                }))                .andDo(result -> Files.delete(path));
+    }
 
-        Mockito.when(repositories.findResourceFileResources(extVersion, "extension/images")).thenReturn(List.of(resource));
-
-        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/images/"))
+    @Test
+    void testBrowseSyntaxesDir() throws Exception {
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, TargetPlatform.NAME_UNIVERSAL, version);
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/syntaxes/"))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json("[\"http://localhost/vscode/unpkg/foo/bar/1.3.4/extension/images/icon128.png\"]"));
+                .andExpect(content().json("[\"http://localhost/vscode/unpkg/EditorConfig/EditorConfig/0.16.6/extension/syntaxes/editorconfig.tmLanguage.json\"]"))
+                .andDo(result -> Files.delete(path));
     }
 
     @Test
     void testBrowseIcon() throws Exception {
-        var version = "1.3.4";
-        var extensionName = "bar";
-        var namespaceName = "foo";
-        var namespace = new Namespace();
-        namespace.setName(namespaceName);
-        var extension = new Extension();
-        extension.setId(0L);
-        extension.setName(extensionName);
-        extension.setNamespace(namespace);
-        var extVersion = new ExtensionVersion();
-        extVersion.setId(1L);
-        extVersion.setVersion(version);
-        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
-        extVersion.setExtension(extension);
-        Mockito.when(repositories.findActiveExtensionVersion(version, extensionName, namespaceName))
-                .thenReturn(extVersion);
-
-        var resource = new FileResource();
-        resource.setExtension(extVersion);
-        resource.setName("extension/images/icon128.png");
-        resource.setType(RESOURCE);
-        resource.setStorageType(STORAGE_LOCAL);
-
-        Mockito.when(repositories.findResourceFileResources(extVersion, "extension/images/icon128.png")).thenReturn(List.of(resource));
-
-        var path = Path.of("/tmp", namespaceName, extensionName, version, "extension", "images", "icon128.png");
-        Files.createDirectories(path.getParent());
-        Files.writeString(path, "ICON128");
-
-        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/images/icon128.png"))
+        var namespaceName = "EditorConfig";
+        var extensionName = "EditorConfig";
+        var version = "0.16.6";
+        var path = mockExtensionBrowse(namespaceName, extensionName, version);
+        var bytes = new byte[0];
+        try(var zip = new ZipFile(path.toFile())) {
+            var entry = zip.getEntry("extension/EditorConfig_icon.png");
+            try(var in = zip.getInputStream(entry)) {
+                bytes = in.readAllBytes();
+            }
+        }
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/EditorConfig_icon.png"))
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string("ICON128"))
+                .andExpect(content().bytes(bytes))
                 .andDo(result -> Files.delete(path));
     }
 
@@ -998,6 +851,54 @@ class VSCodeAPITest {
         }
     }
 
+    private Path mockExtensionBrowse(String namespaceName, String extensionName, String version) throws IOException {
+        return mockExtensionBrowse(namespaceName, extensionName, null, version, true);
+    }
+
+    private Path mockExtensionBrowse(String namespaceName, String extensionName, String targetPlatform, String version) throws IOException {
+        return mockExtensionBrowse(namespaceName, extensionName, targetPlatform, version, true);
+    }
+
+    private Path mockWebResourceAsset(String namespaceName, String extensionName, String targetPlatform, String version) throws IOException {
+        return mockExtensionBrowse(namespaceName, extensionName, targetPlatform, version, false);
+    }
+
+    private Path mockExtensionBrowse(String namespaceName, String extensionName, String targetPlatform, String version, boolean browse) throws IOException {
+        if(!TargetPlatform.isValid(targetPlatform)) {
+            targetPlatform = TargetPlatform.NAME_UNIVERSAL;
+        }
+
+        var namespace = new Namespace();
+        namespace.setId(0L);
+        namespace.setName(namespaceName);
+        var extension = new Extension();
+        extension.setId(1L);
+        extension.setName(extensionName);
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(2L);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(targetPlatform);
+        extVersion.setExtension(extension);
+        var resource = new FileResource();
+        resource.setId(3L);
+        resource.setExtension(extVersion);
+        resource.setName("EditorConfig.EditorConfig-0.16.6.vsix");
+        resource.setType(DOWNLOAD);
+        resource.setStorageType(STORAGE_LOCAL);
+
+        var path = Path.of("/tmp", namespaceName, extensionName, (!TargetPlatform.isUniversal(targetPlatform) ? targetPlatform : ""), version, resource.getName());
+        path.toFile().mkdirs();
+        try (var in = getClass().getResourceAsStream("../EditorConfig.EditorConfig-0.16.6.vsix")) {
+            Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        Mockito.when(repositories.findFileByType(namespaceName, extensionName, browse ? null : targetPlatform, version, DOWNLOAD))
+                .thenReturn(resource);
+
+        return path;
+    }
+
     @TestConfiguration
     @Import(SecurityConfig.class)
     static class TestConfig {
@@ -1032,14 +933,20 @@ class VSCodeAPITest {
         }
 
         @Bean
+        WebResourceService webResourceService(StorageUtilService storageUtil, RepositoryService repositories) {
+            return new WebResourceService(storageUtil, repositories);
+        }
+
+        @Bean
         LocalVSCodeService localVSCodeService(
                 RepositoryService repositories,
                 VersionService versions,
                 SearchUtilService search,
                 StorageUtilService storageUtil,
-                ExtensionVersionIntegrityService integrityService
+                ExtensionVersionIntegrityService integrityService,
+                WebResourceService webResourceService
         ) {
-            return new LocalVSCodeService(repositories, versions, search, storageUtil, integrityService);
+            return new LocalVSCodeService(repositories, versions, search, storageUtil, integrityService, webResourceService);
         }
 
         @Bean
@@ -1089,6 +996,11 @@ class VSCodeAPITest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        FilesCacheKeyGenerator filesCacheKeyGenerator() {
+            return new FilesCacheKeyGenerator();
         }
     }
 
