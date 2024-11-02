@@ -13,6 +13,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Map;
 
+import static org.eclipse.openvsx.util.TargetPlatform.*;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
+
 @Schema(
     name = "VersionReference",
     description = "Essential metadata of an extension version"
@@ -27,7 +30,13 @@ public class VersionReferenceJson {
 
     private String version;
 
-    @Schema(description = "Name of the target platform")
+    @Schema(description = "Name of the target platform", allowableValues = {
+            NAME_WIN32_X64, NAME_WIN32_IA32, NAME_WIN32_ARM64,
+            NAME_LINUX_X64, NAME_LINUX_ARM64, NAME_LINUX_ARMHF,
+            NAME_ALPINE_X64, NAME_ALPINE_ARM64,
+            NAME_DARWIN_X64, NAME_DARWIN_ARM64,
+            NAME_WEB, NAME_UNIVERSAL
+    })
     private String targetPlatform;
 
     @Schema(description = "Map of engine names to the respective version constraints")

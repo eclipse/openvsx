@@ -35,7 +35,7 @@ public class QueryParamJson {
     @Schema(description = "Version of an extension")
     private String extensionVersion;
 
-    @Schema(description = "Identifier in the form {namespace}.{extension}")
+    @Schema(description = "Identifier in the format {namespace}.{extension}")
     private String extensionId;
 
     @Schema(description = "Universally unique identifier of an extension")

@@ -86,25 +86,8 @@ public class RegistryAPI {
         description = "The specified namespace could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<NamespaceJson> getNamespace(
-            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+            @PathVariable @Parameter(description = "Namespace name", example = "eamodio")
             String namespace
         ) {
         for (var registry : getRegistries()) {
@@ -140,25 +123,8 @@ public class RegistryAPI {
         description = "The specified namespace could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<ResultJson> verifyToken(
-            @PathVariable @Parameter(description = "Namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Namespace", example = "GitLab")
             String namespace,
             @RequestParam @Parameter(description = "A personal access token") String token
     ) {
@@ -187,25 +153,8 @@ public class RegistryAPI {
             description = "The specified namespace could not be found",
             content = @Content()
     )
-    @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                    @Header(
-                            name = "X-Rate-Limit-Retry-After-Seconds",
-                            description = "Number of seconds to wait after receiving a 429 response",
-                            schema = @Schema(type = "integer", format = "int32")
-                    ),
-                    @Header(
-                            name = "X-Rate-Limit-Remaining",
-                            description = "Remaining number of requests left",
-                            schema = @Schema(type = "integer", format = "int32")
-                    )
-            }
-    )
     public ResponseEntity<NamespaceDetailsJson> getNamespaceDetails(
-            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+            @PathVariable @Parameter(description = "Namespace name", example = "devsense")
             String namespace
     ) {
         for (var registry : getRegistries()) {
@@ -235,27 +184,10 @@ public class RegistryAPI {
         responseCode = "404",
         description = "The specified namespace could not be found"
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<StreamingResponseBody> getNamespaceLogo(
-            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+            @PathVariable @Parameter(description = "Namespace name", example = "Codeium")
             String namespace,
-            @PathVariable @Parameter(description = "Logo file name", example = "logo-redhat.png")
+            @PathVariable @Parameter(description = "Logo file name", example = "logo-codeium.png")
             String fileName
     ) {
         for (var registry : getRegistries()) {
@@ -284,27 +216,10 @@ public class RegistryAPI {
         description = "The specified extension could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "rust-lang")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "rust-analyzer")
             String extension
     ) {
         for (var registry : getRegistries()) {
@@ -335,27 +250,10 @@ public class RegistryAPI {
         description = "The specified extension could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "Dart-Code")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "flutter")
             String extension,
             @PathVariable
             @Parameter(
@@ -399,29 +297,12 @@ public class RegistryAPI {
         description = "The specified extension could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "TabNine")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "tabnine-vscode")
             String extension,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "3.172.0")
             String version
     ) {
         for (var registry : getRegistries()) {
@@ -452,27 +333,10 @@ public class RegistryAPI {
         description = "The specified extension could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "julialang")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "language-julia")
             String extension,
             @PathVariable
             @Parameter(
@@ -487,7 +351,7 @@ public class RegistryAPI {
                 })
             )
             String targetPlatform,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "1.124.2")
             String version
     ) {
         for (var registry : getRegistries()) {
@@ -518,27 +382,10 @@ public class RegistryAPI {
         description = "The specified extension could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<VersionsJson> getVersions(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "vscodevim")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "vim")
             String extension,
             @RequestParam(defaultValue = "18")
             @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
@@ -565,27 +412,10 @@ public class RegistryAPI {
             description = "The specified extension could not be found",
             content = @Content()
     )
-    @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                    @Header(
-                            name = "X-Rate-Limit-Retry-After-Seconds",
-                            description = "Number of seconds to wait after receiving a 429 response",
-                            schema = @Schema(type = "integer", format = "int32")
-                    ),
-                    @Header(
-                            name = "X-Rate-Limit-Remaining",
-                            description = "Remaining number of requests left",
-                            schema = @Schema(type = "integer", format = "int32")
-                    )
-            }
-    )
     public ResponseEntity<VersionsJson> getVersions(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "stateful")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "runme")
             String extension,
             @PathVariable
             @Parameter(
@@ -647,27 +477,10 @@ public class RegistryAPI {
             description = "The specified extension could not be found",
             content = @Content()
     )
-    @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                    @Header(
-                            name = "X-Rate-Limit-Retry-After-Seconds",
-                            description = "Number of seconds to wait after receiving a 429 response",
-                            schema = @Schema(type = "integer", format = "int32")
-                    ),
-                    @Header(
-                            name = "X-Rate-Limit-Remaining",
-                            description = "Remaining number of requests left",
-                            schema = @Schema(type = "integer", format = "int32")
-                    )
-            }
-    )
     public ResponseEntity<VersionReferencesJson> getVersionReferences(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "svelte")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "svelte-vscode")
             String extension,
             @RequestParam(defaultValue = "18")
             @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
@@ -694,27 +507,10 @@ public class RegistryAPI {
             description = "The specified extension could not be found",
             content = @Content()
     )
-    @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                    @Header(
-                            name = "X-Rate-Limit-Retry-After-Seconds",
-                            description = "Number of seconds to wait after receiving a 429 response",
-                            schema = @Schema(type = "integer", format = "int32")
-                    ),
-                    @Header(
-                            name = "X-Rate-Limit-Remaining",
-                            description = "Remaining number of requests left",
-                            schema = @Schema(type = "integer", format = "int32")
-                    )
-            }
-    )
     public ResponseEntity<VersionReferencesJson> getVersionReferences(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "hashicorp")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "terraform")
             String extension,
             @PathVariable
             @Parameter(
@@ -783,30 +579,13 @@ public class RegistryAPI {
         description = "The specified file could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<StreamingResponseBody> getFile(
             HttpServletRequest request,
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "astro-build")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "astro-vscode")
             String extension,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "2.15.4")
             String version
     ) {
         var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{version}/file/**");
@@ -842,28 +621,11 @@ public class RegistryAPI {
         description = "The specified file could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<StreamingResponseBody> getFile(
             HttpServletRequest request,
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "AdaCore")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "ada")
             String extension,
             @PathVariable
             @Parameter(
@@ -878,7 +640,7 @@ public class RegistryAPI {
                 })
             )
             String targetPlatform,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "24.0.6")
             String version
     ) {
         var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{targetPlatform}/{version}/file/**");
@@ -908,9 +670,9 @@ public class RegistryAPI {
         content = @Content()
     )
     public ResponseEntity<ReviewListJson> getReviews(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "Prisma")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "prisma")
             String extension
     ) {
         for (var registry : getRegistries()) {
@@ -943,23 +705,6 @@ public class RegistryAPI {
             mediaType = MediaType.APPLICATION_JSON_VALUE,
             examples = @ExampleObject(value = "{\"error\": \"The parameter 'size' must not be negative.\"}")
         )
-    )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
     )
     public ResponseEntity<SearchResultJson> search(
             @RequestParam(required = false)
@@ -1080,7 +825,7 @@ public class RegistryAPI {
             @Parameter(description = "Version of an extension", example = "1")
             String extensionVersion,
             @RequestParam(required = false)
-            @Parameter(description = "Identifier in the form {namespace}.{extension}", example = "foo.bar")
+            @Parameter(description = "Identifier in the format {namespace}.{extension}", example = "foo.bar")
             String extensionId,
             @RequestParam(required = false)
             @Parameter(description = "Universally unique identifier of an extension", example = "5678")
@@ -1189,23 +934,6 @@ public class RegistryAPI {
             examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
         )
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<QueryResultJson> getQuery(
             @RequestParam(required = false)
             @Parameter(description = "Name of a namespace", example = "foo")
@@ -1217,7 +945,7 @@ public class RegistryAPI {
             @Parameter(description = "Version of an extension", example = "1")
             String extensionVersion,
             @RequestParam(required = false)
-            @Parameter(description = "Identifier in the form {namespace}.{extension}", example = "foo.bar")
+            @Parameter(description = "Identifier in the format {namespace}.{extension}", example = "foo.bar")
             String extensionId,
             @RequestParam(required = false)
             @Parameter(description = "Universally unique identifier of an extension", example = "5678")
@@ -1326,23 +1054,6 @@ public class RegistryAPI {
         responseCode = "301",
         description = "Returns redirect to GET /api/-/query."
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<QueryResultJson> postQuery(
             @RequestBody @Parameter(description = "Parameters of the metadata query")
             QueryParamJson param
@@ -1381,23 +1092,6 @@ public class RegistryAPI {
             mediaType = MediaType.APPLICATION_JSON_VALUE,
             examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
         )
-    )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
     )
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody @Parameter(description = "Describes the namespace to create")
@@ -1461,23 +1155,6 @@ public class RegistryAPI {
         responseCode = "403",
         description = "User is not logged in"
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody NamespaceJson namespace
     ) {
@@ -1534,23 +1211,6 @@ public class RegistryAPI {
             examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
         )
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<ExtensionJson> publish(
             InputStream content,
             @RequestParam @Parameter(description = "A personal access token") String token
@@ -1601,23 +1261,6 @@ public class RegistryAPI {
     @ApiResponse(
         responseCode = "403",
         description = "User is not logged in"
-    )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
     )
     public ResponseEntity<ExtensionJson> publish(InputStream content) {
         try {
@@ -1702,23 +1345,6 @@ public class RegistryAPI {
         description = "The specified public key file could not be found",
         content = @Content()
     )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        content = @Content(),
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
     public ResponseEntity<String> getPublicKey(
             @PathVariable @Parameter(description = "Public ID of a public key file", example = "92dea4de-80b5-4577-b27d-44cdcda82c63")
             String publicId
@@ -1747,22 +1373,6 @@ public class RegistryAPI {
     @ApiResponse(
         responseCode = "404",
         description = "The registry version could not be determined"
-    )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Remaining number of requests left",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
     )
     public ResponseEntity<RegistryVersionJson> getServerVersion() {
         try {

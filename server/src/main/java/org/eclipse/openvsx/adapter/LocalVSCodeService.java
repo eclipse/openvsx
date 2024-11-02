@@ -311,8 +311,8 @@ public class LocalVSCodeService implements IVSCodeService {
         var type = assets.get(assetType);
         if(type != null) {
             resource = repositories.findFileByType(namespace, extensionName, targetPlatform, version, type);
-        } else if(asset.startsWith(FILE_WEB_RESOURCES + "extension/")) {
-            var name = asset.substring((FILE_WEB_RESOURCES.length()));
+        } else if(asset.startsWith(FILE_WEB_RESOURCES + "/extension/")) {
+            var name = asset.substring((FILE_WEB_RESOURCES.length() + 1));
             resource = repositories.findFileByTypeAndName(namespace, extensionName, targetPlatform, version, FileResource.RESOURCE, name);
         }
 
