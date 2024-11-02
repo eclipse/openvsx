@@ -23,6 +23,9 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import static org.eclipse.openvsx.util.TargetPlatform.*;
+import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
+
 @Schema(
     name = "Extension",
     description = "Metadata of an extension"
@@ -55,7 +58,13 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @NotNull
     private String namespace;
 
-    @Schema(description = "Name of the target platform")
+    @Schema(description = "Name of the target platform", allowableValues = {
+            NAME_WIN32_X64, NAME_WIN32_IA32, NAME_WIN32_ARM64,
+            NAME_LINUX_X64, NAME_LINUX_ARM64, NAME_LINUX_ARMHF,
+            NAME_ALPINE_X64, NAME_ALPINE_ARM64,
+            NAME_DARWIN_X64, NAME_DARWIN_ARM64,
+            NAME_WEB, NAME_UNIVERSAL
+    })
     private String targetPlatform;
 
     @Schema(description = "Selected version, or the latest version if none was specified")

@@ -76,6 +76,7 @@ management:
             requests: true
 
 springdoc:
+  model-and-view-allowed: true
   swagger-ui:
     path: /swagger-ui
     docExpansion: list
