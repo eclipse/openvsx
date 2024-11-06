@@ -44,7 +44,7 @@ public class DocumentationConfig {
 
     @Bean
     public GroupedOpenApi vscode(OpenApiCustomizer sortSchemasAlphabetically, OpenApiCustomizer addRateLimitResponse) {
-        var description = "This API provides an interopability layer between VS Code based editors and the Open VSX Registry.";
+        var description = "Provides a compatibility layer between VS Code based editors and the Open VSX Registry.";
         return GroupedOpenApi.builder()
                 .group("vscode-adapter")
                 .displayName("VSCode Adapter")
