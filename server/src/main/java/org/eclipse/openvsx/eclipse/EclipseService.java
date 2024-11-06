@@ -166,9 +166,11 @@ public class EclipseService {
         }
 
         var publisherAgreement = new UserJson.PublisherAgreement();
+        publisherAgreement.setStatus("none");
+        json.setPublisherAgreement(publisherAgreement);
+
         var personId = user.getEclipsePersonId();
         if (personId == null) {
-            publisherAgreement.setStatus("none");
             return;
         }
 
@@ -176,14 +178,13 @@ public class EclipseService {
         try {
             // Add information on the publisher agreement
             var agreement = getPublisherAgreement(user);
-            if (agreement == null || !agreement.isActive() || agreement.version() == null)
-                publisherAgreement.setStatus("none");
-            else if (publisherAgreementVersion.equals(agreement.version()))
-                publisherAgreement.setStatus("signed");
-            else
-                publisherAgreement.setStatus("outdated");
-            if (agreement != null && agreement.timestamp() != null)
+            if(agreement != null && agreement.isActive() && agreement.version() != null) {
+                var status = publisherAgreementVersion.equals(agreement.version()) ? "signed" : "outdated";
+                publisherAgreement.setStatus(status);
+            }
+            if (agreement != null && agreement.timestamp() != null) {
                 publisherAgreement.setTimestamp(TimeUtil.toUTCString(agreement.timestamp()));
+            }
         } catch (ErrorResultException e) {
             if(e.getStatus() == HttpStatus.FORBIDDEN) {
                 usableToken = false;
@@ -192,7 +193,6 @@ public class EclipseService {
             }
         }
 
-        json.setPublisherAgreement(publisherAgreement);
         // Report user as logged in only if there is a usable token:
         // we need the token to access the Eclipse REST API
         if(usableToken) {
