@@ -88,9 +88,10 @@ public class ExtensionControlService {
     @Transactional
     public UserData createExtensionControlUser() {
         var userName = "ExtensionControlUser";
-        var user = repositories.findUserByLoginName(null, userName);
+        var user = repositories.findUserByLoginName("system", userName);
         if(user == null) {
             user = new UserData();
+            user.setProvider("system");
             user.setLoginName(userName);
             entityManager.persist(user);
         }
