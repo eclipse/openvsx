@@ -216,3 +216,10 @@ commands:
           kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx create-namespace '$EXTENSION_NAMESPACE_NAME'" || true &&
           kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx publish /tmp/extension.vsix" &&
           kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "rm /tmp/extension.vsix"
+
+  - id: publish-extensions
+    exec:
+      label: "2.7. Publish list of VS Code Extensions"
+      component: tool
+      workingDir: ${PROJECTS_ROOT}/openvsx/openshift
+      commandLine: ./scripts/publish_extensions.sh

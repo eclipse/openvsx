@@ -33,6 +33,10 @@ In case you have deployed Eclipse Che on the cluster, you can patch it to use yo
 
 This command facilitates publishing a VS Code extension to the local OpenVSX registry. It prompts the user to provide the extension's namespace name and download URL. The extension is then downloaded into a temporary folder inside the ovsx-cli pod, a namespace is created (if not already present), and the extension is published to the OpenVSX registry. Afterward, the temporary file is deleted. This command is ideal for adding custom or internal extensions to a local OpenVSX instance.
 
+* 2.7. Publish list of VS Code Extensions
+
+This command facilitates publishing a list of VS Code extensions to a local OpenVSX registry based on URLs specified in the `extensions.txt` file. For each extension listed, it downloads the `.vsix` file into a temporary directory on the ovsx-cli pod, creates a namespace if it doesn’t already exist, and publishes the extension to the OpenVSX registry. After each extension is published, the temporary file is deleted from the pod. This command is ideal for managing multiple extensions by automating the download, namespace creation, and publishing steps, making it easy to maintain a custom set of extensions in a local OpenVSX instance.
+
 ## OpenShift Template (openvsx-deployment.yml)
 You can find the deployment YAML configuration in the `openvsx-deployment.yml` file. This template defines the deployments, services, and route for the PostgreSQL database, Elasticsearch, OpenVSX Server, and OpenVSX CLI.
 
