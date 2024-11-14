@@ -30,7 +30,9 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import static org.eclipse.openvsx.adapter.ExtensionQueryParam.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.ExtensionFile.*;
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
@@ -303,5 +305,42 @@ public class VSCodeAPI {
         }
 
         return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping(
+            path = "/vscode/gallery/{namespaceName}/{extensionName}/latest",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides metadata of the extension matching the given parameters")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Returns the extension metadata"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "The specified extension could not be found",
+            content = @Content()
+    )
+    public ExtensionQueryResult.Extension getLatest(
+            @PathVariable @Parameter(description = "Extension namespace", example = "malloydata") String namespaceName,
+            @PathVariable @Parameter(description = "Extension name", example = "malloy-vscode") String extensionName
+    ) {
+        var extensionId = String.join(".", namespaceName, extensionName);
+        var criterion = new ExtensionQueryParam.Criterion(ExtensionQueryParam.Criterion.FILTER_EXTENSION_NAME, extensionId);
+        var filter = new ExtensionQueryParam.Filter(List.of(criterion), 0, 0, 0, 0);
+        int flags = FLAG_INCLUDE_VERSIONS | FLAG_INCLUDE_ASSET_URI | FLAG_INCLUDE_VERSION_PROPERTIES | FLAG_INCLUDE_FILES | FLAG_INCLUDE_STATISTICS;
+        var param = new ExtensionQueryParam(List.of(filter), flags);
+        var result = extensionQueryRequestHandler.getResult(param, 1, DEFAULT_PAGE_SIZE);
+        if(result.results().isEmpty()) {
+            throw new NotFoundException();
+        }
+
+        var extensions = result.results().get(0).extensions();
+        if(extensions.isEmpty()) {
+            throw new NotFoundException();
+        }
+
+        return extensions.get(0);
     }
 }
