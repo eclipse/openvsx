@@ -29,9 +29,10 @@ public class FixTargetPlatformsService {
     @Transactional
     public UserData getUser() {
         var userName = "FixTargetPlatformMigration";
-        var user = repositories.findUserByLoginName(null, userName);
+        var user = repositories.findUserByLoginName("system", userName);
         if(user == null) {
             user = new UserData();
+            user.setProvider("system");
             user.setLoginName(userName);
             entityManager.persist(user);
         }

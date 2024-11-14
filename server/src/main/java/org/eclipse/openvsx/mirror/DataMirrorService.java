@@ -131,12 +131,21 @@ public class DataMirrorService {
 
     @Transactional
     public UserData createMirrorUser() {
-        var user = repositories.findUserByLoginName(null, userName);
-        if(user == null) {
-            user = new UserData();
-            user.setLoginName(userName);
-            entityManager.persist(user);
+        var user = repositories.findUserByLoginName("system", userName);
+        if(user != null) {
+            return user;
         }
+
+        user = repositories.findUserByLoginName(null, userName);
+        if(user != null) {
+            user.setProvider("system");
+            return user;
+        }
+
+        user = new UserData();
+        user.setProvider("system");
+        user.setLoginName(userName);
+        entityManager.persist(user);
         return user;
     }
 
