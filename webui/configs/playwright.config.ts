@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import { SmokeTestOptions } from "./smoke-test.options";
+import path from "path";
+
+const resultsDir = path.resolve('./', 'playwright-report')
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -14,8 +17,20 @@ export default defineConfig<SmokeTestOptions>({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
+
+
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: [
+      [
+          "html", { outputFolder: `${resultsDir}/playwright-report` }
+      ],
+      [
+          "json", { outputFile: `${resultsDir}/report.json` }
+      ],
+      [
+        "../reporters/prometheus-reporter.ts", { outputFile: `${resultsDir}/report.prom` }
+      ]
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */

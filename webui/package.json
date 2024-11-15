@@ -86,6 +86,7 @@
         "@types/react-transition-group": "^4.4.6",
         "@typescript-eslint/eslint-plugin": "^5.61.0",
         "@typescript-eslint/parser": "^5.61.0",
+        "axios": "^1.7.7",
         "chai": "^4.3.7",
         "css-loader": "^6.8.1",
         "eslint": "^8.44.0",
