@@ -10,7 +10,7 @@
 package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * Used to describe an error situation as JSON response.
