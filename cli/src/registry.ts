@@ -168,9 +168,9 @@ export class Registry {
 
     private getProtocol(url: URL) {
         if (url.protocol === 'https:')
-            return followRedirects.https as typeof https;
+            return followRedirects.https
         else
-            return followRedirects.http as typeof http;
+            return followRedirects.http
     }
 
     private getRequestOptions(method?: string, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): http.RequestOptions {

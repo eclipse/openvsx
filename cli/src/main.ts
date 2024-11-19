@@ -75,7 +75,6 @@ module.exports = function (argv: string[]): void {
             publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate, packageVersion })
                 .then(results => {
                     const reasons = results.filter(result => result.status === 'rejected')
-                        .map(result => result as PromiseRejectedResult)
                         .map(rejectedResult => rejectedResult.reason);
 
                     if (reasons.length > 0) {

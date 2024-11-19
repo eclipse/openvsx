@@ -3,23 +3,23 @@ import { Readable } from 'stream';
 import { Manifest } from './util';
 
 async function bufferStream(stream: Readable): Promise<Buffer> {
-	return await new Promise((c, e) => {
+	return await new Promise((resolve, reject) => {
 		const buffers: Buffer[] = [];
 		stream.on('data', buffer => buffers.push(buffer));
-		stream.once('error', e);
-		stream.once('end', () => c(Buffer.concat(buffers)));
+		stream.once('error', reject);
+		stream.once('end', () => resolve(Buffer.concat(buffers)));
 	});
 }
 
 export async function readZip(packagePath: string, filter: (name: string) => boolean): Promise<Map<string, Buffer>> {
-	const zipfile = await new Promise<ZipFile>((c, e) =>
-		open(packagePath, { lazyEntries: true }, (err, zipfile) => (err ? e(err) : c(zipfile!)))
+	const zipfile = await new Promise<ZipFile>((resolve, reject) =>
+		open(packagePath, { lazyEntries: true }, (err, zipfile) => (err ? reject(err) : resolve(zipfile)))
 	);
 
-	return await new Promise((c, e) => {
+	return await new Promise((resolve, reject) => {
 		const result = new Map<string, Buffer>();
 
-		zipfile.once('close', () => c(result));
+		zipfile.once('close', () => resolve(result));
 
 		zipfile.readEntry();
 		zipfile.on('entry', (entry: Entry) => {
@@ -29,10 +29,10 @@ export async function readZip(packagePath: string, filter: (name: string) => boo
 				zipfile.openReadStream(entry, (err, stream) => {
 					if (err) {
 						zipfile.close();
-						return e(err);
+						return reject(err);
 					}
 
-					bufferStream(stream!).then(buffer => {
+					bufferStream(stream).then(buffer => {
 						result.set(name, buffer);
 						zipfile.readEntry();
 					});
