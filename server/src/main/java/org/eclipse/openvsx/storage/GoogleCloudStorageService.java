@@ -72,8 +72,7 @@ public class GoogleCloudStorageService implements IStorageService {
         var resource = tempFile.getResource();
         var objectId = getObjectId(resource);
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot upload file "
-                    + objectId + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage("Cannot upload file", resource.getName()));
         }
 
         uploadFile(tempFile, resource.getName(), objectId);
@@ -84,8 +83,7 @@ public class GoogleCloudStorageService implements IStorageService {
         var namespace = logoFile.getNamespace();
         var objectId = getObjectId(namespace);
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot upload file "
-                    + objectId + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage("Cannot upload file", objectId));
         }
 
         uploadFile(logoFile, namespace.getLogoName(), objectId);
@@ -127,8 +125,7 @@ public class GoogleCloudStorageService implements IStorageService {
 
     private void removeFile(String objectId) {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot remove file "
-                    + objectId + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage("Cannot remove file", objectId));
         }
 
         getStorage().delete(BlobId.of(bucketId, objectId));
@@ -137,8 +134,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public URI getLocation(FileResource resource) {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + resource.getName() + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
         return URI.create(BASE_URL + bucketId + "/" + getObjectId(resource));
     }
@@ -160,8 +156,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public URI getNamespaceLogoLocation(Namespace namespace) {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + namespace.getLogoName() + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage(namespace.getLogoName()));
         }
         return URI.create(BASE_URL + bucketId + "/" + getObjectId(namespace));
     }
@@ -169,8 +164,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public TempFile downloadFile(FileResource resource) throws IOException {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + resource.getName() + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
 
         var tempFile = new TempFile("temp_file_", "");
@@ -182,6 +176,14 @@ public class GoogleCloudStorageService implements IStorageService {
 
     protected String getObjectId(Namespace namespace) {
         return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
+    }
+
+    private String missingBucketIdMessage(String name) {
+        return missingBucketIdMessage("Cannot determine location of file", name);
+    }
+
+    private String missingBucketIdMessage(String action, String name) {
+        return action + " " + name + ": missing Google bucket id";
     }
 
     @Override
@@ -202,8 +204,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
     public Path getCachedFile(FileResource resource) throws IOException {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + resource.getName() + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
 
         var path = Files.createTempFile("cached_file", null);

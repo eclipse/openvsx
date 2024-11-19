@@ -48,6 +48,8 @@ import java.util.regex.Pattern;
 @Component
 public class EclipseService {
 
+    private static final String VAR_PERSON_ID = "personId";
+
     public static final DateTimeFormatter CUSTOM_DATE_TIME = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
             .append(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -126,7 +128,7 @@ public class EclipseService {
     public EclipseProfile getPublicProfile(String personId) {
         checkApiUrl();
         var urlTemplate = eclipseApiUrl + "account/profile/{personId}";
-        var uriVariables = Map.of("personId", personId);
+        var uriVariables = Map.of(VAR_PERSON_ID, personId);
         var headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         var request = new HttpEntity<Void>(headers);
@@ -289,7 +291,7 @@ public class EclipseService {
         }
         checkApiUrl();
         var urlTemplate = eclipseApiUrl + "openvsx/publisher_agreement/{personId}";
-        var uriVariables = Map.of("personId", personId);
+        var uriVariables = Map.of(VAR_PERSON_ID, personId);
         var headers = new HttpHeaders();
         headers.setBearerAuth(eclipseToken.accessToken());
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
@@ -425,7 +427,7 @@ public class EclipseService {
         headers.setBearerAuth(eclipseToken.accessToken());
         var request = new HttpEntity<>(headers);
         var urlTemplate = eclipseApiUrl + "openvsx/publisher_agreement/{personId}";
-        var uriVariables = Map.of("personId", user.getEclipsePersonId());
+        var uriVariables = Map.of(VAR_PERSON_ID, user.getEclipsePersonId());
 
         try {
             var requestCallback = restTemplate.httpEntityCallback(request);

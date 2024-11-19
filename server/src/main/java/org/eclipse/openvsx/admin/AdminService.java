@@ -166,6 +166,10 @@ public class AdminService {
         entityManager.remove(extVersion);
     }
 
+    private String userNotFoundMessage(String user) {
+        return "User not found: " + user;
+    }
+
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role,
             UserData admin) throws ErrorResultException {
@@ -175,7 +179,7 @@ public class AdminService {
         }
         var user = repositories.findUserByLoginName(provider, userName);
         if (user == null) {
-            throw new ErrorResultException("User not found: " + provider + "/" + userName);
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + userName));
         }
 
         var result = role.equals("remove")
@@ -253,7 +257,7 @@ public class AdminService {
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
-            throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
+            throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
         var userPublishInfo = new UserPublishInfoJson();
@@ -285,7 +289,7 @@ public class AdminService {
     public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
-            throw new ErrorResultException("User not found: " + loginName, HttpStatus.NOT_FOUND);
+            throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
         // Send a DELETE request to the Eclipse publisher agreement API

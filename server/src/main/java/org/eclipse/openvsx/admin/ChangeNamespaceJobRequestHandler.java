@@ -33,6 +33,8 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<ChangeNamespaceJobRequest> {
 
+    private static final String EXT_PACKAGE = ".vsix";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeNamespaceJobRequestHandler.class);
 
     private static final List<String> RENAME_TYPES = List.of(DOWNLOAD, DOWNLOAD_SHA256, DOWNLOAD_SIG);
@@ -172,10 +174,10 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                 : resource.getName();
 
         if(resource.getType().equals(DOWNLOAD_SHA256)) {
-            name = name.replace(".vsix", ".sha256");
+            name = name.replace(EXT_PACKAGE, ".sha256");
         }
         if(resource.getType().equals(DOWNLOAD_SIG)) {
-            name = name.replace(".vsix", ".sigzip");
+            name = name.replace(EXT_PACKAGE, ".sigzip");
         }
 
         LOGGER.info("New resource name: {}", name);
@@ -188,7 +190,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                 extVersion.getExtension().getName(),
                 extVersion.getTargetPlatform(),
                 extVersion.getVersion(),
-                ".vsix"
+                EXT_PACKAGE
         );
     }
 }

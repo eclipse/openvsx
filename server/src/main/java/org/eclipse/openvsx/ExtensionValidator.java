@@ -49,17 +49,27 @@ public class ExtensionValidator {
             return Optional.of(new Issue("Invalid namespace name: " + namespace));
         }
         if (namespace.length() > DEFAULT_STRING_SIZE) {
-            return Optional.of(new Issue("The namespace name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+            return Optional.of(new Issue(charactersExceededMessage("namespace name", DEFAULT_STRING_SIZE)));
         }
         return Optional.empty();
     }
 
+    private void validateDisplayName(String displayName, int limit, List<Issue> issues) {
+        var field = "displayName";
+        checkCharacters(displayName, field, issues);
+        checkFieldSize(displayName, limit, field, issues);
+    }
+
+    private void validateDescription(String description, int limit, List<Issue> issues) {
+        var field = "description";
+        checkCharacters(description, field, issues);
+        checkFieldSize(description, limit, field, issues);
+    }
+
     public List<Issue> validateNamespaceDetails(NamespaceDetailsJson json) {
         var issues = new ArrayList<Issue>();
-        checkCharacters(json.getDisplayName(), "displayName", issues);
-        checkFieldSize(json.getDisplayName(), 32, "displayName", issues);
-        checkCharacters(json.getDescription(), "description", issues);
-        checkFieldSize(json.getDescription(), DEFAULT_STRING_SIZE, "description", issues);
+        validateDisplayName(json.getDisplayName(), 32, issues);
+        validateDescription(json.getDescription(), DEFAULT_STRING_SIZE, issues);
         checkURL(json.getWebsite(), "website", issues);
         checkURL(json.getSupportLink(), "supportLink", issues);
 
@@ -87,7 +97,7 @@ public class ExtensionValidator {
             return Optional.of(new Issue("Invalid extension name: " + name));
         }
         if (name.length() > DEFAULT_STRING_SIZE) {
-            return Optional.of(new Issue("The extension name exceeds the current limit of " + DEFAULT_STRING_SIZE + " characters."));
+            return Optional.of(new Issue(charactersExceededMessage("extension name", DEFAULT_STRING_SIZE)));
         }
         return Optional.empty();
     }
@@ -104,10 +114,8 @@ public class ExtensionValidator {
         var issues = new ArrayList<Issue>();
         checkVersion(extVersion.getVersion(), issues);
         checkTargetPlatform(extVersion.getTargetPlatform(), issues);
-        checkCharacters(extVersion.getDisplayName(), "displayName", issues);
-        checkFieldSize(extVersion.getDisplayName(), DEFAULT_STRING_SIZE, "displayName", issues);
-        checkCharacters(extVersion.getDescription(), "description", issues);
-        checkFieldSize(extVersion.getDescription(), DESCRIPTION_SIZE, "description", issues);
+        validateDisplayName(extVersion.getDisplayName(), DEFAULT_STRING_SIZE, issues);
+        validateDescription(extVersion.getDescription(), DESCRIPTION_SIZE, issues);
         checkCharacters(extVersion.getCategories(), "categories", issues);
         checkFieldSize(extVersion.getCategories(), DEFAULT_STRING_SIZE, "categories", issues);
         checkCharacters(extVersion.getTags(), "keywords", issues);
@@ -181,8 +189,12 @@ public class ExtensionValidator {
 
     private void checkFieldSize(String value, int limit, String field, List<Issue> issues) {
         if (value != null && value.length() > limit) {
-            issues.add(new Issue("The field '" + field + "' exceeds the current limit of " + limit + " characters."));
+            issues.add(new Issue(charactersExceededMessage("field '" + field + "'", limit)));
         }
+    }
+
+    private String charactersExceededMessage(String name, int limit) {
+        return "The " + name + " exceeds the current limit of " + limit + " characters.";
     }
 
     private void checkFieldSize(List<String> values, int limit, String field, List<Issue> issues) {

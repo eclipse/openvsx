@@ -109,6 +109,10 @@ public final class UrlUtil {
         return baseUrl + path;
     }
 
+    public static String createApiReviewsUrl(String serverUrl, String namespace, String extension) {
+        return createApiUrl(serverUrl, "api", namespace, extension, "reviews");
+    }
+
     /**
      * Add a query to a URL. The parameters array must contain a sequence of key and
      * value pairs, so its length is expected to be even.
@@ -240,6 +244,10 @@ public final class UrlUtil {
 
     public static String getPublicKeyUrl(String publicId) {
         return createApiUrl(getBaseUrl(), "api", "-", "public-key", publicId);
+    }
+
+    public static String createAllVersionsUrl(String namespaceName, String extensionName, String targetPlatform) {
+        return createAllVersionsUrl(namespaceName, extensionName, targetPlatform, "versions");
     }
 
     public static String createAllVersionsUrl(String namespaceName, String extensionName, String targetPlatform, String versionsSegment) {

@@ -242,9 +242,9 @@ public class AdminAPI {
             admins.checkAdminUser();
 
             var namespace = local.getNamespace(namespaceName);
-            var serverUrl = UrlUtil.getBaseUrl();
-            namespace.setMembersUrl(UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.getName(), "members"));
-            namespace.setRoleUrl(UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.getName(), "change-member"));
+            var adminNamespaceUrl = createAdminNamespaceUrl(namespace);
+            namespace.setMembersUrl(UrlUtil.createApiUrl(adminNamespaceUrl, "members"));
+            namespace.setRoleUrl(UrlUtil.createApiUrl(adminNamespaceUrl, "change-member"));
             return ResponseEntity.ok(namespace);
         } catch (NotFoundException exc) {
             var json = NamespaceJson.error("Namespace not found: " + namespaceName);
@@ -252,6 +252,10 @@ public class AdminAPI {
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(NamespaceJson.class);
         }
+    }
+
+    private String createAdminNamespaceUrl(NamespaceJson namespace) {
+        return UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "admin", "namespace", namespace.getName());
     }
 
     @PostMapping(
@@ -263,8 +267,7 @@ public class AdminAPI {
         try {
             admins.checkAdminUser();
             var json = admins.createNamespace(namespace);
-            var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "admin", "namespace", namespace.getName());
+            var url = createAdminNamespaceUrl(namespace);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);

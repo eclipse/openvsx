@@ -49,6 +49,11 @@ public class LocalVSCodeService implements IVSCodeService {
     private final ExtensionVersionIntegrityService integrityService;
     private final WebResourceService webResources;
 
+    private final StreamingResponseBody builtinExtensionResponse = outputStream -> {
+        var message = "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
+        outputStream.write(message.getBytes(StandardCharsets.UTF_8));
+    };
+
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
@@ -270,10 +275,7 @@ public class LocalVSCodeService implements IVSCodeService {
             String restOfTheUrl
     ) {
         if(BuiltInExtensionUtil.isBuiltIn(namespace)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(outputStream -> {
-                var message = "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
-                outputStream.write(message.getBytes(StandardCharsets.UTF_8));
-            });
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(builtinExtensionResponse);
         }
 
         var asset = (restOfTheUrl != null && !restOfTheUrl.isEmpty()) ? (assetType + "/" + restOfTheUrl) : assetType;
@@ -328,10 +330,14 @@ public class LocalVSCodeService implements IVSCodeService {
         throw new NotFoundException();
     }
 
+    private String builtinExtensionMessage() {
+        return "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
+    }
+
     @Override
     public String getItemUrl(String namespaceName, String extensionName) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, builtinExtensionMessage());
         }
 
         var extension = repositories.findActiveExtension(extensionName, namespaceName);
@@ -345,7 +351,7 @@ public class LocalVSCodeService implements IVSCodeService {
     @Override
     public String download(String namespaceName, String extensionName, String version, String targetPlatform) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, builtinExtensionMessage());
         }
 
         var resource = repositories.findFileByType(namespaceName, extensionName, targetPlatform, version, FileResource.DOWNLOAD);
@@ -372,10 +378,7 @@ public class LocalVSCodeService implements IVSCodeService {
     @Override
     public ResponseEntity<StreamingResponseBody> browse(String namespaceName, String extensionName, String version, String path) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(outputStream -> {
-                var message = "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
-                outputStream.write(message.getBytes(StandardCharsets.UTF_8));
-            });
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(builtinExtensionResponse);
         }
 
         var file = webResources.getWebResource(namespaceName, extensionName, null, version, path, true);
