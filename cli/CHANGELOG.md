@@ -2,6 +2,14 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.10.1 (Nov. 2024)
+
+#### Dependencies
+
+- Upgrade `@vscode/vsce` from `3.1.0` to `3.2.1` ([#1047](https://github.com/eclipse/openvsx/pull/1047))
+
+---
+
 ### v0.10.0 (Oct. 2024)
 
 #### New Features
