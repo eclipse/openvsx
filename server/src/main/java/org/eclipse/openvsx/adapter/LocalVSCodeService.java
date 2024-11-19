@@ -9,10 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -23,9 +20,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,7 +29,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.Criterion.*;
@@ -53,6 +47,7 @@ public class LocalVSCodeService implements IVSCodeService {
     private final SearchUtilService search;
     private final StorageUtilService storageUtil;
     private final ExtensionVersionIntegrityService integrityService;
+    private final WebResourceService webResources;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
@@ -62,13 +57,15 @@ public class LocalVSCodeService implements IVSCodeService {
             VersionService versions,
             SearchUtilService search,
             StorageUtilService storageUtil,
-            ExtensionVersionIntegrityService integrityService
+            ExtensionVersionIntegrityService integrityService,
+            WebResourceService webResources
     ) {
         this.repositories = repositories;
         this.versions = versions;
         this.search = search;
         this.storageUtil = storageUtil;
         this.integrityService = integrityService;
+        this.webResources = webResources;
     }
 
     @Override
@@ -307,23 +304,28 @@ public class LocalVSCodeService implements IVSCodeService {
                 FILE_SIGNATURE, DOWNLOAD_SIG
         );
 
-        FileResource resource = null;
         var type = assets.get(assetType);
         if(type != null) {
-            resource = repositories.findFileByType(namespace, extensionName, targetPlatform, version, type);
+            var resource = repositories.findFileByType(namespace, extensionName, targetPlatform, version, type);
+            if (resource == null) {
+                throw new NotFoundException();
+            }
+            if (resource.getType().equals(FileResource.DOWNLOAD)) {
+                storageUtil.increaseDownloadCount(resource);
+            }
+
+            return storageUtil.getFileResponse(resource);
         } else if(asset.startsWith(FILE_WEB_RESOURCES + "/extension/")) {
             var name = asset.substring((FILE_WEB_RESOURCES.length() + 1));
-            resource = repositories.findFileByTypeAndName(namespace, extensionName, targetPlatform, version, FileResource.RESOURCE, name);
+            var file = webResources.getWebResource(namespace, extensionName, targetPlatform, version, name, false);
+            if(file == null) {
+                throw new NotFoundException();
+            }
+
+            return storageUtil.getFileResponse(file);
         }
 
-        if (resource == null) {
-            throw new NotFoundException();
-        }
-        if (resource.getType().equals(FileResource.DOWNLOAD)) {
-            storageUtil.increaseDownloadCount(resource);
-        }
-
-        return storageUtil.getFileResponse(resource);
+        throw new NotFoundException();
     }
 
     @Override
@@ -376,68 +378,12 @@ public class LocalVSCodeService implements IVSCodeService {
             });
         }
 
-        var extVersion = repositories.findActiveExtensionVersion(version, extensionName, namespaceName);
-        if (extVersion == null) {
+        var file = webResources.getWebResource(namespaceName, extensionName, null, version, path, true);
+        if(file == null) {
             throw new NotFoundException();
         }
 
-        var matches = repositories.findResourceFileResources(extVersion, path);
-        if(matches.isEmpty()) {
-            throw new NotFoundException();
-        }
-
-        var firstMatch = matches.get(0);
-        Metrics.counter("vscode.unpkg", List.of(
-                Tag.of("extension", NamingUtil.toLogFormat(extVersion)),
-                Tag.of("file", String.valueOf(matches.size() == 1 && firstMatch.getName().equals(path))),
-                Tag.of("path", path)
-        )).increment();
-
-        if (matches.size() == 1 && firstMatch.getName().equals(path)) {
-            return storageUtil.getFileResponse(firstMatch);
-        } else {
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
-                    .body(outputStream -> {
-                        var urls = browseDirectory(matches, namespaceName, extensionName, version, path);
-                        new ObjectMapper().writeValue(outputStream, urls);
-                    });
-        }
-    }
-
-    private Set<String> browseDirectory(
-            List<FileResource> resources,
-            String namespaceName,
-            String extensionName,
-            String version,
-            String path
-    ) {
-        if(!path.isEmpty() && !path.endsWith("/")) {
-            path += "/";
-        }
-
-        var urls = new HashSet<String>();
-        var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespaceName, extensionName, version);
-        for(var resource : resources) {
-            var name = resource.getName();
-            if(name.startsWith(path)) {
-                var index = name.indexOf('/', path.length());
-                var isDirectory = index != -1;
-                if(isDirectory) {
-                    name = name.substring(0, index);
-                }
-
-                var url = UrlUtil.createApiUrl(baseUrl, name.split("/"));
-                if(isDirectory) {
-                    url += '/';
-                }
-
-                urls.add(url);
-            }
-        }
-
-        return urls;
+        return storageUtil.getFileResponse(file);
     }
 
     private ExtensionQueryResult.Extension toQueryExtension(Extension extension, ExtensionVersion latest, List<ExtensionQueryResult.ExtensionVersion> versions, int flags) {

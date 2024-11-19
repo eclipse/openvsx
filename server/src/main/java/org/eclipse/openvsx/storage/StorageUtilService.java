@@ -23,6 +23,7 @@ import org.eclipse.openvsx.util.TempFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -269,6 +272,20 @@ public class StorageUtilService implements IStorageService {
         }
     }
 
+    public ResponseEntity<StreamingResponseBody> getFileResponse(Path path) {
+        var fileName = path.getFileName().toString();
+        var headers = new HttpHeaders();
+        headers.setContentType(StorageUtil.getFileType(fileName));
+        headers.setCacheControl(StorageUtil.getCacheControl(fileName));
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(outputStream -> {
+                    try (var in = Files.newInputStream(path)) {
+                        in.transferTo(outputStream);
+                    }
+                });
+    }
+
     public ResponseEntity<StreamingResponseBody> getNamespaceLogo(Namespace namespace) {
         if (namespace.getLogoStorageType().equals(STORAGE_LOCAL)) {
             return localStorage.getNamespaceLogo(namespace);
@@ -297,5 +314,15 @@ public class StorageUtilService implements IStorageService {
                     break;
             }
         }
+    }
+
+    @Override
+    public Path getCachedFile(FileResource resource) throws IOException {
+        return switch (resource.getStorageType()) {
+            case STORAGE_GOOGLE -> googleStorage.getCachedFile(resource);
+            case STORAGE_AZURE -> azureStorage.getCachedFile(resource);
+            case STORAGE_LOCAL -> localStorage.getCachedFile(resource);
+            default -> null;
+        };
     }
 }

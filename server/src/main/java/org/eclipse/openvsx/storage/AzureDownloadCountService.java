@@ -18,6 +18,7 @@ import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
@@ -45,6 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.eclipse.openvsx.storage.AzureBlobStorageService.AZURE_USER_AGENT;
 
 /**
  * Pulls logs from Azure Blob Storage, extracts downloads from the logs
@@ -194,10 +197,10 @@ public class AzureDownloadCountService {
                             }
                         })
                         .filter(node -> {
-                            var operationName = node.get("operationName").asText();
-                            var statusCode = node.get("statusCode").asInt();
-                            var uri = node.get("uri").asText();
-                            return operationName.equals("GetBlob") && statusCode == 200 && uri.endsWith(".vsix");
+                            return isGetBlobOperation(node)
+                                    && isStatusOk(node)
+                                    && isExtensionPackageUri(node)
+                                    && isNotOpenVSXUserAgent(node);
                         }).map(node -> {
                             var uri = node.get("uri").asText();
                             var pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
@@ -215,6 +218,23 @@ public class AzureDownloadCountService {
             }
         });
     }
+
+    private boolean isGetBlobOperation(JsonNode node) {
+        return node.get("operationName").asText().equals("GetBlob");
+    }
+
+    private boolean isStatusOk(JsonNode node) {
+        return node.get("statusCode").asInt() == 200;
+    }
+
+    private boolean isExtensionPackageUri(JsonNode node) {
+        return node.get("uri").asText().endsWith(".vsix");
+    }
+
+    private boolean isNotOpenVSXUserAgent(JsonNode node) {
+        return !node.get("properties").get("userAgentHeader").asText().equals(AZURE_USER_AGENT);
+    }
+
 
     private TempFile downloadBlobItem(String blobName) /*throws IOException*/ {
         return Observation.createNotStarted("AzureDownloadCountService#downloadBlobItem", observations).observe(() -> {

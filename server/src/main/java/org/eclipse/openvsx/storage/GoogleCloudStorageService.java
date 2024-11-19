@@ -20,6 +20,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+
+import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_FILES;
+import static org.eclipse.openvsx.cache.CacheService.GENERATOR_FILES;
 
 @Component
 public class GoogleCloudStorageService implements IStorageService {
@@ -191,5 +196,19 @@ public class GoogleCloudStorageService implements IStorageService {
 
             getStorage().copy(request).getResult();
         }
+    }
+
+    @Override
+    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
+    public Path getCachedFile(FileResource resource) throws IOException {
+        if (StringUtils.isEmpty(bucketId)) {
+            throw new IllegalStateException("Cannot determine location of file "
+                    + resource.getName() + ": missing Google bucket id");
+        }
+
+        var path = Files.createTempFile("cached_file", null);
+        var objectId = getObjectId(resource);
+        getStorage().downloadTo(BlobId.of(bucketId, objectId), path);
+        return path;
     }
 }

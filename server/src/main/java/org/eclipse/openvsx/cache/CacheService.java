@@ -25,6 +25,8 @@ import java.util.List;
 public class CacheService {
 
     public static final String CACHE_DATABASE_SEARCH = "database.search";
+    public static final String CACHE_WEB_RESOURCE_FILES = "files.webresource";
+    public static final String CACHE_EXTENSION_FILES = "files.extension";
     public static final String CACHE_EXTENSION_JSON = "extension.json";
     public static final String CACHE_LATEST_EXTENSION_VERSION = "latest.extension.version";
     public static final String CACHE_NAMESPACE_DETAILS_JSON = "namespace.details.json";
@@ -34,6 +36,7 @@ public class CacheService {
 
     public static final String GENERATOR_EXTENSION_JSON = "extensionJsonCacheKeyGenerator";
     public static final String GENERATOR_LATEST_EXTENSION_VERSION = "latestExtensionVersionCacheKeyGenerator";
+    public static final String GENERATOR_FILES = "filesCacheKeyGenerator";
 
     private final CacheManager cacheManager;
     private final RepositoryService repositories;

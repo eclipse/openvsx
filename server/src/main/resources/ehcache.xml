@@ -7,65 +7,65 @@
             <none/>
         </expiry>
         <resources>
-            <heap unit="entries">1</heap>
+            <heap>1</heap>
             <offheap unit="MB">1</offheap>
             <disk unit="MB">2</disk>
         </resources>
     </cache>
     <cache alias="namespace.details.json">
         <expiry>
-            <ttl unit="seconds">3600</ttl>
+            <ttl unit="hours">1</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1024</heap>
+            <heap>1024</heap>
             <offheap unit="MB">32</offheap>
             <disk unit="MB">128</disk>
         </resources>
     </cache>
     <cache alias="database.search">
         <expiry>
-            <ttl unit="seconds">3600</ttl>
+            <ttl unit="hours">1</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1024</heap>
+            <heap>1024</heap>
         </resources>
     </cache>
     <cache alias="extension.json">
         <expiry>
-            <ttl unit="seconds">3600</ttl>
+            <ttl unit="hours">1</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1024</heap>
+            <heap>1024</heap>
             <offheap unit="MB">32</offheap>
             <disk unit="MB">128</disk>
         </resources>
     </cache>
     <cache alias="latest.extension.version">
         <expiry>
-            <ttl unit="seconds">3600</ttl>
+            <ttl unit="hours">1</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1024</heap>
+            <heap>1024</heap>
             <offheap unit="MB">32</offheap>
             <disk unit="MB">128</disk>
         </resources>
     </cache>
     <cache alias="buckets">
         <expiry>
-            <ttl unit="seconds">3600</ttl>
+            <ttl unit="hours">1</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1024</heap>
+            <heap>1024</heap>
             <offheap unit="MB">32</offheap>
             <disk unit="MB">128</disk>
         </resources>
     </cache>
     <cache alias="sitemap">
         <expiry>
-            <ttl unit="seconds">3600</ttl>
+            <ttl unit="hours">1</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1</heap>
+            <heap>1</heap>
             <offheap unit="MB">2</offheap>
             <disk unit="MB">8</disk>
         </resources>
@@ -75,9 +75,45 @@
             <ttl unit="days">1</ttl>
         </expiry>
         <resources>
-            <heap unit="entries">1</heap>
+            <heap>1</heap>
             <offheap unit="MB">2</offheap>
             <disk unit="MB">8</disk>
+        </resources>
+    </cache>
+    <cache alias="files.webresource">
+        <expiry>
+            <tti unit="hours">1</tti>
+        </expiry>
+        <listeners>
+            <listener>
+                <class>org.eclipse.openvsx.cache.ExpiredFileListener</class>
+                <event-firing-mode>ASYNCHRONOUS</event-firing-mode>
+                <event-ordering-mode>UNORDERED</event-ordering-mode>
+                <events-to-fire-on>EXPIRED</events-to-fire-on>
+                <events-to-fire-on>EVICTED</events-to-fire-on>
+                <events-to-fire-on>REMOVED</events-to-fire-on>
+            </listener>
+        </listeners>
+        <resources>
+            <heap>150</heap>
+        </resources>
+    </cache>
+    <cache alias="files.extension">
+        <expiry>
+            <tti unit="hours">1</tti>
+        </expiry>
+        <listeners>
+            <listener>
+                <class>org.eclipse.openvsx.cache.ExpiredFileListener</class>
+                <event-firing-mode>ASYNCHRONOUS</event-firing-mode>
+                <event-ordering-mode>UNORDERED</event-ordering-mode>
+                <events-to-fire-on>EXPIRED</events-to-fire-on>
+                <events-to-fire-on>EVICTED</events-to-fire-on>
+                <events-to-fire-on>REMOVED</events-to-fire-on>
+            </listener>
+        </listeners>
+        <resources>
+            <heap>20</heap>
         </resources>
     </cache>
 </config>
