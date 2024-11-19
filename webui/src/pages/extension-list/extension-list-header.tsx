@@ -80,121 +80,119 @@ export const ExtensionListHeader: FunctionComponent<ExtensionListHeaderProps> = 
     };
 
     const SearchHeader = context.pageSettings.elements.searchHeader;
-    return <>
-        <Container>
-            <Box display='flex' flexDirection='column' alignItems='center' py={6}>
-                {SearchHeader ? <SearchHeader /> : ''}
+    return <Container>
+        <Box display='flex' flexDirection='column' alignItems='center' py={6}>
+            {SearchHeader ? <SearchHeader /> : ''}
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: { xs: '100%', sm: '100%', md: '70%', lg: '70%', xl: '70%' },
+                    maxWidth: { xs: 500, sm: 500, md: 500, lg: 'none', xl: 'none' }
+                }}
+            >
                 <Box
                     sx={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        width: { xs: '100%', sm: '100%', md: '70%', lg: '70%', xl: '70%' },
-                        maxWidth: { xs: 500, sm: 500, md: 500, lg: 'none', xl: 'none' }
+                        width: '100%',
+                        flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
                     }}
                 >
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            width: '100%',
-                            flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
-                        }}
-                    >
-                        <ExtensionListSearchfield
-                            onSearchChanged={handleSearchChange}
-                            onSearchSubmit={handleSearchSubmit}
-                            searchQuery={props.searchQuery}
-                            placeholder='Search by Name, Tag, or Description' />
-                        <Paper sx={{ flex: 1, display: 'flex' }}>
+                    <ExtensionListSearchfield
+                        onSearchChanged={handleSearchChange}
+                        onSearchSubmit={handleSearchSubmit}
+                        searchQuery={props.searchQuery}
+                        placeholder='Search by Name, Tag, or Description' />
+                    <Paper sx={{ flex: 1, display: 'flex' }}>
+                        <Select
+                            value={category}
+                            onChange={handleCategoryChange}
+                            renderValue={renderValue}
+                            displayEmpty
+                            input={<InputBase sx={{ flex: 1, pl: 1 }} />}>
+                            <MenuItem value=''>All Categories</MenuItem>
+                            {categories.map(c => {
+                                return <MenuItem value={c} key={c}>{c}</MenuItem>;
+                            })}
+                        </Select>
+                    </Paper>
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: '0.75rem',
+                        mt: 1
+                    }}
+                >
+                    <Box sx={{ color: 'text.secondary' }} >{`${props.resultNumber} Result${props.resultNumber !== 1 ? 's' : ''}`}</Box>
+                    <Box sx={{ color: 'text.secondary', display: 'flex' }}>
+                        <Box>
+                            Sort by
                             <Select
-                                value={category}
-                                onChange={handleCategoryChange}
-                                renderValue={renderValue}
-                                displayEmpty
-                                input={<InputBase sx={{ flex: 1, pl: 1 }} />}>
-                                <MenuItem value=''>All Categories</MenuItem>
-                                {categories.map(c => {
-                                    return <MenuItem value={c} key={c}>{c}</MenuItem>;
-                                })}
-                            </Select>
-                        </Paper>
-                    </Box>
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontSize: '0.75rem',
-                            mt: 1
-                        }}
-                    >
-                        <Box sx={{ color: 'text.secondary' }} >{`${props.resultNumber} Result${props.resultNumber !== 1 ? 's' : ''}`}</Box>
-                        <Box sx={{ color: 'text.secondary', display: 'flex' }}>
-                            <Box>
-                                Sort by
-                                <Select
-                                    sx={{
-                                        ml: '4px',
-                                        fontSize: '0.75rem',
-                                        height: '1.1rem',
-                                        '& .MuiSelect-select': {
-                                            padding: '0px !important',
-                                            '&:hover': {
-                                                color: 'secondary.main'
-                                            }
-                                        },
-                                        '& .MuiSelect-icon': {
-                                            display: 'none'
-                                        },
-                                        '&.Mui-focused': {
-                                            '& .MuiOutlinedInput-notchedOutline': {
-                                                border: 0
-                                            }
-                                        },
+                                sx={{
+                                    ml: '4px',
+                                    fontSize: '0.75rem',
+                                    height: '1.1rem',
+                                    '& .MuiSelect-select': {
+                                        padding: '0px !important',
+                                        '&:hover': {
+                                            color: 'secondary.main'
+                                        }
+                                    },
+                                    '& .MuiSelect-icon': {
+                                        display: 'none'
+                                    },
+                                    '&.Mui-focused': {
                                         '& .MuiOutlinedInput-notchedOutline': {
                                             border: 0
                                         }
-                                    }}
-                                    IconComponent={() => <span />}
-                                    value={sortBy}
-                                    onChange={handleSortByChange}
-                                >
-                                    <MenuItem value={'relevance'}>Relevance</MenuItem>
-                                    <MenuItem value={'timestamp'}>Date</MenuItem>
-                                    <MenuItem value={'downloadCount'}>Downloads</MenuItem>
-                                    <MenuItem value={'rating'}>Rating</MenuItem>
-                                </Select>
-                            </Box>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    ml: 0.75,
-                                    '&:hover': {
-                                        cursor: 'pointer',
-                                        color: 'secondary.main'
+                                    },
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                        border: 0
                                     }
                                 }}
-                                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                                tabIndex={0}
-                                onKeyDown={(e: KeyboardEvent) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleSortOrderChange();
-                                    }
-                                }}
-                                onClick={handleSortOrderChange}>
-                                {
-                                    sortOrder === 'asc'
-                                        ? <ArrowUpwardIcon fontSize='small' />
-                                        : <ArrowDownwardIcon fontSize='small' />
+                                IconComponent={() => <span />}
+                                value={sortBy}
+                                onChange={handleSortByChange}
+                            >
+                                <MenuItem value={'relevance'}>Relevance</MenuItem>
+                                <MenuItem value={'timestamp'}>Date</MenuItem>
+                                <MenuItem value={'downloadCount'}>Downloads</MenuItem>
+                                <MenuItem value={'rating'}>Rating</MenuItem>
+                            </Select>
+                        </Box>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                ml: 0.75,
+                                '&:hover': {
+                                    cursor: 'pointer',
+                                    color: 'secondary.main'
                                 }
-                            </Box>
+                            }}
+                            title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                            tabIndex={0}
+                            onKeyDown={(e: KeyboardEvent) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSortOrderChange();
+                                }
+                            }}
+                            onClick={handleSortOrderChange}>
+                            {
+                                sortOrder === 'asc'
+                                    ? <ArrowUpwardIcon fontSize='small' />
+                                    : <ArrowDownwardIcon fontSize='small' />
+                            }
                         </Box>
                     </Box>
                 </Box>
             </Box>
-        </Container>
-    </>;
+        </Box>
+    </Container>;
 };
 
 export interface ExtensionListHeaderProps {

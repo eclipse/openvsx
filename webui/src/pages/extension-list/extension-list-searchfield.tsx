@@ -38,56 +38,54 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
     };
 
     const searchIconColor = pageSettings?.themeType === 'dark' ? '#111111' : '#ffffff';
-    return (<>
-        <Paper
-            sx={{
-                flex: 2,
-                display: 'flex',
-                mr: { xs: 0, sm: 0, md: 1, lg: 1, xl: 1 },
-                mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 0 },
-                border: (props.error ? 2 : 0),
-                borderColor: 'error.main'
+    return <Paper
+        sx={{
+            flex: 2,
+            display: 'flex',
+            mr: { xs: 0, sm: 0, md: 1, lg: 1, xl: 1 },
+            mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 0 },
+            border: (props.error ? 2 : 0),
+            borderColor: 'error.main'
+        }}
+    >
+        <InputBase
+            autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
+            value={props.searchQuery}
+            onChange={handleSearchChange}
+            sx={{ flex: 1, pl: 1 }}
+            placeholder={props.placeholder}
+            id='search-input'
+            type='search'
+            inputMode='search'
+            onKeyDown={(e: KeyboardEvent) => {
+                if (e.key === 'Enter' && props.onSearchSubmit) {
+                    props.onSearchSubmit(props.searchQuery || '');
+                }
             }}
-        >
-            <InputBase
-                autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
-                value={props.searchQuery}
-                onChange={handleSearchChange}
-                sx={{ flex: 1, pl: 1 }}
-                placeholder={props.placeholder}
-                id='search-input'
-                type='search'
-                inputMode='search'
-                onKeyDown={(e: KeyboardEvent) => {
-                    if (e.key === 'Enter' && props.onSearchSubmit) {
-                        props.onSearchSubmit(props.searchQuery || '');
-                    }
-                }}
-            />
-            <label
-                htmlFor='search-input'
-                className='visually-hidden' >
-                Search for Name, Tags or Description
-            </label>
-            {
-                props.hideIconButton ? '' :
-                    <IconButton
-                        color='primary'
-                        aria-label='Search'
-                        onClick={handleSearchButtonClick}
-                        sx={{
-                            bgcolor: 'secondary.main',
-                            borderRadius: '0 4px 4px 0',
-                            p: 1,
-                            transition: 'all 0s',
-                            '&:hover': {
-                                filter: 'invert(100%)'
-                            }
-                        }}
-                    >
-                        <SearchIcon sx={{ color: searchIconColor }} />
-                    </IconButton>
-            }
-        </Paper>
-    </>);
+        />
+        <label
+            htmlFor='search-input'
+            className='visually-hidden' >
+            Search for Name, Tags or Description
+        </label>
+        {
+            props.hideIconButton ? '' :
+                <IconButton
+                    color='primary'
+                    aria-label='Search'
+                    onClick={handleSearchButtonClick}
+                    sx={{
+                        bgcolor: 'secondary.main',
+                        borderRadius: '0 4px 4px 0',
+                        p: 1,
+                        transition: 'all 0s',
+                        '&:hover': {
+                            filter: 'invert(100%)'
+                        }
+                    }}
+                >
+                    <SearchIcon sx={{ color: searchIconColor }} />
+                </IconButton>
+        }
+    </Paper>;
 };
