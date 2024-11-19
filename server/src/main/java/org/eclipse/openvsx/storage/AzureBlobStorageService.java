@@ -74,6 +74,14 @@ public class AzureBlobStorageService implements IStorageService {
         return containerClient;
     }
 
+    private String missingEndpointMessage(String name) {
+        return missingEndpointMessage("Cannot determine location of file", name);
+    }
+
+    private String missingEndpointMessage(String action, String name) {
+        return action + " " + name + ": missing Azure blob service endpoint";
+    }
+
 	@Override
     public void uploadFile(TempFile tempFile) {
         var resource = tempFile.getResource();
@@ -90,8 +98,7 @@ public class AzureBlobStorageService implements IStorageService {
 
     protected void uploadFile(TempFile file, String fileName, String blobName) {
         if (StringUtils.isEmpty(serviceEndpoint)) {
-            throw new IllegalStateException("Cannot upload file "
-                    + blobName + ": missing Azure blob service endpoint");
+            throw new IllegalStateException(missingEndpointMessage("Cannot upload file", blobName));
         }
 
         var blobClient = getContainerClient().getBlobClient(blobName);
@@ -120,8 +127,7 @@ public class AzureBlobStorageService implements IStorageService {
 
     private void removeFile(String blobName) {
         if (StringUtils.isEmpty(serviceEndpoint)) {
-            throw new IllegalStateException("Cannot remove file "
-                    + blobName + ": missing Azure blob service endpoint");
+            throw new IllegalStateException(missingEndpointMessage("Cannot remove file", blobName));
         }
 
         try {
@@ -139,8 +145,7 @@ public class AzureBlobStorageService implements IStorageService {
 	public URI getLocation(FileResource resource) {
         var blobName = getBlobName(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + blobName + ": missing Azure blob service endpoint");
+            throw new IllegalStateException(missingEndpointMessage(blobName));
         }
         if (!serviceEndpoint.endsWith("/")) {
             throw new IllegalStateException("The Azure blob service endpoint URL must end with a slash.");
@@ -166,8 +171,7 @@ public class AzureBlobStorageService implements IStorageService {
     public URI getNamespaceLogoLocation(Namespace namespace) {
         var blobName = getBlobName(namespace);
         if (StringUtils.isEmpty(serviceEndpoint)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + blobName + ": missing Azure blob service endpoint");
+            throw new IllegalStateException(missingEndpointMessage(blobName));
         }
         if (!serviceEndpoint.endsWith("/")) {
             throw new IllegalStateException("The Azure blob service endpoint URL must end with a slash.");
@@ -179,8 +183,7 @@ public class AzureBlobStorageService implements IStorageService {
     public TempFile downloadFile(FileResource resource) throws IOException {
         var blobName = getBlobName(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + blobName + ": missing Azure blob service endpoint");
+            throw new IllegalStateException(missingEndpointMessage(blobName));
         }
 
         var tempFile = new TempFile("temp_file_", "");
@@ -217,8 +220,7 @@ public class AzureBlobStorageService implements IStorageService {
     public Path getCachedFile(FileResource resource) throws IOException {
         var blobName = getBlobName(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + blobName + ": missing Azure blob service endpoint");
+            throw new IllegalStateException(missingEndpointMessage(blobName));
         }
 
         var path = Files.createTempFile("cached_file", null);

@@ -37,6 +37,9 @@ import java.util.Optional;
 
 @Component
 public class UpstreamVSCodeService implements IVSCodeService {
+    private static final String VAR_NAMESPACE = "namespace";
+    private static final String VAR_EXTENSION = "extension";
+    private static final String VAR_VERSION = "version";
 
     protected final Logger logger = LoggerFactory.getLogger(UpstreamVSCodeService.class);
 
@@ -88,9 +91,9 @@ public class UpstreamVSCodeService implements IVSCodeService {
     public ResponseEntity<StreamingResponseBody> browse(String namespaceName, String extensionName, String version, String path) {
         var urlBuilder = new StringBuilder(urlConfigService.getUpstreamUrl() + "/vscode/unpkg/{namespace}/{extension}/{version}");
         var uriVariables = new HashMap<>(Map.of(
-            "namespace", namespaceName,
-            "extension", extensionName,
-            "version", version
+            VAR_NAMESPACE, namespaceName,
+            VAR_EXTENSION, extensionName,
+            VAR_VERSION, version
         ));
 
         if (path != null && !path.isBlank()) {
@@ -145,8 +148,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                     }
                 }
                 if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-                    var url = UriComponentsBuilder.fromUriString(urlBuilder.toString()).build(uriVariables);
-                    logger.error("GET {}: {}", url, response);
+                    handleResponseError(urlTemplate, uriVariables, response);
                 }
 
                 throw new NotFoundException();
@@ -164,9 +166,9 @@ public class UpstreamVSCodeService implements IVSCodeService {
     public String download(String namespace, String extension, String version, String targetPlatform) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage?targetPlatform={targetPlatform}";
         var uriVariables = Map.of(
-                "namespace", namespace,
-                "extension", extension,
-                "version", version,
+                VAR_NAMESPACE, namespace,
+                VAR_EXTENSION, extension,
+                VAR_VERSION, version,
                 "targetPlatform", targetPlatform
         );
 
@@ -188,8 +190,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
             return location.toString();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-            logger.error("GET {}: {}", url, response);
+            handleResponseError(urlTemplate, uriVariables, response);
         }
 
         throw new NotFoundException();
@@ -198,7 +199,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
     @Override
     public String getItemUrl(String namespace, String extension) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/vscode/item?itemName={namespace}.{extension}";
-        var uriVariables = Map.of("namespace", namespace, "extension", extension);
+        var uriVariables = Map.of(VAR_NAMESPACE, namespace, VAR_EXTENSION, extension);
 
         ResponseEntity<Void> response;
         var method = HttpMethod.GET;
@@ -218,8 +219,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
             return location.toString();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-            logger.error("GET {}: {}", url, response);
+            handleResponseError(urlTemplate, uriVariables, response);
         }
 
         throw new NotFoundException();
@@ -231,9 +231,9 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 .append(urlConfigService.getUpstreamUrl())
                 .append("/vscode/asset/{namespace}/{extension}/{version}/{assetType}");
         var uriVariables = new HashMap<>(Map.of(
-            "namespace", namespace,
-            "extension", extensionName,
-            "version", version,
+            VAR_NAMESPACE, namespace,
+            VAR_EXTENSION, extensionName,
+            VAR_VERSION, version,
             "assetType", assetType,
             "targetPlatform", targetPlatform
         ));
@@ -292,8 +292,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                             .build();
                 }
                 if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-                    var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                    logger.error("GET {}: {}", url, response);
+                    handleResponseError(urlTemplate, uriVariables, response);
                 }
 
                 throw new NotFoundException();
@@ -305,6 +304,11 @@ public class UpstreamVSCodeService implements IVSCodeService {
         } catch (RestClientException exc) {
             throw propagateRestException(exc, method, urlTemplate, uriVariables);
         }
+    }
+
+    private void handleResponseError(String urlTemplate, Map<String, String> uriVariables, Object response) {
+        var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+        logger.error("GET {}: {}", url, response);
     }
 
     private NotFoundException propagateRestException(RestClientException exc, HttpMethod method, String urlTemplate,

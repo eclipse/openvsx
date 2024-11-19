@@ -46,6 +46,7 @@ public class RegistryAPI {
     private final static int REVIEW_TITLE_SIZE = 255;
     private final static int REVIEW_COMMENT_SIZE = 2048;
     private final static String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
+    private final static String NO_JSON_INPUT = "No JSON input.";
 
     protected final Logger logger = LoggerFactory.getLogger(RegistryAPI.class);
 
@@ -166,8 +167,28 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = NamespaceDetailsJson.error("Namespace not found: " + namespace);
+        var json = NamespaceDetailsJson.error(namespaceNotFoundMessage(namespace));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+    }
+
+    private String extensionNotFoundMessage(String extension) {
+        return "Extension not found: " + extension;
+    }
+
+    private String namespaceNotFoundMessage(String namespace) {
+        return "Namespace not found: " + namespace;
+    }
+
+    private String negativeSizeMessage() {
+      return negativeParameterMessage("size");
+    }
+
+    private String negativeOffsetMessage() {
+        return negativeParameterMessage("offset");
+    }
+
+    private String negativeParameterMessage(String field) {
+        return "The parameter '" + field + "' must not be negative.";
     }
 
     @GetMapping(
@@ -231,7 +252,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toExtensionId(namespace, extension));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -278,7 +299,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform.toString(), null));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform.toString(), null)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -314,7 +335,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, version));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, version)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -363,7 +384,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform, version)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -442,11 +463,11 @@ public class RegistryAPI {
 
     private ResponseEntity<VersionsJson> handleGetVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
         if (size < 0) {
-            var json = VersionsJson.error("The parameter 'size' must not be negative.");
+            var json = VersionsJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = VersionsJson.error("The parameter 'offset' must not be negative.");
+            var json = VersionsJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         for (var registry : getRegistries()) {
@@ -458,7 +479,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = VersionsJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform));
+        var json = VersionsJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -537,11 +558,11 @@ public class RegistryAPI {
 
     private ResponseEntity<VersionReferencesJson> handleGetVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset) {
         if (size < 0) {
-            var json = VersionReferencesJson.error("The parameter 'size' must not be negative.");
+            var json = VersionReferencesJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = VersionReferencesJson.error("The parameter 'offset' must not be negative.");
+            var json = VersionReferencesJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         for (var registry : getRegistries()) {
@@ -553,7 +574,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = VersionReferencesJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform));
+        var json = VersionReferencesJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -684,7 +705,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ReviewListJson.error("Extension not found: " + NamingUtil.toExtensionId(namespace, extension));
+        var json = ReviewListJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -743,11 +764,11 @@ public class RegistryAPI {
             boolean includeAllVersions
     ) {
         if (size < 0) {
-            var json = SearchResultJson.error("The parameter 'size' must not be negative.");
+            var json = SearchResultJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = SearchResultJson.error("The parameter 'offset' must not be negative.");
+            var json = SearchResultJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
@@ -860,11 +881,11 @@ public class RegistryAPI {
             int offset
     ) {
         if (size < 0) {
-            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+            var json = QueryResultJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+            var json = QueryResultJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if(!List.of("true", "false", "links").contains(includeAllVersions)) {
@@ -977,11 +998,11 @@ public class RegistryAPI {
             int offset
     ) {
         if (size < 0) {
-            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+            var json = QueryResultJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+            var json = QueryResultJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         
@@ -1100,7 +1121,7 @@ public class RegistryAPI {
             String token
     ) {
         if (namespace == null) {
-            return ResponseEntity.ok(ResultJson.error("No JSON input."));
+            return ResponseEntity.ok(ResultJson.error(NO_JSON_INPUT));
         }
         if (StringUtils.isEmpty(namespace.getName())) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
@@ -1164,7 +1185,7 @@ public class RegistryAPI {
         }
 
         if (namespace == null) {
-            return ResponseEntity.ok(ResultJson.error("No JSON input."));
+            return ResponseEntity.ok(ResultJson.error(NO_JSON_INPUT));
         }
         if (StringUtils.isEmpty(namespace.getName())) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
@@ -1293,7 +1314,7 @@ public class RegistryAPI {
             @PathVariable String extension
     ) {
         if (review == null) {
-            var json = ResultJson.error("No JSON input.");
+            var json = ResultJson.error(NO_JSON_INPUT);
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (review.getRating() < 0 || review.getRating() > 5) {

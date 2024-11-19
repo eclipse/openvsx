@@ -42,14 +42,16 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
 import static org.eclipse.openvsx.entities.FileResource.*;
-import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
-import static org.eclipse.openvsx.util.UrlUtil.createApiVersionUrl;
+import static org.eclipse.openvsx.util.UrlUtil.*;
 
 @Component
 public class LocalRegistryService implements IExtensionRegistry {
 
     protected final Logger logger = LoggerFactory.getLogger(LocalRegistryService.class);
 
+    private static final String RESTRICTED_ACCESS = "restricted";
+    private static final String ACCESS_TOKEN_ERROR = "Invalid access token.";
+    
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final ExtensionService extensions;
@@ -109,7 +111,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
         json.setExtensions(extensions);
         json.setVerified(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
-        json.setAccess("restricted");
+        json.setAccess(RESTRICTED_ACCESS);
         return json;
     }
 
@@ -599,7 +601,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
         var token = users.useAccessToken(tokenValue);
         if (token == null) {
-            throw new ErrorResultException("Invalid access token.");
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
         return createNamespace(json, token.getUser());
@@ -636,7 +638,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
         var token = users.useAccessToken(tokenValue);
         if (token == null) {
-            throw new ErrorResultException("Invalid access token.");
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
         var namespace = repositories.findNamespace(namespaceName);
@@ -662,7 +664,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
         var token = users.useAccessToken(tokenValue);
         if (token == null || token.getUser() == null) {
-            throw new ErrorResultException("Invalid access token.");
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
         // Check whether the user has a valid publisher agreement
@@ -868,12 +870,12 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         json.setVersionAlias(versionAlias);
         json.setVerified(isVerified(extVersion));
-        json.setNamespaceAccess("restricted");
+        json.setNamespaceAccess(RESTRICTED_ACCESS);
         json.setUnrelatedPublisher(!json.getVerified());
         json.setReviewCount(Optional.ofNullable(extension.getReviewCount()).orElse(0L));
         var serverUrl = UrlUtil.getBaseUrl();
         json.setNamespaceUrl(createApiUrl(serverUrl, "api", json.getNamespace()));
-        json.setReviewsUrl(createApiUrl(serverUrl, "api", json.getNamespace(), json.getName(), "reviews"));
+        json.setReviewsUrl(createApiReviewsUrl(serverUrl, json.getNamespace(), json.getName()));
 
         var allVersions = new ArrayList<String>();
         if (latest != null)
@@ -883,7 +885,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.getNamespace(), json.getName(), targetPlatform);
         allVersions.addAll(repositories.findVersionStringsSorted(extension, targetPlatform, onlyActive));
-        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatform, "versions"));
+        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatform));
         var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
         for (var version : allVersions) {
             allVersionsJson.put(version, createApiUrl(versionBaseUrl, version));
@@ -922,12 +924,12 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = extVersion.toExtensionJson();
         json.setPreview(preview);
         json.setVerified(isVerified(extVersion, membershipsByNamespaceId));
-        json.setNamespaceAccess("restricted");
+        json.setNamespaceAccess(RESTRICTED_ACCESS);
         json.setUnrelatedPublisher(!json.getVerified());
         json.setReviewCount(reviewCount);
         var serverUrl = UrlUtil.getBaseUrl();
         json.setNamespaceUrl(createApiUrl(serverUrl, "api", json.getNamespace()));
-        json.setReviewsUrl(createApiUrl(serverUrl, "api", json.getNamespace(), json.getName(), "reviews"));
+        json.setReviewsUrl(createApiReviewsUrl(serverUrl, json.getNamespace(), json.getName()));
 
         var extension = extVersion.getExtension();
         if(extension.getReplacement() != null) {
@@ -965,7 +967,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             allVersions.addAll(versions);
         }
 
-        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatformParam, "versions"));
+        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatformParam));
         var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
         var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.getNamespace(), json.getName(), targetPlatformParam);
         for(var version : allVersions) {
@@ -1013,12 +1015,12 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = extVersion.toExtensionJson();
         json.setPreview(preview);
         json.setVerified(isVerified(extVersion, membershipsByNamespaceId));
-        json.setNamespaceAccess("restricted");
+        json.setNamespaceAccess(RESTRICTED_ACCESS);
         json.setUnrelatedPublisher(!json.getVerified());
         json.setReviewCount(reviewCount);
         var serverUrl = UrlUtil.getBaseUrl();
         json.setNamespaceUrl(createApiUrl(serverUrl, "api", json.getNamespace()));
-        json.setReviewsUrl(createApiUrl(serverUrl, "api", json.getNamespace(), json.getName(), "reviews"));
+        json.setReviewsUrl(createApiReviewsUrl(serverUrl, json.getNamespace(), json.getName()));
         json.setUrl(createApiVersionUrl(serverUrl, json));
 
         var extension = extVersion.getExtension();
@@ -1058,7 +1060,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             allVersions.addAll(versions);
         }
 
-        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatformParam, "versions"));
+        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatformParam));
         if(!allVersions.isEmpty()) {
             var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
             var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.getNamespace(), json.getName(), targetPlatformParam);
