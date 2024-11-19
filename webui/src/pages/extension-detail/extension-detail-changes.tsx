@@ -78,25 +78,23 @@ export const ExtensionDetailChanges: FunctionComponent<ExtensionDetailChangesPro
             </Box>
         </>;
     }
-    return <>
-        <Box
-            sx={{
-                display: 'flex',
-                mt: 2,
-                flexDirection: {
-                    xs: 'column-reverse',
-                    sm: 'column-reverse',
-                    md: 'column-reverse',
-                    lg: 'column-reverse',
-                    xl: 'row'
-                }
-            }}
-        >
-            <Box flex={5} overflow='auto'>
-                <SanitizedMarkdown content={changelog} />
-            </Box>
+    return <Box
+        sx={{
+            display: 'flex',
+            mt: 2,
+            flexDirection: {
+                xs: 'column-reverse',
+                sm: 'column-reverse',
+                md: 'column-reverse',
+                lg: 'column-reverse',
+                xl: 'row'
+            }
+        }}
+    >
+        <Box flex={5} overflow='auto'>
+            <SanitizedMarkdown content={changelog} />
         </Box>
-    </>;
+    </Box>;
 };
 
 export interface ExtensionDetailChangesProps {

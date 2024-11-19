@@ -36,11 +36,7 @@ export const ExtensionRatingStarSetter: FunctionComponent<ExtensionRatingStarSet
         return stars;
     };
 
-    return <>
-        <Box>
-            {renderStars()}
-        </Box>
-    </>;
+    return <Box>{renderStars()}</Box>;
 };
 
 export interface ExtensionRatingStarSetterProps {

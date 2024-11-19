@@ -71,17 +71,17 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             <Typography variant='h6'>Version</Typography>
             {
                 allVersions.length === 1 ?
-                <Typography variant='body1' display='inline'>{allVersions[0]}</Typography>
-                :
-                <NativeSelect
-                    name='Version'
-                    value={extension.version}
-                    onChange={event => props.selectVersion(event.target.value)}
-                    inputProps={{ 'aria-label': 'Version' }} >
-                    {
-                        allVersions.map(version => <option key={version}>{version}</option>)
-                    }
-                </NativeSelect>
+                    <Typography variant='body1' display='inline'>{allVersions[0]}</Typography>
+                    :
+                    <NativeSelect
+                        name='Version'
+                        value={extension.version}
+                        onChange={event => props.selectVersion(event.target.value)}
+                        inputProps={{ 'aria-label': 'Version' }} >
+                        {
+                            allVersions.map(version => <option key={version}>{version}</option>)
+                        }
+                    </NativeSelect>
             }
             {
                 extension.preRelease ?
@@ -90,10 +90,10 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             }
             {
                 extension.timestamp ?
-                <Box mt={1} mb={1}>
-                    Published <Timestamp value={extension.timestamp} />
-                </Box>
-                : null
+                    <Box mt={1} mb={1}>
+                        Published <Timestamp value={extension.timestamp} />
+                    </Box>
+                    : null
             }
         </>;
     };
@@ -150,8 +150,8 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         key={buttonLabel}
                         title={
                             kind === 'category'
-                            ? `Search for extensions in "${buttonLabel}" category`
-                            : `Search for extensions containing "${buttonLabel}"`
+                                ? `Search for extensions in "${buttonLabel}" category`
+                                : `Search for extensions containing "${buttonLabel}"`
                         }
                         onClick={() => {
                             const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
@@ -163,7 +163,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         </>;
     };
 
-    const renderWorksWithList = (downloads: {[targetPlatform: string]: UrlString}): ReactNode => {
+    const renderWorksWithList = (downloads: { [targetPlatform: string]: UrlString }): ReactNode => {
         return Object.keys(downloads).map((targetPlatform, index) => {
             const displayName = getTargetPlatformDisplayName(targetPlatform);
             return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
@@ -238,60 +238,59 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
     // filter internal tags
     const tags = extension.tags?.filter(t => !t.startsWith('__'));
-    return <>
+    return <Box
+        sx={{
+            display: 'flex',
+            mt: 2,
+            flexDirection: {
+                xs: 'column-reverse',
+                sm: 'column-reverse',
+                md: 'column-reverse',
+                lg: 'column-reverse',
+                xl: 'row'
+            }
+        }}
+    >
+        <Box flex={5} overflow='auto'>
+            <SanitizedMarkdown content={readme} />
+        </Box>
         <Box
             sx={{
+                flex: 1,
                 display: 'flex',
-                mt: 2,
-                flexDirection: {
-                    xs: 'column-reverse',
-                    sm: 'column-reverse',
-                    md: 'column-reverse',
-                    lg: 'column-reverse',
-                    xl: 'row'
-                }
+                width: '100%',
+                minWidth: '290px',
+                mb: { xs: 2, sm: 2, md: 2, lg: 2, xl: 0 },
+                ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: '4.8rem' },
+                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'column' }
             }}
         >
-            <Box flex={5} overflow='auto'>
-                <SanitizedMarkdown content={readme} />
-            </Box>
-            <Box
-                sx={{
-                    flex: 1,
-                    display: 'flex',
-                    width: '100%',
-                    minWidth: '290px',
-                    mb: { xs: 2, sm: 2, md: 2, lg: 2, xl: 0 },
-                    ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: '4.8rem' },
-                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'column' }
-                }}
-            >
-                <Box sx={resourcesGroup}>
-                    <Box>
-                        {renderVersionSection()}
-                    </Box>
-                    {
-                        (otherAliases.length || extension.versionAlias.length) ? <Box>{renderAliasesSection(otherAliases, tagButton)}</Box> : ''
-                    }
+            <Box sx={resourcesGroup}>
+                <Box>
+                    {renderVersionSection()}
                 </Box>
-                <Box sx={resourcesGroup}>
-                    {
-                        extension.categories && extension.categories.length > 0 ?
+                {
+                    (otherAliases.length || extension.versionAlias.length) ? <Box>{renderAliasesSection(otherAliases, tagButton)}</Box> : ''
+                }
+            </Box>
+            <Box sx={resourcesGroup}>
+                {
+                    extension.categories && extension.categories.length > 0 ?
                         <Box>
                             {renderButtonList('category', 'Categories', extension.categories, tagButton)}
                         </Box>
                         : null
-                    }
-                    {
-                        tags && tags.length > 0 ?
+                }
+                {
+                    tags && tags.length > 0 ?
                         <Box mt={2}>
                             {renderButtonList('search', 'Tags', tags, tagButton)}
                         </Box>
                         : null
-                    }
-                </Box>
-                {
-                    extension.downloads ?
+                }
+            </Box>
+            {
+                extension.downloads ?
                     <Box sx={resourcesGroup}>
                         <Box>
                             <Typography variant='h6'>Works With</Typography>
@@ -299,55 +298,54 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         </Box>
                     </Box>
                     : null
-                }
-                <Box sx={resourcesGroup}>
-                    <Box>
-                        <Typography variant='h6'>Resources</Typography>
-                        {renderResourceLink('Homepage', resourceLink, extension.homepage)}
-                        {renderResourceLink('Repository', resourceLink, extension.repository)}
-                        {renderResourceLink('Bugs', resourceLink, extension.bugs)}
-                        {renderResourceLink('Q\'n\'A', resourceLink, extension.qna)}
-                        {
-                            extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 1 ?
-                            <ExtensionDetailDownloadsMenu downloads={extension.downloads}/>
-                            : extension.downloadable && extension.downloads && Object.keys(extension.downloads).length == 1 ?
-                            <Button variant='contained' color='secondary' sx={{ mt: 2 }}
-                                href={extension.downloads[Object.keys(extension.downloads)[0]]}
-                            >
-                                Download
-                            </Button>
-                            : null
-                        }
-                        {
-                            DownloadTerms && extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 0
-                            ? <DownloadTerms/>
-                            : null
-                        }
-                    </Box>
+            }
+            <Box sx={resourcesGroup}>
+                <Box>
+                    <Typography variant='h6'>Resources</Typography>
+                    {renderResourceLink('Homepage', resourceLink, extension.homepage)}
+                    {renderResourceLink('Repository', resourceLink, extension.repository)}
+                    {renderResourceLink('Bugs', resourceLink, extension.bugs)}
+                    {renderResourceLink('Q\'n\'A', resourceLink, extension.qna)}
                     {
-                        extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0 ?
+                        extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 1 ?
+                            <ExtensionDetailDownloadsMenu downloads={extension.downloads} />
+                            : extension.downloadable && extension.downloads && Object.keys(extension.downloads).length == 1 ?
+                                <Button variant='contained' color='secondary' sx={{ mt: 2 }}
+                                    href={extension.downloads[Object.keys(extension.downloads)[0]]}
+                                >
+                                    Download
+                                </Button>
+                                : null
+                    }
+                    {
+                        DownloadTerms && extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 0
+                            ? <DownloadTerms />
+                            : null
+                    }
+                </Box>
+                {
+                    extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0 ?
                         <Box mt={2}>
                             <Typography variant='h6'>Bundled Extensions</Typography>
                             {extension.bundledExtensions!.map(ref => renderExtensionRef(ref))}
                         </Box>
                         : null
-                    }
-                    {
-                        extension.dependencies !== undefined && extension.dependencies.length > 0 ?
+                }
+                {
+                    extension.dependencies !== undefined && extension.dependencies.length > 0 ?
                         <Box mt={2}>
                             <Typography variant='h6'>Dependencies</Typography>
                             {extension.dependencies!.map(ref => renderExtensionRef(ref))}
                         </Box>
                         : null
-                    }
-                    <Box mt={2}>
-                        {ClaimNamespace ? <ClaimNamespace extension={extension} sx={resourceLink} /> : ''}
-                        {ReportAbuse ? <ReportAbuse extension={extension} sx={resourceLink} /> : ''}
-                    </Box>
+                }
+                <Box mt={2}>
+                    {ClaimNamespace ? <ClaimNamespace extension={extension} sx={resourceLink} /> : ''}
+                    {ReportAbuse ? <ReportAbuse extension={extension} sx={resourceLink} /> : ''}
                 </Box>
             </Box>
         </Box>
-    </>;
+    </Box>;
 };
 
 export interface ExtensionDetailOverviewProps {
