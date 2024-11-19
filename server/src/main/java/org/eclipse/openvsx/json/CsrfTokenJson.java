@@ -10,7 +10,7 @@
 package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * A badge to be shown in the sidebar of the extension page in the marketplace.
