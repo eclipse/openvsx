@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Box, Typography, Tabs, Tab, useTheme, useMediaQuery, Link } from '@mui/material';
 import { Namespace, UserData } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -18,7 +18,7 @@ import { CreateNamespaceDialog } from './create-namespace-dialog';
 
 interface NamespaceTabProps {
     chosenNamespace: Namespace,
-    onChange: (event: ChangeEvent<{}>, value: Namespace) => void,
+    onChange: (value: Namespace) => void,
     namespaces: Namespace[]
 }
 
@@ -28,7 +28,7 @@ const NamespacesTabs = (props: NamespaceTabProps) => {
     return <Tabs
         orientation={isATablet ? 'horizontal' : 'vertical'}
         value={props.chosenNamespace}
-        onChange={props.onChange}
+        onChange={(event, value) => props.onChange(value)}
         variant={isATablet ? 'scrollable' : 'standard'}
         scrollButtons={isATablet ? 'auto' : false}
         indicatorColor='secondary'
@@ -69,7 +69,7 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
         };
     }, []);
 
-    const handleChangeNamespace = (event: ChangeEvent<{}>, value: Namespace): void => {
+    const handleChangeNamespace = (value: Namespace): void => {
         doHandleChangeNamespace(value);
     };
 

@@ -178,7 +178,6 @@ export const UserSettingsTokens: FunctionComponent = () => {
 };
 
 export namespace UserSettingsTokens {
-    export interface Props {}
     export interface State {
         tokens: PersonalAccessToken[];
         loading: boolean;
