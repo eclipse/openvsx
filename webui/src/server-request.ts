@@ -66,7 +66,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
 
     const response = await fetchBuilder(fetch, options)(req.endpoint, param);
     if (response.ok) {
-        switch (req.headers!['Accept']) {
+        switch (req.headers['Accept']) {
             case 'application/json':
                 return response.json();
             case 'text/plain':
@@ -74,7 +74,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
             case 'application/octet-stream':
                 return response.blob() as Promise<any>;
             default:
-                throw new Error(`Unsupported type ${req.headers!['Accept']}`);
+                throw new Error(`Unsupported type ${req.headers['Accept']}`);
         }
     } else if (response.status === 429) {
         const retrySeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds') || '0';

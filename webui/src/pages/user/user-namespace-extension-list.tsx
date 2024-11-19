@@ -51,7 +51,7 @@ export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespac
         const extensionUnfiltered = await Promise.all(
             extensionsURLs.map((url: string) => getExtension(url))
         );
-        const extensions = extensionUnfiltered.filter(e => !!e) as Extension[];
+        const extensions = extensionUnfiltered.filter(e => e != null) as Extension[];
 
         setExtensions(extensions);
         setLoading(false);

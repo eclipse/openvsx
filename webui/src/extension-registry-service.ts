@@ -118,7 +118,7 @@ export class ExtensionRegistryService {
     getExtensionReadme(abortController: AbortController, extension: Extension): Promise<string> {
         return sendRequest({
             abortController,
-            endpoint: extension.files.readme!,
+            endpoint: extension.files.readme,
             headers: { 'Accept': 'text/plain' },
             followRedirect: true
         });
@@ -127,7 +127,7 @@ export class ExtensionRegistryService {
     getExtensionChangelog(abortController: AbortController, extension: Extension): Promise<string> {
         return sendRequest({
             abortController,
-            endpoint: extension.files.changelog!,
+            endpoint: extension.files.changelog,
             headers: { 'Accept': 'text/plain' },
             followRedirect: true
         });
