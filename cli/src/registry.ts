@@ -9,7 +9,6 @@
  ********************************************************************************/
 
 import * as http from 'http';
-import * as https from 'https';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as followRedirects from 'follow-redirects';
@@ -167,10 +166,7 @@ export class Registry {
     }
 
     private getProtocol(url: URL) {
-        if (url.protocol === 'https:')
-            return followRedirects.https
-        else
-            return followRedirects.http
+        return url.protocol === 'https:' ? followRedirects.https : followRedirects.http;
     }
 
     private getRequestOptions(method?: string, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): http.RequestOptions {
