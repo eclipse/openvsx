@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.entities.Extension;
@@ -31,7 +30,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 

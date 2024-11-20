@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.eclipse;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  *
