@@ -11,6 +11,7 @@ package org.eclipse.openvsx.cache;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -42,17 +43,20 @@ public class CacheService {
     private final RepositoryService repositories;
     private final ExtensionJsonCacheKeyGenerator extensionJsonCacheKey;
     private final LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
+    private final FilesCacheKeyGenerator filesCacheKeyGenerator;
 
     public CacheService(
             CacheManager cacheManager,
             RepositoryService repositories,
             ExtensionJsonCacheKeyGenerator extensionJsonCacheKey,
-            LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey
+            LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey,
+            FilesCacheKeyGenerator filesCacheKeyGenerator
     ) {
         this.cacheManager = cacheManager;
         this.repositories = repositories;
         this.extensionJsonCacheKey = extensionJsonCacheKey;
         this.latestExtensionVersionCacheKey = latestExtensionVersionCacheKey;
+        this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
     public void evictNamespaceDetails() {
@@ -153,5 +157,23 @@ public class CacheService {
         }
 
         cache.invalidate();
+    }
+
+    public void evictExtensionFile(FileResource download) {
+        var cache = cacheManager.getCache(CACHE_EXTENSION_FILES);
+        if(cache == null) {
+            return;
+        }
+
+        cache.evict(filesCacheKeyGenerator.generate(download));
+    }
+
+    public void evictWebResourceFile(String namespaceName, String extensionName, String targetPlatform, String version, String path) {
+        var cache = cacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
+        if(cache == null) {
+            return;
+        }
+
+        cache.evict(filesCacheKeyGenerator.generate(namespaceName, extensionName, targetPlatform, version, path));
     }
 }
