@@ -933,8 +933,8 @@ class VSCodeAPITest {
         }
 
         @Bean
-        WebResourceService webResourceService(StorageUtilService storageUtil, RepositoryService repositories) {
-            return new WebResourceService(storageUtil, repositories);
+        WebResourceService webResourceService(StorageUtilService storageUtil, RepositoryService repositories, CacheService cache) {
+            return new WebResourceService(storageUtil, repositories, cache);
         }
 
         @Bean
@@ -944,9 +944,10 @@ class VSCodeAPITest {
                 SearchUtilService search,
                 StorageUtilService storageUtil,
                 ExtensionVersionIntegrityService integrityService,
-                WebResourceService webResourceService
+                WebResourceService webResourceService,
+                CacheService cache
         ) {
-            return new LocalVSCodeService(repositories, versions, search, storageUtil, integrityService, webResourceService);
+            return new LocalVSCodeService(repositories, versions, search, storageUtil, integrityService, webResourceService, cache);
         }
 
         @Bean

@@ -11,6 +11,7 @@ package org.eclipse.openvsx.adapter;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -19,6 +20,8 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,6 +46,7 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 
 @Component
 public class LocalVSCodeService implements IVSCodeService {
+    protected final Logger logger = LoggerFactory.getLogger(LocalVSCodeService.class);
 
     private final RepositoryService repositories;
     private final VersionService versions;
@@ -48,6 +54,7 @@ public class LocalVSCodeService implements IVSCodeService {
     private final StorageUtilService storageUtil;
     private final ExtensionVersionIntegrityService integrityService;
     private final WebResourceService webResources;
+    private final CacheService cache;
 
     private final StreamingResponseBody builtinExtensionResponse = outputStream -> {
         var message = "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
@@ -63,7 +70,8 @@ public class LocalVSCodeService implements IVSCodeService {
             SearchUtilService search,
             StorageUtilService storageUtil,
             ExtensionVersionIntegrityService integrityService,
-            WebResourceService webResources
+            WebResourceService webResources,
+            CacheService cache
     ) {
         this.repositories = repositories;
         this.versions = versions;
@@ -71,6 +79,7 @@ public class LocalVSCodeService implements IVSCodeService {
         this.storageUtil = storageUtil;
         this.integrityService = integrityService;
         this.webResources = webResources;
+        this.cache = cache;
     }
 
     @Override
@@ -319,15 +328,24 @@ public class LocalVSCodeService implements IVSCodeService {
             return storageUtil.getFileResponse(resource);
         } else if(asset.startsWith(FILE_WEB_RESOURCES + "/extension/")) {
             var name = asset.substring((FILE_WEB_RESOURCES.length() + 1));
-            var file = webResources.getWebResource(namespace, extensionName, targetPlatform, version, name, false);
-            if(file == null) {
-                throw new NotFoundException();
-            }
-
+            var file = getWebResource(namespace, extensionName, targetPlatform, version, name, false);
             return storageUtil.getFileResponse(file);
         }
 
         throw new NotFoundException();
+    }
+
+    private Path getWebResource(String namespaceName, String extensionName, String targetPlatform, String version, String name, boolean browse) {
+        var file = webResources.getWebResource(namespaceName, extensionName, targetPlatform, version, name, browse);
+        if(file == null) {
+            throw new NotFoundException();
+        }
+        if(!Files.exists(file)) {
+            logger.error("File doesn't exist {}", file);
+            cache.evictWebResourceFile(namespaceName, extensionName, null, version, name);
+            throw new NotFoundException();
+        }
+        return file;
     }
 
     private String builtinExtensionMessage() {
@@ -381,11 +399,7 @@ public class LocalVSCodeService implements IVSCodeService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(builtinExtensionResponse);
         }
 
-        var file = webResources.getWebResource(namespaceName, extensionName, null, version, path, true);
-        if(file == null) {
-            throw new NotFoundException();
-        }
-
+        var file = getWebResource(namespaceName, extensionName, null, version, path, true);
         return storageUtil.getFileResponse(file);
     }
 

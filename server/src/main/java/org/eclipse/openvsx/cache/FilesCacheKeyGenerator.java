@@ -31,17 +31,20 @@ public class FilesCacheKeyGenerator implements KeyGenerator {
             return generate(namespace, extension, targetPlatform, version, name);
         }
         if(target instanceof IStorageService) {
-            var resource = (FileResource) params[0];
-            var extVersion = resource.getExtension();
-            var extension = extVersion.getExtension();
-            var namespace = extension.getNamespace();
-            return generate(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion(), resource.getName());
+            return generate((FileResource) params[0]);
         }
 
         throw new UnsupportedOperationException();
     }
 
-    private String generate(String namespace, String extension, String targetPlatform, String version, String name) {
+    public String generate(FileResource resource) {
+        var extVersion = resource.getExtension();
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        return generate(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion(), resource.getName());
+    }
+
+    public String generate(String namespace, String extension, String targetPlatform, String version, String name) {
         return UrlUtil.createApiFileUrl("", namespace, extension, targetPlatform, version, name);
     }
 }

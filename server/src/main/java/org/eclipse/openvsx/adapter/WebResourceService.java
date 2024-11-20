@@ -10,12 +10,15 @@
 package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -32,12 +35,16 @@ import static org.eclipse.openvsx.cache.CacheService.GENERATOR_FILES;
 @Component
 public class WebResourceService {
 
+    protected final Logger logger = LoggerFactory.getLogger(WebResourceService.class);
+
     private final StorageUtilService storageUtil;
     private final RepositoryService repositories;
+    private final CacheService cache;
 
-    public WebResourceService(StorageUtilService storageUtil, RepositoryService repositories) {
+    public WebResourceService(StorageUtilService storageUtil, RepositoryService repositories, CacheService cache) {
         this.storageUtil = storageUtil;
         this.repositories = repositories;
+        this.cache = cache;
     }
 
     @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES)
@@ -54,6 +61,11 @@ public class WebResourceService {
             throw new ErrorResultException("Failed to get file for download " + NamingUtil.toLogFormat(download.getExtension()));
         }
         if(path == null) {
+            return null;
+        }
+        if(!Files.exists(path)) {
+            logger.error("File doesn't exist {}", path);
+            cache.evictExtensionFile(download);
             return null;
         }
 
