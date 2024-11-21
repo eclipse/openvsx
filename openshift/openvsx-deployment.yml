@@ -35,7 +35,7 @@ objects:
         containers:
           - name: postgresql
             image: ${POSTGERSQL_IMAGE}
-            imagePullPolicy: Always
+            imagePullPolicy: Never
             env:
               - name: POSTGRESQL_DATABASE
                 value: openvsx
@@ -120,7 +120,7 @@ objects:
                 protocol: TCP
               - containerPort: 9200
                 protocol: TCP
-            imagePullPolicy: Always
+            imagePullPolicy: Never
             env:
               - name: bootstrap.memory_lock
                 value: 'true'
@@ -193,7 +193,7 @@ objects:
         containers:
           - name: openvsx-server
             image: ${OPENVSX_SERVER_IMAGE}
-            imagePullPolicy: Always
+            imagePullPolicy: Never
             readinessProbe:
               httpGet:
                 path: /api/version
@@ -302,7 +302,7 @@ objects:
         containers:
           - name: ovsx-cli
             image: ${OPENVSX_CLI_IMAGE}
-            imagePullPolicy: Always
+            imagePullPolicy: Never
             env:
               - name: OVSX_REGISTRY_URL
                 value: http://openvsx-server:8080
