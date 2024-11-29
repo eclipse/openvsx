@@ -1,12 +1,10 @@
 import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { AppBar, Box, IconButton, Toolbar } from '@mui/material';
+import { AppBar, Box, Toolbar } from '@mui/material';
 import { styled, Theme } from '@mui/material/styles';
-import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import { Banner } from './components/banner';
 import { MainContext } from './context';
 import { HeaderMenu } from './header-menu';
-import { UserAvatar } from './pages/user/avatar';
 import { ExtensionListContainer, ExtensionListRoutes } from './pages/extension-list/extension-list-container';
 import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { NamespaceDetail, NamespaceDetailRoutes } from './pages/namespace-detail/namespace-detail';
@@ -38,7 +36,7 @@ const Footer = styled('footer')(({ theme }: { theme: Theme }) => ({
 }));
 
 export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
-    const { service, pageSettings } = useContext(MainContext);
+    const { pageSettings } = useContext(MainContext);
     const {
         additionalRoutes: AdditionalRoutes,
         banner: BannerComponent,
@@ -89,17 +87,6 @@ export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
                 </ToolbarItem>
                 <ToolbarItem>
                     <HeaderMenu />
-                    {
-                        props.user ?
-                            <UserAvatar />
-                            :
-                            <IconButton
-                                href={service.getLoginUrl()}
-                                title='Log In'
-                                aria-label='Log In' >
-                                <AccountBoxIcon />
-                            </IconButton>
-                    }
                 </ToolbarItem>
             </Toolbar>
         </AppBar>
