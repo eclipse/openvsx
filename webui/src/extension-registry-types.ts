@@ -91,7 +91,7 @@ export interface Extension {
     description?: string;
 
     // key: engine, value: version constraint
-    engines?: string[];
+    engines?: Record<string, string>;
     categories?: string[];
     tags?: string[];
     license?: string;

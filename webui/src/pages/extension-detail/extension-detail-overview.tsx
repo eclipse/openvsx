@@ -9,14 +9,14 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled } from '@mui/material';
+import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MainContext } from '../../context';
-import { addQuery, createRoute, getTargetPlatformDisplayName } from '../../utils';
+import { addQuery, createRoute, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
@@ -163,11 +163,47 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         </>;
     };
 
-    const renderWorksWithList = (downloads: { [targetPlatform: string]: UrlString }): ReactNode => {
-        return Object.keys(downloads).map((targetPlatform, index) => {
-            const displayName = getTargetPlatformDisplayName(targetPlatform);
-            return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
-        });
+    const renderWorksWithEngines = (engines?: Record<string, string>): ReactNode => {
+        if (engines == null) {
+            return null;
+        }
+
+        const data = Object.keys(engines)
+            .map((engine) => ({
+                key: engine,
+                name: getEngineDisplayName(engine),
+                version: engines[engine]
+            }))
+            .filter((d) => d.name != null);
+
+        return (<>
+            <Grid item xs='auto'>
+                <Stack spacing={0.5}>
+                    {
+                        data.map((d) => <Box component='span' key={d.key} sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>{d.name}:</Box>)
+                    }
+                </Stack>
+            </Grid>
+            <Grid item xs>
+                <Stack spacing={0.5}>
+                    {
+                        data.map((d) => <Box component='span' key={d.key}>{d.version}</Box>)
+                    }
+                </Stack>
+            </Grid>
+        </>);
+    };
+
+    const renderWorksWithTargetPlatformsList = (downloads: { [targetPlatform: string]: UrlString }): ReactNode => {
+        return (<Grid item xs={12}>
+            <Box component='span' sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>Target Platforms:{' '}</Box>
+            {
+                Object.keys(downloads).map((targetPlatform, index) => {
+                    const displayName = getTargetPlatformDisplayName(targetPlatform);
+                    return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
+                })
+            }
+        </Grid>);
     };
 
     const renderResourceLink = (label: string, resourceLink: SxProps<Theme>, href?: string): ReactNode => {
@@ -294,7 +330,10 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                     <Box sx={resourcesGroup}>
                         <Box>
                             <Typography variant='h6'>Works With</Typography>
-                            {renderWorksWithList(extension.downloads)}
+                            <Grid container spacing={0.5}>
+                                {renderWorksWithEngines(extension.engines)}
+                                {renderWorksWithTargetPlatformsList(extension.downloads)}
+                            </Grid>
                         </Box>
                     </Box>
                     : null
