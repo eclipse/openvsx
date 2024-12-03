@@ -26,6 +26,7 @@ import { OtherPages } from './other-pages';
 export const Main: FunctionComponent<MainProps> = props => {
     const [user, setUser] = useState<UserData>();
     const [userLoading, setUserLoading] = useState<boolean>(true);
+    const [isOAuth2Enabled, setIsOAuth2Enabled] = useState<boolean>(false);
     const [error, setError] = useState<{message: string, code?: number | string}>();
     const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
     const abortController = useRef<AbortController>(new AbortController());
@@ -39,6 +40,9 @@ export const Main: FunctionComponent<MainProps> = props => {
 
         // Get data of the currently logged in user
         updateUser();
+
+        // Fetch OAuth2 status
+        fetchOAuth2Status();
 
         return () => abortController.current.abort();
     }, []);
@@ -58,6 +62,15 @@ export const Main: FunctionComponent<MainProps> = props => {
         }
 
         setUserLoading(false);
+    };
+
+    const fetchOAuth2Status = async () => {
+        try {
+            const isEnabled = await props.service.isOAuth2Enabled(abortController.current);
+            setIsOAuth2Enabled(isEnabled);
+        } catch (err) {
+            console.error('Failed to fetch OAuth2 status:', err);
+        }
     };
 
     const onError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
@@ -101,6 +114,7 @@ export const Main: FunctionComponent<MainProps> = props => {
         pageSettings: props.pageSettings,
         user,
         updateUser,
+        isOAuth2Enabled,
         handleError: onError
     };
     return <>

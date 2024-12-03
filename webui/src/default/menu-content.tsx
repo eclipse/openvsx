@@ -116,15 +116,16 @@ export const MobileUserAvatar: FunctionComponent = () => {
 };
 
 export const MobileMenuContent: FunctionComponent = () => {
-
+    const { isOAuth2Enabled } = useContext(MainContext);
     const location = useLocation();
     const { service, user } = useContext(MainContext);
 
     return <>
-        {
-            user
-                ? <MobileUserAvatar/>
-                : <MobileMenuItem>
+        {isOAuth2Enabled && (
+            user ? (
+                <MobileUserAvatar />
+            ) : (
+                <MobileMenuItem>
                     <Link href={service.getLoginUrl()}>
                         <MobileMenuItemText>
                             <AccountBoxIcon sx={itemIcon} />
@@ -132,10 +133,10 @@ export const MobileMenuContent: FunctionComponent = () => {
                         </MobileMenuItemText>
                     </Link>
                 </MobileMenuItem>
-        }
-        {
-            !location.pathname.startsWith(UserSettingsRoutes.ROOT)
-            ? <MobileMenuItem>
+            )
+        )}
+        {isOAuth2Enabled && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
+            <MobileMenuItem>
                 <RouteLink to='/user-settings/extensions'>
                     <MobileMenuItemText>
                         <PublishIcon sx={itemIcon} />
@@ -143,8 +144,7 @@ export const MobileMenuContent: FunctionComponent = () => {
                     </MobileMenuItemText>
                 </RouteLink>
             </MobileMenuItem>
-            : null
-        }
+        )}
         <MobileMenuItem>
             <Link target='_blank' href='https://github.com/eclipse/openvsx'>
                 <MobileMenuItemText>
@@ -200,30 +200,42 @@ export const MenuLink = styled(Link)(headerItem);
 export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
-    const { service, user } = useContext(MainContext);
-    return <>
-        <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
-            Documentation
-        </MenuLink>
-        <MenuLink href='https://gitter.im/eclipse/openvsx'>
-            Community
-        </MenuLink>
-        <MenuRouteLink to='/about'>
-            About
-        </MenuRouteLink>
-        <Button variant='contained' color='secondary' href='/user-settings/extensions' sx={{ mx: 2.5 }}>
-            Publish
-        </Button>
-        {
-            user ?
-                <UserAvatar />
-                :
-                <IconButton
-                    href={service.getLoginUrl()}
-                    title='Log In'
-                    aria-label='Log In' >
-                    <AccountBoxIcon />
-                </IconButton>
-        }
-    </>;
+    const { service, user, isOAuth2Enabled } = useContext(MainContext);
+
+    return (
+        <>
+            <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
+                Documentation
+            </MenuLink>
+            <MenuLink href='https://gitter.im/eclipse/openvsx'>
+                Community
+            </MenuLink>
+            <MenuRouteLink to='/about'>
+                About
+            </MenuRouteLink>
+            {isOAuth2Enabled && (
+                <>
+                    <Button
+                        variant='contained'
+                        color='secondary'
+                        href='/user-settings/extensions'
+                        sx={{ mx: 2.5 }}
+                    >
+                        Publish
+                    </Button>
+                    {user ? (
+                        <UserAvatar />
+                    ) : (
+                        <IconButton
+                            href={service.getLoginUrl()}
+                            title='Log In'
+                            aria-label='Log In'
+                        >
+                            <AccountBoxIcon />
+                        </IconButton>
+                    )}
+                </>
+            )}
+        </>
+    );
 };

@@ -421,6 +421,11 @@ export class ExtensionRegistryService {
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'version']);
         return sendRequest({ abortController, endpoint });
     }
+
+    async isOAuth2Enabled(abortController: AbortController): Promise<Readonly<boolean>> {
+        const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'oauth2', 'enabled']);
+        return sendRequest({ abortController, endpoint });
+    }
 }
 
 export interface AdminService {

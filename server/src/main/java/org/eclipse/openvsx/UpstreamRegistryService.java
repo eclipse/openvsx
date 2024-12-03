@@ -428,6 +428,17 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         }
     }
 
+    /**
+     * For the upstream registry, it is assumed that OAuth2 is always configured and required.
+     * This method consistently returns {@code true} to reflect that assumption.
+     * 
+     * @return {@code true}, indicating that OAuth2 is enabled and expected to be configured.
+    */
+    @Override
+    public boolean isOAuth2Enabled() {
+        return true;    
+    }
+
     private void handleError(Throwable exc) throws RuntimeException {
         if (exc instanceof HttpStatusCodeException) {
             var status = ((HttpStatusCodeException) exc).getStatusCode();

@@ -1251,7 +1251,8 @@ class AdminAPITest {
                 EclipseService eclipse,
                 CacheService cache,
                 FileCacheDurationConfig fileCacheDurationConfig,
-                ExtensionVersionIntegrityService integrityService
+                ExtensionVersionIntegrityService integrityService,
+                ClientRegistrationRepository clientRegistrationRepository
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -1264,7 +1265,8 @@ class AdminAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService
+                    integrityService,
+                    clientRegistrationRepository
             );
         }
 

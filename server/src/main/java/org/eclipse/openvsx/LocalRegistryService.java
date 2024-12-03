@@ -26,12 +26,14 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -63,6 +65,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final EclipseService eclipse;
     private final CacheService cache;
     private final ExtensionVersionIntegrityService integrityService;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     public LocalRegistryService(
             EntityManager entityManager,
@@ -75,7 +78,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             StorageUtilService storageUtil,
             EclipseService eclipse,
             CacheService cache,
-            ExtensionVersionIntegrityService integrityService
+            ExtensionVersionIntegrityService integrityService,
+            @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -88,6 +92,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.eclipse = eclipse;
         this.cache = cache;
         this.integrityService = integrityService;
+        this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
     @Value("${ovsx.webui.url:}")
@@ -1141,5 +1146,10 @@ public class LocalRegistryService implements IExtensionRegistry {
         var registryVersion = new RegistryVersionJson();
         registryVersion.setVersion(this.registryVersion);
         return registryVersion;
+    }
+
+    @Override
+    public boolean isOAuth2Enabled() {
+        return this.clientRegistrationRepository == null ? false : true;    
     }
 }
