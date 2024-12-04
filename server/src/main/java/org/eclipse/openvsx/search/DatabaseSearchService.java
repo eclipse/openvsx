@@ -151,45 +151,41 @@ public class DatabaseSearchService implements ISearchService {
         return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, null, null, searchHits, null, null);
     }
 
-    /**
-     * Clear the cache when asked to update the search index. It could be done also
-     * through a cron job as well
-     */
     @Override
     @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void updateSearchIndex(boolean clear) {
-
+        // The @CacheEvict annotation clears the cache when asked to update the search index
     }
 
     @Override
     @Async
     @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void updateSearchEntriesAsync(List<Extension> extensions) {
-
+        // The @CacheEvict annotation clears the cache when asked to update search entries
     }
 
     @Override
     @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void updateSearchEntries(List<Extension> extensions) {
-
+        // The @CacheEvict annotation clears the cache when asked to update search entries
     }
 
     @Override
     @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void updateSearchEntry(Extension extension) {
-
+        // The @CacheEvict annotation clears the cache when asked to update a search entry
     }
 
     @Override
     @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void removeSearchEntries(Collection<Long> ids) {
-
+        // The @CacheEvict annotation clears the cache when asked to removes search entries
     }
 
     @Override
     @CacheEvict(value = CACHE_DATABASE_SEARCH, allEntries = true)
     public void removeSearchEntry(Extension extension) {
-
+        // The @CacheEvict annotation clears the cache when asked to remove a search entry
     }
 
     /**
