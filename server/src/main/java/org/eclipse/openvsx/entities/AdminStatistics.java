@@ -23,53 +23,53 @@ public class AdminStatistics {
     @Id
     @GeneratedValue(generator = "adminStatisticsSeq")
     @SequenceGenerator(name = "adminStatisticsSeq", sequenceName = "admin_statistics_seq")
-    long id;
+    private long id;
 
-    int year;
+    private int year;
 
-    int month;
+    private int month;
 
-    long extensions;
+    private long extensions;
 
-    long downloads;
+    private long downloads;
 
-    long downloadsTotal;
+    private long downloadsTotal;
 
-    long publishers;
+    private long publishers;
 
-    double averageReviewsPerExtension;
+    private double averageReviewsPerExtension;
 
-    long namespaceOwners;
+    private long namespaceOwners;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "rating")
     @Column(name = "extensions")
-    Map<Integer, Integer> extensionsByRating;
+    private Map<Integer, Integer> extensionsByRating;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "extensions_published")
     @Column(name = "publishers")
-    Map<Integer, Integer> publishersByExtensionsPublished;
+    private Map<Integer, Integer> publishersByExtensionsPublished;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "login_name")
     @Column(name = "extension_version_count")
-    Map<String, Integer> topMostActivePublishingUsers;
+    private Map<String, Integer> topMostActivePublishingUsers;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "namespace")
     @Column(name = "extension_count")
-    Map<String, Integer> topNamespaceExtensions;
+    private Map<String, Integer> topNamespaceExtensions;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "namespace")
     @Column(name = "extension_version_count")
-    Map<String, Integer> topNamespaceExtensionVersions;
+    private Map<String, Integer> topNamespaceExtensionVersions;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "extension_identifier")
     @Column(name = "downloads")
-    Map<String, Long> topMostDownloadedExtensions;
+    private Map<String, Long> topMostDownloadedExtensions;
 
     public String toCsv() {
         var ratings = 5;

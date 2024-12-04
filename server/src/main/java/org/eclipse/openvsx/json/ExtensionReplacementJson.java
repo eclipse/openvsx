@@ -12,6 +12,7 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Schema(
@@ -20,6 +21,9 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExtensionReplacementJson implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "URL of the extension replacement")
     private String url;

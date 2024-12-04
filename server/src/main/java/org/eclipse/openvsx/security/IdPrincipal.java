@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 public class IdPrincipal implements OidcUser, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final long id;

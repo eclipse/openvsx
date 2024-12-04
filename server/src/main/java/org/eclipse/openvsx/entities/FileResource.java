@@ -11,8 +11,14 @@ package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Entity
-public class FileResource {
+public class FileResource implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     // Resource types
     public static final String DOWNLOAD = "download";
@@ -35,21 +41,21 @@ public class FileResource {
     @Id
     @GeneratedValue(generator = "fileResourceSeq")
     @SequenceGenerator(name = "fileResourceSeq", sequenceName = "file_resource_seq")
-    long id;
+    private long id;
 
     @OneToOne
-    ExtensionVersion extension;
+    private ExtensionVersion extension;
 
-    String name;
+    private String name;
 
     @Column(length = 32)
-    String type;
+    private String type;
 
     @Basic(fetch = FetchType.LAZY)
-    byte[] content;
+    private byte[] content;
 
     @Column(length = 32)
-    String storageType;
+    private String storageType;
 
     public long getId() {
         return id;

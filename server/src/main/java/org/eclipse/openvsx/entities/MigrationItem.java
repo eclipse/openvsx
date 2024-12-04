@@ -17,13 +17,13 @@ public class MigrationItem {
     @Id
     @GeneratedValue(generator = "migrationItemSeq")
     @SequenceGenerator(name = "migrationItemSeq", sequenceName = "migration_item_seq")
-    long id;
+    private long id;
 
-    String migrationScript;
+    private String migrationScript;
 
-    long entityId;
+    private long entityId;
 
-    boolean migrationScheduled;
+    private boolean migrationScheduled;
 
     public long getId() {
         return id;

@@ -11,6 +11,8 @@ package org.eclipse.openvsx.security;
 
 import org.springframework.security.core.AuthenticationException;
 
+import java.io.Serial;
+
 /**
  * Authentication exception that contains a code to be used in user interfaces to
  * provide more help for resolving the problem.
@@ -23,6 +25,7 @@ public class CodedAuthException extends AuthenticationException {
     public static final String ECLIPSE_MISSING_GITHUB_ID = "eclipse-missing-github-id";
     public static final String ECLIPSE_MISMATCH_GITHUB_ID = "eclipse-mismatch-github-id";
 
+    @Serial
     private static final long serialVersionUID = 1L;
     
     private final String code;

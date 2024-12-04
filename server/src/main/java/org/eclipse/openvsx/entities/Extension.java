@@ -13,6 +13,7 @@ import jakarta.persistence.*;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.util.NamingUtil;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -27,40 +28,43 @@ import java.util.Objects;
 })
 public class Extension implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(generator = "extensionSeq")
     @SequenceGenerator(name = "extensionSeq", sequenceName = "extension_seq")
-    long id;
+    private long id;
 
     @Column(length = 128)
-    String publicId;
+    private String publicId;
 
-    String name;
+    private String name;
 
     @ManyToOne
-    Namespace namespace;
+    private Namespace namespace;
 
     @OneToMany(mappedBy = "extension")
-    List<ExtensionVersion> versions;
+    private List<ExtensionVersion> versions;
 
-    boolean active;
+    private boolean active;
 
-    Double averageRating;
+    private Double averageRating;
 
-    Long reviewCount;
+    private Long reviewCount;
 
-    int downloadCount;
+    private int downloadCount;
 
-    LocalDateTime publishedDate;
+    private LocalDateTime publishedDate;
 
-    LocalDateTime lastUpdatedDate;
+    private LocalDateTime lastUpdatedDate;
 
-    boolean deprecated;
+    private boolean deprecated;
 
     @OneToOne
-    Extension replacement;
+    private Extension replacement;
 
-    boolean downloadable;
+    private boolean downloadable;
 
     /**
      * Convert to a search entity for Elasticsearch.

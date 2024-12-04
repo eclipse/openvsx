@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,9 @@ import java.util.Objects;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NamespaceDetailsJson extends ResultJson implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public static NamespaceDetailsJson error(String message) {
         var result = new NamespaceDetailsJson();

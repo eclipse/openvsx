@@ -18,6 +18,7 @@ import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "targetPlatform", "version" })})
 public class ExtensionVersion implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public static final Comparator<ExtensionVersion> SORT_COMPARATOR =
         Comparator.comparing(ExtensionVersion::getSemanticVersion)
@@ -42,16 +46,16 @@ public class ExtensionVersion implements Serializable {
     @Id
     @GeneratedValue(generator = "extensionVersionSeq")
     @SequenceGenerator(name = "extensionVersionSeq", sequenceName = "extension_version_seq")
-    long id;
+    private long id;
 
     @ManyToOne
-    Extension extension;
+    private Extension extension;
 
-    String version;
+    private String version;
 
-    String targetPlatform;
+    private String targetPlatform;
 
-    boolean universalTargetPlatform;
+    private boolean universalTargetPlatform;
 
     @Embedded
     @AttributeOverride(name = "major", column = @Column(name = "semver_major"))
@@ -60,80 +64,80 @@ public class ExtensionVersion implements Serializable {
     @AttributeOverride(name = "preRelease", column = @Column(name = "semver_pre_release"))
     @AttributeOverride(name = "isPreRelease", column = @Column(name = "semver_is_pre_release"))
     @AttributeOverride(name = "buildMetadata", column = @Column(name = "semver_build_metadata"))
-    SemanticVersion semver;
+    private SemanticVersion semver;
 
-    boolean preRelease;
+    private boolean preRelease;
 
-    boolean preview;
+    private boolean preview;
 
-    LocalDateTime timestamp;
+    private LocalDateTime timestamp;
 
     @ManyToOne
-    PersonalAccessToken publishedWith;
+    private PersonalAccessToken publishedWith;
 
-    boolean active;
+    private boolean active;
 
-    boolean potentiallyMalicious;
+    private boolean potentiallyMalicious;
 
-    String displayName;
-
-    @Column(length = 2048)
-    String description;
+    private String displayName;
 
     @Column(length = 2048)
-    @Convert(converter = ListOfStringConverter.class)
-    List<String> engines;
+    private String description;
 
     @Column(length = 2048)
     @Convert(converter = ListOfStringConverter.class)
-    List<String> categories;
+    private List<String> engines;
+
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
+    private List<String> categories;
 
     @Column(length = 16384)
     @Convert(converter = ListOfStringConverter.class)
-    List<String> tags;
+    private List<String> tags;
 
     @Column
     @Convert(converter = ListOfStringConverter.class)
-    List<String> extensionKind;
+    private List<String> extensionKind;
 
-    String license;
+    private String license;
 
-    String homepage;
+    private String homepage;
 
-    String repository;
+    private String repository;
 
-    String sponsorLink;
+    private String sponsorLink;
 
-    String bugs;
-
-    @Column(length = 16)
-    String markdown;
+    private String bugs;
 
     @Column(length = 16)
-    String galleryColor;
+    private String markdown;
 
     @Column(length = 16)
-    String galleryTheme;
+    private String galleryColor;
+
+    @Column(length = 16)
+    private String galleryTheme;
 
     @Column
     @Convert(converter = ListOfStringConverter.class)
-    List<String> localizedLanguages;
+    private List<String> localizedLanguages;
 
-    String qna;
-
-    @Column(length = 2048)
-    @Convert(converter = ListOfStringConverter.class)
-    List<String> dependencies;
+    private String qna;
 
     @Column(length = 2048)
     @Convert(converter = ListOfStringConverter.class)
-    List<String> bundledExtensions;
+    private List<String> dependencies;
+
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
+    private List<String> bundledExtensions;
 
     @ManyToOne
-    SignatureKeyPair signatureKeyPair;
+    private SignatureKeyPair signatureKeyPair;
 
     @Transient
-    Type type;
+    private Type type;
 
     /**
      * Convert to a JSON object without URLs.

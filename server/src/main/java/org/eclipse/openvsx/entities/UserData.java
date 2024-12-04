@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -20,47 +21,50 @@ import org.eclipse.openvsx.json.UserJson;
 @Entity
 public class UserData implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     public static final String ROLE_ADMIN = "admin";
     public static final String ROLE_PRIVILEGED = "privileged";
 
     @Id
     @GeneratedValue(generator = "userDataSeq")
     @SequenceGenerator(name = "userDataSeq", sequenceName = "user_data_seq")
-    long id;
+    private long id;
 
     @Column(length = 32)
-    String role;
+    private String role;
 
-    String loginName;
+    private String loginName;
 
-    String fullName;
+    private String fullName;
 
-    String email;
+    private String email;
 
-    String avatarUrl;
+    private String avatarUrl;
 
     @Column(length = 32)
-    String provider;
+    private String provider;
 
-    String authId;
+    private String authId;
 
-    String providerUrl;
-
-    @OneToMany(mappedBy = "user")
-    List<PersonalAccessToken> tokens;
+    private String providerUrl;
 
     @OneToMany(mappedBy = "user")
-    List<NamespaceMembership> memberships;
+    private List<PersonalAccessToken> tokens;
 
-    String eclipsePersonId;
+    @OneToMany(mappedBy = "user")
+    private List<NamespaceMembership> memberships;
+
+    private String eclipsePersonId;
 
     @Column(length = 4096)
     @Convert(converter = AuthTokenConverter.class)
-    AuthToken githubToken;
+    private AuthToken githubToken;
 
     @Column(length = 4096)
     @Convert(converter = AuthTokenConverter.class)
-    AuthToken eclipseToken;
+    private AuthToken eclipseToken;
 
 
     /**

@@ -22,24 +22,24 @@ public class ExtensionReview {
     @Id
 	@GeneratedValue(generator = "extensionReviewSeq")
 	@SequenceGenerator(name = "extensionReviewSeq", sequenceName = "extension_review_seq")
-	long id;
+	private long id;
 
     @ManyToOne
-    Extension extension;
+	private Extension extension;
 
-    boolean active;
+	private boolean active;
 
-    LocalDateTime timestamp;
+	private LocalDateTime timestamp;
 
     @ManyToOne
-    UserData user;
+	private UserData user;
 
-    String title;
+	private String title;
 
     @Column(length = 2048)
-    String comment;
+	private String comment;
 
-    int rating;
+	private int rating;
 
 
     /**
