@@ -35,6 +35,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -415,15 +416,7 @@ class VSCodeAPITest {
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string(new BaseMatcher<String>() {
-                    @Override
-                    public boolean matches(Object o) {
-                        return ((String) o).startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">");
-                    }
-
-                    @Override
-                    public void describeTo(Description description) {}
-                }))
+                .andExpect(content().string(Matchers.startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">")))
                 .andDo(result -> Files.delete(path));
     }
 
@@ -437,15 +430,7 @@ class VSCodeAPITest {
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string(new BaseMatcher<String>() {
-                    @Override
-                    public boolean matches(Object o) {
-                        return ((String) o).startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">");
-                    }
-
-                    @Override
-                    public void describeTo(Description description) {}
-                }))
+                .andExpect(content().string(Matchers.startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">")))
                 .andDo(result -> Files.delete(path));
     }
 
@@ -459,15 +444,7 @@ class VSCodeAPITest {
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string(new BaseMatcher<String>() {
-                    @Override
-                    public boolean matches(Object o) {
-                        return ((String) o).startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">");
-                    }
-
-                    @Override
-                    public void describeTo(Description description) {}
-                }))
+                .andExpect(content().string(Matchers.startsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">")))
                 .andDo(result -> Files.delete(path));
     }
 
@@ -507,23 +484,8 @@ class VSCodeAPITest {
                 .andExpect(request().asyncStarted())
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
-                .andExpect(content().string(new BaseMatcher<String>() {
-                    @Override
-                    public boolean matches(Object o) {
-                        var mapper = new ObjectMapper();
-                        try {
-                            var json = mapper.readTree((String) o);
-                            return json.get("name").asText().equals(extensionName)
-                                    && json.get("publisher").asText().equals(namespaceName)
-                                    && json.get("version").asText().equals(version);
-                        } catch (IOException e) {
-                            return false;
-                        }
-                    }
-
-                    @Override
-                    public void describeTo(Description description) {}
-                }))                .andDo(result -> Files.delete(path));
+                .andExpect(content().json("{\"name\":" + extensionName + ",\"publisher\":" + namespaceName + ",\"version\":" + version + "}"))
+                .andDo(result -> Files.delete(path));
     }
 
     @Test

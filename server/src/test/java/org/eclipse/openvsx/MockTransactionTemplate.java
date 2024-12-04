@@ -24,6 +24,6 @@ public class MockTransactionTemplate extends TransactionTemplate {
 
     @Override
     public void afterPropertiesSet() {
+        // Method override to prevent IllegalArgumentException from being thrown
     }
-    
 }
