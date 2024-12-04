@@ -51,10 +51,12 @@ public class StorageUtilService implements IStorageService {
     private final GoogleCloudStorageService googleStorage;
     private final AzureBlobStorageService azureStorage;
     private final LocalStorageService localStorage;
+    private final AwsStorageService awsStorage;
     private final AzureDownloadCountService azureDownloadCountService;
     private final SearchUtilService search;
     private final CacheService cache;
     private final EntityManager entityManager;
+    private final FileCacheDurationConfig fileCacheDurationConfig;
 
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
@@ -69,19 +71,23 @@ public class StorageUtilService implements IStorageService {
             GoogleCloudStorageService googleStorage,
             AzureBlobStorageService azureStorage,
             LocalStorageService localStorage,
+            AwsStorageService awsStorage,
             AzureDownloadCountService azureDownloadCountService,
             SearchUtilService search,
             CacheService cache,
-            EntityManager entityManager
+            EntityManager entityManager,
+            FileCacheDurationConfig fileCacheDurationConfig
     ) {
         this.repositories = repositories;
         this.googleStorage = googleStorage;
         this.azureStorage = azureStorage;
         this.localStorage = localStorage;
+        this.awsStorage = awsStorage;
         this.azureDownloadCountService = azureDownloadCountService;
         this.search = search;
         this.cache = cache;
         this.entityManager = entityManager;
+        this.fileCacheDurationConfig = fileCacheDurationConfig;
     }
 
     public boolean shouldStoreExternally(FileResource resource) {
@@ -96,15 +102,17 @@ public class StorageUtilService implements IStorageService {
 
     @Override
     public boolean isEnabled() {
-        return googleStorage.isEnabled() || azureStorage.isEnabled() || localStorage.isEnabled();
+        return googleStorage.isEnabled() || azureStorage.isEnabled() || localStorage.isEnabled() || awsStorage.isEnabled();
     }
 
     public String getActiveStorageType() {
-        var storageTypes = new ArrayList<String>(2);
+        var storageTypes = new ArrayList<String>(3);
         if (googleStorage.isEnabled())
             storageTypes.add(STORAGE_GOOGLE);
         if (azureStorage.isEnabled())
             storageTypes.add(STORAGE_AZURE);
+        if (awsStorage.isEnabled())
+            storageTypes.add(STORAGE_AWS);
         if (!StringUtils.isEmpty(primaryService)) {
             if (!storageTypes.contains(primaryService))
                 throw new RuntimeException("The selected primary storage service is not available.");
@@ -130,6 +138,9 @@ public class StorageUtilService implements IStorageService {
                 break;
             case STORAGE_AZURE:
                 azureStorage.uploadFile(tempFile);
+                break;
+            case STORAGE_AWS:
+                awsStorage.uploadFile(tempFile);
                 break;
             case STORAGE_LOCAL:
                 localStorage.uploadFile(tempFile);
@@ -157,6 +168,9 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_AZURE:
                 azureStorage.uploadNamespaceLogo(logoFile);
                 break;
+            case STORAGE_AWS:
+                awsStorage.uploadNamespaceLogo(logoFile);
+                break;
             case STORAGE_LOCAL:
                 localStorage.uploadNamespaceLogo(logoFile);
                 break;
@@ -176,6 +190,9 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_AZURE:
                 azureStorage.removeFile(resource);
                 break;
+            case STORAGE_AWS:
+                awsStorage.removeFile(resource);
+                break;
             case STORAGE_LOCAL:
                 localStorage.removeFile(resource);
                 break;
@@ -191,6 +208,9 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_AZURE:
                 azureStorage.removeNamespaceLogo(namespace);
                 break;
+            case STORAGE_AWS:
+                awsStorage.removeNamespaceLogo(namespace);
+                break;
             case STORAGE_LOCAL:
                 localStorage.removeNamespaceLogo(namespace);
                 break;
@@ -202,6 +222,7 @@ public class StorageUtilService implements IStorageService {
         return switch (resource.getStorageType()) {
             case STORAGE_GOOGLE -> googleStorage.getLocation(resource);
             case STORAGE_AZURE -> azureStorage.getLocation(resource);
+            case STORAGE_AWS -> awsStorage.getLocation(resource);
             case STORAGE_LOCAL -> localStorage.getLocation(resource);
             default -> null;
         };
@@ -212,6 +233,7 @@ public class StorageUtilService implements IStorageService {
         return switch (namespace.getLogoStorageType()) {
             case STORAGE_GOOGLE -> googleStorage.getNamespaceLogoLocation(namespace);
             case STORAGE_AZURE -> azureStorage.getNamespaceLogoLocation(namespace);
+            case STORAGE_AWS -> awsStorage.getNamespaceLogoLocation(namespace);
             case STORAGE_LOCAL -> localStorage.getNamespaceLogoLocation(namespace);
             default -> null;
         };
@@ -221,6 +243,7 @@ public class StorageUtilService implements IStorageService {
         return switch (resource.getStorageType()) {
             case STORAGE_GOOGLE -> googleStorage.downloadFile(resource);
             case STORAGE_AZURE -> azureStorage.downloadFile(resource);
+            case STORAGE_AWS -> awsStorage.downloadFile(resource);
             case STORAGE_LOCAL -> localStorage.downloadFile(resource);
             default -> null;
         };
@@ -267,7 +290,7 @@ public class StorageUtilService implements IStorageService {
         } else {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(getLocation(resource))
-                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .cacheControl(CacheControl.maxAge(fileCacheDurationConfig.getCacheDuration()).cachePublic())
                     .build();
         }
     }
@@ -309,6 +332,9 @@ public class StorageUtilService implements IStorageService {
                 case STORAGE_AZURE:
                     azureStorage.copyFiles(group);
                     break;
+                case STORAGE_AWS:
+                    awsStorage.copyFiles(group);
+                    break;
                 case STORAGE_LOCAL:
                     localStorage.copyFiles(group);
                     break;
@@ -321,6 +347,7 @@ public class StorageUtilService implements IStorageService {
         return switch (resource.getStorageType()) {
             case STORAGE_GOOGLE -> googleStorage.getCachedFile(resource);
             case STORAGE_AZURE -> azureStorage.getCachedFile(resource);
+            case STORAGE_AWS -> awsStorage.getCachedFile(resource);
             case STORAGE_LOCAL -> localStorage.getCachedFile(resource);
             default -> null;
         };

@@ -55,9 +55,8 @@ import static org.mockito.ArgumentMatchers.eq;
 @ExtendWith(SpringExtension.class)
 @MockBean({
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
-    UserService.class, PublishExtensionVersionHandler.class,
-    SimpleMeterRegistry.class
+    AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
+    UserService.class, PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class
 })
 class EclipseServiceTest {
 
@@ -292,20 +291,24 @@ class EclipseServiceTest {
                 GoogleCloudStorageService googleStorage,
                 AzureBlobStorageService azureStorage,
                 LocalStorageService localStorage,
+                AwsStorageService awsStorage,
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager
+                EntityManager entityManager,
+                FileCacheDurationConfig fileCacheDurationConfig
         ) {
             return new StorageUtilService(
                     repositories,
                     googleStorage,
                     azureStorage,
                     localStorage,
+                    awsStorage,
                     azureDownloadCountService,
                     search,
                     cache,
-                    entityManager
+                    entityManager,
+                    fileCacheDurationConfig
             );
         }
 

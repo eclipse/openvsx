@@ -67,9 +67,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
-    CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class,
-    EclipseService.class, SimpleMeterRegistry.class
+    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
+    CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
+    SimpleMeterRegistry.class, FileCacheDurationConfig.class
 })
 class AdminAPITest {
     
@@ -1250,6 +1250,7 @@ class AdminAPITest {
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
+                FileCacheDurationConfig fileCacheDurationConfig,
                 ExtensionVersionIntegrityService integrityService
         ) {
             return new LocalRegistryService(
@@ -1288,20 +1289,24 @@ class AdminAPITest {
                 GoogleCloudStorageService googleStorage,
                 AzureBlobStorageService azureStorage,
                 LocalStorageService localStorage,
+                AwsStorageService awsStorage,
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager
+                EntityManager entityManager,
+                FileCacheDurationConfig fileCacheDurationConfig
         ) {
             return new StorageUtilService(
                     repositories,
                     googleStorage,
                     azureStorage,
                     localStorage,
+                    awsStorage,
                     azureDownloadCountService,
                     search,
                     cache,
-                    entityManager
+                    entityManager,
+                    fileCacheDurationConfig
             );
         }
 

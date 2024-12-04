@@ -141,7 +141,7 @@ public class AzureBlobStorageService implements IStorageService {
         }
     }
 
-	@Override
+    @Override
 	public URI getLocation(FileResource resource) {
         var blobName = getBlobName(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
