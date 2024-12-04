@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
+import java.io.Serial;
+
 /**
  * Throw this exception to reply with a JSON object of the form
  * 
@@ -25,6 +27,7 @@ import org.springframework.http.ResponseEntity;
  */
 public class ErrorResultException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 147466147310091931L;
 
     private final HttpStatusCode status;

@@ -12,6 +12,8 @@ package org.eclipse.openvsx.entities;
 import org.apache.commons.lang3.StringUtils;
 
 import jakarta.persistence.Embeddable;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +22,9 @@ import java.util.regex.Pattern;
 
 @Embeddable
 public class SemanticVersion implements Comparable<SemanticVersion>, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     // source: https://semver.org/, search for: https://regex101.com/r/vkijKf/1/
     public static final Pattern VERSION_PARSE_PATTERN = Pattern.compile("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)(?:-(?<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");

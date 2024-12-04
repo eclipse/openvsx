@@ -13,11 +13,15 @@ import jakarta.persistence.*;
 
 import org.eclipse.openvsx.json.NamespaceMembershipJson;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
 public class NamespaceMembership implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public static final String ROLE_OWNER = "owner";
     public static final String ROLE_CONTRIBUTOR = "contributor";
@@ -25,22 +29,22 @@ public class NamespaceMembership implements Serializable {
     @Id
     @GeneratedValue(generator = "namespaceMembershipSeq")
     @SequenceGenerator(name = "namespaceMembershipSeq", sequenceName = "namespace_membership_seq")
-    long id;
+    private long id;
 
     @ManyToOne
     @JoinColumn(name = "namespace")
-    Namespace namespace;
+    private Namespace namespace;
 
     @ManyToOne
     @JoinColumn(name = "user_data")
-    UserData user;
+    private UserData user;
 
     @Column(length = 32)
-    String role;
+    private String role;
 
     public NamespaceMembershipJson toJson() {
         return new NamespaceMembershipJson(
-                this.namespace.name,
+                this.namespace.getName(),
                 this.role,
                 this.user.toUserJson()
         );

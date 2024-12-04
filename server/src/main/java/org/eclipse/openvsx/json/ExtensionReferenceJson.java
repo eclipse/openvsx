@@ -15,6 +15,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -24,6 +26,9 @@ import java.util.Objects;
 )
 @JsonInclude(Include.NON_NULL)
 public class ExtensionReferenceJson implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "URL to get metadata of the referenced extension")
     @NotNull

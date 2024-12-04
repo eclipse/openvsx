@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 )
 @JsonInclude(Include.NON_NULL)
 public class SearchEntryJson implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "URL to get the full metadata of the extension")
     @NotNull

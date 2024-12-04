@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,9 @@ import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
 )
 @JsonInclude(Include.NON_NULL)
 public class ExtensionJson extends ResultJson implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public static ExtensionJson error(String message) {
         var info = new ExtensionJson();

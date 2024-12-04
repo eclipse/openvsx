@@ -13,8 +13,11 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.Serial;
+
 public class MockTransactionTemplate extends TransactionTemplate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

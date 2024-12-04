@@ -13,6 +13,7 @@ import jakarta.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
 })
 public class Namespace implements Serializable {
 
+	@Serial
+	private static final long serialVersionUID = 1L;
+
 	private static final String SL_LINKEDIN = "linkedin";
 	private static final String SL_GITHUB = "github";
 	private static final String SL_TWITTER = "twitter";
@@ -33,39 +37,39 @@ public class Namespace implements Serializable {
     @Id
 	@GeneratedValue(generator = "namespaceSeq")
 	@SequenceGenerator(name = "namespaceSeq", sequenceName = "namespace_seq")
-	long id;
+	private long id;
 
     @Column(length = 128)
-    String publicId;
+	private String publicId;
 
-    String name;
-
-	@Column(length = 32)
-	String displayName;
-
-    String description;
-
-    String website;
-
-    String supportLink;
-
-    String logoName;
-
-	byte[] logoBytes;
+	private String name;
 
 	@Column(length = 32)
-	String logoStorageType;
+	private String displayName;
+
+	private String description;
+
+	private String website;
+
+	private String supportLink;
+
+	private String logoName;
+
+	private byte[] logoBytes;
+
+	@Column(length = 32)
+	private String logoStorageType;
 
 	@ElementCollection
 	@MapKeyColumn(name = "provider")
 	@Column(name = "social_link")
-    Map<String, String> socialLinks;
+	private Map<String, String> socialLinks;
 
     @OneToMany(mappedBy = "namespace")
-    List<Extension> extensions;
+	private List<Extension> extensions;
 
     @OneToMany(mappedBy = "namespace")
-    List<NamespaceMembership> memberships;
+	private List<NamespaceMembership> memberships;
 
 
 	public long getId() {
