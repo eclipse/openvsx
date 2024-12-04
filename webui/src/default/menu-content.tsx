@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, PropsWithChildren } from 'react';
+import React, { FunctionComponent, PropsWithChildren, useContext } from 'react';
 import { Typography, MenuItem, Link, Button } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { Link as RouteLink } from 'react-router-dom';
@@ -19,6 +19,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import PublishIcon from '@mui/icons-material/Publish';
 import { UserSettingsRoutes } from '../pages/user/user-settings';
 import { styled, Theme } from '@mui/material/styles';
+import { MainContext } from '../context';
 
 //-------------------- Mobile View --------------------//
 
@@ -44,7 +45,7 @@ const MobileMenuItemText: FunctionComponent<PropsWithChildren> = ({ children }) 
 };
 
 export const MobileMenuContent: FunctionComponent = () => {
-
+    const { isOAuth2Enabled } = useContext(MainContext);
     const location = useLocation();
 
     return <>
@@ -81,8 +82,8 @@ export const MobileMenuContent: FunctionComponent = () => {
             </RouteLink>
         </MobileMenuItem>
         {
-            !location.pathname.startsWith(UserSettingsRoutes.ROOT)
-            ? <MobileMenuItem>
+            !location.pathname.startsWith(UserSettingsRoutes.ROOT) && isOAuth2Enabled && (
+            <MobileMenuItem>
                 <RouteLink to='/user-settings/extensions'>
                     <MobileMenuItemText>
                         <PublishIcon sx={itemIcon} />
@@ -90,8 +91,7 @@ export const MobileMenuContent: FunctionComponent = () => {
                     </MobileMenuItemText>
                 </RouteLink>
             </MobileMenuItem>
-            : null
-        }
+        )}
     </>;
 };
 
@@ -115,6 +115,7 @@ const MenuLink = styled(Link)(headerItem);
 const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
+    const { isOAuth2Enabled } = useContext(MainContext);
     return <>
         <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
             Documentation
@@ -125,8 +126,10 @@ export const DefaultMenuContent: FunctionComponent = () => {
         <MenuRouteLink to='/about'>
             About
         </MenuRouteLink>
-        <Button variant='contained' color='secondary' href='/user-settings/extensions' sx={{ mx: 2.5 }}>
-            Publish
-        </Button>
+        {isOAuth2Enabled && (
+            <Button variant='contained' color='secondary' href='/user-settings/extensions' sx={{ mx: 2.5 }}>
+                Publish
+            </Button>
+        )}
     </>;
 };

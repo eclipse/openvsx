@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -44,7 +45,7 @@ public class TokenService {
     public TokenService(
             TransactionTemplate transactions,
             EntityManager entityManager,
-            ClientRegistrationRepository clientRegistrationRepository
+            @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository
     ) {
         this.transactions = transactions;
         this.entityManager = entityManager;
@@ -60,6 +61,10 @@ public class TokenService {
     
         switch (registrationId) {
             case "github": {
+                if (clientRegistrationRepository == null) {
+                    // Handle the case where GitHub OAuth2 is not configured
+                    return updateGitHubToken(userData, null);
+                }
                 if (accessToken == null) {
                     return updateGitHubToken(userData, null);
                 }

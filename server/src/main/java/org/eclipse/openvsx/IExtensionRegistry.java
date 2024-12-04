@@ -46,4 +46,6 @@ public interface IExtensionRegistry {
     String getPublicKey(String publicId);
 
     RegistryVersionJson getRegistryVersion();
+
+    boolean isOAuth2Enabled();
 }

@@ -38,7 +38,7 @@ const Footer = styled('footer')(({ theme }: { theme: Theme }) => ({
 }));
 
 export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
-    const { service, pageSettings } = useContext(MainContext);
+    const { service, pageSettings, isOAuth2Enabled } = useContext(MainContext);
     const {
         additionalRoutes: AdditionalRoutes,
         banner: BannerComponent,
@@ -90,15 +90,17 @@ export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
                 <ToolbarItem>
                     <HeaderMenu />
                     {
-                        props.user ?
+                        props.user ? (
                             <UserAvatar />
-                            :
-                            <IconButton
-                                href={service.getLoginUrl()}
-                                title='Log In'
-                                aria-label='Log In' >
-                                <AccountBoxIcon />
-                            </IconButton>
+                        ) : (
+                            isOAuth2Enabled && ( // Show "Log In" button only if OAuth2 is enabled
+                                <IconButton
+                                    href={service.getLoginUrl()}
+                                    title='Log In'
+                                    aria-label='Log In' >
+                                    <AccountBoxIcon />
+                                </IconButton>)
+                        )
                     }
                 </ToolbarItem>
             </Toolbar>
