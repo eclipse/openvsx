@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, TextField, Typography, Grid, Button, IconButton, Slider, Stack, Dialog, DialogActions, DialogTitle,
     DialogContent, InputAdornment, Select, MenuItem, Paper, SelectChangeEvent } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
@@ -100,6 +100,11 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     const [prevEditorRotation, setPrevEditorRotation] = useState<number>(0);
     const [prevEditorPosition, setPrevEditorPosition] = useState<Position>();
     const [linkedInAccountType, setLinkedInAccountType] = useState<string>(LINKED_IN_PERSONAL);
+
+    const noChanges = useMemo(() => {
+        const isFalsy = (x: unknown) => !!x === false;
+        return _.isEqual(_.omitBy(currentDetails, isFalsy), _.omitBy(newDetails, isFalsy));
+    }, [currentDetails, newDetails]);
 
     useEffect(() => {
         getNamespaceDetails();
@@ -194,8 +199,15 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 throw result;
             }
 
+            if (logoPreview) {
+                const logoFile = await (await fetch(logoPreview)).blob();
+                await context.service.setNamespaceLogo(abortController.current, details.name, logoFile, details.logo as string);
+                await getNamespaceDetails();
+            } else {
+                setCurrentDetails(copy(newDetails));
+            }
+
             setDetailsUpdated(true);
-            setCurrentDetails(copy(details));
             setBannerNamespaceName(details.displayName || details.name);
         } catch (err) {
             context.handleError(err);
@@ -303,21 +315,24 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
         setEditing(false);
     };
 
-    const handleSaveLogo = () => {
-        const canvasScaled = editor.current?.getImageScaledToCanvas();
-        if (canvasScaled) {
-            canvasScaled.toBlob(async (blob) => {
-                if (blob) {
-                    if (logoPreview) {
-                        URL.revokeObjectURL(logoPreview);
-                    }
-                    setLogoPreview(URL.createObjectURL(blob));
-                    await context.service.setNamespaceLogo(abortController.current, props.namespace.name, blob, dropzoneFile!.name);
-                    await getNamespaceDetails();
+    const handleApplyLogo = () => {
+        const avatarEditor = editor.current as AvatarEditor;
+        const canvasScaled = avatarEditor.getImageScaledToCanvas();
+        canvasScaled.toBlob(async (blob) => {
+            if (blob) {
+                if (logoPreview) {
+                    URL.revokeObjectURL(logoPreview);
                 }
-            });
-            setEditing(false);
-        }
+                setLogoPreview(URL.createObjectURL(blob));
+
+                if (newDetails) {
+                    const details = copy(newDetails);
+                    details.logo = dropzoneFile!.name;
+                    setNewDetails(details);
+                }
+            }
+        });
+        setEditing(false);
     };
 
     const adjustScale = (x: number) => {
@@ -420,8 +435,8 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 </Button>
                 <Button
                     autoFocus
-                    onClick={handleSaveLogo} >
-                    Save logo
+                    onClick={handleApplyLogo} >
+                    Apply logo
                 </Button>
             </DialogActions>
         </Dialog>
@@ -603,7 +618,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 </Grid>
             </Grid>
             <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' disabled={_.isEqual(currentDetails, newDetails)} onClick={setNamespaceDetails}>
+                <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' disabled={noChanges} onClick={setNamespaceDetails}>
                     Save Namespace Details
                 </Button>
             </Grid>

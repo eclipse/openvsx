@@ -60,5 +60,7 @@ public interface IStorageService {
 
     void copyFiles(List<Pair<FileResource, FileResource>> pairs);
 
+    void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace);
+
     Path getCachedFile(FileResource resource) throws IOException;
 }

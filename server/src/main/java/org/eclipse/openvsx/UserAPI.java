@@ -264,7 +264,6 @@ public class UserAPI {
     ) {
         try {
             return ResponseEntity.ok()
-                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                     .body(users.updateNamespaceDetailsLogo(namespace, file));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
