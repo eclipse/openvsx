@@ -56,6 +56,7 @@ export const MobileHeaderMenu: FunctionComponent<MobileHeaderMenuProps> = props 
         <Menu
             open={open}
             anchorEl={anchorEl}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             onClose={() => setOpen(false)} >
             <MenuContent />
