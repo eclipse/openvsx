@@ -56,7 +56,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -66,9 +65,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -80,9 +77,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureWebClient
 @MockBean({
     ClientRegistrationRepository.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    AzureDownloadCountService.class, CacheService.class, UpstreamVSCodeService.class,
-    VSCodeIdService.class, EntityManager.class, EclipseService.class, ExtensionValidator.class,
-    SimpleMeterRegistry.class
+    AwsStorageService.class, AzureDownloadCountService.class, CacheService.class, UpstreamVSCodeService.class,
+    VSCodeIdService.class, EntityManager.class, EclipseService.class, ExtensionValidator.class, SimpleMeterRegistry.class,
+    FileCacheDurationConfig.class
 })
 class VSCodeAPITest {
 
@@ -929,20 +926,24 @@ class VSCodeAPITest {
                 GoogleCloudStorageService googleStorage,
                 AzureBlobStorageService azureStorage,
                 LocalStorageService localStorage,
+                AwsStorageService awsStorage,
                 AzureDownloadCountService azureDownloadCountService,
                 SearchUtilService search,
                 CacheService cache,
-                EntityManager entityManager
+                EntityManager entityManager,
+                FileCacheDurationConfig fileCacheDurationConfig
         ) {
             return new StorageUtilService(
                     repositories,
                     googleStorage,
                     azureStorage,
                     localStorage,
+                    awsStorage,
                     azureDownloadCountService,
                     search,
                     cache,
-                    entityManager
+                    entityManager,
+                    fileCacheDurationConfig
             );
         }
 
