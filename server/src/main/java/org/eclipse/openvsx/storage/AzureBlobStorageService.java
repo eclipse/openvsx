@@ -216,6 +216,19 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     @Override
+    public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
+        var oldLocation = getNamespaceLogoLocation(oldNamespace).toString();
+        var newBlobName = getBlobName(newNamespace);
+        var poller = getContainerClient().getBlobClient(newBlobName)
+                .beginCopy(oldLocation, Duration.of(1, ChronoUnit.SECONDS));
+
+        var response = poller.waitForCompletion();
+        if(response.getValue().getCopyStatus() != CopyStatusType.SUCCESS) {
+            throw new RuntimeException(response.getValue().getError());
+        }
+    }
+
+    @Override
     @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
     public Path getCachedFile(FileResource resource) throws IOException {
         var blobName = getBlobName(resource);

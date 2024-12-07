@@ -38,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -237,6 +238,12 @@ public class UserService {
         if(!Objects.equals(details.getSocialLinks(), namespace.getSocialLinks())) {
             namespace.setSocialLinks(details.getSocialLinks());
         }
+        if(StringUtils.isEmpty(details.getLogo()) && StringUtils.isNotEmpty(namespace.getLogoName())) {
+            storageUtil.removeNamespaceLogo(namespace);
+            namespace.clearLogoBytes();
+            namespace.setLogoName(null);
+            namespace.setLogoStorageType(null);
+        }
 
         return ResultJson.success("Updated details for namespace " + details.getName());
     }
@@ -257,15 +264,12 @@ public class UserService {
             var tika = new Tika();
             var detectedType = tika.detect(file.getInputStream(), file.getOriginalFilename());
             var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
-            if(logoType != null) {
-                if(!logoType.getType().equals(MediaType.image("png")) && !logoType.getType().equals(MediaType.image("jpg"))) {
-                    throw new ErrorResultException("Namespace logo should be of png or jpg type");
-                }
-
-                var logoName = "logo-" + namespace.getName() + "-" + System.currentTimeMillis() + logoType.getExtension();
-                namespace.setLogoName(logoName);
+            var expectedLogoTypes = List.of(MediaType.image("png"), MediaType.image("jpg"));
+            if(logoType == null || !expectedLogoTypes.contains(logoType.getType())) {
+                throw new ErrorResultException("Namespace logo should be a png or jpg file");
             }
 
+            namespace.setLogoName(NamingUtil.toLogoName(namespace, logoType));
             file.getInputStream().transferTo(out);
             logoFile.setNamespace(namespace);
             storageUtil.uploadNamespaceLogo(logoFile);

@@ -138,10 +138,17 @@ public class LocalStorageService implements IStorageService {
     public void copyFiles(List<Pair<FileResource, FileResource>> pairs) {
         try {
             for (var pair : pairs) {
-                var source = getPath(pair.getFirst());
-                var target = getPath(pair.getSecond());
-                Files.copy(source, target);
+                Files.copy(getPath(pair.getFirst()), getPath(pair.getSecond()), StandardCopyOption.REPLACE_EXISTING);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
+        try {
+            Files.copy(getLogoPath(oldNamespace), getLogoPath(newNamespace), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
