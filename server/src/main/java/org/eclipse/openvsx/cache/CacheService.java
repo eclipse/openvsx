@@ -9,10 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -59,17 +56,28 @@ public class CacheService {
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
+    public void evictSitemap() {
+        invalidateCache(CACHE_SITEMAP);
+    }
+
     public void evictNamespaceDetails() {
         invalidateCache(CACHE_NAMESPACE_DETAILS_JSON);
     }
 
+    public void evictNamespaceDetails(Namespace namespace) {
+        evictNamespaceDetails(namespace.getName());
+    }
+
     public void evictNamespaceDetails(Extension extension) {
+        evictNamespaceDetails(extension.getNamespace().getName());
+    }
+
+    private void evictNamespaceDetails(String namespaceName) {
         var cache = cacheManager.getCache(CACHE_NAMESPACE_DETAILS_JSON);
         if(cache == null) {
             return; // cache is not created
         }
 
-        var namespaceName = extension.getNamespace().getName();
         cache.evictIfPresent(namespaceName);
     }
 

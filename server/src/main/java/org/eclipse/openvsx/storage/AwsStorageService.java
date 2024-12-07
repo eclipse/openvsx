@@ -222,18 +222,23 @@ public class AwsStorageService implements IStorageService {
 
     @Override
     public void copyFiles(List<Pair<FileResource, FileResource>> pairs) {
-        for(var pair : pairs) {
-            var oldObjectKey = getObjectKey(pair.getFirst());
-            var newObjectKey = getObjectKey(pair.getSecond());
-            var request = CopyObjectRequest.builder()
-                    .sourceBucket(bucket)
-                    .sourceKey(oldObjectKey)
-                    .destinationBucket(bucket)
-                    .destinationKey(newObjectKey)
-                    .build();
+        pairs.forEach(pair -> copy(getObjectKey(pair.getFirst()), getObjectKey(pair.getSecond())));
+    }
 
-            getS3Client().copyObject(request);
-        }
+    @Override
+    public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
+        copy(getObjectKey(oldNamespace), getObjectKey(newNamespace));
+    }
+
+    private void copy(String oldObjectKey, String newObjectKey) {
+        var request = CopyObjectRequest.builder()
+                .sourceBucket(bucket)
+                .sourceKey(oldObjectKey)
+                .destinationBucket(bucket)
+                .destinationKey(newObjectKey)
+                .build();
+
+        getS3Client().copyObject(request);
     }
 
     @Override
