@@ -198,3 +198,22 @@ export function getTargetPlatformDisplayName(targetPlatform: string): string {
 
     return targetPlatformDisplayNames.get(targetPlatform) ?? '';
 }
+
+export function getEngineDisplayName(engine: string): string {
+    const engineDisplayNames = new Map([
+        ['vscode', 'VS Code'],
+        ['node', 'Node.js'],
+        ['npm', 'npm'],
+        ['pnpm', 'pnpm'],
+        ['yarn', 'Yarn'],
+        ['vsce', 'vsce'],
+        ['sqlops', 'SQL Operation Studio'],
+        ['azdata', 'Azure Data Studio'],
+        ['theiaPlugin', 'Theia Plugin'],
+        ['opensumi', 'OpenSumi'],
+        ['nadako.vshaxe', 'nadako.vshaxe'],
+        ['hbenl.vscode-test-explorer', 'hbenl.vscode-test-explorer'],
+    ]);
+
+    return engineDisplayNames.get(engine) ?? '';
+}

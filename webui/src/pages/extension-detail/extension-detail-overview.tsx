@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled } from '@mui/material';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
+import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MainContext } from '../../context';
-import { addQuery, createRoute, getTargetPlatformDisplayName } from '../../utils';
+import { addQuery, createRoute, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
@@ -24,7 +24,6 @@ import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-
 import { ExtensionListRoutes } from '../extension-list/extension-list-container';
 import { ExtensionDetailRoutes } from './extension-detail';
 import { ExtensionDetailDownloadsMenu } from './extension-detail-downloads-menu';
-import { UrlString } from '../..';
 
 export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewProps> = props => {
 
@@ -34,6 +33,50 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
     const params = useParams();
     const navigate = useNavigate();
     const abortController = useRef<AbortController>(new AbortController());
+
+    const worksWithEngines = useMemo(() => {
+        const engines = props.extension.engines;
+        if (engines == null) {
+            return null;
+        }
+
+        const data = Object.keys(engines)
+            .map((engine) => ({
+                key: engine,
+                name: getEngineDisplayName(engine),
+                version: engines[engine]
+            }))
+            .filter((d) => d.name != null);
+
+        return (<>
+            <Grid item xs='auto'>
+                <Stack spacing={0.5}>
+                    {
+                        data.map((d) => <Box component='span' key={d.key} sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>{d.name}:</Box>)
+                    }
+                </Stack>
+            </Grid>
+            <Grid item xs>
+                <Stack spacing={0.5}>
+                    {
+                        data.map((d) => <Box component='span' key={d.key}>{d.version}</Box>)
+                    }
+                </Stack>
+            </Grid>
+        </>);
+    }, [props.extension.engines]);
+
+    const worksWithTargetPlatforms = useMemo(() => {
+        return (<Grid item xs={12}>
+            <Box component='span' sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>Target Platforms:{' '}</Box>
+            {
+                Object.keys(props.extension.downloads).map((targetPlatform, index) => {
+                    const displayName = getTargetPlatformDisplayName(targetPlatform);
+                    return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
+                })
+            }
+        </Grid>);
+    }, [props.extension.downloads]);
 
     useEffect(() => {
         updateReadme();
@@ -163,13 +206,6 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         </>;
     };
 
-    const renderWorksWithList = (downloads: { [targetPlatform: string]: UrlString }): ReactNode => {
-        return Object.keys(downloads).map((targetPlatform, index) => {
-            const displayName = getTargetPlatformDisplayName(targetPlatform);
-            return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
-        });
-    };
-
     const renderResourceLink = (label: string, resourceLink: SxProps<Theme>, href?: string): ReactNode => {
         if (!href || !(href.startsWith('http') || href.startsWith('mailto'))) {
             return '';
@@ -294,7 +330,10 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                     <Box sx={resourcesGroup}>
                         <Box>
                             <Typography variant='h6'>Works With</Typography>
-                            {renderWorksWithList(extension.downloads)}
+                            <Grid container spacing={0.5}>
+                                {worksWithEngines}
+                                {worksWithTargetPlatforms}
+                            </Grid>
                         </Box>
                     </Box>
                     : null
