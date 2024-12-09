@@ -12,6 +12,7 @@ package org.eclipse.openvsx;
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PublisherStatistics;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -340,4 +341,111 @@ public class UserAPI {
         }
     }
 
+    @GetMapping(
+            path = "/user/statistics",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<PublisherStatisticsJson> getPublisherStatistics() {
+        var user = users.findLoggedInUser();
+        if (users.findLoggedInUser() == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        // TODO mock response to develop dashboard
+        var octYaml = new PublisherStatisticsJson.ExtensionDownloads();
+        octYaml.setExtensionIdentifier("amvanbaren.yaml");
+        octYaml.setDownloads(123);
+
+        var octYamlTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        octYamlTotal.setExtensionIdentifier("amvanbaren.yaml");
+        octYamlTotal.setDownloads(8943);
+
+        var octJava = new PublisherStatisticsJson.ExtensionDownloads();
+        octJava.setExtensionIdentifier("amvanbaren.java");
+        octJava.setDownloads(837);
+
+        var octJavaTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        octJavaTotal.setExtensionIdentifier("amvanbaren.java");
+        octJavaTotal.setDownloads(2453);
+
+        var octTheme = new PublisherStatisticsJson.ExtensionDownloads();
+        octTheme.setExtensionIdentifier("amvanbaren.theme");
+        octTheme.setDownloads(345);
+
+        var octThemeTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        octThemeTotal.setExtensionIdentifier("amvanbaren.theme");
+        octThemeTotal.setDownloads(9485);
+
+        var oct = new PublisherStatisticsJson();
+        oct.setMonth(10);
+        oct.setYear(2024);
+        oct.setExtensionDownloads(List.of(octYaml, octJava, octTheme));
+        oct.setExtensionTotalDownloads(List.of(octYamlTotal, octJavaTotal, octThemeTotal));
+
+        var novYaml = new PublisherStatisticsJson.ExtensionDownloads();
+        novYaml.setExtensionIdentifier("amvanbaren.yaml");
+        novYaml.setDownloads(3375);
+
+        var novYamlTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        novYamlTotal.setExtensionIdentifier("amvanbaren.yaml");
+        novYamlTotal.setDownloads(12318);
+
+        var novJava = new PublisherStatisticsJson.ExtensionDownloads();
+        novJava.setExtensionIdentifier("amvanbaren.java");
+        novJava.setDownloads(1022);
+
+        var novJavaTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        novJavaTotal.setExtensionIdentifier("amvanbaren.java");
+        novJavaTotal.setDownloads(3475);
+
+        var novTheme = new PublisherStatisticsJson.ExtensionDownloads();
+        novTheme.setExtensionIdentifier("amvanbaren.theme");
+        novTheme.setDownloads(10329);
+
+        var novThemeTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        novThemeTotal.setExtensionIdentifier("amvanbaren.theme");
+        novThemeTotal.setDownloads(19814);
+
+        var nov = new PublisherStatisticsJson();
+        nov.setMonth(11);
+        nov.setYear(2024);
+        nov.setExtensionDownloads(List.of(novYaml, novJava, novTheme));
+        nov.setExtensionTotalDownloads(List.of(novYamlTotal, novJavaTotal, novThemeTotal));
+
+        var decYaml = new PublisherStatisticsJson.ExtensionDownloads();
+        decYaml.setExtensionIdentifier("amvanbaren.yaml");
+        decYaml.setDownloads(1971);
+
+        var decYamlTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        decYamlTotal.setExtensionIdentifier("amvanbaren.yaml");
+        decYamlTotal.setDownloads(14289);
+
+        var decJava = new PublisherStatisticsJson.ExtensionDownloads();
+        decJava.setExtensionIdentifier("amvanbaren.java");
+        decJava.setDownloads(1788);
+
+        var decJavaTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        decJavaTotal.setExtensionIdentifier("amvanbaren.java");
+        decJavaTotal.setDownloads(5263);
+
+        var decTheme = new PublisherStatisticsJson.ExtensionDownloads();
+        decTheme.setExtensionIdentifier("amvanbaren.theme");
+        decTheme.setDownloads(3384);
+
+        var decThemeTotal = new PublisherStatisticsJson.ExtensionDownloads();
+        decThemeTotal.setExtensionIdentifier("amvanbaren.theme");
+        decThemeTotal.setDownloads(23198);
+
+        var dec = new PublisherStatisticsJson();
+        dec.setMonth(12);
+        dec.setYear(2024);
+        dec.setExtensionDownloads(List.of(decYaml, decJava, decTheme));
+        dec.setExtensionTotalDownloads(List.of(decYamlTotal, decJavaTotal, decThemeTotal));
+
+        return List.of(oct, nov, dec);
+
+//        return repositories.findPublisherStatisticsByUser(user).stream()
+//                .map(PublisherStatistics::toJson)
+//                .toList();
+    }
 }
