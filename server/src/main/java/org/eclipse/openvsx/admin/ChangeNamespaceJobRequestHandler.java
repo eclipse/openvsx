@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.admin;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -103,6 +104,11 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                     return oldResource;
                 })
                 .collect(Collectors.toList());
+
+        if(StringUtils.isNotEmpty(oldNamespace.getLogoName())) {
+            newNamespace.setLogoName(NamingUtil.changeLogoName(oldNamespace, newNamespace));
+            storageUtil.copyNamespaceLogo(oldNamespace, newNamespace);
+        }
 
         service.changeNamespaceInDatabase(newNamespace, oldNamespace, updatedResources, createNewNamespace, json.removeOldNamespace());
 

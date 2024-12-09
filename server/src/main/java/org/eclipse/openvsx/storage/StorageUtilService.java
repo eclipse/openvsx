@@ -343,6 +343,26 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
+    public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
+        switch (oldNamespace.getLogoStorageType()) {
+            case STORAGE_GOOGLE:
+                googleStorage.copyNamespaceLogo(oldNamespace, newNamespace);
+                break;
+            case STORAGE_AZURE:
+                azureStorage.copyNamespaceLogo(oldNamespace, newNamespace);
+                break;
+            case STORAGE_AWS:
+                awsStorage.copyNamespaceLogo(oldNamespace, newNamespace);
+                break;
+            case STORAGE_LOCAL:
+                localStorage.copyNamespaceLogo(oldNamespace, newNamespace);
+                break;
+        }
+
+        newNamespace.setLogoStorageType(oldNamespace.getLogoStorageType());
+    }
+
+    @Override
     public Path getCachedFile(FileResource resource) throws IOException {
         return switch (resource.getStorageType()) {
             case STORAGE_GOOGLE -> googleStorage.getCachedFile(resource);

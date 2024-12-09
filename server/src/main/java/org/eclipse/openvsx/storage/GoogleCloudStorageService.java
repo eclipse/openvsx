@@ -188,16 +188,21 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
-        for(var pair : pairs) {
-            var source = getObjectId(pair.getFirst());
-            var target = getObjectId(pair.getSecond());
-            var request = new Storage.CopyRequest.Builder()
-                    .setSource(BlobId.of(bucketId, source))
-                    .setTarget(BlobId.of(bucketId, target))
-                    .build();
+        pairs.forEach(pair -> copy(getObjectId(pair.getFirst()), getObjectId(pair.getSecond())));
+    }
 
-            getStorage().copy(request).getResult();
-        }
+    @Override
+    public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
+        copy(getObjectId(oldNamespace), getObjectId(newNamespace));
+    }
+
+    private void copy(String source, String target) {
+        var request = new Storage.CopyRequest.Builder()
+                .setSource(BlobId.of(bucketId, source))
+                .setTarget(BlobId.of(bucketId, target))
+                .build();
+
+        getStorage().copy(request).getResult();
     }
 
     @Override

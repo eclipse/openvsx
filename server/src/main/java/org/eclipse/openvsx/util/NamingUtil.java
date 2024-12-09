@@ -10,9 +10,11 @@
 package org.eclipse.openvsx.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.mime.MimeType;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.search.ExtensionSearch;
 
@@ -93,4 +95,11 @@ public class NamingUtil {
                 : null;
     }
 
+    public static String toLogoName(Namespace namespace, MimeType logoType) {
+        return  "logo-" + namespace.getName() + "-" + System.currentTimeMillis() + logoType.getExtension();
+    }
+
+    public static String changeLogoName(Namespace oldNamespace, Namespace newNamespace) {
+        return oldNamespace.getLogoName().replace("-" + oldNamespace.getName() + "-", "-" + newNamespace.getName() + "-");
+    }
 }

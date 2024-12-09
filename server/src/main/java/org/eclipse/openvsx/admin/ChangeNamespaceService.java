@@ -72,6 +72,8 @@ public class ChangeNamespaceService {
             entityManager.remove(oldNamespace);
         }
 
+        cache.evictSitemap();
+        cache.evictNamespaceDetails(oldNamespace);
         search.updateSearchEntries(extensions.toList());
     }
 
