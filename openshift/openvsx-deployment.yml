@@ -9,6 +9,16 @@ objects:
     name: "${NAMESPACE}"
     labels:
       name: openvsx
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: postgres-pvc
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${STORAGE_CAPACITY}
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -32,10 +42,14 @@ objects:
           app.kubernetes.io/instance: openvsx
           app.kubernetes.io/component: postgresql
       spec:
+        volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
         containers:
           - name: postgresql
             image: ${POSTGERSQL_IMAGE}
-            imagePullPolicy: Never
+            imagePullPolicy: IfNotPresent
             env:
               - name: POSTGRESQL_DATABASE
                 value: openvsx
@@ -43,6 +57,9 @@ objects:
                 value: openvsx
               - name: POSTGRESQL_PASSWORD
                 value: openvsx
+            volumeMounts:
+              - name: postgres-storage
+                mountPath: /var/lib/pgsql/data
             ports:
               - containerPort: 5432
                 protocol: TCP
@@ -120,7 +137,7 @@ objects:
                 protocol: TCP
               - containerPort: 9200
                 protocol: TCP
-            imagePullPolicy: Never
+            imagePullPolicy: IfNotPresent
             env:
               - name: bootstrap.memory_lock
                 value: 'true'
@@ -171,6 +188,16 @@ objects:
         protocol: TCP
     selector:
       deployment: elasticsearch
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: extensions-pvc
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${EXTENSIONS_STORAGE_CAPACITY}
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -193,7 +220,7 @@ objects:
         containers:
           - name: openvsx-server
             image: ${OPENVSX_SERVER_IMAGE}
-            imagePullPolicy: Never
+            imagePullPolicy: IfNotPresent
             readinessProbe:
               httpGet:
                 path: /api/version
@@ -229,6 +256,13 @@ objects:
                   secretKeyRef:
                     name: github-oauth
                     key: client-secret
+            volumeMounts:
+              - name: extensions-storage
+                mountPath: /tmp/extensions
+        volumes:
+        - name: extensions-storage
+          persistentVolumeClaim:
+            claimName: extensions-pvc             
 - apiVersion: v1
   kind: Service
   metadata:
@@ -302,7 +336,7 @@ objects:
         containers:
           - name: ovsx-cli
             image: ${OPENVSX_CLI_IMAGE}
-            imagePullPolicy: Never
+            imagePullPolicy: IfNotPresent
             env:
               - name: OVSX_REGISTRY_URL
                 value: http://openvsx-server:8080
@@ -354,3 +388,9 @@ parameters:
   value: "ZHVtbXlfdmFsdWU="
   displayName: GitHub Client Secret
   description: Base64 encoded GitHub Client Secret
+- name: STORAGE_CAPACITY
+  description: "Persistent storage capacity for PostgreSQL"
+  value: "1Gi"
+- name: EXTENSIONS_STORAGE_CAPACITY
+  description: "Persistent storage capacity for local extensions storage"
+  value: "5Gi"

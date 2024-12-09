@@ -42,6 +42,6 @@ USER root
 RUN sed -i "s/OPENVSX_VERSION/${OPENVSX_VERSION}/g" config/application.yml
 USER openvsx
 # Local storage:
-  RUN \
+RUN \
   mkdir -p /tmp/extensions && \
   chmod 777 /tmp/extensions
