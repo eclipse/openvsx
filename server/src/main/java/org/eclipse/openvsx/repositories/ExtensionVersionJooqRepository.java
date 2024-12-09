@@ -152,7 +152,7 @@ public class ExtensionVersionJooqRepository {
                 .map(row -> {
                     var extensionId = row.get(top.field(EXTENSION_VERSION.EXTENSION_ID));
                     var version = row.get(top.field(EXTENSION_VERSION.VERSION));
-                    return new AbstractMap.SimpleEntry<>(extensionId, version);
+                    return Map.entry(extensionId, version);
                 })
                 .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
@@ -797,7 +797,7 @@ public class ExtensionVersionJooqRepository {
         return query.fetch(row -> {
             var id = row.get(EXTENSION.ID);
             var preview = row.get(latest.field(EXTENSION_VERSION.PREVIEW));
-            return new AbstractMap.SimpleEntry<>(id, preview);
+            return Map.entry(id, preview);
         })
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

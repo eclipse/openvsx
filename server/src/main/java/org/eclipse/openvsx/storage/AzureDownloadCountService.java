@@ -204,13 +204,13 @@ public class AzureDownloadCountService {
                         }).map(node -> {
                             var uri = node.get("uri").asText();
                             var pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
-                            return new AbstractMap.SimpleEntry<>(pathParams, node.get("time").asText());
+                            return Map.entry(pathParams, node.get("time").asText());
                         })
                         .filter(entry -> storageBlobContainer.equals(entry.getKey()[1]))
                         .map(entry -> {
                             var pathParams = entry.getKey();
                             var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
-                            return new AbstractMap.SimpleEntry<>(fileName, 1);
+                            return Map.entry(fileName, 1);
                         })
                         .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingInt(Map.Entry::getValue)));
             } catch (IOException e) {
