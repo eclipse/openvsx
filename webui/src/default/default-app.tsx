@@ -30,6 +30,10 @@ if (serverHost.startsWith('3000-')) {
 } else if (location.port === '3000') {
     // Localhost dev environment
     serverHost = serverHost + ':8080';
+} else if (serverHost.includes('che-webui')) {
+    // Eclipse Che dev environment.
+    // If serverHost contains 'che-webui', replace it with 'che-server'
+    serverHost = serverHost.replace('che-webui', 'che-server');
 }
 const service = new ExtensionRegistryService(`${location.protocol}//${serverHost}`);
 
