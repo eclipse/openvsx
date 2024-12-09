@@ -11,7 +11,8 @@
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
-    SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion
+    SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
+    PublisherStatistics
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -420,6 +421,23 @@ export class ExtensionRegistryService {
     async getRegistryVersion(abortController: AbortController): Promise<Readonly<RegistryVersion>> {
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'version']);
         return sendRequest({ abortController, endpoint });
+    }
+
+    async getStatistics(abortController: AbortController): Promise<Readonly<PublisherStatistics[] | ErrorResult>> {
+        const csrfResponse = await this.getCsrfToken(abortController);
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest<PublisherStatistics[] | ErrorResult>({
+            abortController,
+            method: 'GET',
+            credentials: true,
+            headers: headers,
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'statistics'])
+        });
     }
 }
 

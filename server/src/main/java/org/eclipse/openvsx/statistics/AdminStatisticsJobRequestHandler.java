@@ -7,32 +7,28 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx.admin;
+package org.eclipse.openvsx.statistics;
 
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 @Component
-public class AdminStatisticsJobRequestHandler implements JobRequestHandler<AdminStatisticsJobRequest> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminStatisticsJobRequestHandler.class);
+public class AdminStatisticsJobRequestHandler implements JobRequestHandler<StatisticsJobRequest> {
 
     private final RepositoryService repositories;
-    private final AdminStatisticsService service;
+    private final StatisticsService service;
 
-    public AdminStatisticsJobRequestHandler(RepositoryService repositories, AdminStatisticsService service) {
+    public AdminStatisticsJobRequestHandler(RepositoryService repositories, StatisticsService service) {
         this.repositories = repositories;
         this.service = service;
     }
 
     @Override
-    public void run(AdminStatisticsJobRequest jobRequest) throws Exception {
+    public void run(StatisticsJobRequest jobRequest) throws Exception {
         var year = jobRequest.getYear();
         var month = jobRequest.getMonth();
 
