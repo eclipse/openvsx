@@ -136,7 +136,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                     newExtension.setId(extension.getId());
                     newExtension.setName(extension.getName());
                     newExtension.setNamespace(newNamespace);
-                    return new AbstractMap.SimpleEntry<>(entry.getKey(), newExtension);
+                    return Map.entry(entry.getKey(), newExtension);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -151,7 +151,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
         }
 
         var newBinaryNames = extVersions.values().stream()
-                .map(extVersion -> new AbstractMap.SimpleEntry<>(extVersion.getId(), newBinaryName(newNamespace, extVersion)))
+                .map(extVersion -> Map.entry(extVersion.getId(), newBinaryName(newNamespace, extVersion)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return resources.stream()

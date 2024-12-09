@@ -208,7 +208,7 @@ public class DataMirrorService {
 
         var remoteReviews = upstream.getReviews(namespaceName, extensionName);
         var localReviews = repositories.findAllReviews(extension)
-                .map(review -> new AbstractMap.SimpleEntry<>(review.toReviewJson(), review));
+                .map(review -> Map.entry(review.toReviewJson(), review));
 
         remoteReviews.getReviews().stream()
                 .filter(review -> localReviews.stream().noneMatch(entry -> entry.getKey().equals(review)))

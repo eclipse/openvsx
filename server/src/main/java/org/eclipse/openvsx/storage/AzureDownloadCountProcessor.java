@@ -71,7 +71,7 @@ public class AzureDownloadCountProcessor {
     public Map<Long, Integer> processDownloadCounts(Map<String, Integer> files) {
         return Observation.createNotStarted("AzureDownloadCountProcessor#processDownloadCounts", observations).observe(() -> {
             return repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
-                    .map(fileResource -> new AbstractMap.SimpleEntry<>(fileResource, files.get(fileResource.getName().toUpperCase())))
+                    .map(fileResource -> Map.entry(fileResource, files.get(fileResource.getName().toUpperCase())))
                     .collect(Collectors.groupingBy(
                             e -> e.getKey().getExtension().getExtension().getId(),
                             Collectors.summingInt(Map.Entry::getValue)

@@ -254,8 +254,8 @@ public class StorageUtilService implements IStorageService {
      */
     public Map<Long, Map<String, String>> getFileUrls(Collection<ExtensionVersion> extVersions, String serverUrl, String... types) {
         var type2Url = extVersions.stream()
-                .map(ev -> new AbstractMap.SimpleEntry<Long, Map<String, String>>(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .map(ev -> Map.<Long, Map<String, String>>entry(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
+                .collect(Collectors.<Map.Entry<Long, Map<String, String>>, Long, Map<String, String>>toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
         for (var resource : resources) {

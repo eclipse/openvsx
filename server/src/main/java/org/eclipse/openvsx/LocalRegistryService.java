@@ -194,7 +194,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                         logger.warn("Could not find download for: {}", NamingUtil.toLogFormat(ev));
                         return null;
                     } else {
-                        return new AbstractMap.SimpleEntry<>(ev.getTargetPlatform(), download);
+                        return Map.entry(ev.getTargetPlatform(), download);
                     }
                 })
                 .filter(Objects::nonNull)
@@ -788,7 +788,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                     var entry = e.getValue().toSearchEntryJson();
                     entry.setUrl(createApiUrl(serverUrl, "api", entry.getNamespace(), entry.getName()));
                     entry.setVerified(isVerified(e.getValue(), membershipsByNamespaceId));
-                    return new AbstractMap.SimpleEntry<>(e.getKey(), entry);
+                    return Map.entry(e.getKey(), entry);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
