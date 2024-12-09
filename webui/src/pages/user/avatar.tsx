@@ -8,52 +8,27 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import React, { FunctionComponent, useContext, useRef, useState } from 'react';
 import { styled } from '@mui/material/styles';
-import { Avatar, Button, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@mui/material';
+import { Avatar, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
-import { isError, CsrfTokenJson } from '../../extension-registry-types';
 import { UserSettingsRoutes } from './user-settings';
 import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
 import { MainContext } from '../../context';
+import { LogoutForm } from './logout';
 
-const link = {
+const AvatarRouteLink = styled(RouteLink)({
     cursor: 'pointer',
     textDecoration: 'none'
-};
-
-const AvatarRouteLink = styled(RouteLink)(link);
-const AvatarMenuItem = styled(MenuItem)({ cursor: 'auto' });
-const LogoutButton = styled(Button)({
-    ...link,
-    border: 'none',
-    background: 'none',
-    padding: 0
 });
+
+const AvatarMenuItem = styled(MenuItem)({ cursor: 'auto' });
+
 
 export const UserAvatar: FunctionComponent = () => {
     const [open, setOpen] = useState<boolean>(false);
-    const [csrf, setCsrf] = useState<string>();
     const context = useContext(MainContext);
     const avatarButton = useRef<any>();
-
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        updateCsrf();
-        return () => abortController.current.abort();
-    }, []);
-
-    const updateCsrf = async () => {
-        try {
-            const csrfResponse = await context.service.getCsrfToken(abortController.current);
-            if (!isError(csrfResponse)) {
-                const csrfToken = csrfResponse as CsrfTokenJson;
-                setCsrf(csrfToken.value);
-            }
-        } catch (err) {
-            context.handleError(err);
-        }
-    };
 
     const handleAvatarClick = () => {
         setOpen(!open);
@@ -116,14 +91,11 @@ export const UserAvatar: FunctionComponent = () => {
                     ''
             }
             <AvatarMenuItem>
-                <form method='post' action={context.service.getLogoutUrl()}>
-                    {csrf ? <input name='_csrf' type='hidden' value={csrf} /> : null}
-                    <LogoutButton type='submit'>
-                        <Typography variant='button' sx={{ color: 'primary.dark' }}>
-                            Log Out
-                        </Typography>
-                    </LogoutButton>
-                </form>
+                <LogoutForm>
+                    <Typography variant='button' sx={{ color: 'primary.dark' }}>
+                        Log Out
+                    </Typography>
+                </LogoutForm>
             </AvatarMenuItem>
         </Menu>
     </>;
