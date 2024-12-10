@@ -53,17 +53,20 @@ public class UserAPI {
     private final UserService users;
     private final EclipseService eclipse;
     private final StorageUtilService storageUtil;
+    private final OVSXConfig config;
 
     public UserAPI(
             RepositoryService repositories,
             UserService users,
             EclipseService eclipse,
-            StorageUtilService storageUtil
+            StorageUtilService storageUtil,
+            OVSXConfig config
     ) {
         this.repositories = repositories;
         this.users = users;
         this.eclipse = eclipse;
         this.storageUtil = storageUtil;
+        this.config = config;
     }
 
     /**
@@ -73,7 +76,7 @@ public class UserAPI {
         path = "/login"
     )
     public ModelAndView login(ModelMap model) {
-        return new ModelAndView("redirect:/oauth2/authorization/github", model);
+        return new ModelAndView("redirect:/oauth2/authorization/" + config.getAuth().getProvider(), model);
     }
 
     /**
