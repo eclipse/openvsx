@@ -422,8 +422,8 @@ export class ExtensionRegistryService {
         return sendRequest({ abortController, endpoint });
     }
 
-    async isOAuth2Enabled(abortController: AbortController): Promise<Readonly<boolean>> {
-        const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'oauth2', 'enabled']);
+    async canLogin(abortController: AbortController): Promise<Readonly<boolean>> {
+        const endpoint = createAbsoluteURL([this.serverUrl, 'can-login']);
         return sendRequest({ abortController, endpoint });
     }
 }

@@ -1404,38 +1404,4 @@ public class RegistryAPI {
             return exc.toResponseEntity(RegistryVersionJson.class);
         }
     }
-
-    @GetMapping(path = "/api/oauth2/enabled", produces = MediaType.APPLICATION_JSON_VALUE)
-    @CrossOrigin
-    @Operation(summary = "Check if OAuth2 is enabled")
-    @ApiResponse(
-        responseCode = "200",
-        description = "Returns true if OAuth2 is enabled, false otherwise"
-    )
-    @ApiResponse(
-        responseCode = "429",
-        description = "A client has sent too many requests in a given amount of time",
-        headers = {
-            @Header(
-                name = "X-Rate-Limit-Retry-After-Seconds",
-                description = "Number of seconds to wait before retrying after receiving a 429 response",
-                schema = @Schema(type = "integer", format = "int32")
-            ),
-            @Header(
-                name = "X-Rate-Limit-Remaining",
-                description = "Number of remaining requests available",
-                schema = @Schema(type = "integer", format = "int32")
-            )
-        }
-    )
-    public ResponseEntity<Boolean> isOAuth2Enabled() {
-        try {
-            boolean enabled = local.isOAuth2Enabled();
-            return ResponseEntity.ok()
-                    .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic())
-                    .body(enabled);
-        } catch (Exception exc) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
-        }
-    }
 }

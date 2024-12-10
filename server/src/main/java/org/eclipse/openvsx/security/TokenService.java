@@ -52,19 +52,19 @@ public class TokenService {
         this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
+    private boolean isEnabled() {
+        return clientRegistrationRepository != null;
+    }
+
     public AuthToken updateTokens(long userId, String registrationId, OAuth2AccessToken accessToken,
             OAuth2RefreshToken refreshToken) {
-        var userData = entityManager.find(UserData.class, userId);
+        var userData = isEnabled() ? entityManager.find(UserData.class, userId) : null;
         if (userData == null) {
             return null;
         }
     
         switch (registrationId) {
             case "github": {
-                if (clientRegistrationRepository == null) {
-                    // Handle the case where GitHub OAuth2 is not configured
-                    return updateGitHubToken(userData, null);
-                }
                 if (accessToken == null) {
                     return updateGitHubToken(userData, null);
                 }
@@ -124,6 +124,10 @@ public class TokenService {
     }
 
     public AuthToken getActiveToken(UserData userData, String registrationId) {
+        if(!isEnabled()) {
+            return null;
+        }
+
         switch (registrationId) {
             case "github": {
                 return userData.getGithubToken();
@@ -153,7 +157,7 @@ public class TokenService {
         return instant != null && Instant.now().isAfter(instant);
     }
 
-    protected Pair<OAuth2AccessToken, OAuth2RefreshToken> refreshEclipseToken(AuthToken token) {
+    private Pair<OAuth2AccessToken, OAuth2RefreshToken> refreshEclipseToken(AuthToken token) {
         if(token.refreshToken() == null || isExpired(token.refreshExpiresAt())) {
             return null;
         }

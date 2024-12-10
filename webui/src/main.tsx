@@ -26,12 +26,14 @@ import { OtherPages } from './other-pages';
 export const Main: FunctionComponent<MainProps> = props => {
     const [user, setUser] = useState<UserData>();
     const [userLoading, setUserLoading] = useState<boolean>(true);
-    const [isOAuth2Enabled, setIsOAuth2Enabled] = useState<boolean>(false);
+    const [canLogin, setCanLogin] = useState<boolean>(props.canLogin ?? true);
     const [error, setError] = useState<{message: string, code?: number | string}>();
     const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
     const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
+        getCanLogin();
+
         // If there was an authentication error, get the message from the server and show it
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.has('auth-error')) {
@@ -40,9 +42,6 @@ export const Main: FunctionComponent<MainProps> = props => {
 
         // Get data of the currently logged in user
         updateUser();
-
-        // Fetch OAuth2 status
-        fetchOAuth2Status();
 
         return () => abortController.current.abort();
     }, []);
@@ -64,13 +63,13 @@ export const Main: FunctionComponent<MainProps> = props => {
         setUserLoading(false);
     };
 
-    const fetchOAuth2Status = async () => {
-        try {
-            const isEnabled = await props.service.isOAuth2Enabled(abortController.current);
-            setIsOAuth2Enabled(isEnabled);
-        } catch (err) {
-            console.error('Failed to fetch OAuth2 status:', err);
+    const getCanLogin = async () => {
+        if (props.canLogin != null) {
+            return;
         }
+
+        const newCanLogin = await props.service.canLogin(abortController.current);
+        setCanLogin(newCanLogin);
     };
 
     const onError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
@@ -114,7 +113,7 @@ export const Main: FunctionComponent<MainProps> = props => {
         pageSettings: props.pageSettings,
         user,
         updateUser,
-        isOAuth2Enabled,
+        canLogin,
         handleError: onError
     };
     return <>
@@ -128,4 +127,5 @@ export const Main: FunctionComponent<MainProps> = props => {
 export interface MainProps {
     service: ExtensionRegistryService;
     pageSettings: PageSettings;
+    canLogin?: boolean;
 }

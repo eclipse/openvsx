@@ -116,12 +116,11 @@ export const MobileUserAvatar: FunctionComponent = () => {
 };
 
 export const MobileMenuContent: FunctionComponent = () => {
-    const { isOAuth2Enabled } = useContext(MainContext);
     const location = useLocation();
-    const { service, user } = useContext(MainContext);
+    const { service, user, canLogin } = useContext(MainContext);
 
     return <>
-        {isOAuth2Enabled && (
+        {canLogin && (
             user ? (
                 <MobileUserAvatar />
             ) : (
@@ -135,7 +134,7 @@ export const MobileMenuContent: FunctionComponent = () => {
                 </MobileMenuItem>
             )
         )}
-        {isOAuth2Enabled && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
+        {canLogin && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
             <MobileMenuItem>
                 <RouteLink to='/user-settings/extensions'>
                     <MobileMenuItemText>
@@ -200,7 +199,7 @@ export const MenuLink = styled(Link)(headerItem);
 export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
-    const { service, user, isOAuth2Enabled } = useContext(MainContext);
+    const { service, user, canLogin } = useContext(MainContext);
 
     return (
         <>
@@ -213,7 +212,7 @@ export const DefaultMenuContent: FunctionComponent = () => {
             <MenuRouteLink to='/about'>
                 About
             </MenuRouteLink>
-            {isOAuth2Enabled && (
+            {canLogin && (
                 <>
                     <Button
                         variant='contained'

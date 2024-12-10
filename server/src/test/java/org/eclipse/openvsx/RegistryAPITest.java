@@ -2426,8 +2426,7 @@ class RegistryAPITest {
                 EclipseService eclipse,
                 CacheService cache,
                 FileCacheDurationConfig fileCacheDurationConfig,
-                ExtensionVersionIntegrityService integrityService,
-                ClientRegistrationRepository clientRegistrationRepository
+                ExtensionVersionIntegrityService integrityService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -2440,8 +2439,7 @@ class RegistryAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService,
-                    clientRegistrationRepository
+                    integrityService
             );
         }
 
