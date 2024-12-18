@@ -253,3 +253,15 @@ export interface RegistryVersion {
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';
+
+export interface PublisherStatistic {
+    year: number;
+    month: number;
+    extensionDownloads: ExtensionDownloads[];
+    extensionTotalDownloads: ExtensionDownloads[];
+}
+
+export interface ExtensionDownloads {
+    extensionIdentifier: string;
+    downloads: number;
+}

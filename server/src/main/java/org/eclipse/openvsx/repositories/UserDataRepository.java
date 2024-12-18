@@ -13,6 +13,7 @@ import org.eclipse.openvsx.entities.UserData;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.Repository;
+import org.springframework.data.util.Streamable;
 
 public interface UserDataRepository extends Repository<UserData, Long> {
 
@@ -22,4 +23,5 @@ public interface UserDataRepository extends Repository<UserData, Long> {
 
     long count();
 
+    Streamable<UserData> findByProvider(String provider);
 }
