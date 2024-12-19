@@ -110,6 +110,10 @@ public class OAuth2UserServices {
         }
     }
 
+    public boolean canLogin() {
+        return users.canLogin();
+    }
+
     private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
         var authUser = delegate.loadUser(userRequest);
         String loginName = authUser.getAttribute("login");

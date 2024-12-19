@@ -30,8 +30,10 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,22 +55,29 @@ public class UserService {
     private final StorageUtilService storageUtil;
     private final CacheService cache;
     private final ExtensionValidator validator;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     public UserService(
             EntityManager entityManager,
             RepositoryService repositories,
             StorageUtilService storageUtil,
             CacheService cache,
-            ExtensionValidator validator
+            ExtensionValidator validator,
+            @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.storageUtil = storageUtil;
         this.cache = cache;
         this.validator = validator;
+        this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
     public UserData findLoggedInUser() {
+        if(!canLogin()) {
+            return null;
+        }
+
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             if (authentication.getPrincipal() instanceof IdPrincipal) {
@@ -314,5 +323,9 @@ public class UserService {
 
         token.setActive(false);
         return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
+    }
+
+    public boolean canLogin() {
+        return clientRegistrationRepository != null && clientRegistrationRepository.findByRegistrationId("github") != null;
     }
 }
