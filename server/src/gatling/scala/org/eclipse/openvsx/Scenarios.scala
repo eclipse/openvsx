@@ -484,4 +484,16 @@ object Scenarios {
             .check(status.is(200)))
       }
   }
+
+  def getWebResourceScenario(): ScenarioBuilder = {
+    scenario("VSCodeAdapter: Get WebResource")
+      .repeat(10000) {
+        feed(csv("adapter/webresources.csv").random)
+          .exec(http("VSCodeAdapter.getWebResource")
+            .get("""/vscode/asset/#{namespace}/#{extension}/#{version}/Microsoft.VisualStudio.Code.WebResources#{asset}""")
+            .headers(headers())
+            .requestTimeout(3.minutes)
+            .check(status.is(200)))
+      }
+  }
 }
