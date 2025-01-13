@@ -22,7 +22,7 @@ export const HeaderMenu: FunctionComponent = () => {
         defaultMenuContent: DefaultMenuContent,
         mobileMenuContent: MobileMenuContent
     } = pageSettings.elements;
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     if (isMobile && MobileMenuContent) {
         return <MobileHeaderMenu menuContent={MobileMenuContent} />;
     } else if (DefaultMenuContent) {
