@@ -207,10 +207,13 @@ public class UserService {
 
     @Transactional(rollbackOn = { ErrorResultException.class, NotFoundException.class })
     @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#details.name")
-    public ResultJson updateNamespaceDetails(NamespaceDetailsJson details) {
+    public ResultJson updateNamespaceDetails(NamespaceDetailsJson details, UserData user) {
         var namespace = repositories.findNamespace(details.getName());
         if (namespace == null) {
             throw new NotFoundException();
+        }
+        if (!repositories.isNamespaceOwner(user, namespace)) {
+            throw new ErrorResultException("You must be an owner of this namespace.");
         }
 
         var issues = validator.validateNamespaceDetails(details);
@@ -243,10 +246,13 @@ public class UserService {
 
     @Transactional
     @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#namespaceName")
-    public ResultJson updateNamespaceDetailsLogo(String namespaceName, MultipartFile file) {
+    public ResultJson updateNamespaceDetailsLogo(String namespaceName, MultipartFile file, UserData user) {
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
             throw new NotFoundException();
+        }
+        if (!repositories.isNamespaceOwner(user, namespace)) {
+            throw new ErrorResultException("You must be an owner of this namespace.");
         }
 
         var oldNamespace = SerializationUtils.clone(namespace);
