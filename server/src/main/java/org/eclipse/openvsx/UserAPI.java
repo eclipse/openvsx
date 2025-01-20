@@ -241,10 +241,15 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> updateNamespaceDetails(@RequestBody NamespaceDetailsJson details) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
         try {
             return ResponseEntity.ok()
                     .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                    .body(users.updateNamespaceDetails(details));
+                    .body(users.updateNamespaceDetails(details, user));
         } catch (NotFoundException exc) {
             var json = NamespaceDetailsJson.error("Namespace not found: " + details.getName());
             return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
@@ -262,9 +267,14 @@ public class UserAPI {
             @PathVariable String namespace,
             @RequestParam MultipartFile file
     ) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
         try {
             return ResponseEntity.ok()
-                    .body(users.updateNamespaceDetailsLogo(namespace, file));
+                    .body(users.updateNamespaceDetailsLogo(namespace, file, user));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
         }
