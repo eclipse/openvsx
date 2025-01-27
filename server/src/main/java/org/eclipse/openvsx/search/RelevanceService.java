@@ -71,30 +71,39 @@ public class RelevanceService {
     }
 
     private double calculateRelevance(Extension extension, ExtensionVersion latest, SearchStats stats, ExtensionSearch entry) {
+        var extensionId = NamingUtil.toExtensionId(extension);
+        logger.info(">> [{}] CALCULATE RELEVANCE", extensionId);
         var ratingValue = 0.0;
         if (extension.getAverageRating() != null) {
+            logger.info("[{}] INCLUDE AVG RATING", extensionId);
             var reviewCount = extension.getReviewCount();
             // Reduce the rating relevance if there are only few reviews
             var countRelevance = saturate(reviewCount, 0.25);
             ratingValue = (extension.getAverageRating() / 5.0) * countRelevance;
+            logger.info("[{}] {} = {} * {} | {}", extensionId, ratingValue, extension.getAverageRating() / 5.0, countRelevance, reviewCount);
         }
         var downloadsValue = entry.getDownloadCount() / stats.downloadRef;
         var timestamp = latest.getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
         var relevance = ratingRelevance * limit(ratingValue) + downloadsRelevance * limit(downloadsValue)
                 + timestampRelevance * limit(timestampValue);
+        logger.info("[{}] RELEVANCE: {} = {} * {} + {} * {} + {} * {}", extensionId, relevance, ratingRelevance, limit(ratingValue), downloadsRelevance, limit(downloadsValue), timestampRelevance, limit(timestampValue));
+        logger.info("[{}] VALUES: {} | {} | {}", extensionId, ratingValue, downloadsValue, timestampValue);
 
         // Reduce the relevance value of unverified extensions
         if (!isVerified(latest)) {
             relevance *= unverifiedRelevance;
+            logger.info("[{}] UNVERIFIED: {} * {}", extensionId, relevance, unverifiedRelevance);
         }
 
         // Reduce the relevance value of deprecated extensions
         if (extension.isDeprecated()) {
             relevance *= deprecatedRelevance;
+            logger.info("[{}] DEPRECATED: {} * {}", extensionId, relevance, deprecatedRelevance);
         }
 
-        if (Double.isNaN(entry.getRelevance()) || Double.isInfinite(entry.getRelevance())) {
+        if (Double.isNaN(relevance) || Double.isInfinite(relevance)) {
+            logger.info("[{}] INVALID RELEVANCE", extensionId);
             var message = "Invalid relevance for entry " + NamingUtil.toExtensionId(entry);
             try {
                 message += " " + new ObjectMapper().writeValueAsString(stats);
@@ -105,6 +114,7 @@ public class RelevanceService {
             relevance = 0.0;
         }
 
+        logger.info("<< [{}] CALCULATE RELEVANCE: {}", extensionId, relevance);
         return relevance;
     }
 
