@@ -108,18 +108,20 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
             </Grid>
             {
                 props.namespace.membersUrl
-                ? <>
-                    <Grid item>
-                        <UserNamespaceMemberList
-                            setLoadingState={props.setLoadingState}
-                            namespace={props.namespace}
-                            filterUsers={props.filterUsers}
-                            fixSelf={props.fixSelf} />
-                    </Grid>
-                    <Grid item>
-                        <UserNamespaceDetails namespace={props.namespace}/>
-                    </Grid>
-                </>
+                ? <Grid item>
+                    <UserNamespaceMemberList
+                        setLoadingState={props.setLoadingState}
+                        namespace={props.namespace}
+                        filterUsers={props.filterUsers}
+                        fixSelf={props.fixSelf} />
+                </Grid>
+                : null
+            }
+            {
+                props.namespace.detailsUrl
+                ? <Grid item>
+                    <UserNamespaceDetails namespace={props.namespace}/>
+                </Grid>
                 : null
             }
             <Grid item>

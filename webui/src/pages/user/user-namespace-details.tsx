@@ -194,14 +194,14 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 ? 'https://twitter.com/' + details.socialLinks.twitter
                 : undefined;
 
-            const result = await context.service.setNamespaceDetails(abortController.current, details);
+            const result = await context.service.setNamespaceDetails(abortController.current, props.namespace.detailsUrl, details);
             if (isError(result)) {
                 throw result;
             }
 
             if (logoPreview) {
                 const logoFile = await (await fetch(logoPreview)).blob();
-                await context.service.setNamespaceLogo(abortController.current, details.name, logoFile, details.logo as string);
+                await context.service.setNamespaceLogo(abortController.current, props.namespace.detailsUrl, logoFile, details.logo as string);
                 await getNamespaceDetails();
             } else {
                 setCurrentDetails(copy(newDetails));

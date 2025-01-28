@@ -230,6 +230,7 @@ public class UserAPI {
             if(isOwner) {
                 json.setMembersUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members"));
                 json.setRoleUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role"));
+                json.setDetailsUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "details"));
             }
 
             return json;
