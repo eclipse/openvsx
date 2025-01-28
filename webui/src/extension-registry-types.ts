@@ -220,6 +220,7 @@ export interface Namespace {
     verified: boolean;
     membersUrl: UrlString;
     roleUrl: UrlString;
+    detailsUrl: UrlString;
 }
 
 export interface NamespaceDetails {

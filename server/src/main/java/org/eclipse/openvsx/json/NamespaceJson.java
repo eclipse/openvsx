@@ -55,6 +55,9 @@ public class NamespaceJson extends ResultJson {
     @Schema(hidden = true)
     private String roleUrl;
 
+    @Schema(hidden = true)
+    private String detailsUrl;
+
     public String getName() {
         return name;
     }
@@ -101,5 +104,13 @@ public class NamespaceJson extends ResultJson {
 
     public void setRoleUrl(String roleUrl) {
         this.roleUrl = roleUrl;
+    }
+
+    public String getDetailsUrl() {
+        return detailsUrl;
+    }
+
+    public void setDetailsUrl(String detailsUrl) {
+        this.detailsUrl = detailsUrl;
     }
 }
