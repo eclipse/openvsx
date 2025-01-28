@@ -46,7 +46,7 @@ public class ExtensionJooqRepository {
         var conditions = new ArrayList<Condition>();
         conditions.add(EXTENSION.PUBLIC_ID.in(publicIds));
         for(var namespaceToExclude : namespacesToExclude) {
-            conditions.add(NAMESPACE.NAME.notEqual(namespaceToExclude));
+            conditions.add(NAMESPACE.NAME.notEqualIgnoreCase(namespaceToExclude));
         }
 
         var query = findAllActive();
@@ -242,8 +242,8 @@ public class ExtensionJooqRepository {
         var unresolvedDependency = DSL.concat(namespace, DSL.value("."), extension).as("unresolved_dependency");
         return dsl.select(unresolvedDependency)
                 .from(ids)
-                .leftJoin(NAMESPACE).on(NAMESPACE.NAME.eq(namespace))
-                .leftJoin(EXTENSION).on(EXTENSION.NAME.eq(extension))
+                .leftJoin(NAMESPACE).on(NAMESPACE.NAME.equalIgnoreCase(namespace))
+                .leftJoin(EXTENSION).on(EXTENSION.NAME.equalIgnoreCase(extension))
                 .where(NAMESPACE.NAME.isNull()).or(EXTENSION.NAME.isNull())
                 .limit(1)
                 .fetchOne(unresolvedDependency);
