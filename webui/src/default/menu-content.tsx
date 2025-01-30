@@ -162,10 +162,10 @@ export const MobileMenuContent: FunctionComponent = () => {
             </Link>
         </MobileMenuItem>
         <MobileMenuItem>
-            <Link href='https://gitter.im/eclipse/openvsx'>
+            <Link href='https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A'>
                 <MobileMenuItemText>
                     <ForumIcon sx={itemIcon} />
-                    Community Chat
+                    Slack Workspace
                 </MobileMenuItemText>
             </Link>
         </MobileMenuItem>
@@ -205,8 +205,8 @@ export const DefaultMenuContent: FunctionComponent = () => {
         <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
             Documentation
         </MenuLink>
-        <MenuLink href='https://gitter.im/eclipse/openvsx'>
-            Community
+        <MenuLink href='https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A'>
+            Slack Workspace
         </MenuLink>
         <MenuRouteLink to='/about'>
             About
