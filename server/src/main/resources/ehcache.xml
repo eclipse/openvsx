@@ -92,6 +92,7 @@
                 <events-to-fire-on>EXPIRED</events-to-fire-on>
                 <events-to-fire-on>EVICTED</events-to-fire-on>
                 <events-to-fire-on>REMOVED</events-to-fire-on>
+                <events-to-fire-on>UPDATED</events-to-fire-on>
             </listener>
         </listeners>
         <resources>
@@ -110,6 +111,7 @@
                 <events-to-fire-on>EXPIRED</events-to-fire-on>
                 <events-to-fire-on>EVICTED</events-to-fire-on>
                 <events-to-fire-on>REMOVED</events-to-fire-on>
+                <events-to-fire-on>UPDATED</events-to-fire-on>
             </listener>
         </listeners>
         <resources>

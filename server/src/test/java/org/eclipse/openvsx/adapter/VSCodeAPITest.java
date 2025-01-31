@@ -892,8 +892,13 @@ class VSCodeAPITest {
         }
 
         @Bean
-        WebResourceService webResourceService(StorageUtilService storageUtil, RepositoryService repositories, CacheService cache) {
-            return new WebResourceService(storageUtil, repositories, cache);
+        WebResourceService webResourceService(
+                StorageUtilService storageUtil,
+                RepositoryService repositories,
+                CacheService cache,
+                FilesCacheKeyGenerator filesCacheKeyGenerator
+        ) {
+            return new WebResourceService(storageUtil, repositories, cache, filesCacheKeyGenerator);
         }
 
         @Bean

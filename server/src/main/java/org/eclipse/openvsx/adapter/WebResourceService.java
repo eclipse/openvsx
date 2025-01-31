@@ -11,6 +11,7 @@ package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -40,11 +41,18 @@ public class WebResourceService {
     private final StorageUtilService storageUtil;
     private final RepositoryService repositories;
     private final CacheService cache;
+    private final FilesCacheKeyGenerator filesCacheKeyGenerator;
 
-    public WebResourceService(StorageUtilService storageUtil, RepositoryService repositories, CacheService cache) {
+    public WebResourceService(
+            StorageUtilService storageUtil,
+            RepositoryService repositories,
+            CacheService cache,
+            FilesCacheKeyGenerator filesCacheKeyGenerator
+    ) {
         this.storageUtil = storageUtil;
         this.repositories = repositories;
         this.cache = cache;
+        this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
     @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES)
@@ -74,9 +82,11 @@ public class WebResourceService {
             if(fileEntry != null) {
                 var fileExtIndex = fileEntry.getName().lastIndexOf('.');
                 var fileExt = fileExtIndex != -1 ? fileEntry.getName().substring(fileExtIndex) : "";
-                var file = Files.createTempFile("webresource_", fileExt);
-                try(var in = zip.getInputStream(fileEntry)) {
-                    Files.copy(in, file, StandardCopyOption.REPLACE_EXISTING);
+                var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, fileExt);
+                if(!Files.exists(file)) {
+                    try (var in = zip.getInputStream(fileEntry)) {
+                        Files.copy(in, file);
+                    }
                 }
 
                 return file;
@@ -93,14 +103,17 @@ public class WebResourceService {
                     return null;
                 }
 
-                var file = Files.createTempFile("webresource_", ".unpkg.json");
-                var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespace, extension, version);
-                var mapper = new ObjectMapper();
-                var node = mapper.createArrayNode();
-                for(var entry : dirEntries) {
-                    node.add(baseUrl + "/" + entry);
+                var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, ".unpkg.json");
+                if(!Files.exists(file)) {
+                    var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespace, extension, version);
+                    var mapper = new ObjectMapper();
+                    var node = mapper.createArrayNode();
+                    for (var entry : dirEntries) {
+                        node.add(baseUrl + "/" + entry);
+                    }
+                    mapper.writeValue(file.toFile(), node);
                 }
-                mapper.writeValue(file.toFile(), node);
+
                 return file;
             } else {
                 return null;

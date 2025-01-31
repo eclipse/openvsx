@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.net.URI;
 
+import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -60,8 +61,13 @@ class AzureBlobStorageServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        AzureBlobStorageService azureBlobStorageService() {
-            return new AzureBlobStorageService();
+        FilesCacheKeyGenerator filesCacheKeyGenerator() {
+            return new FilesCacheKeyGenerator();
+        }
+
+        @Bean
+        AzureBlobStorageService azureBlobStorageService(FilesCacheKeyGenerator filesCacheKeyGenerator) {
+            return new AzureBlobStorageService(filesCacheKeyGenerator);
         }
     }
 }

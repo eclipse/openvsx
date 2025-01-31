@@ -19,6 +19,7 @@ import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
@@ -46,6 +47,8 @@ public class AzureBlobStorageService implements IStorageService {
 
     public static final String AZURE_USER_AGENT = "OpenVSX";
 
+    private final FilesCacheKeyGenerator filesCacheKeyGenerator;
+
     @Value("${ovsx.storage.azure.service-endpoint:}")
     String serviceEndpoint;
 
@@ -56,6 +59,10 @@ public class AzureBlobStorageService implements IStorageService {
     String blobContainer;
 
     private BlobContainerClient containerClient;
+
+    public AzureBlobStorageService(FilesCacheKeyGenerator filesCacheKeyGenerator) {
+        this.filesCacheKeyGenerator = filesCacheKeyGenerator;
+    }
 
 	@Override
 	public boolean isEnabled() {
@@ -236,8 +243,11 @@ public class AzureBlobStorageService implements IStorageService {
             throw new IllegalStateException(missingEndpointMessage(blobName));
         }
 
-        var path = Files.createTempFile("cached_file", null);
-        getContainerClient().getBlobClient(blobName).downloadToFile(path.toAbsolutePath().toString(), true);
+        var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
+        if(!Files.exists(path)) {
+            getContainerClient().getBlobClient(blobName).downloadToFile(path.toAbsolutePath().toString());
+        }
+
         return path;
     }
 }
