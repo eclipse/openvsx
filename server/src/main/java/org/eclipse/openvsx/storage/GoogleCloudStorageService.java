@@ -15,6 +15,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
@@ -39,6 +40,8 @@ public class GoogleCloudStorageService implements IStorageService {
 
     private static final String BASE_URL = "https://storage.googleapis.com/";
 
+    private final FilesCacheKeyGenerator filesCacheKeyGenerator;
+
     @Value("${ovsx.storage.gcp.project-id:}")
     String projectId;
 
@@ -46,6 +49,10 @@ public class GoogleCloudStorageService implements IStorageService {
     String bucketId;
 
     private Storage storage;
+
+    public GoogleCloudStorageService(FilesCacheKeyGenerator filesCacheKeyGenerator) {
+        this.filesCacheKeyGenerator = filesCacheKeyGenerator;
+    }
 
     @Override
     public boolean isEnabled() {
@@ -212,9 +219,12 @@ public class GoogleCloudStorageService implements IStorageService {
             throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
 
-        var path = Files.createTempFile("cached_file", null);
-        var objectId = getObjectId(resource);
-        getStorage().downloadTo(BlobId.of(bucketId, objectId), path);
+        var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
+        if(!Files.exists(path)) {
+            var objectId = getObjectId(resource);
+            getStorage().downloadTo(BlobId.of(bucketId, objectId), path);
+        }
+
         return path;
     }
 }

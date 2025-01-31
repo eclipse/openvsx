@@ -11,6 +11,7 @@ package org.eclipse.openvsx.cache;
 
 import org.ehcache.event.CacheEvent;
 import org.ehcache.event.CacheEventListener;
+import org.ehcache.event.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +19,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class ExpiredFileListener implements CacheEventListener<String, Path> {
+// V can be Path or NullValue (Spring's way of caching null values), that's why Object is used as V type
+public class ExpiredFileListener implements CacheEventListener<String, Object> {
     protected final Logger logger = LoggerFactory.getLogger(ExpiredFileListener.class);
     @Override
-    public void onEvent(CacheEvent<? extends String, ? extends Path> cacheEvent) {
+    public void onEvent(CacheEvent<? extends String, ?> cacheEvent) {
         logger.info("Expired file cache event: {} | key: {}", cacheEvent.getType(), cacheEvent.getKey());
-        var path = cacheEvent.getOldValue();
+        var oldValue = cacheEvent.getOldValue();
+        var path = oldValue instanceof Path ? (Path) oldValue : null;
+        if(path == null || (cacheEvent.getType() == EventType.UPDATED && path.equals(cacheEvent.getNewValue()))) {
+            return;
+        }
+
         try {
             var deleted = Files.deleteIfExists(path);
             if(deleted) {
