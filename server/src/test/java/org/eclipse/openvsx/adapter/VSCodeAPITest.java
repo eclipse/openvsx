@@ -16,6 +16,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
+import org.eclipse.openvsx.OVSXConfig;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
@@ -27,6 +28,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.security.AuthUserFactory;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.security.TokenService;
@@ -877,9 +879,10 @@ class VSCodeAPITest {
                 TokenService tokens,
                 RepositoryService repositories,
                 EntityManager entityManager,
-                EclipseService eclipse
+                EclipseService eclipse,
+                AuthUserFactory authUserFactory
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, authUserFactory);
         }
 
         @Bean
@@ -966,6 +969,17 @@ class VSCodeAPITest {
         FilesCacheKeyGenerator filesCacheKeyGenerator() {
             return new FilesCacheKeyGenerator();
         }
-    }
 
+        @Bean
+        AuthUserFactory authUserFactory(
+            OVSXConfig config
+        ) {
+            return new AuthUserFactory(config);
+        }
+
+        @Bean
+        OVSXConfig ovsxConfig() {
+            return new OVSXConfig();
+        }
+    }
 }
