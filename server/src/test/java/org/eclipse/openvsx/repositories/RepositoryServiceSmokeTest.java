@@ -228,7 +228,10 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findDeprecatedExtensions(extension),
                 () -> repositories.findLatestReplacement(1L, null, false, false),
                 () -> repositories.findNotMigratedLocalNamespaceLogos(),
-                () -> repositories.findNotMigratedLocalFileResourceContent()
+                () -> repositories.findNotMigratedLocalFileResourceContent(),
+                () -> repositories.findPublisherStatisticsByYearAndMonthAndUser(2025, 1, userData),
+                () -> repositories.findPublisherStatisticsByUser(userData),
+                () -> repositories.findUsersByProvider("github")
         );
 
         // check that we did not miss anything
