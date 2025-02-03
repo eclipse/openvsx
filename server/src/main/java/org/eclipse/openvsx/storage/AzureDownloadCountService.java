@@ -91,15 +91,13 @@ public class AzureDownloadCountService {
      * Indicates whether the download service is enabled by application config.
      */
     public boolean isEnabled() {
-        return Observation.createNotStarted("AzureDownloadCountService#isEnabled", observations).observe(() -> {
-            var logsEnabled = !StringUtils.isEmpty(logsServiceEndpoint);
-            var storageEnabled = !StringUtils.isEmpty(storageServiceEndpoint);
-            if (logsEnabled && !storageEnabled) {
-                logger.warn("The ovsx.storage.azure.service-endpoint value must be set to enable AzureDownloadCountService");
-            }
+        var logsEnabled = !StringUtils.isEmpty(logsServiceEndpoint);
+        var storageEnabled = !StringUtils.isEmpty(storageServiceEndpoint);
+        if (logsEnabled && !storageEnabled) {
+            logger.warn("The ovsx.storage.azure.service-endpoint value must be set to enable AzureDownloadCountService");
+        }
 
-            return logsEnabled && storageEnabled;
-        });
+        return logsEnabled && storageEnabled;
     }
 
     /**
@@ -108,66 +106,64 @@ public class AzureDownloadCountService {
     @Job(name = "Update Download Counts", retries = 0)
     @Recurring(id = "update-download-counts", cron = "0 5 * * * *", zoneId = "UTC")
     public void updateDownloadCounts() {
-        Observation.createNotStarted("AzureDownloadCountService#updateDownloadCounts", observations).observe(() -> {
-            if (!isEnabled()) {
-                return;
-            }
+        if (!isEnabled()) {
+            return;
+        }
 
-            logger.info(">> updateDownloadCounts");
-            var maxExecutionTime = LocalDateTime.now().withMinute(55);
-            var blobs = listBlobs();
-            var iterableByPage = blobs.iterableByPage();
+        logger.info(">> updateDownloadCounts");
+        var maxExecutionTime = LocalDateTime.now().withMinute(55);
+        var blobs = listBlobs();
+        var iterableByPage = blobs.iterableByPage();
 
-            var stopWatch = new StopWatch();
-            while (iterableByPage != null) {
-                PagedResponse<BlobItem> response = null;
-                var iterator = iterableByPage.iterator();
-                if (iterator.hasNext()) {
-                    response = iterator.next();
-                    var blobNames = getBlobNames(response.getValue());
-                    var processedItems = processor.processedItems(blobNames);
-                    processedItems.forEach(this::deleteBlob);
-                    blobNames.removeAll(processedItems);
-                    for (var name : blobNames) {
-                        if (LocalDateTime.now().isAfter(maxExecutionTime)) {
-                            var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
-                            logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
-                            logger.info("<< updateDownloadCounts");
-                            return;
+        var stopWatch = new StopWatch();
+        while (iterableByPage != null) {
+            PagedResponse<BlobItem> response = null;
+            var iterator = iterableByPage.iterator();
+            if (iterator.hasNext()) {
+                response = iterator.next();
+                var blobNames = getBlobNames(response.getValue());
+                var processedItems = processor.processedItems(blobNames);
+                processedItems.forEach(this::deleteBlob);
+                blobNames.removeAll(processedItems);
+                for (var name : blobNames) {
+                    if (LocalDateTime.now().isAfter(maxExecutionTime)) {
+                        var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
+                        logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
+                        logger.info("<< updateDownloadCounts");
+                        return;
+                    }
+
+                    var processedOn = LocalDateTime.now();
+                    var success = false;
+                    stopWatch.start();
+                    try {
+                        var files = processBlobItem(name);
+                        if (!files.isEmpty()) {
+                            var extensionDownloads = processor.processDownloadCounts(files);
+                            var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
+                            processor.evictCaches(updatedExtensions);
+                            processor.updateSearchEntries(updatedExtensions);
                         }
 
-                        var processedOn = LocalDateTime.now();
-                        var success = false;
-                        stopWatch.start();
-                        try {
-                            var files = processBlobItem(name);
-                            if (!files.isEmpty()) {
-                                var extensionDownloads = processor.processDownloadCounts(files);
-                                var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                                processor.evictCaches(updatedExtensions);
-                                processor.updateSearchEntries(updatedExtensions);
-                            }
+                        success = true;
+                    } catch (Exception e) {
+                        logger.error("Failed to process BlobItem: " + name, e);
+                    }
 
-                            success = true;
-                        } catch (Exception e) {
-                            logger.error("Failed to process BlobItem: " + name, e);
-                        }
-
-                        stopWatch.stop();
-                        var executionTime = (int) stopWatch.getLastTaskTimeMillis();
-                        processor.persistProcessedItem(name, processedOn, executionTime, success);
-                        if(success) {
-                            deleteBlob(name);
-                        }
+                    stopWatch.stop();
+                    var executionTime = (int) stopWatch.getLastTaskTimeMillis();
+                    processor.persistProcessedItem(name, processedOn, executionTime, success);
+                    if(success) {
+                        deleteBlob(name);
                     }
                 }
-
-                var continuationToken = response != null ? response.getContinuationToken() : "";
-                iterableByPage = !StringUtils.isEmpty(continuationToken) ? blobs.iterableByPage(continuationToken) : null;
             }
 
-            logger.info("<< updateDownloadCounts");
-        });
+            var continuationToken = response != null ? response.getContinuationToken() : "";
+            iterableByPage = !StringUtils.isEmpty(continuationToken) ? blobs.iterableByPage(continuationToken) : null;
+        }
+
+        logger.info("<< updateDownloadCounts");
     }
 
     private void deleteBlob(String blobName) {
@@ -183,40 +179,38 @@ public class AzureDownloadCountService {
     }
 
     private Map<String, Integer> processBlobItem(String blobName) {
-        return Observation.createNotStarted("AzureDownloadCountService#processBlobItem", observations).observe(() -> {
-            try (
-                    var downloadsTempFile = downloadBlobItem(blobName);
-                    var reader = Files.newBufferedReader(downloadsTempFile.getPath())
-            ) {
-                return reader.lines()
-                        .map(line -> {
-                            try {
-                                return getObjectMapper().readTree(line);
-                            } catch (JsonProcessingException e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                        .filter(node -> {
-                            return isGetBlobOperation(node)
-                                    && isStatusOk(node)
-                                    && isExtensionPackageUri(node)
-                                    && isNotOpenVSXUserAgent(node);
-                        }).map(node -> {
-                            var uri = node.get("uri").asText();
-                            var pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
-                            return Map.entry(pathParams, node.get("time").asText());
-                        })
-                        .filter(entry -> storageBlobContainer.equals(entry.getKey()[1]))
-                        .map(entry -> {
-                            var pathParams = entry.getKey();
-                            var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
-                            return Map.entry(fileName, 1);
-                        })
-                        .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingInt(Map.Entry::getValue)));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try (
+                var downloadsTempFile = downloadBlobItem(blobName);
+                var reader = Files.newBufferedReader(downloadsTempFile.getPath())
+        ) {
+            return reader.lines()
+                    .map(line -> {
+                        try {
+                            return getObjectMapper().readTree(line);
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .filter(node -> {
+                        return isGetBlobOperation(node)
+                                && isStatusOk(node)
+                                && isExtensionPackageUri(node)
+                                && isNotOpenVSXUserAgent(node);
+                    }).map(node -> {
+                        var uri = node.get("uri").asText();
+                        var pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
+                        return Map.entry(pathParams, node.get("time").asText());
+                    })
+                    .filter(entry -> storageBlobContainer.equals(entry.getKey()[1]))
+                    .map(entry -> {
+                        var pathParams = entry.getKey();
+                        var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
+                        return Map.entry(fileName, 1);
+                    })
+                    .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingInt(Map.Entry::getValue)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private boolean isGetBlobOperation(JsonNode node) {
@@ -232,53 +226,51 @@ public class AzureDownloadCountService {
     }
 
     private boolean isNotOpenVSXUserAgent(JsonNode node) {
-        return !node.get("properties").get("userAgentHeader").asText().equals(AZURE_USER_AGENT);
+        var userAgentHeader = node.path("properties").path("userAgentHeader").asText();
+        if(StringUtils.isEmpty(userAgentHeader)) {
+            try {
+                logger.info("USER AGENT HEADER IS EMPTY, JSON:\n{}", getObjectMapper().writeValueAsString(node));
+            } catch (JsonProcessingException e) {
+                // do nothing, this logger statement is for debugging purposes
+            }
+
+            throw new IllegalArgumentException("Expected node to have userAgentHeader property");
+        }
+
+        return !userAgentHeader.equals(AZURE_USER_AGENT);
     }
 
 
-    private TempFile downloadBlobItem(String blobName) /*throws IOException*/ {
-        return Observation.createNotStarted("AzureDownloadCountService#downloadBlobItem", observations).observe(() -> {
-            TempFile downloadsTempFile;
-            try {
-                downloadsTempFile = new TempFile("azure-downloads-", ".json");
-            } catch (IOException e) {
-                // TODO add `throws IOException` to `downloadBlobItem` method signature when reverting Observations
-                // TODO remove try catch around `downloadsTempFile`
-                throw new RuntimeException(e);
-            }
-            getContainerClient().getBlobClient(blobName).downloadToFile(downloadsTempFile.getPath().toAbsolutePath().toString(), true);
-            return downloadsTempFile;
-        });
+    private TempFile downloadBlobItem(String blobName) throws IOException {
+        var downloadsTempFile = new TempFile("azure-downloads-", ".json");
+        getContainerClient().getBlobClient(blobName).downloadToFile(downloadsTempFile.getPath().toAbsolutePath().toString(), true);
+        return downloadsTempFile;
     }
 
     private List<String> getBlobNames(List<BlobItem> items) {
-        return Observation.createNotStarted("AzureDownloadCountService#getBlobNames", observations).observe(() -> {
-            var blobNames = new ArrayList<String>();
-            for (var item : items) {
-                var name = item.getName();
-                if (isCorrectName(name)) {
-                    blobNames.add(name);
-                }
+        var blobNames = new ArrayList<String>();
+        for (var item : items) {
+            var name = item.getName();
+            if (isCorrectName(name)) {
+                blobNames.add(name);
             }
+        }
 
-            return blobNames;
-        });
+        return blobNames;
     }
 
     private PagedIterable<BlobItem> listBlobs() {
-        return Observation.createNotStarted("AzureDownloadCountService#listBlobs", observations).observe(() -> {
-            var details = new BlobListDetails()
-                    .setRetrieveCopy(false)
-                    .setRetrieveMetadata(false)
-                    .setRetrieveDeletedBlobs(false)
-                    .setRetrieveTags(false)
-                    .setRetrieveSnapshots(false)
-                    .setRetrieveUncommittedBlobs(false)
-                    .setRetrieveVersions(false);
+        var details = new BlobListDetails()
+                .setRetrieveCopy(false)
+                .setRetrieveMetadata(false)
+                .setRetrieveDeletedBlobs(false)
+                .setRetrieveTags(false)
+                .setRetrieveSnapshots(false)
+                .setRetrieveUncommittedBlobs(false)
+                .setRetrieveVersions(false);
 
-            var options = new ListBlobsOptions().setMaxResultsPerPage(100).setDetails(details);
-            return getContainerClient().listBlobs(options, Duration.ofMinutes(5));
-        });
+        var options = new ListBlobsOptions().setMaxResultsPerPage(100).setDetails(details);
+        return getContainerClient().listBlobs(options, Duration.ofMinutes(5));
     }
 
     private BlobContainerClient getContainerClient() {
