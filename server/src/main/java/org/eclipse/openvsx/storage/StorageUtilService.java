@@ -363,7 +363,7 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
-    public Path getCachedFile(FileResource resource) throws IOException {
+    public Path getCachedFile(FileResource resource) {
         return switch (resource.getStorageType()) {
             case STORAGE_GOOGLE -> googleStorage.getCachedFile(resource);
             case STORAGE_AZURE -> azureStorage.getCachedFile(resource);

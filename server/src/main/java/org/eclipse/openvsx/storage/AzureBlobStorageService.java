@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +33,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -237,17 +237,16 @@ public class AzureBlobStorageService implements IStorageService {
 
     @Override
     @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
-    public Path getCachedFile(FileResource resource) throws IOException {
+    public Path getCachedFile(FileResource resource) {
         var blobName = getBlobName(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException(missingEndpointMessage(blobName));
         }
 
         var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
-        if(!Files.exists(path)) {
-            getContainerClient().getBlobClient(blobName).downloadToFile(path.toAbsolutePath().toString());
-        }
-
+        FileUtil.writeSync(path, (p) -> {
+            getContainerClient().getBlobClient(blobName).downloadToFile(p.toAbsolutePath().toString());
+        });
         return path;
     }
 }
