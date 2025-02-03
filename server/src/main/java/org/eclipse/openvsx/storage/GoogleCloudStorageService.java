@@ -9,15 +9,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
+import com.google.cloud.storage.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -214,16 +212,16 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
-    public Path getCachedFile(FileResource resource) throws IOException {
+    public Path getCachedFile(FileResource resource) {
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
 
+        var objectId = getObjectId(resource);
         var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
-        if(!Files.exists(path)) {
-            var objectId = getObjectId(resource);
-            getStorage().downloadTo(BlobId.of(bucketId, objectId), path);
-        }
+        FileUtil.writeSync(path, (p) -> {
+            getStorage().downloadTo(BlobId.of(bucketId, objectId), p);
+        });
 
         return path;
     }

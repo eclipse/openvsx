@@ -11,6 +11,7 @@
 package org.eclipse.openvsx.storage;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -24,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -246,7 +248,7 @@ public class AwsStorageService implements IStorageService {
 
     @Override
     @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
-    public Path getCachedFile(FileResource resource) throws IOException {
+    public Path getCachedFile(FileResource resource) {
         var objectKey = getObjectKey(resource);
         var request = GetObjectRequest.builder()
                 .bucket(bucket)
@@ -254,11 +256,13 @@ public class AwsStorageService implements IStorageService {
                 .build();
 
         var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
-        if(!Files.exists(path)) {
+        FileUtil.writeSync(path, (p) -> {
             try (var stream = getS3Client().getObject(request)) {
-                Files.copy(stream, path);
+                Files.copy(stream, p);
+            } catch(IOException e) {
+                throw new UncheckedIOException(e);
             }
-        }
+        });
 
         return path;
     }
