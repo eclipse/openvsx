@@ -233,7 +233,6 @@ public class PublishExtensionVersionHandler {
                 }
             }
 
-            processor.processEachResource(extVersion, consumer);
             processor.getFileResources(extVersion, consumer);
             try (var sha256File = processor.generateSha256Checksum(extVersion)) {
                 consumer.accept(sha256File);

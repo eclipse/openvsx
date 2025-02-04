@@ -43,7 +43,6 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
     @Job(name = "Run migrations", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         orphanNamespaceMigration.fixOrphanNamespaces();
-        extractResourcesMigration();
         setPreReleaseMigration();
         renameDownloadsMigration();
         extractVsixManifestMigration();
@@ -53,12 +52,7 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         checkPotentiallyMaliciousExtensionVersions();
         migrateLocalNamespaceLogos();
         migrateLocalFileResourceContent();
-    }
-
-    private void extractResourcesMigration() {
-        var jobName = "ExtractResourcesMigration";
-        var handler = ExtractResourcesJobRequestHandler.class;
-        repositories.findNotMigratedResources().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        removeFileResourceTypeResource();
     }
 
     private void setPreReleaseMigration() {
@@ -113,5 +107,11 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
         var jobName = "LocalFileResourceContentMigration";
         var handler = FileResourceContentJobRequestHandler.class;
         repositories.findNotMigratedLocalFileResourceContent().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+    }
+
+    private void removeFileResourceTypeResource() {
+        var jobName = "RemoveFileResourceTypeResourceMigration";
+        var handler = RemoveFileResourceTypeResourceJobRequestHandler.class;
+        repositories.findNotMigratedFileResourceTypeResource().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
     }
 }

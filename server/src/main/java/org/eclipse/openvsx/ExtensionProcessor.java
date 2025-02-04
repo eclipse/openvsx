@@ -318,25 +318,6 @@ public class ExtensionProcessor implements AutoCloseable {
         }
     }
 
-    public void processEachResource(ExtensionVersion extVersion, Consumer<TempFile> processor) {
-        readInputStream();
-        zipFile.stream()
-                .filter(zipEntry -> !zipEntry.isDirectory())
-                .forEach(zipEntry -> {
-                    try (var resourceFile = ArchiveUtil.readEntry(zipFile, zipEntry)) {
-                        var resource = new FileResource();
-                        resource.setExtension(extVersion);
-                        resource.setName(zipEntry.getName());
-                        resource.setType(FileResource.RESOURCE);
-                        resourceFile.setResource(resource);
-
-                        processor.accept(resourceFile);
-                    } catch (IOException | ErrorResultException exc) {
-                        logger.warn(exc.getMessage());
-                    }
-                });
-    }
-
     public FileResource getBinary(ExtensionVersion extVersion, String binaryName) {
         var binary = new FileResource();
         binary.setExtension(extVersion);

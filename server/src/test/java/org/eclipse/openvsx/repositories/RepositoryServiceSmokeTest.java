@@ -139,7 +139,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.topMostDownloadedExtensions(1),
                 () -> repositories.deleteFileResources(extVersion, "download"),
                 () -> repositories.countActiveAccessTokens(userData),
-                () -> repositories.findNotMigratedResources(),
                 () -> repositories.findNotMigratedPreReleases(),
                 () -> repositories.findNotMigratedRenamedDownloads(),
                 () -> repositories.findNotMigratedVsixManifests(),
@@ -150,7 +149,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.topNamespaceExtensions(1),
                 () -> repositories.topNamespaceExtensionVersions(1),
                 () -> repositories.findFileResourcesByExtensionVersionIdAndType(LONG_LIST, STRING_LIST),
-                () -> repositories.findResourceFileResources(extVersion, "prefix"),
                 () -> repositories.findActiveExtensionVersions(LONG_LIST, "targetPlatform"),
                 () -> repositories.findActiveExtension("name", "namespaceName"),
                 () -> repositories.findActiveExtensionsById(LONG_LIST),
@@ -228,7 +226,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findDeprecatedExtensions(extension),
                 () -> repositories.findLatestReplacement(1L, null, false, false),
                 () -> repositories.findNotMigratedLocalNamespaceLogos(),
-                () -> repositories.findNotMigratedLocalFileResourceContent()
+                () -> repositories.findNotMigratedLocalFileResourceContent(),
+                () -> repositories.findNotMigratedFileResourceTypeResource()
         );
 
         // check that we did not miss anything
