@@ -13,7 +13,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.eclipse.openvsx.adapter.WebResourceService;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.storage.IStorageService;
-import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
 
@@ -47,7 +46,7 @@ public class FilesCacheKeyGenerator implements KeyGenerator {
     }
 
     public String generate(String namespace, String extension, String targetPlatform, String version, String name) {
-        return UrlUtil.createApiFileUrl("", namespace, extension, targetPlatform, version, name);
+        return String.join("|", namespace.toLowerCase(), extension.toLowerCase(), targetPlatform, version, name);
     }
 
     public Path generateCachedExtensionPath(FileResource resource) {
