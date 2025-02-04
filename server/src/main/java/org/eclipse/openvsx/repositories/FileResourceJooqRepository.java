@@ -96,16 +96,6 @@ public class FileResourceJooqRepository {
         return query.fetchOne(this::mapFindByQueryResult);
     }
 
-    public FileResource findByTypeAndName(String namespace, String extension, String targetPlatform, String version, String type, String name) {
-        var onlyPreRelease = VersionAlias.PRE_RELEASE.equals(version);
-        var query = findByQuery(namespace, extension, version, targetPlatform, onlyPreRelease);
-        query.addConditions(
-                FILE_RESOURCE.TYPE.eq(type),
-                FILE_RESOURCE.NAME.equalIgnoreCase(name)
-        );
-        return query.fetchOne(this::mapFindByQueryResult);
-    }
-
     private SelectQuery<Record> findByQuery(
             String namespace,
             String extension,

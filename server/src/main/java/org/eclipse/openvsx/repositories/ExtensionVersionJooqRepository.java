@@ -358,22 +358,6 @@ public class ExtensionVersionJooqRepository {
         return new PageImpl<>(content, PageRequest.of(request.offset() / request.size(), request.size()), total);
     }
 
-    public ExtensionVersion findActiveByVersionAndExtensionNameAndNamespaceName(String version, String extensionName, String namespaceName) {
-        var query = findAllActive();
-        query.addConditions(
-                EXTENSION_VERSION.VERSION.eq(version),
-                EXTENSION.NAME.equalIgnoreCase(extensionName),
-                NAMESPACE.NAME.equalIgnoreCase(namespaceName)
-        );
-        query.addOrderBy(
-                EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
-                EXTENSION_VERSION.TARGET_PLATFORM.asc()
-        );
-        query.addLimit(1);
-        var results = fetch(query);
-        return !results.isEmpty() ? results.get(0) : null;
-    }
-
     public List<ExtensionVersion> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
         var query = findAllActive();
         query.addConditions(EXTENSION.NAME.equalIgnoreCase(extensionName));

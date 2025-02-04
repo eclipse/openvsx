@@ -21,8 +21,6 @@ import java.util.List;
 
 public interface ExtensionRepository extends Repository<Extension, Long> {
 
-    Streamable<Extension> findByNameIgnoreCase(String name);
-
     Streamable<Extension> findByNamespace(Namespace namespace);
 
     Streamable<Extension> findByNamespaceAndActiveTrueOrderByNameAsc(Namespace namespace);
@@ -30,8 +28,6 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
     Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
 
     Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
-
-    Extension findByPublicId(String publicId);
 
     Streamable<Extension> findByActiveTrue();
 

@@ -2017,10 +2017,6 @@ class RegistryAPITest {
                 .thenReturn(0L);
         Mockito.when(repositories.findNamespace("foo"))
                 .thenReturn(namespace);
-        Mockito.when(repositories.findExtensions("bar"))
-                .thenReturn(Streamable.of(extension));
-        Mockito.when(repositories.findExtensionByPublicId("5678"))
-                .thenReturn(extension);
 
         var download = new FileResource();
         download.setExtension(extVersion);
@@ -2242,8 +2238,6 @@ class RegistryAPITest {
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.findFilesByType(anyCollection(), anyCollection()))
                 .thenReturn(Collections.emptyList());
-        Mockito.when(repositories.findVersions(eq("1.0.0"), any(Extension.class)))
-                .thenReturn(Streamable.empty());
         if (mode.equals("owner")) {
             var ownerMem = new NamespaceMembership();
             ownerMem.setUser(token.getUser());
