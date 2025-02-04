@@ -134,10 +134,6 @@ public class RepositoryService {
         return extensionRepo.findByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespace);
     }
 
-    public Extension findExtensionByPublicId(String publicId) {
-        return extensionRepo.findByPublicId(publicId);
-    }
-
     public Streamable<Extension> findActiveExtensions(Namespace namespace) {
         return extensionRepo.findByNamespaceAndActiveTrueOrderByNameAsc(namespace);
     }
@@ -148,10 +144,6 @@ public class RepositoryService {
 
     public Streamable<Extension> findExtensions(Namespace namespace) {
         return extensionRepo.findByNamespace(namespace);
-    }
-
-    public Streamable<Extension> findExtensions(String name) {
-        return extensionRepo.findByNameIgnoreCase(name);
     }
 
     public Streamable<Extension> findAllActiveExtensions() {
@@ -180,10 +172,6 @@ public class RepositoryService {
 
     public Streamable<ExtensionVersion> findVersions(Extension extension) {
          return extensionVersionRepo.findByExtension(extension);
-    }
-
-    public Streamable<ExtensionVersion> findVersions(String version, Extension extension) {
-        return extensionVersionRepo.findByVersionAndExtension(version, extension);
     }
 
     public Streamable<ExtensionVersion> findActiveVersions(Extension extension) {
@@ -252,10 +240,6 @@ public class RepositoryService {
 
     public FileResource findFileByName(String namespace, String extension, String targetPlatform, String version, String name) {
         return fileResourceJooqRepo.findByName(namespace, extension, targetPlatform, version, name);
-    }
-
-    public FileResource findFileByTypeAndName(String namespace, String extension, String targetPlatform, String version, String type, String name) {
-        return fileResourceJooqRepo.findByTypeAndName(namespace, extension, targetPlatform, version, type, name);
     }
 
     public Streamable<FileResource> findDownloadsByStorageTypeAndName(String storageType, Collection<String> names) {
@@ -398,10 +382,6 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
     }
 
-    public ExtensionVersion findActiveExtensionVersion(String version, String extensionName, String namespaceName) {
-        return extensionVersionJooqRepo.findActiveByVersionAndExtensionNameAndNamespaceName(version, extensionName, namespaceName);
-    }
-
     public List<FileResource> findFileResourcesByExtensionVersionIdAndType(Collection<Long> extensionVersionIds, Collection<String> types) {
         return fileResourceJooqRepo.findAll(extensionVersionIds, types);
     }
@@ -460,10 +440,6 @@ public class RepositoryService {
 
     public Streamable<ExtensionVersion> findTargetPlatformVersions(String version, String extensionName, String namespaceName) {
         return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespaceName);
-    }
-
-    public void deleteFileResources(ExtensionVersion extVersion, String type) {
-        fileResourceRepo.deleteByExtensionAndType(extVersion, type);
     }
 
     public int countVersions(Extension extension) {

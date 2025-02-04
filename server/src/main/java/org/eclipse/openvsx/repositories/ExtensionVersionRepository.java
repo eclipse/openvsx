@@ -25,8 +25,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
 
-    Streamable<ExtensionVersion> findByVersionAndExtension(String version, Extension extension);
-
     ExtensionVersion findByVersionAndTargetPlatformAndExtension(String version, String targetPlatform, Extension extension);
 
     ExtensionVersion findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String targetPlatform, String extensionName, String namespace);

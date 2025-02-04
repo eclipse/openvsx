@@ -717,8 +717,6 @@ class VSCodeAPITest {
         extVersion.setEngines(Lists.newArrayList("vscode@^1.31.0"));
         extVersion.setDependencies(Lists.newArrayList());
         extVersion.setBundledExtensions(Lists.newArrayList());
-        Mockito.when(repositories.findExtensionByPublicId("test-1"))
-                .thenReturn(extension);
         Mockito.when(repositories.findExtension("vscode-yaml", "redhat"))
                 .thenReturn(extension);
         Mockito.when(repositories.findVersion("0.5.2", targetPlatform, "vscode-yaml", "redhat"))
