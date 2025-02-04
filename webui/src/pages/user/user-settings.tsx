@@ -33,7 +33,7 @@ export namespace UserSettingsRoutes {
 
 export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
 
-    const { pageSettings, service, user } = useContext(MainContext);
+    const { pageSettings, service, user, canLogin } = useContext(MainContext);
     const { tab } = useParams();
 
     const renderTab = (tab: string, user: UserData): ReactNode => {
@@ -57,7 +57,7 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
         }
 
         if (!user) {
-            return <Container>
+            return canLogin ? <Container>
                 <Box mt={6}>
                     <Typography variant='h4'>Not Logged In</Typography>
                     <Box mt={2}>
@@ -67,7 +67,7 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
                         </Typography>
                     </Box>
                 </Box>
-            </Container>;
+            </Container> : null;
         }
 
         return <Container>

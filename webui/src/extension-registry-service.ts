@@ -420,6 +420,11 @@ export class ExtensionRegistryService {
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'version']);
         return sendRequest({ abortController, endpoint });
     }
+
+    async canLogin(abortController: AbortController): Promise<Readonly<boolean>> {
+        const endpoint = createAbsoluteURL([this.serverUrl, 'can-login']);
+        return sendRequest({ abortController, endpoint });
+    }
 }
 
 export interface AdminService {

@@ -33,7 +33,7 @@ export namespace AdminDashboardRoutes {
 }
 
 export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
-    const { user } = useContext(MainContext);
+    const { user, canLogin } = useContext(MainContext);
 
     const navigate = useNavigate();
     const toMainPage = () => navigate('/');
@@ -41,7 +41,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
     const [currentPage, setCurrentPage] = useState<string | undefined>(useLocation().pathname);
     const handleOpenRoute = (route: string) => setCurrentPage(route);
 
-    const message = user ? 'You are not authorized as administrator.' : !props.userLoading ? 'You are not logged in.' : null;
+    const message = user ? 'You are not authorized as administrator.' : !props.userLoading && canLogin ? 'You are not logged in.' : null;
     return <>
         <CssBaseline />
         <Box display='flex' height='100vh'>
