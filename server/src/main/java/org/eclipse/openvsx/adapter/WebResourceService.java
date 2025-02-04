@@ -101,7 +101,6 @@ public class WebResourceService {
                     return null;
                 }
 
-
                 var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, ".unpkg.json");
                 FileUtil.writeSync(file, (p) -> {
                     var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespace, extension, version);

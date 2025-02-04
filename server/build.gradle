@@ -4,6 +4,7 @@ buildscript {
     }
     dependencies {
         classpath "org.hibernate.orm:hibernate-gradle-plugin:6.2.2.Final"
+        classpath "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin:4.0.0"
     }
 }
 plugins {
@@ -16,6 +17,7 @@ plugins {
     id 'java'
 }
 apply plugin: 'org.hibernate.orm'
+apply plugin: 'com.adarshr.test-logger'
 
 def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [

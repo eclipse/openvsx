@@ -342,7 +342,7 @@ public class LocalVSCodeService implements IVSCodeService {
         }
         if(!Files.exists(file)) {
             logger.error("File doesn't exist {}", file);
-            cache.evictWebResourceFile(namespaceName, extensionName, null, version, name);
+            cache.evictWebResourceFile(namespaceName, extensionName, targetPlatform, version, name);
             throw new NotFoundException();
         }
         return file;
