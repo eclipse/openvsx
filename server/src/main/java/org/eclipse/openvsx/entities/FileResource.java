@@ -30,7 +30,6 @@ public class FileResource implements Serializable {
     public static final String README = "readme";
     public static final String LICENSE = "license";
     public static final String CHANGELOG = "changelog";
-    public static final String RESOURCE = "resource";
     public static final String VSIXMANIFEST = "vsixmanifest";
 
     // Storage types

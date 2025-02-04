@@ -267,18 +267,10 @@ public class RepositoryService {
     }
 
     public FileResource findFileByType(ExtensionVersion extVersion, String type) {
-        if(FileResource.RESOURCE.equals(type)) {
-            throw new IllegalArgumentException("There are multiple files of type: " + FileResource.RESOURCE);
-        }
-
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }
 
     public FileResource findFileByType(String namespace, String extension, String targetPlatform, String version, String type) {
-        if(FileResource.RESOURCE.equals(type)) {
-            throw new IllegalArgumentException("There are multiple files of type: " + FileResource.RESOURCE);
-        }
-
         return fileResourceJooqRepo.findByType(namespace, extension, targetPlatform, version, type);
     }
 
@@ -414,10 +406,6 @@ public class RepositoryService {
         return fileResourceJooqRepo.findAll(extensionVersionIds, types);
     }
 
-    public List<FileResource> findResourceFileResources(ExtensionVersion extVersion, String prefix) {
-        return fileResourceJooqRepo.findAllResources(extVersion, prefix);
-    }
-
     public List<NamespaceMembership> findNamespaceMemberships(Collection<Long> namespaceIds) {
         return membershipJooqRepo.findAllByNamespaceId(namespaceIds);
     }
@@ -482,10 +470,6 @@ public class RepositoryService {
         return extensionVersionRepo.countByExtension(extension);
     }
 
-    public Streamable<MigrationItem> findNotMigratedResources() {
-        return findNotMigratedItems("V1_23__FileResource_Extract_Resources.sql");
-    }
-
     public Streamable<MigrationItem> findNotMigratedPreReleases() {
         return findNotMigratedItems("V1_26__Extension_Set_PreRelease.sql");
     }
@@ -516,6 +500,10 @@ public class RepositoryService {
 
     public Iterable<MigrationItem> findNotMigratedLocalFileResourceContent() {
         return findNotMigratedItems("V1_48__Local_Storage_FileResource.sql");
+    }
+
+    public Iterable<MigrationItem> findNotMigratedFileResourceTypeResource() {
+        return findNotMigratedItems("V1_50_FileResource_Remove_Resource.sql");
     }
 
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
