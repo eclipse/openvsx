@@ -9,11 +9,31 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import jakarta.servlet.http.HttpServletRequest;
+import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.ICON;
+import static org.eclipse.openvsx.entities.FileResource.LICENSE;
+import static org.eclipse.openvsx.entities.FileResource.MANIFEST;
+import static org.eclipse.openvsx.entities.FileResource.README;
+import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
+import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.json.AccessTokenJson;
+import org.eclipse.openvsx.json.CsrfTokenJson;
+import org.eclipse.openvsx.json.ErrorJson;
+import org.eclipse.openvsx.json.ExtensionJson;
+import org.eclipse.openvsx.json.NamespaceDetailsJson;
+import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.NamespaceMembershipListJson;
+import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -30,17 +50,17 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.eclipse.openvsx.entities.FileResource.*;
-import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class UserAPI {
@@ -53,17 +73,20 @@ public class UserAPI {
     private final UserService users;
     private final EclipseService eclipse;
     private final StorageUtilService storageUtil;
+    private final OVSXConfig config;
 
     public UserAPI(
             RepositoryService repositories,
             UserService users,
             EclipseService eclipse,
-            StorageUtilService storageUtil
+            StorageUtilService storageUtil,
+            OVSXConfig config
     ) {
         this.repositories = repositories;
         this.users = users;
         this.eclipse = eclipse;
         this.storageUtil = storageUtil;
+        this.config = config;
     }
 
     /**
@@ -73,7 +96,7 @@ public class UserAPI {
         path = "/login"
     )
     public ModelAndView login(ModelMap model) {
-        return new ModelAndView("redirect:/oauth2/authorization/github", model);
+        return new ModelAndView("redirect:/oauth2/authorization/" + config.getOauth2().getProvider(), model);
     }
 
     /**
@@ -297,7 +320,7 @@ public class UserAPI {
             membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
             return new ResponseEntity<>(membershipList, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN); 
+            return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN);
         }
     }
 
