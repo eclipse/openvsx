@@ -479,7 +479,7 @@ public class RepositoryService {
     }
 
     public Iterable<MigrationItem> findNotMigratedFileResourceTypeResource() {
-        return findNotMigratedItems("V1_50_FileResource_Remove_Resource.sql");
+        return findNotMigratedItems("V1_50__FileResource_Remove_Resource.sql");
     }
 
     private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
