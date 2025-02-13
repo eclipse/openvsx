@@ -369,10 +369,8 @@ public class ElasticSearchService implements ISearchService {
         if(type == null) {
             throw new ErrorResultException("sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'.");
         }
-        if ("relevance".equals(sortBy)) {
-            queryBuilder.withSort(builder -> builder.score(scoreSort -> scoreSort.order(order)));
-        }
 
+        queryBuilder.withSort(builder -> builder.score(scoreSort -> scoreSort.order(order)));
         queryBuilder.withSort(builder -> builder.field(fieldSort -> fieldSort.field(sortBy).unmappedType(type).order(order)));
     }
 
