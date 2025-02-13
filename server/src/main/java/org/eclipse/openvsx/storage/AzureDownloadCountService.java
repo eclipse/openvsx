@@ -228,13 +228,9 @@ public class AzureDownloadCountService {
     private boolean isNotOpenVSXUserAgent(JsonNode node) {
         var userAgentHeader = node.path("properties").path("userAgentHeader").asText();
         if(StringUtils.isEmpty(userAgentHeader)) {
-            try {
-                logger.info("USER AGENT HEADER IS EMPTY, JSON:\n{}", getObjectMapper().writeValueAsString(node));
-            } catch (JsonProcessingException e) {
-                // do nothing, this logger statement is for debugging purposes
-            }
-
             throw new IllegalArgumentException("Expected node to have userAgentHeader property");
+        } else if (userAgentHeader.equals(AZURE_USER_AGENT)) {
+            logger.info("userAgentHeader: {}", userAgentHeader);
         }
 
         return !userAgentHeader.equals(AZURE_USER_AGENT);
