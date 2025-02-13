@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -176,6 +177,7 @@ public class CacheService {
         cache.evict(filesCacheKeyGenerator.generate(download));
     }
 
+    @Observed
     public void evictWebResourceFile(String namespaceName, String extensionName, String targetPlatform, String version, String path) {
         var cache = cacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
         if(cache == null) {

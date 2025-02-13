@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import com.google.common.collect.Lists;
+import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
@@ -273,6 +274,7 @@ public class LocalVSCodeService implements IVSCodeService {
         }
     }
 
+    @Observed
     @Override
     public ResponseEntity<StreamingResponseBody> getAsset(
             String namespace, String extensionName, String version, String assetType, String targetPlatform,
@@ -392,6 +394,7 @@ public class LocalVSCodeService implements IVSCodeService {
         }
     }
 
+    @Observed
     @Override
     public ResponseEntity<StreamingResponseBody> browse(String namespaceName, String extensionName, String version, String path) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
