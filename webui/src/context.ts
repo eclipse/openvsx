@@ -20,6 +20,7 @@ export interface MainContext {
     handleError: (err: Error | Partial<ErrorResponse>) => void;
     user?: UserData;
     updateUser: () => void;
+    canLogin: boolean;
 }
 
 // We don't include `undefined` as context value to avoid checking the value in all components

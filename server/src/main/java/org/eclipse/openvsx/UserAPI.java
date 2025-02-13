@@ -33,8 +33,8 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.ModelAndView;
 
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -66,14 +66,30 @@ public class UserAPI {
         this.storageUtil = storageUtil;
     }
 
+    @GetMapping(
+            path = "/can-login",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Boolean> canLogin() {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(users.canLogin());
+    }
+
     /**
      * Redirect to GitHub Oauth2 login as default login provider.
      */
     @GetMapping(
         path = "/login"
     )
-    public ModelAndView login(ModelMap model) {
-        return new ModelAndView("redirect:/oauth2/authorization/github", model);
+    public ResponseEntity<Void> login(ModelMap model) {
+        if(users.canLogin()) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "oauth2", "authorization", "github")))
+                    .build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**
@@ -84,7 +100,7 @@ public class UserAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ErrorJson getAuthError(HttpServletRequest request) {
-        var authException = request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+        var authException = users.canLogin() ? request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION) : null;
         if (!(authException instanceof AuthenticationException))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
