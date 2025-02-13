@@ -15,10 +15,7 @@ import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
@@ -446,44 +443,44 @@ public class RepositoryService {
         return extensionVersionRepo.countByExtension(extension);
     }
 
-    public Streamable<MigrationItem> findNotMigratedPreReleases() {
-        return findNotMigratedItems("V1_26__Extension_Set_PreRelease.sql");
+    public Slice<MigrationItem> findNotMigratedPreReleases(Pageable page) {
+        return findNotMigratedItems("V1_26__Extension_Set_PreRelease.sql", page);
     }
 
-    public Streamable<MigrationItem> findNotMigratedRenamedDownloads() {
-        return findNotMigratedItems("V1_28__MigrationItem.sql");
+    public Slice<MigrationItem> findNotMigratedRenamedDownloads(Pageable page) {
+        return findNotMigratedItems("V1_28__MigrationItem.sql", page);
     }
 
-    public Streamable<MigrationItem> findNotMigratedVsixManifests() {
-        return findNotMigratedItems("V1_32__FileResource_Extract_VsixManifest.sql");
+    public Slice<MigrationItem> findNotMigratedVsixManifests(Pageable page) {
+        return findNotMigratedItems("V1_32__FileResource_Extract_VsixManifest.sql", page);
     }
 
-    public Streamable<MigrationItem> findNotMigratedTargetPlatforms() {
-        return findNotMigratedItems("V1_34__ExtensionVersion_Fix_TargetPlatform.sql");
+    public Slice<MigrationItem> findNotMigratedTargetPlatforms(Pageable page) {
+        return findNotMigratedItems("V1_34__ExtensionVersion_Fix_TargetPlatform.sql", page);
     }
 
-    public Streamable<MigrationItem> findNotMigratedSha256Checksums() {
-        return findNotMigratedItems("V1_35__FileResource_Generate_Sha256_Checksum.sql");
+    public Slice<MigrationItem> findNotMigratedSha256Checksums(Pageable page) {
+        return findNotMigratedItems("V1_35__FileResource_Generate_Sha256_Checksum.sql", page);
     }
 
-    public Streamable<MigrationItem> findNotMigratedPotentiallyMalicious() {
-        return findNotMigratedItems("V1_46__ExtensionVersion_PotentiallyMalicious.sql");
+    public Slice<MigrationItem> findNotMigratedPotentiallyMalicious(Pageable page) {
+        return findNotMigratedItems("V1_46__ExtensionVersion_PotentiallyMalicious.sql", page);
     }
 
-    public Iterable<MigrationItem> findNotMigratedLocalNamespaceLogos() {
-        return findNotMigratedItems("V1_48__Local_Storage_Namespace.sql");
+    public Slice<MigrationItem> findNotMigratedLocalNamespaceLogos(Pageable page) {
+        return findNotMigratedItems("V1_48__Local_Storage_Namespace.sql", page);
     }
 
-    public Iterable<MigrationItem> findNotMigratedLocalFileResourceContent() {
-        return findNotMigratedItems("V1_48__Local_Storage_FileResource.sql");
+    public Slice<MigrationItem> findNotMigratedLocalFileResourceContent(Pageable page) {
+        return findNotMigratedItems("V1_48__Local_Storage_FileResource.sql", page);
     }
 
-    public Iterable<MigrationItem> findNotMigratedFileResourceTypeResource() {
-        return findNotMigratedItems("V1_50__FileResource_Remove_Resource.sql");
+    public Slice<MigrationItem> findNotMigratedFileResourceTypeResource(Pageable page) {
+        return findNotMigratedItems("V1_50__FileResource_Remove_Resource.sql", page);
     }
 
-    private Streamable<MigrationItem> findNotMigratedItems(String migrationScript) {
-        return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript);
+    private Slice<MigrationItem> findNotMigratedItems(String migrationScript, Pageable page) {
+        return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript, page);
     }
 
     public double getAverageReviewRating() {

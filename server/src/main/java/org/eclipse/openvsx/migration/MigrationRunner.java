@@ -9,12 +9,17 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import org.eclipse.openvsx.entities.MigrationItem;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
+
+import java.util.function.Function;
 
 @Component
 public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> {
@@ -58,31 +63,31 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
     private void setPreReleaseMigration() {
         var jobName = "SetPreReleaseMigration";
         var handler = SetPreReleaseJobRequestHandler.class;
-        repositories.findNotMigratedPreReleases().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedPreReleases);
     }
 
     private void renameDownloadsMigration() {
         var jobName = "RenameDownloadsMigration";
         var handler = RenameDownloadsJobRequestHandler.class;
-        repositories.findNotMigratedRenamedDownloads().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedRenamedDownloads);
     }
 
     private void extractVsixManifestMigration() {
         var jobName = "ExtractVsixManifestMigration";
         var handler = ExtractVsixManifestsJobRequestHandler.class;
-        repositories.findNotMigratedVsixManifests().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedVsixManifests);
     }
 
     private void fixTargetPlatformMigration() {
         var jobName = "FixTargetPlatformMigration";
         var handler = FixTargetPlatformsJobRequestHandler.class;
-        repositories.findNotMigratedTargetPlatforms().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedTargetPlatforms);
     }
 
     private void generateSha256ChecksumMigration() {
         var jobName = "GenerateSha256ChecksumMigration";
         var handler = GenerateSha256ChecksumJobRequestHandler.class;
-        repositories.findNotMigratedSha256Checksums().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedSha256Checksums);
     }
 
     private void extensionVersionSignatureMigration() {
@@ -94,24 +99,35 @@ public class MigrationRunner implements JobRequestHandler<HandlerJobRequest<?>> 
     private void checkPotentiallyMaliciousExtensionVersions() {
         var jobName = "CheckPotentiallyMaliciousExtensionVersions";
         var handler = PotentiallyMaliciousJobRequestHandler.class;
-        repositories.findNotMigratedPotentiallyMalicious().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedPotentiallyMalicious);
     }
 
     private void migrateLocalNamespaceLogos() {
         var jobName = "LocalNamespaceLogoMigration";
         var handler = NamespaceLogoFileResourceJobRequestHandler.class;
-        repositories.findNotMigratedLocalNamespaceLogos().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedLocalNamespaceLogos);
     }
 
     private void migrateLocalFileResourceContent() {
         var jobName = "LocalFileResourceContentMigration";
         var handler = FileResourceContentJobRequestHandler.class;
-        repositories.findNotMigratedLocalFileResourceContent().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedLocalFileResourceContent);
     }
 
     private void removeFileResourceTypeResource() {
         var jobName = "RemoveFileResourceTypeResourceMigration";
         var handler = RemoveFileResourceTypeResourceJobRequestHandler.class;
-        repositories.findNotMigratedFileResourceTypeResource().forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+        scheduleMigrations(jobName, handler, repositories::findNotMigratedFileResourceTypeResource);
+    }
+
+    private void scheduleMigrations(String jobName, Class<? extends JobRequestHandler<MigrationJobRequest>> handler, Function<PageRequest, Slice<MigrationItem>> query) {
+        var pageRequest = PageRequest.ofSize(10000);
+        var next = true;
+        while(next) {
+            var items = query.apply(pageRequest);
+            items.forEach(item -> migrations.enqueueMigration(jobName, handler, item));
+            next = items.hasNext();
+            pageRequest = pageRequest.next();
+        }
     }
 }
