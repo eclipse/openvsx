@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
@@ -56,6 +57,7 @@ public class WebResourceService {
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
+    @Observed
     @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES)
     public Path getWebResource(String namespace, String extension, String targetPlatform, String version, String name, boolean browse) {
         var download = repositories.findFileByType(namespace, extension, targetPlatform, version, FileResource.DOWNLOAD);

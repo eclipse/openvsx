@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import io.micrometer.observation.annotation.Observed;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -87,6 +88,7 @@ public class VSCodeAPI {
         return extensionQueryRequestHandler.getResult(param, size, DEFAULT_PAGE_SIZE);
     }
 
+    @Observed
     @GetMapping("/vscode/asset/{namespaceName}/{extensionName}/{version}/{assetType}/**")
     @CrossOrigin
     @Operation(summary = "Access an extension asset")
@@ -258,6 +260,7 @@ public class VSCodeAPI {
         return new ModelAndView(null, HttpStatus.NOT_FOUND);
     }
 
+    @Observed
     @GetMapping("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/**")
     @CrossOrigin
     @Operation(summary = "Browse an extension package")

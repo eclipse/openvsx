@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
@@ -254,6 +255,7 @@ public class RepositoryService {
         return fileResourceRepo.findByExtensionAndType(extVersion, type);
     }
 
+    @Observed
     public FileResource findFileByType(String namespace, String extension, String targetPlatform, String version, String type) {
         return fileResourceJooqRepo.findByType(namespace, extension, targetPlatform, version, type);
     }
@@ -643,6 +645,7 @@ public class RepositoryService {
         return membershipJooqRepo.canPublish(user, namespace);
     }
 
+    @Observed
     public String findSignatureKeyPairPublicId(String namespace, String extension, String targetPlatform, String version) {
         return signatureKeyPairJooqRepo.findPublicId(namespace, extension, targetPlatform, version);
     }
