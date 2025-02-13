@@ -53,6 +53,9 @@ public class ExtensionControlService {
     @Value("${ovsx.data.mirror.enabled:false}")
     boolean mirrorEnabled;
 
+    @Value("${ovsx.extension-control.enabled:true}")
+    boolean enabled;
+
     @Value("${ovsx.extension-control.update-on-start:false}")
     boolean updateOnStart;
 
@@ -75,7 +78,7 @@ public class ExtensionControlService {
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
-        if(mirrorEnabled) {
+        if(!enabled || mirrorEnabled) {
             return;
         }
         if(updateOnStart) {
