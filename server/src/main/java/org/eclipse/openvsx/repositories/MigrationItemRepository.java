@@ -10,12 +10,11 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.MigrationItem;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
 
 public interface MigrationItemRepository extends Repository<MigrationItem, Long> {
 
-    Streamable<MigrationItem> findByMigrationScriptAndMigrationScheduledFalseOrderById(String migrationScript);
-
-    Streamable<MigrationItem> findByMigrationScript(String migrationScript);
+    Slice<MigrationItem> findByMigrationScriptAndMigrationScheduledFalseOrderById(String migrationScript, Pageable page);
 }

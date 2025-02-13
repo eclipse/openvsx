@@ -71,6 +71,7 @@ class RepositoryServiceSmokeTest {
         Stream.of(extension, namespace, userData, extVersion, personalAccessToken, keyPair).forEach(em::persist);
         em.flush();
 
+        var page = PageRequest.ofSize(1);
         var queryRequest = new QueryRequest(null, null, null, null, null, null, false, null, 1, 0);
 
         // record executed queries
@@ -135,12 +136,12 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countVersions(extension),
                 () -> repositories.topMostDownloadedExtensions(1),
                 () -> repositories.countActiveAccessTokens(userData),
-                () -> repositories.findNotMigratedPreReleases(),
-                () -> repositories.findNotMigratedRenamedDownloads(),
-                () -> repositories.findNotMigratedVsixManifests(),
-                () -> repositories.findNotMigratedTargetPlatforms(),
-                () -> repositories.findNotMigratedSha256Checksums(),
-                () -> repositories.findNotMigratedPotentiallyMalicious(),
+                () -> repositories.findNotMigratedPreReleases(page),
+                () -> repositories.findNotMigratedRenamedDownloads(page),
+                () -> repositories.findNotMigratedVsixManifests(page),
+                () -> repositories.findNotMigratedTargetPlatforms(page),
+                () -> repositories.findNotMigratedSha256Checksums(page),
+                () -> repositories.findNotMigratedPotentiallyMalicious(page),
                 () -> repositories.topMostActivePublishingUsers(1),
                 () -> repositories.topNamespaceExtensions(1),
                 () -> repositories.topNamespaceExtensionVersions(1),
@@ -161,9 +162,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findVersionsWithout(keyPair),
                 () -> repositories.deleteDownloadSigFiles(),
                 () -> repositories.deleteAllKeyPairs(),
-                () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", PageRequest.ofSize(1)),
-                () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", "targetPlatform", PageRequest.ofSize(1)),
-                () -> repositories.findActiveVersionStringsSorted("namespaceName", "extensionName", "targetPlatform", PageRequest.ofSize(1)),
+                () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", page),
+                () -> repositories.findActiveVersionsSorted("namespaceName", "extensionName", "targetPlatform", page),
+                () -> repositories.findActiveVersionStringsSorted("namespaceName", "extensionName", "targetPlatform", page),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findActiveVersions(queryRequest),
@@ -219,9 +220,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.hasExtension("namespaceName", "extensionName"),
                 () -> repositories.findDeprecatedExtensions(extension),
                 () -> repositories.findLatestReplacement(1L, null, false, false),
-                () -> repositories.findNotMigratedLocalNamespaceLogos(),
-                () -> repositories.findNotMigratedLocalFileResourceContent(),
-                () -> repositories.findNotMigratedFileResourceTypeResource()
+                () -> repositories.findNotMigratedLocalNamespaceLogos(page),
+                () -> repositories.findNotMigratedLocalFileResourceContent(page),
+                () -> repositories.findNotMigratedFileResourceTypeResource(page)
         );
 
         // check that we did not miss anything
