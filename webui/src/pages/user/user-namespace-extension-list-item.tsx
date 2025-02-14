@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useContext, FunctionComponent, useState, useEffect, useRef } from 'react';
+import React, { useContext, FunctionComponent, useState, useEffect, useRef, ReactNode } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, styled } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
@@ -59,6 +59,20 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
         service.getExtensionIcon(abortController.current, extension).then(setIcon);
     }, [extension]);
 
+    let status: ReactNode = null;
+    if (inactive) {
+        status = <Box mt={0.25}>
+            Deactivated
+        </Box>;
+    } else if (extension.timestamp) {
+        status = <Paragraph mt={0.25}>
+            <span>Published:</span>
+            <Timestamp
+                value={extension.timestamp}
+                sx={noOverflow} />
+        </Paragraph>;
+    }
+
     return (
         extension ? (
             <RouteLink to={route} style={{ textDecoration: 'none' }}>
@@ -92,20 +106,7 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                             <span>Version:</span>
                             <Box component='span' sx={noOverflow}>{extension.version}</Box>
                         </Paragraph>
-                        {
-                            inactive ?
-                            <Box mt={0.25}>
-                                Deactivated
-                            </Box>
-                            : extension.timestamp ?
-                            <Paragraph mt={0.25}>
-                                <span>Published:</span>
-                                <Timestamp
-                                    value={extension.timestamp}
-                                    sx={noOverflow} />
-                            </Paragraph>
-                            : null
-                        }
+                        {status}
                     </Box>
                 </Paper>
             </RouteLink>

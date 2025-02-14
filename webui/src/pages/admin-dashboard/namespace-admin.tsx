@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useState, useContext, useEffect, useRef, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';
@@ -77,37 +77,36 @@ export const NamespaceAdmin: FunctionComponent = props => {
         }
     };
 
+    let listContainer: ReactNode = '';
+    if (currentNamespace && pageSettings && user) {
+        listContainer = <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
+            <NamespaceDetail
+                setLoadingState={setLoading}
+                namespace={currentNamespace}
+                filterUsers={() => true}
+                fixSelf={false}
+            />
+        </NamespaceDetailConfigContext.Provider>;
+    } else if (notFound) {
+        listContainer = <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center'>
+            <Typography variant='body1'>
+                Namespace {notFound} not found. Do you want to create it?
+            </Typography>
+            <Box mt={3}>
+                <ButtonWithProgress
+                    working={creating}
+                    onClick={onCreate}>
+                    Create Namespace {notFound}
+                </ButtonWithProgress>
+            </Box>
+        </Box>;
+    }
+
     return <SearchListContainer
         searchContainer={
             [<StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />]
         }
-        listContainer={<>
-            {
-                currentNamespace && pageSettings && user ?
-                    <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
-                        <NamespaceDetail
-                            setLoadingState={setLoading}
-                            namespace={currentNamespace}
-                            filterUsers={() => true}
-                            fixSelf={false}
-                        />
-                    </NamespaceDetailConfigContext.Provider>
-                    : notFound ?
-                        <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center'>
-                            <Typography variant='body1'>
-                                Namespace {notFound} not found. Do you want to create it?
-                            </Typography>
-                            <Box mt={3}>
-                                <ButtonWithProgress
-                                    working={creating}
-                                    onClick={onCreate}>
-                                    Create Namespace {notFound}
-                                </ButtonWithProgress>
-                            </Box>
-                        </Box>
-                        : ''
-            }
-        </>}
+        listContainer={listContainer}
         loading={loading}
     />;
 };
