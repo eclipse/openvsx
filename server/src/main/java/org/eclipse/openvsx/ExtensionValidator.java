@@ -29,15 +29,15 @@ import java.util.regex.Pattern;
 @Component
 public class ExtensionValidator {
 
-    private final static List<String> MARKDOWN_VALUES = List.of("github", "standard");
+    private static final List<String> MARKDOWN_VALUES = List.of("github", "standard");
 
-    private final static List<String> GALLERY_THEME_VALUES = List.of("dark", "light");
+    private static final List<String> GALLERY_THEME_VALUES = List.of("dark", "light");
 
-    private final static List<String> QNA_VALUES = List.of("marketplace", "false");
+    private static final List<String> QNA_VALUES = List.of("marketplace", "false");
 
-    private final static int DEFAULT_STRING_SIZE = 255;
-    private final static int DESCRIPTION_SIZE = 2048;
-    private final static int GALLERY_COLOR_SIZE = 16;
+    private static final int DEFAULT_STRING_SIZE = 255;
+    private static final int DESCRIPTION_SIZE = 2048;
+    private static final int GALLERY_COLOR_SIZE = 16;
 
     private final Pattern namePattern = Pattern.compile("[\\w\\-\\+\\$~]+");
 

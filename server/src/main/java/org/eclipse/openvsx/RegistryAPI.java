@@ -43,10 +43,10 @@ import static org.eclipse.openvsx.util.TargetPlatform.*;
 
 @RestController
 public class RegistryAPI {
-    private final static int REVIEW_TITLE_SIZE = 255;
-    private final static int REVIEW_COMMENT_SIZE = 2048;
-    private final static String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
-    private final static String NO_JSON_INPUT = "No JSON input.";
+    private static final int REVIEW_TITLE_SIZE = 255;
+    private static final int REVIEW_COMMENT_SIZE = 2048;
+    private static final String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
+    private static final String NO_JSON_INPUT = "No JSON input.";
 
     protected final Logger logger = LoggerFactory.getLogger(RegistryAPI.class);
 
