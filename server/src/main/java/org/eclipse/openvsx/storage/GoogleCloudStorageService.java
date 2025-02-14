@@ -219,7 +219,7 @@ public class GoogleCloudStorageService implements IStorageService {
 
         var objectId = getObjectId(resource);
         var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
-        FileUtil.writeSync(path, (p) -> {
+        FileUtil.writeSync(path, p -> {
             getStorage().downloadTo(BlobId.of(bucketId, objectId), p);
         });
 

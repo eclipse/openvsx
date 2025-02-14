@@ -81,7 +81,7 @@ public class WebResourceService {
                 var fileExtIndex = fileEntry.getName().lastIndexOf('.');
                 var fileExt = fileExtIndex != -1 ? fileEntry.getName().substring(fileExtIndex) : "";
                 var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, fileExt);
-                FileUtil.writeSync(file, (p) -> {
+                FileUtil.writeSync(file, p -> {
                     try (var in = zip.getInputStream(fileEntry)) {
                         Files.copy(in, p);
                     } catch(IOException e) {
@@ -104,7 +104,7 @@ public class WebResourceService {
                 }
 
                 var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, ".unpkg.json");
-                FileUtil.writeSync(file, (p) -> {
+                FileUtil.writeSync(file, p -> {
                     var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespace, extension, version);
                     var mapper = new ObjectMapper();
                     var node = mapper.createArrayNode();

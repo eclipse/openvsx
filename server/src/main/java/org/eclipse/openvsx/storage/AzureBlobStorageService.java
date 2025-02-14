@@ -244,7 +244,7 @@ public class AzureBlobStorageService implements IStorageService {
         }
 
         var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
-        FileUtil.writeSync(path, (p) -> {
+        FileUtil.writeSync(path, p -> {
             getContainerClient().getBlobClient(blobName).downloadToFile(p.toAbsolutePath().toString());
         });
         return path;

@@ -593,7 +593,7 @@ public class ExtensionVersionJooqRepository {
         }
 
         return query.fetch()
-                .map((row) -> {
+                .map(row -> {
                    var extVersion = new ExtensionVersion();
                    extVersion.setId(row.get(EXTENSION_VERSION.ID));
                    extVersion.setVersion(row.get(EXTENSION_VERSION.VERSION));
@@ -621,7 +621,7 @@ public class ExtensionVersionJooqRepository {
         query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
         query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
         query.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(extensionId));
-        return query.fetchOne((row) -> {
+        return query.fetchOne(row -> {
             var namespace = new Namespace();
             namespace.setId(row.get(NAMESPACE.ID));
             namespace.setName(row.get(NAMESPACE.NAME));
@@ -686,7 +686,7 @@ public class ExtensionVersionJooqRepository {
         query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
         query.addJoin(SIGNATURE_KEY_PAIR, JoinType.LEFT_OUTER_JOIN, SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID));
         query.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()));
-        return query.fetchOne((row) -> toExtensionVersionFull(row, extension, null));
+        return query.fetchOne(row -> toExtensionVersionFull(row, extension, null));
     }
 
     public ExtensionVersion findLatest(
@@ -1063,7 +1063,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.PREVIEW
         );
-        return query.fetchOne((row) -> {
+        return query.fetchOne(row -> {
             if(row == null) {
                 return null;
             }
@@ -1173,7 +1173,7 @@ public class ExtensionVersionJooqRepository {
             query.addConditions(EXTENSION_VERSION.VERSION.eq(version));
         }
 
-        return query.fetchOne((row) -> {
+        return query.fetchOne(row -> {
             var extVersion = toExtensionVersionFull(row);
             extVersion.getExtension().setDeprecated(row.get(EXTENSION.DEPRECATED));
             extVersion.getExtension().setDownloadable(row.get(EXTENSION.DOWNLOADABLE));
