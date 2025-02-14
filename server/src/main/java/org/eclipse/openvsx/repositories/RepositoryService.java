@@ -12,6 +12,7 @@ package org.eclipse.openvsx.repositories;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
+import org.eclipse.openvsx.statistics.MembershipDownloadCount;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
@@ -671,15 +672,19 @@ public class RepositoryService {
         return extensionRepo.findByReplacement(replacement);
     }
 
-    public PublisherStatistics findPublisherStatisticsByYearAndMonthAndUser(int year, int month, UserData user) {
-        return publisherStatisticsRepo.findByYearAndMonthAndUser(year, month, user);
+    public PublisherStatistics findPublisherStatisticsByYearAndMonthAndUserId(int year, int month, long userId) {
+        return publisherStatisticsRepo.findByYearAndMonthAndUserId(year, month, userId);
     }
 
     public Streamable<PublisherStatistics> findPublisherStatisticsByUser(UserData user) {
         return publisherStatisticsRepo.findByUser(user);
     }
 
-    public Streamable<UserData> findUsersByProvider(String provider) {
-        return userDataRepo.findByProvider(provider);
+    public List<MembershipDownloadCount> findMembershipDownloads(int offset, int limit) {
+        return extensionJooqRepo.findMembershipDownloads(offset, limit);
+    }
+
+    public List<MembershipDownloadCount> findMembershipDownloads(String loginName) {
+        return extensionJooqRepo.findMembershipDownloads(loginName);
     }
 }

@@ -16,7 +16,7 @@ import org.springframework.data.util.Streamable;
 
 public interface PublisherStatisticsRepository extends Repository<PublisherStatistics, Long> {
 
-    PublisherStatistics findByYearAndMonthAndUser(int year, int month, UserData user);
+    PublisherStatistics findByYearAndMonthAndUserId(int year, int month, long userId);
 
     Streamable<PublisherStatistics> findByUser(UserData user);
 }

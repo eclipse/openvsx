@@ -11,6 +11,7 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.statistics.MembershipDownloadCount;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.web.SitemapRow;
 import org.jooq.Record;
@@ -24,8 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.eclipse.openvsx.jooq.Tables.EXTENSION;
-import static org.eclipse.openvsx.jooq.Tables.NAMESPACE;
+import static org.eclipse.openvsx.jooq.Tables.*;
 
 @Component
 public class ExtensionJooqRepository {
@@ -269,5 +269,41 @@ public class ExtensionJooqRepository {
                         .where(NAMESPACE.NAME.equalIgnoreCase(namespace))
                         .and(EXTENSION.NAME.equalIgnoreCase(extension))
         );
+    }
+
+    public List<MembershipDownloadCount> findMembershipDownloads(int offset, int limit) {
+        return dsl.select(USER_DATA.ID, NAMESPACE.NAME, EXTENSION.NAME, EXTENSION.DOWNLOAD_COUNT)
+                .from(USER_DATA)
+                .join(NAMESPACE_MEMBERSHIP).on(NAMESPACE_MEMBERSHIP.USER_DATA.eq(USER_DATA.ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(NAMESPACE_MEMBERSHIP.NAMESPACE))
+                .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
+                .where(USER_DATA.PROVIDER.eq("github"))
+                .and(EXTENSION.ACTIVE.eq(true))
+                .orderBy(USER_DATA.ID, NAMESPACE.NAME, EXTENSION.NAME)
+                .offset(offset)
+                .limit(limit)
+                .fetch(row -> new MembershipDownloadCount(
+                        row.get(USER_DATA.ID),
+                        row.get(NAMESPACE.NAME),
+                        row.get(EXTENSION.NAME),
+                        row.get(EXTENSION.DOWNLOAD_COUNT))
+                );
+    }
+
+    public List<MembershipDownloadCount> findMembershipDownloads(String loginName) {
+        return dsl.select(USER_DATA.ID, NAMESPACE.NAME, EXTENSION.NAME, EXTENSION.DOWNLOAD_COUNT)
+                .from(USER_DATA)
+                .join(NAMESPACE_MEMBERSHIP).on(NAMESPACE_MEMBERSHIP.USER_DATA.eq(USER_DATA.ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(NAMESPACE_MEMBERSHIP.NAMESPACE))
+                .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
+                .where(USER_DATA.PROVIDER.eq("github"))
+                .and(USER_DATA.LOGIN_NAME.eq(loginName))
+                .and(EXTENSION.ACTIVE.eq(true))
+                .fetch(row -> new MembershipDownloadCount(
+                        row.get(USER_DATA.ID),
+                        row.get(NAMESPACE.NAME),
+                        row.get(EXTENSION.NAME),
+                        row.get(EXTENSION.DOWNLOAD_COUNT))
+                );
     }
 }

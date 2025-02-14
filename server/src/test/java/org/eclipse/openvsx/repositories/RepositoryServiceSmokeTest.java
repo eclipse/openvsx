@@ -223,9 +223,10 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findNotMigratedLocalNamespaceLogos(page),
                 () -> repositories.findNotMigratedLocalFileResourceContent(page),
                 () -> repositories.findNotMigratedFileResourceTypeResource(page),
-                () -> repositories.findPublisherStatisticsByYearAndMonthAndUser(2025, 1, userData),
+                () -> repositories.findPublisherStatisticsByYearAndMonthAndUserId(2025, 1, userData.getId()),
                 () -> repositories.findPublisherStatisticsByUser(userData),
-                () -> repositories.findUsersByProvider("github")
+                () -> repositories.findMembershipDownloads("loginName"),
+                () -> repositories.findMembershipDownloads(0, 1)
         );
 
         // check that we did not miss anything
