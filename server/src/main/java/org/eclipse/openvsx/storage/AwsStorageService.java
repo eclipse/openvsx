@@ -256,7 +256,7 @@ public class AwsStorageService implements IStorageService {
                 .build();
 
         var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
-        FileUtil.writeSync(path, (p) -> {
+        FileUtil.writeSync(path, p -> {
             try (var stream = getS3Client().getObject(request)) {
                 Files.copy(stream, p);
             } catch(IOException e) {

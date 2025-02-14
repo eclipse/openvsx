@@ -170,7 +170,7 @@ public class VSCodeIdUpdateService {
 
     private void updatePublicIdNulls(Map<Long, String> changedPublicIds, Set<String> newPublicIds, Map<Long, String> publicIdMap) {
         // remove unchanged random public ids
-        changedPublicIds.entrySet().removeIf((e) -> {
+        changedPublicIds.entrySet().removeIf(e -> {
             var publicId = e.getValue() == null ? publicIdMap.get(e.getKey()) : null;
             var remove = publicId != null && !newPublicIds.contains(publicId);
             if(remove) {

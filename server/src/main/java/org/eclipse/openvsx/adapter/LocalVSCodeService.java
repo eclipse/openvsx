@@ -350,7 +350,7 @@ public class LocalVSCodeService implements IVSCodeService {
     }
 
     private StreamingResponseBody builtinExtensionResponse() {
-        return (out) -> out.write(builtinExtensionMessage().getBytes(StandardCharsets.UTF_8));
+        return out -> out.write(builtinExtensionMessage().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

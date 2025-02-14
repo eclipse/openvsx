@@ -213,7 +213,7 @@ public class ExtensionJooqRepository {
                 .join(EXTENSION).on(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID))
                 .where(EXTENSION.ACTIVE.eq(true))
                 .fetch()
-                .map((row) -> {
+                .map(row -> {
                     return new SitemapRow(
                             row.get(NAMESPACE.NAME),
                             row.get(EXTENSION.NAME),
