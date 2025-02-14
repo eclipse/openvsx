@@ -116,8 +116,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
         try {
             var json = restTemplate.getForObject(urlTemplate, ExtensionJson.class, uriVariables);
-            makeDownloadsCompatible(json);
-            return proxy != null ? proxy.rewriteUrls(json) : json;
+            if(json != null) {
+                makeDownloadsCompatible(json);
+                if(proxy != null) {
+                    proxy.rewriteUrls(json);
+                }
+            }
+
+            return json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -144,8 +150,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
         try {
             var json = restTemplate.getForObject(urlTemplate, ExtensionJson.class, uriVariables);
-            makeDownloadsCompatible(json);
-            return proxy != null ? proxy.rewriteUrls(json) : json;
+            if(json != null) {
+                makeDownloadsCompatible(json);
+                if(proxy != null) {
+                    proxy.rewriteUrls(json);
+                }
+            }
+
+            return json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);

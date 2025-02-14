@@ -258,6 +258,10 @@ public class EclipseService {
 
     private EclipseProfile parseEclipseProfile(ResponseEntity<String> response) {
         var json = response.getBody();
+        if(json == null) {
+            return new EclipseProfile();
+        }
+
         try {
             if (json.startsWith("[\"")) {
                 var error = objectMapper.readValue(json, TYPE_LIST_STRING);
@@ -373,6 +377,10 @@ public class EclipseService {
 
     private PublisherAgreement parseAgreementResponse(ResponseEntity<String> response) {
         var json = response.getBody();
+        if(json == null) {
+            return null;
+        }
+
         try {
             PublisherAgreementResponse agreementResponse;
             if (json.startsWith("[\"")) {

@@ -178,20 +178,22 @@ public class UpstreamVSCodeService implements IVSCodeService {
             throw propagateRestException(exc, method, urlTemplate, uriVariables);
         }
 
+        URI location = null;
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
-            var location = response.getHeaders().getLocation();
-            if(proxy != null) {
-                location = proxy.rewriteUrl(location);
-            }
-
-            return location.toString();
+            location = response.getHeaders().getLocation();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             handleResponseError(urlTemplate, uriVariables, response);
         }
+        if(location == null) {
+            throw new NotFoundException();
+        }
 
-        throw new NotFoundException();
+        if(proxy != null) {
+            location = proxy.rewriteUrl(location);
+        }
+        return location.toString();
     }
 
     @Override
@@ -207,20 +209,22 @@ public class UpstreamVSCodeService implements IVSCodeService {
             throw propagateRestException(exc, method, urlTemplate, uriVariables);
         }
 
+        URI location = null;
         var statusCode = response.getStatusCode();
         if(statusCode.is3xxRedirection()) {
-            var location = response.getHeaders().getLocation();
-            if(proxy != null) {
-                location = proxy.rewriteUrl(location);
-            }
-
-            return location.toString();
+            location = response.getHeaders().getLocation();
         }
         if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
             handleResponseError(urlTemplate, uriVariables, response);
         }
+        if(location == null) {
+            throw new NotFoundException();
+        }
 
-        throw new NotFoundException();
+        if(proxy != null) {
+            location = proxy.rewriteUrl(location);
+        }
+        return location.toString();
     }
 
     @Override

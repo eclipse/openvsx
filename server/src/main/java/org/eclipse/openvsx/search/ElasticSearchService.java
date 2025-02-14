@@ -377,7 +377,7 @@ public class ElasticSearchService implements ISearchService {
     private long getMaxResultWindow() {
         if(maxResultWindow == null) {
             var settings = searchOperations.indexOps(ExtensionSearch.class).getSettings(true);
-            maxResultWindow = Long.parseLong(settings.get("index.max_result_window").toString());
+            maxResultWindow = Long.parseLong(settings.getOrDefault("index.max_result_window", "10000").toString());
         }
 
         return maxResultWindow;
