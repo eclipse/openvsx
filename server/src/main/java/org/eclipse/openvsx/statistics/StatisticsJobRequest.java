@@ -7,21 +7,31 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx.admin;
+package org.eclipse.openvsx.statistics;
 
 import org.jobrunr.jobs.lambdas.JobRequest;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 
-public class AdminStatisticsJobRequest implements JobRequest {
+public class StatisticsJobRequest<T extends JobRequestHandler<StatisticsJobRequest>> implements JobRequest {
 
+    private Class<T> handler;
     private int year;
     private int month;
 
-    public AdminStatisticsJobRequest() {}
+    public StatisticsJobRequest() {}
 
-    public AdminStatisticsJobRequest(int year, int month) {
+    public StatisticsJobRequest(Class<T> handler,int year, int month) {
+        this.handler = handler;
         this.year = year;
         this.month = month;
+    }
+
+    public Class<T> getHandler() {
+        return handler;
+    }
+
+    public void setHandler(Class<T> handler) {
+        this.handler = handler;
     }
 
     public int getYear() {
@@ -41,7 +51,7 @@ public class AdminStatisticsJobRequest implements JobRequest {
     }
 
     @Override
-    public Class<? extends JobRequestHandler> getJobRequestHandler() {
-        return AdminStatisticsJobRequestHandler.class;
+    public Class<T> getJobRequestHandler() {
+        return this.handler;
     }
 }

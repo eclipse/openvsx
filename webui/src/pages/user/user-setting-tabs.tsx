@@ -42,6 +42,7 @@ export const UserSettingTabs = (): ReactElement => {
             <Tab value='tokens' label='Access Tokens' />
             <Tab value='namespaces' label='Namespaces' />
             <Tab value='extensions' label='Extensions' />
+            <Tab value='statistics' label='Statistics' />
         </Tabs>
     );
 };

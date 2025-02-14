@@ -7,10 +7,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx.admin;
+package org.eclipse.openvsx.statistics;
 
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.statistics.StatisticsJobRequest;
+import org.eclipse.openvsx.statistics.AdminStatisticsJobRequestHandler;
+import org.eclipse.openvsx.statistics.StatisticsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -23,13 +26,13 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class AdminStatisticsJobRequestHandlerTest {
+class StatisticsJobRequestHandlerTest {
 
     @MockBean
     RepositoryService repositories;
 
     @MockBean
-    AdminStatisticsService service;
+    StatisticsService service;
 
     @Autowired
     AdminStatisticsJobRequestHandler handler;
@@ -38,7 +41,7 @@ class AdminStatisticsJobRequestHandlerTest {
     void testAdminStatisticsJobRequestHandler() throws Exception {
         var expectedStatistics = mockAdminStatistics();
 
-        var request = new AdminStatisticsJobRequest(2023, 11);
+        var request = new StatisticsJobRequest(AdminStatisticsJobRequestHandler.class, 2023, 11);
         handler.run(request);
         Mockito.verify(service).saveAdminStatistics(expectedStatistics);
     }
@@ -52,7 +55,7 @@ class AdminStatisticsJobRequestHandlerTest {
         prevStatistics.setDownloadsTotal(5000);
         Mockito.when(repositories.findAdminStatisticsByYearAndMonth(2023, 10)).thenReturn(prevStatistics);
 
-        var request = new AdminStatisticsJobRequest(2023, 11);
+        var request = new StatisticsJobRequest(AdminStatisticsJobRequestHandler.class, 2023, 11);
         handler.run(request);
         Mockito.verify(service).saveAdminStatistics(expectedStatistics);
     }
@@ -62,7 +65,7 @@ class AdminStatisticsJobRequestHandlerTest {
         @Bean
         AdminStatisticsJobRequestHandler adminStatisticsJobRequestHandler(
                 RepositoryService repositories,
-                AdminStatisticsService service
+                StatisticsService service
         ) {
             return new AdminStatisticsJobRequestHandler(repositories, service);
         }

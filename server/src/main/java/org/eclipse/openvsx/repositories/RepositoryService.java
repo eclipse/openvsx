@@ -12,6 +12,7 @@ package org.eclipse.openvsx.repositories;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
+import org.eclipse.openvsx.statistics.MembershipDownloadCount;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
@@ -58,6 +59,7 @@ public class RepositoryService {
     private final MigrationItemRepository migrationItemRepo;
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
+    private final PublisherStatisticsRepository publisherStatisticsRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -81,7 +83,8 @@ public class RepositoryService {
             AdminStatisticCalculationsRepository adminStatisticCalculationsRepo,
             MigrationItemRepository migrationItemRepo,
             SignatureKeyPairRepository signatureKeyPairRepo,
-            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo
+            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
+            PublisherStatisticsRepository publisherStatisticsRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -105,6 +108,7 @@ public class RepositoryService {
         this.migrationItemRepo = migrationItemRepo;
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
+        this.publisherStatisticsRepo = publisherStatisticsRepo;
     }
 
     public Namespace findNamespace(String name) {
@@ -666,5 +670,21 @@ public class RepositoryService {
 
     public Streamable<Extension> findDeprecatedExtensions(Extension replacement) {
         return extensionRepo.findByReplacement(replacement);
+    }
+
+    public PublisherStatistics findPublisherStatisticsByYearAndMonthAndUserId(int year, int month, long userId) {
+        return publisherStatisticsRepo.findByYearAndMonthAndUserId(year, month, userId);
+    }
+
+    public Streamable<PublisherStatistics> findPublisherStatisticsByUser(UserData user) {
+        return publisherStatisticsRepo.findByUser(user);
+    }
+
+    public List<MembershipDownloadCount> findMembershipDownloads(int offset, int limit) {
+        return extensionJooqRepo.findMembershipDownloads(offset, limit);
+    }
+
+    public List<MembershipDownloadCount> findMembershipDownloads(String loginName) {
+        return extensionJooqRepo.findMembershipDownloads(loginName);
     }
 }

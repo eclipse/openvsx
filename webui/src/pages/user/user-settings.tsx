@@ -21,6 +21,7 @@ import { UserSettingsNamespaces } from './user-settings-namespaces';
 import { UserSettingsExtensions } from './user-settings-extensions';
 import { MainContext } from '../../context';
 import { UserData } from '../../extension-registry-types';
+import { UserSettingsStatistics } from './user-settings-statistics';
 
 export namespace UserSettingsRoutes {
     export const ROOT = createRoute(['user-settings']);
@@ -46,6 +47,8 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
                 return <UserSettingsNamespaces />;
             case 'extensions':
                 return <UserSettingsExtensions />;
+            case 'statistics':
+                return <UserSettingsStatistics />;
             default:
                 return null;
         }
