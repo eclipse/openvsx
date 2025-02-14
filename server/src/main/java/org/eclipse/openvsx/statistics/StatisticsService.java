@@ -7,24 +7,30 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx.admin;
+package org.eclipse.openvsx.statistics;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.AdminStatistics;
+import org.eclipse.openvsx.entities.PublisherStatistics;
 import org.springframework.stereotype.Component;
 
 @Component
-public class AdminStatisticsService {
+public class StatisticsService {
 
     private final EntityManager entityManager;
 
-    public AdminStatisticsService(EntityManager entityManager) {
+    public StatisticsService(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
     @Transactional
     public void saveAdminStatistics(AdminStatistics statistics) {
+        entityManager.persist(statistics);
+    }
+
+    @Transactional
+    public void savePublisherStatistics(PublisherStatistics statistics) {
         entityManager.persist(statistics);
     }
 }

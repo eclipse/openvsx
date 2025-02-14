@@ -12,6 +12,7 @@ package org.eclipse.openvsx;
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PublisherStatistics;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -366,4 +367,18 @@ public class UserAPI {
         }
     }
 
+    @GetMapping(
+            path = "/user/statistics",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<PublisherStatisticsJson> getPublisherStatistics() {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        return repositories.findPublisherStatisticsByUser(user).stream()
+                .map(PublisherStatistics::toJson)
+                .toList();
+    }
 }

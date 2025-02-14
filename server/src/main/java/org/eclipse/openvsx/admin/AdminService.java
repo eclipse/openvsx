@@ -22,6 +22,7 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.statistics.MonthlyStatisticsJobRequestHandler;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -78,7 +79,7 @@ public class AdminService {
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
-        var jobRequest = new HandlerJobRequest<>(MonthlyAdminStatisticsJobRequestHandler.class);
+        var jobRequest = new HandlerJobRequest<>(MonthlyStatisticsJobRequestHandler.class);
         scheduler.scheduleRecurrently("MonthlyAdminStatistics", Cron.monthly(1, 0, 3), ZoneId.of("UTC"), jobRequest);
     }
 
