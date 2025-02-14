@@ -105,10 +105,9 @@ public class VSCodeIdService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + API_VERSION);
         var result = vsCodeIdRestTemplate.postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
-
-        if (result.results() != null && result.results().size() > 0) {
+        if (result != null && result.results() != null && !result.results().isEmpty()) {
             var item = result.results().get(0);
-            if (item.extensions() != null && item.extensions().size() > 0) {
+            if (item.extensions() != null && !item.extensions().isEmpty()) {
                 return item.extensions().get(0);
             }
         }
