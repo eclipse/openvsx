@@ -45,7 +45,7 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 @RestController
 public class UserAPI {
 
-    private final static int TOKEN_DESCRIPTION_SIZE = 255;
+    private static final int TOKEN_DESCRIPTION_SIZE = 255;
 
     protected final Logger logger = LoggerFactory.getLogger(UserAPI.class);
 
