@@ -79,30 +79,18 @@ public class DocumentationConfig {
                         "X-Rate-Limit-Remaining", limitRemainingHeader
                 ));
 
-        return openApi -> {
-            openApi.getPaths().forEach((path, item) -> {
-                Stream.of(
-                    item.getGet(),
-                    item.getHead(),
-                    item.getPost(),
-                    item.getPut(),
-                    item.getDelete(),
-                    item.getOptions(),
-                    item.getTrace(),
-                    item.getPatch()
-                )
-                .filter(Objects::nonNull)
-                .forEach(operation -> {
-                    var responses = operation.getResponses();
-                    if(responses == null) {
-                        responses = new ApiResponses();
-                    }
+        return openApi -> openApi.getPaths()
+                .forEach((path, item) -> item.readOperations()
+                        .forEach(operation -> {
+                            var responses = operation.getResponses();
+                            if(responses == null) {
+                                responses = new ApiResponses();
+                            }
 
-                    responses.addApiResponse("429", response);
-                    operation.setResponses(responses);
-                });
-            });
-        };
+                            responses.addApiResponse("429", response);
+                            operation.setResponses(responses);
+                        })
+                );
     }
 
     @Bean

@@ -69,14 +69,12 @@ public class AzureDownloadCountProcessor {
     }
 
     public Map<Long, Integer> processDownloadCounts(Map<String, Integer> files) {
-        return Observation.createNotStarted("AzureDownloadCountProcessor#processDownloadCounts", observations).observe(() -> {
-            return repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
-                    .map(fileResource -> Map.entry(fileResource, files.get(fileResource.getName().toUpperCase())))
-                    .collect(Collectors.groupingBy(
-                            e -> e.getKey().getExtension().getExtension().getId(),
-                            Collectors.summingInt(Map.Entry::getValue)
-                    ));
-        });
+        return Observation.createNotStarted("AzureDownloadCountProcessor#processDownloadCounts", observations).observe(() -> repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
+                .map(fileResource -> Map.entry(fileResource, files.get(fileResource.getName().toUpperCase())))
+                .collect(Collectors.groupingBy(
+                        e -> e.getKey().getExtension().getExtension().getId(),
+                        Collectors.summingInt(Map.Entry::getValue)
+                )));
     }
 
     @Transactional
@@ -94,13 +92,11 @@ public class AzureDownloadCountProcessor {
 
     @Transactional //needs transaction for lazy-loading versions
     public void evictCaches(List<Extension> extensions) {
-        Observation.createNotStarted("AzureDownloadCountProcessor#evictCaches", observations).observe(() -> {
-            extensions.forEach(extension -> {
-                extension = entityManager.merge(extension);
-                cache.evictExtensionJsons(extension);
-                cache.evictLatestExtensionVersion(extension);
-            });
-        });
+        Observation.createNotStarted("AzureDownloadCountProcessor#evictCaches", observations).observe(() -> extensions.forEach(extension -> {
+            extension = entityManager.merge(extension);
+            cache.evictExtensionJsons(extension);
+            cache.evictLatestExtensionVersion(extension);
+        }));
     }
 
     public void updateSearchEntries(List<Extension> extensions) {
@@ -120,8 +116,6 @@ public class AzureDownloadCountProcessor {
     }
 
     public List<String> processedItems(List<String> blobNames) {
-        return Observation.createNotStarted("AzureDownloadCountProcessor#processedItems", observations).observe(() -> {
-            return repositories.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(blobNames);
-        });
+        return Observation.createNotStarted("AzureDownloadCountProcessor#processedItems", observations).observe(() -> repositories.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(blobNames));
     }
 }
