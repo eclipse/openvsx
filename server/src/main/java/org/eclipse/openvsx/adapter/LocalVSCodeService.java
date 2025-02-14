@@ -218,11 +218,11 @@ public class LocalVSCodeService implements IVSCodeService {
         var extensionQueryResults = new ArrayList<ExtensionQueryResult.Extension>();
         for(var extension : extensionsList) {
             var latest = latestVersions.get(extension.getId());
-            var versions = extensionVersionsMap.getOrDefault(extension.getId(), Collections.emptyList()).stream()
+            var queryVersions = extensionVersionsMap.getOrDefault(extension.getId(), Collections.emptyList()).stream()
                     .map(extVer -> toQueryVersion(extVer, fileResources, flags))
                     .collect(Collectors.toList());
 
-            var queryExt = toQueryExtension(extension, latest, versions, flags);
+            var queryExt = toQueryExtension(extension, latest, queryVersions, flags);
             extensionQueryResults.add(queryExt);
         }
 

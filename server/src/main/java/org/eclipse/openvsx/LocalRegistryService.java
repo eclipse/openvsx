@@ -103,13 +103,13 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         var json = new NamespaceJson();
         json.setName(namespace.getName());
-        var extensions = new LinkedHashMap<String, String>();
+        var extensionsMap = new LinkedHashMap<String, String>();
         var serverUrl = UrlUtil.getBaseUrl();
         for (var name : repositories.findActiveExtensionNames(namespace)) {
             String url = createApiUrl(serverUrl, "api", namespace.getName(), name);
-            extensions.put(name, url);
+            extensionsMap.put(name, url);
         }
-        json.setExtensions(extensions);
+        json.setExtensions(extensionsMap);
         json.setVerified(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
         json.setAccess(RESTRICTED_ACCESS);
         return json;
@@ -333,9 +333,9 @@ public class LocalRegistryService implements IExtensionRegistry {
                     var latestPreRelease = latestPreReleases.get(getLatestVersionKey(ev));
                     var reviewCount = reviewCounts.getOrDefault(ev.getExtension().getId(), 0L);
                     var preview = previewsByExtensionId.get(ev.getExtension().getId());
-                    var versions = versionStrings.get(ev.getExtension().getId());
+                    var extensionVersionStrings = versionStrings.get(ev.getExtension().getId());
                     var fileResources = fileResourcesByExtensionVersionId.getOrDefault(ev.getId(), Collections.emptyList());
-                    return toExtensionVersionJson(ev, latest, latestPreRelease, reviewCount, preview, versions, targetPlatform, fileResources, membershipsByNamespaceId);
+                    return toExtensionVersionJson(ev, latest, latestPreRelease, reviewCount, preview, extensionVersionStrings, targetPlatform, fileResources, membershipsByNamespaceId);
                 })
                 .toList());
 
@@ -441,9 +441,9 @@ public class LocalRegistryService implements IExtensionRegistry {
                     var fileResources = fileResourcesByExtensionVersionId.getOrDefault(ev.getId(), Collections.emptyList());
                     var globalLatest = addAllVersions ? latestGlobalVersions.get(ev.getExtension().getId()) : null;
                     var globalLatestPreRelease = addAllVersions ? latestGlobalPreReleases.get(ev.getExtension().getId()) : null;
-                    var versions = addAllVersions ? versionStrings.get(ev.getExtension().getId()) : null;
+                    var extensionVersionStrings = addAllVersions ? versionStrings.get(ev.getExtension().getId()) : null;
 
-                    return toExtensionVersionJsonV2(ev, latest, latestPreRelease, globalLatest, globalLatestPreRelease, reviewCount, preview, versions, targetPlatform, fileResources, membershipsByNamespaceId);
+                    return toExtensionVersionJsonV2(ev, latest, latestPreRelease, globalLatest, globalLatestPreRelease, reviewCount, preview, extensionVersionStrings, targetPlatform, fileResources, membershipsByNamespaceId);
                 })
                 .toList());
 
@@ -753,13 +753,13 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .distinct()
                 .collect(Collectors.toList());
 
-        var versions = findLatestVersions(ids);
-        ids.removeAll(versions.keySet());
+        var latestVersions = findLatestVersions(ids);
+        ids.removeAll(latestVersions.keySet());
         if(!ids.isEmpty()) {
             search.removeSearchEntries(ids);
         }
 
-        return versions;
+        return latestVersions;
     }
 
     private LinkedHashMap<Long, ExtensionVersion> findLatestVersions(Collection<Long> ids) {
@@ -1135,11 +1135,12 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Override
     public RegistryVersionJson getRegistryVersion() {
-        if (this.registryVersion == null || this.registryVersion.isEmpty()) {
+        if(StringUtils.isEmpty(registryVersion)) {
             throw new NotFoundException();
         }
-        var registryVersion = new RegistryVersionJson();
-        registryVersion.setVersion(this.registryVersion);
-        return registryVersion;
+
+        var json = new RegistryVersionJson();
+        json.setVersion(registryVersion);
+        return json;
     }
 }

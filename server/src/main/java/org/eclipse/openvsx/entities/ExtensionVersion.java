@@ -208,32 +208,27 @@ public class ExtensionVersion implements Serializable {
      */
     public SearchEntryJson toSearchEntryJson() {
         var entry = new SearchEntryJson();
-        var extension = this.getExtension();
-        entry.setName(extension.getName());
-        entry.setNamespace(extension.getNamespace().getName());
-        entry.setAverageRating(extension.getAverageRating());
-        entry.setReviewCount(extension.getReviewCount());
-        entry.setDownloadCount(extension.getDownloadCount());
+        var ext = this.getExtension();
+        entry.setName(ext.getName());
+        entry.setNamespace(ext.getNamespace().getName());
+        entry.setAverageRating(ext.getAverageRating());
+        entry.setReviewCount(ext.getReviewCount());
+        entry.setDownloadCount(ext.getDownloadCount());
         entry.setVersion(this.getVersion());
         entry.setTimestamp(TimeUtil.toUTCString(this.getTimestamp()));
         entry.setDisplayName(this.getDisplayName());
         entry.setDescription(this.getDescription());
-        entry.setDeprecated(extension.isDeprecated());
+        entry.setDeprecated(ext.isDeprecated());
         return entry;
     }
 
     public Map<String, String> getEnginesMap() {
-        var engines = this.getEngines();
-        if (engines == null)
-            return null;
-        var result = Maps.<String, String>newLinkedHashMapWithExpectedSize(engines.size());
-        for (var engine : engines) {
-            var split = engine.split("@");
-            if (split.length == 2) {
-                result.put(split[0], split[1]);
-            }
-        }
-        return result;
+        var map = Optional.ofNullable(this.getEngines()).orElse(Collections.emptyList()).stream()
+                .map(engine -> engine.split("@"))
+                .filter(split -> split.length == 2)
+                .collect(Collectors.toMap(split -> split[0], split -> split[1], (a, b) -> a, Maps::newLinkedHashMap));
+
+        return !map.isEmpty() ? map : null;
     }
 
 	public long getId() {

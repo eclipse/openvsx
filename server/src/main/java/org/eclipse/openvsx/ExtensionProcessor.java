@@ -335,11 +335,11 @@ public class ExtensionProcessor implements AutoCloseable {
         var sha256File = new TempFile("extension_", ".sha256");
         Files.writeString(sha256File.getPath(), hash);
 
-        var sha256 = new FileResource();
-        sha256.setExtension(extVersion);
-        sha256.setName(NamingUtil.toFileFormat(extVersion, ".sha256"));
-        sha256.setType(FileResource.DOWNLOAD_SHA256);
-        sha256File.setResource(sha256);
+        var sha256Resource = new FileResource();
+        sha256Resource.setExtension(extVersion);
+        sha256Resource.setName(NamingUtil.toFileFormat(extVersion, ".sha256"));
+        sha256Resource.setType(FileResource.DOWNLOAD_SHA256);
+        sha256File.setResource(sha256Resource);
         return sha256File;
     }
 
@@ -349,11 +349,11 @@ public class ExtensionProcessor implements AutoCloseable {
         if (entryFile == null) {
             throw new ErrorResultException(entryNotFoundMessage(PACKAGE_JSON));
         }
-        var manifest = new FileResource();
-        manifest.setExtension(extVersion);
-        manifest.setName("package.json");
-        manifest.setType(FileResource.MANIFEST);
-        entryFile.setResource(manifest);
+        var manifestResource = new FileResource();
+        manifestResource.setExtension(extVersion);
+        manifestResource.setName("package.json");
+        manifestResource.setType(FileResource.MANIFEST);
+        entryFile.setResource(manifestResource);
         return entryFile;
     }
 
@@ -383,9 +383,9 @@ public class ExtensionProcessor implements AutoCloseable {
 
     public TempFile getLicense(ExtensionVersion extVersion) throws IOException {
         readInputStream();
-        var license = new FileResource();
-        license.setExtension(extVersion);
-        license.setType(FileResource.LICENSE);
+        var licenseResource = new FileResource();
+        licenseResource.setExtension(extVersion);
+        licenseResource.setType(FileResource.LICENSE);
 
         var assetPath = tryGetLicensePath();
         if(StringUtils.isEmpty(assetPath)) {
@@ -399,8 +399,8 @@ public class ExtensionProcessor implements AutoCloseable {
 
         var lastSegmentIndex = assetPath.lastIndexOf('/');
         var lastSegment = assetPath.substring(lastSegmentIndex + 1);
-        license.setName(lastSegment);
-        entryFile.setResource(license);
+        licenseResource.setName(lastSegment);
+        entryFile.setResource(licenseResource);
         return entryFile;
     }
 
@@ -480,32 +480,32 @@ public class ExtensionProcessor implements AutoCloseable {
             throw new ErrorResultException(entryNotFoundMessage(iconPath));
         }
 
-        var icon = new FileResource();
-        icon.setExtension(extVersion);
+        var iconResource = new FileResource();
+        iconResource.setExtension(extVersion);
         var fileNameIndex = iconPath.lastIndexOf('/');
         var iconName = fileNameIndex >= 0
                 ? iconPath.substring(fileNameIndex + 1)
                 : iconPath;
 
-        icon.setName(iconName);
-        icon.setType(FileResource.ICON);
-        entryFile.setResource(icon);
+        iconResource.setName(iconName);
+        iconResource.setType(FileResource.ICON);
+        entryFile.setResource(iconResource);
         return entryFile;
     }
 
     public TempFile getVsixManifest(ExtensionVersion extVersion) throws IOException {
         readInputStream();
-        var vsixManifest = new FileResource();
-        vsixManifest.setExtension(extVersion);
-        vsixManifest.setName(VSIX_MANIFEST);
-        vsixManifest.setType(FileResource.VSIXMANIFEST);
+        var vsixManifestResource = new FileResource();
+        vsixManifestResource.setExtension(extVersion);
+        vsixManifestResource.setName(VSIX_MANIFEST);
+        vsixManifestResource.setType(FileResource.VSIXMANIFEST);
 
         var entryFile = ArchiveUtil.readEntry(zipFile, VSIX_MANIFEST);
         if(entryFile == null) {
             throw new ErrorResultException(entryNotFoundMessage(VSIX_MANIFEST));
         }
 
-        entryFile.setResource(vsixManifest);
+        entryFile.setResource(vsixManifestResource);
         return entryFile;
     }
 
