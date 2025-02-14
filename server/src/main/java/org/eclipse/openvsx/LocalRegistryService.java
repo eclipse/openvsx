@@ -846,21 +846,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var latestPreRelease = repositories.findLatestVersionForAllUrls(extension, targetPlatform, true, onlyActive);
 
         var json = extVersion.toExtensionJson();
-        if(extension.getReplacement() != null) {
-            var replacementId = extension.getReplacement().getId();
-            var replacement = repositories.findLatestReplacement(replacementId, targetPlatform, false, onlyActive);
-            if(replacement != null) {
-                var displayName = StringUtils.isNotEmpty(replacement.getDisplayName())
-                        ? replacement.getDisplayName()
-                        : replacement.getExtension().getName();
-
-                var replacementJson = new ExtensionReplacementJson();
-                replacementJson.setUrl(UrlUtil.createApiUrl(webuiUrl, "extension", replacement.getExtension().getNamespace().getName(), replacement.getExtension().getName()));
-                replacementJson.setDisplayName(displayName);
-                json.setReplacement(replacementJson);
-            }
-        }
-
+        json.setReplacement(toReplacementJson(extension, targetPlatform, onlyActive, true));
         json.setPreview(latest != null && latest.isPreview());
         var versionAlias = new ArrayList<String>();
         if (latest != null && extVersion.getVersion().equals(latest.getVersion()))
@@ -932,20 +918,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.setReviewsUrl(createApiReviewsUrl(serverUrl, json.getNamespace(), json.getName()));
 
         var extension = extVersion.getExtension();
-        if(extension.getReplacement() != null) {
-            var replacementId = extension.getReplacement().getId();
-            var replacement = repositories.findLatestReplacement(replacementId, targetPlatformParam, false, true);
-            if(replacement != null) {
-                var displayName = StringUtils.isNotEmpty(replacement.getDisplayName())
-                        ? replacement.getDisplayName()
-                        : replacement.getExtension().getName();
-
-                var replacementJson = new ExtensionReplacementJson();
-                replacementJson.setUrl(UrlUtil.createApiUrl(serverUrl, "api", replacement.getExtension().getNamespace().getName(), replacement.getExtension().getName()));
-                replacementJson.setDisplayName(displayName);
-                json.setReplacement(replacementJson);
-            }
-        }
+        json.setReplacement(toReplacementJson(extension, targetPlatformParam, true, false));
 
         var versionAlias = new ArrayList<String>(2);
         if (extVersion.equals(latest)) {
@@ -1024,21 +997,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.setUrl(createApiVersionUrl(serverUrl, json));
 
         var extension = extVersion.getExtension();
-        if(extension.getReplacement() != null) {
-            var replacementId = extension.getReplacement().getId();
-            var replacement = repositories.findLatestReplacement(replacementId, targetPlatformParam, false, true);
-            if(replacement != null) {
-                var displayName = StringUtils.isNotEmpty(replacement.getDisplayName())
-                        ? replacement.getDisplayName()
-                        : replacement.getExtension().getName();
-
-                var replacementJson = new ExtensionReplacementJson();
-                replacementJson.setUrl(UrlUtil.createApiUrl(serverUrl, "api", replacement.getExtension().getNamespace().getName(), replacement.getExtension().getName()));
-                replacementJson.setDisplayName(displayName);
-
-                json.setReplacement(replacementJson);
-            }
-        }
+        json.setReplacement(toReplacementJson(extension, targetPlatformParam, true, false));
 
         var versionAlias = new ArrayList<String>(2);
         if (extVersion.equals(latest)) {
@@ -1091,6 +1050,34 @@ public class LocalRegistryService implements IExtensionRegistry {
                     .peek(ref -> ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension())))
                     .toList());
         }
+        return json;
+    }
+
+    private ExtensionReplacementJson toReplacementJson(Extension extension, String targetPlatform, boolean onlyActive, boolean webui) {
+        if(extension.getReplacement() == null) {
+            return null;
+        }
+
+        var replacementId = extension.getReplacement().getId();
+        var replacement = repositories.findLatestReplacement(replacementId, targetPlatform, false, onlyActive);
+        if(replacement == null) {
+            return null;
+        }
+
+        var baseUrl = webui ? webuiUrl : UrlUtil.getBaseUrl();
+        var segments = new String[]{
+                webui ? "extension" : "api",
+                replacement.getExtension().getNamespace().getName(),
+                replacement.getExtension().getName()
+        };
+
+        var displayName = StringUtils.isNotEmpty(replacement.getDisplayName())
+                ? replacement.getDisplayName()
+                : replacement.getExtension().getName();
+
+        var json = new ExtensionReplacementJson();
+        json.setUrl(UrlUtil.createApiUrl(baseUrl, segments));
+        json.setDisplayName(displayName);
         return json;
     }
 
