@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import {
     Box, Typography, Paper, Button, Dialog, DialogContent, DialogContentText, Link
 } from '@mui/material';
@@ -88,46 +88,47 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     if (!user.publisherAgreement) {
         return null;
     }
-    return <>
-        <Paper sx={{ p: 2 }} elevation={3}>
+
+    let content: ReactNode;
+    if (user.publisherAgreement.status === 'signed') {
+        content = <Typography variant='body1'>
             {
-                user.publisherAgreement.status === 'signed' ?
-                    <Typography variant='body1'>
-                        {
-                            user.publisherAgreement.timestamp
-                                ? <>You signed the Eclipse Foundation Open VSX Publisher Agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
-                                : 'You signed the Eclipse Foundation Open VSX Publisher Agreement.'
-                        }
-                    </Typography>
-                    :
-                    user.additionalLogins?.find(login => login.provider === 'eclipse') ?
-                        <>
-                            <Typography variant='body1'>
-                                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
-                                any extension to this registry.
-                            </Typography>
-                            <Box mt={2} display='flex' justifyContent='flex-end'>
-                                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
-                                    Show Publisher Agreement
-                                </Button>
-                            </Box>
-                        </>
-                        :
-                        <>
-                            <Typography variant='body1'>
-                                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
-                                any extension to this registry. To start the signing process, please log in with
-                                an Eclipse Foundation account.
-                            </Typography>
-                            <Box mt={2} display='flex' justifyContent='flex-end'>
-                                <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
-                                    <Button variant='outlined' color='secondary'>
-                                        Log in with Eclipse
-                                    </Button>
-                                </Link>
-                            </Box>
-                        </>}
-        </Paper>
+                user.publisherAgreement.timestamp
+                    ? <>You signed the Eclipse Foundation Open VSX Publisher Agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
+                    : 'You signed the Eclipse Foundation Open VSX Publisher Agreement.'
+            }
+        </Typography>;
+    } else if (user.additionalLogins?.find(login => login.provider === 'eclipse')) {
+        content = <>
+            <Typography variant='body1'>
+                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                any extension to this registry.
+            </Typography>
+            <Box mt={2} display='flex' justifyContent='flex-end'>
+                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
+                    Show Publisher Agreement
+                </Button>
+            </Box>
+        </>;
+    } else {
+        content = <>
+            <Typography variant='body1'>
+                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                any extension to this registry. To start the signing process, please log in with
+                an Eclipse Foundation account.
+            </Typography>
+            <Box mt={2} display='flex' justifyContent='flex-end'>
+                <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+                    <Button variant='outlined' color='secondary'>
+                        Log in with Eclipse
+                    </Button>
+                </Link>
+            </Box>
+        </>;
+    }
+
+    return <>
+        <Paper sx={{ p: 2 }} elevation={3}>{content}</Paper>
         <Dialog
             open={dialogOpen}
             onClose={onClose}

@@ -274,6 +274,18 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
     // filter internal tags
     const tags = extension.tags?.filter(t => !t.startsWith('__'));
+
+    let downloadButton: ReactNode = null;
+    if (extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 1) {
+        downloadButton = <ExtensionDetailDownloadsMenu downloads={extension.downloads} />;
+    } else if (extension.downloadable && extension.downloads && Object.keys(extension.downloads).length == 1) {
+        downloadButton = <Button variant='contained' color='secondary' sx={{ mt: 2 }}
+            href={extension.downloads[Object.keys(extension.downloads)[0]]}
+        >
+            Download
+        </Button>;
+    }
+
     return <Box
         sx={{
             display: 'flex',
@@ -345,17 +357,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                     {renderResourceLink('Repository', resourceLink, extension.repository)}
                     {renderResourceLink('Bugs', resourceLink, extension.bugs)}
                     {renderResourceLink('Q\'n\'A', resourceLink, extension.qna)}
-                    {
-                        extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 1 ?
-                            <ExtensionDetailDownloadsMenu downloads={extension.downloads} />
-                            : extension.downloadable && extension.downloads && Object.keys(extension.downloads).length == 1 ?
-                                <Button variant='contained' color='secondary' sx={{ mt: 2 }}
-                                    href={extension.downloads[Object.keys(extension.downloads)[0]]}
-                                >
-                                    Download
-                                </Button>
-                                : null
-                    }
+                    {downloadButton}
                     {
                         DownloadTerms && extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 0
                             ? <DownloadTerms />

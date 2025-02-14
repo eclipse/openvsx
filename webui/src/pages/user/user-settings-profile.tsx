@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, ReactNode } from 'react';
 import { Theme, Grid, Typography, Avatar } from '@mui/material';
 import { toLocalTime } from '../../utils';
 import { UserData } from '../../extension-registry-types';
@@ -40,6 +40,28 @@ const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
 export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = props => {
 
     const user = props.user;
+    let publisherAgreementPanel: ReactNode = null;
+    if (user.publisherAgreement) {
+        if (props.isAdmin) {
+            let statusText = 'has not signed';
+            if (user.publisherAgreement.status === 'signed') {
+                statusText = 'has signed';
+            } else if (user.publisherAgreement.status === 'outdated') {
+                statusText = 'has signed an outdated version of';
+            }
+
+            publisherAgreementPanel = <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
+                {user.loginName} {statusText} the Eclipse publisher agreement.
+            </Typography>;
+        } else {
+            publisherAgreementPanel = <Grid container>
+                <Grid item xs={12}>
+                    <UserPublisherAgreement user={user} />
+                </Grid>
+            </Grid>;
+        }
+    }
+
     return <>
         <ProfileGrid container>
             <Grid item>
@@ -60,27 +82,7 @@ export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = 
                 />
             </Grid>
         </ProfileGrid>
-        {
-            user.publisherAgreement ? (
-                props.isAdmin ?
-                <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
-                    {user.loginName} {
-                        user.publisherAgreement.status === 'signed' ?
-                        <>has signed</>
-                        : user.publisherAgreement.status === 'outdated' ?
-                        <>has signed an outdated version of</>
-                        :
-                        <>has not signed</>
-                    } the Eclipse publisher agreement.
-                </Typography>
-                :
-                <Grid container>
-                    <Grid item xs={12}>
-                        <UserPublisherAgreement user={user} />
-                    </Grid>
-                </Grid>
-            ) : null
-        }
+        {publisherAgreementPanel}
     </>;
 };
 

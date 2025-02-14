@@ -60,15 +60,20 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
         }
     };
 
+    let buttonText = 'Remove Version';
+    if (removeAll()) {
+        buttonText = 'Remove Extension';
+    } else if (removeVersions()) {
+        buttonText = 'Remove Versions';
+    }
+
     return <>
         <Button
             variant='contained'
             color='secondary'
             onClick={() => setDialogOpen(true)}
             disabled={props.targetPlatformVersions.length === 0} >
-            {
-                removeAll() ? 'Remove Extension' : removeVersions() ? 'Remove Versions' : 'Remove Version'
-            }
+            {buttonText}
         </Button>
         <Dialog
             open={dialogOpen}
