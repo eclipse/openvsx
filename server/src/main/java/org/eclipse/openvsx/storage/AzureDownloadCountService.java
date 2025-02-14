@@ -191,12 +191,11 @@ public class AzureDownloadCountService {
                             throw new RuntimeException(e);
                         }
                     })
-                    .filter(node -> {
-                        return isGetBlobOperation(node)
-                                && isStatusOk(node)
-                                && isExtensionPackageUri(node)
-                                && isNotOpenVSXUserAgent(node);
-                    }).map(node -> {
+                    .filter(node -> isGetBlobOperation(node)
+                            && isStatusOk(node)
+                            && isExtensionPackageUri(node)
+                            && isNotOpenVSXUserAgent(node))
+                    .map(node -> {
                         var uri = node.get("uri").asText();
                         var pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
                         return Map.entry(pathParams, node.get("time").asText());

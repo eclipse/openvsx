@@ -122,9 +122,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                         var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
                         return ResponseEntity.status(statusCode)
                                 .headers(headers)
-                                .body(outputStream -> {
-                                    mapper.writeValue(outputStream, json);
-                                });
+                                .body(outputStream -> mapper.writeValue(outputStream, json));
                     } else {
                         var tempFile = new TempFile("browse", null);
                         try {
