@@ -133,7 +133,7 @@ commands:
     exec:
       label: "2.1. Build and Publish OpenVSX Image"
       component: tool
-      workingDir: ${PROJECTS_ROOT}/openvsx/openshift
+      workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
           read -p "Please enter the value for OPENVSX_VERSION (default: v0.18.0): " OPENVSX_VERSION
           OPENVSX_VERSION=${OPENVSX_VERSION:-v0.18.0}
@@ -150,7 +150,7 @@ commands:
     exec:
       label: "2.2. Build and Publish OpenVSX CLI Image"
       component: tool
-      workingDir: ${PROJECTS_ROOT}/openvsx/openshift
+      workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
           podman build -t "openvsx-cli" -f cli.Dockerfile .&&
           export IMAGE=image-registry.openshift-image-registry.svc:5000/$OPENVSX_NAMESPACE/openvsx-cli &&
@@ -162,7 +162,7 @@ commands:
     exec:
       label: "2.3. Deploy OpenVSX"
       component: tool
-      workingDir: ${PROJECTS_ROOT}/openvsx/openshift
+      workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
           oc process -f openvsx-deployment.yml \
           -p OPENVSX_SERVER_IMAGE=image-registry.openshift-image-registry.svc:5000/$OPENVSX_NAMESPACE/openvsx \
@@ -190,7 +190,7 @@ commands:
     exec:
       label: "2.5. Configure Che to use the internal OpenVSX registry"
       component: tool
-      workingDir: ${PROJECTS_ROOT}/openvsx/openshift
+      workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
           export CHECLUSTER_NAME="$(kubectl get checluster --all-namespaces -o json | jq -r '.items[0].metadata.name')" &&
           export CHECLUSTER_NAMESPACE="$(kubectl get checluster --all-namespaces -o json | jq -r '.items[0].metadata.namespace')" &&
@@ -221,5 +221,5 @@ commands:
     exec:
       label: "2.7. Publish list of VS Code Extensions"
       component: tool
-      workingDir: ${PROJECTS_ROOT}/openvsx/openshift
+      workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: ./scripts/publish_extensions.sh
