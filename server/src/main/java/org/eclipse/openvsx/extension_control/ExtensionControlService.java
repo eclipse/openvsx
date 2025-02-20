@@ -130,6 +130,10 @@ public class ExtensionControlService {
 
     @Cacheable(CACHE_MALICIOUS_EXTENSIONS)
     public List<String> getMaliciousExtensionIds() throws IOException {
+        if(!enabled) {
+            return Collections.emptyList();
+        }
+
         var json = getExtensionControlJson();
         var malicious = json.get("malicious");
         if(!malicious.isArray()) {
