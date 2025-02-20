@@ -27,7 +27,10 @@ To execute any of these commands within your workspace, navigate to Terminal -> 
 To run the Open VSX registry in a development environment, you can use `docker compose` by following these steps:
 
  * Verify Docker Compose is installed by running `docker compose version`. If an error occurs, you may need to [install docker compose](https://docs.docker.com/compose/install/) on your machine.
- * Decide which profile(s) to run based on your needs. By default, only the PostgreSQL and Elasticsearch containers start, which suits running the OpenVSX server and web UI locally for easier debugging. The [docker-compose.yml] file defines additional profiles for specific components:
+ * Decide which profile(s) to run based on your needs. The [docker-compose.yml] file defines profiles for specific components:
+   * `db`: Starts the PostgreSQL container.
+   * `es`: Starts the Elasticsearch container.
+   * `debug`: Starts the PostgreSQL and Elasticsearch containers, which suits running the OpenVSX server and web UI locally for easier debugging.
    * `backend`: Starts the OpenVSX server container (java).
    * `frontend`: Starts the web UI container.
    * `commandline`: Starts a container with the OpenVSX CLI tools.

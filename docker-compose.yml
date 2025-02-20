@@ -11,6 +11,9 @@ services:
         max-file: "3"
     ports:
       - '5432:5432'
+    profiles:
+      - db
+      - debug
 
   elasticsearch:
     image: elasticsearch:8.7.1
@@ -29,6 +32,9 @@ services:
       timeout: 5s
       retries: 50
       start_period: 5s
+    profiles:
+      - es
+      - debug
 
   kibana:
     image: kibana:8.7.1
