@@ -19,6 +19,9 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.AuthUser;
+import org.eclipse.openvsx.security.AuthUserFactory;
+import org.eclipse.openvsx.security.AuthUserFactory.MissingProvider;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -72,6 +75,9 @@ class CacheServiceTest {
     @Autowired
     RepositoryService repositories;
 
+    @Autowired
+    AuthUserFactory authUserFactory;
+
     @Test
     @Transactional
     void testGetExtension() throws IOException {
@@ -118,7 +124,12 @@ class CacheServiceTest {
 
             var user = extVersion.getPublishedWith().getUser();
             var oauthUser = new DefaultOAuth2User(authorities, attributes, "name");
-            users.updateExistingUser(user, oauthUser);
+            AuthUser authUser; try {
+                authUser = authUserFactory.createAuthUser(authority, oauthUser);
+            } catch (MissingProvider e) {
+                authUser = null;
+            }
+            users.updateExistingUser(user, authUser);
             assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
             var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());

@@ -53,17 +53,20 @@ public class UserAPI {
     private final UserService users;
     private final EclipseService eclipse;
     private final StorageUtilService storageUtil;
+    private final OVSXConfig config;
 
     public UserAPI(
             RepositoryService repositories,
             UserService users,
             EclipseService eclipse,
-            StorageUtilService storageUtil
+            StorageUtilService storageUtil,
+            OVSXConfig config
     ) {
         this.repositories = repositories;
         this.users = users;
         this.eclipse = eclipse;
         this.storageUtil = storageUtil;
+        this.config = config;
     }
 
     @GetMapping(
@@ -85,7 +88,7 @@ public class UserAPI {
     public ResponseEntity<Void> login(ModelMap model) {
         if(users.canLogin()) {
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "oauth2", "authorization", "github")))
+                    .location(URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "oauth2", "authorization", config.getOauth2().getProvider())))
                     .build();
         } else {
             return ResponseEntity.notFound().build();
@@ -313,7 +316,7 @@ public class UserAPI {
             membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
             return new ResponseEntity<>(membershipList, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN); 
+            return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN);
         }
     }
 

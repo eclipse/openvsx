@@ -27,6 +27,7 @@ import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.AuthUser;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
@@ -34,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -89,44 +89,44 @@ public class UserService {
     }
 
     @Transactional
-    public UserData registerNewUser(OAuth2User oauth2User) {
+    public UserData registerNewUser(AuthUser authUser) {
         var user = new UserData();
-        user.setProvider("github");
-        user.setAuthId(oauth2User.getName());
-        user.setLoginName(oauth2User.getAttribute("login"));
-        user.setFullName(oauth2User.getAttribute("name"));
-        user.setEmail(oauth2User.getAttribute("email"));
-        user.setProviderUrl(oauth2User.getAttribute("html_url"));
-        user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
+        user.setProvider(authUser.getProviderId());
+        user.setAuthId(authUser.getAuthId());
+        user.setLoginName(authUser.getLoginName());
+        user.setFullName(authUser.getFullName());
+        user.setEmail(authUser.getEmail());
+        user.setProviderUrl(authUser.getProviderUrl());
+        user.setAvatarUrl(authUser.getAvatarUrl());
         entityManager.persist(user);
         return user;
     }
 
     @Transactional
-    public UserData updateExistingUser(UserData user, OAuth2User oauth2User) {
-        if ("github".equals(user.getProvider())) {
+    public UserData updateExistingUser(UserData user, AuthUser authUser) {
+        if (authUser.getProviderId().equals(user.getProvider())) {
             var updated = false;
-            String loginName = oauth2User.getAttribute("login");
+            String loginName = authUser.getLoginName();
             if (loginName != null && !loginName.equals(user.getLoginName())) {
                 user.setLoginName(loginName);
                 updated = true;
             }
-            String fullName = oauth2User.getAttribute("name");
+            String fullName = authUser.getFullName();
             if (fullName != null && !fullName.equals(user.getFullName())) {
                 user.setFullName(fullName);
                 updated = true;
             }
-            String email = oauth2User.getAttribute("email");
+            String email = authUser.getEmail();
             if (email != null && !email.equals(user.getEmail())) {
                 user.setEmail(email);
                 updated = true;
             }
-            String providerUrl = oauth2User.getAttribute("html_url");
+            String providerUrl = authUser.getProviderUrl();
             if (providerUrl != null && !providerUrl.equals(user.getProviderUrl())) {
                 user.setProviderUrl(providerUrl);
                 updated = true;
             }
-            String avatarUrl = oauth2User.getAttribute("avatar_url");
+            String avatarUrl = authUser.getAvatarUrl();
             if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl())) {
                 user.setAvatarUrl(avatarUrl);
                 updated = true;
