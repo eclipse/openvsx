@@ -6,9 +6,11 @@ COPY --chown=gradle:gradle gradlew *.gradle ./
 COPY --chown=gradle:gradle gradle ./gradle/
 COPY --chown=gradle:gradle src ./src/
 
-# Build the server application
-RUN ./gradlew --no-daemon assemble
+ENV CI=true
 
+# Build the server application
+RUN --mount=type=secret,id=dv-key,env=DEVELOCITY_ACCESS_KEY \
+    ./gradlew --no-daemon assemble -Ddevelocity.url=https://ge.solutions-team.gradle.com/
 
 FROM eclipse-temurin:17.0.7_7-jdk
 

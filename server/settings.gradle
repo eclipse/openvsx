@@ -1,1 +1,28 @@
+plugins {
+    id 'com.gradle.develocity' version '3.19.1'
+    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.1'
+}
+
+def isCI = System.getenv('CI') != null // adjust to your CI provider
+
+develocity {
+    server = "https://develocity-staging.eclipse.org"
+    projectId = "openvsx" // adjust to your project identifier / descriptor
+    buildScan {
+        uploadInBackground = !isCI
+        publishing.onlyIf { it.isAuthenticated() }
+        obfuscation {
+            ipAddresses { addresses -> addresses.collect { address -> "0.0.0.0" } }
+        }
+    }
+}
+
+buildCache {
+    remote(develocity.buildCache) {
+        enabled = true
+        push = isCI
+    }
+}
+
+
 rootProject.name = 'openvsx-server'
