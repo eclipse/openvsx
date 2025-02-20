@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM gradle:jdk17 as builder
 
 # Copy sources
@@ -10,7 +11,7 @@ ENV CI=true
 
 # Build the server application
 RUN --mount=type=secret,id=dv-key,env=DEVELOCITY_ACCESS_KEY \
-    ./gradlew --no-daemon assemble -Ddevelocity.url=https://ge.solutions-team.gradle.com/
+    ./gradlew --no-daemon assemble
 
 FROM eclipse-temurin:17.0.7_7-jdk
 
