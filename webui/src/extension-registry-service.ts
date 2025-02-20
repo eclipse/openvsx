@@ -25,7 +25,7 @@ export class ExtensionRegistryService {
     }
 
     getLoginUrl(): string {
-        return createAbsoluteURL([this.serverUrl, 'oauth2', 'authorization', 'github']);
+        return createAbsoluteURL([this.serverUrl, 'login']);
     }
 
     getLogoutUrl(): string {
