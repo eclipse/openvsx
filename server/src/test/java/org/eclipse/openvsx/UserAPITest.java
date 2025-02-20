@@ -23,6 +23,7 @@ import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -555,9 +556,10 @@ class UserAPITest {
                 TokenService tokens,
                 RepositoryService repositories,
                 EntityManager entityManager,
-                EclipseService eclipse
+                EclipseService eclipse,
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
@@ -574,5 +576,4 @@ class UserAPITest {
             return new LatestExtensionVersionCacheKeyGenerator();
         }
     }
-    
 }

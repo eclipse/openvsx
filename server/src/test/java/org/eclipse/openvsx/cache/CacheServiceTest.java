@@ -30,7 +30,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -39,7 +38,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
@@ -102,31 +100,22 @@ class CacheServiceTest {
 
             registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
 
-            var authority = "github";
-            var authorities = List.of((GrantedAuthority) () -> authority);
+            var updatedUser = new UserData();
+            updatedUser.setProvider("github");
+            updatedUser.setLoginName("user");
+            updatedUser.setFullName("User2");
+            updatedUser.setProviderUrl("https://user2.github.io");
+            updatedUser.setAvatarUrl("https://github.com/user2/avatar");
 
-            var loginName = "amvanbaren";
-            var fullName = "Aart van Baren";
-            var htmlUrl = "https://amvanbaren.github.io";
-            var avatarUrl = "https://amvanbaren.github.io/avatar.png";
-            var attributes = new HashMap<String, Object>();
-            attributes.put("login", loginName);
-            attributes.put("name", fullName);
-            attributes.put("email", "amvanbaren@hotmail.com");
-            attributes.put("html_url", htmlUrl);
-            attributes.put("avatar_url", avatarUrl);
-
-            var user = extVersion.getPublishedWith().getUser();
-            var oauthUser = new DefaultOAuth2User(authorities, attributes, "name");
-            users.updateExistingUser(user, oauthUser);
+            users.upsertUser(updatedUser);
             assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
             var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-            assertEquals(loginName, json.getPublishedBy().getLoginName());
-            assertEquals(fullName, json.getPublishedBy().getFullName());
-            assertEquals(htmlUrl, json.getPublishedBy().getHomepage());
-            assertEquals(authority, json.getPublishedBy().getProvider());
-            assertEquals(avatarUrl, json.getPublishedBy().getAvatarUrl());
+            assertEquals("user", json.getPublishedBy().getLoginName());
+            assertEquals("User2", json.getPublishedBy().getFullName());
+            assertEquals("https://user2.github.io", json.getPublishedBy().getHomepage());
+            assertEquals("github", json.getPublishedBy().getProvider());
+            assertEquals("https://github.com/user2/avatar", json.getPublishedBy().getAvatarUrl());
 
             var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
             assertEquals(json, cachedJson);

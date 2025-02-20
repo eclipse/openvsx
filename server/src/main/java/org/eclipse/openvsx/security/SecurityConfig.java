@@ -10,13 +10,11 @@
 package org.eclipse.openvsx.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -32,18 +30,11 @@ public class SecurityConfig {
     @Value("${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/user-settings/**,/admin-dashboard/**}")
     String[] frontendRoutes;
 
-    private final ClientRegistrationRepository clientRegistrationRepository;
-
-    @Autowired
-    public SecurityConfig(@Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository) {
-        this.clientRegistrationRepository = clientRegistrationRepository;
-    }
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, OAuth2UserServices userServices) throws Exception {
         var filterChain = http.authorizeHttpRequests(
                 registry -> registry
-                        .requestMatchers(antMatchers("/*", "/login/**", "/oauth2/**", "/can-login", "/user", "/user/auth-error", "/logout", "/actuator/health/**", "/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**"))
+                        .requestMatchers(antMatchers("/*", "/login/**", "/oauth2/**", "/login-providers", "/user", "/user/auth-error", "/logout", "/actuator/health/**", "/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**"))
                             .permitAll()
                         .requestMatchers(antMatchers("/api/*/*/review", "/api/*/*/review/delete", "/api/user/publish", "/api/user/namespace/create"))
                             .authenticated()
