@@ -16,7 +16,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
-import org.eclipse.openvsx.OVSXConfig;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
@@ -29,7 +29,6 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.security.AuthUserFactory;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
@@ -875,9 +874,9 @@ class VSCodeAPITest {
                 RepositoryService repositories,
                 EntityManager entityManager,
                 EclipseService eclipse,
-                AuthUserFactory authUserFactory
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, authUserFactory);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
@@ -919,9 +918,10 @@ class VSCodeAPITest {
                 StorageUtilService storageUtil,
                 CacheService cache,
                 ExtensionValidator validator,
-                ClientRegistrationRepository clientRegistrationRepository
+                ClientRegistrationRepository clientRegistrationRepository,
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new UserService(entityManager, repositories, storageUtil, cache, validator, clientRegistrationRepository);
+            return new UserService(entityManager, repositories, storageUtil, cache, validator, clientRegistrationRepository, attributesConfig);
         }
 
         @Bean
@@ -969,18 +969,6 @@ class VSCodeAPITest {
         @Bean
         FilesCacheKeyGenerator filesCacheKeyGenerator() {
             return new FilesCacheKeyGenerator();
-        }
-
-        @Bean
-        AuthUserFactory authUserFactory(
-            OVSXConfig config
-        ) {
-            return new AuthUserFactory(config);
-        }
-
-        @Bean
-        OVSXConfig ovsxConfig() {
-            return new OVSXConfig();
         }
     }
 }

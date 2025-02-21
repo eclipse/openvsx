@@ -11,12 +11,11 @@ package org.eclipse.openvsx.web;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
-import org.eclipse.openvsx.OVSXConfig;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.security.AuthUserFactory;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
@@ -78,26 +77,14 @@ class SitemapControllerTest {
                 RepositoryService repositories,
                 EntityManager entityManager,
                 EclipseService eclipse,
-                AuthUserFactory authUserFactory
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, authUserFactory);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
         SitemapService sitemapService(RepositoryService repositories) {
             return new SitemapService(repositories);
-        }
-
-        @Bean
-        AuthUserFactory authUserFactory(
-            OVSXConfig config
-        ) {
-            return new AuthUserFactory(config);
-        }
-
-        @Bean
-        OVSXConfig ovsxConfig() {
-            return new OVSXConfig();
         }
     }
 }

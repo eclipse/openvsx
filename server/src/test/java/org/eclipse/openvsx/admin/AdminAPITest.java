@@ -25,7 +25,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.security.AuthUserFactory;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
@@ -1202,9 +1202,9 @@ class AdminAPITest {
                 RepositoryService repositories,
                 EntityManager entityManager,
                 EclipseService eclipse,
-                AuthUserFactory authUserFactory
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, authUserFactory);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
@@ -1328,18 +1328,6 @@ class AdminAPITest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
-        }
-
-        @Bean
-        AuthUserFactory authUserFactory(
-                OVSXConfig config
-        ) {
-            return new AuthUserFactory(config);
-        }
-
-        @Bean
-        OVSXConfig ovsxConfig() {
-                return new OVSXConfig();
         }
     }
 }

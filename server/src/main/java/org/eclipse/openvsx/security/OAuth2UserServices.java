@@ -16,7 +16,6 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.security.AuthUserFactory.MissingProvider;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -45,15 +44,14 @@ import static org.springframework.security.core.authority.AuthorityUtils.createA
 @Service
 public class OAuth2UserServices {
 
-    private static final DefaultOAuth2UserService springOAuth2UserService = new DefaultOAuth2UserService();
-    private static final OidcUserService springOidcUserService = new OidcUserService();
-
     private final UserService users;
     private final TokenService tokens;
     private final RepositoryService repositories;
     private final EntityManager entityManager;
     private final EclipseService eclipse;
-    private final AuthUserFactory authUserFactory;
+    private final OAuth2AttributesConfig attributesConfig;
+    private final DefaultOAuth2UserService springOAuth2UserService;
+    private final OidcUserService springOidcUserService;
 
     public OAuth2UserServices(
             UserService users,
@@ -61,14 +59,16 @@ public class OAuth2UserServices {
             RepositoryService repositories,
             EntityManager entityManager,
             EclipseService eclipse,
-            AuthUserFactory authUserFactory
+            OAuth2AttributesConfig attributesConfig
     ) {
         this.users = users;
         this.tokens = tokens;
         this.repositories = repositories;
         this.entityManager = entityManager;
         this.eclipse = eclipse;
-        this.authUserFactory = authUserFactory;
+        this.attributesConfig = attributesConfig;
+        springOAuth2UserService = new DefaultOAuth2UserService();
+        springOidcUserService = new OidcUserService();
     }
 
     public OAuth2UserService<OAuth2UserRequest, OAuth2User> getOauth2() { return this::loadUser; }
@@ -99,32 +99,24 @@ public class OAuth2UserServices {
         return users.canLogin();
     }
 
-    private OAuth2User springLoadUser(OAuth2UserRequest userRequest) {
-        return userRequest instanceof OidcUserRequest oidcRequest
-            ? springOidcUserService.loadUser(oidcRequest)
-            : springOAuth2UserService.loadUser(userRequest);
-    }
-
-    private AuthUser loadAuthUser(OAuth2UserRequest userRequest) {
-        try {
-            return authUserFactory.createAuthUser(userRequest.getClientRegistration().getRegistrationId(), springLoadUser(userRequest));
-        } catch (MissingProvider e) {
-            throw new CodedAuthException(e.getMessage(), UNSUPPORTED_REGISTRATION);
-        }
-    }
-
     private IdPrincipal loadGenericUser(OAuth2UserRequest userRequest) {
-        var authUser = loadAuthUser(userRequest);
-        if (StringUtils.isEmpty(authUser.getLoginName())) {
+        var registrationId = userRequest.getClientRegistration().getRegistrationId();
+        var mapping = attributesConfig.getAttributeMapping(registrationId);
+        if(mapping == null) {
+            throw new CodedAuthException("Unsupported registration: " + registrationId ,UNSUPPORTED_REGISTRATION);
+        }
+
+        var oauth2User = userRequest instanceof OidcUserRequest oidcRequest
+                ? springOidcUserService.loadUser(oidcRequest)
+                : springOAuth2UserService.loadUser(userRequest);
+
+        var userAttributes = mapping.toUserData(registrationId, oauth2User);
+        if (StringUtils.isEmpty(userAttributes.getLoginName())) {
             throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_USER);
         }
-        var userData = repositories.findUserByLoginName(authUser.getProviderId(), authUser.getLoginName());
-        if (userData == null) {
-            userData = users.registerNewUser(authUser);
-        } else {
-            users.updateExistingUser(userData, authUser);
-        }
-        return new IdPrincipal(userData.getId(), authUser.getAuthId(), getAuthorities(userData));
+
+        var userData = users.upsertUser(userAttributes);
+        return new IdPrincipal(userData.getId(), userData.getAuthId(), getAuthorities(userData));
     }
 
     private IdPrincipal loadEclipseUser(OAuth2UserRequest userRequest) {
