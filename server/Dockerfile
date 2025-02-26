@@ -3,7 +3,7 @@ FROM gradle:jdk17 as builder
 
 # Copy sources
 WORKDIR /home/gradle
-COPY --chown=gradle:gradle gradlew *.gradle ./
+COPY --chown=gradle:gradle gradlew *.gradle gradle.properties ./
 COPY --chown=gradle:gradle gradle ./gradle/
 COPY --chown=gradle:gradle src ./src/
 
