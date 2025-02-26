@@ -20,7 +20,6 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.util.TempFile;
@@ -40,7 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -226,13 +224,7 @@ public class AzureDownloadCountService {
 
     private boolean isNotOpenVSXUserAgent(JsonNode node) {
         var userAgentHeader = node.path("properties").path("userAgentHeader").asText();
-        if(StringUtils.isEmpty(userAgentHeader)) {
-            throw new IllegalArgumentException("Expected node to have userAgentHeader property");
-        } else if (userAgentHeader.equals(AZURE_USER_AGENT)) {
-            logger.info("userAgentHeader: {}", userAgentHeader);
-        }
-
-        return !userAgentHeader.equals(AZURE_USER_AGENT);
+        return !AZURE_USER_AGENT.equals(userAgentHeader);
     }
 
 
