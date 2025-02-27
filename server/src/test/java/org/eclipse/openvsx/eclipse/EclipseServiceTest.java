@@ -23,7 +23,6 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -224,7 +223,7 @@ class EclipseServiceTest {
         var admin = new UserData();
         admin.setLoginName("admin");
         admin.setEclipseToken(new AuthToken("67890", null, null, null, null, null));
-        Mockito.when(tokens.getActiveToken(admin, "eclipse"))
+        Mockito.when(tokens.getActiveEclipseToken(admin))
             .thenReturn(admin.getEclipseToken());
 
         eclipse.revokePublisherAgreement(user, admin);
@@ -234,7 +233,7 @@ class EclipseServiceTest {
         var user = new UserData();
         user.setLoginName("test");
         user.setEclipseToken(new AuthToken("12345", null, null, null, null, null));
-        Mockito.when(tokens.getActiveToken(user, "eclipse"))
+        Mockito.when(tokens.getActiveEclipseToken(user))
             .thenReturn(user.getEclipseToken());
         return user;
     }

@@ -9,14 +9,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import jakarta.persistence.*;
+import org.eclipse.openvsx.json.UserJson;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
-
-import jakarta.persistence.*;
-
-import org.eclipse.openvsx.json.UserJson;
 
 @Entity
 public class UserData implements Serializable {
@@ -57,10 +56,6 @@ public class UserData implements Serializable {
     private List<NamespaceMembership> memberships;
 
     private String eclipsePersonId;
-
-    @Column(length = 4096)
-    @Convert(converter = AuthTokenConverter.class)
-    private AuthToken githubToken;
 
     @Column(length = 4096)
     @Convert(converter = AuthTokenConverter.class)
@@ -160,14 +155,6 @@ public class UserData implements Serializable {
         this.eclipsePersonId = eclipsePersonId;
     }
 
-    public AuthToken getGithubToken() {
-        return githubToken;
-    }
-
-    public void setGithubToken(AuthToken githubToken) {
-        this.githubToken = githubToken;
-    }
-
     public AuthToken getEclipseToken() {
         return eclipseToken;
     }
@@ -193,7 +180,6 @@ public class UserData implements Serializable {
                 && Objects.equals(tokens, userData.tokens)
                 && Objects.equals(memberships, userData.memberships)
                 && Objects.equals(eclipsePersonId, userData.eclipsePersonId)
-                && Objects.equals(githubToken, userData.githubToken)
                 && Objects.equals(eclipseToken, userData.eclipseToken);
     }
 
@@ -201,7 +187,7 @@ public class UserData implements Serializable {
     public int hashCode() {
         return Objects.hash(
                 id, role, loginName, fullName, email, avatarUrl, provider, authId, providerUrl, tokens, memberships,
-                eclipsePersonId, githubToken, eclipseToken
+                eclipsePersonId, eclipseToken
         );
     }
 }

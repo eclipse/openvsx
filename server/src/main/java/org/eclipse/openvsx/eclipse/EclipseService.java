@@ -21,7 +21,6 @@ import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.UserJson;
-import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
@@ -455,7 +454,7 @@ public class EclipseService {
     }
 
     private AuthToken checkEclipseToken(UserData user) {
-        var eclipseToken = tokens.getActiveToken(user, "eclipse");
+        var eclipseToken = tokens.getActiveEclipseToken(user);
         if (eclipseToken == null || StringUtils.isEmpty(eclipseToken.accessToken())) {
             throw new ErrorResultException("Authorization by Eclipse required.", HttpStatus.FORBIDDEN);
         }
