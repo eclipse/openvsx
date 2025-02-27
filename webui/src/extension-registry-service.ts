@@ -11,7 +11,8 @@
 import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
-    SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion
+    SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
+    LoginProviders
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -24,8 +25,9 @@ export class ExtensionRegistryService {
         this.admin = new AdminConstructor(this);
     }
 
-    getLoginUrl(): string {
-        return createAbsoluteURL([this.serverUrl, 'oauth2', 'authorization', 'github']);
+    getLoginProviders(abortController: AbortController): Promise<Readonly<LoginProviders|SuccessResult>> {
+        const endpoint = createAbsoluteURL([this.serverUrl, 'login-providers']);
+        return sendRequest({ abortController, endpoint });
     }
 
     getLogoutUrl(): string {
@@ -418,11 +420,6 @@ export class ExtensionRegistryService {
 
     async getRegistryVersion(abortController: AbortController): Promise<Readonly<RegistryVersion>> {
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'version']);
-        return sendRequest({ abortController, endpoint });
-    }
-
-    async canLogin(abortController: AbortController): Promise<Readonly<boolean>> {
-        const endpoint = createAbsoluteURL([this.serverUrl, 'can-login']);
         return sendRequest({ abortController, endpoint });
     }
 }

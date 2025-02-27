@@ -29,12 +29,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -67,29 +65,18 @@ public class UserAPI {
     }
 
     @GetMapping(
-            path = "/can-login",
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/login-providers"
     )
-    public ResponseEntity<Boolean> canLogin() {
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                .body(users.canLogin());
-    }
-
-    /**
-     * Redirect to GitHub Oauth2 login as default login provider.
-     */
-    @GetMapping(
-        path = "/login"
-    )
-    public ResponseEntity<Void> login(ModelMap model) {
-        if(users.canLogin()) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "oauth2", "authorization", "github")))
-                    .build();
+    public ResponseEntity<LoginProvidersJson> login() {
+        var json = new LoginProvidersJson();
+        var providers = users.getLoginProviders();
+        if(!providers.isEmpty()) {
+            json.setLoginProviders(providers);
         } else {
-            return ResponseEntity.notFound().build();
+            json.setSuccess("No login providers available.");
         }
+
+        return ResponseEntity.ok(json);
     }
 
     /**
@@ -313,7 +300,7 @@ public class UserAPI {
             membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
             return new ResponseEntity<>(membershipList, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN); 
+            return new ResponseEntity<>(NamespaceMembershipListJson.error("You don't have the permission to see this."), HttpStatus.FORBIDDEN);
         }
     }
 

@@ -15,6 +15,7 @@ import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
@@ -75,9 +76,10 @@ class SitemapControllerTest {
                 TokenService tokens,
                 RepositoryService repositories,
                 EntityManager entityManager,
-                EclipseService eclipse
+                EclipseService eclipse,
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
         }
 
         @Bean

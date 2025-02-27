@@ -44,7 +44,7 @@ const Message: FunctionComponent<{message: string}> = ({ message }) => {
 };
 
 export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
-    const { user, canLogin } = useContext(MainContext);
+    const { user, loginProviders } = useContext(MainContext);
 
     const navigate = useNavigate();
     const toMainPage = () => navigate('/');
@@ -76,7 +76,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
         </>;
     } else if (user) {
         content = <Message message='You are not authorized as administrator.'/>;
-    } else if (!props.userLoading && canLogin) {
+    } else if (!props.userLoading && loginProviders) {
         content = <Message message='You are not logged in.'/>;
     }
 

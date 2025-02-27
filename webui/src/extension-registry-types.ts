@@ -251,6 +251,10 @@ export interface RegistryVersion {
     version: string
 }
 
+export interface LoginProviders {
+    loginProviders: Record<string, string>
+}
+
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';

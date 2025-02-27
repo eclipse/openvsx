@@ -12,11 +12,13 @@ package org.eclipse.openvsx;
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.openvsx.mirror.ReadOnlyRequestFilter;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.web.ShallowEtagHeaderFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +36,7 @@ import org.springframework.security.web.firewall.RequestRejectedHandler;
 @EnableRetry
 @EnableAsync
 @EnableCaching(proxyTargetClass = true)
+@EnableConfigurationProperties(OAuth2AttributesConfig.class)
 public class RegistryApplication {
 
     public static void main(String[] args) {

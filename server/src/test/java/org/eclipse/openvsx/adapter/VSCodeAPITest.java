@@ -16,6 +16,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
@@ -872,9 +873,10 @@ class VSCodeAPITest {
                 TokenService tokens,
                 RepositoryService repositories,
                 EntityManager entityManager,
-                EclipseService eclipse
+                EclipseService eclipse,
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
@@ -916,9 +918,10 @@ class VSCodeAPITest {
                 StorageUtilService storageUtil,
                 CacheService cache,
                 ExtensionValidator validator,
-                ClientRegistrationRepository clientRegistrationRepository
+                ClientRegistrationRepository clientRegistrationRepository,
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new UserService(entityManager, repositories, storageUtil, cache, validator, clientRegistrationRepository);
+            return new UserService(entityManager, repositories, storageUtil, cache, validator, clientRegistrationRepository, attributesConfig);
         }
 
         @Bean
@@ -968,5 +971,4 @@ class VSCodeAPITest {
             return new FilesCacheKeyGenerator();
         }
     }
-
 }

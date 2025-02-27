@@ -21,6 +21,7 @@ import { UserSettingsNamespaces } from './user-settings-namespaces';
 import { UserSettingsExtensions } from './user-settings-extensions';
 import { MainContext } from '../../context';
 import { UserData } from '../../extension-registry-types';
+import { LoginComponent } from '../../default/login';
 
 export namespace UserSettingsRoutes {
     export const ROOT = createRoute(['user-settings']);
@@ -33,7 +34,7 @@ export namespace UserSettingsRoutes {
 
 export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
 
-    const { pageSettings, service, user, canLogin } = useContext(MainContext);
+    const { pageSettings, user, loginProviders } = useContext(MainContext);
     const { tab } = useParams();
 
     const renderTab = (tab: string, user: UserData): ReactNode => {
@@ -57,12 +58,14 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
         }
 
         if (!user) {
-            return canLogin ? <Container>
+            return loginProviders ? <Container>
                 <Box mt={6}>
                     <Typography variant='h4'>Not Logged In</Typography>
                     <Box mt={2}>
                         <Typography variant='body1'>
-                            Please <Link color='secondary' href={service.getLoginUrl()}>log in with GitHub</Link> to
+                            Please <LoginComponent loginProviders={loginProviders} renderButton={(href, onClick) => {
+return (<Link color='secondary' href={href} onClick={onClick}>log in</Link>);
+}}/> to
                             access your account settings.
                         </Typography>
                     </Box>
