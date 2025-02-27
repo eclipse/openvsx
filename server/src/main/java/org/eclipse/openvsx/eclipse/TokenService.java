@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx.security;
+package org.eclipse.openvsx.eclipse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +16,7 @@ import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -28,10 +29,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 public class TokenService {
@@ -52,105 +53,51 @@ public class TokenService {
         this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
-    private boolean isEnabled() {
-        return clientRegistrationRepository != null;
-    }
-
-    public AuthToken updateTokens(long userId, String registrationId, OAuth2AccessToken accessToken,
-            OAuth2RefreshToken refreshToken) {
-        var userData = isEnabled() ? entityManager.find(UserData.class, userId) : null;
-        if (userData == null) {
-            return null;
-        }
-    
-        switch (registrationId) {
-            case "github": {
-                if (accessToken == null) {
-                    return updateGitHubToken(userData, null);
-                }
-
-                var token = new AuthToken(
-                    accessToken.getTokenValue(),
-                    accessToken.getIssuedAt(),
-                    accessToken.getExpiresAt(),
-                    accessToken.getScopes(),
-                        null,
-                        null
-                );
-                return updateGitHubToken(userData, token);
-            }
-
-            case "eclipse": {
-                if (accessToken == null) {
-                    return updateEclipseToken(userData, null);
-                }
-
-                String refresh = null;
-                Instant refreshExpiresAt = null;
-                if (refreshToken != null) {
-                    refresh = refreshToken.getTokenValue();
-                    refreshExpiresAt = refreshToken.getExpiresAt();
-                }
-
-                var token = new AuthToken(
-                        accessToken.getTokenValue(),
-                        accessToken.getIssuedAt(),
-                        accessToken.getExpiresAt(),
-                        accessToken.getScopes(),
-                        refresh,
-                        refreshExpiresAt
-                );
-
-                return updateEclipseToken(userData, token);
-            }
-        }
-        return null;
-    }
-
-    private AuthToken updateGitHubToken(UserData userData, AuthToken token) {
+    public AuthToken updateEclipseToken(long userId, OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
+        var token = toAuthToken(accessToken, refreshToken);
         return transactions.execute(status -> {
-            userData.setGithubToken(token);
-            entityManager.merge(userData);
-            return token;
-        });
-    }
-
-    private AuthToken updateEclipseToken(UserData userData, AuthToken token) {
-        return transactions.execute(status -> {
+            var userData = entityManager.find(UserData.class, userId);
             userData.setEclipseToken(token);
-            entityManager.merge(userData);
             return token;
         });
     }
 
-    public AuthToken getActiveToken(UserData userData, String registrationId) {
-        if(!isEnabled()) {
+    private AuthToken toAuthToken(OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
+        if(accessToken == null) {
             return null;
         }
 
-        switch (registrationId) {
-            case "github": {
-                return userData.getGithubToken();
-            }
-
-            case "eclipse": {
-                var token = userData.getEclipseToken();
-                if (token != null && isExpired(token.expiresAt())) {
-                    OAuth2AccessToken newAccessToken = null;
-                    OAuth2RefreshToken newRefreshToken = null;
-                    var newTokens = refreshEclipseToken(token);
-                    if (newTokens != null) {
-                        newAccessToken = newTokens.getFirst();
-                        newRefreshToken = newTokens.getSecond();
-                    }
-
-                    return updateTokens(userData.getId(), "eclipse", newAccessToken, newRefreshToken);
-                }
-                return token;
-            }
+        String refresh = null;
+        Instant refreshExpiresAt = null;
+        if (refreshToken != null) {
+            refresh = refreshToken.getTokenValue();
+            refreshExpiresAt = refreshToken.getExpiresAt();
         }
 
-        return null;
+        return new AuthToken(
+                accessToken.getTokenValue(),
+                accessToken.getIssuedAt(),
+                accessToken.getExpiresAt(),
+                accessToken.getScopes(),
+                refresh,
+                refreshExpiresAt
+        );
+    }
+
+    public AuthToken getActiveEclipseToken(UserData userData) {
+        var token = userData.getEclipseToken();
+        if (token != null && isExpired(token.expiresAt())) {
+            OAuth2AccessToken newAccessToken = null;
+            OAuth2RefreshToken newRefreshToken = null;
+            var newTokens = refreshEclipseToken(token);
+            if (newTokens != null) {
+                newAccessToken = newTokens.getFirst();
+                newRefreshToken = newTokens.getSecond();
+            }
+
+            return updateEclipseToken(userData.getId(), newAccessToken, newRefreshToken);
+        }
+        return token;
     }
 
     private boolean isExpired(Instant instant) {
@@ -162,12 +109,17 @@ public class TokenService {
             return null;
         }
 
-        var reg = clientRegistrationRepository.findByRegistrationId("eclipse");
+        var reg = Optional.ofNullable(clientRegistrationRepository).map(repo -> repo.findByRegistrationId("eclipse")).orElse(null);
+        if(reg == null) {
+            logger.error("Eclipse client not registered");
+            return null;
+        }
+
         var tokenUri = reg.getProviderDetails().getTokenUri();
 
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
         var objectMapper = new ObjectMapper();
         var data = objectMapper.createObjectNode()
@@ -192,9 +144,9 @@ public class TokenService {
             var newRefreshToken = new OAuth2RefreshToken(newRefreshTokenValue, issuedAt);
             return Pair.of(newToken, newRefreshToken);
         } catch (RestClientException exc) {
-            logger.error("Post request failed with URL: " + tokenUri, exc);
+            logger.error("Post request failed with URL: {}", tokenUri, exc);
         } catch (JsonProcessingException exc) {
-            logger.error("Invalid JSON data received from URL: " + tokenUri, exc);
+            logger.error("Invalid JSON data received from URL: {}", tokenUri, exc);
         }
         return null;
     }

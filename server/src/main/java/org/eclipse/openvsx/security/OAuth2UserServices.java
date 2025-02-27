@@ -13,6 +13,7 @@ import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
+import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -89,12 +90,11 @@ public class OAuth2UserServices {
         // `ExtendedOAuth2UserServices.loadUser` was processed.
         if (event.getSource() instanceof OAuth2LoginAuthenticationToken) {
             var auth = (OAuth2LoginAuthenticationToken) event.getSource();
-            var idPrincipal = (IdPrincipal) auth.getPrincipal();
-            var accessToken = auth.getAccessToken();
-            var refreshToken = auth.getRefreshToken();
             var registrationId = auth.getClientRegistration().getRegistrationId();
-
-            tokens.updateTokens(idPrincipal.getId(), registrationId, accessToken, refreshToken);
+            if(registrationId.equals("eclipse")) {
+                var idPrincipal = (IdPrincipal) auth.getPrincipal();
+                tokens.updateEclipseToken(idPrincipal.getId(), auth.getAccessToken(), auth.getRefreshToken());
+            }
         }
     }
 
