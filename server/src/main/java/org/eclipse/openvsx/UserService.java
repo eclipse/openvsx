@@ -28,21 +28,20 @@ import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
@@ -56,6 +55,7 @@ public class UserService {
     private final CacheService cache;
     private final ExtensionValidator validator;
     private final ClientRegistrationRepository clientRegistrationRepository;
+    private final OAuth2AttributesConfig attributesConfig;
 
     public UserService(
             EntityManager entityManager,
@@ -63,7 +63,8 @@ public class UserService {
             StorageUtilService storageUtil,
             CacheService cache,
             ExtensionValidator validator,
-            @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository
+            @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
+            OAuth2AttributesConfig attributesConfig
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -71,6 +72,7 @@ public class UserService {
         this.cache = cache;
         this.validator = validator;
         this.clientRegistrationRepository = clientRegistrationRepository;
+        this.attributesConfig = attributesConfig;
     }
 
     public UserData findLoggedInUser() {
@@ -86,56 +88,6 @@ public class UserService {
             }
         }
         return null;
-    }
-
-    @Transactional
-    public UserData registerNewUser(OAuth2User oauth2User) {
-        var user = new UserData();
-        user.setProvider("github");
-        user.setAuthId(oauth2User.getName());
-        user.setLoginName(oauth2User.getAttribute("login"));
-        user.setFullName(oauth2User.getAttribute("name"));
-        user.setEmail(oauth2User.getAttribute("email"));
-        user.setProviderUrl(oauth2User.getAttribute("html_url"));
-        user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
-        entityManager.persist(user);
-        return user;
-    }
-
-    @Transactional
-    public UserData updateExistingUser(UserData user, OAuth2User oauth2User) {
-        if ("github".equals(user.getProvider())) {
-            var updated = false;
-            String loginName = oauth2User.getAttribute("login");
-            if (loginName != null && !loginName.equals(user.getLoginName())) {
-                user.setLoginName(loginName);
-                updated = true;
-            }
-            String fullName = oauth2User.getAttribute("name");
-            if (fullName != null && !fullName.equals(user.getFullName())) {
-                user.setFullName(fullName);
-                updated = true;
-            }
-            String email = oauth2User.getAttribute("email");
-            if (email != null && !email.equals(user.getEmail())) {
-                user.setEmail(email);
-                updated = true;
-            }
-            String providerUrl = oauth2User.getAttribute("html_url");
-            if (providerUrl != null && !providerUrl.equals(user.getProviderUrl())) {
-                user.setProviderUrl(providerUrl);
-                updated = true;
-            }
-            String avatarUrl = oauth2User.getAttribute("avatar_url");
-            if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl())) {
-                user.setAvatarUrl(avatarUrl);
-                updated = true;
-            }
-            if (updated) {
-                cache.evictExtensionJsons(user);
-            }
-        }
-        return user;
     }
 
     @Transactional
@@ -332,6 +284,53 @@ public class UserService {
     }
 
     public boolean canLogin() {
-        return clientRegistrationRepository != null && clientRegistrationRepository.findByRegistrationId("github") != null;
+        return !getLoginProviders().isEmpty();
+    }
+
+    @Transactional
+    public UserData upsertUser(UserData newUser) {
+        var userData = repositories.findUserByLoginName(newUser.getProvider(), newUser.getLoginName());
+        if (userData == null) {
+            entityManager.persist(newUser);
+            userData = newUser;
+        } else {
+            var updated = false;
+            if (!StringUtils.equals(userData.getLoginName(), newUser.getLoginName())) {
+                userData.setLoginName(newUser.getLoginName());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getFullName(), newUser.getFullName())) {
+                userData.setFullName(newUser.getFullName());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getEmail(), newUser.getEmail())) {
+                userData.setEmail(newUser.getEmail());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getProviderUrl(), newUser.getProviderUrl())) {
+                userData.setProviderUrl(newUser.getProviderUrl());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getAvatarUrl(), newUser.getAvatarUrl())) {
+                userData.setAvatarUrl(newUser.getAvatarUrl());
+                updated = true;
+            }
+            if (updated) {
+                cache.evictExtensionJsons(userData);
+            }
+        }
+
+        return userData;
+    }
+
+    public Map<String, String> getLoginProviders() {
+        if(clientRegistrationRepository == null) {
+            return Collections.emptyMap();
+        }
+
+        return attributesConfig.getProviders().stream()
+                .filter(provider -> clientRegistrationRepository.findByRegistrationId(provider) != null)
+                .map(provider -> Map.entry(provider, UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "oauth2", "authorization", provider)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

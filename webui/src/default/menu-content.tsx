@@ -28,6 +28,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { AdminDashboardRoutes } from '../pages/admin-dashboard/admin-dashboard';
 import { LogoutForm } from '../pages/user/logout';
+import { LoginComponent } from './login';
 
 //-------------------- Mobile View --------------------//
 
@@ -117,24 +118,29 @@ export const MobileUserAvatar: FunctionComponent = () => {
 
 export const MobileMenuContent: FunctionComponent = () => {
     const location = useLocation();
-    const { service, user, canLogin } = useContext(MainContext);
+    const { user, loginProviders } = useContext(MainContext);
 
     return <>
-        {canLogin && (
+        {loginProviders && (
             user ? (
                 <MobileUserAvatar />
             ) : (
                 <MobileMenuItem>
-                    <Link href={service.getLoginUrl()}>
-                        <MobileMenuItemText>
-                            <AccountBoxIcon sx={itemIcon} />
-                            Log In
-                        </MobileMenuItemText>
-                    </Link>
+                    <LoginComponent
+                        loginProviders={loginProviders}
+                        renderButton={(href, onClick) => {
+                            return (<Link href={href} onClick={onClick}>
+                                <MobileMenuItemText>
+                                    <AccountBoxIcon sx={itemIcon} />
+                                    Log In
+                                </MobileMenuItemText>
+                            </Link>);
+                        }}
+                    />
                 </MobileMenuItem>
             )
         )}
-        {canLogin && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
+        {loginProviders && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
             <MobileMenuItem>
                 <RouteLink to='/user-settings/extensions'>
                     <MobileMenuItemText>
@@ -199,7 +205,7 @@ export const MenuLink = styled(Link)(headerItem);
 export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
-    const { service, user, canLogin } = useContext(MainContext);
+    const { user, loginProviders } = useContext(MainContext);
     return <>
         <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
             Documentation
@@ -210,7 +216,7 @@ export const DefaultMenuContent: FunctionComponent = () => {
         <MenuRouteLink to='/about'>
             About
         </MenuRouteLink>
-        {canLogin && (
+        {loginProviders && (
             <>
                 <Button variant='contained' color='secondary' href='/user-settings/extensions' sx={{ mx: 2.5 }}>
                     Publish
@@ -219,12 +225,26 @@ export const DefaultMenuContent: FunctionComponent = () => {
                     user ?
                         <UserAvatar />
                         :
-                        <IconButton
-                            href={service.getLoginUrl()}
-                            title='Log In'
-                            aria-label='Log In' >
-                            <AccountBoxIcon />
-                        </IconButton>
+                        <LoginComponent
+                            loginProviders={loginProviders}
+                            renderButton={(href, onClick) => {
+                                if (href) {
+                                    return (<IconButton
+                                        href={href}
+                                        title='Log In'
+                                        aria-label='Log In' >
+                                        <AccountBoxIcon />
+                                    </IconButton>);
+                                } else {
+                                    return (<IconButton
+                                        onClick={onClick}
+                                        title='Log In'
+                                        aria-label='Log In' >
+                                        <AccountBoxIcon />
+                                    </IconButton>);
+                                }
+                            }}
+                        />
                 }
             </>
         )}
