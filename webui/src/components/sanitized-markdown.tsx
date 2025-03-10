@@ -11,7 +11,7 @@
 import React, { FunctionComponent, useEffect } from 'react';
 import * as MarkdownIt from 'markdown-it';
 import * as MarkdownItAnchor from 'markdown-it-anchor';
-import * as DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify';
 import { Theme, styled } from '@mui/material/styles';
 import linkIcon from './link-icon';
 import { useLocation } from 'react-router-dom';
