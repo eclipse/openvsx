@@ -32,6 +32,10 @@ public class RemoveFileResourceTypeResourceJobRequestHandler implements JobReque
     @Job(name = "Remove FileResource of type 'resource'", retries = 3)
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var resource = migrations.getResource(jobRequest);
+        if(resource == null) {
+            return;
+        }
+
         logger.info("Removing file resource: {} {}", NamingUtil.toLogFormat(resource.getExtension()), resource.getName());
         migrations.removeFile(resource);
         migrations.deleteFileResource(resource);
