@@ -83,6 +83,64 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
+    public void deleteExtensionAndDependencies(String namespaceName, String extensionName, UserData admin) throws ErrorResultException {
+        var extension = repositories.findExtension(extensionName, namespaceName);
+        if (extension == null) {
+            var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
+            throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
+        }
+
+        deleteExtensionAndDependencies(extension, admin, 0);
+    }
+
+    public void deleteExtensionAndDependencies(Extension extension, UserData admin, int depth) throws ErrorResultException {
+        if(depth > 5) {
+            throw new ErrorResultException("Failed to delete extension and its dependencies. Exceeded maximum recursion depth.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        var bundledRefs = repositories.findBundledExtensionsReference(extension);
+        for(var bundledRef : bundledRefs) {
+            deleteExtensionAndDependencies(bundledRef, admin, depth);
+        }
+
+        var dependRefs = repositories.findDependenciesReference(extension);
+        for(var dependRef : dependRefs) {
+            deleteExtensionAndDependencies(dependRef, admin, depth);
+        }
+
+        cache.evictExtensionJsons(extension);
+        for (var extVersion : repositories.findVersions(extension)) {
+            removeExtensionVersion(extVersion);
+        }
+        for (var review : repositories.findAllReviews(extension)) {
+            entityManager.remove(review);
+        }
+
+        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
+        for(var deprecatedExtension : deprecatedExtensions) {
+            deprecatedExtension.setReplacement(null);
+            cache.evictExtensionJsons(deprecatedExtension);
+        }
+
+        entityManager.remove(extension);
+        search.removeSearchEntry(extension);
+        logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
+    }
+
+    protected void deleteExtensionAndDependencies(ExtensionVersion extVersion, UserData admin, int depth) {
+        var extension = extVersion.getExtension();
+        if (repositories.countVersions(extension) == 1) {
+            deleteExtensionAndDependencies(extension, admin, depth + 1);
+            return;
+        }
+
+        removeExtensionVersion(extVersion);
+        extension.getVersions().remove(extVersion);
+        extensions.updateExtension(extension);
+        logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(String namespaceName, String extensionName, UserData admin)
             throws ErrorResultException {
         var extension = repositories.findExtension(extensionName, namespaceName);
