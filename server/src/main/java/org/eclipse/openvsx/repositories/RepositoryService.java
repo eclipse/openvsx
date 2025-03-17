@@ -443,44 +443,12 @@ public class RepositoryService {
         return extensionVersionRepo.countByExtension(extension);
     }
 
-    public Slice<MigrationItem> findNotMigratedPreReleases(Pageable page) {
-        return findNotMigratedItems("V1_26__Extension_Set_PreRelease.sql", page);
+    public Slice<MigrationItem> findNotMigratedItems(Pageable page) {
+        return migrationItemRepo.findByMigrationScheduledFalseOrderById(page);
     }
 
-    public Slice<MigrationItem> findNotMigratedRenamedDownloads(Pageable page) {
-        return findNotMigratedItems("V1_28__MigrationItem.sql", page);
-    }
-
-    public Slice<MigrationItem> findNotMigratedVsixManifests(Pageable page) {
-        return findNotMigratedItems("V1_32__FileResource_Extract_VsixManifest.sql", page);
-    }
-
-    public Slice<MigrationItem> findNotMigratedTargetPlatforms(Pageable page) {
-        return findNotMigratedItems("V1_34__ExtensionVersion_Fix_TargetPlatform.sql", page);
-    }
-
-    public Slice<MigrationItem> findNotMigratedSha256Checksums(Pageable page) {
-        return findNotMigratedItems("V1_35__FileResource_Generate_Sha256_Checksum.sql", page);
-    }
-
-    public Slice<MigrationItem> findNotMigratedPotentiallyMalicious(Pageable page) {
-        return findNotMigratedItems("V1_46__ExtensionVersion_PotentiallyMalicious.sql", page);
-    }
-
-    public Slice<MigrationItem> findNotMigratedLocalNamespaceLogos(Pageable page) {
-        return findNotMigratedItems("V1_48__Local_Storage_Namespace.sql", page);
-    }
-
-    public Slice<MigrationItem> findNotMigratedLocalFileResourceContent(Pageable page) {
-        return findNotMigratedItems("V1_48__Local_Storage_FileResource.sql", page);
-    }
-
-    public Slice<MigrationItem> findNotMigratedFileResourceTypeResource(Pageable page) {
-        return findNotMigratedItems("V1_50__FileResource_Remove_Resource.sql", page);
-    }
-
-    private Slice<MigrationItem> findNotMigratedItems(String migrationScript, Pageable page) {
-        return migrationItemRepo.findByMigrationScriptAndMigrationScheduledFalseOrderById(migrationScript, page);
+    public Slice<MigrationItem> findMigrationItemsByJobName(String jobName, Pageable page) {
+        return migrationItemRepo.findByJobName(jobName, page);
     }
 
     public double getAverageReviewRating() {

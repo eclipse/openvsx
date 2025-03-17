@@ -16,5 +16,7 @@ import org.springframework.data.repository.Repository;
 
 public interface MigrationItemRepository extends Repository<MigrationItem, Long> {
 
-    Slice<MigrationItem> findByMigrationScriptAndMigrationScheduledFalseOrderById(String migrationScript, Pageable page);
+    Slice<MigrationItem> findByMigrationScheduledFalseOrderById(Pageable page);
+
+    Slice<MigrationItem> findByJobName(String jobName, Pageable page);
 }

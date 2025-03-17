@@ -19,22 +19,14 @@ public class MigrationItem {
     @SequenceGenerator(name = "migrationItemSeq", sequenceName = "migration_item_seq")
     private long id;
 
-    private String migrationScript;
-
     private long entityId;
 
     private boolean migrationScheduled;
 
+    private String jobName;
+
     public long getId() {
         return id;
-    }
-
-    public String getMigrationScript() {
-        return migrationScript;
-    }
-
-    public void setMigrationScript(String migrationScript) {
-        this.migrationScript = migrationScript;
     }
 
     public long getEntityId() {
@@ -51,5 +43,13 @@ public class MigrationItem {
 
     public void setMigrationScheduled(boolean migrationScheduled) {
         this.migrationScheduled = migrationScheduled;
+    }
+
+    public String getJobName() {
+        return jobName;
+    }
+
+    public void setJobName(String jobName) {
+        this.jobName = jobName;
     }
 }

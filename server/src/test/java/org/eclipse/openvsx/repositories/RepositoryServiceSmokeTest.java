@@ -136,12 +136,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countVersions(extension),
                 () -> repositories.topMostDownloadedExtensions(1),
                 () -> repositories.countActiveAccessTokens(userData),
-                () -> repositories.findNotMigratedPreReleases(page),
-                () -> repositories.findNotMigratedRenamedDownloads(page),
-                () -> repositories.findNotMigratedVsixManifests(page),
-                () -> repositories.findNotMigratedTargetPlatforms(page),
-                () -> repositories.findNotMigratedSha256Checksums(page),
-                () -> repositories.findNotMigratedPotentiallyMalicious(page),
                 () -> repositories.topMostActivePublishingUsers(1),
                 () -> repositories.topNamespaceExtensions(1),
                 () -> repositories.topNamespaceExtensionVersions(1),
@@ -220,9 +214,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.hasExtension("namespaceName", "extensionName"),
                 () -> repositories.findDeprecatedExtensions(extension),
                 () -> repositories.findLatestReplacement(1L, null, false, false),
-                () -> repositories.findNotMigratedLocalNamespaceLogos(page),
-                () -> repositories.findNotMigratedLocalFileResourceContent(page),
-                () -> repositories.findNotMigratedFileResourceTypeResource(page)
+                () -> repositories.findNotMigratedItems(page),
+                () -> repositories.findMigrationItemsByJobName("job", page)
         );
 
         // check that we did not miss anything

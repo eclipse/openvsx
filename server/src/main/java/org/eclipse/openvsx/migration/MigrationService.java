@@ -27,10 +27,23 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
 public class MigrationService {
+
+    private static final Map<String, Class<? extends JobRequestHandler<MigrationJobRequest>>> JOB_HANDLERS = Map.of(
+            "SetPreReleaseMigration", SetPreReleaseJobRequestHandler.class,
+            "RenameDownloadsMigration", RenameDownloadsJobRequestHandler.class,
+            "ExtractVsixManifestMigration", ExtractVsixManifestsJobRequestHandler.class,
+            "FixTargetPlatformMigration", FixTargetPlatformsJobRequestHandler.class,
+            "GenerateSha256ChecksumMigration", GenerateSha256ChecksumJobRequestHandler.class,
+            "CheckPotentiallyMaliciousExtensionVersions", PotentiallyMaliciousJobRequestHandler.class,
+            "LocalNamespaceLogoMigration", NamespaceLogoFileResourceJobRequestHandler.class,
+            "LocalFileResourceContentMigration", FileResourceContentJobRequestHandler.class,
+            "RemoveFileResourceTypeResourceMigration", RemoveFileResourceTypeResourceJobRequestHandler.class
+    );
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
 
@@ -52,11 +65,13 @@ public class MigrationService {
     }
 
     @Transactional
-    public void enqueueMigration(String jobName, Class<? extends JobRequestHandler<MigrationJobRequest>> handler, MigrationItem item) {
+    public void enqueueMigration(MigrationItem item) {
         item = entityManager.merge(item);
-        var jobIdText = jobName + "::itemId=" + item.getId();
+        var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+        var handler = JOB_HANDLERS.get(item.getJobName());
         scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId()));
+        logger.info("Enqueued migration {}", jobIdText);
         item.setMigrationScheduled(true);
     }
 
