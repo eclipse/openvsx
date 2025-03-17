@@ -214,8 +214,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.hasExtension("namespaceName", "extensionName"),
                 () -> repositories.findDeprecatedExtensions(extension),
                 () -> repositories.findLatestReplacement(1L, null, false, false),
-                () -> repositories.findNotMigratedItems(page),
-                () -> repositories.findMigrationItemsByJobName("job", page)
+                () -> repositories.findNotMigratedItems(page)
         );
 
         // check that we did not miss anything
