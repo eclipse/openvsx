@@ -36,6 +36,7 @@ UPDATE migration_item
 SET job_name = 'RemoveFileResourceTypeResourceMigration'
 WHERE migration_script = 'V1_50__FileResource_Remove_Resource.sql';
 
+DELETE FROM migration_item WHERE job_name IS NULL;
 ALTER TABLE migration_item DROP COLUMN migration_script;
 ALTER TABLE migration_item ALTER COLUMN job_name SET NOT NULL;
 
