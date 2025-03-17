@@ -631,4 +631,8 @@ public class RepositoryService {
     public Streamable<Extension> findDeprecatedExtensions(Extension replacement) {
         return extensionRepo.findByReplacement(replacement);
     }
+
+    public Slice<MigrationItem> findMigrationItemsByJobName(String jobName, Pageable page) {
+        return migrationItemRepo.findByJobName(jobName, page);
+    }
 }
