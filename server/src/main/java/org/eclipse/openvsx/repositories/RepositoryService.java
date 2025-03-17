@@ -447,10 +447,6 @@ public class RepositoryService {
         return migrationItemRepo.findByMigrationScheduledFalseOrderById(page);
     }
 
-    public Slice<MigrationItem> findMigrationItemsByJobName(String jobName, Pageable page) {
-        return migrationItemRepo.findByJobName(jobName, page);
-    }
-
     public double getAverageReviewRating() {
         return extensionReviewRepo.averageRatingAndActiveTrue();
     }
