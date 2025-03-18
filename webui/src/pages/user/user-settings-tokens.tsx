@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Theme, Typography, Box, Paper, Button, Link } from '@mui/material';
+import { Theme, Typography, Box, Paper, Button, Link, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
@@ -47,6 +47,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
 
     const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
     const [loading, setLoading] = useState(true);
+    const [showDeleteAll, setShowDeleteAll] = useState(false);
 
     const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
@@ -80,7 +81,11 @@ export const UserSettingsTokens: FunctionComponent = () => {
         }
     };
 
+    const onShowDeleteAll = () => setShowDeleteAll(true);
+    const onHideDeleteAll = () => setShowDeleteAll(false);
+
     const handleDeleteAll = async () => {
+        onHideDeleteAll();
         setLoading(true);
         try {
             await service.deleteAllAccessTokens(abortController.current, tokens);
@@ -153,8 +158,8 @@ export const UserSettingsTokens: FunctionComponent = () => {
                 <Box>
                     <DeleteButton
                         variant='outlined'
-                        onClick={handleDeleteAll}
-                        disabled={loading}>
+                        onClick={onShowDeleteAll}
+                        disabled={loading || tokens.length === 0}>
                         Delete all
                     </DeleteButton>
                 </Box>
@@ -174,6 +179,33 @@ export const UserSettingsTokens: FunctionComponent = () => {
                 {tokens.map(token => renderToken(token))}
             </Paper>
         </Box>
+        <Dialog
+            open={showDeleteAll}
+            onClose={onHideDeleteAll} >
+            <DialogTitle >
+                Delete all access tokens
+            </DialogTitle>
+            <DialogContent>
+                <DialogContentText component='div'>
+                    Are you sure you want to delete all access tokens?
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button
+                    variant='contained'
+                    color='primary'
+                    onClick={onHideDeleteAll} >
+                    Cancel
+                </Button>
+                <Button
+                    variant='contained'
+                    color='secondary'
+                    autoFocus
+                    onClick={handleDeleteAll} >
+                    Delete
+                </Button>
+            </DialogActions>
+        </Dialog>
     </>;
 };
 
