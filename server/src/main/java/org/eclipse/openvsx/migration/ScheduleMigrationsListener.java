@@ -9,18 +9,12 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import org.eclipse.openvsx.repositories.RepositoryService;
-import org.jobrunr.jobs.states.IllegalJobStateChangeException;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.jobrunr.storage.ConcurrentJobModificationException;
-import org.jobrunr.storage.JobNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -33,7 +27,7 @@ public class ScheduleMigrationsListener {
     protected final Logger logger = LoggerFactory.getLogger(ScheduleMigrationsListener.class);
 
     private final JobRequestScheduler scheduler;
-    private final RepositoryService repositories;
+    private final MigrationService migrations;
 
     @Value("${ovsx.migrations.delay.seconds:0}")
     long delay;
@@ -41,31 +35,15 @@ public class ScheduleMigrationsListener {
     @Value("${ovsx.registry.version:}")
     String registryVersion;
 
-    public ScheduleMigrationsListener(JobRequestScheduler scheduler, RepositoryService repositories) {
+    public ScheduleMigrationsListener(JobRequestScheduler scheduler, MigrationService migrations) {
         this.scheduler = scheduler;
-        this.repositories = repositories;
+        this.migrations = migrations;
     }
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
-        // TODO remove after deployment of v0.23.3
-        Pageable page = PageRequest.ofSize(10000);
-        while(page != null) {
-            var migrationItems = repositories.findMigrationItemsByJobName("RemoveFileResourceTypeResourceMigration", page);
-            for (var item : migrationItems) {
-                var jobIdText = item.getJobName() + "::itemId=" + item.getId();
-                var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
-                try {
-                    scheduler.delete(jobId);
-                } catch (JobNotFoundException | IllegalJobStateChangeException | ConcurrentJobModificationException e) {
-                    if(!(e instanceof JobNotFoundException)) {
-                        logger.warn("Failed to delete job", e);
-                    }
-                }
-            }
-
-            page = migrationItems.hasNext() ? migrationItems.getPageable().next() : null;
-        }
+        // TODO remove after deployment of v0.23.4
+        migrations.clearJobQueue();
 
         var instant = Instant.now().plusSeconds(delay);
         var jobIdText = "MigrationScheduler::" + registryVersion;
