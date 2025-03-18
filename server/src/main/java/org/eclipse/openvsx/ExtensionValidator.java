@@ -19,10 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -62,7 +59,8 @@ public class ExtensionValidator {
 
     private void validateDescription(String description, int limit, List<Issue> issues) {
         var field = "description";
-        checkCharacters(description, field, issues);
+        var zeroWidthJoinerChar = '\u200D'; // character that allows combining multiple emojis into one (https://en.wikipedia.org/wiki/Zero-width_joiner)
+        checkCharacters(description, field, issues, List.of(zeroWidthJoinerChar));
         checkFieldSize(description, limit, field, issues);
     }
 
@@ -164,11 +162,21 @@ public class ExtensionValidator {
     }
 
     private void checkCharacters(String value, String field, List<Issue> issues) {
+        checkCharacters(value, field, issues, Collections.emptyList());
+    }
+
+    private void checkCharacters(String value, String field, List<Issue> issues, List<Character> allowedChars) {
         if (value == null) {
             return;
         }
+
         for (var i = 0; i < value.length(); i++) {
-            var type = Character.getType(value.charAt(i));
+            var character = value.charAt(i);
+            if(allowedChars.contains(character)) {
+                continue;
+            }
+
+            var type = Character.getType(character);
             if (type == Character.CONTROL || type == Character.FORMAT
                     || type == Character.UNASSIGNED || type == Character.PRIVATE_USE
                     || type == Character.LINE_SEPARATOR || type == Character.PARAGRAPH_SEPARATOR) {

@@ -109,6 +109,16 @@ class ExtensionValidatorTest {
         assertThat(issues).isEmpty();
     }
 
+    @Test
+    void testDescription() {
+        var extension = new ExtensionVersion();
+        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extension.setVersion("1.0.0");
+        extension.setDescription("\uD83C\uDFC3\u200D♂\uFE0F Jump/Select to the Start/End of a word in VSCode");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).isEmpty();
+    }
+
     @TestConfiguration
     static class TestConfig {
         @Bean
