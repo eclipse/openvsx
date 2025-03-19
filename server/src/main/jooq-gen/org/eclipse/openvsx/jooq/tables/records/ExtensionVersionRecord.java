@@ -512,16 +512,14 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     }
 
     /**
-     * Setter for
-     * <code>public.extension_version.potentially_malicious</code>.
+     * Setter for <code>public.extension_version.potentially_malicious</code>.
      */
     public void setPotentiallyMalicious(Boolean value) {
         set(35, value);
     }
 
     /**
-     * Getter for
-     * <code>public.extension_version.potentially_malicious</code>.
+     * Getter for <code>public.extension_version.potentially_malicious</code>.
      */
     public Boolean getPotentiallyMalicious() {
         return (Boolean) get(35);

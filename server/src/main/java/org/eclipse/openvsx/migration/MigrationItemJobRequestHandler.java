@@ -58,6 +58,8 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
         for(var item : items) {
             migrations.enqueueMigration(item);
         }
+
+        logger.info("Scheduled migration items: {}", items.getSize());
         if(!items.hasNext()) {
             scheduler.deleteRecurringJob(getJobName());
         }

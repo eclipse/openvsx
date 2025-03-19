@@ -56,6 +56,7 @@ public class RepositoryService {
     private final AdminStatisticsRepository adminStatisticsRepo;
     private final AdminStatisticCalculationsRepository adminStatisticCalculationsRepo;
     private final MigrationItemRepository migrationItemRepo;
+    private final MigrationItemJooqRepository migrationItemJooqRepo;
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
 
@@ -80,6 +81,7 @@ public class RepositoryService {
             AdminStatisticsRepository adminStatisticsRepo,
             AdminStatisticCalculationsRepository adminStatisticCalculationsRepo,
             MigrationItemRepository migrationItemRepo,
+            MigrationItemJooqRepository migrationItemJooqRepo,
             SignatureKeyPairRepository signatureKeyPairRepo,
             SignatureKeyPairJooqRepository signatureKeyPairJooqRepo
     ) {
@@ -103,6 +105,7 @@ public class RepositoryService {
         this.adminStatisticsRepo = adminStatisticsRepo;
         this.adminStatisticCalculationsRepo = adminStatisticCalculationsRepo;
         this.migrationItemRepo = migrationItemRepo;
+        this.migrationItemJooqRepo = migrationItemJooqRepo;
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
     }
@@ -632,7 +635,7 @@ public class RepositoryService {
         return extensionRepo.findByReplacement(replacement);
     }
 
-    public Slice<MigrationItem> findMigrationItemsByJobName(String jobName, Pageable page) {
-        return migrationItemRepo.findByJobName(jobName, page);
+    public List<MigrationItem> findRemoveFileResourceTypeResourceMigrationItems(int offset, int limit) {
+        return migrationItemJooqRepo.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
     }
 }
