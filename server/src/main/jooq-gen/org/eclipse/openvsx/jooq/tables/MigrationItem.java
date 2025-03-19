@@ -54,11 +54,6 @@ public class MigrationItem extends TableImpl<MigrationItemRecord> {
     public final TableField<MigrationItemRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
-     * The column <code>public.migration_item.migration_script</code>.
-     */
-    public final TableField<MigrationItemRecord, String> MIGRATION_SCRIPT = createField(DSL.name("migration_script"), SQLDataType.VARCHAR(1000).nullable(false), this, "");
-
-    /**
      * The column <code>public.migration_item.entity_id</code>.
      */
     public final TableField<MigrationItemRecord, Long> ENTITY_ID = createField(DSL.name("entity_id"), SQLDataType.BIGINT.nullable(false), this, "");
@@ -67,6 +62,11 @@ public class MigrationItem extends TableImpl<MigrationItemRecord> {
      * The column <code>public.migration_item.migration_scheduled</code>.
      */
     public final TableField<MigrationItemRecord, Boolean> MIGRATION_SCHEDULED = createField(DSL.name("migration_scheduled"), SQLDataType.BOOLEAN.nullable(false), this, "");
+
+    /**
+     * The column <code>public.migration_item.job_name</code>.
+     */
+    public final TableField<MigrationItemRecord, String> JOB_NAME = createField(DSL.name("job_name"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     private MigrationItem(Name alias, Table<MigrationItemRecord> aliased) {
         this(alias, aliased, null);
@@ -155,14 +155,14 @@ public class MigrationItem extends TableImpl<MigrationItemRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Row4<Long, String, Long, Boolean> fieldsRow() {
+    public Row4<Long, Long, Boolean, String> fieldsRow() {
         return (Row4) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function4<? super Long, ? super String, ? super Long, ? super Boolean, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function4<? super Long, ? super Long, ? super Boolean, ? super String, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -170,7 +170,7 @@ public class MigrationItem extends TableImpl<MigrationItemRecord> {
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super Long, ? super String, ? super Long, ? super Boolean, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super Long, ? super Long, ? super Boolean, ? super String, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }

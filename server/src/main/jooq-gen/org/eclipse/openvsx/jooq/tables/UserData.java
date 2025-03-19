@@ -13,11 +13,11 @@ import org.eclipse.openvsx.jooq.Public;
 import org.eclipse.openvsx.jooq.tables.records.UserDataRecord;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function12;
+import org.jooq.Function11;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Records;
-import org.jooq.Row12;
+import org.jooq.Row11;
 import org.jooq.Schema;
 import org.jooq.SelectField;
 import org.jooq.Table;
@@ -99,11 +99,6 @@ public class UserData extends TableImpl<UserDataRecord> {
      * The column <code>public.user_data.eclipse_token</code>.
      */
     public final TableField<UserDataRecord, String> ECLIPSE_TOKEN = createField(DSL.name("eclipse_token"), SQLDataType.VARCHAR(4096), this, "");
-
-    /**
-     * The column <code>public.user_data.github_token</code>.
-     */
-    public final TableField<UserDataRecord, String> GITHUB_TOKEN = createField(DSL.name("github_token"), SQLDataType.VARCHAR(4096), this, "");
 
     /**
      * The column <code>public.user_data.eclipse_person_id</code>.
@@ -198,18 +193,18 @@ public class UserData extends TableImpl<UserDataRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row12 type methods
+    // Row11 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row12<Long, String, String, String, String, String, String, String, String, String, String, String> fieldsRow() {
-        return (Row12) super.fieldsRow();
+    public Row11<Long, String, String, String, String, String, String, String, String, String, String> fieldsRow() {
+        return (Row11) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function12<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function11<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -217,7 +212,7 @@ public class UserData extends TableImpl<UserDataRecord> {
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function12<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function11<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? super String, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }
