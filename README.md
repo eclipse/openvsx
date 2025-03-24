@@ -4,6 +4,7 @@
 [![Contribute](https://www.eclipse.org/che/contribute.svg)](https://workspaces.openshift.com#https://github.com/eclipse/openvsx)
 [![Slack workspace](https://img.shields.io/badge/Slack-Join%20workspace-4A154B?logo=slack&logoColor=white)](https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A)
 [![License](https://img.shields.io/github/license/eclipse/openvsx)](https://github.com/eclipse/openvsx/blob/master/LICENSE)
+[![GitHub tag](https://img.shields.io/github/v/tag/eclipse/openvsx?sort=semver)](https://github.com/eclipse/openvsx/releases)
 [![CI](https://github.com/eclipse/openvsx/workflows/CI/badge.svg)](https://github.com/eclipse/openvsx/actions?query=workflow%3ACI)
 [![Revved up by Develocity](https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A)](https://develocity-staging.eclipse.org/)
 
