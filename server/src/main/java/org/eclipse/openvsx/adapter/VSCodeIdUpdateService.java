@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.BuiltInExtensionUtil;
@@ -27,10 +28,12 @@ public class VSCodeIdUpdateService {
 
     private final RepositoryService repositories;
     private final VSCodeIdService service;
+    private final CacheService cache;
 
-    public VSCodeIdUpdateService(RepositoryService repositories, VSCodeIdService service) {
+    public VSCodeIdUpdateService(RepositoryService repositories, VSCodeIdService service, CacheService cache) {
         this.repositories = repositories;
         this.service = service;
+        this.cache = cache;
     }
 
     public void update(String namespaceName, String extensionName) {
@@ -53,6 +56,9 @@ public class VSCodeIdUpdateService {
         updateNamespacePublicId(extension, namespaceUpdates, false);
         if(!namespaceUpdates.isEmpty()) {
             repositories.updateNamespacePublicIds(namespaceUpdates);
+        }
+        if(!extensionUpdates.isEmpty() || !namespaceUpdates.isEmpty()) {
+            cache.evictExtensionQueryExtensionData(extension);
         }
     }
 
@@ -106,6 +112,8 @@ public class VSCodeIdUpdateService {
     public void updateAll() {
         LOGGER.debug("DAILY UPDATE ALL");
         var extensions = repositories.findAllPublicIds();
+        var extensionMap = extensions.stream().collect(Collectors.toMap(e -> e.getId(), e -> e));
+        var namespaceMap = extensions.stream().collect(Collectors.toMap(e -> e.getNamespace().getId(), e -> e, (id1, id2) -> id1));
         var extensionPublicIdsMap = extensions.stream()
                 .filter(e -> StringUtils.isNotEmpty(e.getPublicId()))
                 .collect(Collectors.toMap(e -> e.getId(), e -> e.getPublicId()));
@@ -152,6 +160,12 @@ public class VSCodeIdUpdateService {
                 LOGGER.debug("{}: {}", entry.getKey(), entry.getValue());
             }
 
+            var changedExtensions = changedExtensionPublicIds.keySet().stream()
+                    .map(extensionMap::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            cache.evictExtensionQueryExtensionData(changedExtensions);
             repositories.updateExtensionPublicIds(changedExtensionPublicIds);
         }
 
@@ -164,6 +178,13 @@ public class VSCodeIdUpdateService {
                 LOGGER.debug("{}: {}", entry.getKey(), entry.getValue());
             }
 
+            var changedExtensions = changedNamespacePublicIds.keySet().stream()
+                    .map(namespaceMap::get)
+                    .filter(Objects::nonNull)
+                    .filter(e -> !changedExtensionPublicIds.containsKey(e.getId()))
+                    .toList();
+
+            cache.evictExtensionQueryExtensionData(changedExtensions);
             repositories.updateNamespacePublicIds(changedNamespacePublicIds);
         }
     }

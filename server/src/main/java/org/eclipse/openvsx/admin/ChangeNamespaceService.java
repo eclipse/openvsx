@@ -55,6 +55,7 @@ public class ChangeNamespaceService {
         for(var extension : extensions) {
             cache.evictExtensionJsons(extension);
             cache.evictLatestExtensionVersion(extension);
+            cache.evictExtensionQueryExtensionData(extension);
         }
 
         if(createNewNamespace) {

@@ -686,6 +686,7 @@ class VSCodeAPITest {
         var builtInExtensionNamespace = "vscode";
         var entry1 = new ExtensionSearch();
         entry1.setId(1);
+        entry1.setExtensionId("redhat.vscode-yaml");
         List<ExtensionSearch> searchHits = !builtInExtensionNamespace.equals(namespaceName)
                 ? Collections.singletonList(entry1)
                 : Collections.emptyList();
@@ -717,7 +718,7 @@ class VSCodeAPITest {
         Mockito.when(repositories.findActiveExtensionsById(List.of(entry1.getId())))
                 .thenReturn(results);
 
-        var publicIds = Set.of(extension.getPublicId());
+        var publicIds = List.of(extension.getPublicId());
         Mockito.when(repositories.findActiveExtensionsByPublicId(publicIds, builtInExtensionNamespace))
                 .thenReturn(results);
 

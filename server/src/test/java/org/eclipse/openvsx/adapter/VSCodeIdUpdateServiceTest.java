@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
+import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @ExtendWith(SpringExtension.class)
+@MockitoBean( types = { CacheService.class })
 class VSCodeIdUpdateServiceTest {
 
     @MockitoBean
@@ -609,8 +611,8 @@ class VSCodeIdUpdateServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        VSCodeIdUpdateService vsCodeIdUpdateService(RepositoryService repositories, VSCodeIdService service) {
-            return new VSCodeIdUpdateService(repositories, service);
+        VSCodeIdUpdateService vsCodeIdUpdateService(RepositoryService repositories, VSCodeIdService service, CacheService cache) {
+            return new VSCodeIdUpdateService(repositories, service, cache);
         }
     }
 }
