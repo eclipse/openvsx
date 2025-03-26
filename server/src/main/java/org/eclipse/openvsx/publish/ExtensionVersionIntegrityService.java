@@ -31,8 +31,6 @@ import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -61,17 +59,6 @@ public class ExtensionVersionIntegrityService {
     public ExtensionVersionIntegrityService(EntityManager entityManager, CacheService cache) {
         this.entityManager = entityManager;
         this.cache = cache;
-    }
-
-    @EventListener
-    public void applicationStarted(ApplicationStartedEvent event) {
-        if(!isEnabled()) {
-            return;
-        }
-
-        cache.evictLatestExtensionVersions();
-        cache.evictExtensionJsons();
-        cache.evictNamespaceDetails();
     }
 
     public boolean isEnabled() {
