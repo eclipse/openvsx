@@ -11,19 +11,18 @@ package org.eclipse.openvsx.migration;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import org.jobrunr.jobs.context.JobRunrDashboardLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CheckPotentiallyMaliciousExtensionVersionsService {
 
-    protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(PotentiallyMaliciousJobRequestHandler.class));
+    protected final Logger logger = LoggerFactory.getLogger(CheckPotentiallyMaliciousExtensionVersionsService.class);
 
     private final EntityManager entityManager;
 
