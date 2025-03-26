@@ -9,14 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
-import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
@@ -29,6 +27,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
@@ -227,6 +226,78 @@ class VSCodeAPITest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(file("findname-yaml-response.json")));
+    }
+
+    @Test
+    void testFindIncludeLatestVersionOnly() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, new String[]{"0.5.2", "0.4.0"}, "universal");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                        .content(file("findname-yaml-query-latest-version-only.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response-latest-version-only.json")));
+    }
+
+    @Test
+    void testFindIncludeVersions() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, new String[]{"0.5.2", "0.4.0"}, "universal");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                        .content(file("findname-yaml-query-versions.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response-versions.json")));
+    }
+
+    @Test
+    void testFindIncludeVersionProperties() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, new String[]{"0.5.2", "0.4.0"}, "universal");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                        .content(file("findname-yaml-query-version-properties.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response-version-properties.json")));
+    }
+
+    @Test
+    void testFindIncludeFiles() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, new String[]{"0.5.2", "0.4.0"}, "universal");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                        .content(file("findname-yaml-query-files.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response-files.json")));
+    }
+
+    @Test
+    void testFindIncludeStatistics() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, new String[]{"0.5.2", "0.4.0"}, "universal");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                        .content(file("findname-yaml-query-statistics.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response-statistics.json")));
+    }
+
+    @Test
+    void testFindIncludeAssetUri() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, new String[]{"0.5.2", "0.4.0"}, "universal");
+
+        mockMvc.perform(post("/vscode/gallery/extensionquery")
+                        .content(file("findname-yaml-query-asset-uri.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("findname-yaml-response-asset-uri.json")));
     }
 
     @Test
@@ -581,7 +652,6 @@ class VSCodeAPITest {
         Mockito.when(repositories.findActiveExtensionsByPublicId(publicIds, builtInExtensionNamespace))
                 .thenReturn(results);
 
-        var ids = List.of(extension.getId());
         Mockito.when(repositories.findActiveExtension(extension.getName(), extension.getNamespace().getName()))
                 .thenReturn(extension);
 
@@ -610,23 +680,29 @@ class VSCodeAPITest {
     }
 
     private void mockExtensionVersions(Extension extension, String queryTargetPlatform, String... targetPlatforms) {
+        mockExtensionVersions(extension, queryTargetPlatform, new String[]{"0.5.2"}, targetPlatforms);
+    }
+
+    private void mockExtensionVersions(Extension extension, String queryTargetPlatform, String[] versions, String... targetPlatforms) {
         var id = 2;
-        var versions = new ArrayList<ExtensionVersion>(targetPlatforms.length);
-        for(var targetPlatform : targetPlatforms) {
-            versions.add(mockExtensionVersion(extension, id, targetPlatform));
-            id++;
+        var extVersions = new ArrayList<ExtensionVersion>(targetPlatforms.length);
+        for(var version : versions) {
+            for (var targetPlatform : targetPlatforms) {
+                extVersions.add(mockExtensionVersion(extension, id, version, targetPlatform));
+                id++;
+            }
         }
 
         Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), queryTargetPlatform))
-                .thenReturn(versions);
+                .thenReturn(extVersions);
 
-        mockFileResources(versions);
+        mockFileResources(extVersions);
     }
 
-    private ExtensionVersion mockExtensionVersion(Extension extension, long id, String targetPlatform) {
+    private ExtensionVersion mockExtensionVersion(Extension extension, long id, String version, String targetPlatform) {
         var extVersion = new ExtensionVersion();
         extVersion.setId(id);
-        extVersion.setVersion("0.5.2");
+        extVersion.setVersion(version);
         extVersion.setTargetPlatform(targetPlatform);
         extVersion.setPreview(true);
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
@@ -678,17 +754,11 @@ class VSCodeAPITest {
         return resource;
     }
 
-    private FileResource mockFileResource(long id, ExtensionVersion extVersion, String name, String type, String storageType) {
-        var resource = mockFileResource(id, extVersion, name, type);
-        resource.setStorageType(storageType);
-        return resource;
-    }
-
-    private ExtensionVersion mockExtensionVersion() throws JsonProcessingException {
+    private ExtensionVersion mockExtensionVersion() {
         return mockExtensionVersion(TargetPlatform.NAME_UNIVERSAL);
     }
 
-    private ExtensionVersion mockExtensionVersion(String targetPlatform) throws JsonProcessingException {
+    private ExtensionVersion mockExtensionVersion(String targetPlatform) {
         var namespace = new Namespace();
         namespace.setId(2);
         namespace.setPublicId("test-2");
