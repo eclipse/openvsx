@@ -19,14 +19,10 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
-import org.jobrunr.jobs.states.IllegalJobStateChangeException;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.jobrunr.storage.ConcurrentJobModificationException;
-import org.jobrunr.storage.JobNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.retry.annotation.Retryable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -129,34 +125,5 @@ public class MigrationService {
         }
 
         return download;
-    }
-
-    @Async
-    public void clearJobQueue() {
-        // TODO remove after deployment of v0.23.5
-        var offset = 0;
-        var limit = 10000;
-        var hasNext = true;
-        var counter = 0;
-        while(hasNext) {
-            var migrationItems = repositories.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
-            for (var item : migrationItems) {
-                var jobIdText = item.getJobName() + "::itemId=" + item.getId();
-                var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
-                try {
-                    scheduler.delete(jobId);
-                    counter++;
-                } catch (JobNotFoundException | IllegalJobStateChangeException | ConcurrentJobModificationException e) {
-                    var suppressException = e instanceof JobNotFoundException || (e instanceof IllegalJobStateChangeException && e.getMessage().endsWith("from DELETED to DELETED."));
-                    if(!suppressException) {
-                        logger.warn("Failed to delete job", e);
-                    }
-                }
-            }
-
-            logger.info("Total deleted jobs: {}/{}", counter, offset + limit);
-            offset += limit;
-            hasNext = migrationItems.size() == limit;
-        }
     }
 }
