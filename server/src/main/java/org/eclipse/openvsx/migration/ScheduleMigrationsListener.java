@@ -42,9 +42,6 @@ public class ScheduleMigrationsListener {
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
-        // TODO remove after deployment of v0.23.5
-        migrations.clearJobQueue();
-
         var instant = Instant.now().plusSeconds(delay);
         var jobIdText = "MigrationScheduler::" + registryVersion;
         var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
