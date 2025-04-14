@@ -248,7 +248,7 @@ public class ElasticSearchService implements ISearchService {
     public SearchHits<ExtensionSearch> search(Options options) {
         var resultWindow = options.requestedOffset() + options.requestedSize();
         if(resultWindow > getMaxResultWindow()) {
-            return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, null, null, Collections.emptyList(), null, null);
+            return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, null, null, Collections.emptyList(), null, null, null);
         }
 
         var queryBuilder = new NativeQueryBuilder();
@@ -293,6 +293,7 @@ public class ElasticSearchService implements ISearchService {
                     null,
                     null,
                     searchHits,
+                    null,
                     null,
                     null
             );

@@ -2184,7 +2184,7 @@ class RegistryAPITest {
         var entry1 = new ExtensionSearch();
         entry1.setId(1);
         var searchHit = new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1);
-        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1", null, List.of(searchHit), null, null);
+        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1", null, List.of(searchHit), null, null, null);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false, null);
