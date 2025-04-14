@@ -62,7 +62,7 @@ public class DatabaseSearchService implements ISearchService {
 
         // no extensions in the database
         if (matchingExtensions.isEmpty()) {
-            return new SearchHitsImpl<>(0,TotalHitsRelation.OFF, 0f, null, null, Collections.emptyList(), null, null);
+            return new SearchHitsImpl<>(0,TotalHitsRelation.OFF, 0f, null, null, Collections.emptyList(), null, null, null);
         }
 
         // exlude namespaces
@@ -148,7 +148,7 @@ public class DatabaseSearchService implements ISearchService {
             searchHits = sortedExtensions.stream().map(extensionSearch -> new SearchHit<>(null, null, null, 0.0f, null, null, null, null, null, null, extensionSearch)).collect(Collectors.toList());
         }
 
-        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, null, null, searchHits, null, null);
+        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, null, null, searchHits, null, null, null);
     }
 
     @Override

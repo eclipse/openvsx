@@ -633,7 +633,7 @@ class VSCodeAPITest {
                 ? Collections.singletonList(new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1))
                 : Collections.emptyList();
         var searchHits = new SearchHitsImpl<>(searchResults.size(), TotalHitsRelation.EQUAL_TO, 1.0f, "1", null,
-                searchResults, null, null);
+                searchResults, null, null, null);
 
         Mockito.when(integrityService.isEnabled())
                 .thenReturn(true);
