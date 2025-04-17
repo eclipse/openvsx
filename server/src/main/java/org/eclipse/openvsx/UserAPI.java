@@ -346,8 +346,15 @@ public class UserAPI {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         try {
-            eclipse.signPublisherAgreement(user);
-            return ResponseEntity.ok(getUserData());
+            var agreement = eclipse.signPublisherAgreement(user);
+            var json = user.toUserJson();
+            var serverUrl = UrlUtil.getBaseUrl();
+            json.setRole(user.getRole());
+            json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
+            json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
+            eclipse.enrichUserJson(json, user, agreement);
+
+            return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(UserJson.class);
         }

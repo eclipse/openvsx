@@ -158,10 +158,31 @@ public class EclipseService {
         user.setEclipsePersonId(profile.getName());
     }
 
+    public void enrichUserJson(UserJson json, UserData user) {
+        var usableToken = true;
+        PublisherAgreement agreement = null;
+        try {
+            // Add information on the publisher agreement
+            agreement = getPublisherAgreement(user);
+        } catch (ErrorResultException e) {
+            if(e.getStatus() == HttpStatus.FORBIDDEN) {
+                usableToken = false;
+            } else {
+                logger.info("Failed to enrich UserJson", e);
+            }
+        }
+
+        enrichUserJson(json, user, agreement, usableToken);
+    }
+
+    public void enrichUserJson(UserJson json, UserData user, PublisherAgreement agreement) {
+        enrichUserJson(json, user, agreement, true);
+    }
+
     /**
      * Enrich the given JSON user data with Eclipse-specific information.
      */
-    public void enrichUserJson(UserJson json, UserData user) {
+    private void enrichUserJson(UserJson json, UserData user, PublisherAgreement agreement, boolean usableToken) {
         if (!isActive()) {
             return;
         }
@@ -175,23 +196,12 @@ public class EclipseService {
             return;
         }
 
-        var usableToken = true;
-        try {
-            // Add information on the publisher agreement
-            var agreement = getPublisherAgreement(user);
-            if(agreement != null && agreement.isActive() && agreement.version() != null) {
-                var status = publisherAgreementVersion.equals(agreement.version()) ? "signed" : "outdated";
-                publisherAgreement.setStatus(status);
-            }
-            if (agreement != null && agreement.timestamp() != null) {
-                publisherAgreement.setTimestamp(TimeUtil.toUTCString(agreement.timestamp()));
-            }
-        } catch (ErrorResultException e) {
-            if(e.getStatus() == HttpStatus.FORBIDDEN) {
-                usableToken = false;
-            } else {
-                logger.info("Failed to enrich UserJson", e);
-            }
+        if(agreement != null && agreement.isActive() && agreement.version() != null) {
+            var status = publisherAgreementVersion.equals(agreement.version()) ? "signed" : "outdated";
+            publisherAgreement.setStatus(status);
+        }
+        if (agreement != null && agreement.timestamp() != null) {
+            publisherAgreement.setTimestamp(TimeUtil.toUTCString(agreement.timestamp()));
         }
 
         // Report user as logged in only if there is a usable token:
