@@ -70,7 +70,11 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
     @Override
     public void run(ChangeNamespaceJobRequest jobRequest) throws Exception {
         var oldNamespace = jobRequest.getData().oldNamespace();
-        synchronized (LOCKS.computeIfAbsent(oldNamespace, key -> new Object())) {
+        Object lock;
+        synchronized (LOCKS) {
+            lock = LOCKS.computeIfAbsent(oldNamespace, key -> new Object());
+        }
+        synchronized (lock) {
             execute(jobRequest);
         }
     }

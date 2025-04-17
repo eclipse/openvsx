@@ -1021,7 +1021,7 @@ class AdminAPITest {
         token.setActive(true);
         token.setValue(tokenValue);
         token.setUser(user);
-        Mockito.when(repositories.isAdminToken(tokenValue)).thenReturn(true);
+        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
 
         return token;
     }
@@ -1035,7 +1035,7 @@ class AdminAPITest {
         token.setActive(true);
         token.setValue(tokenValue);
         token.setUser(user);
-        Mockito.when(repositories.isAdminToken(tokenValue)).thenReturn(false);
+        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
 
         return token;
     }

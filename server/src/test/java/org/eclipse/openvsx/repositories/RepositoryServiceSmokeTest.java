@@ -194,7 +194,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findExtensionTargetPlatforms(extension),
                 () -> repositories.deactivateKeyPairs(),
                 () -> repositories.findActiveAccessTokens(userData),
-                () -> repositories.isAdminToken("tokenValue"),
                 () -> repositories.findLatestVersions(List.of(1L)),
                 () -> repositories.hasSameVersion(extVersion),
                 () -> repositories.hasActiveReview(extension, userData),

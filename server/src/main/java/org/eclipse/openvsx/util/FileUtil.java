@@ -38,7 +38,11 @@ public class FileUtil {
      * @param writer Writes to file
      */
     public static void writeSync(Path path, Consumer<Path> writer) {
-        synchronized (LOCKS.computeIfAbsent(path, key -> new Object())) {
+        Object lock;
+        synchronized (LOCKS) {
+            lock = LOCKS.computeIfAbsent(path, key -> new Object());
+        }
+        synchronized (lock) {
             if(!Files.exists(path)) {
                 writer.accept(path);
             }
