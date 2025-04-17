@@ -88,14 +88,8 @@ public class AdminAPI {
         }
     }
 
-    private void validateToken(String tokenValue) {
-        if(!repositories.isAdminToken(tokenValue)) {
-            throw new ErrorResultException("Invalid access token", HttpStatus.FORBIDDEN);
-        }
-    }
-
     private AdminStatistics getReport(String tokenValue, int year, int month) {
-        validateToken(tokenValue);
+        admins.checkAdminUser(tokenValue);
         return admins.getAdminStatistics(year, month);
     }
 
@@ -295,9 +289,17 @@ public class AdminAPI {
         path = "/admin/namespace/{namespaceName}/members",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String namespaceName) {
+    public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(
+            @PathVariable String namespaceName,
+            @RequestParam(value = "token", required = false) String tokenValue
+    ) {
         try{
-            admins.checkAdminUser();
+            if(tokenValue == null) {
+                admins.checkAdminUser();
+            } else {
+                admins.checkAdminUser(tokenValue);
+            }
+
             var memberships = repositories.findMemberships(namespaceName);
             var membershipList = new NamespaceMembershipListJson();
             membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
@@ -311,12 +313,15 @@ public class AdminAPI {
         path = "/admin/namespace/{namespaceName}/change-member",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ResultJson> editNamespaceMember(@PathVariable String namespaceName,
-                                                          @RequestParam("user") String userName,
-                                                          @RequestParam(required = false) String provider,
-                                                          @RequestParam String role) {
+    public ResponseEntity<ResultJson> editNamespaceMember(
+            @PathVariable String namespaceName,
+            @RequestParam("user") String userName,
+            @RequestParam(required = false) String provider,
+            @RequestParam String role,
+            @RequestParam(value = "token", required = false) String tokenValue
+    ) {
         try {
-            var adminUser = admins.checkAdminUser();
+            var adminUser = tokenValue == null ? admins.checkAdminUser() : admins.checkAdminUser(tokenValue);
             var result = admins.editNamespaceMember(namespaceName, userName, provider, role, adminUser);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {

@@ -342,10 +342,6 @@ public class RepositoryService {
         return  tokenRepo.findByValue(value);
     }
 
-    public boolean isAdminToken(String value) {
-        return tokenJooqRepo.isAdminToken(value);
-    }
-
     public PersonalAccessToken findAccessToken(long id) {
         return tokenRepo.findById(id);
     }

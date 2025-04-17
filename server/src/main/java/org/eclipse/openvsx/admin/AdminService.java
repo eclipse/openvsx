@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -388,7 +389,19 @@ public class AdminService {
     }
 
     public UserData checkAdminUser() {
-        var user = users.findLoggedInUser();
+        return checkAdminUser(users.findLoggedInUser());
+    }
+
+    public UserData checkAdminUser(String tokenValue) {
+        var user = Optional.of(tokenValue)
+                .map(users::useAccessToken)
+                .map(PersonalAccessToken::getUser)
+                .orElse(null);
+
+        return checkAdminUser(user);
+    }
+
+    private UserData checkAdminUser(UserData user) {
         if (user == null || !UserData.ROLE_ADMIN.equals(user.getRole())) {
             throw new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN);
         }

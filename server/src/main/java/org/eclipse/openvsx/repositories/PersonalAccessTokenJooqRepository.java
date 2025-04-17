@@ -9,12 +9,10 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.entities.UserData;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Component;
 
 import static org.eclipse.openvsx.jooq.Tables.PERSONAL_ACCESS_TOKEN;
-import static org.eclipse.openvsx.jooq.Tables.USER_DATA;
 
 @Component
 public class PersonalAccessTokenJooqRepository {
@@ -29,17 +27,6 @@ public class PersonalAccessTokenJooqRepository {
                 dsl.selectOne()
                         .from(PERSONAL_ACCESS_TOKEN)
                         .where(PERSONAL_ACCESS_TOKEN.VALUE.eq(value))
-        );
-    }
-
-    public boolean isAdminToken(String value) {
-        return dsl.fetchExists(
-                dsl.selectOne()
-                        .from(PERSONAL_ACCESS_TOKEN)
-                        .join(USER_DATA).on(USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA))
-                        .where(PERSONAL_ACCESS_TOKEN.VALUE.eq(value))
-                        .and(PERSONAL_ACCESS_TOKEN.ACTIVE.eq(true))
-                        .and(USER_DATA.ROLE.eq(UserData.ROLE_ADMIN))
         );
     }
 }
