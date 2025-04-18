@@ -227,7 +227,7 @@ public class RepositoryService {
     }
 
     public Streamable<FileResource> findFiles(ExtensionVersion extVersion) {
-        return fileResourceRepo.findByExtensionAndStorageTypeNot(extVersion, STORAGE_LOCAL);
+        return fileResourceRepo.findByExtension(extVersion);
     }
 
     public void deleteFiles(ExtensionVersion extVersion) {
