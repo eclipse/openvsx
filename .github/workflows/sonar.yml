@@ -9,19 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
     steps:
+    - name: Create artifacts directory
+      run: mkdir -p ${{ runner.temp }}/artifacts
     - name: Download PR number artifact
       if: github.event.workflow_run.event == 'pull_request'
       uses: dawidd6/action-download-artifact@v6
       with:
         workflow: CI
         run_id: ${{ github.event.workflow_run.id }}
+        path: ${{ runner.temp }}/artifacts
         name: PR_NUMBER
     - name: Read PR_NUMBER.txt
       if: github.event.workflow_run.event == 'pull_request'
       id: pr_number
       uses: juliangruber/read-file-action@v1
       with:
-        path: ./PR_NUMBER.txt
+        path: ${{ runner.temp }}/artifacts/PR_NUMBER.txt
     - name: Request GitHub API for PR data
       if: github.event.workflow_run.event == 'pull_request'
       uses: octokit/request-action@v2.x
