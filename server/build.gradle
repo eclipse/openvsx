@@ -24,23 +24,23 @@ def versions = [
     java: '17',
     flyway: '9.19.1',
     springdoc: '2.1.0',
-    gcloud: '2.36.1',
+    gcloud: '2.50.0',
     azure: '12.23.0',
     aws: '2.29.29',
     junit: '5.9.2',
     testcontainers: '1.15.2',
     jackson: '2.15.2',
     woodstox: '6.4.0',
-    jobrunr: '7.3.1',
+    jobrunr: '7.5.0',
     bucket4j: '0.12.7',
     ehcache: '3.10.8',
-    tika: '2.6.0',
-    bouncycastle: '1.77',
+    tika: '3.1.0',
+    bouncycastle: '1.80',
     commons_lang3: '3.12.0',
     httpclient5: '5.2.1',
     jaxb_api: '2.3.1',
     jaxb_impl: '2.3.8',
-    gatling: '3.9.5',
+    gatling: '3.13.5',
     loki4j: '1.4.2'
 ]
 ext['junit-jupiter.version'] = versions.junit
@@ -129,12 +129,6 @@ dependencies {
 
     gatling "io.gatling:gatling-core:${versions.gatling}"
     gatling "io.gatling:gatling-app:${versions.gatling}"
-
-    constraints {
-        implementation('org.eclipse.parsson:parsson:1.0.5') {
-            because 'version 1.0.0 pulled from elasticsearch-java has CVE-2023-4043'
-        }
-    }
 }
 
 jooq {
