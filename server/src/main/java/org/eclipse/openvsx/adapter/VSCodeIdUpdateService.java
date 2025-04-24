@@ -33,7 +33,7 @@ public class VSCodeIdUpdateService {
         this.service = service;
     }
 
-    public void update(String namespaceName, String extensionName) throws InterruptedException {
+    public void update(String namespaceName, String extensionName) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(namespaceName, extensionName));
@@ -101,7 +101,7 @@ public class VSCodeIdUpdateService {
         }
     }
 
-    public void updateAll() throws InterruptedException {
+    public void updateAll() {
         LOGGER.debug("DAILY UPDATE ALL");
         var extensions = repositories.findAllPublicIds();
         var extensionPublicIdsMap = extensions.stream()
