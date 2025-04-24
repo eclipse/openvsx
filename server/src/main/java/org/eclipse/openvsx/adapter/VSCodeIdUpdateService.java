@@ -35,7 +35,9 @@ public class VSCodeIdUpdateService {
 
     public void update(String namespaceName, String extensionName) throws InterruptedException {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            LOGGER.debug("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(namespaceName, extensionName));
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(namespaceName, extensionName));
+            }
             return;
         }
 
@@ -54,7 +56,10 @@ public class VSCodeIdUpdateService {
     }
 
     private void updateExtensionPublicId(Extension extension, Map<Long, String> updates, boolean mustUpdate) {
-        LOGGER.debug("updateExtensionPublicId: {}", NamingUtil.toExtensionId(extension));
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("updateExtensionPublicId: {}", NamingUtil.toExtensionId(extension));
+        }
+
         var oldPublicId = extension.getPublicId();
         var newPublicId = service.getUpstreamPublicIds(extension).extension();
         if(newPublicId == null || (mustUpdate && newPublicId.equals(oldPublicId))) {
@@ -111,11 +116,15 @@ public class VSCodeIdUpdateService {
         var upstreamNamespacePublicIds = new HashMap<Long, String>();
         for(var extension : extensions) {
             if(BuiltInExtensionUtil.isBuiltIn(extension)) {
-                LOGGER.trace("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(extension));
+                if(LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(extension));
+                }
                 continue;
             }
+            if(LOGGER.isTraceEnabled()) {
+                LOGGER.trace("GET UPSTREAM PUBLIC ID: {} | {}", extension.getId(), NamingUtil.toExtensionId(extension));
+            }
 
-            LOGGER.trace("GET UPSTREAM PUBLIC ID: {} | {}", extension.getId(), NamingUtil.toExtensionId(extension));
             var publicIds = service.getUpstreamPublicIds(extension);
             if(upstreamExtensionPublicIds.get(extension.getId()) == null) {
                 LOGGER.trace("ADD EXTENSION PUBLIC ID: {} - {}", extension.getId(), publicIds.extension());

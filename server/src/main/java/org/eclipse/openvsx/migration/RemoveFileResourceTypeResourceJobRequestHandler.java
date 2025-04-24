@@ -35,8 +35,10 @@ public class RemoveFileResourceTypeResourceJobRequestHandler implements JobReque
         if(resource == null) {
             return;
         }
+        if(logger.isInfoEnabled()) {
+            logger.info("Removing file resource: {} {}", NamingUtil.toLogFormat(resource.getExtension()), resource.getName());
+        }
 
-        logger.info("Removing file resource: {} {}", NamingUtil.toLogFormat(resource.getExtension()), resource.getName());
         migrations.removeFile(resource);
         migrations.deleteFileResource(resource);
     }

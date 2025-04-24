@@ -328,7 +328,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
         } else {
             url = URI.create(urlTemplate);
         }
-        logger.error("upstream: " + method + ": " + url, exc);
+        logger.error("upstream: {}: {}", method, url, exc);
         return new NotFoundException();
     }
 
