@@ -105,13 +105,13 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
                     try {
                         var lastModifiedString = url.getElementsByTagName("lastmod").item(0).getTextContent();
                         lastModified = LocalDate.parse(lastModifiedString, dateFormatter);
-                    } catch(Throwable t) {
-                        logger.error("failed to resolve last modified date " + extensionId, t);
+                    } catch(Exception e) {
+                        logger.error("failed to resolve last modified date {}", extensionId, e);
                     }
                     try {
                         mirrorExtensionService.mirrorExtension(namespace, extension, mirrorUser, lastModified, jobContext());
-                    } catch (Throwable t) {
-                        logger.error("failed to mirror " + extensionId, t);
+                    } catch (Exception e) {
+                        logger.error("failed to mirror {}", extensionId, e);
                     }
                     extensionIds.add(extensionId);
                     progress.increaseByOne();
@@ -126,18 +126,18 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
                     try {
                         var namespace = extension.getNamespace();
                         admin.deleteExtension(namespace.getName(), extension.getName(), mirrorUser);
-                    } catch (ErrorResultException t) { 
-                        if (t.getStatus() != HttpStatus.NOT_FOUND) {
-                            logger.warn("mirror: failed to delete extension " + extensionId, t);
+                    } catch (ErrorResultException e) {
+                        if (e.getStatus() != HttpStatus.NOT_FOUND) {
+                            logger.warn("mirror: failed to delete extension {}", extensionId, e);
                         }
-                    } catch (Throwable t) {
-                        logger.error("mirror: failed to delete extension " + extensionId,  t);
+                    } catch (Exception e) {
+                        logger.error("mirror: failed to delete extension {}", extensionId, e);
                     }
                 }
             }
-        } catch (Throwable t) {
-            logger.error("failed to mirror data", t);
-            throw t;
+        } catch (Exception e) {
+            logger.error("failed to mirror data", e);
+            throw e;
         }finally {
             logger.debug("<< Completed DataMirrorJob");
         } 

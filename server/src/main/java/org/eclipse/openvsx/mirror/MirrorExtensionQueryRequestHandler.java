@@ -54,9 +54,9 @@ public class MirrorExtensionQueryRequestHandler implements IExtensionQueryReques
                 ).collect(Collectors.toList()));
             } catch (NotFoundException | ResponseStatusException exc) {
                 // expected issues with upstream, try local
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 // unexpected issues with upstream, log and try local
-                logger.error("vscode: mirror: failed to query upstream:", t);
+                logger.error("vscode: mirror: failed to query upstream:", e);
             }
         }
         return local.extensionQuery(param, pageSize);
