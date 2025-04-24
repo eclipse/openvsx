@@ -100,7 +100,7 @@ public class ElasticSearchService implements ISearchService {
         stopWatch.start();
         updateSearchIndex(clearOnStart);
         stopWatch.stop();
-        logger.info("Initialized search index in " + stopWatch.getTotalTimeMillis() + " ms");
+        logger.info("Initialized search index in {} ms", stopWatch.getTotalTimeMillis());
     }
 
     /**
@@ -118,7 +118,7 @@ public class ElasticSearchService implements ISearchService {
         stopWatch.start();
         updateSearchIndex(false);
         stopWatch.stop();
-        logger.info("Updated search index in " + stopWatch.getTotalTimeMillis() + " ms");
+        logger.info("Updated search index in {} ms", stopWatch.getTotalTimeMillis());
     }
 
     /**

@@ -274,7 +274,7 @@ public class EclipseService {
         try {
             if (json.startsWith("[\"")) {
                 var error = objectMapper.readValue(json, TYPE_LIST_STRING);
-                logger.error("Profile request failed:\n" + json);
+                logger.error("Profile request failed:\n{}", json);
                 throw new ErrorResultException("Request to the Eclipse Foundation server failed: " + error,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             } else if (json.startsWith("[")) {
@@ -394,7 +394,7 @@ public class EclipseService {
             PublisherAgreementResponse agreementResponse;
             if (json.startsWith("[\"")) {
                 var error = objectMapper.readValue(json, TYPE_LIST_STRING);
-                logger.error("Publisher agreement request failed:\n" + json);
+                logger.error("Publisher agreement request failed:\n{}", json);
                 throw new ErrorResultException("Request to the Eclipse Foundation server failed: " + error,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             } else if (json.startsWith("[")) {
