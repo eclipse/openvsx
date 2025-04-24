@@ -36,7 +36,13 @@ jobs:
       run: yarn --cwd cli
     - name: Build Web UI Image
       run: docker build -t $WEBUI_TAG:$IMAGE_VERSION webui
+    - name: Get all changed server files
+      id: changed_server_files
+      uses: tj-actions/changed-files@v46.0.5
+      with:
+        files: server/**
     - name: Run Server Tests
+      if: steps.changed_server_files.outputs.any_changed == 'true'
       run: server/gradlew --no-daemon -p server check
       env:
         DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
