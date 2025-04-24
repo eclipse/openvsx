@@ -31,6 +31,7 @@ public class MirrorExtensionHandlerInterceptor implements HandlerInterceptor {
         this.dataMirror = dataMirror;
     }
 
+    @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         var params = request.getRequestURI().equals("/vscode/item")
                 ? extractQueryParams(request)

@@ -24,6 +24,7 @@ public class FileUtil {
     static {
         var MAX_SIZE = 100;
         LOCKS = Collections.synchronizedMap(new LinkedHashMap<>(MAX_SIZE) {
+            @Override
             protected boolean removeEldestEntry(Map.Entry eldest){
                 return size() > MAX_SIZE;
             }

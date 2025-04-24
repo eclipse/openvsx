@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public class ShallowEtagHeaderFilter extends org.springframework.web.filter.ShallowEtagHeaderFilter {
 
+    @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         // limit the filter to /api/{namespace}/{extension}, /api/{namespace}/details,
         // /api/{namespace}/{extension}/{version}, and /api/-/search endpoints
