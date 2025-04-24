@@ -9,11 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -24,7 +20,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriUtils;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public final class UrlUtil {
 
@@ -205,6 +204,8 @@ public final class UrlUtil {
                 if (port != 443 && port > 0)
                     url.append(":").append(port);
                 break;
+            default:
+                throw new IllegalArgumentException("Unsupported scheme: " + scheme);
         }
 
         // Use the prefix from the X-Forwarded-Prefix header if present

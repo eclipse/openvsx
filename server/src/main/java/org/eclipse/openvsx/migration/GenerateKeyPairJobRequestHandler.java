@@ -62,6 +62,9 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
             case KEYPAIR_MODE_DELETE:
                 deleteKeyPairs();
                 break;
+            default:
+                var values = String.join(",", KEYPAIR_MODE_CREATE, KEYPAIR_MODE_RENEW, KEYPAIR_MODE_DELETE);
+                throw new IllegalArgumentException("Unsupported value for 'ovsx.integrity.key-pair' defined. Supported values are: " + values);
         }
     }
 
