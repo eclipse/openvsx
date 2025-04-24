@@ -38,7 +38,9 @@ public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandle
     public void run(MigrationJobRequest jobRequest) throws IOException {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        logger.info("Generate sha256 checksum for: {}", NamingUtil.toLogFormat(extVersion));
+        if(logger.isInfoEnabled()) {
+            logger.info("Generate sha256 checksum for: {}", NamingUtil.toLogFormat(extVersion));
+        }
 
         var existingChecksum = migrations.getFileResource(extVersion, FileResource.DOWNLOAD_SHA256);
         if(existingChecksum != null) {

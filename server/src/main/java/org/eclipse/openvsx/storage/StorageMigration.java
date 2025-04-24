@@ -83,7 +83,7 @@ public class StorageMigration {
         
         if (!resourceQueue.isEmpty()) {
             for (var i = 0; i < migrations.size(); i++) {
-                if (migrationCount[i] > 0) {
+                if (migrationCount[i] > 0 && logger.isInfoEnabled()) {
                     logger.info("Migrating {} resources from {} to {}.", migrationCount[i], migrations.get(i), storageType);
                 }
             }

@@ -199,7 +199,9 @@ public class MirrorExtensionService {
 
             var token = users.useAccessToken(accessTokenValue);
             extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.getTimestamp());
-            logger.debug("completed mirroring of extension version: {}", NamingUtil.toLogFormat(json));
+            if(logger.isDebugEnabled()) {
+                logger.debug("completed mirroring of extension version: {}", NamingUtil.toLogFormat(json));
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

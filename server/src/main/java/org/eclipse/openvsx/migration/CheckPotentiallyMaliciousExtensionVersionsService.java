@@ -35,7 +35,7 @@ public class CheckPotentiallyMaliciousExtensionVersionsService {
         try(var extProcessor = new ExtensionProcessor(extensionFile)) {
             boolean isMalicious = extProcessor.isPotentiallyMalicious();
             extVersion.setPotentiallyMalicious(isMalicious);
-            if (isMalicious) {
+            if (isMalicious && logger.isWarnEnabled()) {
                 logger.warn("Extension version is potentially malicious: {}", NamingUtil.toLogFormat(extVersion));
             }
         }
