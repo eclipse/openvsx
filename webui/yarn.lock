@@ -5063,8 +5063,6 @@ __metadata:
     typescript: "npm:~5.1.6"
     webpack: "npm:^5.88.1"
     webpack-cli: "npm:^5.1.4"
-  peerDependencies:
-    "@babel/core": ^7.0.0
   languageName: unknown
   linkType: soft
 
