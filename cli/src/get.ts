@@ -12,7 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
 import { Registry, Extension, RegistryOptions } from "./registry";
-import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions } from './util';
+import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions, rejectError } from './util';
 
 /**
  * Downloads an extension or its metadata.
@@ -51,11 +51,11 @@ function findMatchingVersion(registry: Registry, extension: Extension, constrain
             try {
                 return registry.getJson(new URL(extension.allVersions[version]));
             } catch (err) {
-                return Promise.reject(err);
+                return rejectError(err);
             }
         }
     }
-    return Promise.reject(`Extension ${extension.namespace}.${extension.name} has no published version matching '${constraint}'`);
+    return Promise.reject(new Error(`Extension ${extension.namespace}.${extension.name} has no published version matching '${constraint}'`));
 }
 
 function isAlias(extension: Extension, version: string): boolean {
