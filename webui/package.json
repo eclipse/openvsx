@@ -1,6 +1,6 @@
 {
     "name": "openvsx-webui",
-    "version": "0.16.2",
+    "version": "0.16.3-next.aa1d317e",
     "description": "User interface for Eclipse Open VSX",
     "keywords": [
         "react",
@@ -61,9 +61,6 @@
     },
     "resolutions": {
         "@types/react": "^18.2.14"
-    },
-    "peerDependencies": {
-        "@babel/core": "^7.0.0"
     },
     "devDependencies": {
         "@babel/core": "^7.25.2",
