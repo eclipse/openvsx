@@ -38,8 +38,8 @@ class SemanticVersionTest {
 
     @Test
     void testParseInvalidVersion() {
-        var exception = assertThrows(RuntimeException.class, () -> SemanticVersion.parse("9.2"));
-        assertEquals("Invalid semantic version. See https://semver.org/.", exception.getMessage());
+        var exception = assertThrows(IllegalStateException.class, () -> SemanticVersion.parse("9.2"));
+        assertEquals("No match found", exception.getMessage());
     }
 
     @Test

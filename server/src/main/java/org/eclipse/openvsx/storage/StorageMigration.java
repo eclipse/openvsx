@@ -108,7 +108,8 @@ public class StorageMigration {
         try (var extensionFile = storageUtil.downloadFile(resource)) {
             storageUtil.uploadFile(extensionFile);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            logger.error("Failed to migrate resource", e);
+            return;
         }
 
         var remainingCount = resourceQueue.size();

@@ -150,8 +150,8 @@ public class ExtensionValidator {
 
         try {
             SemanticVersion.parse(version);
-        } catch (RuntimeException e) {
-            issues.add(new Issue(e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            issues.add(new Issue("Invalid semantic version. See https://semver.org/."));
         }
     }
 

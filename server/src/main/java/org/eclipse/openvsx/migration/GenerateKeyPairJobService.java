@@ -47,7 +47,7 @@ public class GenerateKeyPairJobService {
         entityManager.persist(keyPair);
     }
 
-    public SignatureKeyPair generateKeyPair() {
+    public SignatureKeyPair generateKeyPair() throws IOException {
         var generator = new Ed25519KeyPairGenerator();
         generator.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
         var pair = generator.generateKeyPair();
@@ -61,14 +61,9 @@ public class GenerateKeyPairJobService {
         return keyPair;
     }
     
-    private String getPublicKeyText(AsymmetricCipherKeyPair pair) {
-        PemObject pemObject;
-        try {
-            var publicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pair.getPublic());
-            pemObject = new PemObject("PUBLIC KEY", publicKeyInfo.getEncoded());
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+    private String getPublicKeyText(AsymmetricCipherKeyPair pair) throws IOException {
+        var publicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pair.getPublic());
+        var pemObject = new PemObject("PUBLIC KEY", publicKeyInfo.getEncoded());
 
         try (
                 var output = new ByteArrayOutputStream();
@@ -77,8 +72,6 @@ public class GenerateKeyPairJobService {
             writer.writeObject(pemObject);
             writer.flush();
             return output.toString(StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
         }
     }
 

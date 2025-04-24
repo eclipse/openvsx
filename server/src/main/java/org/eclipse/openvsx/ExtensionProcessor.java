@@ -22,8 +22,8 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.server.ServerErrorException;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
@@ -68,7 +68,7 @@ public class ExtensionProcessor implements AutoCloseable {
             try {
                 zipFile.close();
             } catch (IOException exc) {
-                throw new RuntimeException(exc);
+                throw new ServerErrorException("Failed to close extension package", exc);
             }
         }
     }
@@ -81,10 +81,8 @@ public class ExtensionProcessor implements AutoCloseable {
             zipFile = new ZipFile(extensionFile.getPath().toFile());
         } catch (ZipException exc) {
             throw new ErrorResultException("Could not read zip file: " + exc.getMessage());
-        } catch (EOFException exc) {
-            throw new ErrorResultException("Could not read from input stream: " + exc.getMessage());
         } catch (IOException exc) {
-            throw new RuntimeException(exc);
+            throw new ErrorResultException("Could not read from input stream: " + exc.getMessage());
         }
     }
 
@@ -106,7 +104,7 @@ public class ExtensionProcessor implements AutoCloseable {
             throw new ErrorResultException("Invalid JSON format in " + PACKAGE_JSON
                     + ": " + exc.getMessage());
         } catch (IOException exc) {
-            throw new RuntimeException(exc);
+            throw new ErrorResultException("Failed to load package.json", exc);
         }
     }
 
@@ -129,7 +127,7 @@ public class ExtensionProcessor implements AutoCloseable {
             throw new ErrorResultException("Invalid JSON format in " + VSIX_MANIFEST
                     + ": " + exc.getMessage());
         } catch (IOException exc) {
-            throw new RuntimeException(exc);
+            throw new ServerErrorException("Failed to read extension.vsixmanifest file", exc);
         }
     }
 
@@ -314,7 +312,7 @@ public class ExtensionProcessor implements AutoCloseable {
                     .filter(Objects::nonNull)
                     .forEach(processor);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to read file resource", e);
         }
     }
 

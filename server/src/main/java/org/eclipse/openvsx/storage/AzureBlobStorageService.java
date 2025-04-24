@@ -217,7 +217,7 @@ public class AzureBlobStorageService implements IStorageService {
         for(var poller : copyOperations) {
             var response = poller.waitForCompletion();
             if(response.getValue().getCopyStatus() != CopyStatusType.SUCCESS) {
-                throw new RuntimeException(response.getValue().getError());
+                throw new IllegalStateException(response.getValue().getError());
             }
         }
     }
@@ -231,7 +231,7 @@ public class AzureBlobStorageService implements IStorageService {
 
         var response = poller.waitForCompletion();
         if(response.getValue().getCopyStatus() != CopyStatusType.SUCCESS) {
-            throw new RuntimeException(response.getValue().getError());
+            throw new IllegalStateException(response.getValue().getError());
         }
     }
 
