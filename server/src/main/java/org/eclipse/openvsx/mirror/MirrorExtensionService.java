@@ -207,7 +207,7 @@ public class MirrorExtensionService {
         }
     }
 
-    private TempFile downloadToFile(String url, String prefix, String suffix) throws IOException {
+    private TempFile downloadToFile(String url, String prefix, String suffix) {
         return backgroundRestTemplate.execute("{url}", HttpMethod.GET, null, response -> {
             var file = new TempFile(prefix, suffix);
             try(var out = Files.newOutputStream(file.getPath())) {
