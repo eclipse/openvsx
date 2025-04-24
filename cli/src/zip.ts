@@ -13,7 +13,7 @@ async function bufferStream(stream: Readable): Promise<Buffer> {
 
 export async function readZip(packagePath: string, filter: (name: string) => boolean): Promise<Map<string, Buffer>> {
 	const zipfile = await new Promise<ZipFile>((resolve, reject) =>
-		open(packagePath, { lazyEntries: true }, (err, zipfile) => (err ? reject(err) : resolve(zipfile)))
+		open(packagePath, { lazyEntries: true }, (err: Error | null, zipfile: ZipFile) => (err ? reject(err) : resolve(zipfile)))
 	);
 
 	return await new Promise((resolve, reject) => {
@@ -26,7 +26,7 @@ export async function readZip(packagePath: string, filter: (name: string) => boo
 			const name = entry.fileName.toLowerCase();
 
 			if (filter(name)) {
-				zipfile.openReadStream(entry, (err, stream) => {
+				zipfile.openReadStream(entry, (err: Error | null, stream: Readable) => {
 					if (err) {
 						zipfile.close();
 						return reject(err);

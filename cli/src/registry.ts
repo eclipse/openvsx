@@ -12,7 +12,7 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as followRedirects from 'follow-redirects';
-import { statusError } from './util';
+import { rejectError, statusError } from './util';
 
 export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
@@ -53,17 +53,17 @@ export class Registry {
                 'Content-Type': 'application/json'
             }, this.maxNamespaceSize);
         } catch (err) {
-            return Promise.reject(err);
+            return rejectError(err);
         }
     }
 
     verifyPat(namespace: string, pat: string): Promise<Response> {
-      try {
-          const query: { [key: string]: string } = { token: pat };
-          return this.getJson(this.getUrl(`api/${namespace}/verify-pat`, query));
-      } catch (err) {
-          return Promise.reject(err);
-      }
+        try {
+            const query: { [key: string]: string } = { token: pat };
+            return this.getJson(this.getUrl(`api/${namespace}/verify-pat`, query));
+        } catch (err) {
+            return rejectError(err);
+        }
     }
 
     publish(file: string, pat: string): Promise<Extension> {
@@ -74,7 +74,7 @@ export class Registry {
                 'Content-Type': 'application/octet-stream'
             }, this.maxPublishSize);
         } catch (err) {
-            return Promise.reject(err);
+            return rejectError(err);
         }
     }
 
@@ -86,7 +86,7 @@ export class Registry {
             }
             return this.getJson(this.getUrl(path));
         } catch (err) {
-            return Promise.reject(err);
+            return rejectError(err);
         }
     }
 
@@ -105,11 +105,11 @@ export class Registry {
                 });
                 response.pipe(stream);
             });
-            stream.on('error', err => {
+            stream.on('error', (err: Error) => {
                 request.abort();
                 reject(err);
             });
-            request.on('error', err => {
+            request.on('error', (err: Error) => {
                 stream.close();
                 reject(err);
             });
@@ -144,11 +144,11 @@ export class Registry {
             const requestOptions = this.getRequestOptions('POST', headers, maxBodyLength);
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
-            stream.on('error', err => {
+            stream.on('error', (err: Error) => {
                 request.abort();
                 reject(err);
             });
-            request.on('error', err => {
+            request.on('error', (err: Error) => {
                 stream.close();
                 reject(err);
             });
