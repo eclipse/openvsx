@@ -72,10 +72,10 @@ public class OrphanNamespaceMigration {
         });
 
         if (count[0] > 0)
-            logger.info("Deleted " + count[0] + " namespaces that were orphaned and empty.");
+            logger.info("Deleted {} namespaces that were orphaned and empty.", count[0]);
         if (count[1] > 0)
-            logger.info("Assigned explicit members to " + count[1] + " orphaned namespaces.");
+            logger.info("Assigned explicit members to {} orphaned namespaces.", count[1]);
         if (count[2] > 0)
-            logger.info("Found " + count[2] + " orphaned namespaces that could not be fixed.");
+            logger.info("Found {} orphaned namespaces that could not be fixed.", count[2]);
     }
 }

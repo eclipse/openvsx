@@ -84,8 +84,7 @@ public class StorageMigration {
         if (!resourceQueue.isEmpty()) {
             for (var i = 0; i < migrations.size(); i++) {
                 if (migrationCount[i] > 0) {
-                    logger.info("Migrating " + migrationCount[i] + " resources from "
-                            + migrations.get(i) + " to " + storageType + ".");
+                    logger.info("Migrating {} resources from {} to {}.", migrationCount[i], migrations.get(i), storageType);
                 }
             }
             var duration = Duration.of(migrationDelay, ChronoUnit.MILLIS);
@@ -114,7 +113,7 @@ public class StorageMigration {
 
         var remainingCount = resourceQueue.size();
         if (remainingCount > 0 && remainingCount % 1000 == 0) {
-            logger.info("Remaining resources to migrate: " + remainingCount);
+            logger.info("Remaining resources to migrate: {}", remainingCount);
         }
     }
 }
