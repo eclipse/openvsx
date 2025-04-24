@@ -9,6 +9,8 @@ on:
   #   branches: [main, master]
 jobs:
   test:
+    permissions:
+      contents: none
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
