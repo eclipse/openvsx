@@ -160,16 +160,18 @@ public class ExtensionVersionIntegrityService {
         var mapper = new ObjectMapper();
         var manifestEntries = mapper.createObjectNode();
         try(var zip = new ZipFile(extensionFile.getPath().toFile())) {
-            zip.stream()
-                    .filter(entry -> !entry.isDirectory())
-                    .forEach(entry -> {
-                        try (var entryStream = zip.getInputStream(entry)) {
-                            var manifestEntry = generateManifestEntry(entryStream, entry.getSize(), mapper, base64);
-                            manifestEntries.set(new String(base64.encode(entry.getName().getBytes(StandardCharsets.UTF_8))), manifestEntry);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+            var iterator = zip.stream().iterator();
+            while(iterator.hasNext()) {
+                var entry = iterator.next();
+                if(entry.isDirectory()) {
+                    continue;
+                }
+
+                try (var entryStream = zip.getInputStream(entry)) {
+                    var manifestEntry = generateManifestEntry(entryStream, entry.getSize(), mapper, base64);
+                    manifestEntries.set(new String(base64.encode(entry.getName().getBytes(StandardCharsets.UTF_8))), manifestEntry);
+                }
+            }
         }
 
         var manifest = mapper.createObjectNode();

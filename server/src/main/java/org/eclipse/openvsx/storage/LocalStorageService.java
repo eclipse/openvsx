@@ -19,6 +19,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class LocalStorageService implements IStorageService {
             Files.createDirectories(filePath.getParent());
             Files.copy(tempFile.getPath(), filePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to upload file", e);
         }
     }
 
@@ -56,7 +57,7 @@ public class LocalStorageService implements IStorageService {
         try {
             Files.delete(getPath(resource));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to remove file", e);
         }
     }
 
@@ -113,7 +114,7 @@ public class LocalStorageService implements IStorageService {
             Files.createDirectories(filePath);
             Files.copy(logoFile.getPath(), filePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to upload namespace logo file", e);
         }
     }
 
@@ -122,7 +123,7 @@ public class LocalStorageService implements IStorageService {
         try {
             Files.delete(getLogoPath(namespace));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to remove namespace logo file", e);
         }
     }
 

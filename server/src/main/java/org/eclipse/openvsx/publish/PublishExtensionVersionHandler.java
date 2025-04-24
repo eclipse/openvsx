@@ -264,7 +264,7 @@ public class PublishExtensionVersionHandler {
             try (var sha256File = processor.generateSha256Checksum(extVersion)) {
                 service.mirrorResource(sha256File);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Failed to generate SHA-256 checksum file", e);
             }
         }
     }

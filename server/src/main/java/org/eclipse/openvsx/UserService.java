@@ -37,6 +37,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ServerErrorException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -244,7 +245,7 @@ public class UserService {
                 storageUtil.removeNamespaceLogo(oldNamespace);
             }
         } catch (IOException | MimeTypeException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to update namespace logo", e);
         }
 
         return ResultJson.success("Updated logo for namespace " + namespace.getName());

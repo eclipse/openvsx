@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
 import static org.eclipse.openvsx.entities.SignatureKeyPair.*;
 
@@ -47,7 +49,12 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         switch (keyPairMode) {
             case KEYPAIR_MODE_CREATE:
-                createKeyPair();
+                var activeKeyPair = repositories.findActiveKeyPair();
+                if(activeKeyPair == null) {
+                    renewKeyPair();
+                } else {
+                    repositories.findVersionsWithout(activeKeyPair).forEach(this::enqueueCreateSignatureJob);
+                }
                 break;
             case KEYPAIR_MODE_RENEW:
                 renewKeyPair();
@@ -58,16 +65,7 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
         }
     }
 
-    private void createKeyPair() {
-        var activeKeyPair = repositories.findActiveKeyPair();
-        if(activeKeyPair == null) {
-            renewKeyPair();
-        } else {
-            repositories.findVersionsWithout(activeKeyPair).forEach(this::enqueueCreateSignatureJob);
-        }
-    }
-
-    private void renewKeyPair() {
+    private void renewKeyPair() throws IOException {
         var keyPair = service.generateKeyPair();
         service.updateKeyPair(keyPair);
         repositories.findVersions().forEach(this::enqueueCreateSignatureJob);

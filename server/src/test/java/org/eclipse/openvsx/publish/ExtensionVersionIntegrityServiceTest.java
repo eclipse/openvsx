@@ -74,21 +74,20 @@ class ExtensionVersionIntegrityServiceTest {
                     var sigzip = new ZipFile(signatureFile.getPath().toFile());
                     var expectedSigZip = new ZipFile(getClass().getResource("ms-python.python-2024.7.11511013.sigzip").getPath())
             ) {
-                expectedSigZip.stream()
-                        .forEach(expectedEntry -> {
-                            var entry = sigzip.getEntry(expectedEntry.getName());
-                            assertNotNull(entry);
-                            if(expectedEntry.getName().equals(".signature.manifest")) {
-                                try (
-                                        var expectedFile = ArchiveUtil.readEntry(expectedSigZip, expectedEntry);
-                                        var actualFile = ArchiveUtil.readEntry(sigzip, entry)
-                                ) {
-                                    assertEquals(Files.readString(expectedFile.getPath()),Files.readString(actualFile.getPath()));
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        });
+                var iterator = expectedSigZip.stream().iterator();
+                while(iterator.hasNext()) {
+                    var expectedEntry = iterator.next();
+                    var entry = sigzip.getEntry(expectedEntry.getName());
+                    assertNotNull(entry);
+                    if(expectedEntry.getName().equals(".signature.manifest")) {
+                        try (
+                                var expectedFile = ArchiveUtil.readEntry(expectedSigZip, expectedEntry);
+                                var actualFile = ArchiveUtil.readEntry(sigzip, entry)
+                        ) {
+                            assertEquals(Files.readString(expectedFile.getPath()),Files.readString(actualFile.getPath()));
+                        }
+                    }
+                }
 
                 var entry = sigzip.getEntry(".signature.sig");
                 assertNotNull(entry);

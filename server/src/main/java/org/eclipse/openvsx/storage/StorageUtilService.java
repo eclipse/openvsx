@@ -115,14 +115,14 @@ public class StorageUtilService implements IStorageService {
             storageTypes.add(STORAGE_AWS);
         if (!StringUtils.isEmpty(primaryService)) {
             if (!storageTypes.contains(primaryService))
-                throw new RuntimeException("The selected primary storage service is not available.");
+                throw new IllegalStateException("The selected primary storage service is not available.");
             return primaryService;
         }
         if (storageTypes.isEmpty())
             return STORAGE_LOCAL;
         if (storageTypes.size() == 1)
             return storageTypes.get(0);
-        throw new RuntimeException("Multiple external storage services are available. Please select a primary service.");
+        throw new IllegalStateException("Multiple external storage services are available. Please select a primary service.");
     }
 
     @Override
@@ -146,7 +146,7 @@ public class StorageUtilService implements IStorageService {
                 localStorage.uploadFile(tempFile);
                 break;
             default:
-                throw new RuntimeException("Storage '" + storageType + "' is not available.");
+                throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
         }
 
         resource.setStorageType(storageType);
@@ -175,7 +175,7 @@ public class StorageUtilService implements IStorageService {
                 localStorage.uploadNamespaceLogo(logoFile);
                 break;
             default:
-                throw new RuntimeException("Storage '" + storageType + "' is not available.");
+                throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
         }
 
         namespace.setLogoStorageType(storageType);

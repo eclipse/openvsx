@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -114,7 +115,7 @@ public class GoogleCloudStorageService implements IStorageService {
                 buffer.clear();
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to upload file", e);
         }
     }
 

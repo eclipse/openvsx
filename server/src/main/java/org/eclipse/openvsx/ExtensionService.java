@@ -23,6 +23,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -80,7 +81,7 @@ public class ExtensionService {
                 try(var licenseFile = processor.getLicense(extVersion)) {
                     checkLicense(extVersion, licenseFile);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new ServerErrorException("Failed read license file", e);
                 }
             }
 

@@ -13,6 +13,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ServerErrorException;
 
 import java.io.Serial;
 
@@ -64,7 +65,7 @@ public class ErrorResultException extends RuntimeException {
             var responseStatus = status != null ? status : HttpStatus.BAD_REQUEST;
             return new ResponseEntity<>(json, responseStatus);
         } catch (ReflectiveOperationException exc) {
-            throw new RuntimeException(exc);
+            throw new ServerErrorException("Failed to create ResultJson instance", exc);
         }
     }
 

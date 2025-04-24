@@ -25,6 +25,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -149,7 +150,7 @@ public class MirrorExtensionService {
         }
     }
 
-    private void mirrorExtensionVersion(ExtensionJson json) throws RuntimeException {
+    private void mirrorExtensionVersion(ExtensionJson json) {
         var download = json.getFiles().get("download");
         var userJson = new UserJson();
         userJson.setProvider(json.getPublishedBy().getProvider());
@@ -162,13 +163,13 @@ public class MirrorExtensionService {
         var vsixResourceHeaders = backgroundNonRedirectingRestTemplate.headForHeaders("{resolveVsixLocation}", Map.of("resolveVsixLocation", download));
         var vsixLocation = vsixResourceHeaders.getLocation();
         if (vsixLocation == null) {
-            throw new RuntimeException("Failed to parse location header from redirected vsix url");
+            throw new AssertionError("Expected location header from redirected vsix url");
         }
 
         var tokens = vsixLocation.getPath().split("/");
         var filename = tokens[tokens.length-1];
         if (!filename.endsWith(".vsix")) {
-            throw new RuntimeException("Invalid vsix filename from redirected vsix url");
+            throw new AssertionError("Invalid vsix filename from redirected vsix url");
         }
 
         String signatureName = null;
@@ -181,7 +182,7 @@ public class MirrorExtensionService {
                 ) {
                     var verified = integrityService.verifyExtensionVersion(extensionFile, signatureFile, publicKeyFile);
                     if (!verified) {
-                        throw new RuntimeException("Unverified vsix package");
+                        throw new AssertionError("Unverified vsix package");
                     }
                 }
 
@@ -215,12 +216,12 @@ public class MirrorExtensionService {
         }, Map.of("url", url));
     }
 
-    private TempFile extractSignature(TempFile signatureZip) throws RuntimeException, IOException {
+    private TempFile extractSignature(TempFile signatureZip) throws IOException {
         var signature = new TempFile("extension_",".signature.sig");
         try (var zipFile = new ZipFile(signatureZip.getPath().toFile())) {
             var sigEntry = zipFile.getEntry(".signature.sig");
             if(sigEntry == null) {
-                throw new RuntimeException("No extension signature found");
+                throw new FileNotFoundException("No extension signature found");
             }
             try (
                     var sigInput = zipFile.getInputStream(sigEntry);

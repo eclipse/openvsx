@@ -42,7 +42,7 @@ public class SitemapService {
     }
 
     @Cacheable(CACHE_SITEMAP)
-    public String generateSitemap() throws ParserConfigurationException {
+    public String generateSitemap() throws ParserConfigurationException, IOException, TransformerException {
         var document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         document.setXmlStandalone(true);
         var namespace = "http://www.sitemaps.org/schemas/sitemap/0.9";
@@ -70,8 +70,6 @@ public class SitemapService {
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             transformer.transform(new DOMSource(document), new StreamResult(writer));
             return writer.toString();
-        } catch (TransformerException | IOException exc) {
-            throw new RuntimeException(exc);
         }
     }
 
