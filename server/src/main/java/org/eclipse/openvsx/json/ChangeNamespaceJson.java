@@ -12,7 +12,6 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Used to change a namespace
