@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM gradle:jdk17 as builder
+FROM gradle:jdk17 AS builder
 
 # Copy sources
 WORKDIR /home/gradle
