@@ -143,9 +143,9 @@ public class MirrorExtensionService {
             try {
                 mirrorExtensionVersion(json);
                 data.getMirroredVersions().increment();
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 data.getFailedVersions().increment();
-                throw t;
+                throw e;
             }
         }
     }

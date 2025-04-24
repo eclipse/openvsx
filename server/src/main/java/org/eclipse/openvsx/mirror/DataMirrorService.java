@@ -191,8 +191,8 @@ public class DataMirrorService {
         var url = storageUtil.getLocation(resource);
         try {
             backgroundRestTemplate.headForHeaders("{canGetVsixUri}", Map.of("canGetVsixUri", url));
-        } catch(Throwable t) {
-            logger.error("failed to activate extension, vsix is invalid: "+ url, t);
+        } catch(Exception e) {
+            logger.error("failed to activate extension, vsix is invalid: {}", url, e);
             return false;
         }
 
