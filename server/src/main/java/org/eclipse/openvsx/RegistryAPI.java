@@ -759,7 +759,7 @@ public class RegistryAPI {
             @RequestParam(defaultValue = "relevance")
             @Parameter(description = "Sort key (relevance is a weighted mix of various properties)", schema = @Schema(type = "string", allowableValues = {"relevance", "timestamp", "averageRating", "downloadCount"}))
             String sortBy,
-            @RequestParam(required = false)
+            @RequestParam(defaultValue = "false")
             @Parameter(description = "Whether to include information on all available versions for each returned entry")
             boolean includeAllVersions
     ) {
@@ -974,7 +974,7 @@ public class RegistryAPI {
             @RequestParam(required = false)
             @Parameter(description = "Universally unique identifier of a namespace", example = "1234")
             String namespaceUuid,
-            @RequestParam(required = false)
+            @RequestParam(defaultValue = "false")
             @Parameter(description = "Whether to include all versions of an extension, ignored if extensionVersion is specified")
             boolean includeAllVersions,
             @RequestParam(required = false)
