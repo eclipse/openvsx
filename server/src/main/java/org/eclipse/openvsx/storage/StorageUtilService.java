@@ -183,7 +183,8 @@ public class StorageUtilService implements IStorageService {
 
     @Override
     public void removeFile(FileResource resource) {
-        switch (resource.getStorageType()) {
+        var storageType = resource.getStorageType();
+        switch (storageType) {
             case STORAGE_GOOGLE:
                 googleStorage.removeFile(resource);
                 break;
@@ -196,12 +197,15 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_LOCAL:
                 localStorage.removeFile(resource);
                 break;
+            default:
+                throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
         }
     }
 
     @Override
     public void removeNamespaceLogo(Namespace namespace) {
-        switch (namespace.getLogoStorageType()) {
+        var storageType = namespace.getLogoStorageType();
+        switch (storageType) {
             case STORAGE_GOOGLE:
                 googleStorage.removeNamespaceLogo(namespace);
                 break;
@@ -214,6 +218,8 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_LOCAL:
                 localStorage.removeNamespaceLogo(namespace);
                 break;
+            default:
+                throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
         }
     }
 
@@ -338,13 +344,16 @@ public class StorageUtilService implements IStorageService {
                 case STORAGE_LOCAL:
                     localStorage.copyFiles(group);
                     break;
+                default:
+                    throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
             }
         }
     }
 
     @Override
     public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
-        switch (oldNamespace.getLogoStorageType()) {
+        var storageType = oldNamespace.getLogoStorageType();
+        switch (storageType) {
             case STORAGE_GOOGLE:
                 googleStorage.copyNamespaceLogo(oldNamespace, newNamespace);
                 break;
@@ -357,6 +366,8 @@ public class StorageUtilService implements IStorageService {
             case STORAGE_LOCAL:
                 localStorage.copyNamespaceLogo(oldNamespace, newNamespace);
                 break;
+            default:
+                throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
         }
 
         newNamespace.setLogoStorageType(oldNamespace.getLogoStorageType());
