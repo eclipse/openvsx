@@ -20,4 +20,19 @@ public record QueryRequestV2(
         String targetPlatform,
         int size,
         int offset
-) {}
+) {
+    public QueryRequest toQueryRequest() {
+        return new QueryRequest(
+                namespaceName,
+                extensionName,
+                extensionVersion,
+                extensionId,
+                extensionUuid,
+                namespaceUuid,
+                includeAllVersions.equals("true"),
+                targetPlatform,
+                size,
+                offset
+        );
+    }
+}
