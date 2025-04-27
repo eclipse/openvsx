@@ -118,42 +118,7 @@ public class AzureDownloadCountService {
             var iterator = iterableByPage.iterator();
             if (iterator.hasNext()) {
                 response = iterator.next();
-                var blobNames = getBlobNames(response.getValue());
-                var processedItems = processor.processedItems(blobNames);
-                processedItems.forEach(this::deleteBlob);
-                blobNames.removeAll(processedItems);
-                for (var name : blobNames) {
-                    if (LocalDateTime.now().isAfter(maxExecutionTime)) {
-                        var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
-                        logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
-                        logger.info("<< updateDownloadCounts");
-                        return;
-                    }
-
-                    var processedOn = LocalDateTime.now();
-                    var success = false;
-                    stopWatch.start();
-                    try {
-                        var files = processBlobItem(name);
-                        if (!files.isEmpty()) {
-                            var extensionDownloads = processor.processDownloadCounts(files);
-                            var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                            processor.evictCaches(updatedExtensions);
-                            processor.updateSearchEntries(updatedExtensions);
-                        }
-
-                        success = true;
-                    } catch (Exception e) {
-                        logger.error("Failed to process BlobItem: " + name, e);
-                    }
-
-                    stopWatch.stop();
-                    var executionTime = (int) stopWatch.getLastTaskTimeMillis();
-                    processor.persistProcessedItem(name, processedOn, executionTime, success);
-                    if(success) {
-                        deleteBlob(name);
-                    }
-                }
+                processResponse(response, stopWatch, maxExecutionTime);
             }
 
             var continuationToken = response != null ? response.getContinuationToken() : "";
@@ -161,6 +126,45 @@ public class AzureDownloadCountService {
         }
 
         logger.info("<< updateDownloadCounts");
+    }
+
+    private void processResponse(PagedResponse<BlobItem> response, StopWatch stopWatch, LocalDateTime maxExecutionTime) {
+        var blobNames = getBlobNames(response.getValue());
+        var processedItems = processor.processedItems(blobNames);
+        processedItems.forEach(this::deleteBlob);
+        blobNames.removeAll(processedItems);
+        for (var name : blobNames) {
+            if (LocalDateTime.now().isAfter(maxExecutionTime)) {
+                var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
+                logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
+                logger.info("<< updateDownloadCounts");
+                return;
+            }
+
+            var processedOn = LocalDateTime.now();
+            var success = false;
+            stopWatch.start();
+            try {
+                var files = processBlobItem(name);
+                if (!files.isEmpty()) {
+                    var extensionDownloads = processor.processDownloadCounts(files);
+                    var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
+                    processor.evictCaches(updatedExtensions);
+                    processor.updateSearchEntries(updatedExtensions);
+                }
+
+                success = true;
+            } catch (Exception e) {
+                logger.error("Failed to process BlobItem: " + name, e);
+            }
+
+            stopWatch.stop();
+            var executionTime = (int) stopWatch.getLastTaskTimeMillis();
+            processor.persistProcessedItem(name, processedOn, executionTime, success);
+            if(success) {
+                deleteBlob(name);
+            }
+        }
     }
 
     private void deleteBlob(String blobName) {
