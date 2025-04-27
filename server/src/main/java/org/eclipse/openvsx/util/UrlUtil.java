@@ -14,6 +14,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
+import org.springframework.data.util.Pair;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -155,46 +156,12 @@ public final class UrlUtil {
     protected static String getBaseUrl(HttpServletRequest request) {
         var url = new StringBuilder();
 
-        // Use the scheme from the X-Forwarded-Proto header if present
-        String scheme;
-        var forwardedScheme = request.getHeader("X-Forwarded-Proto");
-        if (forwardedScheme == null) {
-            scheme = request.getScheme();
-        } else {
-            scheme = forwardedScheme;
-        }
+        var scheme = getBaseUrlScheme(request);
         url.append(scheme).append("://");
 
-        // Use the host and port from the X-Forwarded-Host header if present
-        String host;
-        int port;
-        var forwardedHostHeadersEnumeration = request.getHeaders("X-Forwarded-Host");
-        if (forwardedHostHeadersEnumeration == null || !forwardedHostHeadersEnumeration.hasMoreElements()) {
-            host = request.getServerName();
-            port = request.getServerPort();
-        } else {
-            // take the first one
-            var forwardedHost = forwardedHostHeadersEnumeration.nextElement();
-
-            // if it's comma separated, take the first one
-            var forwardedHosts = forwardedHost.split(",");
-            if (forwardedHosts.length > 1) {
-                forwardedHost = forwardedHosts[0];
-            }
-            int colonIndex = forwardedHost.lastIndexOf(':');
-            if (colonIndex > 0) {
-                host = forwardedHost.substring(0, colonIndex);
-                try {
-                    port = Integer.parseInt(forwardedHost.substring(colonIndex + 1));
-                } catch (NumberFormatException exc) {
-                    port = -1;
-                }
-            } else {
-                host = forwardedHost;
-                port = -1;
-            }
-        }
-        url.append(host);
+        var pair = getBaseUrlHostAndPort(request);
+        url.append(pair.getFirst());
+        var port = pair.getSecond();
         switch (scheme) {
             case "http":
                 if (port != 80 && port > 0)
@@ -208,18 +175,55 @@ public final class UrlUtil {
                 throw new IllegalArgumentException("Unsupported scheme: " + scheme);
         }
 
-        // Use the prefix from the X-Forwarded-Prefix header if present
-        String prefix;
-        var forwardedPrefix = request.getHeader("X-Forwarded-Prefix");
-        if (forwardedPrefix == null) {
-            prefix = "";
-        } else {
-            prefix = forwardedPrefix;
-        }
-        url.append(prefix);
-
+        url.append(getBaseUrlPrefix(request));
         url.append(request.getContextPath());
         return url.toString();
+    }
+
+    private static String getBaseUrlPrefix(HttpServletRequest request) {
+        // Use the prefix from the X-Forwarded-Prefix header if present
+        var forwardedPrefix = request.getHeader("X-Forwarded-Prefix");
+        if (forwardedPrefix == null) {
+            forwardedPrefix = "";
+        }
+
+        return forwardedPrefix;
+    }
+
+    private static String getBaseUrlScheme(HttpServletRequest request) {
+        // Use the scheme from the X-Forwarded-Proto header if present
+        var forwardedScheme = request.getHeader("X-Forwarded-Proto");
+        return forwardedScheme != null ? forwardedScheme : request.getScheme();
+    }
+
+    private static Pair<String,Integer> getBaseUrlHostAndPort(HttpServletRequest request) {
+        // Use the host and port from the X-Forwarded-Host header if present
+        var forwardedHostHeadersEnumeration = request.getHeaders("X-Forwarded-Host");
+        if (forwardedHostHeadersEnumeration == null || !forwardedHostHeadersEnumeration.hasMoreElements()) {
+            return Pair.of(request.getServerName(), request.getServerPort());
+        } else {
+            // take the first one
+            var forwardedHost = forwardedHostHeadersEnumeration.nextElement();
+
+            // if it's comma separated, take the first one
+            var forwardedHosts = forwardedHost.split(",");
+            if (forwardedHosts.length > 1) {
+                forwardedHost = forwardedHosts[0];
+            }
+            int colonIndex = forwardedHost.lastIndexOf(':');
+            if (colonIndex > 0) {
+                int port;
+                try {
+                    port = Integer.parseInt(forwardedHost.substring(colonIndex + 1));
+                } catch (NumberFormatException exc) {
+                    port = -1;
+                }
+
+                return Pair.of(forwardedHost.substring(0, colonIndex), port);
+            } else {
+                return Pair.of(forwardedHost, -1);
+            }
+        }
     }
 
     public static String extractWildcardPath(HttpServletRequest request) {
