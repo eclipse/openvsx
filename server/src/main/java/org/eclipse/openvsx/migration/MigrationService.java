@@ -42,7 +42,8 @@ public class MigrationService {
             "CheckPotentiallyMaliciousExtensionVersions", PotentiallyMaliciousJobRequestHandler.class,
             "LocalNamespaceLogoMigration", NamespaceLogoFileResourceJobRequestHandler.class,
             "LocalFileResourceContentMigration", FileResourceContentJobRequestHandler.class,
-            "RemoveFileResourceTypeResourceMigration", RemoveFileResourceTypeResourceJobRequestHandler.class
+            "RemoveFileResourceTypeResourceMigration", RemoveFileResourceTypeResourceJobRequestHandler.class,
+            "FixMissingFilesMigration", FixMissingFilesJobRequestHandler.class
     );
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
