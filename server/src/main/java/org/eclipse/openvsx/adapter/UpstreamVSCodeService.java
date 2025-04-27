@@ -96,7 +96,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
             VAR_VERSION, version
         ));
 
-        if (path != null && !path.isBlank()) {
+        if (StringUtils.isNotBlank(path)) {
             var segments = path.split("/");
             for (var i = 0; i < segments.length; i++) {
                 var varName = "seg" + i;
@@ -111,45 +111,47 @@ public class UpstreamVSCodeService implements IVSCodeService {
             @Override
             public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
                 var statusCode = response.getStatusCode();
-                if(statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
-                    var headers = new HttpHeaders();
-                    headers.addAll(response.getHeaders());
-                    headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
-                    headers.remove(HttpHeaders.VARY);
-
-                    if(proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
-                        var mapper = new ObjectMapper();
-                        var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
-                        return ResponseEntity.status(statusCode)
-                                .headers(headers)
-                                .body(outputStream -> mapper.writeValue(outputStream, json));
-                    } else {
-                        var tempFile = new TempFile("browse", null);
-                        try {
-                            try (var out = Files.newOutputStream(tempFile.getPath())) {
-                                response.getBody().transferTo(out);
-                            }
-
-                            return ResponseEntity.status(response.getStatusCode())
-                                    .headers(headers)
-                                    .body(outputStream -> {
-                                        try (var in = Files.newInputStream(tempFile.getPath())) {
-                                            in.transferTo(outputStream);
-                                        }
-
-                                        tempFile.close();
-                                    });
-                        } catch (IOException e) {
-                            tempFile.close();
-                            throw e;
-                        }
-                    }
-                }
                 if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
                     handleResponseError(urlTemplate, uriVariables, response);
                 }
 
-                throw new NotFoundException();
+                var failed = !statusCode.is2xxSuccessful() && !statusCode.is3xxRedirection();
+                if(failed) {
+                    throw new NotFoundException();
+                }
+
+                var headers = new HttpHeaders();
+                headers.addAll(response.getHeaders());
+                headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+                headers.remove(HttpHeaders.VARY);
+
+                if(proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
+                    var mapper = new ObjectMapper();
+                    var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
+                    return ResponseEntity.status(statusCode)
+                            .headers(headers)
+                            .body(outputStream -> mapper.writeValue(outputStream, json));
+                } else {
+                    var tempFile = new TempFile("browse", null);
+                    try {
+                        try (var out = Files.newOutputStream(tempFile.getPath())) {
+                            response.getBody().transferTo(out);
+                        }
+
+                        return ResponseEntity.status(response.getStatusCode())
+                                .headers(headers)
+                                .body(outputStream -> {
+                                    try (var in = Files.newInputStream(tempFile.getPath())) {
+                                        in.transferTo(outputStream);
+                                    }
+
+                                    tempFile.close();
+                                });
+                    } catch (IOException e) {
+                        tempFile.close();
+                        throw e;
+                    }
+                }
             }
         };
 
