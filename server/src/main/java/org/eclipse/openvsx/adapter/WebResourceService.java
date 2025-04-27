@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.cache.CacheService;
@@ -23,6 +24,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_WEB_RESOURCE_FILES;
@@ -78,52 +81,69 @@ public class WebResourceService {
         try(var zip = new ZipFile(path.toFile())) {
             var fileEntry = zip.getEntry(name);
             if(fileEntry != null) {
-                var fileExtIndex = fileEntry.getName().lastIndexOf('.');
-                var fileExt = fileExtIndex != -1 ? fileEntry.getName().substring(fileExtIndex) : "";
+                var fileExt = getFileExtension(fileEntry);
                 var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, fileExt);
-                FileUtil.writeSync(file, p -> {
-                    try (var in = zip.getInputStream(fileEntry)) {
-                        Files.copy(in, p);
-                    } catch(IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
-
+                writeBinaryFile(file, zip, fileEntry);
                 return file;
             } else if (browse) {
-                var dirName = name.isEmpty() || name.endsWith("/") ? name : name + "/";
+                var dirName = getDirectoryName(name);
                 var dirEntries = zip.stream()
                         .filter(entry -> entry.getName().startsWith(dirName))
-                        .map(entry -> {
-                            var folderNameEndIndex = entry.getName().indexOf("/", dirName.length());
-                            return folderNameEndIndex == -1 ? entry.getName() : entry.getName().substring(0, folderNameEndIndex + 1);
-                        })
+                        .map(entry -> getFileInDirectory(dirName, entry))
                         .collect(Collectors.toSet());
                 if(dirEntries.isEmpty()) {
                     return null;
                 }
 
-                var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, ".unpkg.json");
-                FileUtil.writeSync(file, p -> {
-                    var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespace, extension, version);
-                    var mapper = new ObjectMapper();
-                    var node = mapper.createArrayNode();
-                    for (var entry : dirEntries) {
-                        node.add(baseUrl + "/" + entry);
-                    }
-                    try {
-                        mapper.writeValue(p.toFile(), node);
-                    } catch(IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+                var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespace, extension, version);
+                var mapper = new ObjectMapper();
+                var node = mapper.createArrayNode();
+                for (var entry : dirEntries) {
+                    node.add(baseUrl + "/" + entry);
+                }
 
+                var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, ".unpkg.json");
+                writeJsonFile(file, mapper, node);
                 return file;
             } else {
                 return null;
             }
         } catch (IOException | UncheckedIOException e) {
-            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(download.getExtension()));
+            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(download.getExtension()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private String getFileExtension(ZipEntry fileEntry) {
+        var fileExtIndex = fileEntry.getName().lastIndexOf('.');
+        return fileExtIndex != -1 ? fileEntry.getName().substring(fileExtIndex) : "";
+    }
+
+    private void writeBinaryFile(Path file, ZipFile zip, ZipEntry fileEntry) {
+        FileUtil.writeSync(file, p -> {
+            try (var in = zip.getInputStream(fileEntry)) {
+                Files.copy(in, p);
+            } catch(IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    private void writeJsonFile(Path file, ObjectMapper mapper, JsonNode node) {
+        FileUtil.writeSync(file, p -> {
+            try {
+                mapper.writeValue(p.toFile(), node);
+            } catch(IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    private String getDirectoryName(String name) {
+        return name.isEmpty() || name.endsWith("/") ? name : name + "/";
+    }
+
+    private String getFileInDirectory(String dirName, ZipEntry entry) {
+        var folderNameEndIndex = entry.getName().indexOf("/", dirName.length());
+        return folderNameEndIndex == -1 ? entry.getName() : entry.getName().substring(0, folderNameEndIndex + 1);
     }
 }
