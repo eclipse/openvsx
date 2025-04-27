@@ -110,14 +110,15 @@ public class DataMirrorService {
     }
     
     public boolean match(String namespaceName, String extensionName) {
+        var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
         if (!excludeExtensions.isEmpty() &&
             (excludeExtensions.contains(namespaceName + ".*") ||
-            excludeExtensions.contains(NamingUtil.toExtensionId(namespaceName, extensionName)))) {
+            excludeExtensions.contains(extensionId))) {
             return false;
         }
         return includeExtensions.isEmpty() ||
             includeExtensions.contains(namespaceName + ".*") ||
-            includeExtensions.contains(NamingUtil.toExtensionId(namespaceName, extensionName));
+            includeExtensions.contains(extensionId);
     }
 
     @Transactional
