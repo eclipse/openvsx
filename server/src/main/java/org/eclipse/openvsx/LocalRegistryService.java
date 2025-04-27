@@ -344,72 +344,8 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Override
     public QueryResultJson queryV2(QueryRequestV2 request) {
-        if (!StringUtils.isEmpty(request.extensionId())) {
-            var extensionId = NamingUtil.fromExtensionId(request.extensionId());
-            if (extensionId == null)
-                throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
-            if (!StringUtils.isEmpty(request.namespaceName()) && !request.namespaceName().equals(extensionId.namespace()))
-                throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
-            if (!StringUtils.isEmpty(request.extensionName()) && !request.extensionName().equals(extensionId.extension()))
-                throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
-
-            request = new QueryRequestV2(
-                    extensionId.namespace(),
-                    extensionId.extension(),
-                    request.extensionVersion(),
-                    null,
-                    request.extensionUuid(),
-                    request.namespaceUuid(),
-                    request.includeAllVersions(),
-                    request.targetPlatform(),
-                    request.size(),
-                    request.offset()
-            );
-        }
-
-        if(!TargetPlatform.isValid(request.targetPlatform())) {
-            request = new QueryRequestV2(
-                    request.namespaceName(),
-                    request.extensionName(),
-                    request.extensionVersion(),
-                    request.extensionId(),
-                    request.extensionUuid(),
-                    request.namespaceUuid(),
-                    request.includeAllVersions(),
-                    null,
-                    request.size(),
-                    request.offset()
-            );
-        }
-        // Revert to default includeAllVersions value when extensionVersion is set
-        if(!StringUtils.isEmpty(request.extensionVersion()) && request.includeAllVersions().equals("true")) {
-            request = new QueryRequestV2(
-                    request.namespaceName(),
-                    request.extensionName(),
-                    request.extensionVersion(),
-                    request.extensionId(),
-                    request.extensionUuid(),
-                    request.namespaceUuid(),
-                    "links",
-                    request.targetPlatform(),
-                    request.size(),
-                    request.offset()
-            );
-        }
-
-        var queryRequest = new QueryRequest(
-                request.namespaceName(),
-                request.extensionName(),
-                request.extensionVersion(),
-                null,
-                request.extensionUuid(),
-                request.namespaceUuid(),
-                request.includeAllVersions().equals("true"),
-                request.targetPlatform(),
-                request.size(),
-                request.offset()
-        );
-
+        request = normalizeQueryRequest(request);
+        var queryRequest = request.toQueryRequest();
         var extensionVersionsPage = repositories.findActiveVersions(queryRequest);
         var extensionVersions = extensionVersionsPage.getContent();
         var extensionIds = extensionVersions.stream()
@@ -448,6 +384,45 @@ public class LocalRegistryService implements IExtensionRegistry {
                 .toList());
 
         return result;
+    }
+
+    private QueryRequestV2 normalizeQueryRequest(QueryRequestV2 request) {
+        ExtensionId extensionId;
+        if (!StringUtils.isEmpty(request.extensionId())) {
+            extensionId = NamingUtil.fromExtensionId(request.extensionId());
+            if (extensionId == null)
+                throw new ErrorResultException("The 'extensionId' parameter must have the format 'namespace.extension'.");
+            if (!StringUtils.isEmpty(request.namespaceName()) && !request.namespaceName().equals(extensionId.namespace()))
+                throw new ErrorResultException("Conflicting parameters 'extensionId' and 'namespaceName'");
+            if (!StringUtils.isEmpty(request.extensionName()) && !request.extensionName().equals(extensionId.extension()))
+                throw new ErrorResultException("Conflicting parameters 'extensionId' and 'extensionName'");
+        } else {
+            extensionId = new ExtensionId(request.namespaceName(), request.extensionName());
+        }
+
+        var targetPlatform = request.targetPlatform();
+        if(!TargetPlatform.isValid(targetPlatform)) {
+            targetPlatform = null;
+        }
+
+        // Revert to default includeAllVersions value when extensionVersion is set
+        var includeAllVersions = request.includeAllVersions();
+        if(!StringUtils.isEmpty(request.extensionVersion()) && request.includeAllVersions().equals("true")) {
+            includeAllVersions = "links";
+        }
+
+        return new QueryRequestV2(
+                extensionId.namespace(),
+                extensionId.extension(),
+                request.extensionVersion(),
+                null,
+                request.extensionUuid(),
+                request.namespaceUuid(),
+                includeAllVersions,
+                targetPlatform,
+                request.size(),
+                request.offset()
+        );
     }
 
     @Override
