@@ -11,11 +11,14 @@ package org.eclipse.openvsx.migration;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -43,29 +46,12 @@ public class OrphanNamespaceMigration {
                 entityManager.remove(namespace);
                 count[0]++;
             } else {
-
-                // Find all previous contributors
-                var contributors = new LinkedHashSet<UserData>();
-                for (var extension : extensions) {
-                    for (var extVersion : repositories.findActiveVersions(extension)) {
-                        if (extVersion.getPublishedWith() != null) {
-                            contributors.add(extVersion.getPublishedWith().getUser());
-                        }
-                    }
-                }
-
-                if (contributors.isEmpty()) {
+                var publishers = getExtensionPublishers(extensions);
+                if (publishers.isEmpty()) {
                     // This can happen if all extension versions are inactive
                     count[2]++;
                 } else {
-                    // Assign explicit memberships to the previous contributors
-                    for (var contributor : contributors) {
-                        var membership = new NamespaceMembership();
-                        membership.setNamespace(namespace);
-                        membership.setUser(contributor);
-                        membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
-                        entityManager.persist(membership);
-                    }
+                    makePublishersNamespaceContributors(namespace, publishers);
                     count[1]++;
                 }
             }
@@ -77,5 +63,28 @@ public class OrphanNamespaceMigration {
             logger.info("Assigned explicit members to {} orphaned namespaces.", count[1]);
         if (count[2] > 0)
             logger.info("Found {} orphaned namespaces that could not be fixed.", count[2]);
+    }
+
+    private void makePublishersNamespaceContributors(Namespace namespace, LinkedHashSet<UserData> publishers) {
+        for (var publisher : publishers) {
+            var membership = new NamespaceMembership();
+            membership.setNamespace(namespace);
+            membership.setUser(publisher);
+            membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+            entityManager.persist(membership);
+        }
+    }
+
+    private LinkedHashSet<UserData> getExtensionPublishers(Streamable<Extension> extensions) {
+        var publishers = new LinkedHashSet<UserData>();
+        for (var extension : extensions) {
+            for (var extVersion : repositories.findActiveVersions(extension)) {
+                if (extVersion.getPublishedWith() != null) {
+                    publishers.add(extVersion.getPublishedWith().getUser());
+                }
+            }
+        }
+
+        return publishers;
     }
 }
