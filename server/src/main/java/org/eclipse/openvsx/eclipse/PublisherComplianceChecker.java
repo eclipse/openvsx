@@ -104,9 +104,11 @@ public class PublisherComplianceChecker {
                 entityManager.merge(version);
                 var extension = version.getExtension();
                 affectedExtensions.add(extension);
-                if(logger.isInfoEnabled()) {
-                    logger.info("Deactivated: {} - {}", accessToken.getUser().getLoginName(), NamingUtil.toLogFormat(version));
-                }
+                logger.atInfo()
+                        .setMessage("Deactivated: {} - {}")
+                        .addArgument(() -> accessToken.getUser().getLoginName())
+                        .addArgument(() -> NamingUtil.toLogFormat(version))
+                        .log();
             }
         }
         

@@ -37,9 +37,10 @@ public class PotentiallyMaliciousJobRequestHandler implements JobRequestHandler<
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        if(logger.isInfoEnabled()) {
-            logger.info("Checking extension version for potentially malicious vsix file: {}", NamingUtil.toLogFormat(extVersion));
-        }
+        logger.atInfo()
+                .setMessage("Checking extension version for potentially malicious vsix file: {}")
+                .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                .log();
 
         try(var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {

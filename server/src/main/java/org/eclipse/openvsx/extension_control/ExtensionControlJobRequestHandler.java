@@ -53,9 +53,11 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
 
         var adminUser = service.createExtensionControlUser();
         for(var item : node) {
-            if(logger.isInfoEnabled()) {
-                logger.info("malicious: {}", item.asText());
-            }
+            logger.atInfo()
+                    .setMessage("malicious: {}")
+                    .addArgument(item::asText)
+                    .log();
+
             var extensionId = NamingUtil.fromExtensionId(item.asText());
             if(extensionId != null && repositories.hasExtension(extensionId.namespace(), extensionId.extension())) {
                 logger.info("delete malicious extension");

@@ -120,8 +120,11 @@ public class MigrationService {
 
     public FileResource getDownload(ExtensionVersion extVersion) {
         var download = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-        if(download == null && logger.isWarnEnabled()) {
-            logger.warn("Could not find download for: {}", NamingUtil.toLogFormat(extVersion));
+        if(download == null) {
+            logger.atWarn()
+                    .setMessage("Could not find download for: {}")
+                    .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                    .log();
         }
 
         return download;

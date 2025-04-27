@@ -62,9 +62,11 @@ public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHan
         if(download == null) {
             return;
         }
-        if(logger.isInfoEnabled()) {
-            logger.info("Generating signature for: {}", NamingUtil.toLogFormat(extVersion));
-        }
+
+        logger.atInfo()
+                .setMessage("Generating signature for: {}")
+                .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                .log();
 
         var keyPair = repositories.findActiveKeyPair();
         try (var signatureFile = createSignature(download, keyPair)) {
