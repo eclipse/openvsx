@@ -242,7 +242,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
             "targetPlatform", targetPlatform
         ));
 
-        if (restOfTheUrl != null && !restOfTheUrl.isBlank()) {
+        if (StringUtils.isNotBlank(restOfTheUrl)) {
             var segments = restOfTheUrl.split("/");
             for (var i = 0; i < segments.length; i++) {
                 var varName = "seg" + i;
@@ -258,32 +258,6 @@ public class UpstreamVSCodeService implements IVSCodeService {
             @Override
             public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
                 var statusCode = response.getStatusCode();
-                if(statusCode.is2xxSuccessful()) {
-                    var headers = new HttpHeaders();
-                    headers.addAll(response.getHeaders());
-                    headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
-                    headers.remove(HttpHeaders.VARY);
-
-                    var tempFile = new TempFile("asset", null);
-                    try {
-                        try (var out = Files.newOutputStream(tempFile.getPath())) {
-                            response.getBody().transferTo(out);
-                        }
-
-                        return ResponseEntity.status(response.getStatusCode())
-                                .headers(headers)
-                                .body(outputStream -> {
-                                    try (var in = Files.newInputStream(tempFile.getPath())) {
-                                        in.transferTo(outputStream);
-                                    }
-
-                                    tempFile.close();
-                                });
-                    } catch (IOException e) {
-                       tempFile.close();
-                       throw e;
-                    }
-                }
                 if(statusCode.is3xxRedirection()) {
                     var location = response.getHeaders().getLocation();
                     if(proxy != null) {
@@ -294,12 +268,36 @@ public class UpstreamVSCodeService implements IVSCodeService {
                             .headers(response.getHeaders())
                             .location(location)
                             .build();
-                }
-                if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
+                } else if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
                     handleResponseError(urlTemplate, uriVariables, response);
+                } else if(!statusCode.is2xxSuccessful()) {
+                    throw new NotFoundException();
                 }
 
-                throw new NotFoundException();
+                var headers = new HttpHeaders();
+                headers.addAll(response.getHeaders());
+                headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+                headers.remove(HttpHeaders.VARY);
+
+                var tempFile = new TempFile("asset", null);
+                try {
+                    try (var out = Files.newOutputStream(tempFile.getPath())) {
+                        response.getBody().transferTo(out);
+                    }
+
+                    return ResponseEntity.status(response.getStatusCode())
+                            .headers(headers)
+                            .body(outputStream -> {
+                                try (var in = Files.newInputStream(tempFile.getPath())) {
+                                    in.transferTo(outputStream);
+                                }
+
+                                tempFile.close();
+                            });
+                } catch (IOException e) {
+                    tempFile.close();
+                    throw e;
+                }
             }
         };
 
