@@ -975,7 +975,28 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var extension = extVersion.getExtension();
         json.setReplacement(toReplacementJson(extension, targetPlatformParam, true, false));
+        json.setVersionAlias(getVersionAlias(extVersion, latest, latestPreRelease));
+        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatformParam));
+        var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.getNamespace(), json.getName(), targetPlatformParam);
+        json.setAllVersions(toAllVersionsJson(versions, versionBaseUrl, globalLatest, globalLatestPreRelease));
+        var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, json.getNamespace(), json.getName(), json.getTargetPlatform(), json.getVersion());
+        json.setFiles(toFilesJson(extVersion, resources, fileBaseUrl));
+        setExtensionReferenceUrls(json.getDependencies(), serverUrl);
+        setExtensionReferenceUrls(json.getBundledExtensions(), serverUrl);
+        return json;
+    }
 
+    private void setExtensionReferenceUrls(List<ExtensionReferenceJson> refs, String serverUrl) {
+        if(refs == null) {
+            return;
+        }
+
+        for(var ref : refs) {
+            ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
+        }
+    }
+
+    private List<String> getVersionAlias(ExtensionVersion extVersion, ExtensionVersion latest, ExtensionVersion latestPreRelease) {
         var versionAlias = new ArrayList<String>(2);
         if (extVersion.equals(latest)) {
             versionAlias.add(VersionAlias.LATEST);
@@ -984,7 +1005,10 @@ public class LocalRegistryService implements IExtensionRegistry {
             versionAlias.add(VersionAlias.PRE_RELEASE);
         }
 
-        json.setVersionAlias(versionAlias);
+        return versionAlias;
+    }
+
+    private Map<String, String> toAllVersionsJson(List<String> versions, String versionBaseUrl, ExtensionVersion globalLatest, ExtensionVersion globalLatestPreRelease) {
         var allVersions = new ArrayList<String>();
         if(globalLatest != null) {
             allVersions.add(VersionAlias.LATEST);
@@ -995,19 +1019,20 @@ public class LocalRegistryService implements IExtensionRegistry {
         if(versions != null && !versions.isEmpty()) {
             allVersions.addAll(versions);
         }
-
-        json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatformParam));
-        if(!allVersions.isEmpty()) {
-            var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
-            var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.getNamespace(), json.getName(), targetPlatformParam);
-            for(var version : allVersions) {
-                allVersionsJson.put(version, createApiUrl(versionBaseUrl, version));
-            }
-            json.setAllVersions(allVersionsJson);
+        if(allVersions.isEmpty()) {
+            return null;
         }
 
+        var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
+        for(var version : allVersions) {
+            allVersionsJson.put(version, createApiUrl(versionBaseUrl, version));
+        }
+
+        return allVersionsJson;
+    }
+
+    private Map<String, String> toFilesJson(ExtensionVersion extVersion, List<FileResource> resources, String fileBaseUrl) {
         var files = Maps.<String, String>newLinkedHashMapWithExpectedSize(8);
-        var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, json.getNamespace(), json.getName(), json.getTargetPlatform(), json.getVersion());
         for (var resource : resources) {
             var fileUrl = UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName());
             files.put(resource.getType(), fileUrl);
@@ -1016,18 +1041,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             files.put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
         }
 
-        json.setFiles(files);
-        if (json.getDependencies() != null) {
-            for(var ref : json.getDependencies()) {
-                ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
-            }
-        }
-        if (json.getBundledExtensions() != null) {
-            for(var ref : json.getBundledExtensions()) {
-                ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
-            }
-        }
-        return json;
+        return files;
     }
 
     private ExtensionReplacementJson toReplacementJson(Extension extension, String targetPlatform, boolean onlyActive, boolean webui) {
