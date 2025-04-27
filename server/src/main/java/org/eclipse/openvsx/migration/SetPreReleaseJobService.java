@@ -33,9 +33,10 @@ public class SetPreReleaseJobService {
     @Transactional
     public List<ExtensionVersion> getExtensionVersions(MigrationJobRequest jobRequest, Logger logger) {
         var extension = entityManager.find(Extension.class, jobRequest.getEntityId());
-        if(logger.isInfoEnabled()) {
-            logger.info("Setting pre-release for: {}", NamingUtil.toExtensionId(extension));
-        }
+        logger.atInfo()
+                .setMessage("Setting pre-release for: {}")
+                .addArgument(() -> NamingUtil.toExtensionId(extension))
+                .log();
 
         return extension.getVersions();
     }

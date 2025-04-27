@@ -39,9 +39,11 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        if(logger.isInfoEnabled()) {
-            logger.info("Extracting VSIX manifests for: {}", NamingUtil.toLogFormat(extVersion));
-        }
+        logger.atInfo()
+                .setMessage("Extracting VSIX manifests for: {}")
+                .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                .log();
+
         var existingVsixManifest = migrations.getFileResource(extVersion, FileResource.VSIXMANIFEST);
         if(existingVsixManifest != null) {
             migrations.removeFile(existingVsixManifest);

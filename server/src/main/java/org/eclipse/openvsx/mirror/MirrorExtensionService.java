@@ -31,6 +31,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
@@ -82,11 +83,19 @@ public class MirrorExtensionService {
             jobContext.logger().info("all versions are up to date " + NamingUtil.toExtensionId(namespaceName, extensionName));
         }
 
-        var extensionId = logger.isDebugEnabled() ? NamingUtil.toExtensionId(namespaceName, extensionName) : null;
-        logger.debug("activating extension: {}", extensionId);
+        Supplier<Object> extensionIdSupplier = () -> NamingUtil.toExtensionId(namespaceName, extensionName);
+        logger.atDebug()
+                .setMessage("activating extension: {}")
+                .addArgument(extensionIdSupplier)
+                .log();
+
         data.activateExtension(namespaceName, extensionName);
 
-        logger.debug("updating extension metadata: {}", extensionId);
+        logger.atDebug()
+                .setMessage("updating extension metadata: {}")
+                .addArgument(extensionIdSupplier)
+                .log();
+
         data.updateMetadata(namespaceName, extensionName, latest);
         
         logger.debug("updating namespace metadata: {}", namespaceName);
@@ -199,9 +208,10 @@ public class MirrorExtensionService {
 
             var token = users.useAccessToken(accessTokenValue);
             extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.getTimestamp());
-            if(logger.isDebugEnabled()) {
-                logger.debug("completed mirroring of extension version: {}", NamingUtil.toLogFormat(json));
-            }
+            logger.atDebug()
+                    .setMessage("completed mirroring of extension version: {}")
+                    .addArgument(() -> NamingUtil.toLogFormat(json))
+                    .log();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

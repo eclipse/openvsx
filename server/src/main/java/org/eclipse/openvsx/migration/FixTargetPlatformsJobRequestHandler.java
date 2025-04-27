@@ -63,9 +63,10 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
             }
 
             if (fixTargetPlatform) {
-                if(logger.isInfoEnabled()) {
-                    logger.info("Fixing target platform for: {}", NamingUtil.toLogFormat(extVersion));
-                }
+                logger.atInfo()
+                        .setMessage("Fixing target platform for: {}")
+                        .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                        .log();
 
                 deleteExtension(extVersion);
                 try (var input = Files.newInputStream(extensionFile.getPath())) {

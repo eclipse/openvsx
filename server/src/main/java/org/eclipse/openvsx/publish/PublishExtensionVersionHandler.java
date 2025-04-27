@@ -21,10 +21,7 @@ import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.ExtensionId;
-import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -210,9 +207,10 @@ public class PublishExtensionVersionHandler {
         try(var processor = new ExtensionProcessor(extensionFile)) {
             extVersion.setPotentiallyMalicious(processor.isPotentiallyMalicious());
             if (extVersion.isPotentiallyMalicious()) {
-                if(logger.isWarnEnabled()) {
-                    logger.warn("Extension version is potentially malicious: {}", NamingUtil.toLogFormat(extVersion));
-                }
+                logger.atWarn()
+                        .setMessage("Extension version is potentially malicious: {}")
+                        .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                        .log();
                 return;
             }
 
@@ -227,11 +225,14 @@ public class PublishExtensionVersionHandler {
                     try(var signature = integrityService.generateSignature(extensionFile, keyPair)) {
                         consumer.accept(signature);
                     }
-                } else if (logger.isWarnEnabled()) {
+                } else {
                     // Can happen when GenerateKeyPairJobRequestHandler hasn't run yet and there is no active SignatureKeyPair.
                     // This extension version should be assigned a SignatureKeyPair and a signature FileResource should be created
                     // by the ExtensionVersionSignatureJobRequestHandler migration.
-                    logger.warn("Integrity service is enabled, but {} did not have an active key pair", NamingUtil.toLogFormat(extVersion));
+                    logger.atWarn()
+                            .setMessage("Integrity service is enabled, but {} did not have an active key pair")
+                            .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                            .log();
                 }
             }
 
