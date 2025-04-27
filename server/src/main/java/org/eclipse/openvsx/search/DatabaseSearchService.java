@@ -22,11 +22,11 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.SearchHitsImpl;
 import org.springframework.data.elasticsearch.core.TotalHitsRelation;
+import org.springframework.data.util.Streamable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
@@ -57,50 +57,29 @@ public class DatabaseSearchService implements ISearchService {
     @Cacheable(CACHE_DATABASE_SEARCH)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public SearchHits<ExtensionSearch> search(ISearchService.Options options) {
-        // grab all extensions
         var matchingExtensions = repositories.findAllActiveExtensions();
+        matchingExtensions = excludeByNamespace(options, matchingExtensions);
+        matchingExtensions = excludeByTargetPlatform(options, matchingExtensions);
+        matchingExtensions = excludeByCategory(options, matchingExtensions);
+        matchingExtensions = excludeByQueryString(options, matchingExtensions);
 
-        // no extensions in the database
-        if (matchingExtensions.isEmpty()) {
-            return new SearchHitsImpl<>(0,TotalHitsRelation.OFF, 0f, null, null, Collections.emptyList(), null, null, null);
-        }
+        var sortedExtensions = sortExtensions(options, matchingExtensions);
+        var totalHits = sortedExtensions.size();
+        sortedExtensions = applyPaging(options, sortedExtensions);
+        var searchHits = sortedExtensions.stream()
+                .map(extensionSearch -> new SearchHit<>(null, null, null, 0.0f, null, null, null, null, null, null, extensionSearch))
+                .toList();
 
-        // exlude namespaces
-        if(options.namespacesToExclude() != null) {
-            for(var namespaceToExclude : options.namespacesToExclude()) {
-                matchingExtensions = matchingExtensions.filter(extension -> !extension.getNamespace().getName().equals(namespaceToExclude));
-            }
-        }
+        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, null, null, searchHits, null, null, null);
+    }
 
-        // filter target platform
-        if(TargetPlatform.isValid(options.targetPlatform())) {
-            matchingExtensions = matchingExtensions.filter(extension -> extension.getVersions().stream().anyMatch(ev -> ev.getTargetPlatform().equals(options.targetPlatform())));
-        }
+    private List<ExtensionSearch> applyPaging(Options options, List<ExtensionSearch> sortedExtensions) {
+        var endIndex = Math.min(sortedExtensions.size(), options.requestedOffset() + options.requestedSize());
+        var startIndex = Math.min(endIndex, options.requestedOffset());
+        return sortedExtensions.subList(startIndex, endIndex);
+    }
 
-        // filter category
-        if (options.category() != null) {
-            matchingExtensions = matchingExtensions.filter(extension -> {
-                var latest = repositories.findLatestVersion(extension, null, false, true);
-                return latest.getCategories().stream().anyMatch(category -> category.equalsIgnoreCase(options.category()));
-            });
-        }
-
-        // filter text
-        if (options.queryString() != null) {
-            matchingExtensions = matchingExtensions.filter(extension -> {
-                var latest = repositories.findLatestVersion(extension, null, false, true);
-                return extension.getName().toLowerCase().contains(options.queryString().toLowerCase())
-                    || extension.getNamespace().getName().contains(options.queryString().toLowerCase())
-                    || (latest.getDescription() != null && latest.getDescription()
-                        .toLowerCase().contains(options.queryString().toLowerCase()))
-                    || (latest.getDisplayName() != null && latest.getDisplayName()
-                        .toLowerCase().contains(options.queryString().toLowerCase()));
-            });
-        }
-
-        // need to perform the sortBy ()
-        // 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
-
+    private List<ExtensionSearch> sortExtensions(Options options, Streamable<Extension> matchingExtensions) {
         Stream<ExtensionSearch> searchEntries;
         if("relevance".equals(options.sortBy()) || "rating".equals(options.sortBy())) {
             var searchStats = new SearchStats(repositories);
@@ -113,42 +92,63 @@ public class DatabaseSearchService implements ISearchService {
             });
         }
 
-        var comparators = new HashMap<>(Map.of(
+        var comparators = Map.of(
                 "relevance", new RelevanceComparator(),
                 "timestamp", new TimestampComparator(),
                 "rating", new RatingComparator(),
                 "downloadCount", new DownloadedCountComparator()
-        ));
+        );
 
         var comparator = comparators.get(options.sortBy());
-        if(comparator != null) {
-            searchEntries = searchEntries.sorted(comparator);
-        }
-
-        var sortedExtensions = searchEntries.collect(Collectors.toList());
-
-        // need to do sortOrder
-        // 'asc' | 'desc';
         if ("desc".equals(options.sortOrder())) {
-            // reverse the order
-            Collections.reverse(sortedExtensions);
+            comparator = comparator.reversed();
         }
 
-        // Paging
-        var totalHits = sortedExtensions.size();
-        var endIndex = Math.min(sortedExtensions.size(), options.requestedOffset() + options.requestedSize());
-        var startIndex = Math.min(endIndex, options.requestedOffset());
-        sortedExtensions = sortedExtensions.subList(startIndex, endIndex);
+        return searchEntries.sorted(comparator).toList();
+    }
 
-        List<SearchHit<ExtensionSearch>> searchHits;
-        if (sortedExtensions.isEmpty()) {
-            searchHits = Collections.emptyList();
-        } else {
-            // client is interested only in the extension IDs
-            searchHits = sortedExtensions.stream().map(extensionSearch -> new SearchHit<>(null, null, null, 0.0f, null, null, null, null, null, null, extensionSearch)).collect(Collectors.toList());
+    private Streamable<Extension> excludeByQueryString(Options options, Streamable<Extension> matchingExtensions) {
+        if(options.queryString() == null) {
+            return matchingExtensions;
         }
 
-        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, null, null, searchHits, null, null, null);
+        return matchingExtensions.filter(extension -> {
+            var latest = repositories.findLatestVersion(extension, null, false, true);
+            return extension.getName().toLowerCase().contains(options.queryString().toLowerCase())
+                    || extension.getNamespace().getName().contains(options.queryString().toLowerCase())
+                    || (latest.getDescription() != null && latest.getDescription()
+                    .toLowerCase().contains(options.queryString().toLowerCase()))
+                    || (latest.getDisplayName() != null && latest.getDisplayName()
+                    .toLowerCase().contains(options.queryString().toLowerCase()));
+        });
+    }
+
+    private Streamable<Extension> excludeByCategory(Options options, Streamable<Extension> matchingExtensions) {
+        if(options.category() == null) {
+            return matchingExtensions;
+        }
+
+        return matchingExtensions.filter(extension -> {
+            var latest = repositories.findLatestVersion(extension, null, false, true);
+            return latest.getCategories().stream().anyMatch(category -> category.equalsIgnoreCase(options.category()));
+        });
+    }
+
+    private Streamable<Extension> excludeByTargetPlatform(Options options, Streamable<Extension> matchingExtensions) {
+        if(!TargetPlatform.isValid(options.targetPlatform())) {
+            return matchingExtensions;
+        }
+
+        return matchingExtensions.filter(extension -> extension.getVersions().stream().anyMatch(ev -> ev.getTargetPlatform().equals(options.targetPlatform())));
+    }
+
+    private Streamable<Extension> excludeByNamespace(Options options, Streamable<Extension> matchingExtensions) {
+        if(options.namespacesToExclude() == null) {
+            return matchingExtensions;
+        }
+
+        var namespacesToExclude = List.of(options.namespacesToExclude());
+        return matchingExtensions.filter(extension -> !namespacesToExclude.contains(extension.getNamespace().getName()));
     }
 
     @Override
