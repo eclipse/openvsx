@@ -21,7 +21,10 @@ import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.ExtensionId;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,24 +109,9 @@ public class PublishExtensionVersionHandler {
         }
 
         var extensionName = processor.getExtensionName();
-        var nameIssue = validator.validateExtensionName(extensionName);
-        if (nameIssue.isPresent()) {
-            throw new ErrorResultException(nameIssue.get().toString());
-        }
-        if(isMalicious(namespaceName, extensionName)) {
-            throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
-        }
-
-        var version = processor.getVersion();
-        var versionIssue = validator.validateExtensionVersion(version);
-        if (versionIssue.isPresent()) {
-            throw new ErrorResultException(versionIssue.get().toString());
-        }
+        validateExtensionVersion(processor, namespaceName, extensionName);
 
         var extVersion = processor.getMetadata();
-        if (extVersion.getDisplayName() != null && extVersion.getDisplayName().trim().isEmpty()) {
-            extVersion.setDisplayName(null);
-        }
         extVersion.setTimestamp(timestamp);
         extVersion.setPublishedWith(token);
         extVersion.setActive(false);
@@ -153,6 +141,28 @@ public class PublishExtensionVersionHandler {
         extension.getVersions().add(extVersion);
         extVersion.setExtension(extension);
 
+        validateMetadata(extVersion);
+        entityManager.persist(extVersion);
+        return extVersion;
+    }
+
+    private void validateExtensionVersion(ExtensionProcessor processor, String namespaceName, String extensionName) {
+        var nameIssue = validator.validateExtensionName(extensionName);
+        if (nameIssue.isPresent()) {
+            throw new ErrorResultException(nameIssue.get().toString());
+        }
+        if(isMalicious(namespaceName, extensionName)) {
+            throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
+        }
+
+        var version = processor.getVersion();
+        var versionIssue = validator.validateExtensionVersion(version);
+        if (versionIssue.isPresent()) {
+            throw new ErrorResultException(versionIssue.get().toString());
+        }
+    }
+
+    private void validateMetadata(ExtensionVersion extVersion) {
         var metadataIssues = validator.validateMetadata(extVersion);
         if (!metadataIssues.isEmpty()) {
             if (metadataIssues.size() == 1) {
@@ -161,9 +171,6 @@ public class PublishExtensionVersionHandler {
             throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
                     + Joiner.on("\n").join(metadataIssues));
         }
-
-        entityManager.persist(extVersion);
-        return extVersion;
     }
 
     private boolean isMalicious(String namespace, String extension) {

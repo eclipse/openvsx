@@ -235,7 +235,10 @@ public class ExtensionProcessor implements AutoCloseable {
         extVersion.setTargetPlatform(getTargetPlatform());
         extVersion.setPreview(isPreview());
         extVersion.setPreRelease(isPreRelease());
-        extVersion.setDisplayName(vsixManifest.path(MANIFEST_METADATA).path("DisplayName").asText());
+        var displayName = vsixManifest.path(MANIFEST_METADATA).path("DisplayName").asText();
+        if(StringUtils.isNotBlank(displayName)) {
+            extVersion.setDisplayName(displayName);
+        }
         extVersion.setDescription(vsixManifest.path(MANIFEST_METADATA).path("Description").path("").asText());
         extVersion.setEngines(getEngines(packageJson.path("engines")));
         extVersion.setCategories(asStringList(vsixManifest.path(MANIFEST_METADATA).path("Categories").asText(), ","));
