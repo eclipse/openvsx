@@ -178,7 +178,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             uriVariables.put(VAR_TARGET, targetPlatform);
         }
 
-        urlTemplate = "/versions?offset={offset}&size={size}";
+        urlTemplate += "/versions?offset={offset}&size={size}";
         uriVariables.put(VAR_OFFSET, String.valueOf(offset));
         uriVariables.put(VAR_SIZE, String.valueOf(size));
 
@@ -205,7 +205,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
             uriVariables.put(VAR_TARGET, targetPlatform);
         }
 
-        urlTemplate = "/version-references?offset={offset}&size={size}";
+        urlTemplate += "/version-references?offset={offset}&size={size}";
         uriVariables.put(VAR_OFFSET, String.valueOf(offset));
         uriVariables.put(VAR_SIZE, String.valueOf(size));
 
