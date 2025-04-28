@@ -205,7 +205,7 @@ class IntegrationTest {
         var response = restTemplate.getForEntity(apiCall("/api/editorconfig/editorconfig/reviews"), ReviewListJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getError()).isNull();
-        assertThat(response.getBody().getReviews().size()).isEqualTo(0);
+        assertThat(response.getBody().getReviews().size()).isZero();
     }
 
     private void searchExtension() {
