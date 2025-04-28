@@ -10,9 +10,10 @@
 import { createVSIX, IPackageOptions } from '@vscode/vsce';
 import { getPAT } from './login';
 import { createTempFile, addEnvOptions } from './util';
-import { Extension, Registry, RegistryOptions } from './registry';
+import { Extension, Registry } from './registry';
 import { checkLicense } from './check-license';
 import { readVSIXPackage } from './zip';
+import { PublishOptions, PublishCommonOptions } from './publish-options';
 
 /**
  * Publishes an extension.
@@ -78,55 +79,24 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     }
 }
 
-interface PublishCommonOptions extends RegistryOptions {
-    /**
-     * Path to the vsix file to be published. Cannot be used together with `packagePath`.
-     */
-    extensionFile?: string;
-    /**
-     * The base URL for links detected in Markdown files. Only valid with `packagePath`.
-     */
-    baseContentUrl?: string;
-    /**
-     * The base URL for images detected in Markdown files. Only valid with `packagePath`.
-     */
-    baseImagesUrl?: string;
-    /**
-     * Should use `yarn` instead of `npm`. Only valid with `packagePath`.
-     */
-    yarn?: boolean;
-    /**
-     * Mark this package as a pre-release. Only valid with `packagePath`.
-     */
-    preRelease?: boolean;
-    /**
-     * Whether to fail silently if version already exists on the marketplace
-     */
-    skipDuplicate?: boolean;
-    /**
-     * Extension version. Only valid with `packagePath`.
-     */
-    packageVersion?: string;
-}
+async function packageExtension(options: InternalPublishOptions, registry: Registry): Promise<void> {
+    if (registry.requiresLicense) {
+        await checkLicense(options.packagePath!);
+    }
 
-// Interface used by top level CLI
-export interface PublishOptions extends PublishCommonOptions {
-
-    /**
-     * Target architectures.
-     */
-    targets?: string[];
-
-    /**
-     * Paths to the extension to be packaged and published. Cannot be used together
-     * with `extensionFile`.
-     */
-    packagePath?: string[];
-
-    /**
-     * Whether to do dependency detection via npm or yarn
-     */
-    dependencies?: boolean;
+    options.extensionFile = await createTempFile({ postfix: '.vsix' });
+    const packageOptions: IPackageOptions = {
+        packagePath: options.extensionFile,
+        target: options.target,
+        cwd: options.packagePath,
+        baseContentUrl: options.baseContentUrl,
+        baseImagesUrl: options.baseImagesUrl,
+        useYarn: options.yarn,
+        dependencies: options.dependencies,
+        preRelease: options.preRelease,
+        version: options.packageVersion
+    };
+    await createVSIX(packageOptions);
 }
 
 // Interface used internally by the doPublish method
@@ -149,24 +119,4 @@ interface InternalPublishOptions extends PublishCommonOptions {
      * Whether to do dependency detection via npm or yarn
      */
     dependencies?: boolean;
-}
-
-async function packageExtension(options: InternalPublishOptions, registry: Registry): Promise<void> {
-    if (registry.requiresLicense) {
-        await checkLicense(options.packagePath!);
-    }
-
-    options.extensionFile = await createTempFile({ postfix: '.vsix' });
-    const packageOptions: IPackageOptions = {
-        packagePath: options.extensionFile,
-        target: options.target,
-        cwd: options.packagePath,
-        baseContentUrl: options.baseContentUrl,
-        baseImagesUrl: options.baseImagesUrl,
-        useYarn: options.yarn,
-        dependencies: options.dependencies,
-        preRelease: options.preRelease,
-        version: options.packageVersion
-    };
-    await createVSIX(packageOptions);
 }

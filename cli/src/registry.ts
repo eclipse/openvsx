@@ -12,6 +12,7 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as followRedirects from 'follow-redirects';
+import { RegistryOptions } from './registry-options';
 import { rejectError, statusError } from './util';
 
 export const DEFAULT_URL = 'https://open-vsx.org';
@@ -217,33 +218,6 @@ export class Registry {
         };
     }
 
-}
-
-export interface RegistryOptions {
-    /**
-     * The base URL of the registry API.
-     */
-    registryUrl?: string;
-    /**
-     * Personal access token.
-     */
-    pat?: string;
-    /**
-     * User name for basic authentication.
-     */
-    username?: string;
-    /**
-     * Password for basic authentication.
-     */
-    password?: string;
-    /**
-     * Maximal request body size for creating namespaces.
-     */
-    maxNamespaceSize?: number;
-    /**
-     * Maximal request body size for publishing.
-     */
-    maxPublishSize?: number;
 }
 
 export interface Response {

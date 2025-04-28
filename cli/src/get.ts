@@ -11,8 +11,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
-import { Registry, Extension, RegistryOptions } from "./registry";
+import { Registry, Extension } from "./registry";
 import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions, rejectError } from './util';
+import { GetOptions } from './get-options';
 
 /**
  * Downloads an extension or its metadata.
@@ -102,27 +103,4 @@ async function download(registry: Registry, extension: Extension, output?: strin
     const target = extension.targetPlatform !== 'universal' ? '@' + extension.targetPlatform : '';
     console.log(`Downloading ${extension.namespace}.${extension.name}-${extension.version}${target} to ${filePath}`);
     await registry.download(filePath, new URL(downloadUrl));
-}
-
-export interface GetOptions extends RegistryOptions {
-    /**
-     * Identifier in the form `namespace.extension` or `namespace/extension`.
-     */
-    extensionId: string;
-    /**
-     * Target platform.
-     */
-    target?: string;
-    /**
-     * An exact version or version range.
-     */
-    version?: string;
-    /**
-     * Save the output in the specified file or directory.
-     */
-    output?: string;
-    /**
-     * Print the extension's metadata instead of downloading it.
-     */
-    metadata?: boolean;
 }
