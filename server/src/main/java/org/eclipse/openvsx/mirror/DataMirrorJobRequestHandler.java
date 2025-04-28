@@ -31,6 +31,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -160,6 +161,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
 
         try(var reader = new StringReader(body)) {
             var factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             var builder = factory.newDocumentBuilder();
             return builder.parse(new InputSource(reader));
         }
