@@ -82,11 +82,8 @@ public class UserService {
         }
 
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null) {
-            if (authentication.getPrincipal() instanceof IdPrincipal) {
-                var principal = (IdPrincipal) authentication.getPrincipal();
-                return entityManager.find(UserData.class, principal.getId());
-            }
+        if (authentication != null && authentication.getPrincipal() instanceof IdPrincipal principal) {
+            return entityManager.find(UserData.class, principal.getId());
         }
         return null;
     }
