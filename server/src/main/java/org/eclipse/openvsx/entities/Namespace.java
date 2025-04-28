@@ -120,6 +120,9 @@ public class Namespace implements Serializable {
 		this.logoName = logoName;
 	}
 
+	/**
+	 * @deprecated
+	 */
 	@Deprecated
 	public byte[] getLogoBytes() {
 		return logoBytes;

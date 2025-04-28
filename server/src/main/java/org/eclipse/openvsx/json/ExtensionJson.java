@@ -9,23 +9,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import static org.eclipse.openvsx.util.TargetPlatform.*;
-import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
 
 @Schema(
     name = "Extension",
@@ -89,16 +86,25 @@ public class ExtensionJson extends ResultJson implements Serializable {
     @NotNull
     private Boolean verified;
 
+    /**
+     * @deprecated
+     */
     @Schema(description = "Deprecated: use 'verified' instead (this property is just the negation of 'verified')")
     @NotNull
     @Deprecated
     private Boolean unrelatedPublisher;
 
+    /**
+     * @deprecated
+     */
     @Schema(description = "Access level of the extension's namespace. Deprecated: namespaces are now always restricted", allowableValues = {"public", "restricted"})
     @NotNull
     @Deprecated
     private String namespaceAccess;
 
+    /**
+     * @deprecated
+     */
     @Schema(description = "Map of available versions to their metadata URLs. Deprecated: only returns the last 100 versions. Use allVersionsUrl instead.")
     @Deprecated
     private Map<String, String> allVersions;

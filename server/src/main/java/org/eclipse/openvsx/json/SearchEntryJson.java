@@ -9,19 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 @Schema(
     name = "SearchEntry",
@@ -61,6 +59,9 @@ public class SearchEntryJson implements Serializable {
     @NotNull
     private Boolean verified;
 
+    /**
+     * @deprecated
+     */
     @Schema(description = "Essential metadata of all available versions. Deprecated: only returns the last 100 versions. Use allVersionsUrl instead.")
     @Deprecated
     private List<VersionReferenceJson> allVersions;
