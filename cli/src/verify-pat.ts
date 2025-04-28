@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { getPAT } from './login';
-import { Registry } from './registry';
+import { getPAT, doVerifyPat } from './pat';
 import { readManifest, addEnvOptions } from './util';
 import { VerifyPatOptions } from './verify-pat-options';
 
@@ -36,15 +35,4 @@ export async function verifyPat(options: VerifyPatOptions): Promise<void> {
 
     options.pat = await getPAT(options.namespace, options, false);
     await doVerifyPat(options);
-}
-
-export async function doVerifyPat(options: VerifyPatOptions) {
-    const registry = new Registry(options);
-    const namespace = options.namespace as string;
-    const pat = options.pat as string;
-    const result = await registry.verifyPat(namespace, pat);
-    if (result.error) {
-        throw new Error(result.error);
-    }
-    console.log(`\ud83d\ude80  PAT valid to publish at ${namespace}`);
 }

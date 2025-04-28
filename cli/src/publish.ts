@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 import { createVSIX, IPackageOptions } from '@vscode/vsce';
-import { getPAT } from './login';
+import { getPAT } from './pat';
 import { createTempFile, addEnvOptions } from './util';
 import { Extension, Registry } from './registry';
 import { checkLicense } from './check-license';
