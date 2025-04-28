@@ -151,14 +151,14 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        for(var key : extVersions.keySet()) {
-            var extVersion = extVersions.get(key);
+        for(var entry : extVersions.entrySet()) {
+            var extVersion = entry.getValue();
             var newExtVersion = new ExtensionVersion();
             newExtVersion.setId(extVersion.getId());
             newExtVersion.setExtension(extensions.get(extVersion.getExtension().getId()));
             newExtVersion.setVersion(extVersion.getVersion());
             newExtVersion.setTargetPlatform(extVersion.getTargetPlatform());
-            extVersions.put(key, newExtVersion);
+            entry.setValue(newExtVersion);
         }
 
         var newBinaryNames = extVersions.values().stream()

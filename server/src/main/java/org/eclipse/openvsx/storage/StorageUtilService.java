@@ -329,20 +329,20 @@ public class StorageUtilService implements IStorageService {
     @Override
     public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
         var groupedByStorageType = pairs.stream().collect(Collectors.groupingBy(p -> p.getFirst().getStorageType()));
-        for(var storageType : groupedByStorageType.keySet()) {
-            var group = groupedByStorageType.get(storageType);
+        for(var entry : groupedByStorageType.entrySet()) {
+            var storageType = entry.getKey();
             switch (storageType) {
                 case STORAGE_GOOGLE:
-                    googleStorage.copyFiles(group);
+                    googleStorage.copyFiles(entry.getValue());
                     break;
                 case STORAGE_AZURE:
-                    azureStorage.copyFiles(group);
+                    azureStorage.copyFiles(entry.getValue());
                     break;
                 case STORAGE_AWS:
-                    awsStorage.copyFiles(group);
+                    awsStorage.copyFiles(entry.getValue());
                     break;
                 case STORAGE_LOCAL:
-                    localStorage.copyFiles(group);
+                    localStorage.copyFiles(entry.getValue());
                     break;
                 default:
                     throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
