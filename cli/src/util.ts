@@ -13,7 +13,7 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
 import * as readline from 'readline';
-import { RegistryOptions } from './registry';
+import { RegistryOptions } from './registry-options';
 
 export { promisify } from 'util';
 

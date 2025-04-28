@@ -10,10 +10,11 @@
 import {  } from '@vscode/vsce';
 import { addEnvOptions, getUserInput } from './util';
 import { openDefaultStore } from './store';
-import { RegistryOptions } from './registry';
-import { CreateNamespaceOptions } from './create-namespace';
-import { PublishOptions } from './publish';
-import { VerifyPatOptions, doVerifyPat } from './verify-pat';
+import { CreateNamespaceOptions } from './create-namespace-options';
+import { PublishOptions } from './publish-options';
+import { doVerifyPat } from './verify-pat';
+import { VerifyPatOptions } from './verify-pat-options';
+import { LoginOptions } from './login-options';
 
 export async function requestPAT(namespace: string, options: CreateNamespaceOptions | PublishOptions | VerifyPatOptions, verify: boolean = true): Promise<string> {
     const pat = await getUserInput(`Personal Access Token for namespace '${namespace}':`);
@@ -60,11 +61,4 @@ export default async function login(options: LoginOptions) {
 
 	pat = await requestPAT(options.namespace, options);
 	await store.add(options.namespace, pat);
-}
-
-export interface LoginOptions extends RegistryOptions {
-    /**
-     * Name of the namespace.
-     */
-    namespace?: string
 }

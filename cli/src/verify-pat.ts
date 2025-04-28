@@ -9,8 +9,9 @@
  ********************************************************************************/
 
 import { getPAT } from './login';
-import { Registry, RegistryOptions } from './registry';
+import { Registry } from './registry';
 import { readManifest, addEnvOptions } from './util';
+import { VerifyPatOptions } from './verify-pat-options';
 
 /**
  * Validates that a Personal Access Token can publish to a namespace.
@@ -46,11 +47,4 @@ export async function doVerifyPat(options: VerifyPatOptions) {
         throw new Error(result.error);
     }
     console.log(`\ud83d\ude80  PAT valid to publish at ${namespace}`);
-}
-
-export interface VerifyPatOptions extends RegistryOptions {
-    /**
-     * Name of the namespace.
-     */
-    namespace?: string
 }

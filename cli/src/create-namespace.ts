@@ -8,8 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import { CreateNamespaceOptions } from './create-namespace-options';
 import { getPAT } from './login';
-import { Registry, RegistryOptions } from './registry';
+import { Registry } from './registry';
 import { addEnvOptions } from './util';
 
 /**
@@ -29,11 +30,4 @@ export async function createNamespace(options: CreateNamespaceOptions = {}): Pro
         throw new Error(result.error);
     }
     console.log(`\ud83d\ude80  Created namespace ${options.name}`);
-}
-
-export interface CreateNamespaceOptions extends RegistryOptions {
-    /**
-     * Name of the new namespace.
-     */
-    name?: string
 }
