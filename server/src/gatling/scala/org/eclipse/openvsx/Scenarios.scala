@@ -21,6 +21,11 @@ import scala.concurrent.duration.DurationInt
 import scala.reflect.io.File
 
 object Scenarios {
+  val AccessTokenFeed = "access-tokens.csv"
+  val ExtensionFeed = "extensions.csv"
+  val ExtensionVersionFeed = "extension-versions.csv"
+  val NamespaceFeed = "namespaces.csv"
+  
   val conf = ConfigFactory.load()
   val users = 5
   val httpProtocol = http
@@ -41,8 +46,8 @@ object Scenarios {
     val repeatTimes = namespacesCount / users
     scenario("RegistryAPI: Create Namespace")
       .repeat(repeatTimes) {
-        feed(csv("namespaces.csv"))
-          .feed(csv("access-tokens.csv").circular)
+        feed(csv(NamespaceFeed))
+          .feed(csv(AccessTokenFeed).circular)
           .exec(http("RegistryAPI.createNamespace")
             .post(s"/api/-/namespace/create")
             .headers(headers())
@@ -91,7 +96,7 @@ object Scenarios {
     scenario("RegistryAPI: Publish Extension")
       .repeat(repeatTimes) {
         feed(feeder)
-          .feed(csv("access-tokens.csv").circular)
+          .feed(csv(AccessTokenFeed).circular)
           .exec(http("RegistryAPI.publish")
             .post("/api/-/publish")
             .headers(headers())
@@ -109,8 +114,8 @@ object Scenarios {
     val extensionDir = conf.getString("extensionDir")
     scenario("RegistryAPI: Download Extension")
       .repeat(744) {
-        feed(csv("extension-versions.csv"))
-          .feed(csv("access-tokens.csv").circular)
+        feed(csv(ExtensionVersionFeed))
+          .feed(csv(AccessTokenFeed).circular)
           .exec(session => {
             val namespace = session("namespace").as[String]
             val name = session("name").as[String]
@@ -140,7 +145,7 @@ object Scenarios {
   def getExtensionScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Extension")
       .repeat(1000) {
-        feed(csv("extensions.csv").circular)
+        feed(csv(ExtensionFeed).circular)
           .exec(http("RegistryAPI.getExtension")
             .get("""/api/#{namespace}/#{name}""")
             .headers(headers()))
@@ -152,7 +157,7 @@ object Scenarios {
     // TODO add more target platforms besides 'universal'
     scenario("RegistryAPI: Get Extension by Target Platform")
       .repeat(1000) {
-        feed(csv("extensions.csv").circular)
+        feed(csv(ExtensionFeed).circular)
           .exec(http("RegistryAPI.getExtension")
             .get("""/api/#{namespace}/#{name}/universal""")
             .headers(headers()))
@@ -163,7 +168,7 @@ object Scenarios {
   def getExtensionVersionScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Extension Version")
       .repeat(1000) {
-        feed(csv("extension-versions.csv").circular)
+        feed(csv(ExtensionVersionFeed).circular)
           .exec(http("RegistryAPI.getExtension")
             .get("""/api/#{namespace}/#{name}/#{version}""")
             .headers(headers()))
@@ -175,7 +180,7 @@ object Scenarios {
     // TODO add more target platforms besides 'universal'
     scenario("RegistryAPI: Get Extension Version by Target Platform")
       .repeat(1000) {
-        feed(csv("extension-versions.csv").circular)
+        feed(csv(ExtensionVersionFeed).circular)
           .exec(http("RegistryAPI.getExtension")
             .get("""/api/#{namespace}/#{name}/universal/#{version}""")
             .headers(headers()))
@@ -186,7 +191,7 @@ object Scenarios {
   def getVersionReferencesScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Version References")
       .repeat(1000) {
-        feed(csv("extensions.csv").circular)
+        feed(csv(ExtensionFeed).circular)
           .exec(http("RegistryAPI.getVersionReferences")
             .get("""/api/#{namespace}/#{name}/version-references""")
             .headers(headers()))
@@ -198,7 +203,7 @@ object Scenarios {
     // TODO add more target platforms besides 'universal'
     scenario("RegistryAPI: Get Version References by Target Platform")
       .repeat(1000) {
-        feed(csv("extensions.csv").circular)
+        feed(csv(ExtensionFeed).circular)
           .exec(http("RegistryAPI.getVersionReferences")
             .get("""/api/#{namespace}/#{name}/universal/version-references""")
             .headers(headers()))
@@ -209,7 +214,7 @@ object Scenarios {
   def getNamespaceScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Namespace")
       .repeat(1000) {
-        feed(csv("namespaces.csv").circular)
+        feed(csv(NamespaceFeed).circular)
           .exec(http("RegistryAPI.getNamespace")
             .get("""/api/#{namespace}""")
             .headers(headers())
@@ -220,7 +225,7 @@ object Scenarios {
   def getNamespaceDetailsScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Namespace Details")
       .repeat(1000) {
-        feed(csv("namespaces.csv").circular)
+        feed(csv(NamespaceFeed).circular)
           .exec(http("RegistryAPI.getNamespaceDetails")
             .get("""/api/#{namespace}/details""")
             .headers(headers())
@@ -253,7 +258,7 @@ object Scenarios {
   def getFileScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Manifest File")
       .repeat(1000) {
-        feed(csv("extension-versions.csv").circular)
+        feed(csv(ExtensionVersionFeed).circular)
           .feed(Array(
             Map("file" -> ""),
             Map("file" -> "package.json"),
@@ -281,7 +286,7 @@ object Scenarios {
   def getFileTargetPlatformScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Get Manifest File")
       .repeat(1000) {
-        feed(csv("extension-versions.csv").circular)
+        feed(csv(ExtensionVersionFeed).circular)
           .feed(Array(
             Map("file" -> """#{namespace}.#{name}-#{version}.vsix"""),
             Map("file" -> "package.json"),
@@ -379,8 +384,8 @@ object Scenarios {
   def verifyTokenScenario(): ScenarioBuilder = {
     scenario("RegistryAPI: Verify PAT")
       .repeat(1000) {
-        feed(csv("namespaces.csv").circular)
-          .feed(csv("access-tokens.csv").circular)
+        feed(csv(NamespaceFeed).circular)
+          .feed(csv(AccessTokenFeed).circular)
           .exec(http("RegistryAPI.verifyToken")
             .get("""/api/#{namespace}/verify-pat?token=#{access_token}""")
             .headers(headers())
@@ -430,7 +435,7 @@ object Scenarios {
   def vspackageScenario(): ScenarioBuilder = {
     scenario("VSCodeAdapter: Download")
       .repeat(1000) {
-        feed(csv("extension-versions.csv").circular)
+        feed(csv(ExtensionVersionFeed).circular)
           .exec(http("VSCodeAdapter.download")
             .get("""/vscode/gallery/publishers/#{namespace}/vsextensions/#{name}/#{version}/vspackage""")
             .headers(headers())
@@ -442,7 +447,7 @@ object Scenarios {
   def itemScenario(): ScenarioBuilder = {
     scenario("VSCodeAdapter: Get Item URL")
       .repeat(1000) {
-        feed(csv("extensions.csv").circular)
+        feed(csv(ExtensionFeed).circular)
           .exec(http("VSCodeAdapter.getItemUrl")
             .get("""/vscode/item?itemName=#{namespace}.#{name}""")
             .headers(headers())
@@ -454,7 +459,7 @@ object Scenarios {
   def unpkgScenario(): ScenarioBuilder = {
     scenario("VSCodeAdapter: Browse")
       .repeat(1000) {
-        feed(csv("extension-versions.csv").circular)
+        feed(csv(ExtensionVersionFeed).circular)
           .feed(Array(Map("file" -> "extension.vsixmanifest"), Map("file" -> "extension")).circular)
           .exec(http("VSCodeAdapter.browse")
             .get("""/vscode/unpkg/#{namespace}/#{name}/#{version}/#{file}""")
@@ -467,7 +472,7 @@ object Scenarios {
   def getAssetScenario(): ScenarioBuilder = {
     scenario("VSCodeAdapter: Get Asset")
       .repeat(1000) {
-        feed(csv("extension-versions.csv").circular)
+        feed(csv(ExtensionVersionFeed).circular)
           .feed(Array(
             Map("asset" -> "Microsoft.VisualStudio.Services.Icons.Default"),
             Map("asset" -> "Microsoft.VisualStudio.Services.Content.Details"),
