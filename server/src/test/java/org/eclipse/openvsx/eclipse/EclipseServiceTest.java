@@ -120,7 +120,7 @@ class EclipseServiceTest {
 
         var agreement = eclipse.getPublisherAgreement(user);
         assertThat(agreement).isNotNull();
-        assertThat(agreement.isActive()).isEqualTo(true);
+        assertThat(agreement.isActive()).isTrue();
         assertThat(agreement.documentId()).isEqualTo("abcd");
         assertThat(agreement.version()).isEqualTo("1");
         assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
@@ -158,7 +158,7 @@ class EclipseServiceTest {
 
         var agreement = eclipse.signPublisherAgreement(user);
         assertThat(agreement).isNotNull();
-        assertThat(agreement.isActive()).isEqualTo(true);
+        assertThat(agreement.isActive()).isTrue();
         assertThat(agreement.documentId()).isEqualTo("abcd");
         assertThat(agreement.version()).isEqualTo("1");
         assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
@@ -185,7 +185,7 @@ class EclipseServiceTest {
         var agreement = eclipse.signPublisherAgreement(user);
 
         assertThat(agreement).isNotNull();
-        assertThat(agreement.isActive()).isEqualTo(true);
+        assertThat(agreement.isActive()).isTrue();
         assertThat(agreement.documentId()).isEqualTo("abcd");
         assertThat(agreement.version()).isEqualTo("1");
         assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));

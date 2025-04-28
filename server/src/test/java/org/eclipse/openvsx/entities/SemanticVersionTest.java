@@ -49,7 +49,7 @@ class SemanticVersionTest {
         assertThat(SemanticVersion.parse("1.2.3").compareTo(SemanticVersion.parse("1.2.4")))
                 .isEqualTo(1);
         assertThat(SemanticVersion.parse("1.2.3-next.bc11e2c5").compareTo(SemanticVersion.parse("1.2.3-next.6aa3b0d6")))
-                .isEqualTo(0);
+                .isZero();
         assertThat(SemanticVersion.parse("1.2.3").compareTo(SemanticVersion.parse("1.2.3-next.bc11e2c5")))
                 .isEqualTo(-1);
     }
