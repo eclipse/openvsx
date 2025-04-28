@@ -89,6 +89,9 @@ public class FileResource implements Serializable {
         this.type = type;
     }
 
+    /**
+     * @deprecated
+     */
     @Deprecated
     public byte[] getContent() {
         return content;

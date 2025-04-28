@@ -9,14 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import java.util.Map;
-
-import jakarta.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+
+import java.util.Map;
 
 @Schema(
     name = "Namespace",
@@ -42,6 +40,9 @@ public class NamespaceJson extends ResultJson {
     @NotNull
     private Boolean verified;
 
+    /**
+     * @deprecated
+     */
     @Schema(
         description = "Access level of the namespace. Deprecated: namespaces are now always restricted",
         allowableValues = {"public", "restricted"}
