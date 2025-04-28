@@ -8,8 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import { getPAT } from './login';
 import { Registry, RegistryOptions } from './registry';
-import { addEnvOptions, getPAT } from './util';
+import { addEnvOptions } from './util';
 
 /**
  * Creates a namespace (corresponds to `publisher` in package.json).

@@ -8,8 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import { getPAT } from './login';
 import { Registry, RegistryOptions } from './registry';
-import { readManifest, addEnvOptions, getPAT } from './util';
+import { readManifest, addEnvOptions } from './util';
 
 /**
  * Validates that a Personal Access Token can publish to a namespace.

@@ -8,9 +8,38 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 import {  } from '@vscode/vsce';
-import { addEnvOptions, getUserInput, requestPAT } from './util';
+import { addEnvOptions, getUserInput } from './util';
 import { openDefaultStore } from './store';
 import { RegistryOptions } from './registry';
+import { CreateNamespaceOptions } from './create-namespace';
+import { PublishOptions } from './publish';
+import { VerifyPatOptions, doVerifyPat } from './verify-pat';
+
+export async function requestPAT(namespace: string, options: CreateNamespaceOptions | PublishOptions | VerifyPatOptions, verify: boolean = true): Promise<string> {
+    const pat = await getUserInput(`Personal Access Token for namespace '${namespace}':`);
+    if (verify) {
+        await doVerifyPat({ ...options, namespace, pat });
+    }
+
+    return pat;
+}
+
+export async function getPAT(namespace: string, options: CreateNamespaceOptions | PublishOptions | VerifyPatOptions, verify: boolean = true): Promise<string> {
+    if (options?.pat) {
+        return options.pat;
+    }
+
+    const store = await openDefaultStore();
+    let pat = store.get(namespace);
+    if (pat) {
+        return pat;
+    }
+
+    pat = await requestPAT(namespace, options, verify);
+    await store.add(namespace, pat);
+
+    return pat;
+}
 
 export default async function login(options: LoginOptions) {
 	addEnvOptions(options);
