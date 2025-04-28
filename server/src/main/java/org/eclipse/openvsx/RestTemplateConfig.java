@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx;
 
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
@@ -59,14 +60,18 @@ public class RestTemplateConfig {
     }
 
     private HttpConnPoolConfig createHttpConnPoolConfig(int maxTotal, int defaultMaxPerRoute, int connectionRequestTimeout, int connectTimeout, int socketTimeout) {
+        var connectionConfig = ConnectionConfig.custom()
+                .setConnectTimeout(Timeout.of(connectTimeout, TimeUnit.MILLISECONDS))
+                .setSocketTimeout(Timeout.of(socketTimeout, TimeUnit.MILLISECONDS))
+                .build();
+
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
         connectionManager.setMaxTotal(maxTotal);
         connectionManager.setDefaultMaxPerRoute(defaultMaxPerRoute);
+        connectionManager.setDefaultConnectionConfig(connectionConfig);
         return new HttpConnPoolConfig(
                 connectionManager,
-                connectionRequestTimeout,
-                connectTimeout,
-                socketTimeout
+                connectionRequestTimeout
         );
     }
 
@@ -142,7 +147,6 @@ public class RestTemplateConfig {
     private HttpClientBuilder createHttpClientBuilder(HttpConnPoolConfig httpConnPoolConfig) {
         var requestConfig = RequestConfig.custom()
                 .setConnectionRequestTimeout(Timeout.of(httpConnPoolConfig.getConnectionRequestTimeout(), TimeUnit.MILLISECONDS))
-                .setConnectTimeout(Timeout.of(httpConnPoolConfig.getConnectTimeout(), TimeUnit.MILLISECONDS))
                 .build();
         return HttpClientBuilder
                 .create()
@@ -150,19 +154,14 @@ public class RestTemplateConfig {
                 .setDefaultRequestConfig(requestConfig);
     }
 
-    private static class HttpConnPoolConfig {
+    public static class HttpConnPoolConfig {
 
         private final PoolingHttpClientConnectionManager connectionManager;
         private final int connectionRequestTimeout;
-        private final int connectTimeout;
-        private final int socketTimeout;
 
-        public HttpConnPoolConfig(PoolingHttpClientConnectionManager connectionManager, int connectionRequestTimeout,
-                                  int connectTimeout, int socketTimeout) {
+        public HttpConnPoolConfig(PoolingHttpClientConnectionManager connectionManager, int connectionRequestTimeout) {
             this.connectionManager = connectionManager;
             this.connectionRequestTimeout = connectionRequestTimeout;
-            this.connectTimeout = connectTimeout;
-            this.socketTimeout = socketTimeout;
         }
 
         public PoolingHttpClientConnectionManager getConnectionManager() {
@@ -174,18 +173,5 @@ public class RestTemplateConfig {
         public int getConnectionRequestTimeout() {
             return connectionRequestTimeout;
         }
-        /**
-         * the time to establish the connection with the remote host
-         */
-        public int getConnectTimeout() {
-            return connectTimeout;
-        }
-        /**
-         * the time waiting for data – after establishing the connection; maximum time of inactivity between two data packets
-         */
-        public int getSocketTimeout() {
-            return socketTimeout;
-        }
-
     }
 }

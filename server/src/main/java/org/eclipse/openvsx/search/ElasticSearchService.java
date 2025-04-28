@@ -34,6 +34,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.*;
+import org.springframework.data.elasticsearch.core.query.DeleteQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
@@ -227,7 +228,7 @@ public class ElasticSearchService implements ISearchService {
 
         var queryBuilder = new NativeQueryBuilder();
         var query = queryBuilder.withQuery(builder -> builder.ids(idsBuilder -> idsBuilder.values(ids.stream().map(String::valueOf).collect(Collectors.toList())))).build();
-        searchOperations.delete(query, ExtensionSearch.class);
+        searchOperations.delete(DeleteQuery.builder(query).build(), ExtensionSearch.class);
     }
 
 
