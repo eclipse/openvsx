@@ -195,18 +195,18 @@ public class VSCodeIdUpdateService {
         });
 
         // put random public ids where upstream public id is missing
-        for(var key : changedPublicIds.keySet()) {
-            if(changedPublicIds.get(key) != null) {
+        for(var entry : changedPublicIds.entrySet()) {
+            if(entry.getValue() != null) {
                 continue;
             }
 
             String publicId = null;
             while(newPublicIds.contains(publicId)) {
                 publicId = service.getRandomPublicId();
-                LOGGER.debug("NEW PUBLIC ID - {}: '{}'", key, publicId);
+                LOGGER.debug("NEW PUBLIC ID - {}: '{}'", entry.getKey(), publicId);
             }
 
-            changedPublicIds.put(key, publicId);
+            entry.setValue(publicId);
             newPublicIds.add(publicId);
         }
     }
