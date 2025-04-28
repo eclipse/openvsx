@@ -21,7 +21,7 @@ export interface ExportRatingStarsProps {
 export const ExportRatingStars: FunctionComponent<ExportRatingStarsProps> = props => {
     const getStar = (i: number): ReactNode => {
         const starsNumber = props.number;
-        const fontSize = props.fontSize || 'medium';
+        const fontSize = props.fontSize ?? 'medium';
         if (i <= starsNumber) {
             return <StarIcon fontSize={fontSize}/>;
         }

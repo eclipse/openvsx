@@ -88,8 +88,8 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     }}>
                     <Box
                         component='img'
-                        src={icon || (pageSettings?.urls.extensionDefaultIcon) || ''}
-                        alt={extension.displayName || extension.name}
+                        src={icon ?? pageSettings?.urls.extensionDefaultIcon ?? ''}
+                        alt={extension.displayName ?? extension.name}
                         sx={{
                             flex: '0 0 15%',
                             display: 'block',
@@ -100,7 +100,7 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     />
                     <Box component='div' sx={{ flex: '1', overflow: 'hidden' }}>
                         <Typography variant='h6' noWrap sx={{ fontSize: '1.15rem' }}>
-                            {extension.displayName || extension.name}
+                            {extension.displayName ?? extension.name}
                         </Typography>
                         <Paragraph mt={1}>
                             <span>Version:</span>

@@ -73,11 +73,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         const newVersionsMap = new Map<string, boolean>();
         newTargetPlatformVersions.forEach((targetPlatformVersion) => {
             if (targetPlatformVersion.version !== WILDCARD && targetPlatformVersion.targetPlatform !== WILDCARD) {
-                let checked = newVersionsMap.get(targetPlatformVersion.version);
-                if (checked === undefined) {
-                    checked = true;
-                }
-
+                const checked = newVersionsMap.get(targetPlatformVersion.version) ?? true;
                 newVersionsMap.set(targetPlatformVersion.version, checked && targetPlatformVersion.checked);
             }
         });
@@ -105,7 +101,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                         <Box
                             component='img'
                             src={icon}
-                            alt={extension.displayName || extension.name}
+                            alt={extension.displayName ?? extension.name}
                             sx={{
                                 height: '7.5rem',
                                 maxWidth: '9rem'
@@ -118,7 +114,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                 <Grid item container direction='column' justifyContent='center'>
                     <Grid item>
                         <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
-                            {extension.displayName || extension.name}
+                            {extension.displayName ?? extension.name}
                         </Typography>
                     </Grid>
                     {extension.deprecated &&

@@ -52,9 +52,9 @@ export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = prop
     const { extension, filterSize, idx } = props;
     const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
     const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
-    const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
+    const downloadCountFormatted = numberFormat.format(extension.downloadCount ?? 0);
     return <Fade in={true} timeout={{ enter: ((filterSize + idx) % filterSize) * 200 }}>
-        <Grid item xs={12} sm={3} md={2} title={extension.displayName || extension.name} sx={{ maxWidth: '14.875rem', minWidth: '11.875rem' }}>
+        <Grid item xs={12} sm={3} md={2} title={extension.displayName ?? extension.name} sx={{ maxWidth: '14.875rem', minWidth: '11.875rem' }}>
             <RouteLink to={route} style={{ textDecoration: 'none' }}>
                 <Paper
                     elevation={3}
@@ -73,14 +73,14 @@ export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = prop
                     <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
                         <Box
                             component='img'
-                            src={icon || context.pageSettings.urls.extensionDefaultIcon}
-                            alt={extension.displayName || extension.name}
+                            src={icon ?? context.pageSettings.urls.extensionDefaultIcon}
+                            alt={extension.displayName ?? extension.name}
                             sx={{ width: '4.5rem', maxHeight: '5.4rem' }}
                         />
                     </Box>
                     <Box display='flex' justifyContent='center'>
                         <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
-                            {extension.displayName || extension.name}
+                            {extension.displayName ?? extension.name}
                         </Typography>
                     </Box>
                     <Box display='flex' justifyContent='space-between'>
@@ -92,7 +92,7 @@ export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = prop
                         </Typography>
                     </Box>
                     <Box display='flex' justifyContent='center'>
-                        <ExportRatingStars number={extension.averageRating || 0} fontSize='small' />
+                        <ExportRatingStars number={extension.averageRating ?? 0} fontSize='small' />
                         &nbsp;
                         {downloadCountFormatted != "0" && <><SaveAltIcon /> {downloadCountFormatted}</>}
                     </Box>

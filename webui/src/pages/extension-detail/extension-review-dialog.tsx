@@ -84,7 +84,7 @@ export const ExtensionReviewDialog: FunctionComponent<ExtensionReviewDialogProps
             Write a Review
         </Button>)}
         <Dialog open={open} onClose={handleCancel}>
-            <DialogTitle>{props.extension.displayName || props.extension.name} Review</DialogTitle>
+            <DialogTitle>{props.extension.displayName ?? props.extension.name} Review</DialogTitle>
             <DialogContent>
                 <DialogContentText>
                     Your review will be posted publicly as {context.user.loginName}

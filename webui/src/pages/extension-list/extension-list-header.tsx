@@ -36,19 +36,19 @@ export const ExtensionListHeader: FunctionComponent<ExtensionListHeaderProps> = 
         });
 
         setCategories(categories);
-        setCategory(props.category || '');
+        setCategory(props.category ?? '');
         setSortBy(props.sortBy);
         setSortOrder(props.sortOrder);
     }, []);
 
     useEffect(() => {
-        setCategory(props.category || '');
+        setCategory(props.category ?? '');
         setSortBy(props.sortBy);
         setSortOrder(props.sortOrder);
     }, [props.category, props.sortBy, props.sortOrder]);
 
     const handleCategoryChange = (event: SelectChangeEvent<string>) => {
-        const category = event.target.value as ExtensionCategory || '';
+        const category = event.target.value as ExtensionCategory ?? '';
         setCategory(category);
         props.onCategoryChanged(category);
     };

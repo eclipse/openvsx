@@ -34,12 +34,12 @@ export const DelayedLoadIndicator: FunctionComponent<DelayedLoadIndicatorProps> 
         tryClearTimeout();
         if (props.loading) {
             setWaiting(true);
-            timeout.current = setTimeout(() => setWaiting(false), props.delay || 200);
+            timeout.current = setTimeout(() => setWaiting(false), props.delay ?? 200);
         }
     };
 
     return props.loading && !waiting
-        ? <LinearProgress color={props.color || 'secondary'}/>
+        ? <LinearProgress color={props.color ?? 'secondary'}/>
         : null;
 };
 

@@ -240,7 +240,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                         >
                             <Box
                                 component='img'
-                                src={icon || pageSettings.urls.extensionDefaultIcon }
+                                src={icon ?? pageSettings.urls.extensionDefaultIcon }
                                 alt={extension.displayName ?? extension.name}
                                 sx={{
                                     height: '7.5rem',
