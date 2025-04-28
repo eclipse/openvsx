@@ -18,18 +18,10 @@ import { RegistryOptions } from './registry-options';
 export { promisify } from 'util';
 
 export function addEnvOptions(options: RegistryOptions): void {
-    if (!options.registryUrl) {
-        options.registryUrl = process.env.OVSX_REGISTRY_URL;
-    }
-    if (!options.pat) {
-        options.pat = process.env.OVSX_PAT;
-    }
-    if (!options.username) {
-        options.username = process.env.OVSX_USERNAME;
-    }
-    if (!options.password) {
-        options.password = process.env.OVSX_PASSWORD;
-    }
+    options.registryUrl ??= process.env.OVSX_REGISTRY_URL;
+    options.pat ??= process.env.OVSX_PAT;
+    options.username ??= process.env.OVSX_USERNAME;
+    options.password ??= process.env.OVSX_PASSWORD;
 }
 
 export function matchExtensionId(id: string): RegExpExecArray | null {

@@ -172,9 +172,7 @@ export class Registry {
 
     private getRequestOptions(method?: string, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): http.RequestOptions {
         if (this.username && this.password) {
-            if (!headers) {
-                headers = {};
-            }
+            headers ??= {};
             const credentials = Buffer.from(this.username + ':' + this.password).toString('base64');
             headers['Authorization'] = 'Basic ' + credentials;
         }

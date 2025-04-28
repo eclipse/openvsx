@@ -111,7 +111,7 @@ export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
                 <Route path={NamespaceDetailRoutes.MAIN} element={ <NamespaceDetail /> } />
                 <Route path={ExtensionDetailRoutes.MAIN} element={<ExtensionDetail />} />
                 <Route path={ExtensionDetailRoutes.MAIN_TARGET} element={<ExtensionDetail />} />
-                {AdditionalRoutes ? AdditionalRoutes : null}
+                {AdditionalRoutes ?? null}
                 <Route path='*' element={<NotFound />} />
             </Routes>
         </Box>

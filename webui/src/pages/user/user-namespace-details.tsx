@@ -385,7 +385,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                         <AvatarEditor
                             style={{ margin: '0 auto' }}
                             ref={editor}
-                            image={dropzoneFile || ''}
+                            image={dropzoneFile ?? ''}
                             width={120}
                             height={120}
                             border={8}
@@ -481,7 +481,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                                 style={{ borderColor: getColor(isFocused, isDragAccept, isDragReject) }}
                             >
                                 <input {...getInputProps({ accept: 'image/jpeg,image/png', multiple: false })} />
-                                <img src={logoPreview || newDetails?.logo || context.pageSettings.urls.extensionDefaultIcon}/>
+                                <img src={logoPreview ?? newDetails?.logo ?? context.pageSettings.urls.extensionDefaultIcon}/>
                             </DropzoneDiv>
                             { logoPreview || newDetails?.logo ?
                                 <Box
@@ -521,7 +521,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                         <TextField fullWidth
                             label='Display name'
                             name={INPUT_DISPLAY_NAME}
-                            value={ newDetails.displayName || '' }
+                            value={ newDetails.displayName ?? '' }
                             onChange={ handleInputChange } />
                     </Grid>
                     <Grid item xs={12}>
@@ -532,7 +532,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                             variant='outlined'
                             label='Description'
                             name={INPUT_DESCRIPTION}
-                            value={ newDetails.description || '' }
+                            value={ newDetails.description ?? '' }
                             onChange={ handleInputChange } />
                     </Grid>
                 </Grid>
@@ -542,7 +542,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                         label='Website'
                         type='url'
                         name={INPUT_WEBSITE}
-                        value={ newDetails.website || '' }
+                        value={ newDetails.website ?? '' }
                         onChange={ handleInputChange } />
             </Grid>
             <Grid item xs={12}>
@@ -550,7 +550,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     label='Support link'
                     type='url'
                     name={INPUT_SUPPORT_LINK}
-                    value={ newDetails.supportLink || '' }
+                    value={ newDetails.supportLink ?? '' }
                     onChange={ handleInputChange } />
             </Grid>
             <Grid item xs={12}>
@@ -561,7 +561,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     <Grid item xs>
                         <TextField fullWidth
                             name={INPUT_LINKEDIN}
-                            value={ newDetails.socialLinks.linkedin || '' }
+                            value={ newDetails.socialLinks.linkedin ?? '' }
                             onChange={ handleInputChange }
                             InputProps={{ startAdornment: <InputAdornment position='start'>
                                 <Select
@@ -597,7 +597,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     <Grid item xs>
                         <TextField fullWidth
                             name={INPUT_GITHUB}
-                            value={ newDetails.socialLinks.github || '' }
+                            value={ newDetails.socialLinks.github ?? '' }
                             onChange={ handleInputChange }
                             InputProps={{ startAdornment: <InputAdornment position='start'>https://github.com/</InputAdornment> }}/>
                     </Grid>
@@ -611,7 +611,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     <Grid item xs>
                         <TextField fullWidth
                             name={INPUT_TWITTER}
-                            value={ newDetails.socialLinks.twitter || '' }
+                            value={ newDetails.socialLinks.twitter ?? '' }
                             onChange={ handleInputChange }
                             InputProps={{ startAdornment: <InputAdornment position='start'>https://twitter.com/</InputAdornment> }}/>
                     </Grid>

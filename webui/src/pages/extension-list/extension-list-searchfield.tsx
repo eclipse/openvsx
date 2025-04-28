@@ -33,7 +33,7 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
 
     const handleSearchButtonClick = () => {
         if (props.onSearchSubmit) {
-            props.onSearchSubmit(props.searchQuery || '');
+            props.onSearchSubmit(props.searchQuery ?? '');
         }
     };
 
@@ -49,7 +49,7 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
         }}
     >
         <InputBase
-            autoFocus={props.autoFocus !== undefined ? props.autoFocus : true}
+            autoFocus={props.autoFocus ?? true}
             value={props.searchQuery}
             onChange={handleSearchChange}
             sx={{ flex: 1, pl: 1 }}
@@ -59,7 +59,7 @@ export const ExtensionListSearchfield: FunctionComponent<ExtensionListSearchfiel
             inputMode='search'
             onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === 'Enter' && props.onSearchSubmit) {
-                    props.onSearchSubmit(props.searchQuery || '');
+                    props.onSearchSubmit(props.searchQuery ?? '');
                 }
             }}
         />

@@ -24,7 +24,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     const enableLoadMore = useRef(false);
     const lastRequestedPage = useRef(0);
     const pageOffset = useRef(0);
-    const filterSize = useRef(props.filter.size || 10);
+    const filterSize = useRef(props.filter.size ?? 10);
     const context = useContext(MainContext);
     const [extensions, setExtensions] = useState<SearchEntry[]>([]);
     const [extensionKeys, setExtensionKeys] = useState<Set<string>>(new Set<string>());
@@ -42,7 +42,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     }, []);
 
     useEffect(() => {
-        filterSize.current = props.filter.size || filterSize.current;
+        filterSize.current = props.filter.size ?? filterSize.current;
         debounce(
             async () => {
                 try {

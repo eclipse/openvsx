@@ -29,12 +29,8 @@ export interface ErrorResponse {
 }
 
 export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
-    if (!req.method) {
-        req.method = 'GET';
-    }
-    if (!req.headers) {
-        req.headers = {};
-    }
+    req.method ??= 'GET';
+    req.headers ??= {};
     if (!req.headers['Accept']) {
         req.headers['Accept'] = 'application/json';
     }
@@ -77,7 +73,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
                 throw new Error(`Unsupported type ${req.headers['Accept']}`);
         }
     } else if (response.status === 429) {
-        const retrySeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds') || '0';
+        const retrySeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds') ?? '0';
         const jitter = Math.floor(Math.random() * 100);
         const timeoutMillis = ((Number(retrySeconds) + 1) * 1000) + jitter;
         return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req))
