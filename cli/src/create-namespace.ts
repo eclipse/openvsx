@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { CreateNamespaceOptions } from './create-namespace-options';
-import { getPAT } from './login';
+import { getPAT } from './pat';
 import { Registry } from './registry';
 import { addEnvOptions } from './util';
 
