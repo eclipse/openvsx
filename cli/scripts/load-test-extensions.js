@@ -46,34 +46,15 @@ async function loadTestExtensions() {
             continue;
         }
         const fileName = await download(publicReg, meta, publicLimiter);
-        try {
-            await localLimiter.removeTokens(1);
-            const nsResult = await localReg.createNamespace(meta.namespace, accessToken);
-            console.log(nsResult.success);
-        } catch (error) {
-            if (!error.message.startsWith('Namespace already exists')) {
-                console.error(error);
-                process.exit(1);
-            }
-        }
-
-        try {
-            await localLimiter.removeTokens(1);
-            const published = await localReg.publish(fileName, accessToken);
-            if (published.namespace && published.name) {
-                console.log(`\u2713  Published ${published.namespace}.${published.name}@${published.version}`);
-            }
-        } catch (error) {
-            if (!error.message.endsWith('is already published.')) {
-                console.error(`\u274c  ${error}`);
-            }
-        }
+        await createNamespace(localReg, meta, localLimiter);
+        await publishExtension(localReg, fileName, localLimiter);
     }
 }
 
 /**
  * @param {Registry} registry 
  * @param {import('../lib/registry').Extension} extension 
+ * @param {RateLimiter} rateLimiter
  */
 async function download(registry, extension, rateLimiter) {
     const downloadUrl = extension.files.download;
@@ -88,6 +69,43 @@ async function download(registry, extension, rateLimiter) {
     await rateLimiter.removeTokens(1);
     await registry.download(filePath, new URL(downloadUrl));
     return filePath;
+}
+
+/**
+ * @param {Registry} registry 
+ * @param {import('../lib/registry').Extension} extension 
+ * @param {RateLimiter} rateLimiter
+ */
+async function createNamespace(registry, extension, rateLimiter) {
+    try {
+        await rateLimiter.removeTokens(1);
+        const nsResult = await registry.createNamespace(extension.namespace, accessToken);
+        console.log(nsResult.success);
+    } catch (error) {
+        if (!error.message.startsWith('Namespace already exists')) {
+            console.error(error);
+            process.exit(1);
+        }
+    }
+}
+
+/**
+ * @param {Registry} registry 
+ * @param {string} fileName 
+ * @param {RateLimiter} rateLimiter
+ */
+async function publishExtension(registry, fileName, rateLimiter) {
+    try {
+        await rateLimiter.removeTokens(1);
+        const published = await registry.publish(fileName, accessToken);
+        if (published.namespace && published.name) {
+            console.log(`\u2713  Published ${published.namespace}.${published.name}@${published.version}`);
+        }
+    } catch (error) {
+        if (!error.message.endsWith('is already published.')) {
+            console.error(`\u274c  ${error}`);
+        }
+    }
 }
 
 loadTestExtensions();
