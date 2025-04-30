@@ -21,9 +21,10 @@ spring:
       config: classpath:ehcache.xml
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
-    username: gitpod
-    password: gitpod
+    username: openvsx
+    password: openvsx
   flyway:
+    schemas: public
     baseline-on-migrate: true
     baseline-version: 0.1.0
     baseline-description: JobRunr tables
@@ -135,10 +136,28 @@ bucket4j:
               time: 1
               unit: seconds
 
+axon:
+  serializer:
+    events: jackson
+
 ovsx:
+  axon:
+    datasource:
+      jdbc-url: jdbc:postgresql://localhost:5432/postgres
+      username: openvsx
+      password: openvsx
+      schema: axon
+    jpa:
+      generate-ddl: true
+      properties:
+        hibernate:
+          dialect: org.eclipse.openvsx.axon.ByteaEnforcedPostgresSQLDialect
+          physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+
   databasesearch:
     enabled: false
   elasticsearch:
+    enabled: false
     clear-on-start: true
   eclipse:
     base-url: https://api.eclipse.org

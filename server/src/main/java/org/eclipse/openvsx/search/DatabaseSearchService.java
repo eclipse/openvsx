@@ -26,7 +26,12 @@ import org.springframework.data.util.Streamable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
@@ -70,7 +75,7 @@ public class DatabaseSearchService implements ISearchService {
                 .map(extensionSearch -> new SearchHit<>(null, null, null, 0.0f, null, null, null, null, null, null, extensionSearch))
                 .toList();
 
-        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, null, null, searchHits, null, null, null);
+        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, Duration.of(0L, ChronoUnit.MILLIS), null, null, searchHits, null, null, null);
     }
 
     private List<ExtensionSearch> applyPaging(Options options, List<ExtensionSearch> sortedExtensions) {
