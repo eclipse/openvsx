@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -19,7 +20,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
@@ -27,9 +27,9 @@ import org.springframework.data.elasticsearch.core.index.Settings;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.util.Streamable;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,16 +39,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(SpringExtension.class)
-@MockBean({JobRequestScheduler.class})
+@MockitoBean(types = {JobRequestScheduler.class})
 class ElasticSearchServiceTest {
 
-    @MockBean
+    @MockitoBean
     EntityManager entityManager;
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
-    @MockBean
+    @MockitoBean
     ElasticsearchOperations searchOperations;
 
     @Autowired
