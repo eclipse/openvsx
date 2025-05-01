@@ -103,7 +103,7 @@ public class UserService {
             return null;
         }
         token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
-        events.publish(new PersonalAccessTokenAccessed(token.getUser().getId(), token.getId(), token.getAccessedTimestamp()));
+        events.publish(new PersonalAccessTokenAccessed(token.getUser().getId(), token.getId(), TimeUtil.toUTCString(token.getAccessedTimestamp())));
         return token;
     }
 
@@ -270,7 +270,7 @@ public class UserService {
         // Include the token value after creation so the user can copy it
         json.setValue(token.getValue());
         json.setDeleteTokenUrl(createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
-        events.publish(new PersonalAccessTokenCreated(user.getId(), token.getId(), token.getCreatedTimestamp(), token.getDescription()));
+        events.publish(new PersonalAccessTokenCreated(user.getId(), token.getId(), TimeUtil.toUTCString(token.getCreatedTimestamp()), token.getDescription()));
         return json;
     }
 

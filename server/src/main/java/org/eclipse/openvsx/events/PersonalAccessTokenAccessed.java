@@ -9,6 +9,4 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.events;
 
-import java.time.LocalDateTime;
-
-public record PersonalAccessTokenAccessed(long userId, long tokenId, LocalDateTime accessedTimestamp) {}
+public record PersonalAccessTokenAccessed(long userId, long tokenId, String accessedTimestamp) {}

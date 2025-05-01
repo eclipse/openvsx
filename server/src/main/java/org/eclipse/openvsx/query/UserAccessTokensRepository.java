@@ -7,6 +7,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx.events;
+package org.eclipse.openvsx.query;
 
-public record UserDataCreated(long userId) {}
+import org.springframework.data.repository.CrudRepository;
+
+public interface UserAccessTokensRepository extends CrudRepository<UserAccessTokensData, Long> {
+}

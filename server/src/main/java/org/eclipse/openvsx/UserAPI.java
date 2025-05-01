@@ -10,12 +10,16 @@
 package org.eclipse.openvsx;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.QueryGateway;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.query.GetUserAccessTokens;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
+import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -27,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +40,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -51,17 +57,20 @@ public class UserAPI {
     private final UserService users;
     private final EclipseService eclipse;
     private final StorageUtilService storageUtil;
+    private final QueryGateway queries;
 
     public UserAPI(
             RepositoryService repositories,
             UserService users,
             EclipseService eclipse,
-            StorageUtilService storageUtil
+            StorageUtilService storageUtil,
+            QueryGateway queries
     ) {
         this.repositories = repositories;
         this.users = users;
         this.eclipse = eclipse;
         this.storageUtil = storageUtil;
+        this.queries = queries;
     }
 
     @GetMapping(
@@ -133,19 +142,16 @@ public class UserAPI {
         path = "/user/tokens",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public List<AccessTokenJson> getAccessTokens() {
-        var user = users.findLoggedInUser();
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
+    public CompletableFuture<List<AccessTokenJson>> getAccessTokens(@AuthenticationPrincipal IdPrincipal principal) {
         var serverUrl = UrlUtil.getBaseUrl();
-        return repositories.findActiveAccessTokens(user)
-                .map(token -> {
-                    var json = token.toAccessTokenJson();
-                    json.setDeleteTokenUrl(createApiUrl(serverUrl, "user", "token", "delete", Long.toString(token.getId())));
-                    return json;
-                })
-                .toList();
+        return queries.query(new GetUserAccessTokens(principal.getId()), ResponseTypes.multipleInstancesOf(AccessTokenJson.class))
+                .thenApply(tokens ->
+                    tokens.stream().map(token -> {
+                        token.setDeleteTokenUrl(serverUrl + token.getDeleteTokenUrl());
+                        return token;
+                    })
+                    .toList()
+                );
     }
 
     @PostMapping(
