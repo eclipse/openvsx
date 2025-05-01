@@ -153,7 +153,8 @@ ovsx:
         hibernate:
           dialect: org.eclipse.openvsx.axon.ByteaEnforcedPostgresSQLDialect
           physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
-
+  redis:
+    embedded: true
   databasesearch:
     enabled: false
   elasticsearch:

@@ -57,6 +57,14 @@ services:
     profiles:
       - axon
 
+  valkey:
+    image: valkey/valkey
+    ports:
+      - '6379:6379'
+    profiles:
+      - valkey
+      - redis
+
   server:
     image: openjdk:17
     working_dir: /app
