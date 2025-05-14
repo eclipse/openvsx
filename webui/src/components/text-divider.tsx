@@ -13,22 +13,17 @@ import { Divider } from "@mui/material";
 
 export const TextDivider: FunctionComponent<TextDividerProps> = props => {
     const height =  props.collapseSmall ? { xs: 0, sm: 0, md: '1em', lg: '1em', xl: '1em' } : '1em';
-    const marginX = props.collapseSmall ? { xs: 0.25, sm: 0.25, md: 1, lg: 1, xl: 1 } : 1;
-    const marginY = props.collapseSmall ? { xs: 0.25, sm: 0.25, md: 0, lg: 0, xl: 0 } : 0;
-    const backgroundColor = props.themeType === 'dark' ? '#edf5ea' : '#151515';
+    const mx = props.collapseSmall ? { xs: 0.25, sm: 0.25, md: 1, lg: 1, xl: 1 } : 1;
+    const my = props.collapseSmall ? { xs: 0.25, sm: 0.25, md: 0, lg: 0, xl: 0 } : 0;
+    const bgcolor = props.backgroundColor ?? '#151515';
+
     return <Divider
         orientation='vertical'
-        sx={{
-            alignSelf: 'center',
-            height: height,
-            mx: marginX,
-            my: marginY,
-            bgcolor: backgroundColor
-        }}
+        sx={{ alignSelf: 'center', height, mx, my, bgcolor }}
     />;
 };
 
 export interface TextDividerProps {
-    themeType?: 'light' | 'dark';
+    backgroundColor?: string;
     collapseSmall?: boolean;
 }
