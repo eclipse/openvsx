@@ -18,11 +18,16 @@ import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.events.PersonalAccessTokenAccessed;
+import org.eclipse.openvsx.events.PersonalAccessTokenCreated;
+import org.eclipse.openvsx.events.PersonalAccessTokenDeleted;
+import org.eclipse.openvsx.events.UserDataCreated;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -57,6 +62,7 @@ public class UserService {
     private final ExtensionValidator validator;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2AttributesConfig attributesConfig;
+    private final EventGateway events;
 
     public UserService(
             EntityManager entityManager,
@@ -65,7 +71,8 @@ public class UserService {
             CacheService cache,
             ExtensionValidator validator,
             @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
-            OAuth2AttributesConfig attributesConfig
+            OAuth2AttributesConfig attributesConfig,
+            EventGateway events
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -74,6 +81,7 @@ public class UserService {
         this.validator = validator;
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.attributesConfig = attributesConfig;
+        this.events = events;
     }
 
     public UserData findLoggedInUser() {
@@ -95,6 +103,7 @@ public class UserService {
             return null;
         }
         token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+        events.publish(new PersonalAccessTokenAccessed(token.getUser().getId(), token.getId(), TimeUtil.toUTCString(token.getAccessedTimestamp())));
         return token;
     }
 
@@ -261,7 +270,7 @@ public class UserService {
         // Include the token value after creation so the user can copy it
         json.setValue(token.getValue());
         json.setDeleteTokenUrl(createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
-
+        events.publish(new PersonalAccessTokenCreated(user.getId(), token.getId(), TimeUtil.toUTCString(token.getCreatedTimestamp()), token.getDescription()));
         return json;
     }
 
@@ -278,6 +287,7 @@ public class UserService {
         }
 
         token.setActive(false);
+        events.publish(new PersonalAccessTokenDeleted(user.getId(), token.getId()));
         return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
     }
 
@@ -291,6 +301,7 @@ public class UserService {
         if (userData == null) {
             entityManager.persist(newUser);
             userData = newUser;
+            events.publish(new UserDataCreated(userData.getId()));
         } else {
             var updated = false;
             if (!StringUtils.equals(userData.getLoginName(), newUser.getLoginName())) {

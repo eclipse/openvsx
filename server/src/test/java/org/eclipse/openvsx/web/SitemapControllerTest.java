@@ -24,9 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -37,12 +37,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SitemapController.class)
 @AutoConfigureWebClient
-@MockBean({
+@MockitoBean(types = {
         EclipseService.class, SimpleMeterRegistry.class, UserService.class, TokenService.class, EntityManager.class
 })
 class SitemapControllerTest {
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
     @Autowired

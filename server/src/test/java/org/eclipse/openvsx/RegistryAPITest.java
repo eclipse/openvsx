@@ -14,6 +14,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.ArrayUtils;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
@@ -47,8 +51,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
@@ -60,6 +62,8 @@ import org.springframework.data.elasticsearch.core.TotalHitsRelation;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -68,7 +72,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -87,7 +93,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(RegistryAPI.class)
 @AutoConfigureWebClient
-@MockBean({
+@MockitoBean(types = {
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
@@ -95,19 +101,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class RegistryAPITest {
 
-    @SpyBean
+    @MockitoSpyBean
     UserService users;
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
-    @MockBean
+    @MockitoBean
     SearchUtilService search;
 
-    @MockBean
+    @MockitoBean
     ExtensionVersionIntegrityService integrityService;
 
-    @MockBean
+    @MockitoBean
     EntityManager entityManager;
 
     @Autowired
@@ -2184,7 +2190,7 @@ class RegistryAPITest {
         var entry1 = new ExtensionSearch();
         entry1.setId(1);
         var searchHit = new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1);
-        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, "1", null, List.of(searchHit), null, null, null);
+        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, Duration.of(0, ChronoUnit.MILLIS), "1", null, List.of(searchHit), null, null, null);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false, null);
@@ -2521,6 +2527,29 @@ class RegistryAPITest {
                     validator,
                     extensionControl
             );
+        }
+
+        @Bean
+        public UserService userService(
+                EntityManager entityManager,
+                RepositoryService repositories,
+                StorageUtilService storageUtil,
+                CacheService cache,
+                ExtensionValidator validator,
+                ClientRegistrationRepository clientRegistrationRepository,
+                OAuth2AttributesConfig attributesConfig,
+                EventGateway events
+        ) {
+            return new UserService(entityManager, repositories, storageUtil, cache, validator, clientRegistrationRepository, attributesConfig, events);
+        }
+
+        @Bean
+        public EventGateway eventGateway(EventBus eventBus) {
+            return DefaultEventGateway.builder().eventBus(eventBus).build();
+        }
+
+        @Bean EventBus eventBus() {
+            return SimpleEventBus.builder().build();
         }
     }
 }

@@ -47,6 +47,24 @@ services:
     profiles:
       - kibana
 
+  axonserver:
+    image: 'axoniq/axonserver:latest'
+    environment:
+      - 'AXONIQ_AXONSERVER_STANDALONE=TRUE'
+    ports:
+      - '8024:8024'
+      - '8124:8124'
+    profiles:
+      - axon
+
+  valkey:
+    image: valkey/valkey
+    ports:
+      - '6379:6379'
+    profiles:
+      - valkey
+      - redis
+
   server:
     image: openjdk:17
     working_dir: /app

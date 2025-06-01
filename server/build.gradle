@@ -11,7 +11,7 @@ plugins {
     id 'jacoco'
     id 'nu.studer.jooq' version '8.2.1'
     id 'de.undercouch.download' version '5.4.0'
-    id 'org.springframework.boot' version '3.3.10'
+    id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.9.5'
     id 'java'
@@ -37,11 +37,13 @@ def versions = [
     tika: '3.1.0',
     bouncycastle: '1.80',
     commons_lang3: '3.12.0',
-    httpclient5: '5.2.1',
     jaxb_api: '2.3.1',
     jaxb_impl: '2.3.8',
     gatling: '3.13.5',
-    loki4j: '1.4.2'
+    loki4j: '1.4.2',
+    axon: '4.11.2',
+    jedis: '5.2.0',
+    embedded_redis: '1.4.3'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -84,6 +86,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "org.springframework.boot:spring-boot-starter-aop"
+    implementation "org.springframework.boot:spring-boot-starter-data-redis"
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
@@ -92,6 +95,9 @@ dependencies {
     implementation "org.ehcache:ehcache:${versions.ehcache}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
     implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
+    implementation("org.axonframework:axon-spring-boot-starter:${versions.axon}") {
+        exclude group: 'org.axonframework', module: 'axon-server-connector'
+    }
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
@@ -106,12 +112,15 @@ dependencies {
     implementation "javax.xml.bind:jaxb-api:${versions.jaxb_api}"
     implementation "com.sun.xml.bind:jaxb-impl:${versions.jaxb_impl}"
     implementation "org.apache.commons:commons-lang3:${versions.commons_lang3}"
-    implementation "org.apache.httpcomponents.client5:httpclient5:${versions.httpclient5}"
+    implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "org.apache.tika:tika-core:${versions.tika}"
     implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
     implementation "io.micrometer:micrometer-tracing"
     implementation "io.micrometer:micrometer-tracing-bridge-otel"
     implementation "io.opentelemetry:opentelemetry-exporter-zipkin"
+    implementation "redis.clients:jedis:${versions.jedis}"
+    implementation "com.github.codemonstur:embedded-redis:${versions.embedded_redis}"
+
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
     jooqGenerator "org.postgresql:postgresql"
