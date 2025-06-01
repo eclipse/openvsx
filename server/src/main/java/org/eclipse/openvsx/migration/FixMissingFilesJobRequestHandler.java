@@ -56,6 +56,9 @@ public class FixMissingFilesJobRequestHandler implements JobRequestHandler<Migra
         var missingFileTypes = new ArrayList<>(List.of(MANIFEST, CHANGELOG, README, LICENSE, ICON, VSIXMANIFEST));
         missingFileTypes.removeAll(resourceTypes);
         resources.filter(this::isFileMissing).map(FileResource::getType).forEach(missingFileTypes::add);
+        if(missingFileTypes.isEmpty()) {
+            return;
+        }
         if(missingFileTypes.stream().anyMatch(t -> t.equals(FileResource.DOWNLOAD))) {
             logger.atInfo()
                     .setMessage("No vsix package available for: {}")
@@ -63,6 +66,12 @@ public class FixMissingFilesJobRequestHandler implements JobRequestHandler<Migra
                     .log();
             return;
         }
+
+        logger.atInfo()
+                .setMessage("{} has missing files: {}")
+                .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                .addArgument(() -> String.join(",", missingFileTypes))
+                .log();
 
         var download = resources.stream().filter(f -> f.getType().equals(FileResource.DOWNLOAD)).findFirst().get();
         try(
