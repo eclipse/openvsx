@@ -112,17 +112,18 @@ public class RegistryAPI {
     @Operation(summary = "Check if a personal access token is valid and is allowed to publish in a namespace")
     @ApiResponse(
         responseCode = "200",
-        description = "The provided PAT is valid and is allowed to publish extensions in the namespace"
+        description = "The provided PAT is valid and is allowed to publish extensions in the namespace",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
         responseCode = "400",
         description = "The token has no publishing permission in the namespace or is not valid",
-        content = @Content()
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
         responseCode = "404",
         description = "The specified namespace could not be found",
-        content = @Content()
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     public ResponseEntity<ResultJson> verifyToken(
             @PathVariable @Parameter(description = "Namespace", example = "GitLab")
@@ -1098,6 +1099,7 @@ public class RegistryAPI {
         description = "Successfully created the namespace",
         content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
             examples = @ExampleObject(value = "{ \"success\": \"Created namespace foobar\" }")
         ),
         headers = @Header(
@@ -1111,6 +1113,7 @@ public class RegistryAPI {
         description = "The namespace could not be created",
         content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
             examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
         )
     )
@@ -1156,6 +1159,7 @@ public class RegistryAPI {
         description = "Successfully created the namespace",
         content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
             examples = @ExampleObject(value="{ \"success\": \"Created namespace foobar\" }")
         ),
         headers = @Header(
@@ -1169,12 +1173,14 @@ public class RegistryAPI {
         description = "The namespace could not be created",
         content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
             examples = @ExampleObject(value="{ \"error\": \"Invalid access token.\" }")
         )
     )
     @ApiResponse(
         responseCode = "403",
-        description = "User is not logged in"
+        description = "User is not logged in",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody NamespaceJson namespace

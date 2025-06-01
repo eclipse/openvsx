@@ -23,7 +23,7 @@ def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [
     java: '17',
     flyway: '9.19.1',
-    springdoc: '2.1.0',
+    springdoc: '2.6.0',
     gcloud: '2.50.0',
     azure: '12.23.0',
     aws: '2.29.29',
