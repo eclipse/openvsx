@@ -331,18 +331,19 @@ public class StorageUtilService implements IStorageService {
         var groupedByStorageType = pairs.stream().collect(Collectors.groupingBy(p -> p.getFirst().getStorageType()));
         for(var entry : groupedByStorageType.entrySet()) {
             var storageType = entry.getKey();
+            var group = entry.getValue();
             switch (storageType) {
                 case STORAGE_GOOGLE:
-                    googleStorage.copyFiles(entry.getValue());
+                    googleStorage.copyFiles(group);
                     break;
                 case STORAGE_AZURE:
-                    azureStorage.copyFiles(entry.getValue());
+                    azureStorage.copyFiles(group);
                     break;
                 case STORAGE_AWS:
-                    awsStorage.copyFiles(entry.getValue());
+                    awsStorage.copyFiles(group);
                     break;
                 case STORAGE_LOCAL:
-                    localStorage.copyFiles(entry.getValue());
+                    localStorage.copyFiles(group);
                     break;
                 default:
                     throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");

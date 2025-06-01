@@ -2,6 +2,24 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.10.3 (Jun. 2025)
+
+#### Bug Fixes
+
+- Use nullish coalescing ([#1233](https://github.com/eclipse/openvsx/pull/#1233))
+- Move personal access token functionality to `pat.ts` ([#1225](https://github.com/eclipse/openvsx/pull/#1225))
+- Reduce nested functions in `zip.ts` ([#1223](https://github.com/eclipse/openvsx/pull/#1223))
+- Split command and options ([#1222](https://github.com/eclipse/openvsx/pull/#1222))
+- Move PAT functionality from `util.ts` to `login.ts` ([#1220](https://github.com/eclipse/openvsx/pull/#1220))
+- Expected the Promise rejection reason to be an Error ([#1197](https://github.com/eclipse/openvsx/pull/1197))
+
+#### Dependencies
+
+- Replace `yauzl` with `yauzl-promise` ([#1226](https://github.com/eclipse/openvsx/pull/1226))
+- Upgrade `yarn` from `4.5.1` to `4.9.1` ([#1190](https://github.com/eclipse/openvsx/pull/1190))
+
+---
+
 ### v0.10.2 (Apr. 2025)
 
 #### Dependencies

@@ -38,7 +38,7 @@ public class SecurityConfig {
                             .permitAll()
                         .requestMatchers(antMatchers("/api/*/*/review", "/api/*/*/review/delete", "/api/user/publish", "/api/user/namespace/create"))
                             .authenticated()
-                        .requestMatchers(antMatchers("/api/**", "/vscode/**", "/documents/**", "/admin/report"))
+                        .requestMatchers(antMatchers("/api/**", "/vscode/**", "/documents/**", "/admin/api/**", "/admin/report"))
                             .permitAll()
                         .requestMatchers(antMatchers("/admin/**"))
                             .hasAuthority("ROLE_ADMIN")
@@ -48,7 +48,7 @@ public class SecurityConfig {
                             .authenticated()
                 )
                 .cors(configurer -> configurer.configure(http))
-                .csrf(configurer -> configurer.ignoringRequestMatchers(antMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**")))
+                .csrf(configurer -> configurer.ignoringRequestMatchers(antMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**", "/admin/api/**")))
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(new Http403ForbiddenEntryPoint()));
 
         if(userServices.canLogin()) {

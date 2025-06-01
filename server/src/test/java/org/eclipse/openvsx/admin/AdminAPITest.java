@@ -206,6 +206,33 @@ class AdminAPITest {
     }
 
     @Test
+    void testChangeNamespaceMemberWithToken() throws Exception {
+        var token = mockAdminToken();
+        var namespace = mockNamespace();
+        var userData2 = new UserData();
+        userData2.setLoginName("other_user");
+        Mockito.when(repositories.findUserByLoginName(null, "other_user"))
+                .thenReturn(userData2);
+        var membership2 = new NamespaceMembership();
+        membership2.setUser(userData2);
+        membership2.setNamespace(namespace);
+        membership2.setRole(NamespaceMembership.ROLE_OWNER);
+        Mockito.when(repositories.findMembership(userData2, namespace))
+                .thenReturn(membership2);
+
+        mockMvc.perform(post("/admin/api/namespace/{namespace}/change-member?user={user}&role={role}&token={token}", "foobar", "other_user", "contributor", token.getValue()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Changed role of other_user in foobar to contributor.")));
+    }
+
+    @Test
+    void testChangeNamespaceMemberWithInvalidToken() throws Exception {
+        var token = mockNonAdminToken();
+        mockMvc.perform(post("/admin/api/namespace/{namespace}/change-member?user={user}&role={role}&token={token}", "foobar", "other_user", "contributor", token.getValue()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void testRemoveNamespaceMember() throws Exception {
         mockAdminUser();
         var namespace = mockNamespace();
@@ -279,6 +306,22 @@ class AdminAPITest {
     }
 
     @Test
+    void testDeleteExtensionWithToken() throws Exception {
+        var token = mockAdminToken();
+        mockExtension(2, 0, 0);
+        mockMvc.perform(post("/admin/api/extension/{namespace}/{extension}/delete?token={token}", "foobar", "baz", token.getValue()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted foobar.baz")));
+    }
+
+    @Test
+    void testDeleteExtensionWithInvalidToken() throws Exception {
+        var token = mockNonAdminToken();
+        mockMvc.perform(post("/admin/api/extension/{namespace}/{extension}/delete?token={token}", "foobar", "baz", token.getValue()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void testDeleteExtensionVersion() throws Exception {
         mockAdminUser();
         mockExtension(2, 0, 0);
@@ -289,6 +332,26 @@ class AdminAPITest {
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deleted foobar.baz 2.0.0")));
+    }
+
+    @Test
+    void testDeleteExtensionVersionWithToken() throws Exception {
+        var token = mockAdminToken();
+        mockExtension(2, 0, 0);
+        mockMvc.perform(post("/admin/api/extension/{namespace}/{extension}/delete?token={token}", "foobar", "baz", token.getValue())
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted foobar.baz 2.0.0")));
+    }
+
+    @Test
+    void testDeleteExtensionVersionWithInvalidToken() throws Exception {
+        var token = mockNonAdminToken();
+        mockMvc.perform(post("/admin/api/extension/{namespace}/{extension}/delete?token={token}", "foobar", "baz", token.getValue())
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -398,6 +461,37 @@ class AdminAPITest {
                     var m = new NamespaceMembershipJson("foobar", "owner", u);
                     nml.setNamespaceMemberships(List.of(m));
                 })));
+    }
+
+    @Test
+    void testGetNamespaceMembersWithToken() throws Exception {
+        var token = mockAdminToken();
+        var namespace = mockNamespace();
+        var user = new UserData();
+        user.setLoginName("other_user");
+        var membership1 = new NamespaceMembership();
+        membership1.setNamespace(namespace);
+        membership1.setUser(user);
+        membership1.setRole(NamespaceMembership.ROLE_OWNER);
+        Mockito.when(repositories.findMemberships(namespace.getName()))
+                .thenReturn(List.of(membership1));
+
+        mockMvc.perform(get("/admin/api/namespace/{namespace}/members?token={token}", "foobar", token.getValue())
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(namespaceMemberJson(nml -> {
+                    var u = new UserJson();
+                    u.setLoginName("other_user");
+                    var m = new NamespaceMembershipJson("foobar", "owner", u);
+                    nml.setNamespaceMemberships(List.of(m));
+                })));
+    }
+
+    @Test
+    void testGetNamespaceMembersWithInvalidToken() throws Exception {
+        var token = mockNonAdminToken();
+        mockMvc.perform(get("/admin/api/namespace/{namespace}/members?token={token}", "foobar", token.getValue()))
+                .andExpect(status().isForbidden());
     }
 
     @Test

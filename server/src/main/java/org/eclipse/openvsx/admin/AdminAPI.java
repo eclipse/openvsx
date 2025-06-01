@@ -19,6 +19,7 @@ import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -124,7 +125,6 @@ public class AdminAPI {
         path = "/admin/stats",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<StatsJson> getStats() {
         try {
             admins.checkAdminUser();
@@ -143,7 +143,6 @@ public class AdminAPI {
         path = "/admin/log",
         produces = MediaType.TEXT_PLAIN_VALUE
     )
-    @Operation(hidden = true)
     public String getLog(@RequestParam(name = "period", required = false) String periodString) {
         try {
             admins.checkAdminUser();
@@ -178,7 +177,6 @@ public class AdminAPI {
         path = "/admin/update-search-index",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<ResultJson> updateSearchIndex() {
         try {
             var adminUser = admins.checkAdminUser();
@@ -197,7 +195,6 @@ public class AdminAPI {
         path = "/admin/extension/{namespaceName}/{extensionName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<ExtensionJson> getExtension(@PathVariable String namespaceName,
                                                       @PathVariable String extensionName) {
         try {
@@ -230,7 +227,7 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/extension/{namespaceName}/{extensionName}/delete",
+        path = "/admin/api/extension/{namespaceName}/{extensionName}/delete",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -253,36 +250,61 @@ public class AdminAPI {
     public ResponseEntity<ResultJson> deleteExtension(
             @PathVariable @Parameter(description = "Namespace name", example = "julialang") String namespaceName,
             @PathVariable @Parameter(description = "Extension name", example = "language-julia") String extensionName,
-            @RequestParam(value = "token", required = false) @Parameter(description = "A personal access token") String tokenValue,
+            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue,
             @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions
     ) {
         try {
-            ResultJson result;
-            var adminUser = tokenValue == null ? admins.checkAdminUser() : admins.checkAdminUser(tokenValue);
-            if(targetVersions == null) {
-                result = admins.deleteExtension(namespaceName, extensionName, adminUser);
-            } else {
-                var results = new ArrayList<ResultJson>();
-                for(var targetVersion : targetVersions) {
-                    results.add(admins.deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
-                }
-
-                result = new ResultJson();
-                result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
-                result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
-            }
-
-            return ResponseEntity.ok(result);
+            var adminUser = admins.checkAdminUser(tokenValue);
+            return deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }
+    }
+
+    @PostMapping(
+            path = "/admin/extension/{namespaceName}/{extensionName}/delete",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> deleteExtension(
+            @PathVariable String namespaceName,
+            @PathVariable String extensionName,
+            @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+            return deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    private ResponseEntity<ResultJson> deleteExtension(
+            UserData adminUser,
+            String namespaceName,
+            String extensionName,
+            List<TargetPlatformVersionJson> targetVersions
+    ) {
+        ResultJson result;
+        if(targetVersions == null) {
+            result = admins.deleteExtension(namespaceName, extensionName, adminUser);
+        } else {
+            var results = new ArrayList<ResultJson>();
+            for(var targetVersion : targetVersions) {
+                results.add(admins.deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
+            }
+
+            result = new ResultJson();
+            result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+            result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping(
         path = "/admin/namespace/{namespaceName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<NamespaceJson> getNamespace(@PathVariable String namespaceName) {
         try {
             admins.checkAdminUser();
@@ -309,7 +331,6 @@ public class AdminAPI {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<ResultJson> createNamespace(@RequestBody NamespaceJson namespace) {
         try {
             admins.checkAdminUser();
@@ -328,7 +349,6 @@ public class AdminAPI {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<ResultJson> changeNamespace(@RequestBody ChangeNamespaceJson json) {
         try {
             admins.checkAdminUser();
@@ -340,7 +360,7 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/namespace/{namespaceName}/members",
+        path = "/admin/api/namespace/{namespaceName}/members",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -351,15 +371,26 @@ public class AdminAPI {
     )
     public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(
             @PathVariable @Parameter(description = "Namespace name", example = "mtxr") String namespaceName,
-            @RequestParam(value = "token", required = false) @Parameter(description = "A personal access token") String tokenValue
+            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
     ) {
         try{
-            if(tokenValue == null) {
-                admins.checkAdminUser();
-            } else {
-                admins.checkAdminUser(tokenValue);
-            }
+            admins.checkAdminUser(tokenValue);
+            var memberships = repositories.findMemberships(namespaceName);
+            var membershipList = new NamespaceMembershipListJson();
+            membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
+            return ResponseEntity.ok(membershipList);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(NamespaceMembershipListJson.class);
+        }
+    }
 
+    @GetMapping(
+        path = "/admin/namespace/{namespaceName}/members",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String namespaceName) {
+        try{
+            admins.checkAdminUser();
             var memberships = repositories.findMemberships(namespaceName);
             var membershipList = new NamespaceMembershipListJson();
             membershipList.setNamespaceMemberships(memberships.stream().map(NamespaceMembership::toJson).toList());
@@ -370,7 +401,7 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/namespace/{namespaceName}/change-member",
+        path = "/admin/api/namespace/{namespaceName}/change-member",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -395,10 +426,29 @@ public class AdminAPI {
                     schema = @Schema(allowableValues = {NamespaceMembership.ROLE_CONTRIBUTOR, NamespaceMembership.ROLE_OWNER, "remove"})
             )
             String role,
-            @RequestParam(value = "token", required = false) @Parameter(description = "A personal access token") String tokenValue
+            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
     ) {
         try {
-            var adminUser = tokenValue == null ? admins.checkAdminUser() : admins.checkAdminUser(tokenValue);
+            var adminUser = admins.checkAdminUser(tokenValue);
+            var result = admins.editNamespaceMember(namespaceName, userName, provider, role, adminUser);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
+        path = "/admin/namespace/{namespaceName}/change-member",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> editNamespaceMember(
+            @PathVariable String namespaceName,
+            @RequestParam("user") String userName,
+            @RequestParam(required = false) String provider,
+            @RequestParam String role
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
             var result = admins.editNamespaceMember(namespaceName, userName, provider, role, adminUser);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
@@ -410,7 +460,6 @@ public class AdminAPI {
         path = "/admin/publisher/{provider}/{loginName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<UserPublishInfoJson> getUserPublishInfo(@PathVariable String provider, @PathVariable String loginName) {
         try {
             admins.checkAdminUser();
@@ -425,7 +474,6 @@ public class AdminAPI {
         path = "/admin/publisher/{provider}/{loginName}/revoke",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(hidden = true)
     public ResponseEntity<ResultJson> revokePublisherContributions(@PathVariable String loginName, @PathVariable String provider) {
         try {
             var adminUser = admins.checkAdminUser();
