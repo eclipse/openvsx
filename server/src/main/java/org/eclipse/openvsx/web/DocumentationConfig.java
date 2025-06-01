@@ -54,6 +54,18 @@ public class DocumentationConfig {
     }
 
     @Bean
+    public GroupedOpenApi admin(OpenApiCustomizer sortSchemasAlphabetically) {
+        var description = "This API provides administration features for the Open VSX Registry.";
+        return GroupedOpenApi.builder()
+                .group("admin")
+                .displayName("Admin API")
+                .pathsToMatch("/admin/**")
+                .addOpenApiCustomizer(openApi -> openApi.getInfo().title("Open VSX Admin API").description(description))
+                .addOpenApiCustomizer(sortSchemasAlphabetically)
+                .build();
+    }
+
+    @Bean
     public OpenApiCustomizer sortSchemasAlphabetically() {
         return openApi -> {
             Map<String, Schema> schemas = openApi.getComponents().getSchemas();
