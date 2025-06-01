@@ -59,7 +59,7 @@ public class DocumentationConfig {
         return GroupedOpenApi.builder()
                 .group("admin")
                 .displayName("Admin API")
-                .pathsToMatch("/admin/**")
+                .pathsToMatch("/admin/api/**", "/admin/report")
                 .addOpenApiCustomizer(openApi -> openApi.getInfo().title("Open VSX Admin API").description(description))
                 .addOpenApiCustomizer(sortSchemasAlphabetically)
                 .build();
