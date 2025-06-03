@@ -247,7 +247,7 @@ public class AwsStorageService implements IStorageService {
     }
 
     @Override
-    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES)
+    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
     public Path getCachedFile(FileResource resource) {
         var objectKey = getObjectKey(resource);
         var request = GetObjectRequest.builder()

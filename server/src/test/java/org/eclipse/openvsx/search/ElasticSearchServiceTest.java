@@ -176,7 +176,7 @@ class ElasticSearchServiceTest {
 
         var options = new ISearchService.Options("foo", "bar", "universal", 50, 10000, null, null, false, null);
         var searchHits = search.search(options);
-        assertThat(searchHits.getSearchHits()).isEmpty();
+        assertThat(searchHits.getHits()).isEmpty();
         assertThat(searchHits.getTotalHits()).isZero();
     }
 
