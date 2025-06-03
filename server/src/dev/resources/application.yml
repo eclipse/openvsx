@@ -16,9 +16,16 @@ spring:
     exclude: org.springframework.boot.actuate.autoconfigure.tracing.zipkin.ZipkinAutoConfiguration
   profiles:
     include: ovsx
-  cache:
-    jcache:
-      config: classpath:ehcache.xml
+  data:
+    redis:
+      # redis standalone configuration
+      host: localhost
+      port: 6379
+      # connect to redis cluster configured in docker-compose.yml
+#      cluster:
+#        nodes: '127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005,127.0.0.1:7006'
+#      username: openvsx
+#      password: openvsx
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: gitpod
@@ -101,6 +108,7 @@ org:
 
 bucket4j:
   enabled: true
+  cache-to-use: redis-jedis # use redis-cluster-jedis when running redis cluster
   filters:
     - cache-name: buckets
       url: '/api/-/(namespace/create|publish)'
@@ -140,7 +148,10 @@ ovsx:
   databasesearch:
     enabled: false
   elasticsearch:
+    enabled: true
     clear-on-start: true
+  redis:
+    embedded: true
   eclipse:
     base-url: https://api.eclipse.org
     publisher-agreement:
