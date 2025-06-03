@@ -2,6 +2,14 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.10.4 (Jun. 2025)
+
+#### Dependencies
+
+- Upgrade `tar-fs` from `2.1.2` to `2.1.3` ([#1252](https://github.com/eclipse/openvsx/pull/1252))
+
+---
+
 ### v0.10.3 (Jun. 2025)
 
 #### Bug Fixes
