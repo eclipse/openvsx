@@ -13,6 +13,7 @@ import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.openvsx.mirror.ReadOnlyRequestFilter;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
+import org.eclipse.openvsx.web.BlockHostFilter;
 import org.eclipse.openvsx.web.ShallowEtagHeaderFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -77,6 +78,18 @@ public class RegistryApplication {
         var registrationBean = new FilterRegistrationBean<ReadOnlyRequestFilter>();
         registrationBean.setFilter(new ReadOnlyRequestFilter(allowedEndpoints, disallowedMethods));
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
+
+        return registrationBean;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "ovsx.blocklist")
+    public FilterRegistrationBean<BlockHostFilter> blockHostFilter(
+            @Value("${ovsx.blocklist}") String[] blockedHosts
+    ) {
+        var registrationBean = new FilterRegistrationBean<BlockHostFilter>();
+        registrationBean.setFilter(new BlockHostFilter(blockedHosts));
+        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
 
         return registrationBean;
     }

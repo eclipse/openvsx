@@ -196,7 +196,7 @@ public final class UrlUtil {
         return forwardedScheme != null ? forwardedScheme : request.getScheme();
     }
 
-    private static Pair<String,Integer> getBaseUrlHostAndPort(HttpServletRequest request) {
+    public static Pair<String,Integer> getBaseUrlHostAndPort(HttpServletRequest request) {
         // Use the host and port from the X-Forwarded-Host header if present
         var forwardedHostHeadersEnumeration = request.getHeaders("X-Forwarded-Host");
         if (forwardedHostHeadersEnumeration == null || !forwardedHostHeadersEnumeration.hasMoreElements()) {
