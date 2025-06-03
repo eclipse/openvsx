@@ -1,7 +1,4 @@
 spring:
-  cache:
-    jcache:
-      config: classpath:ehcache.xml
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
     url: jdbc:tc:postgresql:12.7:///test
@@ -42,6 +39,8 @@ org:
       allow-anonymous-data-usage: false
 
 ovsx:
+  redis:
+    embedded: true
   storage:
     local:
       directory: /tmp

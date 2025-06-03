@@ -24,7 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestTemplate;
 
-import javax.cache.CacheManager;
+import org.springframework.cache.CacheManager;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,12 +56,12 @@ class IntegrationTest {
     }
 
     @AfterAll
-    static void clearFileCaches(@Autowired CacheManager cacheManager) {
-        var cache = cacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
-        cache.removeAll();
+    static void clearFileCaches(@Autowired CacheManager ehcacheManager) {
+        var cache = ehcacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
+        cache.invalidate();
 
-        cache = cacheManager.getCache(CACHE_EXTENSION_FILES);
-        cache.removeAll();
+        cache = ehcacheManager.getCache(CACHE_EXTENSION_FILES);
+        cache.invalidate();
     }
 
     @Test
