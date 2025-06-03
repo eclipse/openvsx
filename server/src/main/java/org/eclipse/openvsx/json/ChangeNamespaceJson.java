@@ -11,8 +11,6 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.io.Serializable;
-
 /**
  * Used to change a namespace
  */
@@ -22,4 +20,4 @@ public record ChangeNamespaceJson(
         String newNamespace,
         boolean removeOldNamespace,
         boolean mergeIfNewNamespaceAlreadyExists
-) implements Serializable {}
+) {}

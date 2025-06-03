@@ -318,7 +318,7 @@ object Scenarios {
     val categories = Array("", "Programming Languages", "Themes", "Snippets", "Debuggers", "Linters", "Other")
     val sizes = Array("", "5", "500")
     val offsets = Array("", "1", "100", "25000")
-    val sortBys = Array("", "relevance", "timestamp", "averageRating", "downloadCount")
+    val sortBys = Array("", "relevance", "timestamp", "rating", "downloadCount")
     val sortOrders = Array("", "asc", "desc")
     val includeAllVersions = Array("", "true", "false")
 
