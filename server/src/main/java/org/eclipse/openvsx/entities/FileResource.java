@@ -11,14 +11,8 @@ package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
 
-import java.io.Serial;
-import java.io.Serializable;
-
 @Entity
-public class FileResource implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class FileResource {
 
     // Resource types
     public static final String DOWNLOAD = "download";

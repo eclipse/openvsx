@@ -35,7 +35,6 @@ import org.springframework.security.web.firewall.RequestRejectedHandler;
 @EnableScheduling
 @EnableRetry
 @EnableAsync
-@EnableCaching(proxyTargetClass = true)
 @EnableConfigurationProperties(OAuth2AttributesConfig.class)
 public class RegistryApplication {
 
