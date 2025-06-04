@@ -788,7 +788,7 @@ public class ExtensionVersionJooqRepository {
     }
 
     public List<ExtensionVersion> findLatest(Collection<Long> extensionIds) {
-        var latestQuery = findLatestQuery(null, false, false);
+        var latestQuery = findLatestQuery(null, false, true);
         latestQuery.addSelect(
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
