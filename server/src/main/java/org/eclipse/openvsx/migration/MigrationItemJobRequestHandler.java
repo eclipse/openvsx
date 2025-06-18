@@ -35,16 +35,19 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
     public MigrationItemJobRequestHandler(
             RepositoryService repositories,
             MigrationService migrations,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            @Value("${ovsx.registry.version:}") String version,
+            @Value("${ovsx.migrations.once-per-version:false}") boolean runMigrationsOncePerVersion
     ) {
         this.repositories = repositories;
         this.migrations = migrations;
         this.scheduler = scheduler;
-    }
 
-    @Value("${ovsx.registry.version:}")
-    public void setJobName(String version) {
-        var jobIdText = "ScheduleMigrationItems::" + version;
+        var jobIdText = "ScheduleMigrationItems";
+        if(runMigrationsOncePerVersion) {
+            jobIdText = jobIdText + "::" + version;
+        }
+
         JOB_NAME = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
