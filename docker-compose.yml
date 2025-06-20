@@ -5,6 +5,8 @@ services:
     environment:
       - POSTGRES_USER=openvsx
       - POSTGRES_PASSWORD=openvsx
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     logging:
       options:
         max-size: 10m
@@ -14,6 +16,7 @@ services:
     profiles:
       - db
       - debug
+      - openvsx
 
   elasticsearch:
     image: elasticsearch:8.7.1
@@ -23,21 +26,31 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - cluster.routing.allocation.disk.threshold_enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - 9200:9200
       - 9300:9300
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     healthcheck:
-      test: curl -s http://elasticsearch01:9200 >/dev/null || exit 1
-      interval: 10s
-      timeout: 5s
-      retries: 50
-      start_period: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     profiles:
       - es
       - debug
+      - openvsx
 
   kibana:
     image: kibana:8.7.1
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - "5601:5601"
     environment:
@@ -48,22 +61,35 @@ services:
       - kibana
 
   server:
-    image: openjdk:17
+    image: openjdk:17-bullseye
     working_dir: /app
-    command: sh -c 'scripts/generate-properties.sh --docker && ./gradlew assemble && ./gradlew runServer'
     volumes:
       - ./server:/app
+      - /etc/localtime:/etc/localtime:ro
+    command: >
+      bash -c '
+        apt-get update && 
+        apt-get install -y curl findutils &&
+        scripts/generate-properties.sh --docker && 
+        ./gradlew assemble && 
+        ./gradlew runServer'
     ports:
-      - 8080:8080
+      - "0.0.0.0:8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - ELASTICSEARCH_HOST=elasticsearch
+      - POSTGRES_HOST=postgres
     depends_on:
-      - postgres
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_started
     healthcheck:
       test: "curl --fail --silent localhost:8081/actuator/health | grep UP || exit 1"
-      interval: 10s
-      timeout: 5s
-      retries: 50
-      start_period: 5s
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     profiles:
       - openvsx
       - backend
@@ -71,27 +97,14 @@ services:
   webui:
     image: node:18
     working_dir: /app
-    command: sh -c 'yarn && yarn build && yarn build:default && yarn start:default'
     volumes:
       - ./webui:/app
+      - /etc/localtime:/etc/localtime:ro
+    command: sh -c 'yarn && yarn build && yarn build:default && yarn start:default'
     ports:
-      - 3000:3000
+      - "0.0.0.0:3000:3000"
     depends_on:
       - server
     profiles:
       - openvsx
       - frontend
-
-  cli:
-    image: node:18
-    working_dir: /app
-    command: sh -c 'yarn && yarn watch'
-    volumes:
-      - ./cli:/app
-    depends_on:
-      - server
-    environment:
-      - OVSX_REGISTRY_URL=http://server:8080
-    profiles:
-      - openvsx
-      - commandline
