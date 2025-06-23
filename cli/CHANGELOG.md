@@ -2,6 +2,15 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### Upcoming Release
+
+#### Dependencies
+
+- Upgrade `brace-expansion` from `2.0.1` to `2.0.2` ([#1273](https://github.com/eclipse/openvsx/pull/1273))
+- Upgrade `brace-expansion` from `1.1.11` to `1.1.12` ([#1261](https://github.com/eclipse/openvsx/pull/1261))
+
+---
+
 ### v0.10.4 (Jun. 2025)
 
 #### Dependencies
