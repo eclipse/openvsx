@@ -9,7 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
-import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.*;
 import co.elastic.clients.elasticsearch._types.mapping.FieldType;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
@@ -305,33 +305,7 @@ public class ElasticSearchService implements ISearchService {
 
     private ObjectBuilder<BoolQuery> createSearchQuery(BoolQuery.Builder boolQuery, Options options) {
         if (!StringUtils.isEmpty(options.queryString())) {
-            boolQuery.should(QueryBuilders.term(builder ->
-                    builder.field("extensionId.keyword")
-                            .value(options.queryString())
-                            .caseInsensitive(true)
-                            .boost(10f)
-            ));
-
-            // Fuzzy matching of search query in multiple fields
-            var multiMatchQuery = QueryBuilders.multiMatch(builder ->
-                    builder.query(options.queryString())
-                            .fields("name").boost(5f)
-                            .fields("displayName").boost(5f)
-                            .fields("tags").boost(3f)
-                            .fields("namespace").boost(2f)
-                            .fields("description")
-                            .fuzziness("AUTO")
-                            .prefixLength(2)
-            );
-
-            boolQuery.should(multiMatchQuery).boost(5f);
-
-            // Prefix matching of search query in display name and namespace
-            var prefixString = options.queryString().trim().toLowerCase();
-            var namePrefixQuery = QueryBuilders.prefix(builder -> builder.field("displayName").value(prefixString));
-            boolQuery.should(namePrefixQuery).boost(2f);
-            var namespacePrefixQuery = QueryBuilders.prefix(builder -> builder.field("namespace").value(prefixString));
-            boolQuery.should(namespacePrefixQuery);
+            boolQuery.must(builder -> builder.bool(textBoolQuery -> createTextSearchQuery(textBoolQuery, options)));
         }
 
         if (!StringUtils.isEmpty(options.category())) {
@@ -348,6 +322,38 @@ public class ElasticSearchService implements ISearchService {
                 boolQuery.mustNot(QueryBuilders.term(builder -> builder.field("namespace.keyword").value(namespaceToExclude)));
             }
         }
+
+        return boolQuery;
+    }
+
+    private ObjectBuilder<BoolQuery> createTextSearchQuery(BoolQuery.Builder boolQuery, Options options) {
+        boolQuery.should(QueryBuilders.term(builder ->
+                builder.field("extensionId.keyword")
+                        .value(options.queryString())
+                        .caseInsensitive(true)
+                        .boost(10f)
+        ));
+
+        // Fuzzy matching of search query in multiple fields
+        var multiMatchQuery = QueryBuilders.multiMatch(builder ->
+                builder.query(options.queryString())
+                        .fields("name").boost(5f)
+                        .fields("displayName").boost(5f)
+                        .fields("tags").boost(3f)
+                        .fields("namespace").boost(2f)
+                        .fields("description")
+                        .fuzziness("AUTO")
+                        .prefixLength(2)
+        );
+
+        boolQuery.should(multiMatchQuery).boost(5f);
+
+        // Prefix matching of search query in display name and namespace
+        var prefixString = options.queryString().trim().toLowerCase();
+        var namePrefixQuery = QueryBuilders.prefix(builder -> builder.field("displayName").value(prefixString));
+        boolQuery.should(namePrefixQuery).boost(2f);
+        var namespacePrefixQuery = QueryBuilders.prefix(builder -> builder.field("namespace").value(prefixString));
+        boolQuery.should(namespacePrefixQuery);
 
         return boolQuery;
     }
@@ -372,8 +378,10 @@ public class ElasticSearchService implements ISearchService {
             throw new ErrorResultException("sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'.");
         }
 
-        queryBuilder.withSort(builder -> builder.score(scoreSort -> scoreSort.order(order)));
-        queryBuilder.withSort(builder -> builder.field(fieldSort -> fieldSort.field(sortBy).unmappedType(type).order(order)));
+        var scoreSort = new SortOptions.Builder().score(builder -> builder.order(order)).build();
+        var fieldSort = new SortOptions.Builder().field(builder -> builder.field(sortBy).unmappedType(type).order(order)).build();
+        var sortOptions = sortBy.equals("relevance") ? List.of(scoreSort, fieldSort) : List.of(fieldSort, scoreSort);
+        queryBuilder.withSort(sortOptions);
     }
 
     private long getMaxResultWindow() {
