@@ -9,15 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import jakarta.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Objects;
 
 @Schema(
@@ -25,10 +21,7 @@ import java.util.Objects;
     description = "A reference to another extension in the registry"
 )
 @JsonInclude(Include.NON_NULL)
-public class ExtensionReferenceJson implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class ExtensionReferenceJson {
 
     @Schema(description = "URL to get metadata of the referenced extension")
     @NotNull
