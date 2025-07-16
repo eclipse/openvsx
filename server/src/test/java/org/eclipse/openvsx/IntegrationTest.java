@@ -22,6 +22,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.client.RestTemplate;
 
 import javax.cache.CacheManager;
 import java.io.IOException;
@@ -43,6 +44,9 @@ class IntegrationTest {
 
     @Autowired
     TestRestTemplate restTemplate;
+
+    @Autowired
+    RestTemplate nonRedirectingRestTemplate;
 
     @Autowired
     TestService testService;
@@ -218,7 +222,7 @@ class IntegrationTest {
 
     void getVscodeDownloadLink() throws URISyntaxException {
         var path = "/vscode/gallery/publishers/editorconfig/vsextensions/editorconfig/0.16.6/vspackage";
-        var response = restTemplate.getForEntity(apiCall(path), String.class);
+        var response = nonRedirectingRestTemplate.getForEntity(apiCall(path), String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         var expectedPath = "/vscode/asset/EditorConfig/EditorConfig/0.16.6/Microsoft.VisualStudio.Services.VSIXPackage";
         assertThat(response.getHeaders().getLocation()).isEqualTo(new URI(apiCall(expectedPath)));

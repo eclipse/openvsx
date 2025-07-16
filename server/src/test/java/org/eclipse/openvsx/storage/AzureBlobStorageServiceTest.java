@@ -9,10 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.storage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.net.URI;
-
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -22,12 +18,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.net.URI;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @ExtendWith(SpringExtension.class)
-@MockBean({ StorageUtilService.class })
+@MockitoBean(types = { StorageUtilService.class })
 class AzureBlobStorageServiceTest {
 
     @Autowired

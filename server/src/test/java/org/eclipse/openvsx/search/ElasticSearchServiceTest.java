@@ -19,7 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
@@ -39,16 +39,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(SpringExtension.class)
-@MockBean({JobRequestScheduler.class})
+@MockitoBean(types = {JobRequestScheduler.class})
 class ElasticSearchServiceTest {
 
-    @MockBean
+    @MockitoBean
     EntityManager entityManager;
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
-    @MockBean
+    @MockitoBean
     ElasticsearchOperations searchOperations;
 
     @Autowired

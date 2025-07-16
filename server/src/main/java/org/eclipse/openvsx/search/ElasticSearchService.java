@@ -41,6 +41,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -249,7 +250,7 @@ public class ElasticSearchService implements ISearchService {
     public SearchHits<ExtensionSearch> search(Options options) {
         var resultWindow = options.requestedOffset() + options.requestedSize();
         if(resultWindow > getMaxResultWindow()) {
-            return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, null, null, Collections.emptyList(), null, null, null);
+            return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, Duration.ZERO, null, null, Collections.emptyList(), null, null, null);
         }
 
         var queryBuilder = new NativeQueryBuilder();
@@ -291,6 +292,7 @@ public class ElasticSearchService implements ISearchService {
                     firstSearchHitsPage.getTotalHits(),
                     firstSearchHitsPage.getTotalHitsRelation(),
                     firstSearchHitsPage.getMaxScore(),
+                    Duration.ZERO,
                     null,
                     null,
                     searchHits,
