@@ -26,6 +26,7 @@ import org.springframework.data.util.Streamable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -70,7 +71,7 @@ public class DatabaseSearchService implements ISearchService {
                 .map(extensionSearch -> new SearchHit<>(null, null, null, 0.0f, null, null, null, null, null, null, extensionSearch))
                 .toList();
 
-        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, null, null, searchHits, null, null, null);
+        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, Duration.ZERO, null, null, searchHits, null, null, null);
     }
 
     private List<ExtensionSearch> applyPaging(Options options, List<ExtensionSearch> sortedExtensions) {

@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import io.micrometer.common.util.StringUtils;
 import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -63,8 +64,10 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
                 deleteKeyPairs();
                 break;
             default:
-                var values = String.join(",", KEYPAIR_MODE_CREATE, KEYPAIR_MODE_RENEW, KEYPAIR_MODE_DELETE);
-                throw new IllegalArgumentException("Unsupported value for 'ovsx.integrity.key-pair' defined. Supported values are: " + values);
+                if(StringUtils.isNotEmpty(keyPairMode)) {
+                    var values = String.join(",", KEYPAIR_MODE_CREATE, KEYPAIR_MODE_RENEW, KEYPAIR_MODE_DELETE);
+                    throw new IllegalArgumentException("Unsupported value '" + keyPairMode + "' for 'ovsx.integrity.key-pair' defined. Supported values are: " + values);
+                }
         }
     }
 

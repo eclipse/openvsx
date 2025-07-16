@@ -38,8 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.util.Streamable;
@@ -47,6 +45,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -69,7 +69,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(AdminAPI.class)
 @AutoConfigureWebClient
-@MockBean({
+@MockitoBean(types = {
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
@@ -77,19 +77,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class AdminAPITest {
     
-    @SpyBean
+    @MockitoSpyBean
     UserService users;
 
-    @MockBean
+    @MockitoBean
     JobRequestScheduler scheduler;
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
-    @MockBean
+    @MockitoBean
     EntityManager entityManager;
 
-    @MockBean
+    @MockitoBean
     ExtensionVersionIntegrityService integrityService;
 
     @Autowired
@@ -1287,6 +1287,19 @@ class AdminAPITest {
         @Bean
         TransactionTemplate transactionTemplate() {
             return new MockTransactionTemplate();
+        }
+
+        @Bean
+        UserService userService(
+                EntityManager entityManager,
+                RepositoryService repositories,
+                StorageUtilService storageUtil,
+                CacheService cache,
+                ExtensionValidator validator,
+                @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
+                OAuth2AttributesConfig attributesConfig
+        ) {
+            return new UserService(entityManager, repositories, storageUtil, cache, validator, clientRegistrationRepository, attributesConfig);
         }
 
         @Bean

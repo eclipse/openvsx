@@ -11,7 +11,7 @@ plugins {
     id 'jacoco'
     id 'nu.studer.jooq' version '8.2.1'
     id 'de.undercouch.download' version '5.4.0'
-    id 'org.springframework.boot' version '3.3.11'
+    id 'org.springframework.boot' version '3.5.3'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.9.5'
     id 'java'
@@ -38,7 +38,6 @@ def versions = [
     tika: '3.1.0',
     bouncycastle: '1.80',
     commons_lang3: '3.12.0',
-    httpclient5: '5.2.1',
     jaxb_api: '2.3.1',
     jaxb_impl: '2.3.8',
     gatling: '3.13.5',
@@ -107,7 +106,7 @@ dependencies {
     implementation "javax.xml.bind:jaxb-api:${versions.jaxb_api}"
     implementation "com.sun.xml.bind:jaxb-impl:${versions.jaxb_impl}"
     implementation "org.apache.commons:commons-lang3:${versions.commons_lang3}"
-    implementation "org.apache.httpcomponents.client5:httpclient5:${versions.httpclient5}"
+    implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "org.apache.tika:tika-core:${versions.tika}"
     implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
     implementation "io.micrometer:micrometer-tracing"

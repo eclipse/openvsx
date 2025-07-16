@@ -17,7 +17,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
@@ -34,21 +34,21 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, OAuth2UserServices userServices) throws Exception {
         var filterChain = http.authorizeHttpRequests(
                 registry -> registry
-                        .requestMatchers(antMatchers("/*", "/login/**", "/oauth2/**", "/login-providers", "/user", "/user/auth-error", "/logout", "/actuator/health/**", "/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**"))
+                        .requestMatchers(pathMatchers("/*", "/login/**", "/oauth2/**", "/login-providers", "/user", "/user/auth-error", "/logout", "/actuator/health/**", "/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**"))
                             .permitAll()
-                        .requestMatchers(antMatchers("/api/*/*/review", "/api/*/*/review/delete", "/api/user/publish", "/api/user/namespace/create"))
+                        .requestMatchers(pathMatchers("/api/*/*/review", "/api/*/*/review/delete", "/api/user/publish", "/api/user/namespace/create"))
                             .authenticated()
-                        .requestMatchers(antMatchers("/api/**", "/vscode/**", "/documents/**", "/admin/api/**", "/admin/report"))
+                        .requestMatchers(pathMatchers("/api/**", "/vscode/**", "/documents/**", "/admin/api/**", "/admin/report"))
                             .permitAll()
-                        .requestMatchers(antMatchers("/admin/**"))
+                        .requestMatchers(pathMatchers("/admin/**"))
                             .hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(antMatchers(frontendRoutes))
+                        .requestMatchers(pathMatchers(frontendRoutes))
                             .permitAll()
                         .anyRequest()
                             .authenticated()
                 )
                 .cors(configurer -> configurer.configure(http))
-                .csrf(configurer -> configurer.ignoringRequestMatchers(antMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**", "/admin/api/**")))
+                .csrf(configurer -> configurer.ignoringRequestMatchers(pathMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**", "/admin/api/**")))
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(new Http403ForbiddenEntryPoint()));
 
         if(userServices.canLogin()) {
@@ -65,13 +65,13 @@ public class SecurityConfig {
         return filterChain.build();
     }
 
-    private RequestMatcher[] antMatchers(String... patterns)
+    private RequestMatcher[] pathMatchers(String... patterns)
     {
-        var antMatchers = new RequestMatcher[patterns.length];
+        var pathMatchers = new RequestMatcher[patterns.length];
         for(var i = 0; i < patterns.length; i++) {
-            antMatchers[i] = AntPathRequestMatcher.antMatcher(patterns[i]);
+            pathMatchers[i] = PathPatternRequestMatcher.withDefaults().matcher(patterns[i]);
         }
 
-        return antMatchers;
+        return pathMatchers;
     }
 }
