@@ -71,10 +71,28 @@ public class CacheConfig {
     }
 
     @Bean
-    public CacheManager fileCacheManager(Cache<Object, Object> extensionCache, Cache<Object, Object> webResourceCache) {
+    public Cache<Object, Object> browseCache(
+            @Value("${ovsx.caching.files-browse.tti:PT1H}") Duration timeToIdle,
+            @Value("${ovsx.caching.files-browse.max-size:50}") long maxSize
+    ) {
+        return Caffeine.newBuilder()
+                .expireAfterAccess(timeToIdle)
+                .maximumSize(maxSize)
+                .scheduler(Scheduler.systemScheduler())
+                .recordStats()
+                .build();
+    }
+
+    @Bean
+    public CacheManager fileCacheManager(
+            Cache<Object, Object> extensionCache,
+            Cache<Object, Object> webResourceCache,
+            Cache<Object, Object> browseCache
+    ) {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.registerCustomCache(CACHE_EXTENSION_FILES, extensionCache);
         caffeineCacheManager.registerCustomCache(CACHE_WEB_RESOURCE_FILES, webResourceCache);
+        caffeineCacheManager.registerCustomCache(CACHE_BROWSE_EXTENSION_FILES, browseCache);
         return caffeineCacheManager;
     }
 
