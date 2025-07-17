@@ -61,7 +61,7 @@ public class WebResourceService {
     }
 
     @Observed
-    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "ehcacheManager")
+    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
     public Path getWebResource(String namespace, String extension, String targetPlatform, String version, String name, boolean browse) {
         var download = repositories.findFileByType(namespace, extension, targetPlatform, version, FileResource.DOWNLOAD);
         if(download == null) {

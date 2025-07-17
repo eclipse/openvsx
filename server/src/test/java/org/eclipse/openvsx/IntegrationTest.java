@@ -56,11 +56,11 @@ class IntegrationTest {
     }
 
     @AfterAll
-    static void clearFileCaches(@Autowired CacheManager ehcacheManager) {
-        var cache = ehcacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
+    static void clearFileCaches(@Autowired CacheManager fileCacheManager) {
+        var cache = fileCacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
         cache.invalidate();
 
-        cache = ehcacheManager.getCache(CACHE_EXTENSION_FILES);
+        cache = fileCacheManager.getCache(CACHE_EXTENSION_FILES);
         cache.invalidate();
     }
 
