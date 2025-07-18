@@ -60,25 +60,26 @@ public class WebResourceService {
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
-    @Observed
-    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
-    public Path getWebResource(String namespace, String extension, String targetPlatform, String version, String name) {
+    public Path getExtensionDownload(String namespace, String extension, String targetPlatform, String version) {
         var download = repositories.findFileByType(namespace, extension, targetPlatform, version, FileResource.DOWNLOAD);
         if(download == null) {
             return null;
         }
 
         var path = storageUtil.getCachedFile(download);
-        if(path == null) {
-            return null;
-        }
-        if(!Files.exists(path)) {
+        if(path != null && !Files.exists(path)) {
             logger.error("File doesn't exist {}", path);
             cache.evictExtensionFile(download);
-            return null;
+            path = null;
         }
 
-        try(var zip = new ZipFile(path.toFile())) {
+        return path;
+    }
+
+    @Observed
+    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
+    public Path getWebResource(String namespace, String extension, String targetPlatform, String version, String name, Path extensionDownloadPath) {
+        try(var zip = new ZipFile(extensionDownloadPath.toFile())) {
             var fileEntry = zip.getEntry(name);
             if(fileEntry != null) {
                 var fileExt = getFileExtension(fileEntry);
@@ -89,28 +90,13 @@ public class WebResourceService {
                 return null;
             }
         } catch (IOException | UncheckedIOException e) {
-            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(download.getExtension()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Cacheable(value = CACHE_BROWSE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
-    public ArrayNode browseExtensionPackage(String namespace, String extension, String targetPlatform, String version, String name) {
-        var download = repositories.findFileByType(namespace, extension, targetPlatform, version, FileResource.DOWNLOAD);
-        if(download == null) {
-            return null;
-        }
-
-        var path = storageUtil.getCachedFile(download);
-        if(path == null) {
-            return null;
-        }
-        if(!Files.exists(path)) {
-            logger.error("File doesn't exist {}", path);
-            cache.evictExtensionFile(download);
-            return null;
-        }
-
-        try(var zip = new ZipFile(path.toFile())) {
+    public ArrayNode browseExtensionPackage(String namespace, String extension, String targetPlatform, String version, String name, Path extensionDownloadPath) {
+        try(var zip = new ZipFile(extensionDownloadPath.toFile())) {
             var dirName = getDirectoryName(name);
             var dirEntries = zip.stream()
                     .filter(entry -> entry.getName().startsWith(dirName))
@@ -129,7 +115,7 @@ public class WebResourceService {
 
             return node;
         } catch (IOException | UncheckedIOException e) {
-            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(download.getExtension()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

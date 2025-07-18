@@ -325,7 +325,8 @@ public class LocalVSCodeService implements IVSCodeService {
             return storageUtil.getFileResponse(resource);
         } else if(asset.startsWith(FILE_WEB_RESOURCES + "/extension/")) {
             var name = asset.substring((FILE_WEB_RESOURCES.length() + 1));
-            var file = getWebResource(namespace, extensionName, targetPlatform, version, name);
+            var extensionDownloadPath = webResources.getExtensionDownload(namespace, extensionName, targetPlatform, version);
+            var file = getWebResource(namespace, extensionName, targetPlatform, version, name, extensionDownloadPath);
             if(file != null) {
                 return storageUtil.getFileResponse(file);
             }
@@ -334,8 +335,8 @@ public class LocalVSCodeService implements IVSCodeService {
         throw new NotFoundException();
     }
 
-    private Path getWebResource(String namespaceName, String extensionName, String targetPlatform, String version, String name) {
-        var file = webResources.getWebResource(namespaceName, extensionName, targetPlatform, version, name);
+    private Path getWebResource(String namespaceName, String extensionName, String targetPlatform, String version, String name, Path extensionDownloadPath) {
+        var file = webResources.getWebResource(namespaceName, extensionName, targetPlatform, version, name, extensionDownloadPath);
         if(file != null && !Files.exists(file)) {
             logger.error("File doesn't exist {}", file);
             cache.evictWebResourceFile(namespaceName, extensionName, targetPlatform, version, name);
@@ -400,12 +401,13 @@ public class LocalVSCodeService implements IVSCodeService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(builtinExtensionResponse());
         }
 
-        var file = getWebResource(namespaceName, extensionName, null, version, path);
+        var extensionDownloadPath = webResources.getExtensionDownload(namespaceName, extensionName, null, version);
+        var file = getWebResource(namespaceName, extensionName, null, version, path, extensionDownloadPath);
         if(file != null) {
             return storageUtil.getFileResponse(file);
         }
 
-        var node = webResources.browseExtensionPackage(namespaceName, extensionName, null, version, path);
+        var node = webResources.browseExtensionPackage(namespaceName, extensionName, null, version, path, extensionDownloadPath);
         if(node != null) {
             return storageUtil.getFileResponse(node);
         }
