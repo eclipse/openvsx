@@ -326,7 +326,7 @@ public class LocalVSCodeService implements IVSCodeService {
         } else if(asset.startsWith(FILE_WEB_RESOURCES + "/extension/")) {
             var name = asset.substring((FILE_WEB_RESOURCES.length() + 1));
             var extensionDownloadPath = webResources.getExtensionDownload(namespace, extensionName, targetPlatform, version);
-            var file = getWebResource(namespace, extensionName, targetPlatform, version, name, extensionDownloadPath);
+            var file = extensionDownloadPath != null ? getWebResource(namespace, extensionName, targetPlatform, version, name, extensionDownloadPath) : null;
             if(file != null) {
                 return storageUtil.getFileResponse(file);
             }
@@ -402,6 +402,10 @@ public class LocalVSCodeService implements IVSCodeService {
         }
 
         var extensionDownloadPath = webResources.getExtensionDownload(namespaceName, extensionName, null, version);
+        if(extensionDownloadPath == null) {
+            throw new NotFoundException();
+        }
+
         var file = getWebResource(namespaceName, extensionName, null, version, path, extensionDownloadPath);
         if(file != null) {
             return storageUtil.getFileResponse(file);
