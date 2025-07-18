@@ -325,22 +325,22 @@ public class LocalVSCodeService implements IVSCodeService {
             return storageUtil.getFileResponse(resource);
         } else if(asset.startsWith(FILE_WEB_RESOURCES + "/extension/")) {
             var name = asset.substring((FILE_WEB_RESOURCES.length() + 1));
-            var file = getWebResource(namespace, extensionName, targetPlatform, version, name, false);
-            return storageUtil.getFileResponse(file);
+            var extensionDownloadPath = webResources.getExtensionDownload(namespace, extensionName, targetPlatform, version);
+            var file = extensionDownloadPath != null ? getWebResource(namespace, extensionName, targetPlatform, version, name, extensionDownloadPath) : null;
+            if(file != null) {
+                return storageUtil.getFileResponse(file);
+            }
         }
 
         throw new NotFoundException();
     }
 
-    private Path getWebResource(String namespaceName, String extensionName, String targetPlatform, String version, String name, boolean browse) {
-        var file = webResources.getWebResource(namespaceName, extensionName, targetPlatform, version, name, browse);
-        if(file == null) {
-            throw new NotFoundException();
-        }
-        if(!Files.exists(file)) {
+    private Path getWebResource(String namespaceName, String extensionName, String targetPlatform, String version, String name, Path extensionDownloadPath) {
+        var file = webResources.getWebResource(namespaceName, extensionName, targetPlatform, version, name, extensionDownloadPath);
+        if(file != null && !Files.exists(file)) {
             logger.error("File doesn't exist {}", file);
             cache.evictWebResourceFile(namespaceName, extensionName, targetPlatform, version, name);
-            throw new NotFoundException();
+            file = null;
         }
         return file;
     }
@@ -401,8 +401,22 @@ public class LocalVSCodeService implements IVSCodeService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(builtinExtensionResponse());
         }
 
-        var file = getWebResource(namespaceName, extensionName, null, version, path, true);
-        return storageUtil.getFileResponse(file);
+        var extensionDownloadPath = webResources.getExtensionDownload(namespaceName, extensionName, null, version);
+        if(extensionDownloadPath == null) {
+            throw new NotFoundException();
+        }
+
+        var file = getWebResource(namespaceName, extensionName, null, version, path, extensionDownloadPath);
+        if(file != null) {
+            return storageUtil.getFileResponse(file);
+        }
+
+        var node = webResources.browseExtensionPackage(namespaceName, extensionName, null, version, path, extensionDownloadPath);
+        if(node != null) {
+            return storageUtil.getFileResponse(node);
+        }
+
+        throw new NotFoundException();
     }
 
     private ExtensionQueryResult.Extension toQueryExtension(Extension extension, ExtensionVersion latest, List<ExtensionQueryResult.ExtensionVersion> versions, int flags) {

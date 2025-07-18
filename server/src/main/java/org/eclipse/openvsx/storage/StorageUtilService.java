@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Maps;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -20,12 +22,10 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -312,6 +312,22 @@ public class StorageUtilService implements IStorageService {
                     try (var in = Files.newInputStream(path)) {
                         in.transferTo(outputStream);
                     }
+                });
+    }
+
+    public ResponseEntity<StreamingResponseBody> getFileResponse(ArrayNode node) {
+        var baseUrl = UrlUtil.getBaseUrl();
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(outputStream -> {
+                    var mapper = new ObjectMapper();
+                    var value = mapper.createArrayNode();
+                    for(var item : node) {
+                        value.add(baseUrl + item.asText());
+                    }
+                    mapper.writeValue(outputStream, value);
                 });
     }
 

@@ -34,14 +34,15 @@ def versions = [
     woodstox: '6.4.0',
     jobrunr: '7.5.0',
     bucket4j: '0.12.7',
-    ehcache: '3.10.8',
+    bucket4j_redis: '8.10.1',
     tika: '3.1.0',
     bouncycastle: '1.80',
     commons_lang3: '3.12.0',
     jaxb_api: '2.3.1',
     jaxb_impl: '2.3.8',
-    gatling: '3.13.5',
-    loki4j: '1.4.2'
+    gatling: '3.9.5',
+    loki4j: '1.4.2',
+    embedded_redis: '1.4.3'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -80,6 +81,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-jooq"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
+    implementation "org.springframework.boot:spring-boot-starter-data-redis"
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-cache"
@@ -89,8 +91,9 @@ dependencies {
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.springframework.retry:spring-retry"
     implementation "org.bouncycastle:bcpkix-jdk18on:${versions.bouncycastle}"
-    implementation "org.ehcache:ehcache:${versions.ehcache}"
+    implementation "com.github.ben-manes.caffeine:caffeine"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
+    implementation "com.bucket4j:bucket4j-redis:${versions.bucket4j_redis}"
     implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
@@ -112,6 +115,7 @@ dependencies {
     implementation "io.micrometer:micrometer-tracing"
     implementation "io.micrometer:micrometer-tracing-bridge-otel"
     implementation "io.opentelemetry:opentelemetry-exporter-zipkin"
+    implementation "com.github.codemonstur:embedded-redis:${versions.embedded_redis}"
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
     jooqGenerator "org.postgresql:postgresql"

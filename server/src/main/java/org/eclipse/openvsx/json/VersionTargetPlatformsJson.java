@@ -9,6 +9,4 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.json;
 
-import java.io.Serializable;
-
-public record VersionTargetPlatformsJson(String version, String[] targetPlatforms) implements Serializable   {}
+public record VersionTargetPlatformsJson(String version, String[] targetPlatforms) {}

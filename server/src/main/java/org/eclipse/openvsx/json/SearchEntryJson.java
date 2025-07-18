@@ -16,8 +16,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -26,10 +24,7 @@ import java.util.Map;
     description = "Summary of metadata of an extension"
 )
 @JsonInclude(Include.NON_NULL)
-public class SearchEntryJson implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class SearchEntryJson {
 
     @Schema(description = "URL to get the full metadata of the extension")
     @NotNull
