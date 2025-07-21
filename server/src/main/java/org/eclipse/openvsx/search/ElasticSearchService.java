@@ -9,7 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
-import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.FieldType;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
@@ -33,7 +34,9 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
-import org.springframework.data.elasticsearch.core.*;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.DeleteQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.retry.annotation.Retryable;
@@ -41,7 +44,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
-import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -247,10 +249,10 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
-    public SearchHits<ExtensionSearch> search(Options options) {
+    public SearchResult search(Options options) {
         var resultWindow = options.requestedOffset() + options.requestedSize();
         if(resultWindow > getMaxResultWindow()) {
-            return new SearchHitsImpl<>(0, TotalHitsRelation.OFF, 0f, Duration.ZERO, null, null, Collections.emptyList(), null, null, null);
+            return new SearchResult(0L, Collections.emptyList());
         }
 
         var queryBuilder = new NativeQueryBuilder();
@@ -279,30 +281,19 @@ public class ElasticSearchService implements ISearchService {
             }
         }
 
+        var firstSearchHitsPage = searchHitsList.get(0);
+        List<SearchHit<ExtensionSearch>> searchHits = new ArrayList<>(firstSearchHitsPage.getSearchHits());
         if(searchHitsList.size() == 2) {
-            var firstSearchHitsPage = searchHitsList.get(0);
             var secondSearchHitsPage = searchHitsList.get(1);
 
-            List<SearchHit<ExtensionSearch>> searchHits = new ArrayList<>(firstSearchHitsPage.getSearchHits());
             searchHits.addAll(secondSearchHitsPage.getSearchHits());
             var endIndex = Math.min(searchHits.size(), options.requestedOffset() + options.requestedSize());
             var startIndex = Math.min(endIndex, options.requestedOffset());
             searchHits = searchHits.subList(startIndex, endIndex);
-            return new SearchHitsImpl<>(
-                    firstSearchHitsPage.getTotalHits(),
-                    firstSearchHitsPage.getTotalHitsRelation(),
-                    firstSearchHitsPage.getMaxScore(),
-                    Duration.ZERO,
-                    null,
-                    null,
-                    searchHits,
-                    null,
-                    null,
-                    null
-            );
-        } else {
-            return searchHitsList.get(0);
         }
+
+        var results = searchHits.stream().map(SearchHit::getContent).toList();
+        return new SearchResult(firstSearchHitsPage.getTotalHits(), results);
     }
 
     private ObjectBuilder<BoolQuery> createSearchQuery(BoolQuery.Builder boolQuery, Options options) {
@@ -369,20 +360,20 @@ public class ElasticSearchService implements ISearchService {
         }
 
         var types = Map.of(
-                "relevance", FieldType.Float,
-                "rating", FieldType.Float,
-                "timestamp", FieldType.Long,
-                "downloadCount", FieldType.Integer
+                SortBy.RELEVANCE, FieldType.Float,
+                SortBy.RATING, FieldType.Float,
+                SortBy.TIMESTAMP, FieldType.Long,
+                SortBy.DOWNLOADS, FieldType.Integer
         );
 
         var type = types.get(sortBy);
         if(type == null) {
-            throw new ErrorResultException("sortBy parameter must be 'relevance', 'timestamp', 'averageRating' or 'downloadCount'.");
+            throw new ErrorResultException("sortBy parameter must be " + SortBy.OPTIONS + ".");
         }
 
         var scoreSort = new SortOptions.Builder().score(builder -> builder.order(order)).build();
         var fieldSort = new SortOptions.Builder().field(builder -> builder.field(sortBy).unmappedType(type).order(order)).build();
-        var sortOptions = sortBy.equals("relevance") ? List.of(scoreSort, fieldSort) : List.of(fieldSort, scoreSort);
+        var sortOptions = sortBy.equals(SortBy.RELEVANCE) ? List.of(scoreSort, fieldSort) : List.of(fieldSort, scoreSort);
         queryBuilder.withSort(sortOptions);
     }
 

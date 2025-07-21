@@ -21,7 +21,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -63,12 +62,12 @@ class DatabaseSearchServiceTest {
         var ext3 = mockExtension("openshift", 1.0, 100, 10, "redhat", List.of("Snippets", "Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3)));
 
-        var searchOptions = searchOptions(null, null, 50, 0, null, "relevance");
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.RELEVANCE);
         var result = search.search(searchOptions);
         // should find all extensions but order should be different
         assertThat(result.getTotalHits()).isEqualTo(3);
 
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         // java should have the most relevance
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("openshift"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("yaml"));
@@ -86,7 +85,7 @@ class DatabaseSearchServiceTest {
         // should find two extensions
         assertThat(result.getTotalHits()).isEqualTo(2);
 
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("java"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("yaml"));
     }
@@ -109,7 +108,7 @@ class DatabaseSearchServiceTest {
         // 7 total hits
         assertThat(result.getTotalHits()).isEqualTo(7);
         // but as we limit the page size it should only contains 5
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(hits.size()).isEqualTo(pageSizeItems);
 
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("ext1"));
@@ -137,7 +136,7 @@ class DatabaseSearchServiceTest {
         // 7 total hits
         assertThat(result.getTotalHits()).isEqualTo(7);
         // But it should only contains 2 search items as specified by the pageSize
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(hits.size()).isEqualTo(pageSizeItems);
 
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("ext5"));
@@ -158,7 +157,7 @@ class DatabaseSearchServiceTest {
         assertThat(result.getTotalHits()).isEqualTo(3);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("java"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("openshift"));
@@ -178,7 +177,7 @@ class DatabaseSearchServiceTest {
         assertThat(result.getTotalHits()).isEqualTo(1);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("openshift"));
     }
 
@@ -198,7 +197,7 @@ class DatabaseSearchServiceTest {
         assertThat(result.getTotalHits()).isEqualTo(1);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("openshift"));
     }
 
@@ -219,7 +218,7 @@ class DatabaseSearchServiceTest {
         assertThat(result.getTotalHits()).isEqualTo(1);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("java"));
     }
 
@@ -235,13 +234,13 @@ class DatabaseSearchServiceTest {
         ext4.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-06T00:00"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = searchOptions(null, null, 50, 0, null, "timestamp");
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.TIMESTAMP);
         var result = search.search(searchOptions);
         // all extensions should be there
         assertThat(result.getTotalHits()).isEqualTo(4);
 
         // test now the order
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("foo"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("java"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("yaml"));
@@ -256,13 +255,13 @@ class DatabaseSearchServiceTest {
         var ext4 = mockExtension("foo", 4.0, 100, 500, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = searchOptions(null, null, 50, 0, null, "downloadCount");
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.DOWNLOADS);
         var result = search.search(searchOptions);
         // all extensions should be there
         assertThat(result.getTotalHits()).isEqualTo(4);
 
         // test now the order
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("openshift"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("foo"));
@@ -277,13 +276,13 @@ class DatabaseSearchServiceTest {
         var ext4 = mockExtension("foo", 1.0, 1, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = searchOptions(null, null, 50, 0, null, "rating");
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.RATING);
         var result = search.search(searchOptions);
         // all extensions should be there
         assertThat(result.getTotalHits()).isEqualTo(4);
 
         // test now the order
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("foo"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("openshift"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("yaml"));
@@ -307,7 +306,7 @@ class DatabaseSearchServiceTest {
             requestedOffset = 0;
         }
         if(sortBy == null) {
-            sortBy = "relevance";
+            sortBy = SortBy.RELEVANCE;
         }
 
         return new ISearchService.Options(
@@ -323,8 +322,8 @@ class DatabaseSearchServiceTest {
         );
     }
 
-    long getIdFromExtensionHits(List<SearchHit<ExtensionSearch>> hits, int index) {
-        return hits.get(index).getContent().getId();
+    long getIdFromExtensionHits(List<ExtensionSearch> hits, int index) {
+        return hits.get(index).getId();
     }
 
     long getIdFromExtensionName(String extensionName) {

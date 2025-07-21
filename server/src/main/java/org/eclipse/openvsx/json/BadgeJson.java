@@ -11,11 +11,8 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Objects;
 
 @Schema(
@@ -23,10 +20,7 @@ import java.util.Objects;
     description = "A badge to be shown in the sidebar of the extension page in the registry"
 )
 @JsonInclude(Include.NON_NULL)
-public class BadgeJson implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class BadgeJson {
 
     @Schema(description = "Image URL of the badge")
     private String url;

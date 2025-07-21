@@ -11,7 +11,6 @@ package org.eclipse.openvsx;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.openvsx.json.*;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,14 +23,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestTemplate;
 
-import javax.cache.CacheManager;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_FILES;
-import static org.eclipse.openvsx.cache.CacheService.CACHE_WEB_RESOURCE_FILES;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -53,15 +49,6 @@ class IntegrationTest {
 
     private String apiCall(String path) {
         return "http://localhost:" + port + path;
-    }
-
-    @AfterAll
-    static void clearFileCaches(@Autowired CacheManager cacheManager) {
-        var cache = cacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
-        cache.removeAll();
-
-        cache = cacheManager.getCache(CACHE_EXTENSION_FILES);
-        cache.removeAll();
     }
 
     @Test

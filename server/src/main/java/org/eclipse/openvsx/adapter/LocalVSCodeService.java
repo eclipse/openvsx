@@ -18,7 +18,9 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.search.SortBy;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
@@ -92,7 +94,7 @@ public class LocalVSCodeService implements IVSCodeService {
         if (param.filters() == null || param.filters().isEmpty()) {
             pageNumber = 0;
             pageSize = defaultPageSize;
-            sortBy = "relevance";
+            sortBy = SortBy.RELEVANCE;
             sortOrder = "desc";
             targetPlatform = null;
             extensionIds = Collections.emptySet();
@@ -138,8 +140,8 @@ public class LocalVSCodeService implements IVSCodeService {
 
                 var searchResult = search.search(searchOptions);
                 totalCount = searchResult.getTotalHits();
-                var ids = searchResult.getSearchHits().stream()
-                        .map(hit -> hit.getContent().getId())
+                var ids = searchResult.getHits().stream()
+                        .map(ExtensionSearch::getId)
                         .collect(Collectors.toList());
 
                 var extensionsMap = repositories.findActiveExtensionsById(ids).stream()
@@ -255,13 +257,13 @@ public class LocalVSCodeService implements IVSCodeService {
     private String getSortBy(int sortBy) {
         switch (sortBy) {
             case 4: // InstallCount
-                return "downloadCount";
+                return SortBy.DOWNLOADS;
             case 5: // PublishedDate
-                return "timestamp";
+                return SortBy.TIMESTAMP;
             case 6: // AverageRating
-                return "averageRating";
+                return SortBy.RATING;
             default:
-                return "relevance";
+                return SortBy.RELEVANCE;
         }
     }
 
@@ -325,22 +327,22 @@ public class LocalVSCodeService implements IVSCodeService {
             return storageUtil.getFileResponse(resource);
         } else if(asset.startsWith(FILE_WEB_RESOURCES + "/extension/")) {
             var name = asset.substring((FILE_WEB_RESOURCES.length() + 1));
-            var file = getWebResource(namespace, extensionName, targetPlatform, version, name, false);
-            return storageUtil.getFileResponse(file);
+            var extensionDownloadPath = webResources.getExtensionDownload(namespace, extensionName, targetPlatform, version);
+            var file = extensionDownloadPath != null ? getWebResource(namespace, extensionName, targetPlatform, version, name, extensionDownloadPath) : null;
+            if(file != null) {
+                return storageUtil.getFileResponse(file);
+            }
         }
 
         throw new NotFoundException();
     }
 
-    private Path getWebResource(String namespaceName, String extensionName, String targetPlatform, String version, String name, boolean browse) {
-        var file = webResources.getWebResource(namespaceName, extensionName, targetPlatform, version, name, browse);
-        if(file == null) {
-            throw new NotFoundException();
-        }
-        if(!Files.exists(file)) {
+    private Path getWebResource(String namespaceName, String extensionName, String targetPlatform, String version, String name, Path extensionDownloadPath) {
+        var file = webResources.getWebResource(namespaceName, extensionName, targetPlatform, version, name, extensionDownloadPath);
+        if(file != null && !Files.exists(file)) {
             logger.error("File doesn't exist {}", file);
             cache.evictWebResourceFile(namespaceName, extensionName, targetPlatform, version, name);
-            throw new NotFoundException();
+            file = null;
         }
         return file;
     }
@@ -401,8 +403,22 @@ public class LocalVSCodeService implements IVSCodeService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(builtinExtensionResponse());
         }
 
-        var file = getWebResource(namespaceName, extensionName, null, version, path, true);
-        return storageUtil.getFileResponse(file);
+        var extensionDownloadPath = webResources.getExtensionDownload(namespaceName, extensionName, null, version);
+        if(extensionDownloadPath == null) {
+            throw new NotFoundException();
+        }
+
+        var file = getWebResource(namespaceName, extensionName, null, version, path, extensionDownloadPath);
+        if(file != null) {
+            return storageUtil.getFileResponse(file);
+        }
+
+        var node = webResources.browseExtensionPackage(namespaceName, extensionName, null, version, path, extensionDownloadPath);
+        if(node != null) {
+            return storageUtil.getFileResponse(node);
+        }
+
+        throw new NotFoundException();
     }
 
     private ExtensionQueryResult.Extension toQueryExtension(Extension extension, ExtensionVersion latest, List<ExtensionQueryResult.ExtensionVersion> versions, int flags) {

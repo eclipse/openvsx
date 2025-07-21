@@ -16,8 +16,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,10 +27,7 @@ import static org.eclipse.openvsx.util.TargetPlatform.*;
     description = "Metadata of an extension"
 )
 @JsonInclude(Include.NON_NULL)
-public class ExtensionJson extends ResultJson implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class ExtensionJson extends ResultJson {
 
     public static ExtensionJson error(String message) {
         var info = new ExtensionJson();
