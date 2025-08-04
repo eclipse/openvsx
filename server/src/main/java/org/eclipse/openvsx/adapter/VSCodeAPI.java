@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,11 +33,12 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.ExtensionFile.*;
 import static org.eclipse.openvsx.util.TargetPlatform.*;
-import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
 
 @RestController
 public class VSCodeAPI {
@@ -325,7 +327,7 @@ public class VSCodeAPI {
             description = "The specified extension could not be found",
             content = @Content()
     )
-    public ExtensionQueryResult.Extension getLatest(
+    public ResponseEntity<ExtensionQueryResult.Extension> getLatest(
             @PathVariable @Parameter(description = "Extension namespace", example = "malloydata") String namespaceName,
             @PathVariable @Parameter(description = "Extension name", example = "malloy-vscode") String extensionName
     ) {
@@ -335,15 +337,17 @@ public class VSCodeAPI {
         int flags = FLAG_INCLUDE_VERSIONS | FLAG_INCLUDE_ASSET_URI | FLAG_INCLUDE_VERSION_PROPERTIES | FLAG_INCLUDE_FILES | FLAG_INCLUDE_STATISTICS;
         var param = new ExtensionQueryParam(List.of(filter), flags);
         var result = extensionQueryRequestHandler.getResult(param, 1, DEFAULT_PAGE_SIZE);
-        if(result.results().isEmpty()) {
-            throw new NotFoundException();
-        }
+        var extension = Optional.of(result)
+                .filter(r -> !r.results().isEmpty())
+                .map(r -> r.results().get(0).extensions())
+                .filter(e -> !e.isEmpty())
+                .map(e -> e.get(0))
+                .orElse(null);
 
-        var extensions = result.results().get(0).extensions();
-        if(extensions.isEmpty()) {
-            throw new NotFoundException();
-        }
-
-        return extensions.get(0);
+        return extension != null
+                ? ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                    .body(extension)
+                : ResponseEntity.notFound().build();
     }
 }
