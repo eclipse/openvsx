@@ -9,8 +9,16 @@ EXTENSIONS_FILE="$current_dir/extensions.txt"
 listOfPublishers=()
 containsElement () { for e in "${@:2}"; do [[ "$e" = "$1" ]] && return 0; done; return 1; }
 
-# Get ovsx-cli pod name
-export OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^ovsx-cli)
+# Get pod name where ovsx is installed
+OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" \
+  | tr ' ' '\n' | grep '^ovsx-cli' || true)
+
+if [ -z "$OVSX_POD_NAME" ]; then
+  OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" \
+    | tr ' ' '\n' | grep '^openvsx-server' || true)
+fi
+
+export OVSX_POD_NAME
 
 # Read the extensions.txt file line by line
 while IFS= read -r line; do

@@ -4,7 +4,7 @@ metadata:
 components:
   - name: tool
     container:
-      image: quay.io/devfile/universal-developer-image:ubi8-latest
+      image: quay.io/devfile/universal-developer-image:ubi9-latest
       memoryRequest: 256Mi
       memoryLimit: 8Gi
       cpuRequest: 100m
@@ -129,18 +129,24 @@ commands:
         find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
 
 # Commands to deploy OpenVSX to OpenShift
+  - id: create-namespace
+    exec:
+      label: "2.1. Create Namespace for OpenVSX"
+      component: tool
+      commandLine: |
+          oc new-project $OPENVSX_NAMESPACE
+
   - id: build-openvsx-image
     exec:
-      label: "2.1. Build and Publish OpenVSX Image"
+      label: "2.2. Build and Publish OpenVSX Image"
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
-          read -p "Please enter the value for OPENVSX_VERSION (default: v0.18.0): " OPENVSX_VERSION
-          OPENVSX_VERSION=${OPENVSX_VERSION:-v0.18.0}
+          read -p "Please enter the value for OPENVSX_VERSION (default: v0.27.0): " OPENVSX_VERSION
+          OPENVSX_VERSION=${OPENVSX_VERSION:-v0.27.0}
           export OPENVSX_VERSION
           echo "OPENVSX_VERSION is set to $OPENVSX_VERSION"
           podman build -t "openvsx:$OPENVSX_VERSION" --build-arg "OPENVSX_VERSION=$OPENVSX_VERSION" -f openvsx.Dockerfile .&&
-          oc new-project $OPENVSX_NAMESPACE
           export IMAGE=image-registry.openshift-image-registry.svc:5000/$OPENVSX_NAMESPACE/openvsx &&
           podman tag openvsx:$OPENVSX_VERSION ${IMAGE} &&
           podman login --tls-verify=false -u $(oc whoami | tr -d :) -p $(oc whoami -t) image-registry.openshift-image-registry.svc:5000 &&
@@ -148,19 +154,23 @@ commands:
 
   - id: build-ovsx-cli-image
     exec:
-      label: "2.2. Build and Publish OpenVSX CLI Image"
+      label: "2.3. Build and Publish OpenVSX CLI Image"
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
-          podman build -t "openvsx-cli" -f cli.Dockerfile .&&
+          read -p "Please enter the value for OVSX_VERSION (default: 0.10.5): " OVSX_VERSION
+          OVSX_VERSION=${OVSX_VERSION:-0.10.5}
+          export OVSX_VERSION
+          echo "OVSX_VERSION is set to $OVSX_VERSION"
+          podman build -t "openvsx-cli:$OVSX_VERSION" --build-arg "OVSX_VERSION=$OVSX_VERSION" -f cli.Dockerfile .&&
           export IMAGE=image-registry.openshift-image-registry.svc:5000/$OPENVSX_NAMESPACE/openvsx-cli &&
-          podman tag openvsx-cli ${IMAGE} &&
+          podman tag openvsx-cli:$OVSX_VERSION ${IMAGE} &&
           podman login --tls-verify=false -u $(oc whoami | tr -d :) -p $(oc whoami -t) image-registry.openshift-image-registry.svc:5000 &&
           podman push --tls-verify=false "${IMAGE}"
 
   - id: deploy-openvsx
     exec:
-      label: "2.3. Deploy OpenVSX"
+      label: "2.4. Deploy OpenVSX"
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
@@ -169,26 +179,66 @@ commands:
           -p OPENVSX_CLI_IMAGE=image-registry.openshift-image-registry.svc:5000/$OPENVSX_NAMESPACE/openvsx-cli \
           | oc apply -f -
 
+  - id: deploy-custom-openvsx
+    exec:
+      label: "2.4.1. Deploy Custom OpenVSX"
+      component: tool
+      workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
+      commandLine: |
+          read -p "Please enter OpenVSX image: " OPENVSX_SERVER_IMAGE
+          OPENVSX_SERVER_IMAGE=${OPENVSX_SERVER_IMAGE}
+          export OPENVSX_SERVER_IMAGE
+          echo "OPENVSX_SERVER_IMAGE is set to $OPENVSX_SERVER_IMAGE"
+          oc process -f openvsx-deployment-no-es.yml \
+          -p OPENVSX_SERVER_IMAGE="${OPENVSX_SERVER_IMAGE}" \
+          | oc apply -f -
+
   - id: add-openvsx-user-with-pat
     exec:
-      label: "2.4. Add OpenVSX user with PAT to the DB"
+      label: "2.5. Add OpenVSX user with PAT to the DB"
       component: tool
       commandLine: |
+          # Prompt for OpenVSX user name
           read -p "Please enter OpenVSX user name (default: eclipse-che): " OPENVSX_USER_NAME
           OPENVSX_USER_NAME=${OPENVSX_USER_NAME:-eclipse-che}
           export OPENVSX_USER_NAME
-          echo "OPENVSX_USER_NAME is set to $OPENVSX_USER_NAME"
+          echo "OPENVSX_USER_NAME is set to: $OPENVSX_USER_NAME"
+          # Prompt for OpenVSX PAT
           read -p "Please enter the value for OpenVSX user PAT (default: eclipse_che_token): " OPENVSX_USER_PAT
           OPENVSX_USER_PAT=${OPENVSX_USER_PAT:-eclipse_che_token}
           export OPENVSX_USER_PAT
-          echo "OPENVSX_USER_PAT is set to $OPENVSX_USER_PAT"
-          export POSTGRESQL_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^postgresql) &&
-          kubectl exec -n "${OPENVSX_NAMESPACE}" "${POSTGRESQL_POD_NAME}" -- bash -c "psql -d openvsx -c \"INSERT INTO user_data (id, login_name, role) VALUES (1001, '$OPENVSX_USER_NAME', 'privileged');\"" &&
-          kubectl exec -n "${OPENVSX_NAMESPACE}" "${POSTGRESQL_POD_NAME}" -- bash -c "psql -d openvsx -c \"INSERT INTO personal_access_token (id, user_data, value, active, created_timestamp, accessed_timestamp, description) VALUES (1001, 1001, '$OPENVSX_USER_PAT', true, current_timestamp, current_timestamp, 'extensions publisher');\""
+          echo "OPENVSX_USER_PAT is set to: $OPENVSX_USER_PAT"
+          # Find PostgreSQL pod
+          export POSTGRESQL_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" \
+          -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep '^postgresql' | head -n 1)
+          if [ -z "$POSTGRESQL_POD_NAME" ]; then
+            echo "❌ Could not find a pod matching 'postgresql' in namespace $OPENVSX_NAMESPACE"
+            exit 1
+          fi
+          echo "Found PostgreSQL pod: $POSTGRESQL_POD_NAME"
+          # Wait until the pod is Running and Ready
+          echo "⏳ Waiting for PostgreSQL pod to be running..."
+          while true; do
+            STATUS=$(kubectl get pod -n "$OPENVSX_NAMESPACE" "$POSTGRESQL_POD_NAME" -o jsonpath="{.status.phase}")
+            READY=$(kubectl get pod -n "$OPENVSX_NAMESPACE" "$POSTGRESQL_POD_NAME" -o jsonpath="{.status.containerStatuses[0].ready}")
+            if [[ "$STATUS" == "Running" && "$READY" == "true" ]]; then
+              echo "✅ PostgreSQL pod is running and ready."
+              break
+            fi
+            sleep 5
+          done
+          sleep 10  # Wait for the database to be ready
+          # Execute SQL inserts
+          echo "⚙️ Inserting user and PAT into OpenVSX database..."
+          kubectl exec -n "$OPENVSX_NAMESPACE" "$POSTGRESQL_POD_NAME" -- bash -c \
+            "psql -d openvsx -c \"INSERT INTO user_data (id, login_name, role) VALUES (1001, '$OPENVSX_USER_NAME', 'privileged');\""
+          kubectl exec -n "$OPENVSX_NAMESPACE" "$POSTGRESQL_POD_NAME" -- bash -c \
+            "psql -d openvsx -c \"INSERT INTO personal_access_token (id, user_data, value, active, created_timestamp, accessed_timestamp, description) VALUES (1001, 1001, '$OPENVSX_USER_PAT', true, current_timestamp, current_timestamp, 'extensions publisher');\""
+          echo "✅ OpenVSX user and token inserted successfully."
 
   - id: enable-internal-openvsx
     exec:
-      label: "2.5. Configure Che to use the internal OpenVSX registry"
+      label: "2.6. Configure Che to use the internal OpenVSX registry"
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
@@ -198,9 +248,9 @@ commands:
           export PATCH='{"spec":{"components":{"pluginRegistry":{"openVSXURL":"https://'"$OPENVSX_ROUTE_URL"'"}}}}' &&
           kubectl patch checluster "${CHECLUSTER_NAME}" --type=merge --patch "${PATCH}" -n "${CHECLUSTER_NAMESPACE}"
 
-  - id: publish-extension
+  - id: publish-extension-url
     exec:
-      label: "2.6. Publish VS Code Extension to the internal OpenVSX"
+      label: "2.7. Publish a VS Code Extension from a URL"
       component: tool
       commandLine: |
           read -p "Please enter extension's namespace name: " EXTENSION_NAMESPACE_NAME
@@ -211,15 +261,46 @@ commands:
           EXTENSION_DOWNLOAD_URL=${EXTENSION_DOWNLOAD_URL}
           export EXTENSION_DOWNLOAD_URL
           echo "EXTENSION_DOWNLOAD_URL is set to $EXTENSION_DOWNLOAD_URL"
-          export OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^ovsx-cli) &&
+          OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" \
+          | tr ' ' '\n' | grep '^ovsx-cli' || true)
+          if [ -z "$OVSX_POD_NAME" ]; then
+            OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" \
+            | tr ' ' '\n' | grep '^openvsx-server' || true)
+          fi
           kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "wget -O /tmp/extension.vsix '$EXTENSION_DOWNLOAD_URL' " &&
           kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx create-namespace '$EXTENSION_NAMESPACE_NAME'" || true &&
           kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx publish /tmp/extension.vsix" &&
           kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "rm /tmp/extension.vsix"
 
+  - id: publish-extension-file
+    exec:
+      label: "2.8. Publish a VS Code Extension from a VSIX file"
+      component: tool
+      commandLine: |
+          read -p "Please enter extension's namespace name: " EXTENSION_NAMESPACE_NAME
+          EXTENSION_NAMESPACE_NAME=${EXTENSION_NAMESPACE_NAME}
+          export EXTENSION_NAMESPACE_NAME
+          echo "EXTENSION_NAMESPACE_NAME is set to $EXTENSION_NAMESPACE_NAME"
+          read -p "Please enter extension's vsix path: " EXTENSION_PATH
+          EXTENSION_PATH=${EXTENSION_PATH}
+          export EXTENSION_PATH
+          echo "EXTENSION_PATH is set to $EXTENSION_PATH"
+          EXTENSION_NAME=$(basename "$EXTENSION_PATH")
+          export EXTENSION_NAME
+          OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" \
+          | tr ' ' '\n' | grep '^ovsx-cli' || true)
+          if [ -z "$OVSX_POD_NAME" ]; then
+            OVSX_POD_NAME=$(kubectl get pods -n "$OPENVSX_NAMESPACE" -o jsonpath="{.items[*].metadata.name}" \
+            | tr ' ' '\n' | grep '^openvsx-server' || true)
+          fi
+          kubectl cp "${EXTENSION_PATH}" "${OPENVSX_NAMESPACE}/${OVSX_POD_NAME}:/tmp/${EXTENSION_NAME}" &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx create-namespace '$EXTENSION_NAMESPACE_NAME'" || true &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "ovsx publish /tmp/${EXTENSION_NAME}" &&
+          kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "rm /tmp/${EXTENSION_NAME}"
+
   - id: publish-extensions
     exec:
-      label: "2.7. Publish list of VS Code Extensions"
+      label: "2.9. Publish list of VS Code Extensions"
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: ./scripts/publish_extensions.sh
