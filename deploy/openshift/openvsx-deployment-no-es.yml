@@ -1,0 +1,254 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: che-openvsx
+objects:
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: "${NAMESPACE}"
+    labels:
+      name: openvsx
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: postgres-pvc
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${STORAGE_CAPACITY}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: postgresql
+    namespace: "${NAMESPACE}"
+    labels:
+      app: postgresql
+      app.kubernetes.io/component: postgresql
+      app.kubernetes.io/instance: postgresql
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        deployment: postgresql
+    template:
+      metadata:
+        labels:
+          app: openvsx
+          deployment: postgresql
+          app.kubernetes.io/name: openvsx
+          app.kubernetes.io/instance: openvsx
+          app.kubernetes.io/component: postgresql
+      spec:
+        volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        containers:
+          - name: postgresql
+            image: ${POSTGERSQL_IMAGE}
+            imagePullPolicy: IfNotPresent
+            env:
+              - name: POSTGRESQL_DATABASE
+                value: openvsx
+              - name: POSTGRESQL_USER
+                value: openvsx
+              - name: POSTGRESQL_PASSWORD
+                value: openvsx
+            volumeMounts:
+              - name: postgres-storage
+                mountPath: /var/lib/pgsql/data
+            ports:
+              - containerPort: 5432
+                protocol: TCP
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: '1'
+                memory: 2Gi
+            livenessProbe:
+              exec:
+                command:
+                  - pg_isready
+                  - -U
+                  - openvsx
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              failureThreshold: 3
+              timeoutSeconds: 5
+            readinessProbe:
+              exec:
+                command:
+                  - pg_isready
+                  - -U
+                  - openvsx
+              initialDelaySeconds: 15
+              periodSeconds: 10
+              failureThreshold: 3
+            securityContext:
+              capabilities:
+                drop:
+                  - ALL
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: postgresql
+    namespace: "${NAMESPACE}"
+    labels:
+      app: postgresql
+      app.kubernetes.io/component: postgresql
+      app.kubernetes.io/instance: postgresql
+  spec:
+    ports:
+      - name: "5432"
+        port: 5432
+        targetPort: 5432
+        protocol: TCP
+    selector:
+      deployment: postgresql
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: extensions-pvc
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${EXTENSIONS_STORAGE_CAPACITY}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: openvsx-server
+    namespace: "${NAMESPACE}"
+    labels:
+      app: openvsx-server
+      app.kubernetes.io/component: openvsx-server
+      app.kubernetes.io/instance: openvsx-server
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        deployment: openvsx-server
+    template:
+      metadata:
+        labels:
+          deployment: openvsx-server
+      spec:
+        containers:
+          - name: openvsx-server
+            image: ${OPENVSX_SERVER_IMAGE}
+            imagePullPolicy: IfNotPresent
+            readinessProbe:
+              httpGet:
+                path: /api/version
+                port: 8080
+              failureThreshold: 30
+              initialDelaySeconds: 140
+              periodSeconds: 10
+              timeoutSeconds: 5
+            livenessProbe:
+              httpGet:
+                path: /api/version
+                port: 8080
+              failureThreshold: 30
+              initialDelaySeconds: 160
+              periodSeconds: 20
+              timeoutSeconds: 5
+            terminationMessagePath: /dev/termination-log
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                cpu: '1'
+                memory: 4Gi
+            env:
+              - name: OVSX_REGISTRY_URL
+                value: http://openvsx-server:8080
+              - name: OVSX_PAT
+                valueFrom:
+                  secretKeyRef:
+                    name: ovsx-pat
+                    key: token
+            volumeMounts:
+              - name: extensions-storage
+                mountPath: /tmp/extensions
+        volumes:
+        - name: extensions-storage
+          persistentVolumeClaim:
+            claimName: extensions-pvc             
+- apiVersion: v1
+  kind: Service
+  metadata:
+    namespace: "${NAMESPACE}"
+    labels:
+      app: openvsx-server
+      app.kubernetes.io/component: openvsx-server
+      app.kubernetes.io/instance: openvsx-server
+    name: openvsx-server
+  spec:
+    ports:
+      - name: 8080-tcp
+        port: 8080
+        targetPort: 8080
+    selector:
+      deployment: openvsx-server
+- apiVersion: v1
+  kind: Route
+  metadata:
+    namespace: "${NAMESPACE}"
+    name: "${ROUTE_NAME}"
+    labels:
+      app.kubernetes.io/instance: openvsx-server
+      app.kubernetes.io/component: openvsx-server
+  spec:
+    to:
+      kind: Service
+      name: openvsx-server
+      weight: 100
+    port:
+      targetPort: 8080
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ovsx-pat
+    namespace: "${NAMESPACE}"
+  type: Opaque
+  data:
+    token: "${OVSX_PAT_BASE64}"
+
+parameters:
+- name: ROUTE_NAME
+  description: The name of the route to access the OpenVSX Server
+  value: "internal"
+- name: NAMESPACE
+  description: The namespace where the OpenVSX will be deployed
+  value: "openvsx"
+- name: POSTGERSQL_IMAGE
+  value: image-registry.openshift-image-registry.svc:5000/openshift/postgresql:15-el8
+  displayName: PostgreSQL image
+  description: PostgreSQL image to use for the deployment of the PostgreSQL database
+- name: OPENVSX_SERVER_IMAGE
+  displayName: OpenVSX Server image
+  description: OpenVSX Server image to use for the deployment of the OpenVSX Server
+- name: OPENVSX_CLI_IMAGE
+  displayName: OpenVSX CLI image
+  description: OpenVSX CLI image to use for the deployment of the OpenVSX CLI
+- name: OVSX_PAT_BASE64
+  value: ZWNsaXBzZV9jaGVfdG9rZW4=
+  displayName: OVSX personal access token
+  description: Base64 encoded OVSX token
+- name: STORAGE_CAPACITY
+  description: "Persistent storage capacity for PostgreSQL"
+  value: "1Gi"
+- name: EXTENSIONS_STORAGE_CAPACITY
+  description: "Persistent storage capacity for local extensions storage"
+  value: "5Gi"
