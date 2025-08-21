@@ -61,7 +61,7 @@ export const UserAvatar: FunctionComponent = () => {
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             onClose={handleClose} >
             <AvatarMenuItem>
-                <Link href={user.homepage} underline='hover'>
+                <Link href={UserSettingsRoutes.PROFILE} underline='hover'>
                     <Typography variant='body2' color='text.primary'>
                         Logged in as
                     </Typography>
