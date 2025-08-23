@@ -71,7 +71,7 @@ services:
   webui:
     image: node:18
     working_dir: /app
-    command: sh -c 'yarn && yarn build && yarn build:default && yarn start:default'
+    command: sh -c 'yarn && yarn build && yarn build:default && yarn watch & yarn watch:default & yarn start:default'
     volumes:
       - ./webui:/app
     ports:
