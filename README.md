@@ -154,10 +154,46 @@ If you would like to test file storage via Amazon S3, follow these steps:
       }
     ]
     ```
+
+#### Authentication Methods
+
+OpenVSX supports multiple AWS authentication methods with the following precedence:
+
+1. **Static credentials with session token** (temporary credentials)
+2. **Static credentials without session token** (permanent credentials)
+3. **IAM role-based credentials** (using AWS Web Identity Token authentication)
+4. **Default credential provider chain** (fallback for other AWS credential sources)
+
+#### Option 1: Static Credentials (Traditional)
+
 * Follow the steps for [programmatic access](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) to create your access key id and secret access key
-* Configure the following environment variables on your server environment
+* Configure the following environment variables:
   * `AWS_ACCESS_KEY_ID` with your access key id
   * `AWS_SECRET_ACCESS_KEY` with your secret access key
+  * `AWS_SESSION_TOKEN` with your session token (optional, for temporary credentials)
+
+#### Option 2: IAM Role with Web Identity Token (Recommended for containerized deployments)
+
+For deployments using IAM roles with web identity token authentication (such as IRSA in Kubernetes, ECS tasks with task roles, or other container orchestration platforms):
+
+* Create an IAM role with S3 permissions and appropriate trust policy
+* Configure your deployment environment to provide the following environment variables:
+  * `AWS_ROLE_ARN` - The ARN of the IAM role to assume
+  * `AWS_WEB_IDENTITY_TOKEN_FILE` - Path to the web identity token file
+* No static credentials needed!
+
+#### Option 3: Default Credential Provider Chain
+
+OpenVSX will automatically detect credentials from:
+* Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
+* AWS credentials file (`~/.aws/credentials`)
+* AWS config file (`~/.aws/config`)
+* IAM instance profile (for EC2 instances)
+* Container credentials (for ECS tasks)
+
+#### Common Configuration
+
+Regardless of authentication method, configure these environment variables:
   * `AWS_REGION` with your bucket region name
   * `AWS_SERVICE_ENDPOINT` with the url of your S3 provider if not using AWS (for AWS do not set)
   * `AWS_BUCKET` with your bucket name
