@@ -548,4 +548,46 @@ public class LocalVSCodeService implements IVSCodeService {
     private boolean test(int flags, int flag) {
         return (flags & flag) != 0;
     }
+
+    /**
+     * Build a VS Code Extensions Control Manifest (partial) containing only the `deprecated` dictionary.
+     * The dictionary maps extension id (publisher.name) to either `true` or an object with optional fields
+     * such as `disallowInstall` and `extension` (replacement recommendation), per IRawExtensionsControlManifest.
+     */
+    public Map<String, Object> buildExtensionsControlManifestDeprecated() {
+        var deprecatedMap = new LinkedHashMap<String, Object>();
+
+        for (var ext : repositories.findAllActiveExtensions()) {
+            if (!ext.isDeprecated()) {
+                continue;
+            }
+
+            var extensionId = ext.getNamespace().getName() + "." + ext.getName();
+
+            var details = new LinkedHashMap<String, Object>();
+
+            if (ext.getDownloadable() != null && !ext.getDownloadable()) {
+                details.put("disallowInstall", true);
+            }
+
+            var replacement = ext.getReplacement();
+            if (replacement != null) {
+                var latestReplacement = repositories.findLatestVersion(replacement, null, false, true);
+                var replacementDisplayName = latestReplacement != null ? latestReplacement.getDisplayName() : replacement.getName();
+                var replacementId = replacement.getNamespace().getName() + "." + replacement.getName();
+                details.put("extension", Map.of(
+                        "id", replacementId,
+                        "displayName", replacementDisplayName
+                ));
+            }
+
+            if (details.isEmpty()) {
+                deprecatedMap.put(extensionId, Boolean.TRUE);
+            } else {
+                deprecatedMap.put(extensionId, details);
+            }
+        }
+
+        return deprecatedMap;
+    }
 }
