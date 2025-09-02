@@ -32,6 +32,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.ExtensionFile.*;
@@ -86,6 +87,21 @@ public class VSCodeAPI {
         }
 
         return extensionQueryRequestHandler.getResult(param, size, DEFAULT_PAGE_SIZE);
+    }
+
+    @GetMapping(
+            path = "/vscode/gallery/extensioncontrol",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides VS Code Extensions Control manifest (partial) containing 'deprecated' mapping")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Returns the control manifest"
+    )
+    public Map<String, Object> getExtensionsControlManifest() {
+        // Only provide the deprecated dictionary for now
+        return Map.of("deprecated", local.buildExtensionsControlManifestDeprecated());
     }
 
     @Observed

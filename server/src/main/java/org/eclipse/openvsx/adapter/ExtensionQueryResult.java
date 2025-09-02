@@ -41,7 +41,7 @@ public record ExtensionQueryResult(List<ResultItem> results) {
             @Schema(description = "Date and time when this extension was last updated (ISO-8601)")
             String lastUpdated,
             List<String> categories,
-            @Schema(description = "Flag extension as preview")
+            @Schema(description = "Flag extension as preview or deprecated (e.g., 'preview,deprecated', 'preview', 'deprecated')")
             String flags
     ) {
         public static final String FLAG_PREVIEW = "preview";
