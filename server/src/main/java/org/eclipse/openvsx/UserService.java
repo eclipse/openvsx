@@ -32,6 +32,7 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -57,6 +58,9 @@ public class UserService {
     private final ExtensionValidator validator;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2AttributesConfig attributesConfig;
+
+    @Value("${ovsx.token-prefix:}")
+    String tokenPrefix;
 
     public UserService(
             EntityManager entityManager,
@@ -101,7 +105,7 @@ public class UserService {
     public String generateTokenValue() {
         String value;
         do {
-            value = UUID.randomUUID().toString();
+            value = tokenPrefix + UUID.randomUUID();
         } while (repositories.hasAccessToken(value));
         return value;
     }
