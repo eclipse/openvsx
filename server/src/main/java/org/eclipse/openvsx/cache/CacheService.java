@@ -25,6 +25,7 @@ public class CacheService {
 
     public static final String CACHE_DATABASE_SEARCH = "database.search";
     public static final String CACHE_WEB_RESOURCE_FILES = "files.webresource";
+    public static final String CACHE_BROWSE_EXTENSION_FILES = "files.browse";
     public static final String CACHE_EXTENSION_FILES = "files.extension";
     public static final String CACHE_EXTENSION_JSON = "extension.json";
     public static final String CACHE_LATEST_EXTENSION_VERSION = "latest.extension.version";

@@ -9,27 +9,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Objects;
-
-import jakarta.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+
+import java.util.List;
+import java.util.Objects;
 
 @Schema(
     name = "User",
     description = "User data"
 )
 @JsonInclude(Include.NON_NULL)
-public class UserJson extends ResultJson implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class UserJson extends ResultJson {
 
     public static UserJson error(String message) {
         var user = new UserJson();
@@ -149,10 +142,7 @@ public class UserJson extends ResultJson implements Serializable {
     }
 
     @JsonInclude(Include.NON_NULL)
-    public static class PublisherAgreement implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public static class PublisherAgreement {
 
         /* 'none' | 'signed' | 'outdated' */
         private String status;
