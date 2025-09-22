@@ -44,6 +44,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,7 +74,8 @@ class EclipseServiceTest {
 
     @BeforeEach
     void setup() {
-        eclipse.publisherAgreementVersion = "1";
+        eclipse.publisherAgreementAllowedVersions = List.of("1", "1.0", "1.1");
+        eclipse.publisherAgreementVersion = "1.1";
         eclipse.eclipseApiUrl = "https://test.openvsx.eclipse.org/";
     }
 
@@ -90,7 +92,7 @@ class EclipseServiceTest {
         assertThat(profile.getGithubHandle()).isEqualTo("test");
         assertThat(profile.getPublisherAgreements()).isNotNull();
         assertThat(profile.getPublisherAgreements().getOpenVsx()).isNotNull();
-        assertThat(profile.getPublisherAgreements().getOpenVsx().getVersion()).isEqualTo("1");
+        assertThat(profile.getPublisherAgreements().getOpenVsx().getVersion()).isEqualTo("1.1");
     }
 
     @Test
@@ -106,7 +108,7 @@ class EclipseServiceTest {
         assertThat(profile.getGithubHandle()).isEqualTo("test");
         assertThat(profile.getPublisherAgreements()).isNotNull();
         assertThat(profile.getPublisherAgreements().getOpenVsx()).isNotNull();
-        assertThat(profile.getPublisherAgreements().getOpenVsx().getVersion()).isEqualTo("1");
+        assertThat(profile.getPublisherAgreements().getOpenVsx().getVersion()).isEqualTo("1.1");
     }
 
     @Test
@@ -122,8 +124,49 @@ class EclipseServiceTest {
         assertThat(agreement).isNotNull();
         assertThat(agreement.isActive()).isTrue();
         assertThat(agreement.documentId()).isEqualTo("abcd");
-        assertThat(agreement.version()).isEqualTo("1");
+        assertThat(agreement.version()).isEqualTo("1.1");
         assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
+    }
+
+    @Test
+    void testCheckPublisherAgreementOutdated() throws Exception {
+        var user = mockUser();
+        user.setEclipsePersonId("test");
+
+        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
+        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
+                .thenReturn(mockOutdatedProfileResponse());
+
+        try {
+            eclipse.checkPublisherAgreement(user);
+            fail("Expected an ErrorResultException");
+        } catch(ErrorResultException exc) {
+            assertThat(exc.getMessage()).isEqualTo("Your Publisher Agreement with the Eclipse Foundation is outdated (version 0.1). The current version is 1.1.");
+        }
+    }
+
+    @Test
+    void testCheckPublisherAgreementAllowed() throws Exception {
+        var user = mockUser();
+        user.setEclipsePersonId("test");
+
+        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
+        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
+                .thenReturn(mockAllowedProfileResponse());
+
+        eclipse.checkPublisherAgreement(user);
+    }
+
+    @Test
+    void testCheckPublisherAgreement() throws Exception {
+        var user = mockUser();
+        user.setEclipsePersonId("test");
+
+        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
+        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
+                .thenReturn(mockProfileResponse());
+
+        eclipse.checkPublisherAgreement(user);
     }
 
     @Test
@@ -160,7 +203,7 @@ class EclipseServiceTest {
         assertThat(agreement).isNotNull();
         assertThat(agreement.isActive()).isTrue();
         assertThat(agreement.documentId()).isEqualTo("abcd");
-        assertThat(agreement.version()).isEqualTo("1");
+        assertThat(agreement.version()).isEqualTo("1.1");
         assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
     }
 
@@ -187,7 +230,7 @@ class EclipseServiceTest {
         assertThat(agreement).isNotNull();
         assertThat(agreement.isActive()).isTrue();
         assertThat(agreement.documentId()).isEqualTo("abcd");
-        assertThat(agreement.version()).isEqualTo("1");
+        assertThat(agreement.version()).isEqualTo("1.1");
         assertThat(agreement.timestamp()).isEqualTo(LocalDateTime.of(2020, 10, 9, 5, 10, 32));
         assertThat(extVersion.isActive()).isTrue();
         assertThat(extension.isActive()).isTrue();
@@ -232,6 +275,7 @@ class EclipseServiceTest {
     private UserData mockUser() {
         var user = new UserData();
         user.setLoginName("test");
+        user.setProvider("github");
         user.setEclipseToken(new AuthToken("12345", null, null, null, null, null));
         Mockito.when(tokens.getActiveEclipseToken(user))
             .thenReturn(user.getEclipseToken());
@@ -240,6 +284,20 @@ class EclipseServiceTest {
 
     private ResponseEntity<String> mockProfileResponse() throws IOException {
         try (var stream = getClass().getResourceAsStream("profile-response.json")) {
+            var json = CharStreams.toString(new InputStreamReader(stream));
+            return new ResponseEntity<>(json, HttpStatus.OK);
+        }
+    }
+
+    private ResponseEntity<String> mockOutdatedProfileResponse() throws IOException {
+        try (var stream = getClass().getResourceAsStream("profile-outdated-response.json")) {
+            var json = CharStreams.toString(new InputStreamReader(stream));
+            return new ResponseEntity<>(json, HttpStatus.OK);
+        }
+    }
+
+    private ResponseEntity<String> mockAllowedProfileResponse() throws IOException {
+        try (var stream = getClass().getResourceAsStream("profile-allowed-response.json")) {
             var json = CharStreams.toString(new InputStreamReader(stream));
             return new ResponseEntity<>(json, HttpStatus.OK);
         }
