@@ -1,7 +1,7 @@
 {
     "PersonID": "test",
     "DocumentID": "abcd",
-    "Version": "1",
+    "Version": "1.1",
     "EffectiveDate": "2020-10-09 05:10:32",
     "ReceivedDate": "2020-10-09",
     "ExpirationDate": null,
@@ -11,7 +11,7 @@
     "ScannedDocumentFileName": "openvsx-publisher-agreement.json",
     "SysDocument": {
         "DocumentID": "abcd",
-        "Version": "1",
+        "Version": "1.1",
         "DocumentBLOB": null,
         "IsActive": "1",
         "Description": "Publisher Agreement - open-vsx.org",

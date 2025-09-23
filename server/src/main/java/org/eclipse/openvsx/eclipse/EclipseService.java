@@ -74,6 +74,9 @@ public class EclipseService {
     @Value("${ovsx.eclipse.publisher-agreement.version:}")
     String publisherAgreementVersion;
 
+    @Value("${ovsx.eclipse.publisher-agreement.allowed-versions:}")
+    List<String> publisherAgreementAllowedVersions;
+
     public EclipseService(
             TokenService tokens,
             ExtensionService extensions,
@@ -89,7 +92,7 @@ public class EclipseService {
     }
 
     public boolean isActive() {
-        return !StringUtils.isEmpty(publisherAgreementVersion);
+        return !StringUtils.isEmpty(publisherAgreementVersion) && !publisherAgreementAllowedVersions.isEmpty();
     }
 
     /**
@@ -114,7 +117,7 @@ public class EclipseService {
                 || profile.getPublisherAgreements().getOpenVsx().getVersion() == null) {
             throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
         }
-        if (!publisherAgreementVersion.equals(profile.getPublisherAgreements().getOpenVsx().getVersion())) {
+        if (!publisherAgreementAllowedVersions.contains(profile.getPublisherAgreements().getOpenVsx().getVersion())) {
             throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
                     + profile.getPublisherAgreements().getOpenVsx().getVersion() + "). The current version is "
                     + publisherAgreementVersion + ".");
@@ -197,7 +200,7 @@ public class EclipseService {
         }
 
         if(agreement != null && agreement.isActive() && agreement.version() != null) {
-            var status = publisherAgreementVersion.equals(agreement.version()) ? "signed" : "outdated";
+            var status = publisherAgreementAllowedVersions.contains(agreement.version()) ? "signed" : "outdated";
             publisherAgreement.setStatus(status);
         }
         if (agreement != null && agreement.timestamp() != null) {
@@ -233,7 +236,7 @@ public class EclipseService {
             var profile = getPublicProfile(personId);
             if (profile.getPublisherAgreements() == null || profile.getPublisherAgreements().getOpenVsx() == null || StringUtils.isEmpty(profile.getPublisherAgreements().getOpenVsx().getVersion()))
                 publisherAgreement.setStatus("none");
-            else if (publisherAgreementVersion.equals(profile.getPublisherAgreements().getOpenVsx().getVersion()))
+            else if (publisherAgreementAllowedVersions.contains(profile.getPublisherAgreements().getOpenVsx().getVersion()))
                 publisherAgreement.setStatus("signed");
             else
                 publisherAgreement.setStatus("outdated");
