@@ -27,9 +27,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.ExtensionSearch;
-import org.eclipse.openvsx.search.ISearchService;
-import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.search.*;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
@@ -52,9 +50,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHitsImpl;
-import org.springframework.data.elasticsearch.core.TotalHitsRelation;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -68,7 +63,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -2184,13 +2178,12 @@ class RegistryAPITest {
         extension.setId(1L);
         var entry1 = new ExtensionSearch();
         entry1.setId(1);
-        var searchHit = new SearchHit<>("0", "1", null, 1.0f, null, null, null, null, null, null, entry1);
-        var searchHits = new SearchHitsImpl<>(1, TotalHitsRelation.EQUAL_TO, 1.0f, Duration.ZERO, null, null, List.of(searchHit), null, null, null);
         Mockito.when(search.isEnabled())
                 .thenReturn(true);
-        var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", "relevance", false, null);
+        var searchResult = new SearchResult(1, List.of(entry1));
+        var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", SortBy.RELEVANCE, false, null);
         Mockito.when(search.search(searchOptions))
-                .thenReturn(searchHits);
+                .thenReturn(searchResult);
         return List.of(extVersion);
     }
 

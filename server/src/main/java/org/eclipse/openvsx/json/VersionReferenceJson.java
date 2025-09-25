@@ -11,17 +11,15 @@ package org.eclipse.openvsx.json;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
-import static org.eclipse.openvsx.util.TargetPlatform.NAME_UNIVERSAL;
 
 @Schema(
     name = "VersionReference",
     description = "Essential metadata of an extension version"
 )
-public class VersionReferenceJson implements Serializable {
+public class VersionReferenceJson {
 
     @Schema(description = "URL to get the full metadata of this version")
     private String url;

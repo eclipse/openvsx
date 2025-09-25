@@ -21,6 +21,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
+import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
@@ -29,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -257,11 +257,11 @@ public class LocalRegistryService implements IExtensionRegistry {
             return json;
         }
 
-        var searchHits = search.search(options);
-        if(searchHits.hasSearchHits()) {
-            json.setExtensions(toSearchEntries(searchHits, options));
+        var result = search.search(options);
+        if(result.hasSearchHits()) {
+            json.setExtensions(toSearchEntries(result, options));
             json.setOffset(options.requestedOffset());
-            json.setTotalSize((int) searchHits.getTotalHits());
+            json.setTotalSize((int) result.getTotalHits());
         } else {
             json.setExtensions(Collections.emptyList());
         }
@@ -724,9 +724,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Deleted review for " + NamingUtil.toExtensionId(extension));
     }
 
-    private LinkedHashMap<Long, ExtensionVersion> getLatestVersions(SearchHits<ExtensionSearch> searchHits) {
-        var ids = searchHits.stream()
-                .map(searchHit -> searchHit.getContent().getId())
+    private LinkedHashMap<Long, ExtensionVersion> getLatestVersions(SearchResult result) {
+        var ids = result.getHits().stream()
+                .map(ExtensionSearch::getId)
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -756,9 +756,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
 
-    private List<SearchEntryJson> toSearchEntries(SearchHits<ExtensionSearch> searchHits, ISearchService.Options options) {
+    private List<SearchEntryJson> toSearchEntries(SearchResult result, ISearchService.Options options) {
         var serverUrl = UrlUtil.getBaseUrl();
-        var latestVersions = getLatestVersions(searchHits);
+        var latestVersions = getLatestVersions(result);
         var membershipsByNamespaceId = getMemberships(latestVersions.values());
         var searchEntries = latestVersions.entrySet().stream()
                 .map(e -> {

@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.search;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.springframework.data.elasticsearch.core.SearchHits;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,7 +29,7 @@ public interface ISearchService {
     /**
      * Search with given options
      */
-    SearchHits<ExtensionSearch> search(Options options);
+    SearchResult search(Options options);
 
     /**
      * Updating the search index has two modes:

@@ -11,6 +11,7 @@ package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
@@ -35,8 +36,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.eclipse.openvsx.cache.CacheService.CACHE_WEB_RESOURCE_FILES;
-import static org.eclipse.openvsx.cache.CacheService.GENERATOR_FILES;
+import static org.eclipse.openvsx.cache.CacheService.*;
 
 @Component
 public class WebResourceService {
@@ -60,56 +60,62 @@ public class WebResourceService {
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
-    @Observed
-    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES)
-    public Path getWebResource(String namespace, String extension, String targetPlatform, String version, String name, boolean browse) {
+    public Path getExtensionDownload(String namespace, String extension, String targetPlatform, String version) {
         var download = repositories.findFileByType(namespace, extension, targetPlatform, version, FileResource.DOWNLOAD);
         if(download == null) {
             return null;
         }
 
         var path = storageUtil.getCachedFile(download);
-        if(path == null) {
-            return null;
-        }
-        if(!Files.exists(path)) {
+        if(path != null && !Files.exists(path)) {
             logger.error("File doesn't exist {}", path);
             cache.evictExtensionFile(download);
-            return null;
+            path = null;
         }
 
-        try(var zip = new ZipFile(path.toFile())) {
+        return path;
+    }
+
+    @Observed
+    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
+    public Path getWebResource(String namespace, String extension, String targetPlatform, String version, String name, Path extensionDownloadPath) {
+        try(var zip = new ZipFile(extensionDownloadPath.toFile())) {
             var fileEntry = zip.getEntry(name);
             if(fileEntry != null) {
                 var fileExt = getFileExtension(fileEntry);
                 var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, fileExt);
                 writeBinaryFile(file, zip, fileEntry);
                 return file;
-            } else if (browse) {
-                var dirName = getDirectoryName(name);
-                var dirEntries = zip.stream()
-                        .filter(entry -> entry.getName().startsWith(dirName))
-                        .map(entry -> getFileInDirectory(dirName, entry))
-                        .collect(Collectors.toSet());
-                if(dirEntries.isEmpty()) {
-                    return null;
-                }
-
-                var baseUrl = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "vscode", "unpkg", namespace, extension, version);
-                var mapper = new ObjectMapper();
-                var node = mapper.createArrayNode();
-                for (var entry : dirEntries) {
-                    node.add(baseUrl + "/" + entry);
-                }
-
-                var file = filesCacheKeyGenerator.generateCachedWebResourcePath(namespace, extension, targetPlatform, version, name, ".unpkg.json");
-                writeJsonFile(file, mapper, node);
-                return file;
             } else {
                 return null;
             }
         } catch (IOException | UncheckedIOException e) {
-            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(download.getExtension()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Cacheable(value = CACHE_BROWSE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
+    public ArrayNode browseExtensionPackage(String namespace, String extension, String targetPlatform, String version, String name, Path extensionDownloadPath) {
+        try(var zip = new ZipFile(extensionDownloadPath.toFile())) {
+            var dirName = getDirectoryName(name);
+            var dirEntries = zip.stream()
+                    .filter(entry -> entry.getName().startsWith(dirName))
+                    .map(entry -> getFileInDirectory(dirName, entry))
+                    .collect(Collectors.toSet());
+            if(dirEntries.isEmpty()) {
+                return null;
+            }
+
+            var baseUrl = UrlUtil.createApiUrl("", "vscode", "unpkg", namespace, extension, version);
+            var mapper = new ObjectMapper();
+            var node = mapper.createArrayNode();
+            for (var entry : dirEntries) {
+                node.add(baseUrl + "/" + entry);
+            }
+
+            return node;
+        } catch (IOException | UncheckedIOException e) {
+            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

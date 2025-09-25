@@ -14,20 +14,19 @@ import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.RelevanceService.SearchStats;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.SearchHitsImpl;
-import org.springframework.data.elasticsearch.core.TotalHitsRelation;
 import org.springframework.data.util.Streamable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
@@ -57,7 +56,7 @@ public class DatabaseSearchService implements ISearchService {
     @Transactional
     @Cacheable(CACHE_DATABASE_SEARCH)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
-    public SearchHits<ExtensionSearch> search(ISearchService.Options options) {
+    public SearchResult search(ISearchService.Options options) {
         var matchingExtensions = repositories.findAllActiveExtensions();
         matchingExtensions = excludeByNamespace(options, matchingExtensions);
         matchingExtensions = excludeByTargetPlatform(options, matchingExtensions);
@@ -67,11 +66,7 @@ public class DatabaseSearchService implements ISearchService {
         var sortedExtensions = sortExtensions(options, matchingExtensions);
         var totalHits = sortedExtensions.size();
         sortedExtensions = applyPaging(options, sortedExtensions);
-        var searchHits = sortedExtensions.stream()
-                .map(extensionSearch -> new SearchHit<>(null, null, null, 0.0f, null, null, null, null, null, null, extensionSearch))
-                .toList();
-
-        return new SearchHitsImpl<>(totalHits, TotalHitsRelation.OFF, 0f, Duration.ZERO, null, null, searchHits, null, null, null);
+        return new SearchResult(totalHits, sortedExtensions);
     }
 
     private List<ExtensionSearch> applyPaging(Options options, List<ExtensionSearch> sortedExtensions) {
@@ -82,7 +77,7 @@ public class DatabaseSearchService implements ISearchService {
 
     private List<ExtensionSearch> sortExtensions(Options options, Streamable<Extension> matchingExtensions) {
         Stream<ExtensionSearch> searchEntries;
-        if("relevance".equals(options.sortBy()) || "rating".equals(options.sortBy())) {
+        if(SortBy.RELEVANCE.equals(options.sortBy()) || SortBy.RATING.equals(options.sortBy())) {
             var searchStats = new SearchStats(repositories);
             searchEntries = matchingExtensions.stream().map(extension -> relevanceService.toSearchEntry(extension, searchStats));
         } else {
@@ -94,13 +89,16 @@ public class DatabaseSearchService implements ISearchService {
         }
 
         var comparators = Map.of(
-                "relevance", new RelevanceComparator(),
-                "timestamp", new TimestampComparator(),
-                "rating", new RatingComparator(),
-                "downloadCount", new DownloadedCountComparator()
+                SortBy.RELEVANCE, new RelevanceComparator(),
+                SortBy.TIMESTAMP, new TimestampComparator(),
+                SortBy.RATING, new RatingComparator(),
+                SortBy.DOWNLOADS, new DownloadedCountComparator()
         );
 
         var comparator = comparators.get(options.sortBy());
+        if(comparator == null) {
+            throw new ErrorResultException("sortBy parameter must be " + SortBy.OPTIONS + ".");
+        }
         if ("desc".equals(options.sortOrder())) {
             comparator = comparator.reversed();
         }
