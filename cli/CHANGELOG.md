@@ -2,6 +2,15 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.10.6 (Seo. 2025)
+
+#### Dependencies
+
+- Upgrade `form-data` from `4.0.0` to `4.0.4` ([#1291](https://github.com/eclipse/openvsx/pull/1291))
+- Upgrade `tmp` from `0.2.3` to `0.2.4` ([#1304](https://github.com/eclipse/openvsx/pull/1304))
+
+---
+
 ### v0.10.5 (Jul. 2025)
 
 #### Dependencies
