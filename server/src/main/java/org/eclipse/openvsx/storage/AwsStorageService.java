@@ -23,6 +23,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.defaultsmode.DefaultsMode;
 import software.amazon.awssdk.regions.Region;
@@ -60,6 +63,9 @@ public class AwsStorageService implements IStorageService {
     @Value("${ovsx.storage.aws.secret-access-key:}")
     String secretAccessKey;
 
+    @Value("${ovsx.storage.aws.session-token:}")
+    String sessionToken;
+
     @Value("${ovsx.storage.aws.region:}")
     String region;
 
@@ -81,12 +87,11 @@ public class AwsStorageService implements IStorageService {
 
     protected S3Client getS3Client() {
         if (s3Client == null) {
-            var credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
             var s3ClientBuilder = S3Client.builder()
                     .defaultsMode(DefaultsMode.STANDARD)
                     .forcePathStyle(pathStyleAccess)
-                    .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                    .region(Region.of(region));
+                    .region(Region.of(region))
+                    .credentialsProvider(getCredentialsProvider());
 
             if(StringUtils.isNotEmpty(serviceEndpoint)) {
                 var endpointParams = S3EndpointParams.builder()
@@ -107,10 +112,9 @@ public class AwsStorageService implements IStorageService {
     }
 
     private S3Presigner getS3Presigner() {
-        var credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
         var builder = S3Presigner.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .region(Region.of(region));
+                .region(Region.of(region))
+                .credentialsProvider(getCredentialsProvider());
 
         if(StringUtils.isNotEmpty(serviceEndpoint)) {
             var endpointParams = S3EndpointParams.builder()
@@ -128,9 +132,44 @@ public class AwsStorageService implements IStorageService {
         return builder.build();
     }
 
+    private AwsCredentialsProvider getCredentialsProvider() {
+        // Use static credentials if provided, otherwise DefaultCredentialsProvider handles everything
+        if (hasStaticCredentials()) {
+            var credentials = hasSessionToken() 
+                ? AwsSessionCredentials.create(accessKeyId, secretAccessKey, sessionToken)
+                : AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+            return StaticCredentialsProvider.create(credentials);
+        }
+        return DefaultCredentialsProvider.create();
+    }
+
+
+    private boolean hasStaticCredentials() {
+        return !StringUtils.isEmpty(accessKeyId) && !StringUtils.isEmpty(secretAccessKey);
+    }
+
+    private boolean hasSessionToken() {
+        return !StringUtils.isEmpty(sessionToken);
+    }
     @Override
     public boolean isEnabled() {
-        return !StringUtils.isEmpty(accessKeyId);
+        // Require region and bucket to be configured
+        if (StringUtils.isEmpty(region) || StringUtils.isEmpty(bucket)) {
+            return false;
+        }
+        
+        // If any credential fields are provided, validate them properly
+        boolean hasAccessKey = !StringUtils.isEmpty(accessKeyId);
+        boolean hasSecretKey = !StringUtils.isEmpty(secretAccessKey);
+        boolean hasSessionToken = !StringUtils.isEmpty(sessionToken);
+        
+        if (hasAccessKey || hasSecretKey || hasSessionToken) {
+            // If any credential is provided, both access key and secret key must be present
+            return hasAccessKey && hasSecretKey;
+        }
+        
+        // No static credentials provided - allow AWS default credential provider chain
+        return true;
     }
 
     @Override
