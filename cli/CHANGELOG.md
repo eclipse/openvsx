@@ -6,8 +6,9 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Dependencies
 
-- Upgrade `form-data` from `4.0.0` to `4.0.4` ([#1291](https://github.com/eclipse/openvsx/pull/1291))
+- Upgrade `tar-fs` from `2.1.3` to `2.1.4` ([#1353](https://github.com/eclipse/openvsx/pull/1353))
 - Upgrade `tmp` from `0.2.3` to `0.2.4` ([#1304](https://github.com/eclipse/openvsx/pull/1304))
+- Upgrade `form-data` from `4.0.0` to `4.0.4` ([#1291](https://github.com/eclipse/openvsx/pull/1291))
 
 ---
 
