@@ -12,21 +12,25 @@ package org.eclipse.openvsx.cache;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.giffing.bucket4j.spring.boot.starter.context.properties.Bucket4JBootProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
+import com.github.benmanes.caffeine.jcache.CacheManagerImpl;
+import com.github.benmanes.caffeine.jcache.configuration.CaffeineConfiguration;
+import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
 import io.micrometer.common.util.StringUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.search.SearchResult;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -39,7 +43,10 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 
+import java.net.URI;
 import java.time.Duration;
+import java.util.OptionalLong;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
@@ -103,13 +110,13 @@ public class CacheConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = Bucket4JBootProperties.PROPERTY_PREFIX, name = "cache-to-use", havingValue = "redis-jedis")
+    @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-jedis'")
     public JedisPool jedisPool(RedisProperties properties) {
         return new JedisPool(properties.getHost(), properties.getPort(), properties.getUsername(), properties.getPassword());
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = Bucket4JBootProperties.PROPERTY_PREFIX, name = "cache-to-use", havingValue = "redis-cluster-jedis")
+    @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-cluster-jedis'")
     public JedisCluster jedisCluster(RedisProperties properties) {
         var configBuilder = DefaultJedisClientConfig.builder();
         var username = properties.getUsername();
@@ -130,6 +137,69 @@ public class CacheConfig {
 
     @Bean
     @Primary
+    @ConditionalOnProperty(value = "ovsx.redis.enabled", havingValue = "false", matchIfMissing = true)
+    public JCacheCacheManager caffeineCacheManager(
+            @Value("${ovsx.caching.average-review-rating.ttl:P3D}") Duration averageReviewRatingTtl,
+            @Value("${ovsx.caching.average-review-rating.max-size:1}") long averageReviewRatingMaxSize,
+            @Value("${ovsx.caching.namespace-details-json.ttl:PT1H}") Duration namespaceDetailsJsonTtl,
+            @Value("${ovsx.caching.namespace-details-json.max-size:1024}") long namespaceDetailsJsonMaxSize,
+            @Value("${ovsx.caching.database-search.ttl:PT1H}") Duration databaseSearchTtl,
+            @Value("${ovsx.caching.database-search.max-size:1024}") long databaseSearchMaxSize,
+            @Value("${ovsx.caching.extension-json.ttl:PT1H}") Duration extensionJsonTtl,
+            @Value("${ovsx.caching.extension-json.max-size:1024}") long extensionJsonMaxSize,
+            @Value("${ovsx.caching.latest-extension-version.ttl:PT1H}") Duration latestExtensionVersionTtl,
+            @Value("${ovsx.caching.latest-extension-version.max-size:1024}") long latestExtensionVersionMaxSize,
+            @Value("${ovsx.caching.sitemap.ttl:PT1H}") Duration sitemapTtl,
+            @Value("${ovsx.caching.sitemap.max-size:1}") long sitemapMaxSize,
+            @Value("${ovsx.caching.malicious-extensions.ttl:P3D}") Duration maliciousExtensionsTtl,
+            @Value("${ovsx.caching.malicious-extensions.max-size:1}") long maliciousExtensionsMaxSize,
+            @Value("${ovsx.caching.rate-limiting.name:buckets}") String rateLimitingCacheName,
+            @Value("${ovsx.caching.rate-limiting.tti:PT1H}") Duration rateLimitingTti,
+            @Value("${ovsx.caching.rate-limiting.max-size:1024}") long rateLimitingMaxSize
+    ) {
+        var averageReviewRatingCache = createCaffeineConfiguration(averageReviewRatingTtl, averageReviewRatingMaxSize, false);
+        var namespaceDetailsJsonCache = createCaffeineConfiguration(namespaceDetailsJsonTtl, namespaceDetailsJsonMaxSize, false);
+        var databaseSearchCache = createCaffeineConfiguration(databaseSearchTtl, databaseSearchMaxSize, false);
+        var extensionJsonCache = createCaffeineConfiguration(extensionJsonTtl, extensionJsonMaxSize, false);
+        var latestExtensionVersionCache = createCaffeineConfiguration(latestExtensionVersionTtl, latestExtensionVersionMaxSize, false);
+        var sitemapCache = createCaffeineConfiguration(sitemapTtl, sitemapMaxSize, false);
+        var maliciousExtensionsCache = createCaffeineConfiguration(maliciousExtensionsTtl, maliciousExtensionsMaxSize, false);
+        var rateLimitingCache = createCaffeineConfiguration(rateLimitingTti, rateLimitingMaxSize, true);
+
+        var cacheManager = new CacheManagerImpl(
+                new CaffeineCachingProvider(),
+                false,
+                URI.create("com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider"),
+                Thread.currentThread().getContextClassLoader(),
+                new Properties()
+        );
+
+        cacheManager.createCache(CACHE_AVERAGE_REVIEW_RATING, averageReviewRatingCache);
+        cacheManager.createCache(CACHE_NAMESPACE_DETAILS_JSON, namespaceDetailsJsonCache);
+        cacheManager.createCache(CACHE_DATABASE_SEARCH, databaseSearchCache);
+        cacheManager.createCache(CACHE_EXTENSION_JSON, extensionJsonCache);
+        cacheManager.createCache(CACHE_LATEST_EXTENSION_VERSION, latestExtensionVersionCache);
+        cacheManager.createCache(CACHE_SITEMAP, sitemapCache);
+        cacheManager.createCache(CACHE_MALICIOUS_EXTENSIONS, maliciousExtensionsCache);
+        cacheManager.createCache(rateLimitingCacheName, rateLimitingCache);
+        return new JCacheCacheManager(cacheManager);
+    }
+
+    private CaffeineConfiguration<Object, Object> createCaffeineConfiguration(Duration duration, long maxSize, boolean tti) {
+        var configuration = new CaffeineConfiguration<>();
+        configuration.setMaximumSize(OptionalLong.of(maxSize));
+        if(tti) {
+            configuration.setExpireAfterAccess(OptionalLong.of(duration.toNanos()));
+        } else {
+            configuration.setExpireAfterWrite(OptionalLong.of(duration.toNanos()));
+        }
+
+        return configuration;
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnProperty(value = "ovsx.redis.enabled", havingValue = "true")
     public CacheManager redisCacheManager(
             RedisConnectionFactory redisConnectionFactory,
             @Value("${ovsx.caching.average-review-rating.ttl:P3D}") Duration averageReviewRatingTtl,

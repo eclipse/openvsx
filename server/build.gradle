@@ -42,7 +42,7 @@ def versions = [
     jaxb_impl: '2.3.8',
     gatling: '3.9.5',
     loki4j: '1.4.2',
-    embedded_redis: '1.4.3'
+    jedis: '6.2.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
 sourceCompatibility = versions.java
@@ -92,6 +92,8 @@ dependencies {
     implementation "org.springframework.retry:spring-retry"
     implementation "org.bouncycastle:bcpkix-jdk18on:${versions.bouncycastle}"
     implementation "com.github.ben-manes.caffeine:caffeine"
+    implementation 'com.github.ben-manes.caffeine:jcache'
+    implementation "redis.clients:jedis:${versions.jedis}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
     implementation "com.bucket4j:bucket4j-redis:${versions.bucket4j_redis}"
     implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
@@ -115,7 +117,6 @@ dependencies {
     implementation "io.micrometer:micrometer-tracing"
     implementation "io.micrometer:micrometer-tracing-bridge-otel"
     implementation "io.opentelemetry:opentelemetry-exporter-zipkin"
-    implementation "com.github.codemonstur:embedded-redis:${versions.embedded_redis}"
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
     jooqGenerator "org.postgresql:postgresql"
