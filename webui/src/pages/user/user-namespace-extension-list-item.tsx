@@ -8,14 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useContext, FunctionComponent, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { useContext, FunctionComponent, useState, useEffect, useRef, ReactNode, MouseEvent } from 'react';
 import { Extension } from '../../extension-registry-types';
-import { Paper, Typography, Box, styled } from '@mui/material';
-import { Link as RouteLink } from 'react-router-dom';
+import { Paper, Typography, Box, styled, IconButton } from '@mui/material';
+import { Link as RouteLink, useNavigate } from 'react-router-dom';
 import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
 import { Timestamp } from '../../components/timestamp';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { UserSettingsRoutes } from './user-settings';
 
 const getOpacity = (extension: Extension) => {
     if (extension.deprecated) {
@@ -44,8 +46,10 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
     const [icon, setIcon] = useState<string | undefined>(undefined);
     const { extension } = props;
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
+    const deleteRoute = extension && createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name, 'delete']) || '';
     const inactive = extension.active === false;
     const abortController = useRef<AbortController>(new AbortController());
+    const navigate = useNavigate();
     useEffect(() => {
         return () => {
             abortController.current.abort();
@@ -73,6 +77,11 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
         </Paragraph>;
     }
 
+    const gotoDeleteRoute = (e: MouseEvent) => {
+        e.preventDefault();
+        navigate(deleteRoute);
+    };
+
     return (
         extension ? (
             <RouteLink to={route} style={{ textDecoration: 'none' }}>
@@ -99,10 +108,15 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                         }}
                     />
                     <Box component='div' sx={{ flex: '1', overflow: 'hidden' }}>
-                        <Typography variant='h6' noWrap sx={{ fontSize: '1.15rem' }}>
-                            {extension.displayName ?? extension.name}
-                        </Typography>
-                        <Paragraph mt={1}>
+                        <Paragraph>
+                            <Typography variant='h6' noWrap sx={{ fontSize: '1.15rem' }}>
+                                {extension.displayName ?? extension.name}
+                            </Typography>
+                            {props.canDelete && deleteRoute && <IconButton onClick={gotoDeleteRoute}>
+                                <DeleteIcon color='error' sx={{ fontSize: '1.15rem' }}/>
+                            </IconButton>}
+                        </Paragraph>
+                        <Paragraph>
                             <span>Version:</span>
                             <Box component='span' sx={noOverflow}>{extension.version}</Box>
                         </Paragraph>
@@ -117,4 +131,5 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
 
 export interface UserNamespaceExtensionListItemProps {
     extension: Extension;
+    canDelete?: boolean
 }

@@ -29,6 +29,8 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     ExtensionVersion findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String targetPlatform, String extensionName, String namespace);
 
+    ExtensionVersion findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(UserData user, String version, String targetPlatform, String extensionName, String namespace);
+
     Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
 
     Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
@@ -47,8 +49,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();
-
-    int countByExtension(Extension extension);
 
     @Modifying
     @Query("update ExtensionVersion ev set ev.signatureKeyPair = null")

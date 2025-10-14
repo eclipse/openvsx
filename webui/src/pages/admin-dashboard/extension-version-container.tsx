@@ -173,9 +173,9 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
             </Grid>
             <Grid item container xs={12} md={8}>
                 <ExtensionRemoveDialog
-                    onUpdate={props.onUpdate}
+                    onRemove={props.onRemove}
                     extension={extension}
-                    targetPlatformVersions={targetPlatformVersions.filter((targetPlatformVersion) => targetPlatformVersion.checked)} />
+                    targetPlatformVersions={targetPlatformVersions.filter((value) => value.checked && value.version != WILDCARD && value.targetPlatform != WILDCARD)} />
             </Grid>
         </Grid>
     </Grid>;
@@ -183,5 +183,5 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
 
 export interface ExtensionVersionContainerProps {
     extension: Extension;
-    onUpdate: () => void;
+    onRemove: (targetPlatformVersions?: TargetPlatformVersion[]) => Promise<void>;
 }

@@ -19,7 +19,6 @@ import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
-import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -34,10 +33,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.net.URI;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -255,7 +252,8 @@ public class AdminAPI {
     ) {
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
-            return deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }
@@ -268,37 +266,15 @@ public class AdminAPI {
     public ResponseEntity<ResultJson> deleteExtension(
             @PathVariable String namespaceName,
             @PathVariable String extensionName,
-            @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions
+            @RequestBody List<TargetPlatformVersionJson> targetVersions
     ) {
         try {
             var adminUser = admins.checkAdminUser();
-            return deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            var result =  admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }
-    }
-
-    private ResponseEntity<ResultJson> deleteExtension(
-            UserData adminUser,
-            String namespaceName,
-            String extensionName,
-            List<TargetPlatformVersionJson> targetVersions
-    ) {
-        ResultJson result;
-        if(targetVersions == null) {
-            result = admins.deleteExtension(namespaceName, extensionName, adminUser);
-        } else {
-            var results = new ArrayList<ResultJson>();
-            for(var targetVersion : targetVersions) {
-                results.add(admins.deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
-            }
-
-            result = new ResultJson();
-            result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
-            result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
-        }
-
-        return ResponseEntity.ok(result);
     }
 
     @GetMapping(

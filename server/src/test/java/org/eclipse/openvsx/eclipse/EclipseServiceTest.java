@@ -26,6 +26,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +57,8 @@ import static org.mockito.ArgumentMatchers.eq;
 @MockitoBean(types = {
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
     AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class, CacheService.class,
-    UserService.class, PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class
+    UserService.class, PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class,
+    JobRequestScheduler.class
 })
 class EclipseServiceTest {
 
@@ -329,12 +331,14 @@ class EclipseServiceTest {
 
         @Bean
         ExtensionService extensionService(
+                EntityManager entityManager,
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
-                PublishExtensionVersionHandler publishHandler
+                PublishExtensionVersionHandler publishHandler,
+                JobRequestScheduler scheduler
         ) {
-            return new ExtensionService(repositories, search, cache, publishHandler);
+            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
         }
 
         @Bean

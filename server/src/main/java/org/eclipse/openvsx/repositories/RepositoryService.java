@@ -11,6 +11,7 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -168,6 +169,10 @@ public class RepositoryService {
 
     public ExtensionVersion findVersion(String version, String targetPlatform, String extensionName, String namespace) {
         return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, targetPlatform, extensionName, namespace);
+    }
+
+    public ExtensionVersion findVersion(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
+        return extensionVersionRepo.findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(user, version, targetPlatform, extensionName, namespace);
     }
 
     public Streamable<ExtensionVersion> findVersions(Extension extension) {
@@ -438,8 +443,8 @@ public class RepositoryService {
         return extensionVersionRepo.findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, extensionName, namespaceName);
     }
 
-    public int countVersions(Extension extension) {
-        return extensionVersionRepo.countByExtension(extension);
+    public int countVersions(String namespaceName, String extensionName) {
+        return extensionVersionJooqRepo.count(namespaceName, extensionName);
     }
 
     public Slice<MigrationItem> findNotMigratedItems(Pageable page) {
@@ -523,6 +528,10 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findTargetPlatformsGroupedByVersion(extension);
     }
 
+    public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension, UserData user) {
+        return extensionVersionJooqRepo.findTargetPlatformsGroupedByVersion(extension, user);
+    }
+
     public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
         return extensionVersionJooqRepo.findVersionsForUrls(extension, targetPlatform, version);
     }
@@ -561,6 +570,10 @@ public class RepositoryService {
 
     public List<ExtensionVersion> findLatestVersions(UserData user) {
         return extensionVersionJooqRepo.findLatest(user);
+    }
+
+    public ExtensionVersion findLatestVersion(UserData user, String namespace, String extension) {
+        return extensionVersionJooqRepo.findLatest(user, namespace, extension);
     }
 
     public List<String> findExtensionTargetPlatforms(Extension extension) {
@@ -637,5 +650,9 @@ public class RepositoryService {
 
     public List<MigrationItem> findRemoveFileResourceTypeResourceMigrationItems(int offset, int limit) {
         return migrationItemJooqRepo.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
+    }
+
+    public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
+        return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
     }
 }

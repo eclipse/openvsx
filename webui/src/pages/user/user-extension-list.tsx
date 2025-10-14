@@ -17,6 +17,7 @@ import { Extension } from '../../extension-registry-types';
 interface UserExtensionListProps {
     extensions?: Extension[];
     loading: boolean;
+    canDelete?: boolean
 }
 
 export const UserExtensionList: FunctionComponent<UserExtensionListProps> = props => {
@@ -35,6 +36,7 @@ export const UserExtensionList: FunctionComponent<UserExtensionListProps> = prop
             props.extensions.map((extension: Extension) => <UserNamespaceExtensionListItem
                 key={`${extension.namespace}.${extension.name}-${extension.version}`}
                 extension={extension}
+                canDelete={props.canDelete}
             />)
             : null
         }

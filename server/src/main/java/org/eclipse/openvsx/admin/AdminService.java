@@ -33,9 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneId;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -134,7 +132,7 @@ public class AdminService {
 
     protected void deleteExtensionAndDependencies(ExtensionVersion extVersion, UserData admin, int depth) {
         var extension = extVersion.getExtension();
-        if (repositories.countVersions(extension) == 1) {
+        if (repositories.countVersions(extension.getNamespace().getName(), extension.getName()) == 1) {
             deleteExtensionAndDependencies(extension, admin, depth + 1);
             return;
         }
@@ -143,6 +141,28 @@ public class AdminService {
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
         logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(
+            UserData adminUser,
+            String namespaceName,
+            String extensionName,
+            List<TargetPlatformVersionJson> targetVersions
+    ) {
+        if(targetVersions == null || repositories.countVersions(namespaceName, extensionName) == targetVersions.size()) {
+            return deleteExtension(namespaceName, extensionName, adminUser);
+        }
+
+        var results = new ArrayList<ResultJson>();
+        for(var targetVersion : targetVersions) {
+            results.add(deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
+        }
+
+        var result = new ResultJson();
+        result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        return result;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -210,10 +230,6 @@ public class AdminService {
 
     protected ResultJson deleteExtension(ExtensionVersion extVersion, UserData admin) {
         var extension = extVersion.getExtension();
-        if (repositories.countVersions(extension) == 1) {
-            return deleteExtension(extension, admin);
-        }
-
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);

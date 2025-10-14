@@ -2429,7 +2429,6 @@ class RegistryAPITest {
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
-                FileCacheDurationConfig fileCacheDurationConfig,
                 ExtensionVersionIntegrityService integrityService
         ) {
             return new LocalRegistryService(
@@ -2449,12 +2448,14 @@ class RegistryAPITest {
 
         @Bean
         ExtensionService extensionService(
+                EntityManager entityManager,
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
-                PublishExtensionVersionHandler publishHandler
+                PublishExtensionVersionHandler publishHandler,
+                JobRequestScheduler scheduler
         ) {
-            return new ExtensionService(repositories, search, cache, publishHandler);
+            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
         }
 
         @Bean
