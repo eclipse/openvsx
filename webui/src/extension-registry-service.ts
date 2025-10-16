@@ -418,6 +418,43 @@ export class ExtensionRegistryService {
         });
     }
 
+    async getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
+        const csrfResponse = await this.getCsrfToken(abortController);
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest<Extension>({
+            abortController,
+            method: 'GET',
+            credentials: true,
+            headers: headers,
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'extension', namespace, extension])
+        });
+    }
+
+    async deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'extension', req.namespace, req.extension, 'delete']),
+            headers,
+            payload: req.targetPlatformVersions
+        });
+    }
+
     async getRegistryVersion(abortController: AbortController): Promise<Readonly<RegistryVersion>> {
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'version']);
         return sendRequest({ abortController, endpoint });

@@ -18,22 +18,23 @@ import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
@@ -58,6 +59,9 @@ public class UserService {
     private final ExtensionValidator validator;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2AttributesConfig attributesConfig;
+    private final ExtensionService extensions;
+    private final SearchUtilService search;
+    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.token-prefix:}")
     String tokenPrefix;
@@ -69,7 +73,10 @@ public class UserService {
             CacheService cache,
             ExtensionValidator validator,
             @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
-            OAuth2AttributesConfig attributesConfig
+            OAuth2AttributesConfig attributesConfig,
+            ExtensionService extensions,
+            SearchUtilService search,
+            JobRequestScheduler scheduler
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -78,6 +85,9 @@ public class UserService {
         this.validator = validator;
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.attributesConfig = attributesConfig;
+        this.extensions = extensions;
+        this.search = search;
+        this.scheduler = scheduler;
     }
 
     public UserData findLoggedInUser() {
@@ -334,5 +344,74 @@ public class UserService {
                 .filter(provider -> clientRegistrationRepository.findByRegistrationId(provider) != null)
                 .map(provider -> Map.entry(provider, UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "oauth2", "authorization", provider)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(String namespaceName, String extensionName, String targetPlatform, String version, UserData user)
+            throws ErrorResultException {
+        var extVersion = repositories.findVersion(user, version, targetPlatform, extensionName, namespaceName);
+        if (extVersion == null) {
+            var message = "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, targetPlatform, version);
+
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
+        return deleteExtension(extVersion);
+    }
+
+    protected ResultJson deleteExtension(Extension extension) throws ErrorResultException {
+        var bundledRefs = repositories.findBundledExtensionsReference(extension);
+        if (!bundledRefs.isEmpty()) {
+            throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
+                    + " is bundled by the following extension packs: "
+                    + bundledRefs.stream()
+                    .map(NamingUtil::toFileFormat)
+                    .collect(Collectors.joining(", ")));
+        }
+        var dependRefs = repositories.findDependenciesReference(extension);
+        if (!dependRefs.isEmpty()) {
+            throw new ErrorResultException("The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
+                    + dependRefs.stream()
+                    .map(NamingUtil::toFileFormat)
+                    .collect(Collectors.joining(", ")));
+        }
+
+        cache.evictExtensionJsons(extension);
+        for (var extVersion : repositories.findVersions(extension)) {
+            removeExtensionVersion(extVersion);
+        }
+        for (var review : repositories.findAllReviews(extension)) {
+            entityManager.remove(review);
+        }
+
+        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
+        for(var deprecatedExtension : deprecatedExtensions) {
+            deprecatedExtension.setReplacement(null);
+            cache.evictExtensionJsons(deprecatedExtension);
+        }
+
+        entityManager.remove(extension);
+        search.removeSearchEntry(extension);
+
+        return ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+    }
+
+    protected ResultJson deleteExtension(ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        if (repositories.countVersions(extension) == 1) {
+            return deleteExtension(extension);
+        }
+
+        removeExtensionVersion(extVersion);
+        extension.getVersions().remove(extVersion);
+        extensions.updateExtension(extension);
+
+        return ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+    }
+
+    private void removeExtensionVersion(ExtensionVersion extVersion) {
+        repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
+        repositories.deleteFiles(extVersion);
+        entityManager.remove(extVersion);
     }
 }

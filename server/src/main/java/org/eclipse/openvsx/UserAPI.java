@@ -18,6 +18,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
@@ -33,9 +34,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
@@ -51,17 +55,20 @@ public class UserAPI {
     private final UserService users;
     private final EclipseService eclipse;
     private final StorageUtilService storageUtil;
+    private final LocalRegistryService local;
 
     public UserAPI(
             RepositoryService repositories,
             UserService users,
             EclipseService eclipse,
-            StorageUtilService storageUtil
+            StorageUtilService storageUtil,
+            LocalRegistryService local
     ) {
         this.repositories = repositories;
         this.users = users;
         this.eclipse = eclipse;
         this.storageUtil = storageUtil;
+        this.local = local;
     }
 
     @GetMapping(
@@ -204,6 +211,62 @@ public class UserAPI {
                     return json;
                 })
                 .toList();
+    }
+
+    @GetMapping(
+            path = "/user/extension/{namespaceName}/{extensionName}",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ExtensionJson> getOwnExtension(@PathVariable String namespaceName,
+                                                      @PathVariable String extensionName) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            ExtensionJson json;
+            var latest = repositories.findLatestVersion(user, namespaceName, extensionName);
+            if (latest != null) {
+                json = local.toExtensionVersionJson(latest, null, false);
+                json.setAllTargetPlatformVersions(repositories.findTargetPlatformsGroupedByVersion(latest.getExtension(), user));
+                json.setActive(latest.getExtension().isActive());
+            } else {
+                var error = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
+                throw new ErrorResultException(error, HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ExtensionJson.class);
+        }
+    }
+
+    @PostMapping(
+            path = "/user/extension/{namespaceName}/{extensionName}/delete",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> deleteExtension(
+            @PathVariable String namespaceName,
+            @PathVariable String extensionName,
+            @RequestBody List<TargetPlatformVersionJson> targetVersions
+    ) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        try {
+            var results = new ArrayList<ResultJson>();
+            for(var targetVersion : targetVersions) {
+                results.add(users.deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), user));
+            }
+
+            var result = new ResultJson();
+            result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+            result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
     }
 
     @GetMapping(

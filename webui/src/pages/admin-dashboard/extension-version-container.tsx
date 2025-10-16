@@ -24,13 +24,17 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
 
     const getTargetPlatformVersions = () => {
         const versionMap: TargetPlatformVersion[] = [];
-        versionMap.push({ targetPlatform: WILDCARD, version: WILDCARD, checked: false });
+        if(props.indented) {
+            versionMap.push({ targetPlatform: WILDCARD, version: WILDCARD, checked: false });
+        }
         if (extension.allTargetPlatformVersions != null) {
             extension.allTargetPlatformVersions
                 .filter(i => VERSION_ALIASES.indexOf(i.version) < 0)
                 .forEach(i => {
                     const { version, targetPlatforms } = i;
-                    versionMap.push({ targetPlatform: WILDCARD, version, checked: false });
+                    if(props.indented) {
+                        versionMap.push({ targetPlatform: WILDCARD, version, checked: false });
+                    }
                     targetPlatforms.forEach(targetPlatform => versionMap.push({ targetPlatform, version, checked: false }));
                 });
         }
@@ -153,7 +157,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
                                     indent = 4;
                                 } else {
                                     label = getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform);
-                                    indent = 8;
+                                    indent = props.indented ? 8 : 0;
                                 }
 
                                 const name = `${targetPlatformVersion.targetPlatform}/${targetPlatformVersion.version}`;
@@ -173,7 +177,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
             </Grid>
             <Grid item container xs={12} md={8}>
                 <ExtensionRemoveDialog
-                    onUpdate={props.onUpdate}
+                    onRemove={props.onRemove}
                     extension={extension}
                     targetPlatformVersions={targetPlatformVersions.filter((targetPlatformVersion) => targetPlatformVersion.checked)} />
             </Grid>
@@ -183,5 +187,6 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
 
 export interface ExtensionVersionContainerProps {
     extension: Extension;
-    onUpdate: () => void;
+    onRemove: (targetPlatformVersions?: TargetPlatformVersion[]) => Promise<void>;
+    indented?: boolean
 }

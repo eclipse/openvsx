@@ -44,14 +44,9 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
             if (!removeAll()) {
                 targetPlatformVersions = props.targetPlatformVersions
                     .filter(t => t.targetPlatform !== WILDCARD && t.version !== WILDCARD)
-                    .map(t => {
-                        return { targetPlatform: t.targetPlatform, version: t.version };
-                    });
             }
 
-            await service.admin.deleteExtensions(abortController.current, { namespace: props.extension.namespace, extension: props.extension.name, targetPlatformVersions: targetPlatformVersions });
-
-            props.onUpdate();
+            await props.onRemove(targetPlatformVersions);
             setDialogOpen(false);
         } catch (err) {
             handleError(err);
@@ -117,5 +112,5 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
 export interface ExtensionRemoveDialogProps {
     targetPlatformVersions: TargetPlatformVersion[];
     extension: Extension;
-    onUpdate: () => void;
+    onRemove: (targetPlatformVersions?: TargetPlatformVersion[]) => Promise<void>;
 }
