@@ -23,6 +23,8 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.search.SearchResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -54,6 +56,8 @@ import static org.eclipse.openvsx.cache.CacheService.*;
 @Configuration
 @EnableCaching(proxyTargetClass = true)
 public class CacheConfig {
+
+    protected final Logger logger = LoggerFactory.getLogger(CacheConfig.class);
 
     @Bean
     public Cache<Object, Object> extensionCache(
@@ -102,6 +106,7 @@ public class CacheConfig {
             Cache<Object, Object> webResourceCache,
             Cache<Object, Object> browseCache
     ) {
+        logger.info("Configure file cache manager");
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.registerCustomCache(CACHE_EXTENSION_FILES, extensionCache);
         caffeineCacheManager.registerCustomCache(CACHE_WEB_RESOURCE_FILES, webResourceCache);
@@ -112,12 +117,14 @@ public class CacheConfig {
     @Bean
     @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-jedis'")
     public JedisPool jedisPool(RedisProperties properties) {
+        logger.info("Configure 'redis-jedis' bucket4j rate-limiting cache");
         return new JedisPool(properties.getHost(), properties.getPort(), properties.getUsername(), properties.getPassword());
     }
 
     @Bean
     @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-cluster-jedis'")
     public JedisCluster jedisCluster(RedisProperties properties) {
+        logger.info("Configure 'redis-cluster-jedis' bucket4j rate-limiting cache");
         var configBuilder = DefaultJedisClientConfig.builder();
         var username = properties.getUsername();
         if(StringUtils.isNotEmpty(username)) {
@@ -157,6 +164,7 @@ public class CacheConfig {
             @Value("${ovsx.caching.rate-limiting.tti:PT1H}") Duration rateLimitingTti,
             @Value("${ovsx.caching.rate-limiting.max-size:1024}") long rateLimitingMaxSize
     ) {
+        logger.info("Configure Caffeine cache manager");
         var averageReviewRatingCache = createCaffeineConfiguration(averageReviewRatingTtl, averageReviewRatingMaxSize, false);
         var namespaceDetailsJsonCache = createCaffeineConfiguration(namespaceDetailsJsonTtl, namespaceDetailsJsonMaxSize, false);
         var databaseSearchCache = createCaffeineConfiguration(databaseSearchTtl, databaseSearchMaxSize, false);
@@ -210,6 +218,7 @@ public class CacheConfig {
             @Value("${ovsx.caching.sitemap.ttl:PT1H}") Duration sitemapTtl,
             @Value("${ovsx.caching.malicious-extensions.ttl:P3D}") Duration maliciousExtensionsTtl
     ) {
+        logger.info("Configure Redis cache manager");
         var extensionVersionMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .serializationInclusion(JsonInclude.Include.NON_NULL)
