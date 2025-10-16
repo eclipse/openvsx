@@ -170,6 +170,10 @@ public class RepositoryService {
         return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, targetPlatform, extensionName, namespace);
     }
 
+    public ExtensionVersion findVersion(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
+        return extensionVersionRepo.findByPersonalAccessTokenUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(user, version, targetPlatform, extensionName, namespace);
+    }
+
     public Streamable<ExtensionVersion> findVersions(Extension extension) {
          return extensionVersionRepo.findByExtension(extension);
     }
@@ -523,6 +527,10 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findTargetPlatformsGroupedByVersion(extension);
     }
 
+    public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension, UserData user) {
+        return extensionVersionJooqRepo.findTargetPlatformsGroupedByVersion(extension, user);
+    }
+
     public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
         return extensionVersionJooqRepo.findVersionsForUrls(extension, targetPlatform, version);
     }
@@ -561,6 +569,10 @@ public class RepositoryService {
 
     public List<ExtensionVersion> findLatestVersions(UserData user) {
         return extensionVersionJooqRepo.findLatest(user);
+    }
+
+    public ExtensionVersion findLatestVersion(UserData user, String namespace, String extension) {
+        return extensionVersionJooqRepo.findLatest(user, namespace, extension);
     }
 
     public List<String> findExtensionTargetPlatforms(Extension extension) {

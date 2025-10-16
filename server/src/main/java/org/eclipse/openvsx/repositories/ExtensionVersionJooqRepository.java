@@ -576,6 +576,46 @@ public class ExtensionVersionJooqRepository {
                 ));
     }
 
+    public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension, UserData user) {
+        var targetPlatforms = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc()
+                );
+
+        return dsl.select(
+                        EXTENSION_VERSION.SEMVER_MAJOR,
+                        EXTENSION_VERSION.SEMVER_MINOR,
+                        EXTENSION_VERSION.SEMVER_PATCH,
+                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
+                        EXTENSION_VERSION.VERSION,
+                        targetPlatforms
+                )
+                .from(EXTENSION_VERSION)
+                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
+                .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
+                .and(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()))
+                .groupBy(
+                        EXTENSION_VERSION.SEMVER_MAJOR,
+                        EXTENSION_VERSION.SEMVER_MINOR,
+                        EXTENSION_VERSION.SEMVER_PATCH,
+                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
+                        EXTENSION_VERSION.VERSION
+                )
+                .orderBy(
+                        EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                        EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                        EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                        EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE.asc(),
+                        EXTENSION_VERSION.VERSION.asc()
+                )
+                .fetch()
+                .map(row -> new VersionTargetPlatformsJson(
+                        row.get(EXTENSION_VERSION.VERSION),
+                        row.get(targetPlatforms)
+                ));
+    }
+
     public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
         var query = dsl.selectQuery();
         query.addSelect(
@@ -1041,6 +1081,112 @@ public class ExtensionVersionJooqRepository {
         query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
         query.addConditions(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
         return query.fetch(row -> {
+            var extVersion = toExtensionVersionFull(row, null, new TableFieldMapper(latest));
+            extVersion.getExtension().getNamespace().setDisplayName(row.get(NAMESPACE.DISPLAY_NAME));
+            extVersion.getExtension().setActive(row.get(EXTENSION.ACTIVE));
+            extVersion.getExtension().setDeprecated(row.get(EXTENSION.DEPRECATED));
+            extVersion.getExtension().setDownloadable(row.get(EXTENSION.DOWNLOADABLE));
+            return extVersion;
+        });
+    }
+
+    public ExtensionVersion findLatest(UserData user, String namespace, String extension) {
+        var latestQuery = findLatestQuery(null, false, false);
+        latestQuery.addSelect(
+                EXTENSION_VERSION.ID,
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.PREVIEW,
+                EXTENSION_VERSION.PRE_RELEASE,
+                EXTENSION_VERSION.TIMESTAMP,
+                EXTENSION_VERSION.DISPLAY_NAME,
+                EXTENSION_VERSION.DESCRIPTION,
+                EXTENSION_VERSION.ENGINES,
+                EXTENSION_VERSION.CATEGORIES,
+                EXTENSION_VERSION.TAGS,
+                EXTENSION_VERSION.EXTENSION_KIND,
+                EXTENSION_VERSION.LICENSE,
+                EXTENSION_VERSION.HOMEPAGE,
+                EXTENSION_VERSION.REPOSITORY,
+                EXTENSION_VERSION.SPONSOR_LINK,
+                EXTENSION_VERSION.BUGS,
+                EXTENSION_VERSION.MARKDOWN,
+                EXTENSION_VERSION.GALLERY_COLOR,
+                EXTENSION_VERSION.GALLERY_THEME,
+                EXTENSION_VERSION.LOCALIZED_LANGUAGES,
+                EXTENSION_VERSION.QNA,
+                EXTENSION_VERSION.DEPENDENCIES,
+                EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
+                EXTENSION_VERSION.PUBLISHED_WITH_ID
+        );
+        latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
+        var latest = latestQuery.asTable();
+
+        var query = dsl.selectQuery();
+        query.addSelect(
+                NAMESPACE.ID,
+                NAMESPACE.NAME,
+                NAMESPACE.DISPLAY_NAME,
+                NAMESPACE.PUBLIC_ID,
+                EXTENSION.ID,
+                EXTENSION.NAME,
+                EXTENSION.PUBLIC_ID,
+                EXTENSION.AVERAGE_RATING,
+                EXTENSION.REVIEW_COUNT,
+                EXTENSION.DOWNLOAD_COUNT,
+                EXTENSION.PUBLISHED_DATE,
+                EXTENSION.LAST_UPDATED_DATE,
+                EXTENSION.ACTIVE,
+                EXTENSION.DEPRECATED,
+                EXTENSION.DOWNLOADABLE,
+                latest.field(EXTENSION_VERSION.ID),
+                latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
+                latest.field(EXTENSION_VERSION.VERSION),
+                latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
+                latest.field(EXTENSION_VERSION.PREVIEW),
+                latest.field(EXTENSION_VERSION.PRE_RELEASE),
+                latest.field(EXTENSION_VERSION.TIMESTAMP),
+                latest.field(EXTENSION_VERSION.DISPLAY_NAME),
+                latest.field(EXTENSION_VERSION.DESCRIPTION),
+                latest.field(EXTENSION_VERSION.ENGINES),
+                latest.field(EXTENSION_VERSION.CATEGORIES),
+                latest.field(EXTENSION_VERSION.TAGS),
+                latest.field(EXTENSION_VERSION.EXTENSION_KIND),
+                latest.field(EXTENSION_VERSION.LICENSE),
+                latest.field(EXTENSION_VERSION.HOMEPAGE),
+                latest.field(EXTENSION_VERSION.REPOSITORY),
+                latest.field(EXTENSION_VERSION.SPONSOR_LINK),
+                latest.field(EXTENSION_VERSION.BUGS),
+                latest.field(EXTENSION_VERSION.MARKDOWN),
+                latest.field(EXTENSION_VERSION.GALLERY_COLOR),
+                latest.field(EXTENSION_VERSION.GALLERY_THEME),
+                latest.field(EXTENSION_VERSION.LOCALIZED_LANGUAGES),
+                latest.field(EXTENSION_VERSION.QNA),
+                latest.field(EXTENSION_VERSION.DEPENDENCIES),
+                latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                SIGNATURE_KEY_PAIR.PUBLIC_ID,
+                USER_DATA.ID,
+                USER_DATA.ROLE,
+                USER_DATA.LOGIN_NAME,
+                USER_DATA.FULL_NAME,
+                USER_DATA.AVATAR_URL,
+                USER_DATA.PROVIDER_URL,
+                USER_DATA.PROVIDER
+        );
+        query.addFrom(NAMESPACE);
+        query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
+        query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
+        query.addJoin(SIGNATURE_KEY_PAIR, JoinType.LEFT_OUTER_JOIN, SIGNATURE_KEY_PAIR.ID.eq(latest.field(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID)));
+        query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_WITH_ID)));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addConditions(
+                PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()),
+                NAMESPACE.NAME.equalIgnoreCase(namespace),
+                EXTENSION.NAME.equalIgnoreCase(extension)
+        );
+        return query.fetchOne(row -> {
             var extVersion = toExtensionVersionFull(row, null, new TableFieldMapper(latest));
             extVersion.getExtension().getNamespace().setDisplayName(row.get(NAMESPACE.DISPLAY_NAME));
             extVersion.getExtension().setActive(row.get(EXTENSION.ACTIVE));
