@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent } from 'react';
 import { Box } from '@mui/material';
 import { SxProps, Theme } from '@mui/material/styles';
 import { toRelativeTime, toLocalTime } from '../utils';

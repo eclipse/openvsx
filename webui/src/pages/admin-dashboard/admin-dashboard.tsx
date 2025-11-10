@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useState } from 'react';
+import { FunctionComponent, ReactNode, useContext, useState } from 'react';
 import { Box, Container, CssBaseline, Typography, IconButton } from '@mui/material';
 import { createRoute } from '../../utils';
 import { Sidepanel } from '../../components/sidepanel/sidepanel';

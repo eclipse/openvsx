@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect } from 'react';
+import { FunctionComponent, ReactNode, useContext, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions, Box, Link } from '@mui/material';
 import { MainContext } from '../context';
 import { styled, Theme } from '@mui/material/styles';

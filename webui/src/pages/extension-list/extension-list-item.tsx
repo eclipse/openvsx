@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
+import { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Grid, Fade } from '@mui/material';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';

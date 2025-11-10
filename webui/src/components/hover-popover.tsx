@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, PropsWithChildren, ReactNode, useState } from 'react';
+import { FunctionComponent, PropsWithChildren, ReactNode, useState } from 'react';
 import { Popover } from "@mui/material";
 
 export const HoverPopover: FunctionComponent<PropsWithChildren<HoverPopoverProps>> = props => {

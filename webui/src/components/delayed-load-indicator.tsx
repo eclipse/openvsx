@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useRef, useEffect } from 'react';
+import { FunctionComponent, useState, useRef, useEffect } from 'react';
 import { LinearProgress } from "@mui/material";
 
 export const DelayedLoadIndicator: FunctionComponent<DelayedLoadIndicatorProps> = props => {

@@ -1,12 +1,7 @@
 {
-    "extends": "./configs/base.tsconfig.json",
-    "compilerOptions": {
-        "outDir": "lib"
-    },
-    "include": [
-        "src", "typings"
-    ],
-    "exclude": [
-        "**/*.spec.ts", "**/*.spec.tsx", "**/server.ts"
-    ]
+  "files": [],
+  "references": [
+    { "path": "./configs/tsconfig.app.json" },
+    { "path": "./configs/tsconfig.node.json" }
+  ]
 }

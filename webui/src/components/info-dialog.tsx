@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useEffect } from 'react';
+import { FunctionComponent, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions } from '@mui/material';
 
 export const InfoDialog: FunctionComponent<InfoDialogProps> = props => {
