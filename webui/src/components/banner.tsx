@@ -21,7 +21,7 @@ export const Banner: FunctionComponent<PropsWithChildren<BannerProps>> = props =
                 display: 'block',
                 width: '100%',
                 mx: 'auto',
-                pb: 1, pr: 1, pl: 2, pt: 1.25,
+                pb: 2, pr: 2, pl: 2, pt: 2,
                 color: cardColor,
                 bgcolor: cardBackground,
                 '& a': {
@@ -39,9 +39,14 @@ export const Banner: FunctionComponent<PropsWithChildren<BannerProps>> = props =
                 </Grid>
                 {
                     props.showDismissButton &&
-                    <Grid item xs={12} sm='auto' sx={{ whiteSpace: 'nowrap', alignSelf: 'flex-end', paddingLeft: '90px !important' }}>
+                    <Grid item xs={12} sm='auto' sx={{ 
+                        whiteSpace: 'nowrap', 
+                        alignSelf: 'center', 
+                        display: 'flex',
+                        justifyContent: 'center', 
+                        flexBasis: '100%'
+                    }}>
                         <Button
-                            sx={{ float: 'right' }}
                             variant='outlined'
                             onClick={props.dismissButtonOnClick}
                         >
