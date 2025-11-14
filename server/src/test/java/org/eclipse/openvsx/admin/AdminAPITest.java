@@ -21,6 +21,7 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -73,7 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
-    SimpleMeterRegistry.class, FileCacheDurationConfig.class
+    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class
 })
 class AdminAPITest {
     
@@ -1368,7 +1369,8 @@ class AdminAPITest {
                 EclipseService eclipse,
                 StorageUtilService storageUtil,
                 CacheService cache,
-                JobRequestScheduler scheduler
+                JobRequestScheduler scheduler,
+                MailService mail
         ) {
             return new AdminService(
                     repositories,
@@ -1380,7 +1382,8 @@ class AdminAPITest {
                     eclipse,
                     storageUtil,
                     cache,
-                    scheduler
+                    scheduler,
+                    mail
             );
         }
 
