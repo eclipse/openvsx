@@ -638,6 +638,40 @@ class AdminAPITest {
     }
 
     @Test
+    void testRevokeAccessTokensNotLoggedIn() throws Exception {
+        mockNamespace();
+        mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
+                        .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testRevokeAccessTokensNotAdmin() throws Exception {
+        mockNormalUser();
+        mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testRevokeAccessTokens() throws Exception {
+        mockAdminUser();
+        var user = new UserData();
+        user.setLoginName("test");
+        user.setProvider("github");
+        Mockito.when(repositories.findUserByLoginName("github", "test"))
+                .thenReturn(user);
+
+        Mockito.when(repositories.deactivateAccessTokens(user)).thenReturn(2);
+        mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deactivated 2 tokens of user github/test.")));
+    }
+
+    @Test
     void testReportUnsupportedMediaType() throws Exception {
         var token = mockNonAdminToken();
         mockMvc.perform(get("/admin/report?token={token}&year=2021&month=3", token.getValue())
