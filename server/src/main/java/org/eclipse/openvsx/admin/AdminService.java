@@ -388,6 +388,20 @@ public class AdminService {
         return result;
     }
 
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson revokePublisherTokens(String provider, String loginName, UserData admin) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
+        }
+
+        var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
+        var result = ResultJson.success("Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
+        logAdminAction(admin, result);
+        // TODO send email to user
+        return result;
+    }
+
     public UserData checkAdminUser() {
         return checkAdminUser(users.findLoggedInUser());
     }
