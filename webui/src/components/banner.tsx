@@ -39,11 +39,11 @@ export const Banner: FunctionComponent<PropsWithChildren<BannerProps>> = props =
                 </Grid>
                 {
                     props.showDismissButton &&
-                    <Grid item xs={12} sm='auto' sx={{ 
-                        whiteSpace: 'nowrap', 
-                        alignSelf: 'center', 
+                    <Grid item xs={12} sm='auto' sx={{
+                        whiteSpace: 'nowrap',
+                        alignSelf: 'center',
                         display: 'flex',
-                        justifyContent: 'center', 
+                        justifyContent: 'center',
                         flexBasis: '100%'
                     }}>
                         <Button
