@@ -227,9 +227,10 @@ services:
   webui:
     image: node:22
     working_dir: /app
-    command: sh -c 'yarn watch:default'
+    command: sh -c 'yarn install && yarn watch:default'
     volumes:
       - ./webui:/app
+      - /app/node_modules
     ports:
       - 3000:3000
     depends_on:
