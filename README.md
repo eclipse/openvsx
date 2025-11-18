@@ -1,12 +1,23 @@
-# Eclipse Open VSX
+<h1 align="center">
 
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse/openvsx)
-[![Contribute](https://www.eclipse.org/che/contribute.svg)](https://workspaces.openshift.com#https://github.com/eclipse/openvsx)
-[![Slack workspace](https://img.shields.io/badge/Slack-Join%20workspace-4A154B?logo=slack&logoColor=white)](https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A)
-[![License](https://img.shields.io/github/license/eclipse/openvsx)](https://github.com/eclipse/openvsx/blob/master/LICENSE)
-[![GitHub tag](https://img.shields.io/github/v/tag/eclipse/openvsx?sort=semver)](https://github.com/eclipse/openvsx/releases)
-[![CI](https://github.com/eclipse/openvsx/workflows/CI/badge.svg)](https://github.com/eclipse/openvsx/actions?query=workflow%3ACI)
-[![Revved up by Develocity](https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A)](https://develocity-staging.eclipse.org/)
+<a href="https://open-vsx.org">
+  <img src="https://outreach.eclipse.foundation/hs-fs/hubfs/OpenVSX-logo.png?width=369&height=117&name=OpenVSX-logo.png">
+</a>
+
+</h1>
+
+<p align="center">
+  <a href="https://gitpod.io/#https://github.com/eclipse/openvsx"><img alt="Gitpod Ready-to-Code" src="https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod" /></a>
+  <a href="https://workspaces.openshift.com#https://github.com/eclipse/openvsx"><img alt="Contribute" src="https://www.eclipse.org/che/contribute.svg" /></a>
+  <a href="https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A"><img alt="Slack workspace" src="https://img.shields.io/badge/Slack-Join%20workspace-4A154B?logo=slack&logoColor=white" /></a>
+  <a href="https://github.com/eclipse/openvsx/blob/master/LICENSE"><img alt="EPLv2 License" src="https://img.shields.io/github/license/eclipse/openvsx" /></a>
+  <a href="https://github.com/eclipse/openvsx/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/eclipse/openvsx?sort=semver" /></a>
+  <a href="https://github.com/eclipse/openvsx/actions/workflows/main.yml?query=branch%3Amaster"><img alt="Build Status" src="https://github.com/eclipse/openvsx/actions/workflows/main.yml/badge.svg?branch:master" /></a>
+  <a href="https://develocity-staging.eclipse.org/"><img alt="Revved up by Develocity" src="https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/eclipse/openvsx"><img alt="OpenSSF Scorecard" src="https://api.securityscorecards.dev/projects/github.com/eclipse/openvsx/badge" /></a>
+</p>
+
+# Eclipse Open VSX
 
 Open VSX is a [vendor-neutral](https://projects.eclipse.org/projects/ecd.openvsx) open-source alternative to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/vscode). It provides a server application that manages [VS Code extensions](https://code.visualstudio.com/api) in a database, a web application similar to the VS Code Marketplace, and a command-line tool for publishing extensions similar to [vsce](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce).
 
