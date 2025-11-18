@@ -1,0 +1,12 @@
+{
+  "extends": "./base.tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["es6"],
+    "outDir": "../lib/default"
+  },
+  "files": [
+    "../src/default/server.ts"
+  ]
+}
