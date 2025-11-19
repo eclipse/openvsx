@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.adapter.ExtensionQueryParam.Criterion.*;
@@ -145,7 +146,7 @@ public class LocalVSCodeService implements IVSCodeService {
                         .collect(Collectors.toList());
 
                 var extensionsMap = repositories.findActiveExtensionsById(ids).stream()
-                        .collect(Collectors.toMap(e -> e.getId(), e -> e));
+                        .collect(Collectors.toMap(Extension::getId, e -> e));
 
                 // keep the same order as search results
                 extensionsList = ids.stream()
@@ -161,7 +162,9 @@ public class LocalVSCodeService implements IVSCodeService {
         }
 
         var flags = param.flags();
-        var extensionsMap = extensionsList.stream().collect(Collectors.toMap(e -> e.getId(), e -> e));
+        // when mapping the list of extensions to a map, we need to handle duplicate entries which can happen,
+        // see https://github.com/eclipse/openvsx/issues/1394
+        var extensionsMap = extensionsList.stream().collect(Collectors.toMap(Extension::getId, Function.identity(), (a, b) -> a));
         List<ExtensionVersion> allActiveExtensionVersions = repositories.findActiveExtensionVersions(extensionsMap.keySet(), targetPlatform);
 
         List<ExtensionVersion> extensionVersions;
@@ -198,7 +201,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
             var idsMap = extensionVersionsMap.values().stream()
                     .flatMap(Collection::stream)
-                    .collect(Collectors.toMap(ev -> ev.getId(), ev -> ev));
+                    .collect(Collectors.toMap(ExtensionVersion::getId, ev -> ev));
 
             fileResources = repositories.findFileResourcesByExtensionVersionIdAndType(idsMap.keySet(), types).stream()
                     .map(r -> {
