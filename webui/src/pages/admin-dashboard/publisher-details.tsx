@@ -14,7 +14,6 @@ import { UserSettingsProfile } from '../user/user-settings-profile';
 import { UserExtensionList } from '../user/user-extension-list';
 import { Box, Typography } from '@mui/material';
 import { PublisherRevokeDialog } from './publisher-revoke-dialog';
-import { PublisherRevokeTokensButton } from './publisher-revoke-tokens-button';
 
 interface PublisherDetailsProps {
     publisherInfo: PublisherInfo;
@@ -28,7 +27,6 @@ export const PublisherDetails: FunctionComponent<PublisherDetailsProps> = props 
             <Typography variant='body1'>
                 {props.publisherInfo.activeAccessTokenNum} active access token{props.publisherInfo.activeAccessTokenNum !== 1 ? 's' : ''}.
             </Typography>
-            {props.publisherInfo.activeAccessTokenNum > 0 && <PublisherRevokeTokensButton publisherInfo={props.publisherInfo}/>}
         </Box>
         <Box mt={2}>
             <Typography variant='h5'>Extensions</Typography>

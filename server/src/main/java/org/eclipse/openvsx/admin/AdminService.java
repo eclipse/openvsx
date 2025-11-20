@@ -19,7 +19,6 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
-import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -53,7 +52,6 @@ public class AdminService {
     private final StorageUtilService storageUtil;
     private final CacheService cache;
     private final JobRequestScheduler scheduler;
-    private final MailService mail;
 
     public AdminService(
             RepositoryService repositories,
@@ -65,8 +63,7 @@ public class AdminService {
             EclipseService eclipse,
             StorageUtilService storageUtil,
             CacheService cache,
-            JobRequestScheduler scheduler,
-            MailService mail
+            JobRequestScheduler scheduler
     ) {
         this.repositories = repositories;
         this.extensions = extensions;
@@ -78,7 +75,6 @@ public class AdminService {
         this.storageUtil = storageUtil;
         this.cache = cache;
         this.scheduler = scheduler;
-        this.mail = mail;
     }
 
     @EventListener
@@ -389,20 +385,6 @@ public class AdminService {
                 + " tokens and deactivated " + deactivatedExtensionCount + " extensions of user "
                 + provider + "/" + loginName + "."); 
         logAdminAction(admin, result);
-        return result;
-    }
-
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson revokePublisherTokens(String provider, String loginName, UserData admin) {
-        var user = repositories.findUserByLoginName(provider, loginName);
-        if (user == null) {
-            throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
-        }
-
-        var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
-        var result = ResultJson.success("Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
-        logAdminAction(admin, result);
-        mail.scheduleRevokedAccessTokensMail(user);
         return result;
     }
 

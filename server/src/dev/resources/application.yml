@@ -162,8 +162,3 @@ ovsx:
   storage:
     local:
       directory: /tmp
-  mail:
-    from: no-reply@example.com
-    revoked-access-tokens:
-      subject: 'Open VSX Access Tokens Revoked'
-      template: 'revoked-access-tokens.html'

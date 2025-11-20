@@ -483,18 +483,4 @@ public class AdminAPI {
             return exc.toResponseEntity();
         }
     }
-
-    @PostMapping(
-            path = "/admin/publisher/{provider}/{loginName}/tokens/revoke",
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<ResultJson> revokePublisherTokens(@PathVariable String loginName, @PathVariable String provider) {
-        try {
-            var adminUser = admins.checkAdminUser();
-            var result = admins.revokePublisherTokens(provider, loginName, adminUser);
-            return ResponseEntity.ok(result);
-        } catch (ErrorResultException exc) {
-            return exc.toResponseEntity();
-        }
-    }
 }

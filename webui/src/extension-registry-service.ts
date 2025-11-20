@@ -432,7 +432,6 @@ export interface AdminService {
     changeNamespace(abortController: AbortController, req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>>
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
     revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
-    revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
 }
 
 export interface AdminServiceConstructor {
@@ -541,21 +540,6 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
-        const headers: Record<string, string> = {};
-        if (!isError(csrfResponse)) {
-            const csrfToken = csrfResponse as CsrfTokenJson;
-            headers[csrfToken.header] = csrfToken.value;
-        }
-        return sendRequest({
-            abortController,
-            method: 'POST',
-            credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'tokens', 'revoke']),
-            headers
-        });
-    }
 }
 
 export interface ExtensionFilter {
