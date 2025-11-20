@@ -108,6 +108,7 @@ export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
             <Routes>
                 <Route path={ExtensionListRoutes.MAIN} element={ <ExtensionListContainer /> } />
                 <Route path={UserSettingsRoutes.MAIN} element={<UserSettings userLoading={props.userLoading} />} />
+                <Route path={UserSettingsRoutes.DELETE_EXTENSION} element={<UserSettings userLoading={props.userLoading} />} />
                 <Route path={NamespaceDetailRoutes.MAIN} element={ <NamespaceDetail /> } />
                 <Route path={ExtensionDetailRoutes.MAIN} element={<ExtensionDetail />} />
                 <Route path={ExtensionDetailRoutes.MAIN_TARGET} element={<ExtensionDetail />} />

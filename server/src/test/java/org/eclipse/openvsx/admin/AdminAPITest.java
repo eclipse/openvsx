@@ -300,6 +300,8 @@ class AdminAPITest {
         mockAdminUser();
         mockExtension(2, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
@@ -325,25 +327,25 @@ class AdminAPITest {
     @Test
     void testDeleteExtensionVersion() throws Exception {
         mockAdminUser();
-        mockExtension(2, 0, 0);
+        mockExtension(3, 0, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
-                .content("[{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
                 .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz 2.0.0")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0\nDeleted foobar.baz 2.0.0")));
     }
 
     @Test
     void testDeleteExtensionVersionWithToken() throws Exception {
         var token = mockAdminToken();
-        mockExtension(2, 0, 0);
+        mockExtension(3, 0, 0);
         mockMvc.perform(post("/admin/api/extension/{namespace}/{extension}/delete?token={token}", "foobar", "baz", token.getValue())
-                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz 2.0.0")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0\nDeleted foobar.baz 2.0.0")));
     }
 
     @Test
@@ -373,6 +375,8 @@ class AdminAPITest {
         mockAdminUser();
         mockExtension(2, 1, 0);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
@@ -384,6 +388,8 @@ class AdminAPITest {
         mockAdminUser();
         mockExtension(2, 0, 1);
         mockMvc.perform(post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                .contentType(MediaType.APPLICATION_JSON)
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
@@ -1239,7 +1245,7 @@ class AdminAPITest {
         }
 
         extension.getVersions().addAll(versions);
-        Mockito.when(repositories.countVersions(extension)).thenReturn(numberOfVersions);
+        Mockito.when(repositories.countVersions(namespace.getName(), extension.getName())).thenReturn(numberOfVersions);
         Mockito.when(repositories.findLatestVersion(namespace.getName(), extension.getName(), null, false, false))
                 .thenReturn(versions.get(numberOfVersions - 1));
         Mockito.when(repositories.findVersions(extension))
@@ -1285,7 +1291,7 @@ class AdminAPITest {
     }
 
     private String createVersion(int major) {
-        return Integer.toString(major) + ".0.0";
+        return major + ".0.0";
     }
 
     private String adminStatisticsJson(Consumer<AdminStatisticsJson> content) throws JsonProcessingException {
@@ -1419,12 +1425,14 @@ class AdminAPITest {
 
         @Bean
         ExtensionService extensionService(
+                EntityManager entityManager,
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
-                PublishExtensionVersionHandler publishHandler
+                PublishExtensionVersionHandler publishHandler,
+                JobRequestScheduler scheduler
         ) {
-            return new ExtensionService(repositories, search, cache, publishHandler);
+            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
         }
 
         @Bean

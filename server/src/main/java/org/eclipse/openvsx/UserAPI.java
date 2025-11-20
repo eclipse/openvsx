@@ -18,6 +18,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
@@ -51,17 +52,23 @@ public class UserAPI {
     private final UserService users;
     private final EclipseService eclipse;
     private final StorageUtilService storageUtil;
+    private final LocalRegistryService local;
+    private final ExtensionService extensions;
 
     public UserAPI(
             RepositoryService repositories,
             UserService users,
             EclipseService eclipse,
-            StorageUtilService storageUtil
+            StorageUtilService storageUtil,
+            LocalRegistryService local,
+            ExtensionService extensions
     ) {
         this.repositories = repositories;
         this.users = users;
         this.eclipse = eclipse;
         this.storageUtil = storageUtil;
+        this.local = local;
+        this.extensions = extensions;
     }
 
     @GetMapping(
@@ -204,6 +211,54 @@ public class UserAPI {
                     return json;
                 })
                 .toList();
+    }
+
+    @GetMapping(
+            path = "/user/extension/{namespaceName}/{extensionName}",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ExtensionJson> getOwnExtension(@PathVariable String namespaceName, @PathVariable String extensionName) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            ExtensionJson json;
+            var latest = repositories.findLatestVersion(user, namespaceName, extensionName);
+            if (latest != null) {
+                json = local.toExtensionVersionJson(latest, null, false);
+                json.setAllTargetPlatformVersions(repositories.findTargetPlatformsGroupedByVersion(latest.getExtension(), user));
+                json.setActive(latest.getExtension().isActive());
+            } else {
+                var error = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
+                throw new ErrorResultException(error, HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ExtensionJson.class);
+        }
+    }
+
+    @PostMapping(
+            path = "/user/extension/{namespaceName}/{extensionName}/delete",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> deleteExtension(
+            @PathVariable String namespaceName,
+            @PathVariable String extensionName,
+            @RequestBody List<TargetPlatformVersionJson> targetVersions
+    ) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        try {
+            var result = extensions.deleteExtension(namespaceName, extensionName, targetVersions, user);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
     }
 
     @GetMapping(

@@ -9,17 +9,23 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -30,31 +36,41 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Component
 public class ExtensionService {
 
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
 
+    private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final SearchUtilService search;
     private final CacheService cache;
     private final PublishExtensionVersionHandler publishHandler;
+    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
 
     public ExtensionService(
+            EntityManager entityManager,
             RepositoryService repositories,
             SearchUtilService search,
             CacheService cache,
-            PublishExtensionVersionHandler publishHandler
+            PublishExtensionVersionHandler publishHandler,
+            JobRequestScheduler scheduler
     ) {
+        this.entityManager = entityManager;
         this.repositories = repositories;
         this.search = search;
         this.cache = cache;
         this.publishHandler = publishHandler;
+        this.scheduler = scheduler;
     }
 
     @Transactional
@@ -151,5 +167,86 @@ public class ExtensionService {
         for (var extension : affectedExtensions) {
             updateExtension(extension);
         }
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(
+            String namespaceName,
+            String extensionName,
+            List<TargetPlatformVersionJson> targetVersions,
+            UserData user
+    ) throws ErrorResultException {
+        var results = new ArrayList<ResultJson>();
+        if(repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
+            var extension = repositories.findExtension(extensionName, namespaceName);
+            results.add(deleteExtension(extension));
+        } else {
+            for (var targetVersion : targetVersions) {
+                var extVersion = repositories.findVersion(user, targetVersion.version(), targetVersion.targetPlatform(), extensionName, namespaceName);
+                if (extVersion == null) {
+                    var message = "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version());
+                    throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+                }
+
+                results.add(deleteExtension(extVersion));
+            }
+        }
+
+        var result = new ResultJson();
+        result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        return result;
+    }
+
+    protected ResultJson deleteExtension(Extension extension) throws ErrorResultException {
+        var bundledRefs = repositories.findBundledExtensionsReference(extension);
+        if (!bundledRefs.isEmpty()) {
+            throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
+                    + " is bundled by the following extension packs: "
+                    + bundledRefs.stream()
+                    .map(NamingUtil::toFileFormat)
+                    .collect(Collectors.joining(", ")));
+        }
+        var dependRefs = repositories.findDependenciesReference(extension);
+        if (!dependRefs.isEmpty()) {
+            throw new ErrorResultException("The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
+                    + dependRefs.stream()
+                    .map(NamingUtil::toFileFormat)
+                    .collect(Collectors.joining(", ")));
+        }
+
+        cache.evictExtensionJsons(extension);
+        for (var extVersion : repositories.findVersions(extension)) {
+            removeExtensionVersion(extVersion);
+        }
+        for (var review : repositories.findAllReviews(extension)) {
+            entityManager.remove(review);
+        }
+
+        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
+        for(var deprecatedExtension : deprecatedExtensions) {
+            deprecatedExtension.setReplacement(null);
+            cache.evictExtensionJsons(deprecatedExtension);
+        }
+
+        entityManager.remove(extension);
+        search.removeSearchEntry(extension);
+
+        return ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+    }
+
+    protected ResultJson deleteExtension(ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        removeExtensionVersion(extVersion);
+        extension.getVersions().remove(extVersion);
+        updateExtension(extension);
+
+        return ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+    }
+
+    private void removeExtensionVersion(ExtensionVersion extVersion) {
+        repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
+        repositories.deleteFiles(extVersion);
+        entityManager.remove(extVersion);
     }
 }
