@@ -21,7 +21,6 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
-import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -74,7 +73,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
-    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class
+    SimpleMeterRegistry.class, FileCacheDurationConfig.class
 })
 class AdminAPITest {
     
@@ -636,40 +635,6 @@ class AdminAPITest {
 
         assertThat(token.isActive()).isFalse();
         assertThat(versions.get(0).isActive()).isFalse();
-    }
-
-    @Test
-    void testRevokeAccessTokensNotLoggedIn() throws Exception {
-        mockNamespace();
-        mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
-                        .with(csrf().asHeader()))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testRevokeAccessTokensNotAdmin() throws Exception {
-        mockNormalUser();
-        mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
-                        .with(user("test_user"))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testRevokeAccessTokens() throws Exception {
-        mockAdminUser();
-        var user = new UserData();
-        user.setLoginName("test");
-        user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
-                .thenReturn(user);
-
-        Mockito.when(repositories.deactivateAccessTokens(user)).thenReturn(2);
-        mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
-                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deactivated 2 tokens of user github/test.")));
     }
 
     @Test
@@ -1369,8 +1334,7 @@ class AdminAPITest {
                 EclipseService eclipse,
                 StorageUtilService storageUtil,
                 CacheService cache,
-                JobRequestScheduler scheduler,
-                MailService mail
+                JobRequestScheduler scheduler
         ) {
             return new AdminService(
                     repositories,
@@ -1382,8 +1346,7 @@ class AdminAPITest {
                     eclipse,
                     storageUtil,
                     cache,
-                    scheduler,
-                    mail
+                    scheduler
             );
         }
 

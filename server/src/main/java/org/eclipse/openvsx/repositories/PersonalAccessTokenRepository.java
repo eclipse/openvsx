@@ -11,8 +11,6 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
@@ -31,8 +29,4 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
     PersonalAccessToken findByValue(String value);
 
     PersonalAccessToken findByUserAndDescriptionAndActiveTrue(UserData user, String description);
-
-    @Modifying
-    @Query("update PersonalAccessToken t set t.active = false where t.user = ?1 and t.active = true")
-    int updateActiveSetFalse(UserData user);
 }

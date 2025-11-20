@@ -571,10 +571,6 @@ public class RepositoryService {
         signatureKeyPairRepo.updateActiveSetFalse();
     }
 
-    public int deactivateAccessTokens(UserData user) {
-        return tokenRepo.updateActiveSetFalse(user);
-    }
-
     public List<String> findActiveExtensionNames(Namespace namespace) {
         return extensionJooqRepo.findActiveExtensionNames(namespace);
     }

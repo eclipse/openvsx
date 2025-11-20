@@ -214,8 +214,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findDeprecatedExtensions(extension),
                 () -> repositories.findLatestReplacement(1L, null, false, false),
                 () -> repositories.findNotMigratedItems(page),
-                () -> repositories.findRemoveFileResourceTypeResourceMigrationItems(0, 1),
-                () -> repositories.deactivateAccessTokens(userData)
+                () -> repositories.findRemoveFileResourceTypeResourceMigrationItems(0, 1)
         );
 
         // check that we did not miss anything
