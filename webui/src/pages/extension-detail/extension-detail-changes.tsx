@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Box, Divider, Typography } from '@mui/material';
 import { MainContext } from '../../context';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
+import { FunctionComponent, PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { isError, CsrfTokenJson } from '../../extension-registry-types';

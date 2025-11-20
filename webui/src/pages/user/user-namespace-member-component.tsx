@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext } from 'react';
+import { FunctionComponent, useContext } from 'react';
 import { Box, Typography, Avatar, Select, MenuItem, Button, SelectChangeEvent } from '@mui/material';
 import { NamespaceMembership, MembershipRole, Namespace, UserData } from '../../extension-registry-types';
 import { MainContext } from '../../context';

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, createContext, useEffect, useRef, ReactNode } from 'react';
+import { FunctionComponent, useState, useContext, createContext, useEffect, useRef, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';

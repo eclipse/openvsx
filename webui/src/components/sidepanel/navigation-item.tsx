@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, PropsWithChildren, ReactNode, useState } from 'react';
+import { FunctionComponent, PropsWithChildren, ReactNode, useState } from 'react';
 import { ListItemButton, ListItemText, Collapse, List, ListItemIcon } from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import { useNavigate } from 'react-router';

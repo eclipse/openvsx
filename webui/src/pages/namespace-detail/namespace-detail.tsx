@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
+import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import { Typography, Box, Container, Grid, Link, Divider } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';

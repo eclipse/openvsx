@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@mui/material';

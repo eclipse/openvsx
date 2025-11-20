@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useEffect, useState, useRef } from 'react';
+import { FunctionComponent, ReactNode, useEffect, useState, useRef } from 'react';
 import { CssBaseline } from '@mui/material';
 import { Route, Routes } from 'react-router-dom';
 import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard';

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useState, useContext, useEffect, useRef } from 'react';
+import { ChangeEvent, FunctionComponent, KeyboardEvent, useState, useContext, useEffect, useRef } from 'react';
 import { UserData } from '../..';
 import {
     Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Popper, Fade, Paper,

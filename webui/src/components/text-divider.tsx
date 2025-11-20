@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent } from 'react';
 import { Divider } from "@mui/material";
 
 export const TextDivider: FunctionComponent<TextDividerProps> = props => {

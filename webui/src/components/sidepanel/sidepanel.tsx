@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, PropsWithChildren } from 'react';
+import { FunctionComponent, PropsWithChildren } from 'react';
 import { Drawer, List } from '@mui/material';
 import { Theme } from '@mui/material/styles';
 

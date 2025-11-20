@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
+import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
 import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Box, Typography } from '@mui/material';
 import { PublishExtensionDialog } from './publish-extension-dialog';
