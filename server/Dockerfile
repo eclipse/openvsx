@@ -16,8 +16,10 @@ RUN --mount=type=secret,id=dv-key,env=DEVELOCITY_ACCESS_KEY \
 FROM eclipse-temurin:17.0.7_7-jdk
 
 # Create user openvsx and set up home directory
-RUN groupadd -r openvsx && useradd --no-log-init -r -g openvsx openvsx
-RUN mkdir -p /home/openvsx/server && chown -R openvsx:openvsx /home/openvsx
+RUN mkdir -p /home/openvsx/server \
+    && groupadd -r openvsx \
+    && useradd --no-log-init -r -g openvsx openvsx \
+    && chown -R openvsx:openvsx /home/openvsx
 USER openvsx
 WORKDIR /home/openvsx/server
 
@@ -29,5 +31,5 @@ RUN jar -xf /home/openvsx/openvsx-server.jar && rm /home/openvsx/openvsx-server.
 COPY --chown=openvsx:openvsx scripts/run-server.sh ./
 RUN chmod u+x run-server.sh
 
-# Run sthe start script
+# Run the start script
 ENTRYPOINT ["./run-server.sh"]
