@@ -37,7 +37,7 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     long count();
 
-    @Query("select max(e.downloadCount) from Extension e")
+    @Query("select coalesce(max(e.downloadCount), 0) from Extension e")
     int getMaxDownloadCount();
 
     @Query("select e from Extension e where concat(e.namespace.name, '.', e.name) not in(?1)")
