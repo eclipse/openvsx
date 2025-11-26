@@ -112,15 +112,24 @@ public class EclipseService {
         if (personId == null) {
             throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
         }
-        var profile = getPublicProfile(personId);
-        if (profile.getPublisherAgreements() == null || profile.getPublisherAgreements().getOpenVsx() == null
-                || profile.getPublisherAgreements().getOpenVsx().getVersion() == null) {
+
+        var json = user.toUserJson();
+        enrichUserJson(json, user);
+        var publisherAgreement = json.getPublisherAgreement();
+
+        if (publisherAgreement == null || publisherAgreement.getStatus().equals("none")) {
             throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
         }
-        if (!publisherAgreementAllowedVersions.contains(profile.getPublisherAgreements().getOpenVsx().getVersion())) {
-            throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
-                    + profile.getPublisherAgreements().getOpenVsx().getVersion() + "). The current version is "
-                    + publisherAgreementVersion + ".");
+
+        if (!publisherAgreement.getStatus().equals("signed")) {
+            var profile = getPublicProfile(personId);
+            if (profile != null && profile.getPublisherAgreements() != null && profile.getPublisherAgreements().getOpenVsx() != null) {
+                throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
+                        + profile.getPublisherAgreements().getOpenVsx().getVersion() + "). The current version is "
+                        + publisherAgreementVersion + ".");
+            } else {
+                throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated.");
+            }
         }
     }
 
