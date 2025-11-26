@@ -33,6 +33,7 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(value = "ovsx.storage.migration.enabled", havingValue = "true", matchIfMissing = true)
 public class StorageMigration {
 
     protected final Logger logger = LoggerFactory.getLogger(StorageMigration.class);

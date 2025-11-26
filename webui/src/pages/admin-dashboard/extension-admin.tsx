@@ -13,7 +13,7 @@ import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@mui/material';
 import { MainContext } from '../../context';
-import { isError, Extension } from '../../extension-registry-types';
+import { isError, Extension, TargetPlatformVersion } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';
 import { StyledInput } from './namespace-input';
 
@@ -77,6 +77,15 @@ export const ExtensionAdmin: FunctionComponent = props => {
         }
     };
 
+    const onRemove = async (targetPlatformVersions?: TargetPlatformVersion[]) => {
+        if (extension == null) {
+            return;
+        }
+
+        await service.admin.deleteExtensions(abortController.current, { namespace: extension.namespace, extension: extension.name, targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform })) });
+        await findExtension();
+    };
+
     return <SearchListContainer
         searchContainer={[
             <StyledInput
@@ -100,7 +109,7 @@ export const ExtensionAdmin: FunctionComponent = props => {
         ]}
         listContainer={
             extension ?
-                <ExtensionVersionContainer onUpdate={findExtension} extension={extension} />
+                <ExtensionVersionContainer onRemove={onRemove} extension={extension} />
                 : ''
         }
         loading={loading}

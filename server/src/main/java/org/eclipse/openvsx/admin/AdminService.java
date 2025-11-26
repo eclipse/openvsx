@@ -19,6 +19,7 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -32,9 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneId;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -52,6 +51,7 @@ public class AdminService {
     private final StorageUtilService storageUtil;
     private final CacheService cache;
     private final JobRequestScheduler scheduler;
+    private final MailService mail;
 
     public AdminService(
             RepositoryService repositories,
@@ -63,7 +63,8 @@ public class AdminService {
             EclipseService eclipse,
             StorageUtilService storageUtil,
             CacheService cache,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            MailService mail
     ) {
         this.repositories = repositories;
         this.extensions = extensions;
@@ -75,6 +76,7 @@ public class AdminService {
         this.storageUtil = storageUtil;
         this.cache = cache;
         this.scheduler = scheduler;
+        this.mail = mail;
     }
 
     @EventListener
@@ -130,7 +132,7 @@ public class AdminService {
 
     protected void deleteExtensionAndDependencies(ExtensionVersion extVersion, UserData admin, int depth) {
         var extension = extVersion.getExtension();
-        if (repositories.countVersions(extension) == 1) {
+        if (repositories.countVersions(extension.getNamespace().getName(), extension.getName()) == 1) {
             deleteExtensionAndDependencies(extension, admin, depth + 1);
             return;
         }
@@ -139,6 +141,28 @@ public class AdminService {
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
         logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(
+            UserData adminUser,
+            String namespaceName,
+            String extensionName,
+            List<TargetPlatformVersionJson> targetVersions
+    ) {
+        if(targetVersions == null || repositories.countVersions(namespaceName, extensionName) == targetVersions.size()) {
+            return deleteExtension(namespaceName, extensionName, adminUser);
+        }
+
+        var results = new ArrayList<ResultJson>();
+        for(var targetVersion : targetVersions) {
+            results.add(deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
+        }
+
+        var result = new ResultJson();
+        result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        return result;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -206,10 +230,6 @@ public class AdminService {
 
     protected ResultJson deleteExtension(ExtensionVersion extVersion, UserData admin) {
         var extension = extVersion.getExtension();
-        if (repositories.countVersions(extension) == 1) {
-            return deleteExtension(extension, admin);
-        }
-
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
@@ -385,6 +405,20 @@ public class AdminService {
                 + " tokens and deactivated " + deactivatedExtensionCount + " extensions of user "
                 + provider + "/" + loginName + "."); 
         logAdminAction(admin, result);
+        return result;
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson revokePublisherTokens(String provider, String loginName, UserData admin) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
+        }
+
+        var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
+        var result = ResultJson.success("Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
+        logAdminAction(admin, result);
+        mail.scheduleRevokedAccessTokensMail(user);
         return result;
     }
 

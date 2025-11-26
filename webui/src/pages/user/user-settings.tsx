@@ -22,6 +22,7 @@ import { UserSettingsExtensions } from './user-settings-extensions';
 import { MainContext } from '../../context';
 import { UserData } from '../../extension-registry-types';
 import { LoginComponent } from '../../default/login';
+import { UserSettingsDeleteExtension } from './user-settings-delete-extension';
 
 export namespace UserSettingsRoutes {
     export const ROOT = createRoute(['user-settings']);
@@ -30,14 +31,19 @@ export namespace UserSettingsRoutes {
     export const TOKENS = createRoute([ROOT, 'tokens']);
     export const NAMESPACES = createRoute([ROOT, 'namespaces']);
     export const EXTENSIONS = createRoute([ROOT, 'extensions']);
+    export const DELETE_EXTENSION = createRoute([ROOT, 'extensions', ':namespace', ':extension', 'delete']);
 }
 
 export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
 
     const { pageSettings, user, loginProviders } = useContext(MainContext);
-    const { tab } = useParams();
+    const { tab, namespace, extension } = useParams();
 
-    const renderTab = (tab: string, user: UserData): ReactNode => {
+    const renderTab = (user: UserData, tab?: string, namespace?: string, extension?: string): ReactNode => {
+        if (tab == null && namespace != null && extension != null) {
+            return <UserSettingsDeleteExtension namespace={namespace} extension={extension}/>;
+        }
+
         switch (tab) {
             case 'profile':
                 return <UserSettingsProfile user={user} />;
@@ -89,7 +95,7 @@ return (<Link color='secondary' href={href} onClick={onClick}>log in</Link>);
                         }}
                     >
                         <Box>
-                            { renderTab(tab as string, user) }
+                            {renderTab(user, tab, namespace, extension)}
                         </Box>
                     </Grid>
                 </Grid>

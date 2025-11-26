@@ -2,7 +2,16 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
-### v0.10.6 (Seo. 2025)
+### v0.10.7 (Nov. 2025)
+
+#### Dependencies
+
+- Upgrade `glob` from `10.3.10` to `10.5.0` ([#1423](https://github.com/eclipse/openvsx/pull/1423))
+- Upgrade `js-yaml` from `4.1.0` to `4.1.1` ([#1417](https://github.com/eclipse/openvsx/pull/1417))
+
+---
+
+### v0.10.6 (Sep. 2025)
 
 #### Dependencies
 

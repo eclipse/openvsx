@@ -1151,7 +1151,7 @@ public class RegistryAPI {
         summary = "Create a namespace",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Describes the namespace to create",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(ref = "NamespaceJson")),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = NamespaceJson.class)),
             required = true
         )
     )

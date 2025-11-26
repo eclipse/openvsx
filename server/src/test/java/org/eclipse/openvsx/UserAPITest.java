@@ -17,18 +17,23 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.TokenService;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
+import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.VersionService;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -36,6 +41,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.util.Streamable;
+import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -48,6 +54,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -59,7 +67,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureWebClient
 @MockitoBean(types = {
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
-        ExtensionValidator.class, SimpleMeterRegistry.class
+        ExtensionValidator.class, SimpleMeterRegistry.class, SearchUtilService.class, PublishExtensionVersionHandler.class,
+        JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class
 })
 class UserAPITest {
 
@@ -224,6 +233,29 @@ class UserAPITest {
     void testOwnNamespacesNotLoggedIn() throws Exception {
         mockOwnMemberships();
         mockMvc.perform(get("/user/namespaces"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testOwnExtension() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData, 2, 0, 0);
+        mockMvc.perform(get("/user/extensions")
+                        .with(user("test_user")))
+                .andExpect(status().isOk())
+                .andExpect(content().json(extensionJson(a -> {
+                    var json = new ExtensionJson();
+                    json.setName("baz");
+                    json.setNamespace("foobar");
+                    a.add(json);
+                })));
+    }
+
+    @Test
+    void testOwnExtensionNotLoggedIn() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData, 1, 0, 0);
+        mockMvc.perform(get("/user/extensions"))
                 .andExpect(status().isForbidden());
     }
 
@@ -422,6 +454,97 @@ class UserAPITest {
                 .andExpect(content().json(errorJson("User other_user already has the role contributor.")));
     }
 
+    @Test
+    void testDeleteExtensionNotLoggedIn() throws Exception {
+        mockExtension(null,2, 0, 0);
+        mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteExtensionNotPublisher() throws Exception {
+        var userData = mockUserData();
+
+        var otherUser = new UserData();
+        otherUser.setLoginName("other_user");
+        otherUser.setFullName("Other User");
+        otherUser.setProviderUrl("http://example.com/test");
+        Mockito.doReturn(otherUser).when(users).findLoggedInUser();
+
+        mockExtension(userData, 2, 0, 0);
+        mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("other_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testDeleteExtension() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData,2, 0, 0);
+        mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted foobar.baz")));
+    }
+
+    @Test
+    void testDeleteExtensionVersion() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData,3, 0, 0);
+        mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0\nDeleted foobar.baz 2.0.0")));
+    }
+
+    @Test
+    void testDeleteLastExtensionVersion() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData,1, 0, 0);
+        mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted foobar.baz")));
+    }
+
+    @Test
+    void testDeleteBundledExtension() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData,2, 1, 0);
+        mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Extension foobar.baz is bundled by the following extension packs: foobar.bundle-1.0.0")));
+    }
+
+    @Test
+    void testDeleteDependingExtension() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData,2, 0, 1);
+        mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("The following extensions have a dependency on foobar.baz: foobar.dependant-1.0.0")));
+    }
 
     //---------- UTILITY ----------//
 
@@ -504,6 +627,12 @@ class UserAPITest {
         return new ObjectMapper().writeValueAsString(json);
     }
 
+    private String extensionJson(Consumer<List<ExtensionJson>> content) throws JsonProcessingException {
+        var json = new ArrayList<ExtensionJson>();
+        content.accept(json);
+        return new ObjectMapper().writeValueAsString(json);
+    }
+
     private void mockNamespaceMemberships(String userRole) {
         var userData = mockUserData();
         var namespace = new Namespace();
@@ -541,7 +670,94 @@ class UserAPITest {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
     }
-    
+
+    private Namespace mockNamespace() {
+        var namespace = new Namespace();
+        namespace.setName("foobar");
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findActiveExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+                .thenReturn(false);
+        return namespace;
+    }
+
+    private String createVersion(int major) {
+        return major + ".0.0";
+    }
+
+    private List<ExtensionVersion> mockExtension(UserData user, int numberOfVersions, int numberOfBundles, int numberOfDependants) {
+        var namespace = mockNamespace();
+        var extension = new Extension();
+        extension.setNamespace(namespace);
+        extension.setName("baz");
+        extension.setActive(true);
+        Mockito.when(repositories.findExtension("baz", "foobar"))
+                .thenReturn(extension);
+
+        var versions = new ArrayList<ExtensionVersion>(numberOfVersions);
+        for (var i = 0; i < numberOfVersions; i++) {
+            var extVersion = new ExtensionVersion();
+            extVersion.setExtension(extension);
+            extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+            extVersion.setVersion(createVersion(i + 1));
+            extVersion.setActive(true);
+            versions.add(extVersion);
+            Mockito.when(repositories.findFiles(extVersion))
+                    .thenReturn(Streamable.empty());
+            Mockito.when(repositories.findVersion(user, extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
+                    .thenReturn(extVersion);
+        }
+
+        extension.getVersions().addAll(versions);
+        Mockito.when(repositories.findVersions(extension))
+                .thenReturn(Streamable.of(versions));
+        Mockito.when(repositories.findLatestVersions(user)).thenReturn(List.of(versions.get(versions.size() - 1)));
+        Mockito.when(repositories.isDeleteAllVersions(eq("foobar"), eq("baz"), any(List.class), eq(user))).then(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                return invocation.getArgument(2, List.class).size() == numberOfVersions;
+            }
+        });
+
+        var bundleExt = new Extension();
+        bundleExt.setName("bundle");
+        bundleExt.setNamespace(namespace);
+
+        var bundles = new ArrayList<ExtensionVersion>(numberOfBundles);
+        for (var i = 0; i < numberOfBundles; i++) {
+            var bundle = new ExtensionVersion();
+            bundle.setExtension(bundleExt);
+            bundle.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+            bundle.setVersion(createVersion(i + 1));
+            bundles.add(bundle);
+        }
+        Mockito.when(repositories.findBundledExtensionsReference(extension))
+                .thenReturn(Streamable.of(bundles));
+
+        var dependantExt = new Extension();
+        dependantExt.setName("dependant");
+        dependantExt.setNamespace(namespace);
+
+        var dependants = new ArrayList<ExtensionVersion>(numberOfDependants);
+        for (var i = 0; i < numberOfDependants; i++) {
+            var dependant = new ExtensionVersion();
+            dependant.setExtension(dependantExt);
+            dependant.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+            dependant.setVersion(createVersion(i + 1));
+            dependants.add(dependant);
+        }
+        Mockito.when(repositories.findDependenciesReference(extension))
+                .thenReturn(Streamable.of(dependants));
+
+        Mockito.when(repositories.findAllReviews(extension))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findDeprecatedExtensions(extension))
+                .thenReturn(Streamable.empty());
+        return versions;
+    }
+
     @TestConfiguration
     @Import(SecurityConfig.class)
     static class TestConfig {
@@ -587,6 +803,47 @@ class UserAPITest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
+        }
+
+        @Bean
+        LocalRegistryService localRegistryService(
+                EntityManager entityManager,
+                RepositoryService repositories,
+                ExtensionService extensions,
+                VersionService versions,
+                UserService users,
+                SearchUtilService search,
+                ExtensionValidator validator,
+                StorageUtilService storageUtil,
+                EclipseService eclipse,
+                CacheService cache,
+                ExtensionVersionIntegrityService integrityService
+        ) {
+            return new LocalRegistryService(
+                    entityManager,
+                    repositories,
+                    extensions,
+                    versions,
+                    users,
+                    search,
+                    validator,
+                    storageUtil,
+                    eclipse,
+                    cache,
+                    integrityService
+            );
+        }
+
+        @Bean
+        ExtensionService extensionService(
+                EntityManager entityManager,
+                RepositoryService repositories,
+                SearchUtilService search,
+                CacheService cache,
+                PublishExtensionVersionHandler publishHandler,
+                JobRequestScheduler scheduler
+        ) {
+            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
         }
     }
 }
