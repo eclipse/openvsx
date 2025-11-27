@@ -49,7 +49,7 @@ public class SearchConfig extends ElasticsearchConfiguration {
     String trustStore;
 
     /**
-     * Name from https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms
+     * Name from https://docs.oracle.com/en/java/javase/25/docs/specs/security/standard-names.html#sslcontext-algorithms
      */
     @Value("${ovsx.elasticsearch.truststoreProtocol:TLSv1.2}")
     String trustStoreProtocol;
