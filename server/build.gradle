@@ -45,7 +45,9 @@ def versions = [
     jedis: '6.2.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
-sourceCompatibility = versions.java
+java {
+    sourceCompatibility = versions.java
+}
 
 repositories {
     mavenCentral()
@@ -174,7 +176,6 @@ jooq {
     }
 }
 
-
 publishing {
     publications {
         maven(MavenPublication) {
@@ -217,8 +218,6 @@ task s3IntegrationTests(type: Test) {
     // Set system properties for test configuration
     systemProperty 'spring.profiles.active', 's3-integration'
 }
-
-
 
 jacocoTestReport {
     reports {
