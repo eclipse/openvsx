@@ -164,6 +164,44 @@ class DatabaseSearchServiceTest {
     }
 
     @Test
+    void testPublisher() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
+        Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
+
+        var searchOptions = searchOptions("publisher:RedHat", null, 50, 0, null, null);
+        var result = search.search(searchOptions);
+        // namespace finding
+        assertThat(result.getTotalHits()).isEqualTo(3);
+
+        // Check it found the correct extension
+        var hits = result.getHits();
+        assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
+        assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("java"));
+        assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("openshift"));
+    }
+
+    @Test
+    void testPublisherWithQuery() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
+        Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
+
+        var searchOptions = searchOptions("publisher:RedHat yaml", null, 50, 0, null, null);
+        var result = search.search(searchOptions);
+        // namespace finding
+        assertThat(result.getTotalHits()).isEqualTo(1);
+
+        // Check it found the correct extension
+        var hits = result.getHits();
+        assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
+    }
+
+    @Test
     void testQueryStringExtensionName() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));

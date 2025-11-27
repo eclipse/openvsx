@@ -301,6 +301,10 @@ public class ElasticSearchService implements ISearchService {
             boolQuery.must(builder -> builder.bool(textBoolQuery -> createTextSearchQuery(textBoolQuery, options)));
         }
 
+        if (!StringUtils.isEmpty(options.namespace())) {
+            // Filter by namespace
+            boolQuery.must(QueryBuilders.term(builder -> builder.field("namespace").value(options.namespace()).caseInsensitive(true)));
+        }
         if (!StringUtils.isEmpty(options.category())) {
             // Filter by selected category
             boolQuery.must(QueryBuilders.matchPhrase(builder -> builder.field("categories").query(options.category())));
