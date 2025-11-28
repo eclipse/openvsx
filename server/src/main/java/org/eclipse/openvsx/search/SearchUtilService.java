@@ -11,7 +11,6 @@
 package org.eclipse.openvsx.search;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -58,8 +57,8 @@ public class SearchUtilService implements ISearchService {
 
     }
 
-    public SearchResult search(ElasticSearchService.Options options) {
-        return getImplementation().search(options);
+    public SearchResult search(ISearchService.Options options) {
+        return options.requestedSize() > 0 ? getImplementation().search(options) : new SearchResult();
     }
 
     @Override
