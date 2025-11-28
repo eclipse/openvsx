@@ -68,7 +68,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: 17
+        java-version: 25
     - name: Generate JaCoCo test report
       run: server/gradlew --no-daemon -p server jacocoTestReport
     - name: Make server libraries directory

@@ -9,7 +9,7 @@ buildscript {
 }
 plugins {
     id 'jacoco'
-    id 'nu.studer.jooq' version '8.2.1'
+    id 'org.jooq.jooq-codegen-gradle' version '3.19.26'
     id 'de.undercouch.download' version '5.4.0'
     id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.0'
@@ -22,7 +22,7 @@ apply plugin: 'com.adarshr.test-logger'
 
 def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [
-    java: '17',
+    java: '25',
     flyway: '9.19.1',
     springdoc: '2.8.13',
     gcloud: '2.50.0',
@@ -45,7 +45,9 @@ def versions = [
     jedis: '6.2.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
-sourceCompatibility = versions.java
+java {
+    sourceCompatibility = versions.java
+}
 
 repositories {
     mavenCentral()
@@ -122,7 +124,7 @@ dependencies {
     implementation "io.opentelemetry:opentelemetry-exporter-zipkin"
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
-    jooqGenerator "org.postgresql:postgresql"
+    jooqCodegen "org.postgresql:postgresql"
 
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
 
@@ -142,38 +144,36 @@ dependencies {
 }
 
 jooq {
-    // use jOOQ version defined in Spring Boot
-    version = dependencyManagement.importedProperties['jooq.version']
-    edition = nu.studer.gradle.jooq.JooqEdition.OSS
-    configurations {
-        main {
-            generateSchemaSourceOnCompilation = false
-            generationTool {
-                logging = org.jooq.meta.jaxb.Logging.WARN
-                jdbc {
-                    driver = 'org.postgresql.Driver'
-                    url = 'jdbc:postgresql://localhost:5432/postgres'
-                    user = 'gitpod'
-                    password = 'gitpod'
-                }
-                generator {
-                    name = 'org.jooq.codegen.DefaultGenerator'
-                    database {
-                        name = 'org.jooq.meta.postgres.PostgresDatabase'
-                        inputSchema = 'public'
-                        includes = '.*'
-                        excludes = ''
-                    }
-                    target {
-                        packageName = 'org.eclipse.openvsx.jooq'
-                        directory = jooqSrcDir
-                    }
-                }
+    configuration {
+        logging = "WARN"
+        jdbc {
+            driver = 'org.postgresql.Driver'
+            url = 'jdbc:postgresql://localhost:5432/postgres'
+            user = 'openvsx'
+            password = 'openvsx'
+        }
+        generator {
+            name = 'org.jooq.codegen.DefaultGenerator'
+            database {
+                name = 'org.jooq.meta.postgres.PostgresDatabase'
+                inputSchema = 'public'
+                includes = '.*'
+                excludes = ''
+            }
+            target {
+                packageName = 'org.eclipse.openvsx.jooq'
+                directory = jooqSrcDir
+            }
+            generate {
+                implicitJoinPathsToOne = false
+                implicitJoinPathsToMany = false
+                implicitJoinPathUnusedConstructors = false
+                implicitJoinPathsUseTableNameForUnambiguousFKs = false
+                implicitJoinPathsAsKotlinProperties = false
             }
         }
     }
 }
-
 
 publishing {
     publications {
@@ -213,12 +213,10 @@ task s3IntegrationTests(type: Test) {
     classpath = sourceSets.test.runtimeClasspath
     useJUnitPlatform()
     include 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
-    
+
     // Set system properties for test configuration
     systemProperty 'spring.profiles.active', 's3-integration'
 }
-
-
 
 jacocoTestReport {
     reports {
