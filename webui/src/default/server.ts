@@ -44,7 +44,7 @@ if (args.indexOf('-ratelimit') != -1) {
 }
 
 // Serve static resources
-const staticPath = path.join(__dirname, '..', '..', 'static');
+const staticPath = path.join(__dirname, '..', '..', 'dist');
 app.use(express.static(staticPath));
 
 // Enable react-router by forwarding the main page to all paths that don't match a resource

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode } from 'react';
+import { FunctionComponent, ReactNode } from 'react';
 import { Theme, Grid, Typography, Avatar } from '@mui/material';
 import { toLocalTime } from '../../utils';
 import { UserData } from '../../extension-registry-types';

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UserExtensionList } from './user-extension-list';

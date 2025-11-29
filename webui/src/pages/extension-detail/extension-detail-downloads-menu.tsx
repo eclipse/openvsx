@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, MouseEvent, useState } from 'react';
+import { FunctionComponent, MouseEvent, useState } from 'react';
 import { Box, Button, Menu, MenuItem, Typography, Link } from '@mui/material';
 import { getTargetPlatformDisplayName } from '../../utils';
 import { UrlString } from '../..';

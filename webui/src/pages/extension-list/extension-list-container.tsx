@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useEffect, useState } from 'react';
+import { FunctionComponent, useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { createRoute, addQuery } from '../../utils';

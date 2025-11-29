@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent } from 'react';
 import { Box, Container, Typography } from '@mui/material';
 import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 

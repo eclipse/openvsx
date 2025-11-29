@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect, useRef } from 'react';
+import { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect, useRef } from 'react';
 import { Box, Typography, Divider, Link } from '@mui/material';
 import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';

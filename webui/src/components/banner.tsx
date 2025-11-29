@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, PropsWithChildren } from 'react';
+import { FunctionComponent, PropsWithChildren } from 'react';
 import { Paper, Grid, Button, Collapse } from '@mui/material';
 
 export const Banner: FunctionComponent<PropsWithChildren<BannerProps>> = props => {

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { FunctionComponent, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { Box, Typography, Tabs, Tab, useTheme, useMediaQuery, Link } from '@mui/material';
 import { Namespace, UserData } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';

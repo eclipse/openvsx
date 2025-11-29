@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Paper } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
 import Dropzone from 'react-dropzone';

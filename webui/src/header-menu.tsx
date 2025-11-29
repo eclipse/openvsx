@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ComponentType, FunctionComponent, useContext, useEffect, useState } from 'react';
+import { ComponentType, FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Menu, IconButton, useTheme } from '@mui/material';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import MenuIcon from '@mui/icons-material/Menu';

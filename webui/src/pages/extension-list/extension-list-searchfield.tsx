@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useContext } from 'react';
+import { ChangeEvent, FunctionComponent, KeyboardEvent, useContext } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import { Paper, IconButton, InputBase } from '@mui/material';
 import { MainContext } from '../../context';

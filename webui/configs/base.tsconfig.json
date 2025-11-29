@@ -1,24 +1,24 @@
 {
-    "compilerOptions": {
-        "target": "es6",
-        "module": "es6",
-        "moduleResolution": "node",
-        "allowSyntheticDefaultImports": true,
-        "lib": [
-            "es6", "es2020.string", "dom"
-        ],
-        "typeRoots": [
-            "node_modules/@types", "typings"
-        ],
-        "sourceMap": true,
-        "declaration": true,
-        "declarationMap": true,
-        "noImplicitAny": true,
-        "noImplicitThis": true,
-        "noImplicitReturns": true,
-        "noUnusedLocals": true,
-        "strictNullChecks": true,
-        "jsx": "react",
-        "baseUrl": "./src"
-    }
+  "compilerOptions": {
+    "target": "es6",
+    "module": "es6",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "lib": [
+      "es6", "es2020.string", "dom"
+    ],
+    "typeRoots": [
+      "node_modules/@types", "typings"
+    ],
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "jsx": "react-jsx",
+    "baseUrl": "./src"
+  }
 }

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useContext, FunctionComponent, useState, useEffect, useRef, ReactNode, MouseEvent } from 'react';
+import { useContext, FunctionComponent, useState, useEffect, useRef, ReactNode } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, styled, IconButton } from '@mui/material';
 import { Link as RouteLink, useNavigate } from 'react-router-dom';

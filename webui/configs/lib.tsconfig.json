@@ -1,0 +1,12 @@
+{
+  "extends": "./base.tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../lib"
+  },
+  "include": [
+    "../src/**/*"
+  ],
+  "exclude": [
+    "../src/default/server.ts"
+  ]
+}

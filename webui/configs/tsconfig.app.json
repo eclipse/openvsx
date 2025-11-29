@@ -1,0 +1,45 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "es6",
+
+        "lib": [
+            "es6", "es2020.string", "dom"
+        ],
+        "typeRoots": [
+            "node_modules/@types", "typings"
+        ],
+
+        "sourceMap": true,
+        "declaration": true,
+        "declarationMap": true,
+        "esModuleInterop": true,
+
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "allowSyntheticDefaultImports": true,
+        "isolatedModules": true,
+        "moduleDetection": "force",
+        "noEmit": true,
+        "jsx": "react-jsx",
+
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "strictNullChecks": true,
+
+        "baseUrl": "./src"
+    },
+
+    "include": [
+      "../src", "../typings"
+    ],
+
+    "exclude": [
+      "**/*.spec.ts", "**/*.spec.tsx", "**/server.ts"
+    ]
+}
