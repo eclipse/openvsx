@@ -17,9 +17,9 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
-public class AzureDownloadCountServiceAspect {
+public class DownloadCountServiceAspect {
 
-    @Around("execution(* org.eclipse.openvsx.storage.AzureDownloadCountService.isEnabled(..))")
+    @Around("execution(* org.eclipse.openvsx.storage.log.DownloadCountService.isEnabled(..))")
     public Object isEnabled() throws Throwable {
         return false;
     }

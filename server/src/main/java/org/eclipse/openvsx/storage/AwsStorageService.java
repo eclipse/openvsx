@@ -83,7 +83,7 @@ public class AwsStorageService implements IStorageService {
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
-    protected S3Client getS3Client() {
+    public S3Client getS3Client() {
         if (s3Client == null) {
             var s3ClientBuilder = S3Client.builder()
                     .defaultsMode(DefaultsMode.STANDARD)

@@ -30,6 +30,7 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -72,7 +73,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureWebClient
 @MockitoBean(types = {
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
+    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
     SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class
 })
@@ -1447,7 +1448,7 @@ class AdminAPITest {
                 AzureBlobStorageService azureStorage,
                 LocalStorageService localStorage,
                 AwsStorageService awsStorage,
-                AzureDownloadCountService azureDownloadCountService,
+                DownloadCountService downloadCountService,
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
@@ -1460,7 +1461,7 @@ class AdminAPITest {
                     azureStorage,
                     localStorage,
                     awsStorage,
-                    azureDownloadCountService,
+                    downloadCountService,
                     search,
                     cache,
                     entityManager,

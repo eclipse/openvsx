@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx.storage;
+package org.eclipse.openvsx.storage.log;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.http.rest.PagedResponse;
@@ -19,8 +19,8 @@ import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.observation.ObservationRegistry;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.annotations.Recurring;
@@ -55,8 +55,7 @@ public class AzureDownloadCountService {
 
     protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountService.class);
 
-    private final AzureDownloadCountProcessor processor;
-    private final ObservationRegistry observations;
+    private final DownloadCountProcessor processor;
     private BlobContainerClient containerClient;
     private ObjectMapper objectMapper;
     private Pattern blobItemNamePattern;
@@ -76,12 +75,8 @@ public class AzureDownloadCountService {
     @Value("${ovsx.storage.azure.blob-container:openvsx-resources}")
     String storageBlobContainer;
 
-    public AzureDownloadCountService(
-            AzureDownloadCountProcessor processor,
-            ObservationRegistry observations
-    ) {
+    public AzureDownloadCountService(DownloadCountProcessor processor) {
         this.processor = processor;
-        this.observations = observations;
     }
 
     /**
@@ -100,15 +95,15 @@ public class AzureDownloadCountService {
     /**
      * Task scheduled once per hour to pull logs from Azure Blob Storage and update extension download counts.
      */
-    @Job(name = "Update Download Counts", retries = 0)
-    @Recurring(id = "update-download-counts", cron = "0 5 * * * *", zoneId = "UTC")
+    @Job(name = "Update Azure Download Counts", retries = 0)
+    @Recurring(id = "update-azure-download-counts", cron = "0 5 * * * *", zoneId = "UTC")
     public void updateDownloadCounts() {
         if (!isEnabled()) {
             return;
         }
 
-        logger.info(">> updateDownloadCounts");
-        var maxExecutionTime = LocalDateTime.now().withMinute(55);
+        logger.info("[AzureDownloadCountService] >> updateDownloadCounts");
+        var maxExecutionTime = LocalDateTime.now().plusMinutes(50);
         var blobs = listBlobs();
         var iterableByPage = blobs.iterableByPage();
 
@@ -118,27 +113,28 @@ public class AzureDownloadCountService {
             var iterator = iterableByPage.iterator();
             if (iterator.hasNext()) {
                 response = iterator.next();
-                processResponse(response, stopWatch, maxExecutionTime);
+                if (!processResponse(response, stopWatch, maxExecutionTime)) {
+                    break;
+                }
             }
 
             var continuationToken = response != null ? response.getContinuationToken() : "";
             iterableByPage = !StringUtils.isEmpty(continuationToken) ? blobs.iterableByPage(continuationToken) : null;
         }
 
-        logger.info("<< updateDownloadCounts");
+        logger.info("[AzureDownloadCountService] << updateDownloadCounts");
     }
 
-    private void processResponse(PagedResponse<BlobItem> response, StopWatch stopWatch, LocalDateTime maxExecutionTime) {
+    private boolean processResponse(PagedResponse<BlobItem> response, StopWatch stopWatch, LocalDateTime maxExecutionTime) {
         var blobNames = getBlobNames(response.getValue());
-        var processedItems = processor.processedItems(blobNames);
+        var processedItems = processor.processedItems(FileResource.STORAGE_AZURE, blobNames);
         processedItems.forEach(this::deleteBlob);
         blobNames.removeAll(processedItems);
         for (var name : blobNames) {
             if (LocalDateTime.now().isAfter(maxExecutionTime)) {
                 var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
                 logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
-                logger.info("<< updateDownloadCounts");
-                return;
+                return false;
             }
 
             var processedOn = LocalDateTime.now();
@@ -155,16 +151,18 @@ public class AzureDownloadCountService {
 
                 success = true;
             } catch (Exception e) {
-                logger.error("Failed to process BlobItem: " + name, e);
+                logger.error("Failed to process BlobItem: {}", name, e);
             }
 
             stopWatch.stop();
-            var executionTime = (int) stopWatch.getLastTaskTimeMillis();
-            processor.persistProcessedItem(name, processedOn, executionTime, success);
+            var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
+            processor.persistProcessedItem(name, FileResource.STORAGE_AZURE, processedOn, executionTime, success);
             if(success) {
                 deleteBlob(name);
             }
         }
+
+        return true;
     }
 
     private void deleteBlob(String blobName) {

@@ -21,6 +21,7 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +53,7 @@ public class StorageUtilService implements IStorageService {
     private final AzureBlobStorageService azureStorage;
     private final LocalStorageService localStorage;
     private final AwsStorageService awsStorage;
-    private final AzureDownloadCountService azureDownloadCountService;
+    private final DownloadCountService downloadCountService;
     private final SearchUtilService search;
     private final CacheService cache;
     private final EntityManager entityManager;
@@ -73,7 +74,7 @@ public class StorageUtilService implements IStorageService {
             AzureBlobStorageService azureStorage,
             LocalStorageService localStorage,
             AwsStorageService awsStorage,
-            AzureDownloadCountService azureDownloadCountService,
+            DownloadCountService downloadCountService,
             SearchUtilService search,
             CacheService cache,
             EntityManager entityManager,
@@ -85,7 +86,7 @@ public class StorageUtilService implements IStorageService {
         this.azureStorage = azureStorage;
         this.localStorage = localStorage;
         this.awsStorage = awsStorage;
-        this.azureDownloadCountService = azureDownloadCountService;
+        this.downloadCountService = downloadCountService;
         this.search = search;
         this.cache = cache;
         this.entityManager = entityManager;
@@ -277,7 +278,7 @@ public class StorageUtilService implements IStorageService {
 
     @Transactional
     public void increaseDownloadCount(FileResource resource) {
-        if(azureDownloadCountService.isEnabled()) {
+        if(downloadCountService.isEnabled(resource)) {
             // don't count downloads twice
             return;
         }
