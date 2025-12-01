@@ -15,5 +15,3 @@ CREATE SEQUENCE download_count_processed_item_seq INCREMENT 50 OWNED BY public.d
 SELECT SETVAL('download_count_processed_item_seq', (SELECT COALESCE(MAX(id), 1) FROM download_count_processed_item)::BIGINT);
 
 DROP TABLE IF EXISTS public.azure_download_count_processed_item;
-
-DELETE FROM public.jobrunr_recurring_jobs where id = 'update-download-counts';
