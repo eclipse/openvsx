@@ -120,7 +120,7 @@ public class AwsDownloadCountService {
             try {
                 var counts = processLogFile(name);
                 if (!counts.isEmpty()) {
-                    var extensionDownloads = processor.processDownloadCounts(counts);
+                    var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
                     var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
                     processor.evictCaches(updatedExtensions);
                     processor.updateSearchEntries(updatedExtensions);

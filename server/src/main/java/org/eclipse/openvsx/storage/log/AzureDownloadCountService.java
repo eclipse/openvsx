@@ -143,7 +143,7 @@ public class AzureDownloadCountService {
             try {
                 var files = processBlobItem(name);
                 if (!files.isEmpty()) {
-                    var extensionDownloads = processor.processDownloadCounts(files);
+                    var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AZURE, files);
                     var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
                     processor.evictCaches(updatedExtensions);
                     processor.updateSearchEntries(updatedExtensions);

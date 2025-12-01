@@ -68,8 +68,8 @@ public class DownloadCountProcessor {
         });
     }
 
-    public Map<Long, Integer> processDownloadCounts(Map<String, Integer> files) {
-        return Observation.createNotStarted("DownloadCountProcessor#processDownloadCounts", observations).observe(() -> repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
+    public Map<Long, Integer> processDownloadCounts(String storageType, Map<String, Integer> files) {
+        return Observation.createNotStarted("DownloadCountProcessor#processDownloadCounts", observations).observe(() -> repositories.findDownloadsByStorageTypeAndName(storageType, files.keySet()).stream()
                 .map(fileResource -> Map.entry(fileResource, files.get(fileResource.getName().toUpperCase())))
                 .collect(Collectors.groupingBy(
                         e -> e.getKey().getExtension().getExtension().getId(),

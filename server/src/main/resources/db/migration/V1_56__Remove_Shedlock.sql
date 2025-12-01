@@ -1,1 +1,1 @@
-DROP TABLE public.shedlock;
+DROP TABLE IF EXISTS public.shedlock;
