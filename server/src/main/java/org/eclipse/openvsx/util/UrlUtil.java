@@ -21,6 +21,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriUtils;
 
+import javax.annotation.Nullable;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
@@ -111,6 +113,22 @@ public final class UrlUtil {
 
     public static String createApiReviewsUrl(String serverUrl, String namespace, String extension) {
         return createApiUrl(serverUrl, "api", namespace, extension, "reviews");
+    }
+
+    public static @Nullable URI createURI(String baseUrl, String... segments) {
+        if(Arrays.stream(segments).anyMatch(Objects::isNull)) {
+            return null;
+        }
+
+        var path = Arrays.stream(segments)
+                .filter(StringUtils::isNotEmpty)
+                .collect(Collectors.joining("/"));
+
+        if (baseUrl.isEmpty() || baseUrl.charAt(baseUrl.length() - 1) != '/') {
+            baseUrl += '/';
+        }
+
+        return URI.create(baseUrl + path);
     }
 
     /**

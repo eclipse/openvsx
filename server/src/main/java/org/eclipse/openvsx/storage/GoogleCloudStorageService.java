@@ -10,14 +10,12 @@
 package org.eclipse.openvsx.storage;
 
 import com.google.cloud.storage.*;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.TempFile;
-import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
@@ -76,7 +74,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public void uploadFile(TempFile tempFile) {
         var resource = tempFile.getResource();
-        var objectId = getObjectId(resource);
+        var objectId = getObjectKey(resource);
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException(missingBucketIdMessage("Cannot upload file", resource.getName()));
         }
@@ -87,7 +85,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public void uploadNamespaceLogo(TempFile logoFile) {
         var namespace = logoFile.getNamespace();
-        var objectId = getObjectId(namespace);
+        var objectId = getObjectKey(namespace);
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException(missingBucketIdMessage("Cannot upload file", objectId));
         }
@@ -121,12 +119,12 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public void removeFile(FileResource resource) {
-        removeFile(getObjectId(resource));
+        removeFile(getObjectKey(resource));
     }
 
     @Override
     public void removeNamespaceLogo(Namespace namespace) {
-        removeFile(getObjectId(namespace));
+        removeFile(getObjectKey(namespace));
     }
 
     private void removeFile(String objectId) {
@@ -142,21 +140,7 @@ public class GoogleCloudStorageService implements IStorageService {
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
-        return URI.create(BASE_URL + bucketId + "/" + getObjectId(resource));
-    }
-
-    protected String getObjectId(FileResource resource) {
-        var extVersion = resource.getExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var segments = new String[]{namespace.getName(), extension.getName()};
-        if(!extVersion.isUniversalTargetPlatform()) {
-			segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
-        }
-
-		segments = ArrayUtils.add(segments, extVersion.getVersion());
-        segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
-        return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
+        return URI.create(BASE_URL + bucketId + "/" + getObjectKey(resource));
     }
 
     @Override
@@ -164,7 +148,7 @@ public class GoogleCloudStorageService implements IStorageService {
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException(missingBucketIdMessage(namespace.getLogoName()));
         }
-        return URI.create(BASE_URL + bucketId + "/" + getObjectId(namespace));
+        return URI.create(BASE_URL + bucketId + "/" + getObjectKey(namespace));
     }
 
     @Override
@@ -174,14 +158,10 @@ public class GoogleCloudStorageService implements IStorageService {
         }
 
         var tempFile = new TempFile("temp_file_", "");
-        var objectId = getObjectId(resource);
+        var objectId = getObjectKey(resource);
         getStorage().downloadTo(BlobId.of(bucketId, objectId), tempFile.getPath());
         tempFile.setResource(resource);
         return tempFile;
-    }
-
-    protected String getObjectId(Namespace namespace) {
-        return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
     }
 
     private String missingBucketIdMessage(String name) {
@@ -194,12 +174,12 @@ public class GoogleCloudStorageService implements IStorageService {
 
     @Override
     public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
-        pairs.forEach(pair -> copy(getObjectId(pair.getFirst()), getObjectId(pair.getSecond())));
+        pairs.forEach(pair -> copy(getObjectKey(pair.getFirst()), getObjectKey(pair.getSecond())));
     }
 
     @Override
     public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
-        copy(getObjectId(oldNamespace), getObjectId(newNamespace));
+        copy(getObjectKey(oldNamespace), getObjectKey(newNamespace));
     }
 
     private void copy(String source, String target) {
@@ -218,7 +198,7 @@ public class GoogleCloudStorageService implements IStorageService {
             throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
 
-        var objectId = getObjectId(resource);
+        var objectId = getObjectKey(resource);
         var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
         FileUtil.writeSync(path, p -> getStorage().downloadTo(BlobId.of(bucketId, objectId), p));
         return path;
