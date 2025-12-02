@@ -24,10 +24,7 @@ import org.springframework.web.util.UriUtils;
 import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -40,12 +37,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-
+/**
+ * Pulls logs from an Amazon S3 bucket, extracts downloads from the logs and updates download counts in the database.
+ * <p>
+ * Currently only log files uploaded by Amazon CloudFront are supported.
+ * <p>
+ * Links:
+ * <ul>
+ *     <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html">CloudFront standard logging</a></li>
+ *     <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logs-reference.html">CloudFront log format</a></li>
+ * </ul>
+ */
 @Component
 public class AwsDownloadCountService {
     private final Logger logger = LoggerFactory.getLogger(AwsDownloadCountService.class);
 
-    private static final String LOG_LOCATION_PREFIX = "AWSLogs/";
     private static final int MAX_KEYS = 100;
 
     private final AwsStorageService  awsStorageService;
@@ -53,6 +59,9 @@ public class AwsDownloadCountService {
 
     @Value("${ovsx.logs.aws.bucket:}")
     String bucket;
+
+    @Value("${ovsx.logs.aws.prefix:AWSLogs/}")
+    String prefix;
 
     public AwsDownloadCountService(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
         this.awsStorageService = awsStorageService;
@@ -74,7 +83,7 @@ public class AwsDownloadCountService {
      * Task scheduled once per hour to pull logs from AWS S3 Storage and update extension download counts.
      */
     @Job(name = "Update AWS Download Counts", retries = 0)
-    @Recurring(id = "update-aws-download-counts", cron = "0 * * * * *", zoneId = "UTC")
+    @Recurring(id = "update-aws-download-counts", cron = "0 10 * * * *", zoneId = "UTC")
     public void updateDownloadCounts() {
         if (!isEnabled()) {
             return;
@@ -104,13 +113,13 @@ public class AwsDownloadCountService {
     private boolean processResponse(List<String> files, StopWatch stopWatch, LocalDateTime maxExecutionTime) {
         var logFiles = files.stream().filter(logFile -> logFile.endsWith(".gz")).collect(Collectors.toList());
         var processedItems = processor.processedItems(FileResource.STORAGE_AWS, logFiles);
-        processedItems.forEach(this::deleteLogFile);
+        processedItems.forEach(this::deleteFile);
         logFiles.removeAll(processedItems);
         for (var name : logFiles) {
             var processedOn = LocalDateTime.now();
 
             if (processedOn.isAfter(maxExecutionTime)) {
-                var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
+                var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(10);
                 logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
                 return false;
             }
@@ -135,7 +144,7 @@ public class AwsDownloadCountService {
             var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
             processor.persistProcessedItem(name, FileResource.STORAGE_AWS, processedOn, executionTime, success);
             if (success) {
-                deleteLogFile(name);
+                deleteFile(name);
             }
         }
 
@@ -157,8 +166,6 @@ public class AwsDownloadCountService {
                     continue;
                 }
 
-                // Format:
-                // date	time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status	cs(Referer)	cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type	x-edge-request-id	x-host-header	cs-protocol	cs-bytes	time-taken	x-forwarded-for	ssl-protocol	ssl-cipher	x-edge-response-result-type	cs-protocol-version	fle-status	fle-encrypted-fields	c-port	time-to-first-byte	x-edge-detailed-result-type	sc-content-type	sc-content-len	sc-range-start	sc-range-end
                 var components = line.split("[ \t]+");
 
                 if (isGetOperation(components) && isStatusOk(components) && isExtensionPackageUri(components)) {
@@ -198,12 +205,12 @@ public class AwsDownloadCountService {
         return downloadsTempFile;
     }
 
-    private void deleteLogFile(String objectKey) {
-//        getS3Client().deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(objectKey).build());
+    private void deleteFile(String objectKey) {
+        getS3Client().deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(objectKey).build());
     }
 
     private ListObjectsV2Response listObjects(String continuationToken) {
-        var builder = ListObjectsV2Request.builder().bucket(bucket).maxKeys(MAX_KEYS).prefix(LOG_LOCATION_PREFIX);
+        var builder = ListObjectsV2Request.builder().bucket(bucket).maxKeys(MAX_KEYS).prefix(prefix);
 
         if (continuationToken != null) {
             builder.continuationToken(continuationToken);

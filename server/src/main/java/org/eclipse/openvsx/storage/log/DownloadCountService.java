@@ -12,6 +12,10 @@ package org.eclipse.openvsx.storage.log;
 import org.eclipse.openvsx.entities.FileResource;
 import org.springframework.stereotype.Component;
 
+/**
+ * A utility service to determine whether an optimized download count service
+ * is available for a specific {@link FileResource}.
+ */
 @Component
 public class DownloadCountService {
 
@@ -26,6 +30,12 @@ public class DownloadCountService {
         this.azureDownloadCountService = azureDownloadCountService;
     }
 
+    /**
+     * Returns whether an optimized download count service is enabled for the given {@link FileResource}.
+     *
+     * @param resource the {@link FileResource} to check
+     * @return {@code true} if an optimized download count service is available, {@code false} otherwise
+     */
     public boolean isEnabled(FileResource resource) {
         return switch (resource.getStorageType()) {
             case FileResource.STORAGE_AWS -> awsDownloadCountService.isEnabled();
