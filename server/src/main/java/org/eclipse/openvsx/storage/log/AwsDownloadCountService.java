@@ -90,6 +90,9 @@ public class AwsDownloadCountService {
         }
 
         logger.info("[AwsDownloadCountService] >> updateDownloadCounts");
+
+        // Note: need to align the next jobRunTime with the cron schedule when changing it.
+        var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(10);
         var maxExecutionTime = LocalDateTime.now().plusMinutes(50);
 
         var stopWatch = new StopWatch();
@@ -100,7 +103,7 @@ public class AwsDownloadCountService {
             var objects = listObjects(continuationToken);
 
             var files = objects.contents().stream().map(S3Object::key).toList();
-            if (!processResponse(files, stopWatch, maxExecutionTime)) {
+            if (!processResponse(files, stopWatch, maxExecutionTime, nextJobRunTime)) {
                 break;
             }
 
@@ -110,16 +113,35 @@ public class AwsDownloadCountService {
         logger.info("[AwsDownloadCountService] << updateDownloadCounts");
     }
 
-    private boolean processResponse(List<String> files, StopWatch stopWatch, LocalDateTime maxExecutionTime) {
+    private boolean processResponse(
+            List<String> files,
+            StopWatch stopWatch,
+            LocalDateTime maxExecutionTime,
+            LocalDateTime nextJobRunTime
+    ) {
         var logFiles = files.stream().filter(logFile -> logFile.endsWith(".gz")).collect(Collectors.toList());
+
+        // determine log files that have already been processed -> delete them and do not re-process them
         var processedItems = processor.processedItems(FileResource.STORAGE_AWS, logFiles);
         processedItems.forEach(this::deleteFile);
+        if (!processedItems.isEmpty()) {
+            logger.info("[AwsDownloadCountService] deleting already analysed log files:");
+            processedItems.forEach(item -> logger.info("  - {}", item));
+        }
         logFiles.removeAll(processedItems);
+
+        // determine log files that could not be processed before -> keep them for analysis and skip processing
+        var failedItems = processor.failedItems(FileResource.STORAGE_AWS, logFiles);
+        if (!failedItems.isEmpty()) {
+            logger.info("[AwsDownloadCountService] skipping previously failed log files:");
+            failedItems.forEach(item -> logger.info("  - {}", item));
+        }
+        logFiles.removeAll(failedItems);
+
         for (var name : logFiles) {
             var processedOn = LocalDateTime.now();
 
             if (processedOn.isAfter(maxExecutionTime)) {
-                var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(10);
                 logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
                 return false;
             }

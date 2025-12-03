@@ -363,6 +363,10 @@ public class RepositoryService {
         return downloadCountRepo.findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(storageType, names);
     }
 
+    public List<String> findAllFailedDownloadCountProcessedItemsByStorageTypeAndNameIn(String storageType, List<String> names) {
+        return downloadCountRepo.findAllFailedDownloadCountProcessedItemsByStorageTypeAndNameIn(storageType, names);
+    }
+
     public List<Extension> findActiveExtensionsByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
         return extensionJooqRepo.findAllActiveByPublicId(publicIds, namespacesToExclude);
     }
