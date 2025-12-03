@@ -106,6 +106,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findAllPersistedLogs(),
                 () -> repositories.findAllReviews(extension),
                 () -> repositories.findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn("storageType", STRING_LIST),
+                () -> repositories.findAllFailedDownloadCountProcessedItemsByStorageTypeAndNameIn("storageType", STRING_LIST),
                 () -> repositories.findBundledExtensionsReference(extension),
                 () -> repositories.findDependenciesReference(extension),
                 () -> repositories.findDownloadsByStorageTypeAndName("storageType", STRING_LIST),
