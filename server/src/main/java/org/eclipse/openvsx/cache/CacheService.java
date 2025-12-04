@@ -15,6 +15,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -100,13 +101,20 @@ public class CacheService {
             return;
         }
 
+        var namespaceName = extension.getNamespace().getName();
+        var extensionName = extension.getName();
+
+        // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern
+        if (cache instanceof RedisCacheWriter redisCache) {
+            redisCache.clean(CACHE_EXTENSION_JSON, extensionJsonCacheKey.generateWildcard(namespaceName, extensionName).getBytes());
+            return;
+        }
+
         var versions = new ArrayList<>(VersionAlias.ALIAS_NAMES);
         extension.getVersions().stream()
                 .map(ExtensionVersion::getVersion)
                 .forEach(versions::add);
 
-        var namespaceName = extension.getNamespace().getName();
-        var extensionName = extension.getName();
         var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
         targetPlatforms.add("null");
         for (var version : versions) {

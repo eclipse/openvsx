@@ -28,4 +28,8 @@ public class ExtensionJsonCacheKeyGenerator implements KeyGenerator {
     public String generate(String namespaceName, String extensionName, String targetPlatform, String version) {
         return NamingUtil.toFileFormat(namespaceName, extensionName, targetPlatform, version);
     }
+
+    public String generateWildcard(String namespaceName, String extensionName) {
+        return NamingUtil.toExtensionId(namespaceName, extensionName) + "*";
+    }
 }
