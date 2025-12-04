@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import com.google.common.io.ByteStreams;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
@@ -107,17 +108,18 @@ public class ExtensionService {
     }
 
     private TempFile createExtensionFile(InputStream content) {
-        try (var input = new BufferedInputStream(content)) {
-            input.mark(0);
-            var skipped = input.skip(MAX_CONTENT_SIZE  + 1);
-            if (skipped > MAX_CONTENT_SIZE) {
-                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
-            }
-
+        try (var input = ByteStreams.limit(new BufferedInputStream(content), MAX_CONTENT_SIZE + 1)) {
+            long size;
             var extensionFile = new TempFile("extension_", ".vsix");
             try(var out = Files.newOutputStream(extensionFile.getPath())) {
-                input.reset();
-                input.transferTo(out);
+                size = input.transferTo(out);
+            }
+
+            if (size > MAX_CONTENT_SIZE) {
+                try {
+                    extensionFile.close();
+                } catch (IOException _) {}
+                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
             }
 
             return extensionFile;
