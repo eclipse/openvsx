@@ -35,7 +35,7 @@ def versions = [
     jobrunr: '7.5.0',
     bucket4j: '0.12.7',
     bucket4j_redis: '8.10.1',
-    tika: '3.1.0',
+    tika: '3.2.2',
     bouncycastle: '1.80',
     commons_lang3: '3.12.0',
     jaxb_api: '2.3.1',
