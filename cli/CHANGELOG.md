@@ -2,6 +2,14 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.10.8 (unreleased)
+
+#### Dependencies
+
+- Upgrade `jws` from `3.2.2` to `3.2.3` ([#1460](https://github.com/eclipse/openvsx/pull/1460))
+
+---
+
 ### v0.10.7 (Nov. 2025)
 
 #### Dependencies
