@@ -15,7 +15,7 @@ jobs:
       run: mkdir -p ${{ runner.temp }}/artifacts
     - name: Download PR number artifact
       if: github.event.workflow_run.event == 'pull_request'
-      uses: dawidd6/action-download-artifact@v6
+      uses: dawidd6/action-download-artifact@v11
       with:
         workflow: CI
         run_id: ${{ github.event.workflow_run.id }}
@@ -38,7 +38,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Checkout head branch
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           ref: ${{ github.event.workflow_run.head_branch }}
@@ -54,19 +54,19 @@ jobs:
         git checkout $HEAD_BRANCH
         git clean -ffdx && git reset --hard HEAD
     - name: Cache SonarCloud packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
     - name: Cache Gradle packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.gradle/caches
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         java-version: 25
