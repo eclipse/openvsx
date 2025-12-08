@@ -24,7 +24,7 @@ import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { HoverPopover } from '../../components/hover-popover';
 import { Extension, UserData, isError } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
-import { ExportRatingStars } from './extension-rating-stars';
+import { ExtensionRatingStars } from './extension-rating-stars';
 import { NamespaceDetailRoutes } from '../namespace-detail/namespace-detail';
 import { ExtensionDetailOverview } from './extension-detail-overview';
 import { ExtensionDetailChanges } from './extension-detail-changes';
@@ -399,7 +399,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                             `Average rating: ${getRoundedRating(extension.averageRating)} out of 5 (${extension.reviewCount} reviews)`
                             : 'Not rated yet'
                     }>
-                    <ExportRatingStars number={extension.averageRating ?? 0} fontSize='small' />
+                    <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='small' />
                     ({reviewCountFormatted})
                 </StyledLink>
                 </Box>
