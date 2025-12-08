@@ -15,9 +15,6 @@ import jakarta.persistence.*;
 
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
-
-import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Entity
 public class ExtensionReview {
@@ -50,17 +47,11 @@ public class ExtensionReview {
      */
     public ReviewJson toReviewJson() {
         var json = new ReviewJson();
-        json.setId(this.getId());
         json.setTimestamp(TimeUtil.toUTCString(this.getTimestamp()));
         json.setUser(this.getUser().toUserJson());
         json.setTitle(this.getTitle());
         json.setComment(this.getComment());
         json.setRating(this.getRating());
-
-        var deleteUrl =
-                createApiUrl(UrlUtil.getBaseUrl(), "admin", "extension", extension.getNamespace().getName(), extension.getName(), "review", Long.toString(this.getId()), "delete");
-        json.setDeleteUrl(deleteUrl);
-
         return json;
     }
 

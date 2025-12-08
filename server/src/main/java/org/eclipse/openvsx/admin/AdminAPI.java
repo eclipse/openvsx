@@ -278,11 +278,11 @@ public class AdminAPI {
     }
 
     @PostMapping(
-            path = "/admin/extension/{namespace}/{extension}/review/{reviewId}/delete",
+            path = "/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    @Operation(summary = "Delete a review for an extension")
+    @Operation(summary = "Delete a review for an extension by a user")
     @ApiResponse(
             responseCode = "200",
             description = "A success message is returned in JSON format",
@@ -301,11 +301,12 @@ public class AdminAPI {
     public ResponseEntity<ResultJson> deleteReview(
             @PathVariable String namespace,
             @PathVariable String extension,
-            @PathVariable String reviewId
+            @PathVariable String provider,
+            @PathVariable String loginName
     ) {
         try {
             var adminUser = admins.checkAdminUser();
-            var result = admins.deleteReview(namespace, extension, reviewId);
+            var result = admins.deleteReview(namespace, extension, loginName, provider);
             admins.logAdminAction(adminUser, result);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {

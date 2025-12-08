@@ -17,21 +17,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
-import java.util.Optional;
-
 import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
 
 public interface ExtensionReviewRepository extends Repository<ExtensionReview, Long> {
 
     Streamable<ExtensionReview> findByExtension(Extension extension);
 
-    Streamable<ExtensionReview> findByUserAndActiveTrue(UserData user);
-
     Streamable<ExtensionReview> findByExtensionAndActiveTrue(Extension extension);
 
     Streamable<ExtensionReview> findByExtensionAndUserAndActiveTrue(Extension extension, UserData user);
 
-    Optional<ExtensionReview> findById(Long id);
+    Streamable<ExtensionReview> findByUserAndActiveTrue(UserData user);
 
     long countByExtensionAndActiveTrue(Extension extension);
 

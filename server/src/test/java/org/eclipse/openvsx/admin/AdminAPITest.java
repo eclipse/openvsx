@@ -639,7 +639,7 @@ class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions and deactivated 0 reviews of user github/test.")));
+                .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions of user github/test.")));
 
         assertThat(token.isActive()).isFalse();
         assertThat(versions.get(0).isActive()).isFalse();
@@ -1149,20 +1149,19 @@ class AdminAPITest {
     @Test
     void testDeleteReview() throws Exception {
         mockAdminUser();
-        var reviews = mockReviews();
+        mockReviews();
 
-        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{reviewId}/delete", "foobar", "baz", "1")
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foobar", "baz", "github", "user1")
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deleted review from user1 for foobar.baz")));
-
-        assertThat(reviews.get(0).isActive()).isFalse();
     }
 
     @Test
     void testDeleteReviewNotLoggedIn() throws Exception {
-        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{reviewId}/delete", "foo", "bar", "1").with(csrf()))
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foo", "bar", "github", "user1")
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 
@@ -1170,7 +1169,7 @@ class AdminAPITest {
     void testDeleteReviewNormalUser() throws Exception {
         mockNormalUser();
 
-        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{reviewId}/delete", "foo", "bar", "1")
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foo", "bar", "github", "user1")
                         .with(user("test_user"))
                         .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
@@ -1179,7 +1178,7 @@ class AdminAPITest {
     @Test
     void testDeleteReviewUnknownExtension() throws Exception {
         mockAdminUser();
-        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{reviewId}/delete", "foo", "bar", "1")
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foo", "bar", "github", "user1")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isNotFound())
@@ -1191,11 +1190,11 @@ class AdminAPITest {
         mockAdminUser();
         mockReviews();
 
-        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{reviewId}/delete", "foobar", "baz", "3")
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foobar", "baz", "github", "user3")
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                         .with(csrf().asHeader()))
                 .andExpect(status().isNotFound())
-                .andExpect(content().json(errorJson("Review with id 3 not found")));
+                .andExpect(content().json(errorJson("No active review for extension foobar.baz and user user3 found")));
     }
 
     //---------- UTILITY ----------//
@@ -1370,12 +1369,22 @@ class AdminAPITest {
         review2.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         review2.setActive(true);
 
-        Mockito.when(repositories.findReview(anyLong()))
-                .thenReturn(Optional.empty());
-        Mockito.when(repositories.findReview(1))
-                .thenReturn(Optional.of(review1));
-        Mockito.when(repositories.findReview(2))
-                .thenReturn(Optional.of(review2));
+        var user3 = new UserData();
+        user3.setLoginName("user3");
+
+        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user1")))
+                .thenReturn(user1);
+        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user2")))
+                .thenReturn(user2);
+        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user3")))
+                .thenReturn(user3);
+
+        Mockito.when(repositories.findActiveReviews(any(), any()))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findActiveReviews(extension, user1))
+                .thenReturn(Streamable.of(review1));
+        Mockito.when(repositories.findActiveReviews(extension, user2))
+                .thenReturn(Streamable.of(review2));
 
         Mockito.when(repositories.findActiveReviews(extension))
                 .thenReturn(Streamable.of(review1, review2));
