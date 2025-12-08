@@ -32,6 +32,9 @@ public class UserPublishInfoJson extends ResultJson {
     private List<ExtensionJson> extensions;
 
     @NotNull
+    private List<ReviewJson> reviews;
+
+    @NotNull
     private Integer activeAccessTokenNum;
 
     public UserJson getUser() {
@@ -48,6 +51,14 @@ public class UserPublishInfoJson extends ResultJson {
 
     public void setExtensions(List<ExtensionJson> extensions) {
         this.extensions = extensions;
+    }
+
+    public List<ReviewJson> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<ReviewJson> reviews) {
+        this.reviews = reviews;
     }
 
     public Integer getActiveAccessTokenNum() {

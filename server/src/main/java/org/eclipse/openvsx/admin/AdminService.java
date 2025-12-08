@@ -250,6 +250,35 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteReview(String namespace, String extensionName, String reviewId) {
+        var extension = repositories.findExtension(extensionName, namespace);
+        if (extension == null || !extension.isActive()) {
+            var message = "Extension not found: " + NamingUtil.toExtensionId(namespace, extensionName);
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
+        var review = repositories.findReview(Long.parseLong(reviewId));
+        if (review.isEmpty()) {
+            var message = "Review with id " + reviewId + " not found";
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
+        deleteReview(review.get());
+        return ResultJson.success("Deleted review from " + review.get().getUser().getLoginName() + " for " + NamingUtil.toExtensionId(extension));
+    }
+
+    private void deleteReview(ExtensionReview review) {
+        review.setActive(false);
+
+        var extension = review.getExtension();
+        extension.setAverageRating(repositories.getAverageReviewRating(extension));
+        extension.setReviewCount(repositories.countActiveReviews(extension));
+        search.updateSearchEntry(extension);
+        cache.evictExtensionJsons(extension);
+        cache.evictLatestExtensionVersion(extension);
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role,
             UserData admin) throws ErrorResultException {
         var namespace = repositories.findNamespace(namespaceName);
@@ -361,6 +390,11 @@ public class AdminService {
                 )
                 .toList());
 
+        var reviews = repositories.findActiveReviews(user);
+        userPublishInfo.setReviews(reviews.stream()
+                .map(ExtensionReview::toReviewJson)
+                .toList());
+
         return userPublishInfo;
     }
 
@@ -401,8 +435,16 @@ public class AdminService {
             extensions.updateExtension(extension);
         }
 
+        var deactivatedReviewCount = 0;
+        var reviews = repositories.findActiveReviews(user);
+        for (var review : reviews) {
+            deleteReview(review);
+            deactivatedReviewCount++;
+        }
+
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount
-                + " tokens and deactivated " + deactivatedExtensionCount + " extensions of user "
+                + " tokens, deactivated " + deactivatedExtensionCount + " extensions and"
+                + " deactivated " + deactivatedReviewCount + " reviews of user "
                 + provider + "/" + loginName + "."); 
         logAdminAction(admin, result);
         return result;

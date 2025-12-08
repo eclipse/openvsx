@@ -143,8 +143,10 @@ export interface NewReview {
 }
 
 export interface ExtensionReview extends NewReview {
+    id: number;
     user: UserData;
     timestamp: TimestampString;
+    deleteUrl: UrlString;
 }
 
 export interface ExtensionReviewList {
@@ -238,6 +240,7 @@ export interface NamespaceDetails {
 export interface PublisherInfo {
     user: UserData;
     extensions: Extension[];
+    reviews: ExtensionReview[];
     activeAccessTokenNum: number;
 }
 

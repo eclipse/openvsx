@@ -60,7 +60,9 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
 
     const tokenCount = props.publisherInfo.activeAccessTokenNum;
     const extensionCount = props.publisherInfo.extensions.filter(e => e.active).length;
+    const reviewCount = props.publisherInfo.reviews.length;
     const hasAgreement = props.publisherInfo.user.publisherAgreement?.status !== 'none';
+
     return <>
         <Button
             variant='contained'
@@ -74,9 +76,9 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
             <DialogTitle >Revoke Publisher Contributions</DialogTitle>
             <DialogContent>
                 <DialogContentText component='div'>
-                    <Typography>
+                    <Typography component='div'>
                         {
-                            !tokenCount && !extensionCount && !hasAgreement ?
+                            !tokenCount && !extensionCount && !reviewCount && !hasAgreement ?
                             <>
                                 Publisher {props.publisherInfo.user.loginName} currently has no contributions to revoke.
                                 Send the request anyway?
@@ -94,6 +96,11 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
                                         extensionCount > 0 ?
                                         <li>Deactivate {extensionCount} published extension version{extensionCount > 1 ? 's' : ''}</li>
                                         : null
+                                    }
+                                    {
+                                        reviewCount > 0 ?
+                                            <li>Deactivate {reviewCount} published extension review{reviewCount > 1 ? 's' : ''}</li>
+                                            : null
                                     }
                                     {
                                         hasAgreement ?

@@ -26,6 +26,9 @@ import java.util.Objects;
 @JsonInclude(Include.NON_NULL)
 public class ReviewJson {
 
+    @Schema(hidden = true)
+    private long id;
+
     @Schema(description = "Data of the user who posted this review")
     @NotNull
     private UserJson user;
@@ -44,6 +47,17 @@ public class ReviewJson {
     @Min(0)
     @Max(5)
     private int rating;
+
+    @Schema(hidden = true)
+    private String deleteUrl;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public UserJson getUser() {
         return user;
@@ -83,6 +97,14 @@ public class ReviewJson {
 
     public void setRating(int rating) {
         this.rating = rating;
+    }
+
+    public String getDeleteUrl() {
+        return deleteUrl;
+    }
+
+    public void setDeleteUrl(String deleteUrl) {
+        this.deleteUrl = deleteUrl;
     }
 
     @Override
