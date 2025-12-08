@@ -14,8 +14,8 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 18.x
       - name: Install dependencies
@@ -27,7 +27,7 @@ jobs:
       - name: Run Playwright tests
         working-directory: ./webui
         run: yarn smoke-tests
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: playwright-report

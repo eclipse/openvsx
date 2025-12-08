@@ -14,7 +14,7 @@ jobs:
       contents: none
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: Set Image Version
       run: echo "IMAGE_VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
     - name: Build Web UI Image
