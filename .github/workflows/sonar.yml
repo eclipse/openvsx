@@ -9,7 +9,7 @@ jobs:
     permissions:
       pull-requests: read
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.repository == 'eclipse/openvsx' && github.event.workflow_run.conclusion == 'success'
     steps:
     - name: Create artifacts directory
       run: mkdir -p ${{ runner.temp }}/artifacts
@@ -37,12 +37,14 @@ jobs:
         full_name: ${{ github.event.repository.full_name }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - uses: actions/checkout@v4
+    - name: Checkout head branch on push
+      uses: actions/checkout@v4
+      if: github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.event.repository.full_name
       with:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
-    - name: Checkout base branch
+    - name: Checkout head branch on pull_request
       if: github.event.workflow_run.event == 'pull_request'
       env:
         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
