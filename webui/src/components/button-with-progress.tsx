@@ -15,7 +15,7 @@ export const ButtonWithProgress: FunctionComponent<PropsWithChildren<ButtonWithP
     return <Box component='div' sx={[{ position: 'relative' }, ...(Array.isArray(props.sx) ? props.sx : [props.sx])]}>
         <Button
             variant='contained'
-            color='secondary'
+            color={props.color || 'secondary'}
             disabled={props.working || props.error}
             autoFocus={props.autoFocus}
             onClick={props.onClick}
@@ -43,6 +43,7 @@ export const ButtonWithProgress: FunctionComponent<PropsWithChildren<ButtonWithP
 
 export interface ButtonWithProgressProps {
     working: boolean;
+    color?: 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning' | undefined;
     error?: boolean;
     autoFocus?: boolean;
     onClick: MouseEventHandler<HTMLButtonElement>;

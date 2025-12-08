@@ -250,25 +250,33 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteReview(String namespace, String extensionName, String reviewId) {
+    public ResultJson deleteReview(String namespace, String extensionName, String loginName, String provider) {
         var extension = repositories.findExtension(extensionName, namespace);
         if (extension == null || !extension.isActive()) {
             var message = "Extension not found: " + NamingUtil.toExtensionId(namespace, extensionName);
             throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
         }
 
-        var review = repositories.findReview(Long.parseLong(reviewId));
-        if (review.isEmpty()) {
-            var message = "Review with id " + reviewId + " not found";
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + loginName), HttpStatus.NOT_FOUND);
+        }
+
+        var reviews = repositories.findActiveReviews(extension, user);
+        if (reviews.isEmpty()) {
+            var message = "No active review for extension " + NamingUtil.toExtensionId(extension) + " and user " + loginName + " found";
             throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
         }
 
-        deleteReview(review.get());
-        return ResultJson.success("Deleted review from " + review.get().getUser().getLoginName() + " for " + NamingUtil.toExtensionId(extension));
+        for (var extReview : reviews) {
+            deleteReview(extReview);
+        }
+
+        return ResultJson.success("Deleted review from " + loginName + " for " + NamingUtil.toExtensionId(extension));
     }
 
     private void deleteReview(ExtensionReview review) {
-        review.setActive(false);
+        entityManager.remove(review);
 
         var extension = review.getExtension();
         extension.setAverageRating(repositories.getAverageReviewRating(extension));
@@ -390,11 +398,6 @@ public class AdminService {
                 )
                 .toList());
 
-        var reviews = repositories.findActiveReviews(user);
-        userPublishInfo.setReviews(reviews.stream()
-                .map(ExtensionReview::toReviewJson)
-                .toList());
-
         return userPublishInfo;
     }
 
@@ -435,17 +438,9 @@ public class AdminService {
             extensions.updateExtension(extension);
         }
 
-        var deactivatedReviewCount = 0;
-        var reviews = repositories.findActiveReviews(user);
-        for (var review : reviews) {
-            deleteReview(review);
-            deactivatedReviewCount++;
-        }
-
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount
-                + " tokens, deactivated " + deactivatedExtensionCount + " extensions and"
-                + " deactivated " + deactivatedReviewCount + " reviews of user "
-                + provider + "/" + loginName + "."); 
+                + " tokens, deactivated " + deactivatedExtensionCount + " extensions of user "
+                + provider + "/" + loginName + ".");
         logAdminAction(admin, result);
         return result;
     }

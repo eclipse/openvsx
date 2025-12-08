@@ -9,7 +9,17 @@
  ********************************************************************************/
 
 import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect, useRef } from 'react';
-import { Box, Typography, Divider, Link } from '@mui/material';
+import {
+    Box,
+    Typography,
+    Divider,
+    Link,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions, Button
+} from '@mui/material';
 import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';
 import { ExtensionReview, Extension, ExtensionReviewList, isEqualUser, isError, UserData } from '../../extension-registry-types';
@@ -24,19 +34,20 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     const [reviewList, setReviewList] = useState<ExtensionReviewList>();
     const [loading, setLoading] = useState<boolean>(true);
     const [revoked, setRevoked] = useState<boolean>(false);
-    const [removeReviewSet, setRemoveReviewSet] = useState(new Set<number>());
+    const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+    const [removeReviewSet, setRemoveReviewSet] = useState(new Set<string>());
     const context = useContext(MainContext);
     const abortController = useRef<AbortController>(new AbortController());
 
-    const addRemoveReviewRequest = (reviewId: number) => {
-        const newSet = new Set<number>(removeReviewSet);
-        newSet.add(reviewId);
+    const addRemoveReviewRequest = (loginName: string) => {
+        const newSet = new Set<string>(removeReviewSet);
+        newSet.add(loginName);
         setRemoveReviewSet(newSet);
     };
 
-    const deleteRemoveReviewRequest = (reviewId: number) => {
-        const newSet = new Set<number>(removeReviewSet);
-        newSet.delete(reviewId);
+    const deleteRemoveReviewRequest = (loginName: string) => {
+        const newSet = new Set<string>(removeReviewSet);
+        newSet.delete(loginName);
         setRemoveReviewSet(newSet);
     };
 
@@ -101,9 +112,9 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     };
 
     const handleAdminRemoveReviewButton = async (r: ExtensionReview) => {
-        addRemoveReviewRequest(r.id);
+        addRemoveReviewRequest(r.user.loginName);
         try {
-            const result = await context.service.deleteReview(abortController.current, r.deleteUrl);
+            const result = await context.service.deleteUserReview(abortController.current, props.extension, r.user);
             if (isError(result)) {
                 throw result;
             }
@@ -111,17 +122,45 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         } catch (err) {
             context.handleError(err);
         } finally {
-            deleteRemoveReviewRequest(r.id);
+            deleteRemoveReviewRequest(r.user.loginName);
         }
     };
 
     const renderAdminRemoveButton = (r: ExtensionReview): ReactNode => {
-        return <ButtonWithProgress
-            working={removeReviewSet.has(r.id)}
-            onClick={() => handleAdminRemoveReviewButton(r)}
-            title={`Remove review`} >
-            Remove review
-        </ButtonWithProgress>;
+        return <>
+            <Button
+                variant='contained'
+                color='error'
+                onClick={() => setRemoveDialogOpen(true)} >
+                Remove review
+            </Button>
+            <Dialog
+                open={removeDialogOpen}
+                onClose={() => setRemoveDialogOpen(false)}>
+                <DialogTitle>Remove Review</DialogTitle>
+                <DialogContent>
+                    <DialogContentText component='div'>
+                        <Typography>Confirm removal of review comment from <code>{r.user.loginName}</code>?</Typography>
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        variant='contained'
+                        color='primary'
+                        onClick={() => setRemoveDialogOpen(false)} >
+                        Cancel
+                    </Button>
+                    <ButtonWithProgress
+                        autoFocus
+                        color='error'
+                        sx={{ ml: 1 }}
+                        working={removeReviewSet.has(r.user.loginName)}
+                        onClick={() => handleAdminRemoveReviewButton(r)} >
+                        Remove review
+                    </ButtonWithProgress>
+                </DialogActions>
+            </Dialog>
+            </>;
     };
 
     const renderReviewList = (list?: ExtensionReviewList): ReactNode => {

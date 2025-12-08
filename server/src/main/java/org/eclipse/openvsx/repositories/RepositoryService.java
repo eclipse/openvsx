@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 
@@ -276,16 +275,12 @@ public class RepositoryService {
         return extensionReviewRepo.findByExtension(extension);
     }
 
-    public Streamable<ExtensionReview> findActiveReviews(Extension extension, UserData user) {
-        return extensionReviewRepo.findByExtensionAndUserAndActiveTrue(extension, user);
-    }
-
     public Streamable<ExtensionReview> findActiveReviews(UserData user) {
         return extensionReviewRepo.findByUserAndActiveTrue(user);
     }
 
-    public Optional<ExtensionReview> findReview(long reviewId) {
-        return extensionReviewRepo.findById(reviewId);
+    public Streamable<ExtensionReview> findActiveReviews(Extension extension, UserData user) {
+        return extensionReviewRepo.findByExtensionAndUserAndActiveTrue(extension, user);
     }
 
     public long countActiveReviews(Extension extension) {

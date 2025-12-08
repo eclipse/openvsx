@@ -101,7 +101,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveReviews(extension),
                 () -> repositories.findActiveReviews(extension, userData),
                 () -> repositories.findActiveReviews(userData),
-                () -> repositories.findReview(1L),
                 () -> repositories.findActiveVersions(extension),
                 () -> repositories.findAdminStatisticsByYearAndMonth(1997, 1),
                 () -> repositories.findAllActiveExtensions(),
