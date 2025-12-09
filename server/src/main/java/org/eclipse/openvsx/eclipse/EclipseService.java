@@ -457,14 +457,13 @@ public class EclipseService {
      * the access token of the target user is used.
      */
     public void revokePublisherAgreement(UserData user, UserData admin) {
-        checkApiUrl();
         checkEclipseData(user);
 
         var eclipseToken = admin == null ? checkEclipseToken(user) : checkEclipseToken(admin);
         var headers = new HttpHeaders();
         headers.setBearerAuth(eclipseToken.accessToken());
         var request = new HttpEntity<>(headers);
-        var urlTemplate = eclipseApiUrl + "openvsx/publisher_agreement/{personId}";
+        var urlTemplate = buildApiUrl("openvsx/publisher_agreement/{personId}");
         var uriVariables = Map.of(VAR_PERSON_ID, user.getEclipsePersonId());
 
         try {
