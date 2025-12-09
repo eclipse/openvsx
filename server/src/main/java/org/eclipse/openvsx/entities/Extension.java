@@ -9,16 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import jakarta.persistence.*;
+import org.eclipse.openvsx.search.ExtensionSearch;
+import org.eclipse.openvsx.util.NamingUtil;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import jakarta.persistence.*;
-
-import org.eclipse.openvsx.search.ExtensionSearch;
-import org.eclipse.openvsx.util.NamingUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(uniqueConstraints = {
@@ -27,50 +28,60 @@ import org.eclipse.openvsx.util.NamingUtil;
 })
 public class Extension implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(generator = "extensionSeq")
     @SequenceGenerator(name = "extensionSeq", sequenceName = "extension_seq")
-    long id;
+    private long id;
 
     @Column(length = 128)
-    String publicId;
+    private String publicId;
 
-    String name;
+    private String name;
 
     @ManyToOne
-    Namespace namespace;
+    private Namespace namespace;
 
     @OneToMany(mappedBy = "extension")
-    List<ExtensionVersion> versions;
+    private List<ExtensionVersion> versions;
 
-    boolean active;
+    private boolean active;
 
-    Double averageRating;
+    private Double averageRating;
 
-    Long reviewCount;
+    private Long reviewCount;
 
-    int downloadCount;
+    private int downloadCount;
 
-    LocalDateTime publishedDate;
+    private LocalDateTime publishedDate;
 
-    LocalDateTime lastUpdatedDate;
+    private LocalDateTime lastUpdatedDate;
+
+    private boolean deprecated;
+
+    @OneToOne
+    private Extension replacement;
+
+    private boolean downloadable;
 
     /**
      * Convert to a search entity for Elasticsearch.
      */
     public ExtensionSearch toSearch(ExtensionVersion latest, List<String> targetPlatforms) {
         var search = new ExtensionSearch();
-        search.id = this.getId();
-        search.name = this.getName();
-        search.namespace = this.getNamespace().getName();
-        search.extensionId = NamingUtil.toExtensionId(search);
-        search.downloadCount = this.getDownloadCount();
-        search.targetPlatforms = targetPlatforms;
-        search.displayName = latest.getDisplayName();
-        search.description = latest.getDescription();
-        search.timestamp = latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
-        search.categories = latest.getCategories();
-        search.tags = latest.getTags();
+        search.setId(this.getId());
+        search.setName(this.getName());
+        search.setNamespace(this.getNamespace().getName());
+        search.setExtensionId(NamingUtil.toExtensionId(search));
+        search.setDownloadCount(this.getDownloadCount());
+        search.setTargetPlatforms(targetPlatforms);
+        search.setDisplayName(latest.getDisplayName());
+        search.setDescription(latest.getDescription());
+        search.setTimestamp(latest.getTimestamp().toEpochSecond(ZoneOffset.UTC));
+        search.setCategories(latest.getCategories());
+        search.setTags(latest.getTags());
 
         return search;
     }
@@ -163,6 +174,30 @@ public class Extension implements Serializable {
         return versions;
     }
 
+    public boolean isDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+    }
+
+    public Extension getReplacement() {
+        return replacement;
+    }
+
+    public void setReplacement(Extension replacement) {
+        this.replacement = replacement;
+    }
+
+    public boolean isDownloadable() {
+        return downloadable;
+    }
+
+    public void setDownloadable(boolean downloadable) {
+        this.downloadable = downloadable;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -178,11 +213,17 @@ public class Extension implements Serializable {
                 && Objects.equals(averageRating, extension.averageRating)
                 && Objects.equals(reviewCount, extension.reviewCount)
                 && Objects.equals(publishedDate, extension.publishedDate)
-                && Objects.equals(lastUpdatedDate, extension.lastUpdatedDate);
+                && Objects.equals(lastUpdatedDate, extension.lastUpdatedDate)
+                && Objects.equals(deprecated, extension.deprecated)
+                && Objects.equals(replacement, extension.replacement)
+                && Objects.equals(downloadable, extension.downloadable);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, publicId, name, namespace, versions, active, averageRating, reviewCount, downloadCount, publishedDate, lastUpdatedDate);
+        return Objects.hash(
+                id, publicId, name, namespace, versions, active, averageRating, reviewCount, downloadCount,
+                publishedDate, lastUpdatedDate, deprecated, replacement, downloadable
+        );
     }
 }

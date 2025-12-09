@@ -1,16 +1,19 @@
-FROM gradle:jdk17 as builder
+# syntax=docker/dockerfile:1
+FROM gradle:jdk-25-and-25 AS builder
 
 # Copy sources
 WORKDIR /home/gradle
-COPY --chown=gradle:gradle gradlew *.gradle ./
+COPY --chown=gradle:gradle gradlew *.gradle gradle.properties ./
 COPY --chown=gradle:gradle gradle ./gradle/
 COPY --chown=gradle:gradle src ./src/
 
+ENV CI=true
+
 # Build the server application
-RUN ./gradlew --no-daemon assemble
+RUN --mount=type=secret,id=dv-key,env=DEVELOCITY_ACCESS_KEY \
+    ./gradlew --no-daemon assemble
 
-
-FROM eclipse-temurin:17.0.7_7-jdk
+FROM eclipse-temurin:25-jdk
 
 # Create user openvsx and set up home directory
 RUN groupadd -r openvsx && useradd --no-log-init -r -g openvsx openvsx

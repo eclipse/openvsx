@@ -10,25 +10,24 @@
 package org.eclipse.openvsx.eclipse;
 
 import jakarta.persistence.EntityManager;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class PublisherComplianceChecker {
@@ -63,8 +62,10 @@ public class PublisherComplianceChecker {
         if (!checkCompliance || !eclipseService.isActive())
             return;
 
-        repositories.findAllUsers().forEach(user -> {
-            var accessTokens = repositories.findAccessTokens(user);
+        var publisherTokens = repositories.findAllAccessTokens().stream()
+                .collect(Collectors.groupingBy(PersonalAccessToken::getUser));
+        publisherTokens.keySet().forEach(user -> {
+            var accessTokens = publisherTokens.get(user);
             if (!accessTokens.isEmpty() && !isCompliant(user)) {
                 // Found a non-compliant publisher: deactivate all extension versions
                 transactions.<Void>execute(status -> {
@@ -87,12 +88,14 @@ public class PublisherComplianceChecker {
         }
 
         var profile = eclipseService.getPublicProfile(user.getEclipsePersonId());
-        return profile.publisherAgreements != null
-                && profile.publisherAgreements.openVsx != null
-                && profile.publisherAgreements.openVsx.version != null;
+        return Optional.of(profile)
+                .map(EclipseProfile::getPublisherAgreements)
+                .map(EclipseProfile.PublisherAgreements::getOpenVsx)
+                .map(EclipseProfile.PublisherAgreement::getVersion)
+                .isPresent();
     }
 
-    private void deactivateExtensions(Streamable<PersonalAccessToken> accessTokens) {
+    private void deactivateExtensions(List<PersonalAccessToken> accessTokens) {
         var affectedExtensions = new LinkedHashSet<Extension>();
         for (var accessToken : accessTokens) {
             var versions = repositories.findVersionsByAccessToken(accessToken, true);
@@ -101,7 +104,11 @@ public class PublisherComplianceChecker {
                 entityManager.merge(version);
                 var extension = version.getExtension();
                 affectedExtensions.add(extension);
-                logger.info("Deactivated: " + accessToken.getUser().getLoginName() + " - " + NamingUtil.toLogFormat(version));
+                logger.atInfo()
+                        .setMessage("Deactivated: {} - {}")
+                        .addArgument(() -> accessToken.getUser().getLoginName())
+                        .addArgument(() -> NamingUtil.toLogFormat(version))
+                        .log();
             }
         }
         

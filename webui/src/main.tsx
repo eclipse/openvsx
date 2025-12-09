@@ -15,7 +15,7 @@ import { AdminDashboard, AdminDashboardRoutes } from './pages/admin-dashboard/ad
 import { ErrorDialog } from './components/error-dialog';
 import { handleError } from './utils';
 import { ExtensionRegistryService } from './extension-registry-service';
-import { UserData, isError, ReportedError } from './extension-registry-types';
+import { UserData, isError, ReportedError, isSuccess, LoginProviders } from './extension-registry-types';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
 import { ErrorResponse } from './server-request';
@@ -26,11 +26,14 @@ import { OtherPages } from './other-pages';
 export const Main: FunctionComponent<MainProps> = props => {
     const [user, setUser] = useState<UserData>();
     const [userLoading, setUserLoading] = useState<boolean>(true);
+    const [loginProviders, setLoginProviders] = useState<Record<string, string> | undefined>(props.loginProviders);
     const [error, setError] = useState<{message: string, code?: number | string}>();
     const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
     const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
+        getLoginProviders();
+
         // If there was an authentication error, get the message from the server and show it
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.has('auth-error')) {
@@ -58,6 +61,19 @@ export const Main: FunctionComponent<MainProps> = props => {
         }
 
         setUserLoading(false);
+    };
+
+    const getLoginProviders = async () => {
+        if (props.loginProviders != null) {
+            return;
+        }
+
+        const data = await props.service.getLoginProviders(abortController.current);
+        if (isSuccess(data)) {
+            console.log(data.success);
+        } else {
+            setLoginProviders((data as LoginProviders).loginProviders);
+        }
     };
 
     const onError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
@@ -101,6 +117,7 @@ export const Main: FunctionComponent<MainProps> = props => {
         pageSettings: props.pageSettings,
         user,
         updateUser,
+        loginProviders,
         handleError: onError
     };
     return <>
@@ -114,4 +131,5 @@ export const Main: FunctionComponent<MainProps> = props => {
 export interface MainProps {
     service: ExtensionRegistryService;
     pageSettings: PageSettings;
+    loginProviders?: Record<string, string>;
 }

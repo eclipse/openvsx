@@ -31,7 +31,6 @@ public class RenameDownloadsService {
         clone.setStorageType(resource.getStorageType());
         clone.setType(resource.getType());
         clone.setExtension(resource.getExtension());
-        clone.setContent(resource.getContent());
         return clone;
     }
 

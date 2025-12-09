@@ -12,6 +12,8 @@ package org.eclipse.openvsx.entities;
 import org.apache.commons.lang3.StringUtils;
 
 import jakarta.persistence.Embeddable;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +23,9 @@ import java.util.regex.Pattern;
 @Embeddable
 public class SemanticVersion implements Comparable<SemanticVersion>, Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     // source: https://semver.org/, search for: https://regex101.com/r/vkijKf/1/
     public static final Pattern VERSION_PARSE_PATTERN = Pattern.compile("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)(?:-(?<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
 
@@ -28,28 +33,24 @@ public class SemanticVersion implements Comparable<SemanticVersion>, Serializabl
     public static final String VERSION_PATH_PARAM_REGEX = "(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)(?:-(?:(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?:[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?";
 
     public static SemanticVersion parse(String version) {
-        try {
-            var matcher = VERSION_PARSE_PATTERN.matcher(version);
-            matcher.find();
+        var matcher = VERSION_PARSE_PATTERN.matcher(version);
+        matcher.find();
 
-            var semver = new SemanticVersion();
-            semver.setMajor(Integer.parseInt(matcher.group("major")));
-            semver.setMinor(Integer.parseInt(matcher.group("minor")));
-            semver.setPatch(Integer.parseInt(matcher.group("patch")));
-            semver.setPreRelease(matcher.group("prerelease"));
-            semver.setBuildMetadata(matcher.group("buildmetadata"));
-            return semver;
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new RuntimeException("Invalid semantic version. See https://semver.org/.");
-        }
+        var semver = new SemanticVersion();
+        semver.setMajor(Integer.parseInt(matcher.group("major")));
+        semver.setMinor(Integer.parseInt(matcher.group("minor")));
+        semver.setPatch(Integer.parseInt(matcher.group("patch")));
+        semver.setPreRelease(matcher.group("prerelease"));
+        semver.setBuildMetadata(matcher.group("buildmetadata"));
+        return semver;
     }
 
-    int major;
-    int minor;
-    int patch;
-    String preRelease;
-    boolean isPreRelease;
-    String buildMetadata;
+    private int major;
+    private int minor;
+    private int patch;
+    private String preRelease;
+    private boolean isPreRelease;
+    private String buildMetadata;
 
     public int getMajor() {
         return major;

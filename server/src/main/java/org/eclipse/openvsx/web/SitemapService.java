@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
@@ -42,7 +43,7 @@ public class SitemapService {
     }
 
     @Cacheable(CACHE_SITEMAP)
-    public String generateSitemap() throws ParserConfigurationException {
+    public String generateSitemap() throws ParserConfigurationException, IOException, TransformerException {
         var document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         document.setXmlStandalone(true);
         var namespace = "http://www.sitemaps.org/schemas/sitemap/0.9";
@@ -64,14 +65,14 @@ public class SitemapService {
         }
 
         try(var writer = new StringWriter()) {
-            var transformer = TransformerFactory.newInstance().newTransformer();
+            var factory = TransformerFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            var transformer = factory.newTransformer();
             transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             transformer.transform(new DOMSource(document), new StreamResult(writer));
             return writer.toString();
-        } catch (TransformerException | IOException exc) {
-            throw new RuntimeException(exc);
         }
     }
 

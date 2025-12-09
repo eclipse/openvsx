@@ -14,8 +14,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -23,7 +21,6 @@ import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.AuthToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.UserJson;
-import org.eclipse.openvsx.security.TokenService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
@@ -50,6 +47,8 @@ import java.util.regex.Pattern;
 @Component
 public class EclipseService {
 
+    private static final String VAR_PERSON_ID = "personId";
+
     public static final DateTimeFormatter CUSTOM_DATE_TIME = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
             .append(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -68,7 +67,6 @@ public class EclipseService {
     private final EntityManager entityManager;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final ObservationRegistry observations;
 
     @Value("${ovsx.eclipse.base-url:}")
     String eclipseApiUrl;
@@ -76,12 +74,14 @@ public class EclipseService {
     @Value("${ovsx.eclipse.publisher-agreement.version:}")
     String publisherAgreementVersion;
 
+    @Value("${ovsx.eclipse.publisher-agreement.allowed-versions:}")
+    List<String> publisherAgreementAllowedVersions;
+
     public EclipseService(
             TokenService tokens,
             ExtensionService extensions,
             EntityManager entityManager,
-            RestTemplate restTemplate,
-            ObservationRegistry observations
+            RestTemplate restTemplate
     ) {
         this.tokens = tokens;
         this.extensions = extensions;
@@ -89,11 +89,10 @@ public class EclipseService {
         this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.observations = observations;
     }
 
     public boolean isActive() {
-        return !StringUtils.isEmpty(publisherAgreementVersion);
+        return !StringUtils.isEmpty(publisherAgreementVersion) && !publisherAgreementAllowedVersions.isEmpty();
     }
 
     /**
@@ -101,30 +100,28 @@ public class EclipseService {
      * @throws ErrorResultException if the user has no active agreement
      */
     public void checkPublisherAgreement(UserData user) {
-        Observation.createNotStarted("EclipseService#checkPublisherAgreement", observations).observe(() -> {
-            if (!isActive()) {
-                return;
-            }
-            // Users without authentication provider have been created directly in the DB,
-            // so we skip the agreement check in this case.
-            if (user.getProvider() == null) {
-                return;
-            }
-            var personId = user.getEclipsePersonId();
-            if (personId == null) {
-                throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
-            }
-            var profile = getPublicProfile(personId);
-            if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null
-                    || profile.publisherAgreements.openVsx.version == null) {
-                throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
-            }
-            if (!publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version)) {
-                throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
-                        + profile.publisherAgreements.openVsx.version + "). The current version is "
-                        + publisherAgreementVersion + ".");
-            }
-        });
+        if (!isActive()) {
+            return;
+        }
+        // Users without authentication provider have been created directly in the DB,
+        // so we skip the agreement check in this case.
+        if (user.getProvider() == null) {
+            return;
+        }
+        var personId = user.getEclipsePersonId();
+        if (personId == null) {
+            throw new ErrorResultException("You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
+        }
+        var profile = getPublicProfile(personId);
+        if (profile.getPublisherAgreements() == null || profile.getPublisherAgreements().getOpenVsx() == null
+                || profile.getPublisherAgreements().getOpenVsx().getVersion() == null) {
+            throw new ErrorResultException("You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
+        }
+        if (!publisherAgreementAllowedVersions.contains(profile.getPublisherAgreements().getOpenVsx().getVersion())) {
+            throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated (version "
+                    + profile.getPublisherAgreements().getOpenVsx().getVersion() + "). The current version is "
+                    + publisherAgreementVersion + ".");
+        }
     }
 
     /**
@@ -133,7 +130,7 @@ public class EclipseService {
     public EclipseProfile getPublicProfile(String personId) {
         checkApiUrl();
         var urlTemplate = eclipseApiUrl + "account/profile/{personId}";
-        var uriVariables = Map.of("personId", personId);
+        var uriVariables = Map.of(VAR_PERSON_ID, personId);
         var headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         var request = new HttpEntity<Void>(headers);
@@ -161,36 +158,15 @@ public class EclipseService {
     @Transactional
     public void updateUserData(UserData user, EclipseProfile profile) {
         user = entityManager.merge(user);
-        user.setEclipsePersonId(profile.name);
+        user.setEclipsePersonId(profile.getName());
     }
 
-    /**
-     * Enrich the given JSON user data with Eclipse-specific information.
-     */
     public void enrichUserJson(UserJson json, UserData user) {
-        if (!isActive()) {
-            return;
-        }
-
-        json.publisherAgreement = new UserJson.PublisherAgreement();
-        var personId = user.getEclipsePersonId();
-        if (personId == null) {
-            json.publisherAgreement.status = "none";
-            return;
-        }
-
         var usableToken = true;
+        PublisherAgreement agreement = null;
         try {
             // Add information on the publisher agreement
-            var agreement = getPublisherAgreement(user);
-            if (agreement == null || !agreement.isActive || agreement.version == null)
-                json.publisherAgreement.status = "none";
-            else if (publisherAgreementVersion.equals(agreement.version))
-                json.publisherAgreement.status = "signed";
-            else
-                json.publisherAgreement.status = "outdated";
-            if (agreement != null && agreement.timestamp != null)
-                json.publisherAgreement.timestamp = TimeUtil.toUTCString(agreement.timestamp);
+            agreement = getPublisherAgreement(user);
         } catch (ErrorResultException e) {
             if(e.getStatus() == HttpStatus.FORBIDDEN) {
                 usableToken = false;
@@ -199,16 +175,48 @@ public class EclipseService {
             }
         }
 
+        enrichUserJson(json, user, agreement, usableToken);
+    }
+
+    public void enrichUserJson(UserJson json, UserData user, PublisherAgreement agreement) {
+        enrichUserJson(json, user, agreement, true);
+    }
+
+    /**
+     * Enrich the given JSON user data with Eclipse-specific information.
+     */
+    private void enrichUserJson(UserJson json, UserData user, PublisherAgreement agreement, boolean usableToken) {
+        if (!isActive()) {
+            return;
+        }
+
+        var publisherAgreement = new UserJson.PublisherAgreement();
+        publisherAgreement.setStatus("none");
+        json.setPublisherAgreement(publisherAgreement);
+
+        var personId = user.getEclipsePersonId();
+        if (personId == null) {
+            return;
+        }
+
+        if(agreement != null && agreement.isActive() && agreement.version() != null) {
+            var status = publisherAgreementAllowedVersions.contains(agreement.version()) ? "signed" : "outdated";
+            publisherAgreement.setStatus(status);
+        }
+        if (agreement != null && agreement.timestamp() != null) {
+            publisherAgreement.setTimestamp(TimeUtil.toUTCString(agreement.timestamp()));
+        }
+
         // Report user as logged in only if there is a usable token:
         // we need the token to access the Eclipse REST API
         if(usableToken) {
             var eclipseLogin = new UserJson();
-            eclipseLogin.provider = "eclipse";
-            eclipseLogin.loginName = personId;
-            if (json.additionalLogins == null)
-                json.additionalLogins = Lists.newArrayList(eclipseLogin);
+            eclipseLogin.setProvider("eclipse");
+            eclipseLogin.setLoginName(personId);
+            if (json.getAdditionalLogins() == null)
+                json.setAdditionalLogins(Lists.newArrayList(eclipseLogin));
             else
-                json.additionalLogins.add(eclipseLogin);
+                json.getAdditionalLogins().add(eclipseLogin);
         }
     }
 
@@ -217,21 +225,23 @@ public class EclipseService {
             return;
         }
 
-        json.publisherAgreement = new UserJson.PublisherAgreement();
+        var publisherAgreement = new UserJson.PublisherAgreement();
         var personId = user.getEclipsePersonId();
         if (personId == null) {
-            json.publisherAgreement.status = "none";
+            publisherAgreement.setStatus("none");
             return;
         }
 
         try {
             var profile = getPublicProfile(personId);
-            if (profile.publisherAgreements == null || profile.publisherAgreements.openVsx == null || StringUtils.isEmpty(profile.publisherAgreements.openVsx.version))
-                json.publisherAgreement.status = "none";
-            else if (publisherAgreementVersion.equals(profile.publisherAgreements.openVsx.version))
-                json.publisherAgreement.status = "signed";
+            if (profile.getPublisherAgreements() == null || profile.getPublisherAgreements().getOpenVsx() == null || StringUtils.isEmpty(profile.getPublisherAgreements().getOpenVsx().getVersion()))
+                publisherAgreement.setStatus("none");
+            else if (publisherAgreementAllowedVersions.contains(profile.getPublisherAgreements().getOpenVsx().getVersion()))
+                publisherAgreement.setStatus("signed");
             else
-                json.publisherAgreement.status = "outdated";
+                publisherAgreement.setStatus("outdated");
+
+            json.setPublisherAgreement(publisherAgreement);
         } catch (ErrorResultException e) {
             logger.error("Failed to get public profile", e);
         }
@@ -260,10 +270,14 @@ public class EclipseService {
 
     private EclipseProfile parseEclipseProfile(ResponseEntity<String> response) {
         var json = response.getBody();
+        if(json == null) {
+            return new EclipseProfile();
+        }
+
         try {
             if (json.startsWith("[\"")) {
                 var error = objectMapper.readValue(json, TYPE_LIST_STRING);
-                logger.error("Profile request failed:\n" + json);
+                logger.error("Profile request failed:\n{}", json);
                 throw new ErrorResultException("Request to the Eclipse Foundation server failed: " + error,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             } else if (json.startsWith("[")) {
@@ -293,9 +307,9 @@ public class EclipseService {
         }
         checkApiUrl();
         var urlTemplate = eclipseApiUrl + "openvsx/publisher_agreement/{personId}";
-        var uriVariables = Map.of("personId", personId);
+        var uriVariables = Map.of(VAR_PERSON_ID, personId);
         var headers = new HttpHeaders();
-        headers.setBearerAuth(eclipseToken.accessToken);
+        headers.setBearerAuth(eclipseToken.accessToken());
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         var request = new HttpEntity<>(headers);
 
@@ -328,7 +342,7 @@ public class EclipseService {
         var eclipseToken = checkEclipseToken(user);
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(eclipseToken.accessToken);
+        headers.setBearerAuth(eclipseToken.accessToken());
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         var data = new SignAgreementParam(publisherAgreementVersion, user.getLoginName());
         var request = new HttpEntity<>(data, headers);
@@ -375,11 +389,15 @@ public class EclipseService {
 
     private PublisherAgreement parseAgreementResponse(ResponseEntity<String> response) {
         var json = response.getBody();
+        if(json == null) {
+            return null;
+        }
+
         try {
             PublisherAgreementResponse agreementResponse;
             if (json.startsWith("[\"")) {
                 var error = objectMapper.readValue(json, TYPE_LIST_STRING);
-                logger.error("Publisher agreement request failed:\n" + json);
+                logger.error("Publisher agreement request failed:\n{}", json);
                 throw new ErrorResultException("Request to the Eclipse Foundation server failed: " + error,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             } else if (json.startsWith("[")) {
@@ -392,12 +410,13 @@ public class EclipseService {
                 agreementResponse = objectMapper.readValue(json, PublisherAgreementResponse.class);
             }
 
-            var agreement = new PublisherAgreement();
-            agreement.documentId = agreementResponse.documentID;
-            agreement.version = agreementResponse.version;
-            agreement.timestamp = parseDate(agreementResponse.effectiveDate);
-            agreement.isActive = TimeUtil.getCurrentUTC().isAfter(agreement.timestamp);
-            return agreement;
+            var timestamp = parseDate(agreementResponse.effectiveDate);
+            return new PublisherAgreement(
+                    TimeUtil.getCurrentUTC().isAfter(timestamp),
+                    agreementResponse.documentID,
+                    agreementResponse.version,
+                    timestamp
+            );
         } catch (JsonProcessingException exc) {
             logger.error("Failed to parse JSON response (" + response.getStatusCode() + "):\n" + json, exc);
             throw new ErrorResultException("Parsing publisher agreement response failed: " + exc.getMessage(),
@@ -425,10 +444,10 @@ public class EclipseService {
 
         var eclipseToken = admin == null ? checkEclipseToken(user) : checkEclipseToken(admin);
         var headers = new HttpHeaders();
-        headers.setBearerAuth(eclipseToken.accessToken);
+        headers.setBearerAuth(eclipseToken.accessToken());
         var request = new HttpEntity<>(headers);
         var urlTemplate = eclipseApiUrl + "openvsx/publisher_agreement/{personId}";
-        var uriVariables = Map.of("personId", user.getEclipsePersonId());
+        var uriVariables = Map.of(VAR_PERSON_ID, user.getEclipsePersonId());
 
         try {
             var requestCallback = restTemplate.httpEntityCallback(request);
@@ -448,8 +467,8 @@ public class EclipseService {
     }
 
     private AuthToken checkEclipseToken(UserData user) {
-        var eclipseToken = tokens.getActiveToken(user, "eclipse");
-        if (eclipseToken == null || StringUtils.isEmpty(eclipseToken.accessToken)) {
+        var eclipseToken = tokens.getActiveEclipseToken(user);
+        if (eclipseToken == null || StringUtils.isEmpty(eclipseToken.accessToken())) {
             throw new ErrorResultException("Authorization by Eclipse required.", HttpStatus.FORBIDDEN);
         }
         return eclipseToken;

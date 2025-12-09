@@ -15,8 +15,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerErrorException;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -29,10 +32,15 @@ public class SitemapController {
     }
 
     @GetMapping(path = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
-    public ResponseEntity<String> getSitemap() throws ParserConfigurationException {
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
-                .body(service.generateSitemap());
+    public ResponseEntity<String> getSitemap() {
+        try {
+            var sitemap = service.generateSitemap();
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                    .body(sitemap);
+        } catch (ParserConfigurationException | IOException | TransformerException e) {
+            throw new ServerErrorException("Failed to generate sitemap.xml", e);
+        }
     }
 }

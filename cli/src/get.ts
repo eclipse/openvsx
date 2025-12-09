@@ -11,18 +11,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
-import { Registry, Extension, RegistryOptions } from "./registry";
-import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions } from './util';
+import { Registry, Extension } from "./registry";
+import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions, rejectError } from './util';
+import { GetOptions } from './get-options';
 
 /**
  * Downloads an extension or its metadata.
  */
 export async function getExtension(options: GetOptions): Promise<void> {
     addEnvOptions(options);
-    if (!options.target) {
-        options.target = 'universal';
-    }
-
     const registry = new Registry(options);
     const match = matchExtensionId(options.extensionId);
     if (!match) {
@@ -55,11 +52,11 @@ function findMatchingVersion(registry: Registry, extension: Extension, constrain
             try {
                 return registry.getJson(new URL(extension.allVersions[version]));
             } catch (err) {
-                return Promise.reject(err);
+                return rejectError(err);
             }
         }
     }
-    return Promise.reject(`Extension ${extension.namespace}.${extension.name} has no published version matching '${constraint}'`);
+    return Promise.reject(new Error(`Extension ${extension.namespace}.${extension.name} has no published version matching '${constraint}'`));
 }
 
 function isAlias(extension: Extension, version: string): boolean {
@@ -106,27 +103,4 @@ async function download(registry: Registry, extension: Extension, output?: strin
     const target = extension.targetPlatform !== 'universal' ? '@' + extension.targetPlatform : '';
     console.log(`Downloading ${extension.namespace}.${extension.name}-${extension.version}${target} to ${filePath}`);
     await registry.download(filePath, new URL(downloadUrl));
-}
-
-export interface GetOptions extends RegistryOptions {
-    /**
-     * Identifier in the form `namespace.extension` or `namespace/extension`.
-     */
-    extensionId: string;
-    /**
-     * Target platform.
-     */
-    target?: string;
-    /**
-     * An exact version or version range.
-     */
-    version?: string;
-    /**
-     * Save the output in the specified file or directory.
-     */
-    output?: string;
-    /**
-     * Print the extension's metadata instead of downloading it.
-     */
-    metadata?: boolean;
 }

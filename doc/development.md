@@ -6,12 +6,31 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/eclipse/openvsx)
 
+### Using Red Hat OpenShift Dev Spaces
+
+Open a development environment in Red Hat OpenShift Dev Spaces. 
+
+[![Open in Dev Spaces](https://www.eclipse.org/che/contribute.svg)](https://workspaces.openshift.com#https://github.com/eclipse/openvsx)
+
+In the workspace, you'll find a set of predefined commands from the devfile.yaml that will assist you in building, running, and testing the application:
+* 1.1. Build OVSX CLI
+* 1.2. Build UI Component
+* 1.3. Build Server Component
+* 1.4. Run OpenVSX Server
+* 1.5. Run OpenVSX WebUI
+* 1.6. Publish extensions by OVSX CLI
+
+To execute any of these commands within your workspace, navigate to Terminal -> Run Task -> devfile.
+
 ### Using Docker Compose
 
 To run the Open VSX registry in a development environment, you can use `docker compose` by following these steps:
 
  * Verify Docker Compose is installed by running `docker compose version`. If an error occurs, you may need to [install docker compose](https://docs.docker.com/compose/install/) on your machine.
- * Decide which profile(s) to run based on your needs. By default, only the PostgreSQL and Elasticsearch containers start, which suits running the OpenVSX server and web UI locally for easier debugging. The [docker-compose.yml] file defines additional profiles for specific components:
+ * Decide which profile(s) to run based on your needs. The [docker-compose.yml] file defines profiles for specific components:
+   * `db`: Starts the PostgreSQL container.
+   * `es`: Starts the Elasticsearch container.
+   * `debug`: Starts the PostgreSQL and Elasticsearch containers, which suits running the OpenVSX server and web UI locally for easier debugging.
    * `backend`: Starts the OpenVSX server container (java).
    * `frontend`: Starts the web UI container.
    * `commandline`: Starts a container with the OpenVSX CLI tools.
@@ -63,13 +82,13 @@ To run the Open VSX registry in a development environment, you can use `docker c
 
   - [https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl)
 
-- Set up JDK 17
+- Set up JDK 25
   - sudo apt install -y wget apt-transport-https
   - mkdir -p /etc/apt/keyrings
   - wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
   - echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
   - sudo apt update
-  - sudo apt install temurin-17-jdk
+  - sudo apt install temurin-25-jdk
 
 - Install docker
 
@@ -101,15 +120,15 @@ To run the Open VSX registry in a development environment, you can use `docker c
 
 - Make sure the correct Java version is being used
 
-  - Download Java 17 if you don't have it already: https://adoptium.net/temurin/releases/
+  - Download Java 25 if you don't have it already: https://adoptium.net/temurin/releases/
 
   - Run the command `/usr/libexec/java_home –V` to see your matching Java virtual machines
 
-  - Pick Java 17 accordingly
+  - Pick Java 25 accordingly
 
-  - export JAVA_HOME='/usr/libexec/java_home –v 17.0.7+7'
+  - export JAVA_HOME='/usr/libexec/java_home –v 25.0.1+8'
 
-  - Run `java –version` to check if Java 17 is indeed being used
+  - Run `java –version` to check if Java 25 is indeed being used
 
   - https://stackoverflow.com/questions/21964709/how-to-set-or-change-the-default-java-jdk-version-on-macos
 

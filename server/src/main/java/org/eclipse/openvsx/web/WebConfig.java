@@ -53,6 +53,8 @@ public class WebConfig implements WebMvcConfigurer {
                         .allowedOrigins(webuiUrl)
                         .allowCredentials(true);
             }
+            registry.addMapping("/login-providers")
+                    .allowedOrigins(webuiUrl);
             registry.addMapping("/documents/**")
                     .allowedOrigins("*");
             registry.addMapping("/api/**")
@@ -65,7 +67,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         for (var route : frontendRoutes) {
-            registry.addViewController(route).setViewName("forward:/");
+            registry.addViewController(route).setViewName("forward:/index.html");
         }
     }
 

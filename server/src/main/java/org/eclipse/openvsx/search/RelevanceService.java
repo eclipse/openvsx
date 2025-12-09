@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -45,46 +44,19 @@ public class RelevanceService {
     double timestampRelevance;
     @Value("${ovsx.search.relevance.unverified:0.5}")
     double unverifiedRelevance;
-
-    @Value("${ovsx.elasticsearch.relevance.rating:-1.0}")
-    double deprecatedElasticSearchRatingRelevance;
-    @Value("${ovsx.elasticsearch.relevance.downloads:-1.0}")
-    double deprecatedElasticSearchDownloadsRelevance;
-    @Value("${ovsx.elasticsearch.relevance.timestamp:-1.0}")
-    double deprecatedElasticSearchTimestampRelevance;
-    @Value("${ovsx.elasticsearch.relevance.unverified:-1.0}")
-    double deprecatedElasticSearchUnverifiedRelevance;
+    @Value("${ovsx.search.relevance.deprecated:0.5}")
+    double deprecatedRelevance;
 
     public RelevanceService(RepositoryService repositories) {
         this.repositories = repositories;
-    }
-
-    @PostConstruct
-    void init() {
-        if (deprecatedElasticSearchRatingRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.rating property. It has been renamed to ovsx.search.relevance.rating.");
-            this.ratingRelevance = deprecatedElasticSearchRatingRelevance;
-        }
-        if (deprecatedElasticSearchDownloadsRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.downloads property. It has been renamed to ovsx.search.relevance.rating.");
-            this.downloadsRelevance = deprecatedElasticSearchDownloadsRelevance;
-        }
-        if (deprecatedElasticSearchTimestampRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.timestamp property. It has been renamed to ovsx.search.relevance.rating.");
-            this.timestampRelevance = deprecatedElasticSearchTimestampRelevance;
-        }
-        if (deprecatedElasticSearchUnverifiedRelevance != -1.0) {
-            logger.warn("Using deprecated ovsx.elasticsearch.relevance.unverified property. It has been renamed to ovsx.search.relevance.rating.");
-            this.unverifiedRelevance = deprecatedElasticSearchUnverifiedRelevance;
-        }
     }
 
     public ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
         var latest = repositories.findLatestVersion(extension,  null, false, true);
         var targetPlatforms = repositories.findExtensionTargetPlatforms(extension);
         var entry = extension.toSearch(latest, targetPlatforms);
-        entry.rating = calculateRating(extension, stats);
-        entry.relevance = calculateRelevance(extension, latest, stats, entry);
+        entry.setRating(calculateRating(extension, stats));
+        entry.setRelevance(calculateRelevance(extension, latest, stats, entry));
 
         return entry;
     }
@@ -99,25 +71,39 @@ public class RelevanceService {
     }
 
     private double calculateRelevance(Extension extension, ExtensionVersion latest, SearchStats stats, ExtensionSearch entry) {
+        var extensionId = NamingUtil.toExtensionId(extension);
+        logger.debug(">> [{}] CALCULATE RELEVANCE", extensionId);
         var ratingValue = 0.0;
         if (extension.getAverageRating() != null) {
+            logger.debug("[{}] INCLUDE AVG RATING", extensionId);
             var reviewCount = extension.getReviewCount();
             // Reduce the rating relevance if there are only few reviews
             var countRelevance = saturate(reviewCount, 0.25);
             ratingValue = (extension.getAverageRating() / 5.0) * countRelevance;
+            logger.debug("[{}] {} = {} * {} | {}", extensionId, ratingValue, extension.getAverageRating() / 5.0, countRelevance, reviewCount);
         }
-        var downloadsValue = entry.downloadCount / stats.downloadRef;
+        var downloadsValue = entry.getDownloadCount() / stats.downloadRef;
         var timestamp = latest.getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
         var relevance = ratingRelevance * limit(ratingValue) + downloadsRelevance * limit(downloadsValue)
                 + timestampRelevance * limit(timestampValue);
+        logger.debug("[{}] RELEVANCE: {} = {} * {} + {} * {} + {} * {}", extensionId, relevance, ratingRelevance, limit(ratingValue), downloadsRelevance, limit(downloadsValue), timestampRelevance, limit(timestampValue));
+        logger.debug("[{}] VALUES: {} | {} | {}", extensionId, ratingValue, downloadsValue, timestampValue);
 
         // Reduce the relevance value of unverified extensions
         if (!isVerified(latest)) {
             relevance *= unverifiedRelevance;
+            logger.debug("[{}] UNVERIFIED: {} * {}", extensionId, relevance, unverifiedRelevance);
         }
 
-        if (Double.isNaN(entry.relevance) || Double.isInfinite(entry.relevance)) {
+        // Reduce the relevance value of deprecated extensions
+        if (extension.isDeprecated()) {
+            relevance *= deprecatedRelevance;
+            logger.debug("[{}] DEPRECATED: {} * {}", extensionId, relevance, deprecatedRelevance);
+        }
+
+        if (Double.isNaN(relevance) || Double.isInfinite(relevance)) {
+            logger.debug("[{}] INVALID RELEVANCE", extensionId);
             var message = "Invalid relevance for entry " + NamingUtil.toExtensionId(entry);
             try {
                 message += " " + new ObjectMapper().writeValueAsString(stats);
@@ -128,6 +114,7 @@ public class RelevanceService {
             relevance = 0.0;
         }
 
+        logger.debug("<< [{}] CALCULATE RELEVANCE: {}", extensionId, relevance);
         return relevance;
     }
 

@@ -12,29 +12,78 @@ package org.eclipse.openvsx.json;
 import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(Include.NON_NULL)
 public class AccessTokenJson extends ResultJson {
 
     public static AccessTokenJson error(String message) {
         var result = new AccessTokenJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
-    public Long id;
+    private Long id;
 
     @Nullable
-    public String value;
+    private String value;
 
-    public String createdTimestamp;
+    private String createdTimestamp;
 
     @Nullable
-    public String accessedTimestamp;
+    private String accessedTimestamp;
 
-    public String description;
+    private String description;
 
-    public String deleteTokenUrl;
+    private String deleteTokenUrl;
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    @Nullable
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(@Nullable String value) {
+        this.value = value;
+    }
+
+    public String getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(String createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+    }
+
+    @Nullable
+    public String getAccessedTimestamp() {
+        return accessedTimestamp;
+    }
+
+    public void setAccessedTimestamp(@Nullable String accessedTimestamp) {
+        this.accessedTimestamp = accessedTimestamp;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDeleteTokenUrl() {
+        return deleteTokenUrl;
+    }
+
+    public void setDeleteTokenUrl(String deleteTokenUrl) {
+        this.deleteTokenUrl = deleteTokenUrl;
+    }
 }

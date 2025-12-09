@@ -13,19 +13,20 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
+import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
-import org.eclipse.openvsx.security.TokenService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -36,19 +37,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SitemapController.class)
 @AutoConfigureWebClient
-@MockBean({
+@MockitoBean(types = {
         EclipseService.class, SimpleMeterRegistry.class, UserService.class, TokenService.class, EntityManager.class
 })
-public class SitemapControllerTest {
+class SitemapControllerTest {
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
     @Autowired
     MockMvc mockMvc;
 
     @Test
-    public void testSitemap() throws Exception {
+    void testSitemap() throws Exception {
         var expected = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -75,9 +76,10 @@ public class SitemapControllerTest {
                 TokenService tokens,
                 RepositoryService repositories,
                 EntityManager entityManager,
-                EclipseService eclipse
+                EclipseService eclipse,
+                OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse);
+            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
         }
 
         @Bean

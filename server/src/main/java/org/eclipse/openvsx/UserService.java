@@ -10,29 +10,40 @@
 package org.eclipse.openvsx;
 
 import com.google.common.base.Joiner;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
+import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ServerErrorException;
 
-import java.util.Objects;
-import java.util.UUID;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
@@ -45,7 +56,11 @@ public class UserService {
     private final StorageUtilService storageUtil;
     private final CacheService cache;
     private final ExtensionValidator validator;
-    private final ObservationRegistry observations;
+    private final ClientRegistrationRepository clientRegistrationRepository;
+    private final OAuth2AttributesConfig attributesConfig;
+
+    @Value("${ovsx.token-prefix:}")
+    String tokenPrefix;
 
     public UserService(
             EntityManager entityManager,
@@ -53,123 +68,61 @@ public class UserService {
             StorageUtilService storageUtil,
             CacheService cache,
             ExtensionValidator validator,
-            ObservationRegistry observations
+            @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
+            OAuth2AttributesConfig attributesConfig
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.storageUtil = storageUtil;
         this.cache = cache;
         this.validator = validator;
-        this.observations = observations;
+        this.clientRegistrationRepository = clientRegistrationRepository;
+        this.attributesConfig = attributesConfig;
     }
 
     public UserData findLoggedInUser() {
-        return Observation.createNotStarted("UserService#findLoggedInUser", observations).observe(() -> {
-            var authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null) {
-                if (authentication.getPrincipal() instanceof IdPrincipal) {
-                    var principal = (IdPrincipal) authentication.getPrincipal();
-                    return entityManager.find(UserData.class, principal.getId());
-                }
-            }
+        if(!canLogin()) {
             return null;
-        });
-    }
-
-    @Transactional
-    public UserData registerNewUser(OAuth2User oauth2User) {
-        var user = new UserData();
-        user.setProvider("github");
-        user.setAuthId(oauth2User.getName());
-        user.setLoginName(oauth2User.getAttribute("login"));
-        user.setFullName(oauth2User.getAttribute("name"));
-        user.setEmail(oauth2User.getAttribute("email"));
-        user.setProviderUrl(oauth2User.getAttribute("html_url"));
-        user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
-        entityManager.persist(user);
-        return user;
-    }
-
-    @Transactional
-    public UserData updateExistingUser(UserData user, OAuth2User oauth2User) {
-        if ("github".equals(user.getProvider())) {
-            var updated = false;
-            String loginName = oauth2User.getAttribute("login");
-            if (loginName != null && !loginName.equals(user.getLoginName())) {
-                user.setLoginName(loginName);
-                updated = true;
-            }
-            String fullName = oauth2User.getAttribute("name");
-            if (fullName != null && !fullName.equals(user.getFullName())) {
-                user.setFullName(fullName);
-                updated = true;
-            }
-            String email = oauth2User.getAttribute("email");
-            if (email != null && !email.equals(user.getEmail())) {
-                user.setEmail(email);
-                updated = true;
-            }
-            String providerUrl = oauth2User.getAttribute("html_url");
-            if (providerUrl != null && !providerUrl.equals(user.getProviderUrl())) {
-                user.setProviderUrl(providerUrl);
-                updated = true;
-            }
-            String avatarUrl = oauth2User.getAttribute("avatar_url");
-            if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl())) {
-                user.setAvatarUrl(avatarUrl);
-                updated = true;
-            }
-            if (updated) {
-                cache.evictExtensionJsons(user);
-            }
         }
-        return user;
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof IdPrincipal principal) {
+            return entityManager.find(UserData.class, principal.getId());
+        }
+        return null;
     }
 
     @Transactional
     public PersonalAccessToken useAccessToken(String tokenValue) {
-        return Observation.createNotStarted("UserService#useAccessToken", observations).observe(() -> {
-            var token = repositories.findAccessToken(tokenValue);
-            if (token == null || !token.isActive()) {
-                return null;
-            }
-            token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
-            return token;
-        });
+        var token = repositories.findAccessToken(tokenValue);
+        if (token == null || !token.isActive()) {
+            return null;
+        }
+        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+        return token;
     }
 
     public String generateTokenValue() {
         String value;
         do {
-            value = UUID.randomUUID().toString();
-        } while (repositories.findAccessToken(value) != null);
+            value = tokenPrefix + UUID.randomUUID();
+        } while (repositories.hasAccessToken(value));
         return value;
     }
 
     public boolean hasPublishPermission(UserData user, Namespace namespace) {
-        return Observation.createNotStarted("UserService#hasPublishPermission", observations).observe(() -> {
+        if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+            // Privileged users can publish to every namespace.
+            return true;
+        }
 
-            if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
-                // Privileged users can publish to every namespace.
-                return true;
-            }
-
-            var membership = repositories.findMembership(user, namespace);
-            if (membership == null) {
-                // The requesting user is not a member of the namespace.
-                return false;
-            }
-            var role = membership.getRole();
-            return NamespaceMembership.ROLE_CONTRIBUTOR.equalsIgnoreCase(role)
-                    || NamespaceMembership.ROLE_OWNER.equalsIgnoreCase(role);
-        });
+        return repositories.canPublishInNamespace(user, namespace);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson setNamespaceMember(UserData requestingUser, String namespaceName, String provider, String userLogin, String role) {
         var namespace = repositories.findNamespace(namespaceName);
-        var userMembership = repositories.findMembership(requestingUser, namespace);
-        if (userMembership == null || !userMembership.getRole().equals(NamespaceMembership.ROLE_OWNER)) {
+        if (!repositories.isNamespaceOwner(requestingUser, namespace)) {
             throw new ErrorResultException("You must be an owner of this namespace.");
         }
         var targetUser = repositories.findUserByLoginName(provider, userLogin);
@@ -218,10 +171,13 @@ public class UserService {
 
     @Transactional(rollbackOn = { ErrorResultException.class, NotFoundException.class })
     @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#details.name")
-    public ResultJson updateNamespaceDetails(NamespaceDetailsJson details) {
-        var namespace = repositories.findNamespace(details.name);
+    public ResultJson updateNamespaceDetails(NamespaceDetailsJson details, UserData user) {
+        var namespace = repositories.findNamespace(details.getName());
         if (namespace == null) {
             throw new NotFoundException();
+        }
+        if (!repositories.isNamespaceOwner(user, namespace)) {
+            throw new ErrorResultException("You must be an owner of this namespace.");
         }
 
         var issues = validator.validateNamespaceDetails(details);
@@ -233,72 +189,84 @@ public class UserService {
             throw new ErrorResultException(message);
         }
 
-        if(!Objects.equals(details.displayName, namespace.getDisplayName())) {
-            namespace.setDisplayName(details.displayName);
+        if(!Objects.equals(details.getDisplayName(), namespace.getDisplayName())) {
+            namespace.setDisplayName(details.getDisplayName());
         }
-        if(!Objects.equals(details.description, namespace.getDescription())) {
-            namespace.setDescription(details.description);
+        if(!Objects.equals(details.getDescription(), namespace.getDescription())) {
+            namespace.setDescription(details.getDescription());
         }
-        if(!Objects.equals(details.website, namespace.getWebsite())) {
-            namespace.setWebsite(details.website);
+        if(!Objects.equals(details.getWebsite(), namespace.getWebsite())) {
+            namespace.setWebsite(details.getWebsite());
         }
-        if(!Objects.equals(details.supportLink, namespace.getSupportLink())) {
-            namespace.setSupportLink(details.supportLink);
+        if(!Objects.equals(details.getSupportLink(), namespace.getSupportLink())) {
+            namespace.setSupportLink(details.getSupportLink());
         }
-        if(!Objects.equals(details.socialLinks, namespace.getSocialLinks())) {
-            namespace.setSocialLinks(details.socialLinks);
+        if(!Objects.equals(details.getSocialLinks(), namespace.getSocialLinks())) {
+            namespace.setSocialLinks(details.getSocialLinks());
+        }
+        if(StringUtils.isEmpty(details.getLogo()) && StringUtils.isNotEmpty(namespace.getLogoName())) {
+            storageUtil.removeNamespaceLogo(namespace);
+            namespace.clearLogoBytes();
+            namespace.setLogoName(null);
+            namespace.setLogoStorageType(null);
         }
 
-        var logo = namespace.getLogoStorageType() != null
-                ? storageUtil.getNamespaceLogoLocation(namespace).toString()
-                : null;
+        return ResultJson.success("Updated details for namespace " + details.getName());
+    }
 
-        if(!Objects.equals(details.logo, logo)) {
-            if (details.logoBytes != null && details.logoBytes.length > 0) {
-                if (namespace.getLogoStorageType() != null) {
-                    storageUtil.removeNamespaceLogo(namespace);
-                }
+    @Transactional
+    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#namespaceName")
+    public ResultJson updateNamespaceDetailsLogo(String namespaceName, MultipartFile file, UserData user) {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new NotFoundException();
+        }
+        if (!repositories.isNamespaceOwner(user, namespace)) {
+            throw new ErrorResultException("You must be an owner of this namespace.");
+        }
 
-                namespace.setLogoName(details.logo);
-                namespace.setLogoBytes(details.logoBytes);
-                storeNamespaceLogo(namespace);
-            } else if (namespace.getLogoStorageType() != null) {
-                storageUtil.removeNamespaceLogo(namespace);
-                namespace.setLogoName(null);
-                namespace.setLogoBytes(null);
-                namespace.setLogoStorageType(null);
+        var oldNamespace = SerializationUtils.clone(namespace);
+        try (
+                var logoFile = new TempFile("namespace-logo", ".png");
+                var out = Files.newOutputStream(logoFile.getPath())
+        ) {
+            var tika = new Tika();
+            var detectedType = tika.detect(file.getInputStream(), file.getOriginalFilename());
+            var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
+            var expectedLogoTypes = List.of(MediaType.image("png"), MediaType.image("jpg"));
+            if(logoType == null || !expectedLogoTypes.contains(logoType.getType())) {
+                throw new ErrorResultException("Namespace logo should be a png or jpg file");
             }
+
+            namespace.setLogoName(NamingUtil.toLogoName(namespace, logoType));
+            file.getInputStream().transferTo(out);
+            logoFile.setNamespace(namespace);
+            storageUtil.uploadNamespaceLogo(logoFile);
+            if(StringUtils.isNotEmpty(oldNamespace.getLogoName())) {
+                storageUtil.removeNamespaceLogo(oldNamespace);
+            }
+        } catch (IOException | MimeTypeException e) {
+            throw new ServerErrorException("Failed to update namespace logo", e);
         }
 
-        return ResultJson.success("Updated details for namespace " + details.name);
+        return ResultJson.success("Updated logo for namespace " + namespace.getName());
     }
 
-    private void storeNamespaceLogo(Namespace namespace) {
-        if (storageUtil.shouldStoreLogoExternally(namespace)) {
-            storageUtil.uploadNamespaceLogo(namespace);
-            // Don't store the binary content in the DB - it's now stored externally
-            namespace.setLogoBytes(null);
-        } else {
-            namespace.setLogoStorageType(FileResource.STORAGE_DB);
-        }
-    }
     @Transactional
     public AccessTokenJson createAccessToken(UserData user, String description) {
-        return Observation.createNotStarted("UserService#createAccessToken", observations).observe(() -> {
-            var token = new PersonalAccessToken();
-            token.setUser(user);
-            token.setValue(generateTokenValue());
-            token.setActive(true);
-            token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
-            token.setDescription(description);
-            entityManager.persist(token);
-            var json = token.toAccessTokenJson();
-            // Include the token value after creation so the user can copy it
-            json.value = token.getValue();
-            json.deleteTokenUrl = createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId()));
+        var token = new PersonalAccessToken();
+        token.setUser(user);
+        token.setValue(generateTokenValue());
+        token.setActive(true);
+        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
+        token.setDescription(description);
+        entityManager.persist(token);
+        var json = token.toAccessTokenJson();
+        // Include the token value after creation so the user can copy it
+        json.setValue(token.getValue());
+        json.setDeleteTokenUrl(createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
 
-            return json;
-        });
+        return json;
     }
 
     @Transactional
@@ -315,5 +283,56 @@ public class UserService {
 
         token.setActive(false);
         return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
+    }
+
+    public boolean canLogin() {
+        return !getLoginProviders().isEmpty();
+    }
+
+    @Transactional
+    public UserData upsertUser(UserData newUser) {
+        var userData = repositories.findUserByLoginName(newUser.getProvider(), newUser.getLoginName());
+        if (userData == null) {
+            entityManager.persist(newUser);
+            userData = newUser;
+        } else {
+            var updated = false;
+            if (!StringUtils.equals(userData.getLoginName(), newUser.getLoginName())) {
+                userData.setLoginName(newUser.getLoginName());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getFullName(), newUser.getFullName())) {
+                userData.setFullName(newUser.getFullName());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getEmail(), newUser.getEmail())) {
+                userData.setEmail(newUser.getEmail());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getProviderUrl(), newUser.getProviderUrl())) {
+                userData.setProviderUrl(newUser.getProviderUrl());
+                updated = true;
+            }
+            if (!StringUtils.equals(userData.getAvatarUrl(), newUser.getAvatarUrl())) {
+                userData.setAvatarUrl(newUser.getAvatarUrl());
+                updated = true;
+            }
+            if (updated) {
+                cache.evictExtensionJsons(userData);
+            }
+        }
+
+        return userData;
+    }
+
+    public Map<String, String> getLoginProviders() {
+        if(clientRegistrationRepository == null) {
+            return Collections.emptyMap();
+        }
+
+        return attributesConfig.getProviders().stream()
+                .filter(provider -> clientRegistrationRepository.findByRegistrationId(provider) != null)
+                .map(provider -> Map.entry(provider, UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "oauth2", "authorization", provider)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

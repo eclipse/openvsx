@@ -9,16 +9,19 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import jakarta.persistence.*;
+import org.eclipse.openvsx.json.UserJson;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-import jakarta.persistence.*;
-
-import org.eclipse.openvsx.json.UserJson;
-
 @Entity
 public class UserData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public static final String ROLE_ADMIN = "admin";
     public static final String ROLE_PRIVILEGED = "privileged";
@@ -26,41 +29,37 @@ public class UserData implements Serializable {
     @Id
     @GeneratedValue(generator = "userDataSeq")
     @SequenceGenerator(name = "userDataSeq", sequenceName = "user_data_seq")
-    long id;
+    private long id;
 
     @Column(length = 32)
-    String role;
+    private String role;
 
-    String loginName;
+    private String loginName;
 
-    String fullName;
+    private String fullName;
 
-    String email;
+    private String email;
 
-    String avatarUrl;
+    private String avatarUrl;
 
     @Column(length = 32)
-    String provider;
+    private String provider;
 
-    String authId;
+    private String authId;
 
-    String providerUrl;
-
-    @OneToMany(mappedBy = "user")
-    List<PersonalAccessToken> tokens;
+    private String providerUrl;
 
     @OneToMany(mappedBy = "user")
-    List<NamespaceMembership> memberships;
+    private List<PersonalAccessToken> tokens;
 
-    String eclipsePersonId;
+    @OneToMany(mappedBy = "user")
+    private List<NamespaceMembership> memberships;
+
+    private String eclipsePersonId;
 
     @Column(length = 4096)
     @Convert(converter = AuthTokenConverter.class)
-    AuthToken githubToken;
-
-    @Column(length = 4096)
-    @Convert(converter = AuthTokenConverter.class)
-    AuthToken eclipseToken;
+    private AuthToken eclipseToken;
 
 
     /**
@@ -68,11 +67,11 @@ public class UserData implements Serializable {
      */
     public UserJson toUserJson() {
         var json = new UserJson();
-        json.loginName = this.getLoginName();
-        json.fullName = this.getFullName();
-        json.avatarUrl = this.getAvatarUrl();
-        json.homepage = this.getProviderUrl();
-        json.provider = this.getProvider();
+        json.setLoginName(this.getLoginName());
+        json.setFullName(this.getFullName());
+        json.setAvatarUrl(this.getAvatarUrl());
+        json.setHomepage(this.getProviderUrl());
+        json.setProvider(this.getProvider());
         return json;
     }
 
@@ -156,14 +155,6 @@ public class UserData implements Serializable {
         this.eclipsePersonId = eclipsePersonId;
     }
 
-    public AuthToken getGithubToken() {
-        return githubToken;
-    }
-
-    public void setGithubToken(AuthToken githubToken) {
-        this.githubToken = githubToken;
-    }
-
     public AuthToken getEclipseToken() {
         return eclipseToken;
     }
@@ -189,7 +180,6 @@ public class UserData implements Serializable {
                 && Objects.equals(tokens, userData.tokens)
                 && Objects.equals(memberships, userData.memberships)
                 && Objects.equals(eclipsePersonId, userData.eclipsePersonId)
-                && Objects.equals(githubToken, userData.githubToken)
                 && Objects.equals(eclipseToken, userData.eclipseToken);
     }
 
@@ -197,7 +187,7 @@ public class UserData implements Serializable {
     public int hashCode() {
         return Objects.hash(
                 id, role, loginName, fullName, email, avatarUrl, provider, authId, providerUrl, tokens, memberships,
-                eclipsePersonId, githubToken, eclipseToken
+                eclipsePersonId, eclipseToken
         );
     }
 }

@@ -4,6 +4,9 @@ logging:
 
 server:
   port: 8080
+  jetty:
+    threads:
+      max-queue-capacity: 100
 
 spring:
   application:
@@ -13,13 +16,17 @@ spring:
     exclude: org.springframework.boot.actuate.autoconfigure.tracing.zipkin.ZipkinAutoConfiguration
   profiles:
     include: ovsx
-  cache:
-    jcache:
-      config: classpath:ehcache.xml
+# connect to redis cluster configured in docker-compose.yml
+#  data:
+#    redis:
+#      cluster:
+#        nodes: '127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005,127.0.0.1:7006'
+#      username: openvsx
+#      password: openvsx
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
-    username: gitpod
-    password: gitpod
+    username: openvsx
+    password: openvsx
   flyway:
     baseline-on-migrate: true
     baseline-version: 0.1.0
@@ -73,10 +80,12 @@ management:
             requests: true
 
 springdoc:
+  model-and-view-allowed: true
   swagger-ui:
     path: /swagger-ui
     docExpansion: list
     operationsSorter: alpha
+    urlsPrimaryName: Registry API
     supportedSubmitMethods:
       - get
 
@@ -96,6 +105,7 @@ org:
 
 bucket4j:
   enabled: true
+  cache-to-use: jcache # use redis-jedis for redis standalone or redis-cluster-jedis for redis cluster
   filters:
     - cache-name: buckets
       url: '/api/-/(namespace/create|publish)'
@@ -135,12 +145,25 @@ ovsx:
   databasesearch:
     enabled: false
   elasticsearch:
+    enabled: true
     clear-on-start: true
+  redis:
+    enabled: false
   eclipse:
     base-url: https://api.eclipse.org
     publisher-agreement:
       timezone: US/Eastern
+  extension-control:
+    update-on-start: true
   integrity:
     key-pair: create # create, renew, delete, 'undefined'
   registry:
     version: 'v0.14.3'
+  storage:
+    local:
+      directory: /tmp
+  mail:
+    from: no-reply@example.com
+    revoked-access-tokens:
+      subject: 'Open VSX Access Tokens Revoked'
+      template: 'revoked-access-tokens.html'

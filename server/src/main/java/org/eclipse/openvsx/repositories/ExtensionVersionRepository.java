@@ -18,7 +18,6 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
@@ -26,21 +25,17 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
 
-    List<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension, Pageable page);
-
-    Streamable<ExtensionVersion> findByVersionAndExtension(String version, Extension extension);
-
     ExtensionVersion findByVersionAndTargetPlatformAndExtension(String version, String targetPlatform, Extension extension);
 
     ExtensionVersion findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String targetPlatform, String extensionName, String namespace);
 
+    ExtensionVersion findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(UserData user, String version, String targetPlatform, String extensionName, String namespace);
+
     Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
 
-    Streamable<ExtensionVersion> findByPublishedWithUser(UserData user);
-
-    Streamable<ExtensionVersion> findByPublishedWith(PersonalAccessToken publishedWith);
-
     Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
+
+    Streamable<ExtensionVersion> findByPublishedWithUserAndActive(UserData user, boolean active);
 
     Streamable<ExtensionVersion> findAll();
 
@@ -54,8 +49,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();
-
-    int countByExtension(Extension extension);
 
     @Modifying
     @Query("update ExtensionVersion ev set ev.signatureKeyPair = null")

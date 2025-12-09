@@ -9,17 +9,16 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import jakarta.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 
+import java.io.Serial;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import jakarta.persistence.*;
 
 @Entity
 @Table(uniqueConstraints = {
@@ -28,6 +27,9 @@ import jakarta.persistence.*;
 })
 public class Namespace implements Serializable {
 
+	@Serial
+	private static final long serialVersionUID = 1L;
+
 	private static final String SL_LINKEDIN = "linkedin";
 	private static final String SL_GITHUB = "github";
 	private static final String SL_TWITTER = "twitter";
@@ -35,39 +37,39 @@ public class Namespace implements Serializable {
     @Id
 	@GeneratedValue(generator = "namespaceSeq")
 	@SequenceGenerator(name = "namespaceSeq", sequenceName = "namespace_seq")
-	long id;
+	private long id;
 
     @Column(length = 128)
-    String publicId;
+	private String publicId;
 
-    String name;
-
-	@Column(length = 32)
-	String displayName;
-
-    String description;
-
-    String website;
-
-    String supportLink;
-
-    String logoName;
-
-	byte[] logoBytes;
+	private String name;
 
 	@Column(length = 32)
-	String logoStorageType;
+	private String displayName;
+
+	private String description;
+
+	private String website;
+
+	private String supportLink;
+
+	private String logoName;
+
+	private byte[] logoBytes;
+
+	@Column(length = 32)
+	private String logoStorageType;
 
 	@ElementCollection
 	@MapKeyColumn(name = "provider")
 	@Column(name = "social_link")
-    Map<String, String> socialLinks;
+	private Map<String, String> socialLinks;
 
     @OneToMany(mappedBy = "namespace")
-    List<Extension> extensions;
+	private List<Extension> extensions;
 
     @OneToMany(mappedBy = "namespace")
-    List<NamespaceMembership> memberships;
+	private List<NamespaceMembership> memberships;
 
 
 	public long getId() {
@@ -118,12 +120,16 @@ public class Namespace implements Serializable {
 		this.logoName = logoName;
 	}
 
+	/**
+	 * @deprecated
+	 */
+	@Deprecated
 	public byte[] getLogoBytes() {
 		return logoBytes;
 	}
 
-	public void setLogoBytes(byte[] logoBytes) {
-		this.logoBytes = logoBytes;
+	public void clearLogoBytes() {
+		this.logoBytes = null;
 	}
 
 	public String getLogoStorageType() {
@@ -178,16 +184,16 @@ public class Namespace implements Serializable {
 
 	public NamespaceDetailsJson toNamespaceDetailsJson() {
 		var details = new NamespaceDetailsJson();
-		details.name = name;
-		details.displayName = StringUtils.isNotEmpty(displayName) ? displayName : name;
-		details.description = description;
-		details.website = website;
-		details.supportLink = supportLink;
-		details.socialLinks = Map.of(
+		details.setName(name);
+		details.setDisplayName(StringUtils.isNotEmpty(displayName) ? displayName : name);
+		details.setDescription(description);
+		details.setWebsite(website);
+		details.setSupportLink(supportLink);
+		details.setSocialLinks(Map.of(
 				SL_LINKEDIN, socialLinks.getOrDefault(SL_LINKEDIN, ""),
 				SL_GITHUB, socialLinks.getOrDefault(SL_GITHUB, ""),
 				SL_TWITTER, socialLinks.getOrDefault(SL_TWITTER, "")
-		);
+		));
 
 		return details;
 	}
@@ -205,7 +211,6 @@ public class Namespace implements Serializable {
 				&& Objects.equals(website, namespace.website)
 				&& Objects.equals(supportLink, namespace.supportLink)
 				&& Objects.equals(logoName, namespace.logoName)
-				&& Arrays.equals(logoBytes, namespace.logoBytes)
 				&& Objects.equals(logoStorageType, namespace.logoStorageType)
 				&& Objects.equals(socialLinks, namespace.socialLinks)
 				&& Objects.equals(extensions, namespace.extensions)
@@ -214,9 +219,7 @@ public class Namespace implements Serializable {
 
 	@Override
 	public int hashCode() {
-		int result = Objects.hash(id, publicId, name, displayName, description, website, supportLink, logoName,
+        return Objects.hash(id, publicId, name, displayName, description, website, supportLink, logoName,
 				logoStorageType, socialLinks, extensions, memberships);
-		result = 31 * result + Arrays.hashCode(logoBytes);
-		return result;
 	}
 }

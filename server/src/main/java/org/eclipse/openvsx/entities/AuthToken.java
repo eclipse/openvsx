@@ -11,44 +11,20 @@ package org.eclipse.openvsx.entities;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Set;
 
 /**
  * This class is not mapped to a database entity, but parsed / serialized to
  * JSON via a column converter.
  */
-public class AuthToken implements Serializable {
-
-    public String accessToken;
-
-    public Instant issuedAt;
-
-    public Instant expiresAt;
-
-    public Set<String> scopes;
-    
-    public String refreshToken;
-
-    public Instant refreshExpiresAt;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AuthToken authToken = (AuthToken) o;
-        return Objects.equals(accessToken, authToken.accessToken)
-                && Objects.equals(issuedAt, authToken.issuedAt)
-                && Objects.equals(expiresAt, authToken.expiresAt)
-                && Objects.equals(scopes, authToken.scopes)
-                && Objects.equals(refreshToken, authToken.refreshToken)
-                && Objects.equals(refreshExpiresAt, authToken.refreshExpiresAt);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(accessToken, issuedAt, expiresAt, scopes, refreshToken, refreshExpiresAt);
-    }
+public record AuthToken(
+        String accessToken,
+        Instant issuedAt,
+        Instant expiresAt,
+        Set<String> scopes,
+        String refreshToken,
+        Instant refreshExpiresAt
+) implements Serializable {
 
     @Override
 	public String toString() {

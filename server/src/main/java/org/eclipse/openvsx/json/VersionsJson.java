@@ -25,21 +25,45 @@ public class VersionsJson extends ResultJson {
 
     public static VersionsJson error(String message) {
         var result = new VersionsJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "Number of skipped entries according to the versions request")
     @NotNull
     @Min(0)
-    public int offset;
+    private int offset;
 
     @Schema(description = "Total number of versions the extension has")
     @NotNull
     @Min(0)
-    public int totalSize;
+    private int totalSize;
 
     @Schema(description = "Map of versions, limited to the size specified in the versions request")
     @NotNull
-    public Map<String, String> versions;
+    private Map<String, String> versions;
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public int getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
+    }
+
+    public Map<String, String> getVersions() {
+        return versions;
+    }
+
+    public void setVersions(Map<String, String> versions) {
+        this.versions = versions;
+    }
 }

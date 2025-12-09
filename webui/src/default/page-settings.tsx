@@ -93,7 +93,7 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
     const extensionHeadTags: FunctionComponent<{extension?: Extension, pageSettings: PageSettings}> = (props) => {
         const params = useParams();
         const name = props.extension
-            ? props.extension.displayName || props.extension.name
+            ? props.extension.displayName ?? props.extension.name
             : params.name;
 
         return headTags({ title: `${name} – ${props.pageSettings.pageTitle}` });
@@ -101,7 +101,7 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
 
     const namespaceHeadTags: FunctionComponent<{namespaceDetails?: NamespaceDetails, name: string, pageSettings: PageSettings}> = (props) => {
         const name = props.namespaceDetails
-            ? props.namespaceDetails.displayName || props.namespaceDetails.name
+            ? props.namespaceDetails.displayName ?? props.namespaceDetails.name
             : props.name;
 
         return headTags({ title: `${name} – ${props.pageSettings.pageTitle}` });

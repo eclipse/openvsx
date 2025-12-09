@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -58,30 +57,28 @@ public class AzureDownloadCountProcessor {
 
     @Transactional
     public void persistProcessedItem(String name, LocalDateTime processedOn, int executionTime, boolean success) {
-//        Observation.createNotStarted("AzureDownloadCountProcessor#persistProcessedItem", observations).observe(() -> {
+        Observation.createNotStarted("AzureDownloadCountProcessor#persistProcessedItem", observations).observe(() -> {
             var processedItem = new AzureDownloadCountProcessedItem();
             processedItem.setName(name);
             processedItem.setProcessedOn(processedOn);
             processedItem.setExecutionTime(executionTime);
             processedItem.setSuccess(success);
             entityManager.persist(processedItem);
-//        });
+        });
     }
 
     public Map<Long, Integer> processDownloadCounts(Map<String, Integer> files) {
-//        return Observation.createNotStarted("AzureDownloadCountProcessor#processDownloadCounts", observations).observe(() -> {
-            return repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
-                    .map(fileResource -> new AbstractMap.SimpleEntry<>(fileResource, files.get(fileResource.getName().toUpperCase())))
-                    .collect(Collectors.groupingBy(
-                            e -> e.getKey().getExtension().getExtension().getId(),
-                            Collectors.summingInt(Map.Entry::getValue)
-                    ));
-//        });
+        return Observation.createNotStarted("AzureDownloadCountProcessor#processDownloadCounts", observations).observe(() -> repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
+                .map(fileResource -> Map.entry(fileResource, files.get(fileResource.getName().toUpperCase())))
+                .collect(Collectors.groupingBy(
+                        e -> e.getKey().getExtension().getExtension().getId(),
+                        Collectors.summingInt(Map.Entry::getValue)
+                )));
     }
 
     @Transactional
     public List<Extension> increaseDownloadCounts(Map<Long, Integer> extensionDownloads) {
-//        return Observation.createNotStarted("AzureDownloadCountProcessor#increaseDownloadCounts", observations).observe(() -> {
+        return Observation.createNotStarted("AzureDownloadCountProcessor#increaseDownloadCounts", observations).observe(() -> {
             var extensions = repositories.findExtensions(extensionDownloads.keySet()).toList();
             extensions.forEach(extension -> {
                 var downloads = extensionDownloads.get(extension.getId());
@@ -89,22 +86,20 @@ public class AzureDownloadCountProcessor {
             });
 
             return extensions;
-//        });
+        });
     }
 
     @Transactional //needs transaction for lazy-loading versions
     public void evictCaches(List<Extension> extensions) {
-//        Observation.createNotStarted("AzureDownloadCountProcessor#evictCaches", observations).observe(() -> {
-            extensions.forEach(extension -> {
-                extension = entityManager.merge(extension);
-                cache.evictExtensionJsons(extension);
-                cache.evictLatestExtensionVersion(extension);
-            });
-//        });
+        Observation.createNotStarted("AzureDownloadCountProcessor#evictCaches", observations).observe(() -> extensions.forEach(extension -> {
+            extension = entityManager.merge(extension);
+            cache.evictExtensionJsons(extension);
+            cache.evictLatestExtensionVersion(extension);
+        }));
     }
 
     public void updateSearchEntries(List<Extension> extensions) {
-//        Observation.createNotStarted("AzureDownloadCountProcessor#updateSearchEntries", observations).observe(() -> {
+        Observation.createNotStarted("AzureDownloadCountProcessor#updateSearchEntries", observations).observe(() -> {
             logger.info(">> updateSearchEntries");
             var activeExtensions = extensions.stream()
                     .filter(Extension::isActive)
@@ -116,12 +111,10 @@ public class AzureDownloadCountProcessor {
 
             parts.forEach(search::updateSearchEntriesAsync);
             logger.info("<< updateSearchEntries");
-//        });
+        });
     }
 
     public List<String> processedItems(List<String> blobNames) {
-//        return Observation.createNotStarted("AzureDownloadCountProcessor#processedItems", observations).observe(() -> {
-            return repositories.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(blobNames);
-//        });
+        return Observation.createNotStarted("AzureDownloadCountProcessor#processedItems", observations).observe(() -> repositories.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(blobNames));
     }
 }

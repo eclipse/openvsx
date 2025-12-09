@@ -79,7 +79,7 @@ export const ExtensionListContainer: FunctionComponent = () => {
         if (sortOrder) {
             queries.push({ key: 'sortOrder', value: sortOrder });
         }
-        const url = addQuery('', queries) || pathname || '/';
+        const url = addQuery('', queries) || pathname;
         history.replaceState(null, '', url);
     };
 

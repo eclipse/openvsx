@@ -22,7 +22,7 @@ export const HeaderMenu: FunctionComponent = () => {
         defaultMenuContent: DefaultMenuContent,
         mobileMenuContent: MobileMenuContent
     } = pageSettings.elements;
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     if (isMobile && MobileMenuContent) {
         return <MobileHeaderMenu menuContent={MobileMenuContent} />;
     } else if (DefaultMenuContent) {
@@ -56,6 +56,7 @@ export const MobileHeaderMenu: FunctionComponent<MobileHeaderMenuProps> = props 
         <Menu
             open={open}
             anchorEl={anchorEl}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             onClose={() => setOpen(false)} >
             <MenuContent />

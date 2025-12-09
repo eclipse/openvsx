@@ -9,22 +9,22 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
+import org.springframework.data.util.Pair;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriUtils;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public final class UrlUtil {
 
@@ -57,7 +57,7 @@ public final class UrlUtil {
     }
 
     public static String createApiVersionUrl(String baseUrl, ExtensionJson json) {
-        return createApiVersionUrl(baseUrl, json.namespace, json.name, json.targetPlatform, json.version);
+        return createApiVersionUrl(baseUrl, json.getNamespace(), json.getName(), json.getTargetPlatform(), json.getVersion());
     }
 
     public static String createApiVersionUrl(String baseUrl, ExtensionVersion extVersion) {
@@ -109,6 +109,10 @@ public final class UrlUtil {
         return baseUrl + path;
     }
 
+    public static String createApiReviewsUrl(String serverUrl, String namespace, String extension) {
+        return createApiUrl(serverUrl, "api", namespace, extension, "reviews");
+    }
+
     /**
      * Add a query to a URL. The parameters array must contain a sequence of key and
      * value pairs, so its length is expected to be even.
@@ -152,23 +156,51 @@ public final class UrlUtil {
     protected static String getBaseUrl(HttpServletRequest request) {
         var url = new StringBuilder();
 
-        // Use the scheme from the X-Forwarded-Proto header if present
-        String scheme;
-        var forwardedScheme = request.getHeader("X-Forwarded-Proto");
-        if (forwardedScheme == null) {
-            scheme = request.getScheme();
-        } else {
-            scheme = forwardedScheme;
-        }
+        var scheme = getBaseUrlScheme(request);
         url.append(scheme).append("://");
 
+        var pair = getBaseUrlHostAndPort(request);
+        url.append(pair.getFirst());
+        var port = pair.getSecond();
+        switch (scheme) {
+            case "http":
+                if (port != 80 && port > 0)
+                    url.append(":").append(port);
+                break;
+            case "https":
+                if (port != 443 && port > 0)
+                    url.append(":").append(port);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported scheme: " + scheme);
+        }
+
+        url.append(getBaseUrlPrefix(request));
+        url.append(request.getContextPath());
+        return url.toString();
+    }
+
+    private static String getBaseUrlPrefix(HttpServletRequest request) {
+        // Use the prefix from the X-Forwarded-Prefix header if present
+        var forwardedPrefix = request.getHeader("X-Forwarded-Prefix");
+        if (forwardedPrefix == null) {
+            forwardedPrefix = "";
+        }
+
+        return forwardedPrefix;
+    }
+
+    private static String getBaseUrlScheme(HttpServletRequest request) {
+        // Use the scheme from the X-Forwarded-Proto header if present
+        var forwardedScheme = request.getHeader("X-Forwarded-Proto");
+        return forwardedScheme != null ? forwardedScheme : request.getScheme();
+    }
+
+    public static Pair<String,Integer> getBaseUrlHostAndPort(HttpServletRequest request) {
         // Use the host and port from the X-Forwarded-Host header if present
-        String host;
-        int port;
         var forwardedHostHeadersEnumeration = request.getHeaders("X-Forwarded-Host");
         if (forwardedHostHeadersEnumeration == null || !forwardedHostHeadersEnumeration.hasMoreElements()) {
-            host = request.getServerName();
-            port = request.getServerPort();
+            return Pair.of(request.getServerName(), request.getServerPort());
         } else {
             // take the first one
             var forwardedHost = forwardedHostHeadersEnumeration.nextElement();
@@ -180,41 +212,18 @@ public final class UrlUtil {
             }
             int colonIndex = forwardedHost.lastIndexOf(':');
             if (colonIndex > 0) {
-                host = forwardedHost.substring(0, colonIndex);
+                int port;
                 try {
                     port = Integer.parseInt(forwardedHost.substring(colonIndex + 1));
                 } catch (NumberFormatException exc) {
                     port = -1;
                 }
+
+                return Pair.of(forwardedHost.substring(0, colonIndex), port);
             } else {
-                host = forwardedHost;
-                port = -1;
+                return Pair.of(forwardedHost, -1);
             }
         }
-        url.append(host);
-        switch (scheme) {
-            case "http":
-                if (port != 80 && port > 0)
-                    url.append(":").append(port);
-                break;
-            case "https":
-                if (port != 443 && port > 0)
-                    url.append(":").append(port);
-                break;
-        }
-
-        // Use the prefix from the X-Forwarded-Prefix header if present
-        String prefix;
-        var forwardedPrefix = request.getHeader("X-Forwarded-Prefix");
-        if (forwardedPrefix == null) {
-            prefix = "";
-        } else {
-            prefix = forwardedPrefix;
-        }
-        url.append(prefix);
-
-        url.append(request.getContextPath());
-        return url.toString();
     }
 
     public static String extractWildcardPath(HttpServletRequest request) {
@@ -235,8 +244,15 @@ public final class UrlUtil {
     }
 
     public static String getPublicKeyUrl(ExtensionVersion extVersion) {
-        var publicId = extVersion.getSignatureKeyPair().getPublicId();
+        return getPublicKeyUrl(extVersion.getSignatureKeyPair().getPublicId());
+    }
+
+    public static String getPublicKeyUrl(String publicId) {
         return createApiUrl(getBaseUrl(), "api", "-", "public-key", publicId);
+    }
+
+    public static String createAllVersionsUrl(String namespaceName, String extensionName, String targetPlatform) {
+        return createAllVersionsUrl(namespaceName, extensionName, targetPlatform, "versions");
     }
 
     public static String createAllVersionsUrl(String namespaceName, String extensionName, String targetPlatform, String versionsSegment) {

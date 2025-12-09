@@ -12,9 +12,7 @@ import React, { FunctionComponent, PropsWithChildren } from 'react';
 import { Drawer, List } from '@mui/material';
 import { Theme } from '@mui/material/styles';
 
-export interface SidepanelProps {}
-
-export const Sidepanel: FunctionComponent<PropsWithChildren<SidepanelProps>> = props => {
+export const Sidepanel: FunctionComponent<PropsWithChildren> = props => {
     return (
         <Drawer
             variant='permanent'

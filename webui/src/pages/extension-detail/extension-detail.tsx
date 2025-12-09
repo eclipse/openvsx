@@ -10,7 +10,7 @@
 
 import * as React from 'react';
 import { ChangeEvent, FunctionComponent, ReactElement, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab } from '@mui/material';
+import { Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab, Stack, useTheme, PaletteMode } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
@@ -68,7 +68,7 @@ const StyledLink = styled(Link)(link);
 const StyledHoverPopover = styled(HoverPopover)(alignVertically);
 
 export const ExtensionDetail: FunctionComponent = () => {
-
+    const theme = useTheme();
     const [loading, setLoading] = useState<boolean>(true);
     const [notFoundError, setNotFoundError] = useState<string>();
     const [extension, setExtension] = useState<Extension>();
@@ -216,18 +216,20 @@ export const ExtensionDetail: FunctionComponent = () => {
 
     const renderExtension = (extension: Extension): ReactNode => {
         const tab = versionPointsToTab(version) ? version as string : 'overview';
-        const headerTheme = (extension.galleryTheme || pageSettings.themeType) ?? 'light';
-        const headerColor = headerTheme === 'dark' ? '#fff' : '#151515';
+        const themeType = (extension.galleryTheme || pageSettings.themeType) ?? 'light';
+        const headerColor = extension.galleryColor || theme.palette.neutral[themeType] as string;
+        const headerTextColor = theme.palette.getContrastText(headerColor);
         return <>
             <Box
                 sx={{
-                    bgcolor: extension.galleryColor || 'neutral.dark',
-                    color: headerColor
+                    bgcolor: headerColor,
+                    color: headerTextColor,
+                    filter: extension.deprecated ? 'grayscale(100%)' : undefined
                 }}
             >
                 <Container maxWidth='xl'>
                     <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', py: 4, px: 0 }}>
-                        {renderBanner(extension, headerTheme, headerColor)}
+                        {renderBanner(extension, headerTextColor, themeType)}
                         <Box
                             sx={{
                                 display: 'flex',
@@ -239,7 +241,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                         >
                             <Box
                                 component='img'
-                                src={icon || pageSettings.urls.extensionDefaultIcon }
+                                src={icon ?? pageSettings.urls.extensionDefaultIcon }
                                 alt={extension.displayName ?? extension.name}
                                 sx={{
                                     height: '7.5rem',
@@ -248,7 +250,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                                     pt: 1
                                 }}
                             />
-                            {renderHeaderInfo(extension, headerTheme, headerColor)}
+                            {renderHeaderInfo(extension, headerTextColor)}
                         </Box>
                     </Box>
                 </Container>
@@ -268,7 +270,7 @@ export const ExtensionDetail: FunctionComponent = () => {
         </>;
     };
 
-    const renderBanner = (extension: Extension, themeType: 'light' | 'dark', themeColor: string): ReactNode => {
+    const renderBanner = (extension: Extension, headerTextColor: string, themeType: PaletteMode): ReactNode => {
         if (!extension.verified) {
             return <Paper
                 sx={{
@@ -280,9 +282,9 @@ export const ExtensionDetail: FunctionComponent = () => {
                     mb: { xs: 2, sm: 2, md: 4, lg: 4, xl: 4 },
                     ml: { xs: 0, sm: 0, md: 6, lg: 6, xl: 6 },
                     bgcolor: `warning.${themeType}`,
-                    color: themeColor,
+                    color: headerTextColor,
                     '& a': {
-                        color: themeColor,
+                        color: headerTextColor,
                         textDecoration: 'underline'
                     }
                 }}
@@ -305,7 +307,7 @@ export const ExtensionDetail: FunctionComponent = () => {
         return null;
     };
 
-    const renderHeaderInfo = (extension: Extension, themeType: 'light' | 'dark', themeColor: string): ReactNode => {
+    const renderHeaderInfo = (extension: Extension, headerTextColor: string): ReactNode => {
         const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
         const downloadCountFormatted = numberFormat.format(extension.downloadCount || 0);
         const reviewCountFormatted = numberFormat.format(extension.reviewCount || 0);
@@ -323,28 +325,38 @@ export const ExtensionDetail: FunctionComponent = () => {
                     { extension.displayName ?? extension.name}
                 </Typography>
             </Badge>
+            { extension.deprecated &&
+                <Stack direction='row' alignItems='center'>
+                    <WarningIcon fontSize='small' />
+                    <Typography>
+                        This extension has been deprecated.{extension.replacement && <>&nbsp;Use <StyledLink sx={{ color: headerTextColor }} href={extension.replacement.url}>
+                            {extension.replacement.displayName}
+                        </StyledLink> instead.</>}
+                    </Typography>
+                </Stack>
+            }
             <Box
                 sx={{
                     ...alignVertically,
-                    color: themeColor,
+                    color: headerTextColor,
                     flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
                 }}
             >
                 <Box sx={alignVertically}>
-                    {renderAccessInfo(extension, themeColor)}&nbsp;
+                    {renderAccessInfo(extension, headerTextColor)}&nbsp;
                     <StyledRouteLink
                         to={createRoute([NamespaceDetailRoutes.ROOT, extension.namespace])}
-                        style={{ color: themeColor }}>
+                        style={{ color: headerTextColor }}>
                         {extension.namespaceDisplayName}
                     </StyledRouteLink>
                 </Box>
-                <TextDivider themeType={themeType} collapseSmall={true} />
+                <TextDivider backgroundColor={headerTextColor} collapseSmall={true} />
                 <Box sx={alignVertically}>
-                    Published by&nbsp;{renderUser(extension.publishedBy, themeColor, alignVertically)}
+                    Published by&nbsp;{renderUser(extension.publishedBy, headerTextColor, alignVertically)}
                 </Box>
-                <TextDivider themeType={themeType} collapseSmall={true} />
+                <TextDivider backgroundColor={headerTextColor} collapseSmall={true} />
                 <Box sx={alignVertically}>
-                    {renderLicense(extension, themeColor)}
+                    {renderLicense(extension, headerTextColor)}
                 </Box>
             </Box>
             <Box mt={2} mb={2} overflow='auto'>
@@ -353,7 +365,7 @@ export const ExtensionDetail: FunctionComponent = () => {
             <Box
                 sx={{
                     ...alignVertically,
-                    color: themeColor,
+                    color: headerTextColor,
                     justifyContent: { xs: 'center', sm: 'center', md: 'flex-start', lg: 'flex-start', xl: 'flex-start' }
                 }}
             >
@@ -361,12 +373,12 @@ export const ExtensionDetail: FunctionComponent = () => {
                     title={extension.downloadCount && extension.downloadCount >= 1000 ? `${extension.downloadCount} downloads` : undefined}>
                     <SaveAltIcon fontSize='small' />&nbsp;{downloadCountFormatted}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
                 </Box>
-                <TextDivider themeType={themeType} />
+                <TextDivider backgroundColor={headerTextColor} />
                 <StyledLink
                     href={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name, 'reviews'])}
                     sx={{
                         ...alignVertically,
-                        color: themeColor
+                        color: headerTextColor
                     }}
                     title={
                         extension.averageRating !== undefined ?

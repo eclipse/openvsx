@@ -30,7 +30,7 @@ export const CopyToClipboard: FunctionComponent<CopyToClipboardProps> = props =>
             leaveDelay={1500}
             onClose={handleOnTooltipClose}
             disableHoverListener
-            {...props.tooltipProps || {}}
+            {...props.tooltipProps ?? {}}
         >
             {
                 props.children({ copy: onCopy }) as ReactElement<any>

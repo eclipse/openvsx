@@ -11,6 +11,7 @@
 import React, { ChangeEvent, FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
 import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
 import { Box, Grid, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
+import WarningIcon from '@mui/icons-material/Warning';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
 import { getTargetPlatformDisplayName } from '../../utils';
 import { MainContext } from '../../context';
@@ -72,11 +73,7 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         const newVersionsMap = new Map<string, boolean>();
         newTargetPlatformVersions.forEach((targetPlatformVersion) => {
             if (targetPlatformVersion.version !== WILDCARD && targetPlatformVersion.targetPlatform !== WILDCARD) {
-                let checked = newVersionsMap.get(targetPlatformVersion.version);
-                if (checked === undefined) {
-                    checked = true;
-                }
-
+                const checked = newVersionsMap.get(targetPlatformVersion.version) ?? true;
                 newVersionsMap.set(targetPlatformVersion.version, checked && targetPlatformVersion.checked);
             }
         });
@@ -96,87 +93,95 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         setTargetPlatformVersions(newTargetPlatformVersions);
     };
 
-    return <>
-        <Grid container direction='column' sx={{ height: '100%' }}>
-            <Grid item container>
-                {
-                    icon ?
-                        <Grid item xs={12} md={4}>
-                            <Box
-                                component='img'
-                                src={icon}
-                                alt={extension.displayName || extension.name}
-                                sx={{
-                                    height: '7.5rem',
-                                    maxWidth: '9rem'
-                                }}
-                            />
+    return <Grid container direction='column' sx={{ height: '100%' }}>
+        <Grid item container sx={{ filter: extension.deprecated ? 'grayscale(100%)' : null }}>
+            {
+                icon ?
+                    <Grid item xs={12} md={4}>
+                        <Box
+                            component='img'
+                            src={icon}
+                            alt={extension.displayName ?? extension.name}
+                            sx={{
+                                height: '7.5rem',
+                                maxWidth: '9rem'
+                            }}
+                        />
+                    </Grid>
+                    : ''
+            }
+            <Grid item container xs={12} md={8}>
+                <Grid item container direction='column' justifyContent='center'>
+                    <Grid item>
+                        <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
+                            {extension.displayName ?? extension.name}
+                        </Typography>
+                    </Grid>
+                    {extension.deprecated &&
+                        <Grid item container direction='row'>
+                            <Grid item>
+                                <WarningIcon fontSize='small' />
+                            </Grid>
+                            <Grid item>
+                                <Typography>&nbsp;This extension has been deprecated.</Typography>
+                            </Grid>
                         </Grid>
-                        : ''
-                }
-                <Grid item container xs={12} md={8}>
-                    <Grid item container direction='column' justifyContent='center'>
-                        <Grid item>
-                            <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
-                                {extension.displayName || extension.name}
-                            </Typography>
-                        </Grid>
-                        <Grid item>
-                            <Typography sx={{ fontFamily: 'Monaco, monospace' }}>{extension.namespace}.{extension.name}</Typography>
-                        </Grid>
-                        <Grid item>
-                            <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{extension.description}</Typography>
-                        </Grid>
+                    }
+                    <Grid item>
+                        <Typography sx={{ fontFamily: 'Monaco, monospace' }}>{extension.namespace}.{extension.name}</Typography>
+                    </Grid>
+                    <Grid item>
+                        <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{extension.description}</Typography>
                     </Grid>
                 </Grid>
             </Grid>
-            <Grid item container sx={{ flex: 1 }}>
-                <Grid item xs={12} md={4}></Grid>
-                <Grid item container xs={12} md={8} direction='column'>
-                    <FormControl component='fieldset'>
-                        <FormGroup>
-                            {
-                                targetPlatformVersions.map((targetPlatformVersion, index) => {
-                                        let label: string;
-                                        let indent: number;
-                                        if (targetPlatformVersion.version === WILDCARD && targetPlatformVersion.targetPlatform === WILDCARD) {
-                                            label = 'All Versions';
-                                            indent = 0;
-                                        } else if (targetPlatformVersion.targetPlatform === WILDCARD) {
-                                            label = targetPlatformVersion.version;
-                                            indent = 4;
-                                        } else {
-                                            label = getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform);
-                                            indent = 8;
-                                        }
+        </Grid>
+        <Grid item container sx={{ flex: 1 }}>
+            <Grid item xs={12} md={4}></Grid>
+            <Grid item container xs={12} md={8} direction='column'>
+                <FormControl component='fieldset'>
+                    <FormGroup>
+                        {
+                            targetPlatformVersions.map((targetPlatformVersion, index) => {
+                                let label: string;
+                                let indent: number;
+                                if (targetPlatformVersion.version === WILDCARD && targetPlatformVersion.targetPlatform === WILDCARD) {
+                                    label = 'All Versions';
+                                    indent = 0;
+                                } else if (targetPlatformVersion.targetPlatform === WILDCARD) {
+                                    label = targetPlatformVersion.version;
+                                    indent = 4;
+                                } else {
+                                    label = getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform);
+                                    indent = 8;
+                                }
 
-                                        const name = `${targetPlatformVersion.targetPlatform}/${targetPlatformVersion.version}`;
-                                        return <FormControlLabel
-                                            sx={{ pl: indent }}
-                                            key={`${name}_${index}`}
-                                            control={<Checkbox checked={targetPlatformVersion.checked} onChange={handleChange} name={name} />}
-                                            label={label} />;
-                                    })
-                            }
-                        </FormGroup>
-                    </FormControl>
-                </Grid>
-            </Grid>
-            <Grid item container>
-                <Grid item xs={12} md={4}>
-                </Grid>
-                <Grid item container xs={12} md={8}>
-                    <ExtensionRemoveDialog
-                        onUpdate={props.onUpdate}
-                        extension={extension}
-                        targetPlatformVersions={targetPlatformVersions.filter((targetPlatformVersion) => targetPlatformVersion.checked)} />
-                </Grid>
+                                const name = `${targetPlatformVersion.targetPlatform}/${targetPlatformVersion.version}`;
+                                return <FormControlLabel
+                                    sx={{ pl: indent }}
+                                    key={`${name}_${index}`}
+                                    control={<Checkbox checked={targetPlatformVersion.checked} onChange={handleChange} name={name} />}
+                                    label={label} />;
+                            })
+                        }
+                    </FormGroup>
+                </FormControl>
             </Grid>
         </Grid>
-    </>;
+        <Grid item container>
+            <Grid item xs={12} md={4}>
+            </Grid>
+            <Grid item container xs={12} md={8}>
+                <ExtensionRemoveDialog
+                    onRemove={props.onRemove}
+                    extension={extension}
+                    targetPlatformVersions={targetPlatformVersions.filter((value) => value.checked && value.version != WILDCARD && value.targetPlatform != WILDCARD)} />
+            </Grid>
+        </Grid>
+    </Grid>;
 };
 
 export interface ExtensionVersionContainerProps {
     extension: Extension;
-    onUpdate: () => void;
+    onRemove: (targetPlatformVersions?: TargetPlatformVersion[]) => Promise<void>;
 }

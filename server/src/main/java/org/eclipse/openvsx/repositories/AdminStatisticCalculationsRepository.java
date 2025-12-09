@@ -15,7 +15,6 @@ import org.jooq.impl.DSL;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -81,7 +80,7 @@ public class AdminStatisticCalculationsRepository {
                 .groupBy(extensionCountsByPublisher.field(aliasExtensionCount, Integer.class))
                 .fetch()
                 .stream()
-                .map(l -> new AbstractMap.SimpleEntry<>(l.value1(), l.value2()))
+                .map(l -> Map.entry(l.value1(), l.value2()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -108,7 +107,7 @@ public class AdminStatisticCalculationsRepository {
                 .groupBy(averageRatingByExtension.field(aliasAverageRating, Integer.class))
                 .fetch()
                 .stream()
-                .map(l -> new AbstractMap.SimpleEntry<>(l.value1(), l.value2()))
+                .map(l -> Map.entry(l.value1(), l.value2()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 

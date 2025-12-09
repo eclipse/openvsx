@@ -10,10 +10,7 @@
 
 package org.eclipse.openvsx.search;
 
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.entities.Extension;
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -28,16 +25,13 @@ public class SearchUtilService implements ISearchService {
 
     private final DatabaseSearchService databaseSearchService;
     private final ElasticSearchService elasticSearchService;
-    private final ObservationRegistry observations;
 
     public SearchUtilService(
             DatabaseSearchService databaseSearchService,
-            ElasticSearchService elasticSearchService,
-            ObservationRegistry observations
+            ElasticSearchService elasticSearchService
     ) {
         this.databaseSearchService = databaseSearchService;
         this.elasticSearchService = elasticSearchService;
-        this.observations = observations;
     }
 
     public boolean isEnabled() {
@@ -63,8 +57,8 @@ public class SearchUtilService implements ISearchService {
 
     }
 
-    public SearchHits<ExtensionSearch> search(ElasticSearchService.Options options) {
-        return getImplementation().search(options);
+    public SearchResult search(ISearchService.Options options) {
+        return options.requestedSize() > 0 ? getImplementation().search(options) : new SearchResult();
     }
 
     @Override
@@ -79,9 +73,7 @@ public class SearchUtilService implements ISearchService {
 
     @Override
     public void updateSearchEntriesAsync(List<Extension> extensions) {
-//        Observation.createNotStarted("SearchUtilService#updateSearchEntriesAsync", observations).observe(() -> {
-            getImplementation().updateSearchEntriesAsync(extensions);
-//        });
+        getImplementation().updateSearchEntriesAsync(extensions);
     }
 
     @Override

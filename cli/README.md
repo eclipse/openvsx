@@ -46,3 +46,17 @@ Variants:
    downloads the JSON metadata of an extension and prints it to the standard output.
  * `ovsx get <extension> --metadata -o <path>`
    downloads the JSON metadata of an extension and saves it in the specified file or directory.
+
+### Store Access Tokens
+
+The `login` command lets you store an access token for a namespace.
+
+ * `ovsx login <name>`
+   the name must correspond to the `publisher` of your extension. `ovsx` will ask you to provide an access token.
+
+The `logout` command lets you remove a stored access token.
+
+ * `ovsx logout <name>`
+   the name must correspond to the `publisher` of your extension.
+
+By default `ovsx` will try to use a `keytar` store with a plaintext file store as fallback. You can specify the environment variable `OVSX_STORE=file` to use the file store.

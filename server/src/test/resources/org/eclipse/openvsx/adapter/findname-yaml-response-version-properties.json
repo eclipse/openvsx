@@ -1,0 +1,78 @@
+{
+    "results" : [ {
+        "extensions" : [ {
+            "extensionId" : "test-1",
+            "extensionName" : "vscode-yaml",
+            "displayName" : "YAML",
+            "shortDescription" : "YAML Language Support",
+            "publisher" : {
+                "displayName" : "redhat",
+                "publisherId" : "test-2",
+                "publisherName" : "redhat",
+                "domain" : null,
+                "isDomainVerified" : null
+            },
+            "versions" : [ {
+                "version" : "0.5.2",
+                "lastUpdated" : "2000-01-01T10:00Z",
+                "assetUri" : null,
+                "fallbackAssetUri" : null,
+                "files" : null,
+                "properties" : [ {
+                    "key" : "Microsoft.VisualStudio.Services.Links.Source",
+                    "value" : "https://github.com/redhat-developer/vscode-yaml"
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.Engine",
+                    "value" : "^1.31.0"
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.ExtensionDependencies",
+                    "value" : ""
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.ExtensionPack",
+                    "value" : ""
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.LocalizedLanguages",
+                    "value" : ""
+                } ],
+                "targetPlatform" : "universal"
+            }, {
+                "version" : "0.4.0",
+                "lastUpdated" : "2000-01-01T10:00Z",
+                "assetUri" : null,
+                "fallbackAssetUri" : null,
+                "files" : null,
+                "properties" : [ {
+                    "key" : "Microsoft.VisualStudio.Services.Links.Source",
+                    "value" : "https://github.com/redhat-developer/vscode-yaml"
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.Engine",
+                    "value" : "^1.31.0"
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.ExtensionDependencies",
+                    "value" : ""
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.ExtensionPack",
+                    "value" : ""
+                }, {
+                    "key" : "Microsoft.VisualStudio.Code.LocalizedLanguages",
+                    "value" : ""
+                } ],
+                "targetPlatform" : "universal"
+            } ],
+            "statistics" : [ ],
+            "tags" : null,
+            "releaseDate" : "1999-12-01T09:00Z",
+            "publishedDate" : "1999-12-01T09:00Z",
+            "lastUpdated" : "2000-01-01T10:00Z",
+            "categories" : null,
+            "flags" : "preview"
+        } ],
+        "resultMetadata" : [ {
+            "metadataType" : "ResultCount",
+            "metadataItems" : [ {
+                "name" : "TotalCount",
+                "count" : 1
+            } ]
+        } ]
+    } ]
+}

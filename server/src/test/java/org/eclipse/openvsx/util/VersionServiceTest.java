@@ -22,13 +22,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
-public class VersionServiceTest {
+class VersionServiceTest {
 
     @Autowired
     VersionService versions;
 
     @Test
-    public void testGetLatestVersion() {
+    void testGetLatestVersion() {
         var release = new ExtensionVersion();
         release.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         release.setVersion("1.0.0");
@@ -46,7 +46,7 @@ public class VersionServiceTest {
     }
 
     @Test
-    public void testGetLatestTargetPlatformSortUniversal() {
+    void testGetLatestTargetPlatformSortUniversal() {
         var version = "1.0.0";
         var universal = new ExtensionVersion();
         universal.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
@@ -65,7 +65,7 @@ public class VersionServiceTest {
     }
 
     @Test
-    public void testGetLatestTargetPlatformSort() {
+    void testGetLatestTargetPlatformSort() {
         var version = "1.0.0";
         var web = new ExtensionVersion();
         web.setTargetPlatform(TargetPlatform.NAME_WEB);
@@ -84,7 +84,7 @@ public class VersionServiceTest {
     }
 
     @Test
-    public void testGetLatestPreRelease() {
+    void testGetLatestPreRelease() {
         var release = new ExtensionVersion();
         release.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         release.setPreRelease(false);
@@ -105,7 +105,7 @@ public class VersionServiceTest {
     }
 
     @Test
-    public void testGetLatestNoPreRelease() {
+    void testGetLatestNoPreRelease() {
         var release = new ExtensionVersion();
         release.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         release.setPreRelease(false);

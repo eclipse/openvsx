@@ -17,8 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
@@ -26,19 +26,19 @@ import java.util.Map;
 import java.util.UUID;
 
 @ExtendWith(SpringExtension.class)
-public class VSCodeIdUpdateServiceTest {
+class VSCodeIdUpdateServiceTest {
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
-    @MockBean
+    @MockitoBean
     VSCodeIdService idService;
 
     @Autowired
     VSCodeIdUpdateService updateService;
 
     @Test
-    public void testUpdateAllNoChanges() throws InterruptedException {
+    void testUpdateAllNoChanges() throws InterruptedException {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -99,7 +99,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testUpdateAllRandomNoChanges() throws InterruptedException {
+    void testUpdateAllRandomNoChanges() throws InterruptedException {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -160,7 +160,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testUpdateAllChange() throws InterruptedException {
+    void testUpdateAllChange() throws InterruptedException {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -230,7 +230,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testUpdateRandom() throws InterruptedException {
+    void testUpdateRandom() throws InterruptedException {
         var namespaceName = "foo";
         var namespacePublicId = UUID.randomUUID().toString();
         var extensionName = "bar";
@@ -259,7 +259,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testUpdateRandomExistsDb() throws InterruptedException {
+    void testUpdateRandomExistsDb() throws InterruptedException {
         var namespaceName = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var namespacePublicId2 = UUID.randomUUID().toString();
@@ -292,7 +292,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testMustUpdateRandom() throws InterruptedException {
+    void testMustUpdateRandom() throws InterruptedException {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -345,7 +345,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testMustUpdateRandomExists() throws InterruptedException {
+    void testMustUpdateRandomExists() throws InterruptedException {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -398,7 +398,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testMustUpdateRandomExistsDb() throws InterruptedException {
+    void testMustUpdateRandomExistsDb() throws InterruptedException {
         var namespaceName1 = "foo";
         var namespaceUuid1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -456,7 +456,7 @@ public class VSCodeIdUpdateServiceTest {
 
 
     @Test
-    public void testUpdateNoChange() throws InterruptedException {
+    void testUpdateNoChange() throws InterruptedException {
         var namespaceName = "foo";
         var namespacePublicId = UUID.randomUUID().toString();
         var extensionName = "bar";
@@ -484,7 +484,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testUpdateUpstream() throws InterruptedException {
+    void testUpdateUpstream() throws InterruptedException {
         var namespaceName = "foo";
         var namespacePublicId = "123-456-789";
         var extensionName = "bar";
@@ -514,7 +514,7 @@ public class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    public void testUpdateDuplicateRecursive() throws InterruptedException {
+    void testUpdateDuplicateRecursive() throws InterruptedException {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";

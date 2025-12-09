@@ -9,114 +9,125 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Component
 public class ExtensionService {
 
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
 
+    private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final SearchUtilService search;
     private final CacheService cache;
     private final PublishExtensionVersionHandler publishHandler;
-    private final ObservationRegistry observations;
+    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
 
     public ExtensionService(
+            EntityManager entityManager,
             RepositoryService repositories,
             SearchUtilService search,
             CacheService cache,
             PublishExtensionVersionHandler publishHandler,
-            ObservationRegistry observations
+            JobRequestScheduler scheduler
     ) {
+        this.entityManager = entityManager;
         this.repositories = repositories;
         this.search = search;
         this.cache = cache;
         this.publishHandler = publishHandler;
-        this.observations = observations;
+        this.scheduler = scheduler;
     }
 
     @Transactional
     public ExtensionVersion mirrorVersion(TempFile extensionFile, String signatureName, PersonalAccessToken token, String binaryName, String timestamp) {
-        var download = doPublish(extensionFile, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
-        publishHandler.mirror(download, extensionFile, signatureName);
+        doPublish(extensionFile, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
+        publishHandler.mirror(extensionFile, signatureName);
+        return extensionFile.getResource().getExtension();
+    }
+
+    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) throws ErrorResultException {
+        var extensionFile = createExtensionFile(content);
+        doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+        publishHandler.publishAsync(extensionFile, this);
+        var download = extensionFile.getResource();
+        publishHandler.schedulePublicIdJob(download);
         return download.getExtension();
     }
 
-    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) {
-        return Observation.createNotStarted("ExtensionService#publishVersion", observations).observe(() -> {
-            var extensionFile = createExtensionFile(content);
-            var download = doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-            publishHandler.publishAsync(download, extensionFile, this);
-            publishHandler.schedulePublicIdJob(download);
-            return download.getExtension();
-        });
-    }
-
-    private FileResource doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
-        return Observation.createNotStarted("ExtensionService#doPublish", observations).observe(() -> {
-            try (var processor = new ExtensionProcessor(extensionFile, observations)) {
-                var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
-                if (requireLicense) {
-                    // Check the extension's license
-                    var license = processor.getLicense(extVersion);
-                    Observation.createNotStarted("ExtensionService#checkLicense", observations).observe(() -> checkLicense(extVersion, license));
+    private void doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
+        try (var processor = new ExtensionProcessor(extensionFile)) {
+            var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
+            if (requireLicense) {
+                // Check the extension's license
+                try(var licenseFile = processor.getLicense(extVersion)) {
+                    checkLicense(extVersion, licenseFile);
+                } catch (IOException e) {
+                    throw new ServerErrorException("Failed read license file", e);
                 }
-
-                return processor.getBinary(extVersion, binaryName);
             }
-        });
+
+            var download = processor.getBinary(extVersion, binaryName);
+            extensionFile.setResource(download);
+        }
     }
 
     private TempFile createExtensionFile(InputStream content) {
-        return Observation.createNotStarted("ExtensionService#createExtensionFile", observations).observe(() -> {
-            try (var input = new BufferedInputStream(content)) {
-                input.mark(0);
-                var skipped = input.skip(MAX_CONTENT_SIZE  + 1);
-                if (skipped > MAX_CONTENT_SIZE) {
-                    throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
-                }
-
-                var extensionFile = new TempFile("extension_", ".vsix");
-                try(var out = Files.newOutputStream(extensionFile.getPath())) {
-                    input.reset();
-                    input.transferTo(out);
-                }
-
-                return extensionFile;
-            } catch (IOException e) {
-                throw new ErrorResultException("Failed to read extension file", e);
+        try (var input = new BufferedInputStream(content)) {
+            input.mark(0);
+            var skipped = input.skip(MAX_CONTENT_SIZE  + 1);
+            if (skipped > MAX_CONTENT_SIZE) {
+                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
             }
-        });
+
+            var extensionFile = new TempFile("extension_", ".vsix");
+            try(var out = Files.newOutputStream(extensionFile.getPath())) {
+                input.reset();
+                input.transferTo(out);
+            }
+
+            return extensionFile;
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
+        }
     }
 
-    private void checkLicense(ExtensionVersion extVersion, FileResource license) {
-        if (StringUtils.isEmpty(extVersion.getLicense()) && (license == null || !license.getType().equals(FileResource.LICENSE))) {
+    private void checkLicense(ExtensionVersion extVersion, TempFile licenseFile) {
+        if (StringUtils.isEmpty(extVersion.getLicense()) && (licenseFile == null || !licenseFile.getResource().getType().equals(FileResource.LICENSE))) {
             throw new ErrorResultException("This extension cannot be accepted because it has no license.");
         }
     }
@@ -147,17 +158,95 @@ public class ExtensionService {
      */
     @Transactional
     public void reactivateExtensions(UserData user) {
-        var accessTokens = repositories.findAccessTokens(user);
         var affectedExtensions = new LinkedHashSet<Extension>();
-        for (var accessToken : accessTokens) {
-            var versions = repositories.findVersionsByAccessToken(accessToken, false);
-            for (var version : versions) {
-                version.setActive(true);
-                affectedExtensions.add(version.getExtension());
-            }
+        var versions = repositories.findVersionsByUser(user, false);
+        for (var version : versions) {
+            version.setActive(true);
+            affectedExtensions.add(version.getExtension());
         }
         for (var extension : affectedExtensions) {
             updateExtension(extension);
         }
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(
+            String namespaceName,
+            String extensionName,
+            List<TargetPlatformVersionJson> targetVersions,
+            UserData user
+    ) throws ErrorResultException {
+        var results = new ArrayList<ResultJson>();
+        if(repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
+            var extension = repositories.findExtension(extensionName, namespaceName);
+            results.add(deleteExtension(extension));
+        } else {
+            for (var targetVersion : targetVersions) {
+                var extVersion = repositories.findVersion(user, targetVersion.version(), targetVersion.targetPlatform(), extensionName, namespaceName);
+                if (extVersion == null) {
+                    var message = "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version());
+                    throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+                }
+
+                results.add(deleteExtension(extVersion));
+            }
+        }
+
+        var result = new ResultJson();
+        result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
+        return result;
+    }
+
+    protected ResultJson deleteExtension(Extension extension) throws ErrorResultException {
+        var bundledRefs = repositories.findBundledExtensionsReference(extension);
+        if (!bundledRefs.isEmpty()) {
+            throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
+                    + " is bundled by the following extension packs: "
+                    + bundledRefs.stream()
+                    .map(NamingUtil::toFileFormat)
+                    .collect(Collectors.joining(", ")));
+        }
+        var dependRefs = repositories.findDependenciesReference(extension);
+        if (!dependRefs.isEmpty()) {
+            throw new ErrorResultException("The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
+                    + dependRefs.stream()
+                    .map(NamingUtil::toFileFormat)
+                    .collect(Collectors.joining(", ")));
+        }
+
+        cache.evictExtensionJsons(extension);
+        for (var extVersion : repositories.findVersions(extension)) {
+            removeExtensionVersion(extVersion);
+        }
+        for (var review : repositories.findAllReviews(extension)) {
+            entityManager.remove(review);
+        }
+
+        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
+        for(var deprecatedExtension : deprecatedExtensions) {
+            deprecatedExtension.setReplacement(null);
+            cache.evictExtensionJsons(deprecatedExtension);
+        }
+
+        entityManager.remove(extension);
+        search.removeSearchEntry(extension);
+
+        return ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+    }
+
+    protected ResultJson deleteExtension(ExtensionVersion extVersion) {
+        var extension = extVersion.getExtension();
+        removeExtensionVersion(extVersion);
+        extension.getVersions().remove(extVersion);
+        updateExtension(extension);
+
+        return ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+    }
+
+    private void removeExtensionVersion(ExtensionVersion extVersion) {
+        repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
+        repositories.deleteFiles(extVersion);
+        entityManager.remove(extVersion);
     }
 }

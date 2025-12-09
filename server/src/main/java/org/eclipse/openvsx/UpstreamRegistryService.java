@@ -19,13 +19,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +37,16 @@ import java.util.stream.Collectors;
 
 @Component
 public class UpstreamRegistryService implements IExtensionRegistry {
+
+    private static final String VAR_NAMESPACE = "namespace";
+    private static final String VAR_EXTENSION = "extension";
+    private static final String VAR_TARGET = "targetPlatform";
+    private static final String VAR_OFFSET = "offset";
+    private static final String VAR_SIZE = "size";
+    private static final String VAR_ALL_VERSIONS = "includeAllVersions";
+    private static final String URL_EXTENSION_FRAGMENT = "/api/{namespace}/{extension}";
+    private static final String URL_TARGET_FRAGMENT = "/{targetPlatform}";
+
 
     protected final Logger logger = LoggerFactory.getLogger(UpstreamRegistryService.class);
 
@@ -57,7 +71,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public NamespaceJson getNamespace(String namespace) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}";
-        var uriVariables = Map.of("namespace", namespace);
+        var uriVariables = Map.of(VAR_NAMESPACE, namespace);
         try {
             var json = restTemplate.getForObject(urlTemplate, NamespaceJson.class, uriVariables);
             return proxy != null ? proxy.rewriteUrls(json) : json;
@@ -73,7 +87,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     @Override
     public NamespaceDetailsJson getNamespaceDetails(String namespace) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/details";
-        var uriVariables = Map.of("namespace", namespace);
+        var uriVariables = Map.of(VAR_NAMESPACE, namespace);
         try {
             return restTemplate.getForObject(urlTemplate, NamespaceDetailsJson.class, uriVariables);
         } catch (RestClientException exc) {
@@ -83,27 +97,33 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<byte[]> getNamespaceLogo(String namespaceName, String fileName) {
+    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(String namespaceName, String fileName) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/logo/{file}";
-        var uriVariables = Map.of("namespace", namespaceName, "file", fileName);
+        var uriVariables = Map.of(VAR_NAMESPACE, namespaceName, "file", fileName);
         return getFile(urlTemplate, uriVariables);
     }
 
     @Override
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform) {
-        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
+        var urlTemplate = urlConfigService.getUpstreamUrl() + URL_EXTENSION_FRAGMENT;
         var uriVariables = new HashMap<String, String>();
-        uriVariables.put("namespace", namespace);
-        uriVariables.put("extension", extension);
+        uriVariables.put(VAR_NAMESPACE, namespace);
+        uriVariables.put(VAR_EXTENSION, extension);
         if(targetPlatform != null) {
-            urlTemplate += "/{targetPlatform}";
-            uriVariables.put("targetPlatform", targetPlatform);
+            urlTemplate += URL_TARGET_FRAGMENT;
+            uriVariables.put(VAR_TARGET, targetPlatform);
         }
 
         try {
             var json = restTemplate.getForObject(urlTemplate, ExtensionJson.class, uriVariables);
-            makeDownloadsCompatible(json);
-            return proxy != null ? proxy.rewriteUrls(json) : json;
+            if(json != null) {
+                makeDownloadsCompatible(json);
+                if(proxy != null) {
+                    proxy.rewriteUrls(json);
+                }
+            }
+
+            return json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -115,13 +135,13 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
     @Override
     public ExtensionJson getExtension(String namespace, String extension, String targetPlatform, String version) {
-        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
+        var urlTemplate = urlConfigService.getUpstreamUrl() + URL_EXTENSION_FRAGMENT;
         var uriVariables = new HashMap<String, String>();
-        uriVariables.put("namespace", namespace);
-        uriVariables.put("extension", extension);
+        uriVariables.put(VAR_NAMESPACE, namespace);
+        uriVariables.put(VAR_EXTENSION, extension);
         if(targetPlatform != null) {
-            urlTemplate += "/{targetPlatform}";
-            uriVariables.put("targetPlatform", targetPlatform);
+            urlTemplate += URL_TARGET_FRAGMENT;
+            uriVariables.put(VAR_TARGET, targetPlatform);
         }
         if(version != null) {
             urlTemplate += "/{version}";
@@ -130,8 +150,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
         try {
             var json = restTemplate.getForObject(urlTemplate, ExtensionJson.class, uriVariables);
-            makeDownloadsCompatible(json);
-            return proxy != null ? proxy.rewriteUrls(json) : json;
+            if(json != null) {
+                makeDownloadsCompatible(json);
+                if(proxy != null) {
+                    proxy.rewriteUrls(json);
+                }
+            }
+
+            return json;
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -143,18 +169,18 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
     @Override
     public VersionsJson getVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
-        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
+        var urlTemplate = urlConfigService.getUpstreamUrl() + URL_EXTENSION_FRAGMENT;
         var uriVariables = new HashMap<String, String>();
-        uriVariables.put("namespace", namespace);
-        uriVariables.put("extension", extension);
+        uriVariables.put(VAR_NAMESPACE, namespace);
+        uriVariables.put(VAR_EXTENSION, extension);
         if(targetPlatform != null) {
-            urlTemplate += "/{targetPlatform}";
-            uriVariables.put("targetPlatform", targetPlatform);
+            urlTemplate += URL_TARGET_FRAGMENT;
+            uriVariables.put(VAR_TARGET, targetPlatform);
         }
 
-        urlTemplate = "/versions?offset={offset}&size={size}";
-        uriVariables.put("offset", String.valueOf(offset));
-        uriVariables.put("size", String.valueOf(size));
+        urlTemplate += "/versions?offset={offset}&size={size}";
+        uriVariables.put(VAR_OFFSET, String.valueOf(offset));
+        uriVariables.put(VAR_SIZE, String.valueOf(size));
 
         try {
             var json = restTemplate.getForObject(urlTemplate, VersionsJson.class, uriVariables);
@@ -170,18 +196,18 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
     @Override
     public VersionReferencesJson getVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset) {
-        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
+        var urlTemplate = urlConfigService.getUpstreamUrl() + URL_EXTENSION_FRAGMENT;
         var uriVariables = new HashMap<String, String>();
-        uriVariables.put("namespace", namespace);
-        uriVariables.put("extension", extension);
+        uriVariables.put(VAR_NAMESPACE, namespace);
+        uriVariables.put(VAR_EXTENSION, extension);
         if(targetPlatform != null) {
-            urlTemplate += "/{targetPlatform}";
-            uriVariables.put("targetPlatform", targetPlatform);
+            urlTemplate += URL_TARGET_FRAGMENT;
+            uriVariables.put(VAR_TARGET, targetPlatform);
         }
 
-        urlTemplate = "/version-references?offset={offset}&size={size}";
-        uriVariables.put("offset", String.valueOf(offset));
-        uriVariables.put("size", String.valueOf(size));
+        urlTemplate += "/version-references?offset={offset}&size={size}";
+        uriVariables.put(VAR_OFFSET, String.valueOf(offset));
+        uriVariables.put(VAR_SIZE, String.valueOf(size));
 
         try {
             var json = restTemplate.getForObject(urlTemplate, VersionReferencesJson.class, uriVariables);
@@ -196,17 +222,17 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<byte[]> getFile(String namespace, String extension, String targetPlatform, String version, String fileName) {
-        var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}";
+    public ResponseEntity<StreamingResponseBody> getFile(String namespace, String extension, String targetPlatform, String version, String fileName) {
+        var urlTemplate = urlConfigService.getUpstreamUrl() + URL_EXTENSION_FRAGMENT;
         var uriVariables = new HashMap<String, String>();
-        uriVariables.put("namespace", namespace);
-        uriVariables.put("extension", extension);
+        uriVariables.put(VAR_NAMESPACE, namespace);
+        uriVariables.put(VAR_EXTENSION, extension);
         if(TargetPlatform.isUniversal(targetPlatform)) {
             targetPlatform = null;
         }
         if(targetPlatform != null) {
-            urlTemplate += "/{targetPlatform}";
-            uriVariables.put("targetPlatform", targetPlatform);
+            urlTemplate += URL_TARGET_FRAGMENT;
+            uriVariables.put(VAR_TARGET, targetPlatform);
         }
 
         urlTemplate += "/{version}/file/{fileName}";
@@ -215,10 +241,32 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         return getFile(urlTemplate, uriVariables);
     }
 
-    private ResponseEntity<byte[]> getFile(String urlTemplate, Map<String, ?> uriVariables) {
-        ResponseEntity<byte[]> response;
+    private ResponseEntity<StreamingResponseBody> getFile(String urlTemplate, Map<String, ?> uriVariables) {
+        var responseHandler = new ResponseExtractor<ResponseEntity<StreamingResponseBody>>() {
+            @Override
+            public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
+                var statusCode = response.getStatusCode();
+                if (statusCode.is2xxSuccessful()) {
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(UriComponentsBuilder.fromHttpUrl(urlTemplate).build(uriVariables))
+                            .build();
+                }
+                if (statusCode.is3xxRedirection()) {
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .headers(response.getHeaders())
+                            .build();
+                }
+                if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
+                    var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
+                    logger.error("HEAD {}: {}", url, response);
+                }
+
+                throw new NotFoundException();
+            }
+        };
+
         try {
-            response = restTemplate.exchange(urlTemplate, HttpMethod.HEAD, null, byte[].class, uriVariables);
+            return restTemplate.execute(urlTemplate, HttpMethod.HEAD, null, responseHandler, uriVariables);
         } catch(RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -227,28 +275,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
             throw new NotFoundException();
         }
-        var statusCode = response.getStatusCode();
-        if (statusCode.is2xxSuccessful()) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(UriComponentsBuilder.fromHttpUrl(urlTemplate).build(uriVariables))
-                    .build();
-        }
-        if (statusCode.is3xxRedirection()) {
-            return response;
-        }
-        if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
-            var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-            logger.error("HEAD {}: {}", url, response);
-        }
-        throw new NotFoundException();
     }
 
     @Override
     public ReviewListJson getReviews(String namespace, String extension) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/{extension}/reviews";
         var uriVariables = new HashMap<String, String>();
-        uriVariables.put("namespace", namespace);
-        uriVariables.put("extension", extension);
+        uriVariables.put(VAR_NAMESPACE, namespace);
+        uriVariables.put(VAR_EXTENSION, extension);
 
         try {
             return restTemplate.getForObject(urlTemplate, ReviewListJson.class, uriVariables);
@@ -266,14 +300,14 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 	public SearchResultJson search(ISearchService.Options options) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/search";
         var uriVariables = new HashMap<String,String>();
-        uriVariables.put("size", Integer.toString(options.requestedSize));
-        uriVariables.put("offset", Integer.toString(options.requestedOffset));
-        uriVariables.put("includeAllVersions", Boolean.toString(options.includeAllVersions));
-        uriVariables.put("query", options.queryString);
-        uriVariables.put("category", options.category);
-        uriVariables.put("sortOrder", options.sortOrder);
-        uriVariables.put("sortBy", options.sortBy);
-        uriVariables.put("targetPlatform", options.targetPlatform);
+        uriVariables.put(VAR_SIZE, Integer.toString(options.requestedSize()));
+        uriVariables.put(VAR_OFFSET, Integer.toString(options.requestedOffset()));
+        uriVariables.put(VAR_ALL_VERSIONS, Boolean.toString(options.includeAllVersions()));
+        uriVariables.put("query", options.queryString());
+        uriVariables.put("category", options.category());
+        uriVariables.put("sortOrder", options.sortOrder());
+        uriVariables.put("sortBy", options.sortBy());
+        uriVariables.put(VAR_TARGET, options.targetPlatform());
 
         var queryString = uriVariables.entrySet().stream()
                 .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
@@ -300,17 +334,16 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     public QueryResultJson query(QueryRequest request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/-/query";
         var queryParams = new HashMap<String,String>();
-        queryParams.put("namespaceName", request.namespaceName);
-        queryParams.put("extensionName", request.extensionName);
-        queryParams.put("extensionVersion", request.extensionVersion);
-        queryParams.put("extensionId", request.extensionId);
-        queryParams.put("extensionUuid", request.extensionUuid);
-        queryParams.put("namespaceUuid", request.namespaceUuid);
-        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
-        queryParams.put("targetPlatform", request.targetPlatform);
-        queryParams.put("size", String.valueOf(request.size));
-        queryParams.put("offset", String.valueOf(request.offset));
-
+        queryParams.put("namespaceName", request.namespaceName());
+        queryParams.put("extensionName", request.extensionName());
+        queryParams.put("extensionVersion", request.extensionVersion());
+        queryParams.put("extensionId", request.extensionId());
+        queryParams.put("extensionUuid", request.extensionUuid());
+        queryParams.put("namespaceUuid", request.namespaceUuid());
+        queryParams.put(VAR_ALL_VERSIONS, String.valueOf(request.includeAllVersions()));
+        queryParams.put(VAR_TARGET, request.targetPlatform());
+        queryParams.put(VAR_SIZE, String.valueOf(request.size()));
+        queryParams.put(VAR_OFFSET, String.valueOf(request.offset()));
 
         var queryString = queryParams.entrySet().stream()
             .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
@@ -337,16 +370,16 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     public QueryResultJson queryV2(QueryRequestV2 request) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/v2/-/query";
         var queryParams = new HashMap<String,String>();
-        queryParams.put("namespaceName", request.namespaceName);
-        queryParams.put("extensionName", request.extensionName);
-        queryParams.put("extensionVersion", request.extensionVersion);
-        queryParams.put("extensionId", request.extensionId);
-        queryParams.put("extensionUuid", request.extensionUuid);
-        queryParams.put("namespaceUuid", request.namespaceUuid);
-        queryParams.put("includeAllVersions", String.valueOf(request.includeAllVersions));
-        queryParams.put("targetPlatform", request.targetPlatform);
-        queryParams.put("size", String.valueOf(request.size));
-        queryParams.put("offset", String.valueOf(request.offset));
+        queryParams.put("namespaceName", request.namespaceName());
+        queryParams.put("extensionName", request.extensionName());
+        queryParams.put("extensionVersion", request.extensionVersion());
+        queryParams.put("extensionId", request.extensionId());
+        queryParams.put("extensionUuid", request.extensionUuid());
+        queryParams.put("namespaceUuid", request.namespaceUuid());
+        queryParams.put(VAR_ALL_VERSIONS, String.valueOf(request.includeAllVersions()));
+        queryParams.put(VAR_TARGET, request.targetPlatform());
+        queryParams.put(VAR_SIZE, String.valueOf(request.size()));
+        queryParams.put(VAR_OFFSET, String.valueOf(request.offset()));
 
         var queryString = queryParams.entrySet().stream()
                 .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
@@ -421,9 +454,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     private void makeDownloadsCompatible(ExtensionJson json) {
-        if (json.downloads == null && json.files.containsKey("download")) {
-            json.downloads = new HashMap<>();
-            json.downloads.put(TargetPlatform.NAME_UNIVERSAL, json.files.get("download"));
+        if (json.getDownloads() == null && json.getFiles().containsKey("download")) {
+            var downloads = new HashMap<String, String>();
+            downloads.put(TargetPlatform.NAME_UNIVERSAL, json.getFiles().get("download"));
+            json.setDownloads(downloads);
         }
     }
 

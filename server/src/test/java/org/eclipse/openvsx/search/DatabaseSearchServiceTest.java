@@ -10,7 +10,6 @@
 
 package org.eclipse.openvsx.search;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
@@ -21,10 +20,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.util.Streamable;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
@@ -33,43 +31,43 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-public class DatabaseSearchServiceTest {
+class DatabaseSearchServiceTest {
 
-    @MockBean
+    @MockitoBean
     EntityManager entityManager;
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
     @Autowired
     DatabaseSearchService search;
 
     @Test
-    public void testCategory() {
+    void testCategory() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3)));
 
-        var searchOptions = new ISearchService.Options(null, "Programming Languages", TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
+        var searchOptions = searchOptions(null, "Programming Languages",50, 0, null, null);
         var result = search.search(searchOptions);
         // should find two extensions
         assertThat(result.getTotalHits()).isEqualTo(2);
     }
 
     @Test
-    public void testRelevance() {
+    void testRelevance() {
         var ext1 = mockExtension("yaml", 1.0, 100, 100, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 10000, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 1.0, 100, 10, "redhat", List.of("Snippets", "Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3)));
 
-        var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "relevance", false);
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.RELEVANCE);
         var result = search.search(searchOptions);
         // should find all extensions but order should be different
         assertThat(result.getTotalHits()).isEqualTo(3);
 
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         // java should have the most relevance
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("openshift"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("yaml"));
@@ -77,23 +75,23 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testReverse() {
+    void testReverse() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2)));
 
-        var searchOptions = new ISearchService.Options(null, "Programming Languages", TargetPlatform.NAME_UNIVERSAL, 50, 0, "desc", null, false);
+        var searchOptions = searchOptions(null, "Programming Languages", 50, 0, "desc", null);
         var result = search.search(searchOptions);
         // should find two extensions
         assertThat(result.getTotalHits()).isEqualTo(2);
 
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("java"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("yaml"));
     }
 
     @Test
-    public void testSimplePageSize() {
+    void testSimplePageSize() {
         var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -104,13 +102,13 @@ public class DatabaseSearchServiceTest {
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4, ext5, ext6, ext7)));
 
         var pageSizeItems = 5;
-        var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, pageSizeItems, 0, null, null, false);
+        var searchOptions = searchOptions(null, null, pageSizeItems, 0, null, null);
 
         var result = search.search(searchOptions);
         // 7 total hits
         assertThat(result.getTotalHits()).isEqualTo(7);
         // but as we limit the page size it should only contains 5
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(hits.size()).isEqualTo(pageSizeItems);
 
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("ext1"));
@@ -121,7 +119,7 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testPages() {
+    void testPages() {
         var ext1 = mockExtension("ext1", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("ext2", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("ext3", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -132,13 +130,13 @@ public class DatabaseSearchServiceTest {
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4, ext5, ext6, ext7)));
 
         var pageSizeItems = 2;
-        var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, pageSizeItems, 4, null, null, false);
+        var searchOptions = searchOptions(null, null, pageSizeItems, 4, null, null);
         var result = search.search(searchOptions);
 
         // 7 total hits
         assertThat(result.getTotalHits()).isEqualTo(7);
         // But it should only contains 2 search items as specified by the pageSize
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(hits.size()).isEqualTo(pageSizeItems);
 
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("ext5"));
@@ -146,45 +144,83 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testQueryStringPublisherName() {
+    void testQueryStringPublisherName() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
         var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = new ISearchService.Options("redhat", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
+        var searchOptions = searchOptions("redhat", null, 50, 0, null, null);
         var result = search.search(searchOptions);
         // namespace finding
         assertThat(result.getTotalHits()).isEqualTo(3);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("java"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("openshift"));
     }
 
     @Test
-    public void testQueryStringExtensionName() {
+    void testPublisher() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
         var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = new ISearchService.Options("openshift", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
+        var searchOptions = searchOptions("publisher:RedHat", null, 50, 0, null, null);
+        var result = search.search(searchOptions);
+        // namespace finding
+        assertThat(result.getTotalHits()).isEqualTo(3);
+
+        // Check it found the correct extension
+        var hits = result.getHits();
+        assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
+        assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("java"));
+        assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("openshift"));
+    }
+
+    @Test
+    void testPublisherWithQuery() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
+        Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
+
+        var searchOptions = searchOptions("publisher:RedHat yaml", null, 50, 0, null, null);
+        var result = search.search(searchOptions);
+        // namespace finding
+        assertThat(result.getTotalHits()).isEqualTo(1);
+
+        // Check it found the correct extension
+        var hits = result.getHits();
+        assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
+    }
+
+    @Test
+    void testQueryStringExtensionName() {
+        var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
+        var ext3 = mockExtension("openshift", 4.0, 100, 0, "redhat", List.of("Snippets", "Other"));
+        var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
+        Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
+
+        var searchOptions = searchOptions("openshift", null, 50, 0, null, null);
         var result = search.search(searchOptions);
         // extension name finding
         assertThat(result.getTotalHits()).isEqualTo(1);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("openshift"));
     }
 
     @Test
-    public void testQueryStringDescription() {
+    void testQueryStringDescription() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         ext2.getVersions().get(0).setDescription("another desc");
@@ -193,18 +229,18 @@ public class DatabaseSearchServiceTest {
         var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = new ISearchService.Options("my custom desc", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
+        var searchOptions = searchOptions("my custom desc", null, 50, 0, null, null);
         var result = search.search(searchOptions);
         // custom description
         assertThat(result.getTotalHits()).isEqualTo(1);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("openshift"));
     }
 
     @Test
-    public void testQueryStringDisplayName() {
+    void testQueryStringDisplayName() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         ext1.getVersions().get(0).setDisplayName("This is a YAML extension");
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -213,19 +249,19 @@ public class DatabaseSearchServiceTest {
         var ext4 = mockExtension("foo", 4.0, 100, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = new ISearchService.Options("Red Hat", null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, null, false);
+        var searchOptions = searchOptions("Red Hat", null, 50, 0, null, null);
         var result = search.search(searchOptions);
 
         // custom displayname
         assertThat(result.getTotalHits()).isEqualTo(1);
 
         // Check it found the correct extension
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("java"));
     }
 
     @Test
-    public void testSortByTimeStamp() {
+    void testSortByTimeStamp() {
         var ext1 = mockExtension("yaml", 3.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
         ext1.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-10T00:00"));
         var ext2 = mockExtension("java", 4.0, 100, 0, "redhat", List.of("Snippets", "Programming Languages"));
@@ -236,13 +272,13 @@ public class DatabaseSearchServiceTest {
         ext4.getVersions().get(0).setTimestamp(LocalDateTime.parse("2021-10-06T00:00"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "timestamp", false);
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.TIMESTAMP);
         var result = search.search(searchOptions);
         // all extensions should be there
         assertThat(result.getTotalHits()).isEqualTo(4);
 
         // test now the order
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("foo"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("java"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("yaml"));
@@ -250,20 +286,20 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByDownloadCount() {
+    void testSortByDownloadCount() {
         var ext1 = mockExtension("yaml", 3.0, 100, 100, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 4.0, 100, 1000, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 4.0, 100, 300, "redhat", List.of("Snippets", "Other"));
         var ext4 = mockExtension("foo", 4.0, 100, 500, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "downloadCount", false);
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.DOWNLOADS);
         var result = search.search(searchOptions);
         // all extensions should be there
         assertThat(result.getTotalHits()).isEqualTo(4);
 
         // test now the order
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("yaml"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("openshift"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("foo"));
@@ -271,20 +307,20 @@ public class DatabaseSearchServiceTest {
     }
 
     @Test
-    public void testSortByRating() {
+    void testSortByRating() {
         var ext1 = mockExtension("yaml", 4.0, 1, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext2 = mockExtension("java", 5.0, 1, 0, "redhat", List.of("Snippets", "Programming Languages"));
         var ext3 = mockExtension("openshift", 2.0, 1, 0, "redhat", List.of("Snippets", "Other"));
         var ext4 = mockExtension("foo", 1.0, 1, 0, "bar", List.of("Other"));
         Mockito.when(repositories.findAllActiveExtensions()).thenReturn(Streamable.of(List.of(ext1, ext2, ext3, ext4)));
 
-        var searchOptions = new ISearchService.Options(null, null, TargetPlatform.NAME_UNIVERSAL, 50, 0, null, "rating", false);
+        var searchOptions = searchOptions(null, null, 50, 0, null, SortBy.RATING);
         var result = search.search(searchOptions);
         // all extensions should be there
         assertThat(result.getTotalHits()).isEqualTo(4);
 
         // test now the order
-        var hits = result.getSearchHits();
+        var hits = result.getHits();
         assertThat(getIdFromExtensionHits(hits, 0)).isEqualTo(getIdFromExtensionName("foo"));
         assertThat(getIdFromExtensionHits(hits, 1)).isEqualTo(getIdFromExtensionName("openshift"));
         assertThat(getIdFromExtensionHits(hits, 2)).isEqualTo(getIdFromExtensionName("yaml"));
@@ -293,8 +329,39 @@ public class DatabaseSearchServiceTest {
 
     // ---------- UTILITY ----------//
 
-    long getIdFromExtensionHits(List<SearchHit<ExtensionSearch>> hits, int index) {
-        return hits.get(index).getContent().id;
+    private ISearchService.Options searchOptions(
+            String queryString,
+            String category,
+            Integer requestedSize,
+            Integer requestedOffset,
+            String sortOrder,
+            String sortBy
+    ) {
+        if(requestedSize == null) {
+            requestedSize = 18;
+        }
+        if(requestedOffset == null) {
+            requestedOffset = 0;
+        }
+        if(sortBy == null) {
+            sortBy = SortBy.RELEVANCE;
+        }
+
+        return new ISearchService.Options(
+                queryString,
+                category,
+                null,
+                requestedSize,
+                requestedOffset,
+                sortOrder,
+                sortBy,
+                false,
+                null
+        );
+    }
+
+    long getIdFromExtensionHits(List<ExtensionSearch> hits, int index) {
+        return hits.get(index).getId();
     }
 
     long getIdFromExtensionName(String extensionName) {
@@ -314,9 +381,6 @@ public class DatabaseSearchServiceTest {
         var namespace = new Namespace();
         namespace.setName(namespaceName);
         extension.setNamespace(namespace);
-        var isUnverified = false;
-        Mockito.when(repositories.countMemberships(namespace, NamespaceMembership.ROLE_OWNER))
-                .thenReturn(isUnverified ? 0l : 1l);
         var extVer = new ExtensionVersion();
         extVer.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVer.setCategories(categories);
@@ -348,11 +412,6 @@ public class DatabaseSearchServiceTest {
         @Bean
         LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKeyGenerator() {
             return new LatestExtensionVersionCacheKeyGenerator();
-        }
-
-        @Bean
-        ObservationRegistry observationRegistry() {
-            return ObservationRegistry.NOOP;
         }
     }
 }

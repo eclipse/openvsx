@@ -17,7 +17,7 @@ import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.v3.oas.annotations.media.Schema;;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
     name = "SearchResult",
@@ -28,22 +28,45 @@ public class SearchResultJson extends ResultJson {
 
     public static SearchResultJson error(String message) {
         var result = new SearchResultJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "Number of skipped entries according to the search query")
     @NotNull
     @Min(0)
-    public int offset;
+    private int offset;
 
     @Schema(description = "Total number of entries that match the search query")
     @NotNull
     @Min(0)
-    public int totalSize;
+    private int totalSize;
 
     @Schema(description = "List of matching entries, limited to the size specified in the search query")
     @NotNull
-    public List<SearchEntryJson> extensions;
+    private List<SearchEntryJson> extensions;
 
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public int getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
+    }
+
+    public List<SearchEntryJson> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(List<SearchEntryJson> extensions) {
+        this.extensions = extensions;
+    }
 }

@@ -21,8 +21,6 @@ import java.util.List;
 
 public interface ExtensionRepository extends Repository<Extension, Long> {
 
-    Streamable<Extension> findByNameIgnoreCase(String name);
-
     Streamable<Extension> findByNamespace(Namespace namespace);
 
     Streamable<Extension> findByNamespaceAndActiveTrueOrderByNameAsc(Namespace namespace);
@@ -30,8 +28,6 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
     Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
 
     Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
-
-    Extension findByPublicId(String publicId);
 
     Streamable<Extension> findByActiveTrue();
 
@@ -41,11 +37,11 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     long count();
 
-    long countByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
-
-    @Query("select max(e.downloadCount) from Extension e")
+    @Query("select coalesce(max(e.downloadCount), 0) from Extension e")
     int getMaxDownloadCount();
 
     @Query("select e from Extension e where concat(e.namespace.name, '.', e.name) not in(?1)")
     Streamable<Extension> findAllNotMatchingByExtensionId(List<String> extensionIds);
+
+    Streamable<Extension> findByReplacement(Extension replacement);
 }

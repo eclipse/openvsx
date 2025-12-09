@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -111,14 +110,15 @@ public class DataMirrorService {
     }
     
     public boolean match(String namespaceName, String extensionName) {
+        var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
         if (!excludeExtensions.isEmpty() &&
             (excludeExtensions.contains(namespaceName + ".*") ||
-            excludeExtensions.contains(NamingUtil.toExtensionId(namespaceName, extensionName)))) {
+            excludeExtensions.contains(extensionId))) {
             return false;
         }
         return includeExtensions.isEmpty() ||
             includeExtensions.contains(namespaceName + ".*") ||
-            includeExtensions.contains(NamingUtil.toExtensionId(namespaceName, extensionName));
+            includeExtensions.contains(extensionId);
     }
 
     @Transactional
@@ -132,27 +132,34 @@ public class DataMirrorService {
 
     @Transactional
     public UserData createMirrorUser() {
-        var user = repositories.findUserByLoginName(null, userName);
-        if(user == null) {
-            user = new UserData();
-            user.setLoginName(userName);
-            entityManager.persist(user);
+        var user = repositories.findUserByLoginName("system", userName);
+        if(user != null) {
+            return user;
         }
+
+        user = repositories.findUserByLoginName(null, userName);
+        if(user != null) {
+            user.setProvider("system");
+            return user;
+        }
+
+        user = new UserData();
+        user.setProvider("system");
+        user.setLoginName(userName);
+        entityManager.persist(user);
         return user;
     }
 
     @Transactional
     public UserData getOrAddUser(UserJson json) {
-        var user = repositories.findUserByLoginName(json.provider, json.loginName);
+        var user = repositories.findUserByLoginName(json.getProvider(), json.getLoginName());
         if (user == null) {
-            // TODO do we need all of the data?
-            // TODO Is this legal (GDPR, other laws)? I'm not a lawyer.
             user = new UserData();
-            user.setLoginName(json.loginName);
-            user.setFullName(json.fullName);
-            user.setAvatarUrl(json.avatarUrl);
-            user.setProviderUrl(json.homepage);
-            user.setProvider(json.provider);
+            user.setLoginName(json.getLoginName());
+            user.setFullName(json.getFullName());
+            user.setAvatarUrl(json.getAvatarUrl());
+            user.setProviderUrl(json.getHomepage());
+            user.setProvider(json.getProvider());
             entityManager.persist(user);
         }
 
@@ -160,13 +167,10 @@ public class DataMirrorService {
     }
 
     public String getOrAddAccessTokenValue(UserData user, String description) {
-        return repositories.findAccessTokens(user)
-                .filter(PersonalAccessToken::isActive)
-                .filter(token -> token.getDescription().equals(description))
-                .stream()
-                .findFirst()
-                .map(PersonalAccessToken::getValue)
-                .orElse(users.createAccessToken(user, description).value);
+        var token = repositories.findAccessToken(user, description);
+        return token == null
+                ? users.createAccessToken(user, description).getValue()
+                : token.getValue();
     }
 
     @Transactional
@@ -187,9 +191,9 @@ public class DataMirrorService {
 
         var url = storageUtil.getLocation(resource);
         try {
-            backgroundRestTemplate.exchange("{canGetVsixUri}", HttpMethod.HEAD, null, byte[].class, Map.of("canGetVsixUri", url));
-        } catch(Throwable t) {
-            logger.error("failed to activate extension, vsix is invalid: "+ url, t);
+            backgroundRestTemplate.headForHeaders("{canGetVsixUri}", Map.of("canGetVsixUri", url));
+        } catch(Exception e) {
+            logger.error("failed to activate extension, vsix is invalid: {}", url, e);
             return false;
         }
 
@@ -199,20 +203,20 @@ public class DataMirrorService {
     @Transactional
     public void updateMetadata(String namespaceName, String extensionName, ExtensionJson latest) {
         var extension = repositories.findExtension(extensionName, namespaceName);
-        extension.setDownloadCount(latest.downloadCount);
-        extension.setAverageRating(latest.averageRating);
-        extension.setReviewCount(latest.reviewCount);
+        extension.setDownloadCount(latest.getDownloadCount());
+        extension.setAverageRating(latest.getAverageRating());
+        extension.setReviewCount(latest.getReviewCount());
 
         var remoteReviews = upstream.getReviews(namespaceName, extensionName);
         var localReviews = repositories.findAllReviews(extension)
-                .map(review -> new AbstractMap.SimpleEntry<>(review.toReviewJson(), review));
+                .map(review -> Map.entry(review.toReviewJson(), review));
 
-        remoteReviews.reviews.stream()
+        remoteReviews.getReviews().stream()
                 .filter(review -> localReviews.stream().noneMatch(entry -> entry.getKey().equals(review)))
                 .forEach(review -> addReview(review, extension));
 
         localReviews.stream()
-                .filter(entry -> remoteReviews.reviews.stream().noneMatch(review -> review.equals(entry.getKey())))
+                .filter(entry -> remoteReviews.getReviews().stream().noneMatch(review -> review.equals(entry.getKey())))
                 .map(Map.Entry::getValue)
                 .forEach(entityManager::remove);
     }
@@ -221,11 +225,11 @@ public class DataMirrorService {
         var review = new ExtensionReview();
         review.setExtension(extension);
         review.setActive(true);
-        review.setTimestamp(TimeUtil.fromUTCString(json.timestamp));
-        review.setUser(getOrAddUser(json.user));
-        review.setTitle(json.title);
-        review.setComment(json.comment);
-        review.setRating(json.rating);
+        review.setTimestamp(TimeUtil.fromUTCString(json.getTimestamp()));
+        review.setUser(getOrAddUser(json.getUser()));
+        review.setTitle(json.getTitle());
+        review.setComment(json.getComment());
+        review.setRating(json.getRating());
         entityManager.persist(review);
     }
 
@@ -241,13 +245,12 @@ public class DataMirrorService {
     }
 
     public void mirrorNamespaceMetadata(String namespaceName) {
-        var remoteVerified = upstream.getNamespace(namespaceName).verified;
-        var localVerified = local.getNamespace(namespaceName).verified;
+        var remoteVerified = upstream.getNamespace(namespaceName).getVerified();
+        var localVerified = local.getNamespace(namespaceName).getVerified();
         if(!localVerified && remoteVerified) {
             // verify the namespace by adding an owner to it
-            var namespace = repositories.findNamespace(namespaceName);
-            var memberships = repositories.findMemberships(namespace);
-            users.addNamespaceMember(namespace, memberships.toList().get(0).getUser(), NamespaceMembership.ROLE_OWNER);
+            var membership = repositories.findFirstMembership(namespaceName);
+            users.addNamespaceMember(membership.getNamespace(), membership.getUser(), NamespaceMembership.ROLE_OWNER);
         }
         if(localVerified && !remoteVerified) {
             // unverify namespace by changing owner(s) back to contributor
@@ -258,16 +261,15 @@ public class DataMirrorService {
     }
 
     public void ensureNamespaceMembership(UserData user, Namespace namespace) {
-        var membership = repositories.findMembership(user, namespace);
-        if (membership == null) {
+        if (!repositories.hasMembership(user, namespace)) {
             users.addNamespaceMember(namespace, user, NamespaceMembership.ROLE_CONTRIBUTOR);
         }
     }
 
     public void ensureNamespace(String namespaceName) {
-        if(repositories.findNamespace(namespaceName) == null) {
+        if(!repositories.namespaceExists(namespaceName)) {
             var json = new NamespaceJson();
-            json.name = namespaceName;
+            json.setName(namespaceName);
             admin.createNamespace(json);
         }
     }

@@ -14,7 +14,7 @@ import { SxProps, Theme } from '@mui/material/styles';
 import { toRelativeTime, toLocalTime } from '../utils';
 
 export const Timestamp: FunctionComponent<TimestampProps> = props => {
-    const sx = props.sx || [];
+    const sx = props.sx ?? [];
     const timestamp = props.value;
     return <Box
         component='span'

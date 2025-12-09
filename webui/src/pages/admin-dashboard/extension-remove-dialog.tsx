@@ -16,7 +16,7 @@ import { MainContext } from '../../context';
 import { getTargetPlatformDisplayName } from '../../utils';
 
 export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps> = props => {
-    const { service, handleError } = useContext(MainContext);
+    const { handleError } = useContext(MainContext);
 
     const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
@@ -28,11 +28,6 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
 
-    const WILDCARD = '*';
-    const removeAll = () => {
-        return props.targetPlatformVersions.find(targetPlatformVersion => targetPlatformVersion.targetPlatform === WILDCARD && targetPlatformVersion.version === WILDCARD);
-    };
-
     const removeVersions = () => {
         return props.targetPlatformVersions.length > 1;
     };
@@ -40,18 +35,7 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
     const handleRemoveVersions = async () => {
         try {
             setWorking(true);
-            let targetPlatformVersions = undefined;
-            if (!removeAll()) {
-                targetPlatformVersions = props.targetPlatformVersions
-                    .filter(t => t.targetPlatform !== WILDCARD && t.version !== WILDCARD)
-                    .map(t => {
-                        return { targetPlatform: t.targetPlatform, version: t.version };
-                    });
-            }
-
-            await service.admin.deleteExtensions(abortController.current, { namespace: props.extension.namespace, extension: props.extension.name, targetPlatformVersions: targetPlatformVersions });
-
-            props.onUpdate();
+            await props.onRemove(props.targetPlatformVersions);
             setDialogOpen(false);
         } catch (err) {
             handleError(err);
@@ -60,33 +44,29 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
         }
     };
 
+    const buttonText = removeVersions() ? 'Remove Versions' : 'Remove Version';
     return <>
         <Button
             variant='contained'
             color='secondary'
             onClick={() => setDialogOpen(true)}
             disabled={props.targetPlatformVersions.length === 0} >
-            {
-                removeAll() ? 'Remove Extension' : removeVersions() ? 'Remove Versions' : 'Remove Version'
-            }
+            {buttonText}
         </Button>
         <Dialog
             open={dialogOpen}
             onClose={() => setDialogOpen(false)} >
             <DialogTitle >
                 Remove {
-                    removeAll() ? 'all ' : ''
-                }{
-                    !(removeAll() && removeVersions()) ? props.targetPlatformVersions.filter((targetVersion) => targetVersion.version !== WILDCARD && targetVersion.targetPlatform !== WILDCARD).length : ''
+                    props.targetPlatformVersions.length
                 } version{
-                    removeAll() || removeVersions() ? 's' : ''
+                    removeVersions() ? 's' : ''
                 } of {props.extension.name}?
             </DialogTitle>
             <DialogContent>
                 <DialogContentText component='div'>
                     {
                         props.targetPlatformVersions
-                            .filter((targetPlatformVersion) => targetPlatformVersion.version !== WILDCARD && targetPlatformVersion.targetPlatform !== WILDCARD)
                             .map((targetPlatformVersion, key) => <Typography key={key} variant='body2'>{targetPlatformVersion.version} ({getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform)})</Typography>)}
                 </DialogContentText>
             </DialogContent>
@@ -112,5 +92,5 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
 export interface ExtensionRemoveDialogProps {
     targetPlatformVersions: TargetPlatformVersion[];
     extension: Extension;
-    onUpdate: () => void;
+    onRemove: (targetPlatformVersions?: TargetPlatformVersion[]) => Promise<void>;
 }

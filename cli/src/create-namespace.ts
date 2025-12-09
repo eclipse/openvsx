@@ -8,7 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { Registry, RegistryOptions } from './registry';
+import { CreateNamespaceOptions } from './create-namespace-options';
+import { getPAT } from './pat';
+import { Registry } from './registry';
 import { addEnvOptions } from './util';
 
 /**
@@ -19,9 +21,8 @@ export async function createNamespace(options: CreateNamespaceOptions = {}): Pro
     if (!options.name) {
         throw new Error('The namespace name is mandatory.');
     }
-    if (!options.pat) {
-        throw new Error("A personal access token must be given with the option '--pat'.");
-    }
+
+    options.pat = await getPAT(options.name, options, false);
 
     const registry = new Registry(options);
     const result = await registry.createNamespace(options.name, options.pat);
@@ -29,11 +30,4 @@ export async function createNamespace(options: CreateNamespaceOptions = {}): Pro
         throw new Error(result.error);
     }
     console.log(`\ud83d\ude80  Created namespace ${options.name}`);
-}
-
-export interface CreateNamespaceOptions extends RegistryOptions {
-    /**
-     * Name of the new namespace.
-     */
-    name?: string
 }

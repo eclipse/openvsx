@@ -33,9 +33,12 @@ public class VSCodeIdUpdateService {
         this.service = service;
     }
 
-    public void update(String namespaceName, String extensionName) throws InterruptedException {
+    public void update(String namespaceName, String extensionName) {
         if(BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            LOGGER.debug("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(namespaceName, extensionName));
+            LOGGER.atDebug()
+                    .setMessage("SKIP BUILT-IN EXTENSION {}")
+                    .addArgument(() -> NamingUtil.toExtensionId(namespaceName, extensionName))
+                    .log();
             return;
         }
 
@@ -54,7 +57,11 @@ public class VSCodeIdUpdateService {
     }
 
     private void updateExtensionPublicId(Extension extension, Map<Long, String> updates, boolean mustUpdate) {
-        LOGGER.debug("updateExtensionPublicId: {}", NamingUtil.toExtensionId(extension));
+        LOGGER.atDebug()
+                .setMessage("updateExtensionPublicId: {}")
+                .addArgument(() -> NamingUtil.toExtensionId(extension))
+                .log();
+
         var oldPublicId = extension.getPublicId();
         var newPublicId = service.getUpstreamPublicIds(extension).extension();
         if(newPublicId == null || (mustUpdate && newPublicId.equals(oldPublicId))) {
@@ -96,7 +103,7 @@ public class VSCodeIdUpdateService {
         }
     }
 
-    public void updateAll() throws InterruptedException {
+    public void updateAll() {
         LOGGER.debug("DAILY UPDATE ALL");
         var extensions = repositories.findAllPublicIds();
         var extensionPublicIdsMap = extensions.stream()
@@ -111,11 +118,18 @@ public class VSCodeIdUpdateService {
         var upstreamNamespacePublicIds = new HashMap<Long, String>();
         for(var extension : extensions) {
             if(BuiltInExtensionUtil.isBuiltIn(extension)) {
-                LOGGER.trace("SKIP BUILT-IN EXTENSION {}", NamingUtil.toExtensionId(extension));
+                LOGGER.atTrace()
+                        .setMessage("SKIP BUILT-IN EXTENSION {}")
+                        .addArgument(() -> NamingUtil.toExtensionId(extension))
+                        .log();
                 continue;
             }
+            LOGGER.atTrace()
+                    .setMessage("GET UPSTREAM PUBLIC ID: {} | {}")
+                    .addArgument(extension::getId)
+                    .addArgument(() -> NamingUtil.toExtensionId(extension))
+                    .log();
 
-            LOGGER.trace("GET UPSTREAM PUBLIC ID: {} | {}", extension.getId(), NamingUtil.toExtensionId(extension));
             var publicIds = service.getUpstreamPublicIds(extension);
             if(upstreamExtensionPublicIds.get(extension.getId()) == null) {
                 LOGGER.trace("ADD EXTENSION PUBLIC ID: {} - {}", extension.getId(), publicIds.extension());
@@ -170,7 +184,7 @@ public class VSCodeIdUpdateService {
 
     private void updatePublicIdNulls(Map<Long, String> changedPublicIds, Set<String> newPublicIds, Map<Long, String> publicIdMap) {
         // remove unchanged random public ids
-        changedPublicIds.entrySet().removeIf((e) -> {
+        changedPublicIds.entrySet().removeIf(e -> {
             var publicId = e.getValue() == null ? publicIdMap.get(e.getKey()) : null;
             var remove = publicId != null && !newPublicIds.contains(publicId);
             if(remove) {
@@ -181,18 +195,18 @@ public class VSCodeIdUpdateService {
         });
 
         // put random public ids where upstream public id is missing
-        for(var key : changedPublicIds.keySet()) {
-            if(changedPublicIds.get(key) != null) {
+        for(var entry : changedPublicIds.entrySet()) {
+            if(entry.getValue() != null) {
                 continue;
             }
 
             String publicId = null;
             while(newPublicIds.contains(publicId)) {
                 publicId = service.getRandomPublicId();
-                LOGGER.debug("NEW PUBLIC ID - {}: '{}'", key, publicId);
+                LOGGER.debug("NEW PUBLIC ID - {}: '{}'", entry.getKey(), publicId);
             }
 
-            changedPublicIds.put(key, publicId);
+            entry.setValue(publicId);
             newPublicIds.add(publicId);
         }
     }

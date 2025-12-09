@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled } from '@mui/material';
+import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
+import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MainContext } from '../../context';
-import { addQuery, createRoute, getTargetPlatformDisplayName } from '../../utils';
+import { addQuery, createRoute, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
@@ -24,7 +24,6 @@ import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-
 import { ExtensionListRoutes } from '../extension-list/extension-list-container';
 import { ExtensionDetailRoutes } from './extension-detail';
 import { ExtensionDetailDownloadsMenu } from './extension-detail-downloads-menu';
-import { UrlString } from '../..';
 
 export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewProps> = props => {
 
@@ -34,6 +33,50 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
     const params = useParams();
     const navigate = useNavigate();
     const abortController = useRef<AbortController>(new AbortController());
+
+    const worksWithEngines = useMemo(() => {
+        const engines = props.extension.engines;
+        if (engines == null) {
+            return null;
+        }
+
+        const data = Object.keys(engines)
+            .map((engine) => ({
+                key: engine,
+                name: getEngineDisplayName(engine),
+                version: engines[engine]
+            }))
+            .filter((d) => d.name != null);
+
+        return (<>
+            <Grid item xs='auto'>
+                <Stack spacing={0.5}>
+                    {
+                        data.map((d) => <Box component='span' key={d.key} sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>{d.name}:</Box>)
+                    }
+                </Stack>
+            </Grid>
+            <Grid item xs>
+                <Stack spacing={0.5}>
+                    {
+                        data.map((d) => <Box component='span' key={d.key}>{d.version}</Box>)
+                    }
+                </Stack>
+            </Grid>
+        </>);
+    }, [props.extension.engines]);
+
+    const worksWithTargetPlatforms = useMemo(() => {
+        return (<Grid item xs={12}>
+            <Box component='span' sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>Target Platforms:{' '}</Box>
+            {
+                Object.keys(props.extension.downloads).map((targetPlatform, index) => {
+                    const displayName = getTargetPlatformDisplayName(targetPlatform);
+                    return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
+                })
+            }
+        </Grid>);
+    }, [props.extension.downloads]);
 
     useEffect(() => {
         updateReadme();
@@ -71,17 +114,17 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             <Typography variant='h6'>Version</Typography>
             {
                 allVersions.length === 1 ?
-                <Typography variant='body1' display='inline'>{allVersions[0]}</Typography>
-                :
-                <NativeSelect
-                    name='Version'
-                    value={extension.version}
-                    onChange={event => props.selectVersion(event.target.value)}
-                    inputProps={{ 'aria-label': 'Version' }} >
-                    {
-                        allVersions.map(version => <option key={version}>{version}</option>)
-                    }
-                </NativeSelect>
+                    <Typography variant='body1' display='inline'>{allVersions[0]}</Typography>
+                    :
+                    <NativeSelect
+                        name='Version'
+                        value={extension.version}
+                        onChange={event => props.selectVersion(event.target.value)}
+                        inputProps={{ 'aria-label': 'Version' }} >
+                        {
+                            allVersions.map(version => <option key={version}>{version}</option>)
+                        }
+                    </NativeSelect>
             }
             {
                 extension.preRelease ?
@@ -90,10 +133,10 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             }
             {
                 extension.timestamp ?
-                <Box mt={1} mb={1}>
-                    Published <Timestamp value={extension.timestamp} />
-                </Box>
-                : null
+                    <Box mt={1} mb={1}>
+                        Published <Timestamp value={extension.timestamp} />
+                    </Box>
+                    : null
             }
         </>;
     };
@@ -150,8 +193,8 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         key={buttonLabel}
                         title={
                             kind === 'category'
-                            ? `Search for extensions in "${buttonLabel}" category`
-                            : `Search for extensions containing "${buttonLabel}"`
+                                ? `Search for extensions in "${buttonLabel}" category`
+                                : `Search for extensions containing "${buttonLabel}"`
                         }
                         onClick={() => {
                             const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
@@ -161,13 +204,6 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                     </Button>)
             }
         </>;
-    };
-
-    const renderWorksWithList = (downloads: {[targetPlatform: string]: UrlString}): ReactNode => {
-        return Object.keys(downloads).map((targetPlatform, index) => {
-            const displayName = getTargetPlatformDisplayName(targetPlatform);
-            return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
-        });
     };
 
     const renderResourceLink = (label: string, resourceLink: SxProps<Theme>, href?: string): ReactNode => {
@@ -238,116 +274,119 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         .filter(version => extension.versionAlias.indexOf(version) < 0 && VERSION_ALIASES.indexOf(version) >= 0);
     // filter internal tags
     const tags = extension.tags?.filter(t => !t.startsWith('__'));
-    return <>
+
+    let downloadButton: ReactNode = null;
+    if (extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 1) {
+        downloadButton = <ExtensionDetailDownloadsMenu downloads={extension.downloads} />;
+    } else if (extension.downloadable && extension.downloads && Object.keys(extension.downloads).length == 1) {
+        downloadButton = <Button variant='contained' color='secondary' sx={{ mt: 2 }}
+            href={extension.downloads[Object.keys(extension.downloads)[0]]}
+        >
+            Download
+        </Button>;
+    }
+
+    return <Box
+        sx={{
+            display: 'flex',
+            mt: 2,
+            flexDirection: {
+                xs: 'column-reverse',
+                sm: 'column-reverse',
+                md: 'column-reverse',
+                lg: 'column-reverse',
+                xl: 'row'
+            }
+        }}
+    >
+        <Box flex={5} overflow='auto'>
+            <SanitizedMarkdown content={readme} />
+        </Box>
         <Box
             sx={{
+                flex: 1,
                 display: 'flex',
-                mt: 2,
-                flexDirection: {
-                    xs: 'column-reverse',
-                    sm: 'column-reverse',
-                    md: 'column-reverse',
-                    lg: 'column-reverse',
-                    xl: 'row'
-                }
+                width: '100%',
+                minWidth: '290px',
+                mb: { xs: 2, sm: 2, md: 2, lg: 2, xl: 0 },
+                ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: '4.8rem' },
+                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'column' }
             }}
         >
-            <Box flex={5} overflow='auto'>
-                <SanitizedMarkdown content={readme} />
-            </Box>
-            <Box
-                sx={{
-                    flex: 1,
-                    display: 'flex',
-                    width: '100%',
-                    minWidth: '290px',
-                    mb: { xs: 2, sm: 2, md: 2, lg: 2, xl: 0 },
-                    ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: '4.8rem' },
-                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'column' }
-                }}
-            >
-                <Box sx={resourcesGroup}>
-                    <Box>
-                        {renderVersionSection()}
-                    </Box>
-                    {
-                        (otherAliases.length || extension.versionAlias.length) ? <Box>{renderAliasesSection(otherAliases, tagButton)}</Box> : ''
-                    }
+            <Box sx={resourcesGroup}>
+                <Box>
+                    {renderVersionSection()}
                 </Box>
-                <Box sx={resourcesGroup}>
-                    {
-                        extension.categories && extension.categories.length > 0 ?
+                {
+                    (otherAliases.length || extension.versionAlias.length) ? <Box>{renderAliasesSection(otherAliases, tagButton)}</Box> : ''
+                }
+            </Box>
+            <Box sx={resourcesGroup}>
+                {
+                    extension.categories && extension.categories.length > 0 ?
                         <Box>
                             {renderButtonList('category', 'Categories', extension.categories, tagButton)}
                         </Box>
                         : null
-                    }
-                    {
-                        tags && tags.length > 0 ?
+                }
+                {
+                    tags && tags.length > 0 ?
                         <Box mt={2}>
                             {renderButtonList('search', 'Tags', tags, tagButton)}
                         </Box>
                         : null
-                    }
-                </Box>
-                {
-                    extension.downloads ?
+                }
+            </Box>
+            {
+                extension.downloads ?
                     <Box sx={resourcesGroup}>
                         <Box>
                             <Typography variant='h6'>Works With</Typography>
-                            {renderWorksWithList(extension.downloads)}
+                            <Grid container spacing={0.5}>
+                                {worksWithEngines}
+                                {worksWithTargetPlatforms}
+                            </Grid>
                         </Box>
                     </Box>
                     : null
-                }
-                <Box sx={resourcesGroup}>
-                    <Box>
-                        <Typography variant='h6'>Resources</Typography>
-                        {renderResourceLink('Homepage', resourceLink, extension.homepage)}
-                        {renderResourceLink('Repository', resourceLink, extension.repository)}
-                        {renderResourceLink('Bugs', resourceLink, extension.bugs)}
-                        {renderResourceLink('Q\'n\'A', resourceLink, extension.qna)}
-                        {
-                            extension.downloads && Object.keys(extension.downloads).length > 1 ?
-                            <ExtensionDetailDownloadsMenu downloads={extension.downloads}/>
-                            : extension.downloads && Object.keys(extension.downloads).length == 1 ?
-                            <Button variant='contained' color='secondary' sx={{ mt: 2 }}
-                                href={extension.downloads[Object.keys(extension.downloads)[0]]}
-                            >
-                                Download
-                            </Button>
-                            : null
-                        }
-                        {
-                            DownloadTerms && extension.downloads && Object.keys(extension.downloads).length > 0
-                            ? <DownloadTerms/>
-                            : null
-                        }
-                    </Box>
+            }
+            <Box sx={resourcesGroup}>
+                <Box>
+                    <Typography variant='h6'>Resources</Typography>
+                    {renderResourceLink('Homepage', resourceLink, extension.homepage)}
+                    {renderResourceLink('Repository', resourceLink, extension.repository)}
+                    {renderResourceLink('Bugs', resourceLink, extension.bugs)}
+                    {renderResourceLink('Q\'n\'A', resourceLink, extension.qna)}
+                    {downloadButton}
                     {
-                        extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0 ?
+                        DownloadTerms && extension.downloadable && extension.downloads && Object.keys(extension.downloads).length > 0
+                            ? <DownloadTerms />
+                            : null
+                    }
+                </Box>
+                {
+                    extension.bundledExtensions !== undefined && extension.bundledExtensions.length > 0 ?
                         <Box mt={2}>
                             <Typography variant='h6'>Bundled Extensions</Typography>
                             {extension.bundledExtensions!.map(ref => renderExtensionRef(ref))}
                         </Box>
                         : null
-                    }
-                    {
-                        extension.dependencies !== undefined && extension.dependencies.length > 0 ?
+                }
+                {
+                    extension.dependencies !== undefined && extension.dependencies.length > 0 ?
                         <Box mt={2}>
                             <Typography variant='h6'>Dependencies</Typography>
                             {extension.dependencies!.map(ref => renderExtensionRef(ref))}
                         </Box>
                         : null
-                    }
-                    <Box mt={2}>
-                        {ClaimNamespace ? <ClaimNamespace extension={extension} sx={resourceLink} /> : ''}
-                        {ReportAbuse ? <ReportAbuse extension={extension} sx={resourceLink} /> : ''}
-                    </Box>
+                }
+                <Box mt={2}>
+                    {ClaimNamespace ? <ClaimNamespace extension={extension} sx={resourceLink} /> : ''}
+                    {ReportAbuse ? <ReportAbuse extension={extension} sx={resourceLink} /> : ''}
                 </Box>
             </Box>
         </Box>
-    </>;
+    </Box>;
 };
 
 export interface ExtensionDetailOverviewProps {

@@ -57,6 +57,7 @@ export interface SearchEntry {
     downloadCount?: number;
     displayName?: string;
     description?: string;
+    deprecated: boolean;
 }
 
 export const VERSION_ALIASES = ['latest', 'pre-release'];
@@ -90,7 +91,7 @@ export interface Extension {
     description?: string;
 
     // key: engine, value: version constraint
-    engines?: string[];
+    engines?: Record<string, string>;
     categories?: string[];
     tags?: string[];
     license?: string;
@@ -108,6 +109,13 @@ export interface Extension {
     // key: target platform, value: download link
     downloads: { [targetPlatform: string]: UrlString };
     allTargetPlatformVersions?: VersionTargetPlatforms[];
+
+    deprecated: boolean
+    replacement?: {
+        url: string
+        displayName: string
+    }
+    downloadable: boolean
 }
 
 export interface Badge {
@@ -212,6 +220,7 @@ export interface Namespace {
     verified: boolean;
     membersUrl: UrlString;
     roleUrl: UrlString;
+    detailsUrl: UrlString;
 }
 
 export interface NamespaceDetails {
@@ -240,6 +249,10 @@ export interface TargetPlatformVersion {
 
 export interface RegistryVersion {
     version: string
+}
+
+export interface LoginProviders {
+    loginProviders: Record<string, string>
 }
 
 export type MembershipRole = 'contributor' | 'owner';

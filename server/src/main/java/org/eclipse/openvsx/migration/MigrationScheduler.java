@@ -1,5 +1,5 @@
 /** ******************************************************************************
- * Copyright (c) 2023 Precies. Software Ltd and others
+ * Copyright (c) 2022 Precies. Software Ltd and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -9,29 +9,38 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import org.jobrunr.jobs.annotations.Job;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jobrunr.scheduling.cron.Cron;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-
 @Component
-public class MigrationScheduler {
+public class MigrationScheduler implements JobRequestHandler<HandlerJobRequest<?>> {
 
+    private final OrphanNamespaceMigration orphanNamespaceMigration;
     private final JobRequestScheduler scheduler;
 
-    @Value("${ovsx.migrations.delay.seconds:0}")
-    long delay;
+    @Value("${ovsx.data.mirror.enabled:false}")
+    boolean mirrorEnabled;
 
-    public MigrationScheduler(JobRequestScheduler scheduler) {
+    public MigrationScheduler(
+            OrphanNamespaceMigration orphanNamespaceMigration,
+            JobRequestScheduler scheduler
+    ) {
+        this.orphanNamespaceMigration = orphanNamespaceMigration;
         this.scheduler = scheduler;
     }
 
-    @EventListener
-    public void applicationStarted(ApplicationStartedEvent event) {
-        var instant = Instant.now().plusSeconds(delay);
-        scheduler.schedule(instant, new HandlerJobRequest<>(MigrationRunner.class));
+    @Override
+    @Job(name = "Schedule migrations", retries = 0)
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
+        orphanNamespaceMigration.fixOrphanNamespaces();
+        if(!mirrorEnabled) {
+            scheduler.enqueue(new HandlerJobRequest<>(GenerateKeyPairJobRequestHandler.class));
+        }
+
+        scheduler.scheduleRecurrently(MigrationItemJobRequestHandler.getJobName(), Cron.every15minutes(), new HandlerJobRequest<>(MigrationItemJobRequestHandler.class));
     }
 }

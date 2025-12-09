@@ -117,9 +117,13 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
                 </Grid>
                 : null
             }
-            <Grid item>
-                <UserNamespaceDetails namespace={props.namespace}/>
-            </Grid>
+            {
+                props.namespace.detailsUrl
+                ? <Grid item>
+                    <UserNamespaceDetails namespace={props.namespace}/>
+                </Grid>
+                : null
+            }
             <Grid item>
                 <UserNamespaceExtensionListContainer
                     namespace={props.namespace}

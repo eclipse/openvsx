@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.admin.AdminService;
@@ -24,7 +23,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.util.AbstractMap;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -54,19 +52,22 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        var content = migrations.getContent(download);
-        try (var extensionFile = migrations.getExtensionFile(new AbstractMap.SimpleEntry<>(download, content))) {
+        try (var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }
 
             boolean fixTargetPlatform;
-            try (var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
+            try (var extProcessor = new ExtensionProcessor(extensionFile)) {
                 fixTargetPlatform = !extProcessor.getMetadata().getTargetPlatform().equals(extVersion.getTargetPlatform());
             }
 
             if (fixTargetPlatform) {
-                logger.info("Fixing target platform for: {}", NamingUtil.toLogFormat(extVersion));
+                logger.atInfo()
+                        .setMessage("Fixing target platform for: {}")
+                        .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                        .log();
+
                 deleteExtension(extVersion);
                 try (var input = Files.newInputStream(extensionFile.getPath())) {
                     extensions.publishVersion(input, extVersion.getPublishedWith());

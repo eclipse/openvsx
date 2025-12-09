@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.SignatureKeyPair;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 
 public interface SignatureKeyPairRepository extends Repository<SignatureKeyPair, Long> {
@@ -19,4 +21,8 @@ public interface SignatureKeyPairRepository extends Repository<SignatureKeyPair,
     void deleteAll();
 
     SignatureKeyPair findByPublicId(String publicId);
+
+    @Modifying
+    @Query("update SignatureKeyPair k set k.active = false")
+    void updateActiveSetFalse();
 }

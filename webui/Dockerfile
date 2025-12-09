@@ -1,4 +1,4 @@
-FROM node:20-alpine3.17 as builder
+FROM node:20-alpine3.17 AS builder
 
 # Copy sources
 COPY --chown=node:node package.json tsconfig.json yarn.lock .yarnrc.yml /home/node/builder/
@@ -26,7 +26,8 @@ COPY --chown=node:node --from=builder /home/node/builder/lib/default/server.js /
 WORKDIR /home/node/webui
 
 # Install Express server
-RUN yarn add express@4.17.1
+RUN yarn add express@4.21.0
+RUN yarn add express-rate-limit@7.4.0
 
 EXPOSE 3000
 ENTRYPOINT ["node", "lib/default/server"]

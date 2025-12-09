@@ -14,6 +14,7 @@ import jakarta.persistence.Converter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.server.ServerErrorException;
 
 @Converter
 public class AuthTokenConverter implements AttributeConverter<AuthToken, String> {
@@ -31,7 +32,7 @@ public class AuthTokenConverter implements AttributeConverter<AuthToken, String>
         try {
             return objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException exc) {
-            throw new RuntimeException("Failed to serialize AuthToken to DB column.", exc);
+            throw new ServerErrorException("Failed to serialize AuthToken to DB column.", exc);
         }
     }
 
@@ -42,7 +43,7 @@ public class AuthTokenConverter implements AttributeConverter<AuthToken, String>
         try {
             return objectMapper.readValue(raw, AuthToken.class);
         } catch (JsonProcessingException exc) {
-            throw new RuntimeException("Failed to parse AuthToken from DB column.", exc);
+            throw new ServerErrorException("Failed to parse AuthToken from DB column.", exc);
         }
     }
 

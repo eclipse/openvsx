@@ -14,12 +14,13 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.jooq.SelectQuery;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
 
-import static org.eclipse.openvsx.jooq.Tables.NAMESPACE_MEMBERSHIP;
+import static org.eclipse.openvsx.jooq.Tables.*;
 
 @Component
 public class NamespaceMembershipJooqRepository {
@@ -39,24 +40,21 @@ public class NamespaceMembershipJooqRepository {
                 )
                 .from(NAMESPACE_MEMBERSHIP)
                 .where(NAMESPACE_MEMBERSHIP.NAMESPACE.in(namespaceIds))
-                .fetch()
-                .map(this::toNamespaceMembership);
-    }
+                .fetch(row -> {
+                    var namespaceMembership = new NamespaceMembership();
+                    namespaceMembership.setId(row.get(NAMESPACE_MEMBERSHIP.ID));
+                    namespaceMembership.setRole(row.get(NAMESPACE_MEMBERSHIP.ROLE));
 
-    private NamespaceMembership toNamespaceMembership(Record record) {
-        var namespaceMembership = new NamespaceMembership();
-        namespaceMembership.setId(record.get(NAMESPACE_MEMBERSHIP.ID));
-        namespaceMembership.setRole(record.get(NAMESPACE_MEMBERSHIP.ROLE));
+                    var namespace = new Namespace();
+                    namespace.setId(row.get(NAMESPACE_MEMBERSHIP.NAMESPACE));
+                    namespaceMembership.setNamespace(namespace);
 
-        var namespace = new Namespace();
-        namespace.setId(record.get(NAMESPACE_MEMBERSHIP.NAMESPACE));
-        namespaceMembership.setNamespace(namespace);
+                    var user = new UserData();
+                    user.setId(row.get(NAMESPACE_MEMBERSHIP.USER_DATA));
+                    namespaceMembership.setUser(user);
 
-        var user = new UserData();
-        user.setId(record.get(NAMESPACE_MEMBERSHIP.USER_DATA));
-        namespaceMembership.setUser(user);
-
-        return namespaceMembership;
+                    return namespaceMembership;
+                });
     }
 
     public boolean isVerified(Namespace namespace, UserData user) {
@@ -71,5 +69,103 @@ public class NamespaceMembershipJooqRepository {
                 .fetch();
 
         return result.isNotEmpty();
+    }
+
+    public boolean hasRole(Namespace namespace, String role) {
+        return dsl.fetchExists(dsl.selectOne().from(NAMESPACE_MEMBERSHIP)
+                .where(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(namespace.getId()))
+                .and(NAMESPACE_MEMBERSHIP.ROLE.equalIgnoreCase(role)));
+    }
+
+    public boolean isOwner(UserData user, Namespace namespace) {
+        return dsl.fetchExists(
+                dsl.selectOne()
+                        .from(NAMESPACE_MEMBERSHIP)
+                        .where(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(namespace.getId()))
+                        .and(NAMESPACE_MEMBERSHIP.USER_DATA.eq(user.getId()))
+                        .and(NAMESPACE_MEMBERSHIP.ROLE.eq(NamespaceMembership.ROLE_OWNER))
+        );
+    }
+
+    public List<NamespaceMembership> findByNamespaceName(String namespaceName) {
+        var query = findMemberships();
+        query.addConditions(NAMESPACE.NAME.equalIgnoreCase(namespaceName));
+        return query.fetch(this::toNamespaceMembership);
+    }
+
+    public List<NamespaceMembership> findMembershipsForOwner(UserData owner, String namespaceName) {
+        var namespaceOwnerQuery = dsl.select(NAMESPACE.ID)
+                .from(NAMESPACE)
+                .join(NAMESPACE_MEMBERSHIP).on(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(NAMESPACE.ID))
+                .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
+                .and(NAMESPACE_MEMBERSHIP.USER_DATA.eq(owner.getId()))
+                .and(NAMESPACE_MEMBERSHIP.ROLE.eq(NamespaceMembership.ROLE_OWNER));
+
+        var query = findMemberships();
+        query.addConditions(NAMESPACE.ID.eq(namespaceOwnerQuery));
+        return query.fetch(this::toNamespaceMembership);
+    }
+
+    private SelectQuery<Record> findMemberships() {
+        var query = dsl.selectQuery();
+        query.addSelect(
+                NAMESPACE.ID,
+                NAMESPACE.NAME,
+                NAMESPACE_MEMBERSHIP.ID,
+                NAMESPACE_MEMBERSHIP.ROLE,
+                USER_DATA.ID,
+                USER_DATA.LOGIN_NAME,
+                USER_DATA.FULL_NAME,
+                USER_DATA.AVATAR_URL,
+                USER_DATA.PROVIDER_URL,
+                USER_DATA.PROVIDER
+        );
+        query.addFrom(NAMESPACE_MEMBERSHIP);
+        query.addJoin(NAMESPACE, NAMESPACE.ID.eq(NAMESPACE_MEMBERSHIP.NAMESPACE));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(NAMESPACE_MEMBERSHIP.USER_DATA));
+        return query;
+    }
+
+    private NamespaceMembership toNamespaceMembership(Record row) {
+        var namespace = new Namespace();
+        namespace.setId(row.get(NAMESPACE.ID));
+        namespace.setName(row.get(NAMESPACE.NAME));
+
+        var user = new UserData();
+        user.setId(row.get(USER_DATA.ID));
+        user.setLoginName(row.get(USER_DATA.LOGIN_NAME));
+        user.setFullName(row.get(USER_DATA.FULL_NAME));
+        user.setAvatarUrl(row.get(USER_DATA.AVATAR_URL));
+        user.setProvider(row.get(USER_DATA.PROVIDER));
+        user.setProviderUrl(row.get(USER_DATA.PROVIDER_URL));
+
+        var membership = new NamespaceMembership();
+        membership.setId(row.get(NAMESPACE_MEMBERSHIP.ID));
+        membership.setRole(row.get(NAMESPACE_MEMBERSHIP.ROLE));
+        membership.setNamespace(namespace);
+        membership.setUser(user);
+
+        return membership;
+    }
+
+    public boolean canPublish(UserData user, Namespace namespace) {
+        return dsl.fetchExists(
+                dsl.selectOne()
+                        .from(NAMESPACE_MEMBERSHIP)
+                        .where(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(namespace.getId()))
+                        .and(NAMESPACE_MEMBERSHIP.USER_DATA.eq(user.getId()))
+                        .and(NAMESPACE_MEMBERSHIP.ROLE.equalIgnoreCase(NamespaceMembership.ROLE_CONTRIBUTOR)
+                                .or(NAMESPACE_MEMBERSHIP.ROLE.equalIgnoreCase(NamespaceMembership.ROLE_OWNER))
+                        )
+        );
+    }
+
+    public boolean hasMembership(UserData user, Namespace namespace) {
+        return dsl.fetchExists(
+                dsl.selectOne()
+                        .from(NAMESPACE_MEMBERSHIP)
+                        .where(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(namespace.getId()))
+                        .and(NAMESPACE_MEMBERSHIP.USER_DATA.eq(user.getId()))
+        );
     }
 }

@@ -11,9 +11,8 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
+
 import java.util.Objects;
 
 @Schema(
@@ -21,15 +20,39 @@ import java.util.Objects;
     description = "A badge to be shown in the sidebar of the extension page in the registry"
 )
 @JsonInclude(Include.NON_NULL)
-public class BadgeJson implements Serializable {
+public class BadgeJson {
 
     @Schema(description = "Image URL of the badge")
-    public String url;
+    private String url;
 
     @Schema(description = "The link users will follow when clicking the badge")
-    public String href;
+    private String href;
 
-    public String description;
+    private String description;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getHref() {
+        return href;
+    }
+
+    public void setHref(String href) {
+        this.href = href;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     @Override
     public boolean equals(Object o) {

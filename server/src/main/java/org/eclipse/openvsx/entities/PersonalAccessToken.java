@@ -9,9 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 
 import jakarta.persistence.*;
@@ -23,43 +23,42 @@ import org.eclipse.openvsx.util.TimeUtil;
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = "value") })
 public class PersonalAccessToken implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(generator = "personalAccessTokenSeq")
     @SequenceGenerator(name = "personalAccessTokenSeq", sequenceName = "personal_access_token_seq")
-    long id;
+    private long id;
 
     @ManyToOne
     @JoinColumn(name = "user_data")
-    UserData user;
+    private UserData user;
 
     @Column(length = 64)
-    String value;
+    private String value;
 
-    boolean active;
+    private boolean active;
 
-    LocalDateTime createdTimestamp;
+    private LocalDateTime createdTimestamp;
 
-    LocalDateTime accessedTimestamp;
+    private LocalDateTime accessedTimestamp;
 
     @Column(length = 2048)
-    String description;
-
-    @OneToMany(mappedBy = "publishedWith")
-    List<ExtensionVersion> publishedVersions;
-
+    private String description;
 
     /**
      * Convert to a JSON object.
      */
     public AccessTokenJson toAccessTokenJson() {
         var json = new AccessTokenJson();
-        json.id = this.getId();
+        json.setId(this.getId());
         // The value is not included: it is displayed only when the token is created
         if (this.getCreatedTimestamp() != null)
-            json.createdTimestamp = TimeUtil.toUTCString(this.getCreatedTimestamp());
+            json.setCreatedTimestamp(TimeUtil.toUTCString(this.getCreatedTimestamp()));
         if (this.getAccessedTimestamp() != null)
-            json.accessedTimestamp = TimeUtil.toUTCString(this.getAccessedTimestamp());
-        json.description = this.getDescription();
+            json.setAccessedTimestamp(TimeUtil.toUTCString(this.getAccessedTimestamp()));
+        json.setDescription(this.getDescription());
         return json;
     }
 
@@ -130,12 +129,11 @@ public class PersonalAccessToken implements Serializable {
                 && Objects.equals(value, that.value)
                 && Objects.equals(createdTimestamp, that.createdTimestamp)
                 && Objects.equals(accessedTimestamp, that.accessedTimestamp)
-                && Objects.equals(description, that.description)
-                && Objects.equals(publishedVersions, that.publishedVersions);
+                && Objects.equals(description, that.description);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, value, active, createdTimestamp, accessedTimestamp, description, publishedVersions);
+        return Objects.hash(id, user, value, active, createdTimestamp, accessedTimestamp, description);
     }
 }

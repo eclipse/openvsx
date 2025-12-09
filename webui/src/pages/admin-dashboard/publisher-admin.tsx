@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, createContext, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useState, useContext, createContext, useEffect, useRef, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -63,23 +63,24 @@ export const PublisherAdmin: FunctionComponent = props => {
         fetchPublisher();
     };
 
+    let listContainer: ReactNode = '';
+    if (publisher && pageSettings && user) {
+        listContainer = <UpdateContext.Provider value={{ handleUpdate }}>
+            <PublisherDetails publisherInfo={publisher} />
+        </UpdateContext.Provider>;
+    } else if (notFound) {
+        listContainer = <Box display='flex' flexDirection='column'>
+            <Typography variant='body1' color='error'>
+                Publisher {notFound} not found.
+            </Typography>
+        </Box>;
+    }
+
     return <SearchListContainer
         searchContainer={
             [<StyledInput placeholder='Publisher Name' key='pi' onSubmit={fetchPublisher} onChange={onChangeInput} />]
         }
-        listContainer={
-            publisher && pageSettings && user ?
-                <UpdateContext.Provider value={{ handleUpdate }}>
-                    <PublisherDetails publisherInfo={publisher} />
-                </UpdateContext.Provider>
-                : notFound ?
-                    <Box display='flex' flexDirection='column'>
-                        <Typography variant='body1' color='error'>
-                            Publisher {notFound} not found.
-                        </Typography>
-                    </Box>
-                    : ''
-        }
+        listContainer={listContainer}
         loading={loading}
     />;
 };

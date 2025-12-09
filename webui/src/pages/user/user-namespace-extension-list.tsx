@@ -51,7 +51,7 @@ export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespac
         const extensionUnfiltered = await Promise.all(
             extensionsURLs.map((url: string) => getExtension(url))
         );
-        const extensions = extensionUnfiltered.filter(e => !!e) as Extension[];
+        const extensions = extensionUnfiltered.filter(e => e != null) as Extension[];
 
         setExtensions(extensions);
         setLoading(false);
@@ -61,7 +61,7 @@ export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespac
         <Typography variant='h5'>Extensions</Typography>
         {
             extensions && extensions.length > 0
-                ? <UserExtensionList extensions={extensions} loading={loading} />
+                ? <UserExtensionList extensions={extensions} loading={loading} canDelete />
                 : <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
         }
     </>;

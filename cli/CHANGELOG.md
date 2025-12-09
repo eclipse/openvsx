@@ -2,6 +2,132 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### v0.10.8 (unreleased)
+
+#### Dependencies
+
+- Upgrade `jws` from `3.2.2` to `3.2.3` ([#1460](https://github.com/eclipse/openvsx/pull/1460))
+
+---
+
+### v0.10.7 (Nov. 2025)
+
+#### Dependencies
+
+- Upgrade `glob` from `10.3.10` to `10.5.0` ([#1423](https://github.com/eclipse/openvsx/pull/1423))
+- Upgrade `js-yaml` from `4.1.0` to `4.1.1` ([#1417](https://github.com/eclipse/openvsx/pull/1417))
+
+---
+
+### v0.10.6 (Sep. 2025)
+
+#### Dependencies
+
+- Upgrade `tar-fs` from `2.1.3` to `2.1.4` ([#1353](https://github.com/eclipse/openvsx/pull/1353))
+- Upgrade `tmp` from `0.2.3` to `0.2.4` ([#1304](https://github.com/eclipse/openvsx/pull/1304))
+- Upgrade `form-data` from `4.0.0` to `4.0.4` ([#1291](https://github.com/eclipse/openvsx/pull/1291))
+
+---
+
+### v0.10.5 (Jul. 2025)
+
+#### Dependencies
+
+- Upgrade `brace-expansion` from `2.0.1` to `2.0.2` ([#1273](https://github.com/eclipse/openvsx/pull/1273))
+- Upgrade `brace-expansion` from `1.1.11` to `1.1.12` ([#1261](https://github.com/eclipse/openvsx/pull/1261))
+
+---
+
+### v0.10.4 (Jun. 2025)
+
+#### Dependencies
+
+- Upgrade `tar-fs` from `2.1.2` to `2.1.3` ([#1252](https://github.com/eclipse/openvsx/pull/1252))
+
+---
+
+### v0.10.3 (Jun. 2025)
+
+#### Bug Fixes
+
+- Use nullish coalescing ([#1233](https://github.com/eclipse/openvsx/pull/#1233))
+- Move personal access token functionality to `pat.ts` ([#1225](https://github.com/eclipse/openvsx/pull/#1225))
+- Reduce nested functions in `zip.ts` ([#1223](https://github.com/eclipse/openvsx/pull/#1223))
+- Split command and options ([#1222](https://github.com/eclipse/openvsx/pull/#1222))
+- Move PAT functionality from `util.ts` to `login.ts` ([#1220](https://github.com/eclipse/openvsx/pull/#1220))
+- Expected the Promise rejection reason to be an Error ([#1197](https://github.com/eclipse/openvsx/pull/1197))
+
+#### Dependencies
+
+- Replace `yauzl` with `yauzl-promise` ([#1226](https://github.com/eclipse/openvsx/pull/1226))
+- Upgrade `yarn` from `4.5.1` to `4.9.1` ([#1190](https://github.com/eclipse/openvsx/pull/1190))
+
+---
+
+### v0.10.2 (Apr. 2025)
+
+#### Dependencies
+
+- Upgrade `tar-fs` from `2.1.1` to `2.1.2` ([#1163](https://github.com/eclipse/openvsx/pull/1163))
+
+---
+
+### v0.10.1 (Nov. 2024)
+
+#### Dependencies
+
+- Upgrade `@vscode/vsce` from `3.1.0` to `3.2.1` ([#1047](https://github.com/eclipse/openvsx/pull/1047))
+
+---
+
+### v0.10.0 (Oct. 2024)
+
+#### New Features
+
+- Added `login` command to add a namespace to the list of known namespaces ([#1012](https://github.com/eclipse/openvsx/pull/1012))
+- Added `logout` command to remove a namespace from the list of known namespaces ([#1012](https://github.com/eclipse/openvsx/pull/1012))
+- Added CLI parameter `--packageVersion` to set the version of the provided VSIX packages ([#1013](https://github.com/eclipse/openvsx/pull/1013))
+
+#### Dependencies
+
+- Added dependency to `yauzl` ([#1012](https://github.com/eclipse/openvsx/pull/1012))
+
+---
+
+### v0.9.5 (Sep. 2024)
+
+#### Breaking Changes
+
+- The minimum version of Node.js required is now `20` because of the newer `@vscode/vsce`
+
+#### Dependencies
+
+- Upgrade `@vscode/vsce` from `2.25.0` to `3.1.0` ([#994](https://github.com/eclipse/openvsx/pull/994))
+- Upgrade `commander` from `6.1.0` to `6.2.1` ([#994](https://github.com/eclipse/openvsx/pull/994))
+- Upgrade `tmp` from `0.2.1` to `0.2.3` ([#994](https://github.com/eclipse/openvsx/pull/994))
+
+---
+
+### v0.9.4 (Sep. 2024)
+
+#### Dependencies
+
+- Upgrade `micromatch` from `4.0.5` to `4.0.8` ([#978](https://github.com/eclipse/openvsx/pull/978))
+
+---
+
+### v0.9.2 (July 2024)
+
+#### Bug Fixes
+
+- Remove default universal for get operation ([#944](https://github.com/eclipse/openvsx/pull/944))
+
+#### Dependencies
+
+- Upgrade `braces` from `3.0.2` to `3.0.3` ([#953](https://github.com/eclipse/openvsx/pull/953))
+
+---
+
 ### v0.9.1 (Apr. 2024)
 
 #### Bug Fixes

@@ -9,22 +9,22 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.migration.GenerateKeyPairJobService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
@@ -34,11 +34,8 @@ import java.util.zip.ZipFile;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@MockBean({ CacheService.class, RepositoryService.class })
-public class ExtensionVersionIntegrityServiceTest {
-
-    @MockBean
-    EntityManager entityManager;
+@MockitoBean(types = { CacheService.class, RepositoryService.class, EntityManager.class })
+class ExtensionVersionIntegrityServiceTest {
 
     @Autowired
     ExtensionVersionIntegrityService integrityService;
@@ -47,11 +44,8 @@ public class ExtensionVersionIntegrityServiceTest {
     GenerateKeyPairJobService keyPairService;
 
     @Test
-    public void testGenerateSignature() throws IOException {
-        keyPairService.generateKeyPair();
-        var keyPairCaptor = ArgumentCaptor.forClass(SignatureKeyPair.class);
-        Mockito.verify(entityManager).persist(keyPairCaptor.capture());
-        var keyPair = keyPairCaptor.getValue();
+    void testGenerateSignature() throws IOException {
+        var keyPair = keyPairService.generateKeyPair();
 
         var namespace = new Namespace();
         namespace.setName("foo");
@@ -68,37 +62,38 @@ public class ExtensionVersionIntegrityServiceTest {
         var download = new FileResource();
         download.setExtension(extVersion);
 
-        var sigzipContent = new byte[0];
         try (
                 var stream = getClass().getResource("ms-python.python-2024.7.11511013.vsix").openStream();
-                var extensionFile = new TempFile("ms-python", ".vsix")
+                var extensionFile = new TempFile("ms-python", ".vsix");
+                var out = Files.newOutputStream(extensionFile.getPath())
         ) {
-            Files.write(extensionFile.getPath(), stream.readAllBytes());
-            var signature = integrityService.generateSignature(download, extensionFile, keyPair);
-            sigzipContent = signature.getContent();
-        }
-
-        try(var temp = new TempFile("ms-python", ".sigzip")) {
-            Files.write(temp.getPath(), sigzipContent);
-            try (
-                    var sigzip = new ZipFile(temp.getPath().toFile());
+            stream.transferTo(out);
+            extensionFile.setResource(download);
+            try(
+                    var signatureFile = integrityService.generateSignature(extensionFile, keyPair);
+                    var sigzip = new ZipFile(signatureFile.getPath().toFile());
                     var expectedSigZip = new ZipFile(getClass().getResource("ms-python.python-2024.7.11511013.sigzip").getPath())
             ) {
-                expectedSigZip.stream()
-                        .forEach(expectedEntry -> {
-                            var entry = sigzip.getEntry(expectedEntry.getName());
-                            assertNotNull(entry);
-                            if(expectedEntry.getName().equals(".signature.manifest")) {
-                                assertEquals(
-                                        new String(ArchiveUtil.readEntry(expectedSigZip, expectedEntry, ObservationRegistry.NOOP)),
-                                        new String(ArchiveUtil.readEntry(sigzip, entry, ObservationRegistry.NOOP))
-                                );
-                            }
-                        });
+                var iterator = expectedSigZip.stream().iterator();
+                while(iterator.hasNext()) {
+                    var expectedEntry = iterator.next();
+                    var entry = sigzip.getEntry(expectedEntry.getName());
+                    assertNotNull(entry);
+                    if(expectedEntry.getName().equals(".signature.manifest")) {
+                        try (
+                                var expectedFile = ArchiveUtil.readEntry(expectedSigZip, expectedEntry);
+                                var actualFile = ArchiveUtil.readEntry(sigzip, entry)
+                        ) {
+                            assertEquals(Files.readString(expectedFile.getPath()),Files.readString(actualFile.getPath()));
+                        }
+                    }
+                }
 
                 var entry = sigzip.getEntry(".signature.sig");
                 assertNotNull(entry);
-                assertTrue(ArchiveUtil.readEntry(sigzip, entry, ObservationRegistry.NOOP).length > 0);
+                try(var entryFile = ArchiveUtil.readEntry(sigzip, entry)) {
+                    assertTrue(Files.size(entryFile.getPath()) > 0);
+                }
             }
         }
     }

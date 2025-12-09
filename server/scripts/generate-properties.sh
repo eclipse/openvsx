@@ -77,3 +77,23 @@ then
     echo "ovsx.logs.azure.sas-token=$AZURE_LOGS_SAS_TOKEN" >> $OVSX_APP_PROFILE
     echo "Using Azure Logs Storage: $AZURE_LOGS_SERVICE_ENDPOINT"
 fi
+
+# Set the AWS Storage service access key id, secret access key, region and endpoint
+if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ] && [ -n "$AWS_REGION" ] && [ -n "$AWS_BUCKET" ]
+then
+  echo "ovsx.storage.aws.access-key-id=$AWS_ACCESS_KEY_ID" >> $OVSX_APP_PROFILE
+  echo "ovsx.storage.aws.secret-access-key=$AWS_SECRET_ACCESS_KEY" >> $OVSX_APP_PROFILE
+  echo "ovsx.storage.aws.region=$AWS_REGION" >> $OVSX_APP_PROFILE
+  echo "ovsx.storage.aws.bucket=$AWS_BUCKET" >> $OVSX_APP_PROFILE
+  if [ -n "$AWS_PATH_STYLE_ACCESS" ]
+  then
+    echo "ovsx.storage.aws.path-style-access=$AWS_PATH_STYLE_ACCESS" >> $OVSX_APP_PROFILE
+  fi
+  if [ -n "$AWS_SERVICE_ENDPOINT" ]
+  then
+    echo "ovsx.storage.aws.service-endpoint=$AWS_SERVICE_ENDPOINT" >> $OVSX_APP_PROFILE
+    echo "Using AWS S3 Storage: $AWS_SERVICE_ENDPOINT"
+  else
+    echo "Using AWS S3 Storage."
+  fi
+fi

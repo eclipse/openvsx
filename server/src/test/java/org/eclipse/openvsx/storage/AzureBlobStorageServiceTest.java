@@ -9,10 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.storage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.net.URI;
-
+import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -21,19 +18,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.net.URI;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @ExtendWith(SpringExtension.class)
-@MockBean({ StorageUtilService.class })
-public class AzureBlobStorageServiceTest {
+@MockitoBean(types = { StorageUtilService.class })
+class AzureBlobStorageServiceTest {
 
     @Autowired
     AzureBlobStorageService service;
 
     @Test
-    public void testGetLocation() {
+    void testGetLocation() {
         service.serviceEndpoint = "http://azure.blob.storage/";
         service.blobContainer = "blob-container";
         var namespace = new Namespace();
@@ -60,8 +61,13 @@ public class AzureBlobStorageServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        AzureBlobStorageService azureBlobStorageService() {
-            return new AzureBlobStorageService();
+        FilesCacheKeyGenerator filesCacheKeyGenerator() {
+            return new FilesCacheKeyGenerator();
+        }
+
+        @Bean
+        AzureBlobStorageService azureBlobStorageService(FilesCacheKeyGenerator filesCacheKeyGenerator) {
+            return new AzureBlobStorageService(filesCacheKeyGenerator);
         }
     }
 }

@@ -9,31 +9,37 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
+import com.google.cloud.storage.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+
+import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_FILES;
+import static org.eclipse.openvsx.cache.CacheService.GENERATOR_FILES;
 
 @Component
 public class GoogleCloudStorageService implements IStorageService {
 
     private static final String BASE_URL = "https://storage.googleapis.com/";
+
+    private final FilesCacheKeyGenerator filesCacheKeyGenerator;
 
     @Value("${ovsx.storage.gcp.project-id:}")
     String projectId;
@@ -42,6 +48,10 @@ public class GoogleCloudStorageService implements IStorageService {
     String bucketId;
 
     private Storage storage;
+
+    public GoogleCloudStorageService(FilesCacheKeyGenerator filesCacheKeyGenerator) {
+        this.filesCacheKeyGenerator = filesCacheKeyGenerator;
+    }
 
     @Override
     public boolean isEnabled() {
@@ -64,48 +74,25 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    public void uploadFile(FileResource resource) {
+    public void uploadFile(TempFile tempFile) {
+        var resource = tempFile.getResource();
         var objectId = getObjectId(resource);
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot upload file "
-                    + objectId + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage("Cannot upload file", resource.getName()));
         }
 
-        uploadFile(resource.getContent(), resource.getName(), objectId);
+        uploadFile(tempFile, resource.getName(), objectId);
     }
 
     @Override
-    public void uploadNamespaceLogo(Namespace namespace) {
+    public void uploadNamespaceLogo(TempFile logoFile) {
+        var namespace = logoFile.getNamespace();
         var objectId = getObjectId(namespace);
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot upload file "
-                    + objectId + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage("Cannot upload file", objectId));
         }
 
-        uploadFile(namespace.getLogoBytes(), namespace.getLogoName(), objectId);
-    }
-
-    protected void uploadFile(byte[] content, String fileName, String objectId) {
-        var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
-                .setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
-            blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
-        } else {
-            var cacheControl = StorageUtil.getCacheControl(fileName);
-            blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
-        }
-        getStorage().create(blobInfoBuilder.build(), content);
-    }
-
-    @Override
-    public void uploadFile(FileResource resource, TempFile file) {
-        var objectId = getObjectId(resource);
-        if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot upload file "
-                    + objectId + ": missing Google bucket id");
-        }
-
-        uploadFile(file, resource.getName(), objectId);
+        uploadFile(logoFile, namespace.getLogoName(), objectId);
     }
 
     protected void uploadFile(TempFile file, String fileName, String objectId) {
@@ -128,7 +115,7 @@ public class GoogleCloudStorageService implements IStorageService {
                 buffer.clear();
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ServerErrorException("Failed to upload file", e);
         }
     }
 
@@ -144,8 +131,7 @@ public class GoogleCloudStorageService implements IStorageService {
 
     private void removeFile(String objectId) {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot remove file "
-                    + objectId + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage("Cannot remove file", objectId));
         }
 
         getStorage().delete(BlobId.of(bucketId, objectId));
@@ -154,8 +140,7 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public URI getLocation(FileResource resource) {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + resource.getName() + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
         return URI.create(BASE_URL + bucketId + "/" + getObjectId(resource));
     }
@@ -177,40 +162,65 @@ public class GoogleCloudStorageService implements IStorageService {
     @Override
     public URI getNamespaceLogoLocation(Namespace namespace) {
         if (StringUtils.isEmpty(bucketId)) {
-            throw new IllegalStateException("Cannot determine location of file "
-                    + namespace.getLogoName() + ": missing Google bucket id");
+            throw new IllegalStateException(missingBucketIdMessage(namespace.getLogoName()));
         }
         return URI.create(BASE_URL + bucketId + "/" + getObjectId(namespace));
+    }
+
+    @Override
+    public TempFile downloadFile(FileResource resource) throws IOException {
+        if (StringUtils.isEmpty(bucketId)) {
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
+        }
+
+        var tempFile = new TempFile("temp_file_", "");
+        var objectId = getObjectId(resource);
+        getStorage().downloadTo(BlobId.of(bucketId, objectId), tempFile.getPath());
+        tempFile.setResource(resource);
+        return tempFile;
     }
 
     protected String getObjectId(Namespace namespace) {
         return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
     }
 
-    @Override
-    public TempFile downloadNamespaceLogo(Namespace namespace) throws IOException {
-        var logoFile = new TempFile("namespace-logo", ".png");
-        try (
-                var reader = getStorage().reader(BlobId.of(bucketId, getObjectId(namespace)));
-                var output = new FileOutputStream(logoFile.getPath().toFile())
-        ) {
-            output.getChannel().transferFrom(reader, 0, Long.MAX_VALUE);
-        }
+    private String missingBucketIdMessage(String name) {
+        return missingBucketIdMessage("Cannot determine location of file", name);
+    }
 
-        return logoFile;
+    private String missingBucketIdMessage(String action, String name) {
+        return action + " " + name + ": missing Google bucket id";
     }
 
     @Override
     public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
-        for(var pair : pairs) {
-            var source = getObjectId(pair.getFirst());
-            var target = getObjectId(pair.getSecond());
-            var request = new Storage.CopyRequest.Builder()
-                    .setSource(BlobId.of(bucketId, source))
-                    .setTarget(BlobId.of(bucketId, target))
-                    .build();
+        pairs.forEach(pair -> copy(getObjectId(pair.getFirst()), getObjectId(pair.getSecond())));
+    }
 
-            getStorage().copy(request).getResult();
+    @Override
+    public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
+        copy(getObjectId(oldNamespace), getObjectId(newNamespace));
+    }
+
+    private void copy(String source, String target) {
+        var request = new Storage.CopyRequest.Builder()
+                .setSource(BlobId.of(bucketId, source))
+                .setTarget(BlobId.of(bucketId, target))
+                .build();
+
+        getStorage().copy(request).getResult();
+    }
+
+    @Override
+    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
+    public Path getCachedFile(FileResource resource) {
+        if (StringUtils.isEmpty(bucketId)) {
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
         }
+
+        var objectId = getObjectId(resource);
+        var path = filesCacheKeyGenerator.generateCachedExtensionPath(resource);
+        FileUtil.writeSync(path, p -> getStorage().downloadTo(BlobId.of(bucketId, objectId), p));
+        return path;
     }
 }

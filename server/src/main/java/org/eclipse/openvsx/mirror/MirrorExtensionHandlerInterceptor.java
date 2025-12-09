@@ -11,6 +11,7 @@ package org.eclipse.openvsx.mirror;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -30,6 +31,7 @@ public class MirrorExtensionHandlerInterceptor implements HandlerInterceptor {
         this.dataMirror = dataMirror;
     }
 
+    @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         var params = request.getRequestURI().equals("/vscode/item")
                 ? extractQueryParams(request)
@@ -46,10 +48,9 @@ public class MirrorExtensionHandlerInterceptor implements HandlerInterceptor {
     }
 
     private Map<String, String> extractQueryParams(HttpServletRequest request) {
-        var itemName = request.getParameter("itemName");
-        var itemNamePieces = itemName.split("\\.");
-        return itemNamePieces.length == 2
-                ? Map.of("namespaceName", itemNamePieces[0], "extensionName", itemNamePieces[1])
+        var itemName = NamingUtil.fromExtensionId(request.getParameter("itemName"));
+        return itemName != null
+                ? Map.of("namespaceName", itemName.namespace(), "extensionName", itemName.extension())
                 : Collections.emptyMap();
     }
 

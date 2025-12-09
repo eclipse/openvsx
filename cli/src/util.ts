@@ -13,23 +13,15 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
 import * as readline from 'readline';
-import { RegistryOptions } from './registry';
+import { RegistryOptions } from './registry-options';
 
 export { promisify } from 'util';
 
 export function addEnvOptions(options: RegistryOptions): void {
-    if (!options.registryUrl) {
-        options.registryUrl = process.env.OVSX_REGISTRY_URL;
-    }
-    if (!options.pat) {
-        options.pat = process.env.OVSX_PAT;
-    }
-    if (!options.username) {
-        options.username = process.env.OVSX_USERNAME;
-    }
-    if (!options.password) {
-        options.password = process.env.OVSX_PASSWORD;
-    }
+    options.registryUrl ??= process.env.OVSX_REGISTRY_URL;
+    options.pat ??= process.env.OVSX_PAT;
+    options.username ??= process.env.OVSX_USERNAME;
+    options.password ??= process.env.OVSX_PASSWORD;
 }
 
 export function matchExtensionId(id: string): RegExpExecArray | null {
@@ -47,7 +39,7 @@ export function makeDirs(path: fs.PathLike): Promise<void> {
         if (fs.existsSync(path)) {
             resolve();
         } else {
-            fs.mkdir(path, { recursive: true }, err => {
+            fs.mkdir(path, { recursive: true }, (err: NodeJS.ErrnoException | null) => {
                 if (err)
                     reject(err);
                 else
@@ -59,13 +51,18 @@ export function makeDirs(path: fs.PathLike): Promise<void> {
 
 export function createTempFile(options: tmp.TmpNameOptions): Promise<string> {
     return new Promise((resolve, reject) => {
-        tmp.tmpName(options, (err, name) => {
+        tmp.tmpName(options, (err: Error | null, name: string) => {
             if (err)
                 reject(err);
             else
                 resolve(name);
         });
     });
+}
+
+export function rejectError(err: any) {
+    const reason = err instanceof Error ? err : new Error(String(err));
+    return Promise.reject(reason);
 }
 
 export function handleError(debug?: boolean, additionalMessage?: string, exit: boolean = true): (reason: any) => void {
@@ -101,7 +98,7 @@ export function readFile(name: string, packagePath?: string, encoding: BufferEnc
         fs.readFile(
             path.join(packagePath ?? process.cwd(), name),
             { encoding },
-            (err, content) => {
+            (err: NodeJS.ErrnoException | null, content: string) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -135,7 +132,7 @@ export function writeFile(name: string, content: string, packagePath?: string, e
             path.join(packagePath ?? process.cwd(), name),
             content,
             { encoding },
-            err => {
+            (err: NodeJS.ErrnoException | null) => {
                 if (err) {
                     reject(err);
                 } else {

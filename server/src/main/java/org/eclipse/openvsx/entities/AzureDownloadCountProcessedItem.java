@@ -18,15 +18,15 @@ public class AzureDownloadCountProcessedItem {
     @Id
     @GeneratedValue(generator = "azureDownloadCountProcessedItemSeq")
     @SequenceGenerator(name = "azureDownloadCountProcessedItemSeq", sequenceName = "azure_download_count_processed_item_seq")
-    long id;
+    private long id;
 
-    String name;
+    private String name;
 
-    LocalDateTime processedOn;
+    private LocalDateTime processedOn;
 
-    int executionTime;
+    private int executionTime;
 
-    boolean success;
+    private boolean success;
 
     public long getId() {
         return id;

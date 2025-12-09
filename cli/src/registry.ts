@@ -9,11 +9,11 @@
  ********************************************************************************/
 
 import * as http from 'http';
-import * as https from 'https';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as followRedirects from 'follow-redirects';
-import { statusError } from './util';
+import { RegistryOptions } from './registry-options';
+import { rejectError, statusError } from './util';
 
 export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
@@ -54,17 +54,17 @@ export class Registry {
                 'Content-Type': 'application/json'
             }, this.maxNamespaceSize);
         } catch (err) {
-            return Promise.reject(err);
+            return rejectError(err);
         }
     }
 
     verifyPat(namespace: string, pat: string): Promise<Response> {
-      try {
-          const query: { [key: string]: string } = { token: pat };
-          return this.getJson(this.getUrl(`api/${namespace}/verify-pat`, query));
-      } catch (err) {
-          return Promise.reject(err);
-      }
+        try {
+            const query: { [key: string]: string } = { token: pat };
+            return this.getJson(this.getUrl(`api/${namespace}/verify-pat`, query));
+        } catch (err) {
+            return rejectError(err);
+        }
     }
 
     publish(file: string, pat: string): Promise<Extension> {
@@ -75,7 +75,7 @@ export class Registry {
                 'Content-Type': 'application/octet-stream'
             }, this.maxPublishSize);
         } catch (err) {
-            return Promise.reject(err);
+            return rejectError(err);
         }
     }
 
@@ -87,7 +87,7 @@ export class Registry {
             }
             return this.getJson(this.getUrl(path));
         } catch (err) {
-            return Promise.reject(err);
+            return rejectError(err);
         }
     }
 
@@ -106,11 +106,11 @@ export class Registry {
                 });
                 response.pipe(stream);
             });
-            stream.on('error', err => {
+            stream.on('error', (err: Error) => {
                 request.abort();
                 reject(err);
             });
-            request.on('error', err => {
+            request.on('error', (err: Error) => {
                 stream.close();
                 reject(err);
             });
@@ -145,11 +145,11 @@ export class Registry {
             const requestOptions = this.getRequestOptions('POST', headers, maxBodyLength);
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
-            stream.on('error', err => {
+            stream.on('error', (err: Error) => {
                 request.abort();
                 reject(err);
             });
-            request.on('error', err => {
+            request.on('error', (err: Error) => {
                 stream.close();
                 reject(err);
             });
@@ -167,17 +167,12 @@ export class Registry {
     }
 
     private getProtocol(url: URL) {
-        if (url.protocol === 'https:')
-            return followRedirects.https as typeof https;
-        else
-            return followRedirects.http as typeof http;
+        return url.protocol === 'https:' ? followRedirects.https : followRedirects.http;
     }
 
     private getRequestOptions(method?: string, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): http.RequestOptions {
         if (this.username && this.password) {
-            if (!headers) {
-                headers = {};
-            }
+            headers ??= {};
             const credentials = Buffer.from(this.username + ':' + this.password).toString('base64');
             headers['Authorization'] = 'Basic ' + credentials;
         }
@@ -221,33 +216,6 @@ export class Registry {
         };
     }
 
-}
-
-export interface RegistryOptions {
-    /**
-     * The base URL of the registry API.
-     */
-    registryUrl?: string;
-    /**
-     * Personal access token.
-     */
-    pat?: string;
-    /**
-     * User name for basic authentication.
-     */
-    username?: string;
-    /**
-     * Password for basic authentication.
-     */
-    password?: string;
-    /**
-     * Maximal request body size for creating namespaces.
-     */
-    maxNamespaceSize?: number;
-    /**
-     * Maximal request body size for publishing.
-     */
-    maxPublishSize?: number;
 }
 
 export interface Response {

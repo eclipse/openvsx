@@ -24,32 +24,32 @@ public class FileResource {
     public static final String README = "readme";
     public static final String LICENSE = "license";
     public static final String CHANGELOG = "changelog";
-    public static final String RESOURCE = "resource";
     public static final String VSIXMANIFEST = "vsixmanifest";
 
     // Storage types
-    public static final String STORAGE_DB = "database";
+    public static final String STORAGE_LOCAL = "local";
     public static final String STORAGE_GOOGLE = "google-cloud";
     public static final String STORAGE_AZURE = "azure-blob";
+    public static final String STORAGE_AWS = "aws";
 
     @Id
     @GeneratedValue(generator = "fileResourceSeq")
     @SequenceGenerator(name = "fileResourceSeq", sequenceName = "file_resource_seq")
-    long id;
+    private long id;
 
     @OneToOne
-    ExtensionVersion extension;
+    private ExtensionVersion extension;
 
-    String name;
+    private String name;
 
     @Column(length = 32)
-    String type;
+    private String type;
 
     @Basic(fetch = FetchType.LAZY)
-    byte[] content;
+    private byte[] content;
 
     @Column(length = 32)
-    String storageType;
+    private String storageType;
 
     public long getId() {
         return id;
@@ -83,13 +83,17 @@ public class FileResource {
         this.type = type;
     }
 
-	public byte[] getContent() {
-		return content;
-	}
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public byte[] getContent() {
+        return content;
+    }
 
-	public void setContent(byte[] content) {
-		this.content = content;
-	}
+    public void clearContent() {
+        this.content = null;
+    }
 
     public String getStorageType() {
         return storageType;

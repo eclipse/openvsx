@@ -9,11 +9,8 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.UserData;
+import io.micrometer.observation.annotation.Observed;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -27,46 +24,62 @@ import java.util.List;
 public class CacheService {
 
     public static final String CACHE_DATABASE_SEARCH = "database.search";
+    public static final String CACHE_WEB_RESOURCE_FILES = "files.webresource";
+    public static final String CACHE_BROWSE_EXTENSION_FILES = "files.browse";
+    public static final String CACHE_EXTENSION_FILES = "files.extension";
     public static final String CACHE_EXTENSION_JSON = "extension.json";
     public static final String CACHE_LATEST_EXTENSION_VERSION = "latest.extension.version";
     public static final String CACHE_NAMESPACE_DETAILS_JSON = "namespace.details.json";
     public static final String CACHE_AVERAGE_REVIEW_RATING = "average.review.rating";
     public static final String CACHE_SITEMAP = "sitemap";
+    public static final String CACHE_MALICIOUS_EXTENSIONS = "malicious.extensions";
 
     public static final String GENERATOR_EXTENSION_JSON = "extensionJsonCacheKeyGenerator";
     public static final String GENERATOR_LATEST_EXTENSION_VERSION = "latestExtensionVersionCacheKeyGenerator";
+    public static final String GENERATOR_FILES = "filesCacheKeyGenerator";
 
     private final CacheManager cacheManager;
-    private final RepositoryService repositoryService;
+    private final RepositoryService repositories;
     private final ExtensionJsonCacheKeyGenerator extensionJsonCacheKey;
     private final LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
-    private final ObservationRegistry observations;
+    private final FilesCacheKeyGenerator filesCacheKeyGenerator;
 
     public CacheService(
             CacheManager cacheManager,
-            RepositoryService repositoryService,
+            RepositoryService repositories,
             ExtensionJsonCacheKeyGenerator extensionJsonCacheKey,
             LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey,
-            ObservationRegistry observations
+            FilesCacheKeyGenerator filesCacheKeyGenerator
     ) {
         this.cacheManager = cacheManager;
-        this.repositoryService = repositoryService;
+        this.repositories = repositories;
         this.extensionJsonCacheKey = extensionJsonCacheKey;
         this.latestExtensionVersionCacheKey = latestExtensionVersionCacheKey;
-        this.observations = observations;
+        this.filesCacheKeyGenerator = filesCacheKeyGenerator;
+    }
+
+    public void evictSitemap() {
+        invalidateCache(CACHE_SITEMAP);
     }
 
     public void evictNamespaceDetails() {
         invalidateCache(CACHE_NAMESPACE_DETAILS_JSON);
     }
 
+    public void evictNamespaceDetails(Namespace namespace) {
+        evictNamespaceDetails(namespace.getName());
+    }
+
     public void evictNamespaceDetails(Extension extension) {
+        evictNamespaceDetails(extension.getNamespace().getName());
+    }
+
+    private void evictNamespaceDetails(String namespaceName) {
         var cache = cacheManager.getCache(CACHE_NAMESPACE_DETAILS_JSON);
         if(cache == null) {
             return; // cache is not created
         }
 
-        var namespaceName = extension.getNamespace().getName();
         cache.evictIfPresent(namespaceName);
     }
 
@@ -74,42 +87,33 @@ public class CacheService {
         invalidateCache(CACHE_EXTENSION_JSON);
     }
 
-    public void evictExtensionJsons(String namespaceName, String extensionName) {
-        evictExtensionJsons(repositoryService.findExtension(extensionName, namespaceName));
-    }
-
     public void evictExtensionJsons(UserData user) {
-        repositoryService.findVersions(user)
-                .map(ExtensionVersion::getExtension)
-                .toSet()
-                .forEach(this::evictExtensionJsons);
+        repositories.findExtensions(user).forEach(this::evictExtensionJsons);
     }
 
     public void evictExtensionJsons(Extension extension) {
-//        Observation.createNotStarted("CacheService#evictExtensionJsons", observations).observe(() -> {
-            var cache = cacheManager.getCache(CACHE_EXTENSION_JSON);
-            if (cache == null) {
-                return; // cache is not created
-            }
-            if (extension.getVersions() == null) {
-                return;
-            }
+        var cache = cacheManager.getCache(CACHE_EXTENSION_JSON);
+        if (cache == null) {
+            return; // cache is not created
+        }
+        if (extension.getVersions() == null) {
+            return;
+        }
 
-            var versions = new ArrayList<>(VersionAlias.ALIAS_NAMES);
-            extension.getVersions().stream()
-                    .map(ExtensionVersion::getVersion)
-                    .forEach(versions::add);
+        var versions = new ArrayList<>(VersionAlias.ALIAS_NAMES);
+        extension.getVersions().stream()
+                .map(ExtensionVersion::getVersion)
+                .forEach(versions::add);
 
-            var namespaceName = extension.getNamespace().getName();
-            var extensionName = extension.getName();
-            var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
-            targetPlatforms.add("null");
-            for (var version : versions) {
-                for (var targetPlatform : targetPlatforms) {
-                    cache.evictIfPresent(extensionJsonCacheKey.generate(namespaceName, extensionName, targetPlatform, version));
-                }
+        var namespaceName = extension.getNamespace().getName();
+        var extensionName = extension.getName();
+        var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
+        targetPlatforms.add("null");
+        for (var version : versions) {
+            for (var targetPlatform : targetPlatforms) {
+                cache.evictIfPresent(extensionJsonCacheKey.generate(namespaceName, extensionName, targetPlatform, version));
             }
-//        });
+        }
     }
 
     public void evictExtensionJsons(ExtensionVersion extVersion) {
@@ -137,25 +141,23 @@ public class CacheService {
     }
 
     public void evictLatestExtensionVersion(Extension extension) {
-//        Observation.createNotStarted("CacheService#evictLatestExtensionVersion", observations).observe(() -> {
-            var cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION);
-            if(cache == null) {
-                return;
-            }
+        var cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION);
+        if(cache == null) {
+            return;
+        }
 
-            var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
-            targetPlatforms.add(null);
-            for (var targetPlatform : targetPlatforms) {
-                for (var preRelease : List.of(true, false)) {
-                    for (var onlyActive : List.of(true, false)) {
-                        for(var type : ExtensionVersion.Type.values()) {
-                            var key = latestExtensionVersionCacheKey.generate(extension, targetPlatform, preRelease, onlyActive, type);
-                            cache.evictIfPresent(key);
-                        }
+        var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
+        targetPlatforms.add(null);
+        for (var targetPlatform : targetPlatforms) {
+            for (var preRelease : List.of(true, false)) {
+                for (var onlyActive : List.of(true, false)) {
+                    for(var type : ExtensionVersion.Type.values()) {
+                        var key = latestExtensionVersionCacheKey.generate(extension, targetPlatform, preRelease, onlyActive, type);
+                        cache.evictIfPresent(key);
                     }
                 }
             }
-//        });
+        }
     }
 
     private void invalidateCache(String cacheName) {
@@ -165,5 +167,24 @@ public class CacheService {
         }
 
         cache.invalidate();
+    }
+
+    public void evictExtensionFile(FileResource download) {
+        var cache = cacheManager.getCache(CACHE_EXTENSION_FILES);
+        if(cache == null) {
+            return;
+        }
+
+        cache.evict(filesCacheKeyGenerator.generate(download));
+    }
+
+    @Observed
+    public void evictWebResourceFile(String namespaceName, String extensionName, String targetPlatform, String version, String path) {
+        var cache = cacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
+        if(cache == null) {
+            return;
+        }
+
+        cache.evict(filesCacheKeyGenerator.generate(namespaceName, extensionName, targetPlatform, version, path));
     }
 }

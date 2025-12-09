@@ -18,6 +18,7 @@ import org.eclipse.openvsx.json.SearchEntryJson;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "targetPlatform", "version" })})
 public class ExtensionVersion implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public static final Comparator<ExtensionVersion> SORT_COMPARATOR =
         Comparator.comparing(ExtensionVersion::getSemanticVersion)
@@ -42,143 +46,146 @@ public class ExtensionVersion implements Serializable {
     @Id
     @GeneratedValue(generator = "extensionVersionSeq")
     @SequenceGenerator(name = "extensionVersionSeq", sequenceName = "extension_version_seq")
-    long id;
+    private long id;
 
     @ManyToOne
-    Extension extension;
+    private Extension extension;
 
-    String version;
+    private String version;
 
-    String targetPlatform;
+    private String targetPlatform;
 
-    boolean universalTargetPlatform;
+    private boolean universalTargetPlatform;
 
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "major", column = @Column(name = "semver_major")),
-            @AttributeOverride(name = "minor", column = @Column(name = "semver_minor")),
-            @AttributeOverride(name = "patch", column = @Column(name = "semver_patch")),
-            @AttributeOverride(name = "preRelease", column = @Column(name = "semver_pre_release")),
-            @AttributeOverride(name = "isPreRelease", column = @Column(name = "semver_is_pre_release")),
-            @AttributeOverride(name = "buildMetadata", column = @Column(name = "semver_build_metadata"))
-    })
-    SemanticVersion semver;
+    @AttributeOverride(name = "major", column = @Column(name = "semver_major"))
+    @AttributeOverride(name = "minor", column = @Column(name = "semver_minor"))
+    @AttributeOverride(name = "patch", column = @Column(name = "semver_patch"))
+    @AttributeOverride(name = "preRelease", column = @Column(name = "semver_pre_release"))
+    @AttributeOverride(name = "isPreRelease", column = @Column(name = "semver_is_pre_release"))
+    @AttributeOverride(name = "buildMetadata", column = @Column(name = "semver_build_metadata"))
+    private SemanticVersion semver;
 
-    boolean preRelease;
+    private boolean preRelease;
 
-    boolean preview;
+    private boolean preview;
 
-    LocalDateTime timestamp;
+    private LocalDateTime timestamp;
 
     @ManyToOne
-    PersonalAccessToken publishedWith;
+    private PersonalAccessToken publishedWith;
 
-    boolean active;
+    private boolean active;
 
-    String displayName;
+    private boolean potentiallyMalicious;
+
+    private String displayName;
 
     @Column(length = 2048)
-    String description;
-
-    @Column(length = 2048)
-    @Convert(converter = ListOfStringConverter.class)
-    List<String> engines;
+    private String description;
 
     @Column(length = 2048)
     @Convert(converter = ListOfStringConverter.class)
-    List<String> categories;
+    private List<String> engines;
+
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
+    private List<String> categories;
 
     @Column(length = 16384)
     @Convert(converter = ListOfStringConverter.class)
-    List<String> tags;
+    private List<String> tags;
 
     @Column
     @Convert(converter = ListOfStringConverter.class)
-    List<String> extensionKind;
+    private List<String> extensionKind;
 
-    String license;
+    private String license;
 
-    String homepage;
+    private String homepage;
 
-    String repository;
+    private String repository;
 
-    String sponsorLink;
+    private String sponsorLink;
 
-    String bugs;
-
-    @Column(length = 16)
-    String markdown;
+    private String bugs;
 
     @Column(length = 16)
-    String galleryColor;
+    private String markdown;
 
     @Column(length = 16)
-    String galleryTheme;
+    private String galleryColor;
+
+    @Column(length = 16)
+    private String galleryTheme;
 
     @Column
     @Convert(converter = ListOfStringConverter.class)
-    List<String> localizedLanguages;
+    private List<String> localizedLanguages;
 
-    String qna;
-
-    @Column(length = 2048)
-    @Convert(converter = ListOfStringConverter.class)
-    List<String> dependencies;
+    private String qna;
 
     @Column(length = 2048)
     @Convert(converter = ListOfStringConverter.class)
-    List<String> bundledExtensions;
+    private List<String> dependencies;
+
+    @Column(length = 2048)
+    @Convert(converter = ListOfStringConverter.class)
+    private List<String> bundledExtensions;
 
     @ManyToOne
-    SignatureKeyPair signatureKeyPair;
+    private SignatureKeyPair signatureKeyPair;
 
     @Transient
-    Type type;
+    private Type type;
 
     /**
      * Convert to a JSON object without URLs.
      */
     public ExtensionJson toExtensionJson() {
         var json = new ExtensionJson();
-        json.targetPlatform = this.getTargetPlatform();
+        json.setTargetPlatform(this.getTargetPlatform());
         var namespace = extension.getNamespace();
-        json.namespace = namespace.getName();
-        json.namespaceDisplayName = StringUtils.isNotEmpty(namespace.getDisplayName())
+        json.setNamespace(namespace.getName());
+        json.setNamespaceDisplayName(StringUtils.isNotEmpty(namespace.getDisplayName())
                 ? namespace.getDisplayName()
-                : json.namespace;
-        json.name = extension.getName();
-        json.averageRating = extension.getAverageRating();
-        json.downloadCount = extension.getDownloadCount();
-        json.version = this.getVersion();
-        json.preRelease = this.isPreRelease();
+                : json.getNamespace());
+        json.setName(extension.getName());
+        json.setAverageRating(extension.getAverageRating());
+        json.setDownloadCount(extension.getDownloadCount());
+        json.setVersion(this.getVersion());
+        json.setPreRelease(this.isPreRelease());
         if (this.getTimestamp() != null) {
-            json.timestamp = TimeUtil.toUTCString(this.getTimestamp());
+            json.setTimestamp(TimeUtil.toUTCString(this.getTimestamp()));
         }
-        json.displayName = this.getDisplayName();
-        json.description = this.getDescription();
-        json.engines = this.getEnginesMap();
-        json.categories = this.getCategories();
-        json.extensionKind = this.getExtensionKind();
-        json.tags = this.getTags();
-        json.license = this.getLicense();
-        json.homepage = this.getHomepage();
-        json.repository = this.getRepository();
-        json.sponsorLink = this.getSponsorLink();
-        json.bugs = this.getBugs();
-        json.markdown = this.getMarkdown();
-        json.galleryColor = this.getGalleryColor();
-        json.galleryTheme = this.getGalleryTheme();
-        json.localizedLanguages = this.getLocalizedLanguages();
-        json.qna = this.getQna();
+        json.setDisplayName(this.getDisplayName());
+        json.setDescription(this.getDescription());
+        json.setEngines(this.getEnginesMap());
+        json.setCategories(this.getCategories());
+        json.setExtensionKind(this.getExtensionKind());
+        json.setTags(this.getTags());
+        json.setLicense(this.getLicense());
+        json.setHomepage(this.getHomepage());
+        json.setRepository(this.getRepository());
+        json.setSponsorLink(this.getSponsorLink());
+        json.setBugs(this.getBugs());
+        json.setMarkdown(this.getMarkdown());
+        json.setGalleryColor(this.getGalleryColor());
+        json.setGalleryTheme(this.getGalleryTheme());
+        json.setLocalizedLanguages(this.getLocalizedLanguages());
+        json.setQna(this.getQna());
         if (this.getPublishedWith() != null) {
-            json.publishedBy = this.getPublishedWith().getUser().toUserJson();
+            json.setPublishedBy(this.getPublishedWith().getUser().toUserJson());
         }
         if (this.getDependencies() != null) {
-            json.dependencies = toExtensionReferenceJson(this.getDependencies());
+            json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
         }
         if (this.getBundledExtensions() != null) {
-            json.bundledExtensions = toExtensionReferenceJson(this.getBundledExtensions());
+            json.setBundledExtensions(toExtensionReferenceJson(this.getBundledExtensions()));
         }
+
+        json.setDeprecated(extension.isDeprecated());
+        json.setDownloadable(extension.isDownloadable());
         return json;
     }
 
@@ -190,8 +197,8 @@ public class ExtensionVersion implements Serializable {
                 return null;
             }
             var ref = new ExtensionReferenceJson();
-            ref.namespace = fqn.substring(0, startIndex);
-            ref.extension = fqn.substring(startIndex + 1);
+            ref.setNamespace(fqn.substring(0, startIndex));
+            ref.setExtension(fqn.substring(startIndex + 1));
             return ref;
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
@@ -201,31 +208,27 @@ public class ExtensionVersion implements Serializable {
      */
     public SearchEntryJson toSearchEntryJson() {
         var entry = new SearchEntryJson();
-        var extension = this.getExtension();
-        entry.name = extension.getName();
-        entry.namespace = extension.getNamespace().getName();
-        entry.averageRating = extension.getAverageRating();
-        entry.reviewCount = extension.getReviewCount();
-        entry.downloadCount = extension.getDownloadCount();
-        entry.version = this.getVersion();
-        entry.timestamp = TimeUtil.toUTCString(this.getTimestamp());
-        entry.displayName = this.getDisplayName();
-        entry.description = this.getDescription();
+        var ext = this.getExtension();
+        entry.setName(ext.getName());
+        entry.setNamespace(ext.getNamespace().getName());
+        entry.setAverageRating(ext.getAverageRating());
+        entry.setReviewCount(ext.getReviewCount());
+        entry.setDownloadCount(ext.getDownloadCount());
+        entry.setVersion(this.getVersion());
+        entry.setTimestamp(TimeUtil.toUTCString(this.getTimestamp()));
+        entry.setDisplayName(this.getDisplayName());
+        entry.setDescription(this.getDescription());
+        entry.setDeprecated(ext.isDeprecated());
         return entry;
     }
 
     public Map<String, String> getEnginesMap() {
-        var engines = this.getEngines();
-        if (engines == null)
-            return null;
-        var result = Maps.<String, String>newLinkedHashMapWithExpectedSize(engines.size());
-        for (var engine : engines) {
-            var split = engine.split("@");
-            if (split.length == 2) {
-                result.put(split[0], split[1]);
-            }
-        }
-        return result;
+        var map = Optional.ofNullable(this.getEngines()).orElse(Collections.emptyList()).stream()
+                .map(engine -> engine.split("@"))
+                .filter(split -> split.length == 2)
+                .collect(Collectors.toMap(split -> split[0], split -> split[1], (a, b) -> a, Maps::newLinkedHashMap));
+
+        return !map.isEmpty() ? map : null;
     }
 
 	public long getId() {
@@ -316,6 +319,14 @@ public class ExtensionVersion implements Serializable {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public boolean isPotentiallyMalicious() {
+        return potentiallyMalicious;
+    }
+
+    public void setPotentiallyMalicious(boolean potentiallyMalicious) {
+        this.potentiallyMalicious = potentiallyMalicious;
     }
 
 	public String getDisplayName() {
@@ -487,6 +498,7 @@ public class ExtensionVersion implements Serializable {
                 && preRelease == that.preRelease
                 && preview == that.preview
                 && active == that.active
+                && potentiallyMalicious == that.potentiallyMalicious
                 && Objects.equals(getId(extension), getId(that.extension)) // use id to prevent infinite recursion
                 && Objects.equals(version, that.version)
                 && Objects.equals(targetPlatform, that.targetPlatform)
@@ -517,7 +529,7 @@ public class ExtensionVersion implements Serializable {
     public int hashCode() {
         return Objects.hash(
                 id, getId(extension), version, targetPlatform, semver, preRelease, preview, timestamp, getId(publishedWith),
-                active, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
+                active, potentiallyMalicious, displayName, description, engines, categories, tags, extensionKind, license, homepage, repository,
                 sponsorLink, bugs, markdown, galleryColor, galleryTheme, localizedLanguages, qna, dependencies,
                 bundledExtensions, signatureKeyPair, type
         );

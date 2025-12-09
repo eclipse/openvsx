@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -22,7 +21,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.util.AbstractMap;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -41,7 +39,10 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
     public void run(MigrationJobRequest jobRequest) throws Exception {
         var download = migrations.getResource(jobRequest);
         var extVersion = download.getExtension();
-        logger.info("Extracting VSIX manifests for: {}", NamingUtil.toLogFormat(extVersion));
+        logger.atInfo()
+                .setMessage("Extracting VSIX manifests for: {}")
+                .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                .log();
 
         var existingVsixManifest = migrations.getFileResource(extVersion, FileResource.VSIXMANIFEST);
         if(existingVsixManifest != null) {
@@ -49,17 +50,18 @@ public class ExtractVsixManifestsJobRequestHandler implements JobRequestHandler<
             migrations.deleteFileResource(existingVsixManifest);
         }
 
-        var content = migrations.getContent(download);
-        var entry = new AbstractMap.SimpleEntry<>(download, content);
-        try(var extensionFile = migrations.getExtensionFile(entry)) {
+        try(var extensionFile = migrations.getExtensionFile(download)) {
             if(Files.size(extensionFile.getPath()) == 0) {
                 return;
             }
-            try (var extProcessor = new ExtensionProcessor(extensionFile, ObservationRegistry.NOOP)) {
-                var vsixManifest = extProcessor.getVsixManifest(extVersion);
-                vsixManifest.setStorageType(download.getStorageType());
-                migrations.uploadFileResource(vsixManifest);
-                migrations.persistFileResource(vsixManifest);
+            try (
+                    var extProcessor = new ExtensionProcessor(extensionFile);
+                    var vsixManifestFile = extProcessor.getVsixManifest(extVersion)
+            ) {
+                migrations.uploadFileResource(vsixManifestFile);
+                var resource = vsixManifestFile.getResource();
+                resource.setStorageType(download.getStorageType());
+                migrations.persistFileResource(resource);
             }
         }
     }

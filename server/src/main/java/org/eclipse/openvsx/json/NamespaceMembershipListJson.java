@@ -16,7 +16,7 @@ import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.v3.oas.annotations.media.Schema;;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
     name = "NamespaceMembershipList",
@@ -27,11 +27,19 @@ public class NamespaceMembershipListJson extends ResultJson {
 
     public static NamespaceMembershipListJson error(String message) {
         var result = new NamespaceMembershipListJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "List of memberships")
     @NotNull
-    public List<NamespaceMembershipJson> namespaceMemberships;
+    private List<NamespaceMembershipJson> namespaceMemberships;
+
+    public List<NamespaceMembershipJson> getNamespaceMemberships() {
+        return namespaceMemberships;
+    }
+
+    public void setNamespaceMemberships(List<NamespaceMembershipJson> namespaceMemberships) {
+        this.namespaceMemberships = namespaceMemberships;
+    }
 }

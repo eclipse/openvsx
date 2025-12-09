@@ -10,8 +10,6 @@
 package org.eclipse.openvsx;
 
 import com.google.common.collect.Iterables;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -19,12 +17,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
+import org.eclipse.openvsx.search.SortBy;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +32,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -45,27 +44,25 @@ import static org.eclipse.openvsx.util.TargetPlatform.*;
 
 @RestController
 public class RegistryAPI {
-    private final static int REVIEW_TITLE_SIZE = 255;
-    private final static int REVIEW_COMMENT_SIZE = 2048;
-    private final static String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
+    private static final int REVIEW_TITLE_SIZE = 255;
+    private static final int REVIEW_COMMENT_SIZE = 2048;
+    private static final String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX + ")|latest|pre-release";
+    private static final String NO_JSON_INPUT = "No JSON input.";
 
     protected final Logger logger = LoggerFactory.getLogger(RegistryAPI.class);
 
     private final LocalRegistryService local;
     private final UpstreamRegistryService upstream;
     private final UserService users;
-    private final ObservationRegistry observations;
 
     public RegistryAPI(
             LocalRegistryService local,
             UpstreamRegistryService upstream,
-            UserService users,
-            ObservationRegistry observations
+            UserService users
     ) {
         this.local = local;
         this.upstream = upstream;
         this.users = users;
-        this.observations = observations;
     }
 
     protected Iterable<IExtensionRegistry> getRegistries() {
@@ -82,36 +79,17 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of a namespace")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The namespace metadata are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified namespace could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The namespace metadata are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified namespace could not be found",
+        content = @Content()
+    )
     public ResponseEntity<NamespaceJson> getNamespace(
-            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+            @PathVariable @Parameter(description = "Namespace name", example = "eamodio")
             String namespace
         ) {
         for (var registry : getRegistries()) {
@@ -133,41 +111,23 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Check if a personal access token is valid and is allowed to publish in a namespace")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The provided PAT is valid and is allowed to publish extensions in the namespace"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The token has no publishing permission in the namespace or is not valid",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified namespace could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The provided PAT is valid and is allowed to publish extensions in the namespace",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The token has no publishing permission in the namespace or is not valid",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified namespace could not be found",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<ResultJson> verifyToken(
-            @PathVariable @Parameter(description = "Namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Namespace", example = "GitLab")
             String namespace,
             @RequestParam @Parameter(description = "A personal access token") String token
     ) {
@@ -187,9 +147,17 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation()
-    @ApiResponses({})
+    @ApiResponse(
+            responseCode = "200",
+            description = "The namespace details are returned in JSON format"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "The specified namespace could not be found",
+            content = @Content()
+    )
     public ResponseEntity<NamespaceDetailsJson> getNamespaceDetails(
-            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+            @PathVariable @Parameter(description = "Namespace name", example = "devsense")
             String namespace
     ) {
         for (var registry : getRegistries()) {
@@ -201,8 +169,28 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = NamespaceDetailsJson.error("Namespace not found: " + namespace);
+        var json = NamespaceDetailsJson.error(namespaceNotFoundMessage(namespace));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+    }
+
+    private String extensionNotFoundMessage(String extension) {
+        return "Extension not found: " + extension;
+    }
+
+    private String namespaceNotFoundMessage(String namespace) {
+        return "Namespace not found: " + namespace;
+    }
+
+    private String negativeSizeMessage() {
+      return negativeParameterMessage("size");
+    }
+
+    private String negativeOffsetMessage() {
+        return negativeParameterMessage("offset");
+    }
+
+    private String negativeParameterMessage(String field) {
+        return "The parameter '" + field + "' must not be negative.";
     }
 
     @GetMapping(
@@ -211,20 +199,18 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides logo of a namespace")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The namespace details are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified namespace could not be found"
-        )
-    })
-    public ResponseEntity<byte[]> getNamespaceLogo(
-            @PathVariable @Parameter(description = "Namespace name", example = "redhat")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The namespace details are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified namespace could not be found"
+    )
+    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(
+            @PathVariable @Parameter(description = "Namespace name", example = "Codeium")
             String namespace,
-            @PathVariable @Parameter(description = "Logo file name", example = "logo-redhat.png")
+            @PathVariable @Parameter(description = "Logo file name", example = "logo-codeium.png")
             String fileName
     ) {
         for (var registry : getRegistries()) {
@@ -244,38 +230,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of the latest version of an extension")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The extension metadata are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified extension could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The extension metadata are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified extension could not be found",
+        content = @Content()
+    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "rust-lang")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "rust-analyzer")
             String extension
     ) {
         for (var registry : getRegistries()) {
@@ -287,7 +254,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toExtensionId(namespace, extension));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -297,38 +264,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of the latest version of an extension")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The extension metadata are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified extension could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The extension metadata are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified extension could not be found",
+        content = @Content()
+    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "Dart-Code")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "flutter")
             String extension,
             @PathVariable
             @Parameter(
@@ -353,7 +301,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform.toString(), null));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform.toString(), null)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -363,40 +311,21 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of a specific version of an extension")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The extension metadata are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified extension could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The extension metadata are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified extension could not be found",
+        content = @Content()
+    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "TabNine")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "tabnine-vscode")
             String extension,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "3.172.0")
             String version
     ) {
         for (var registry : getRegistries()) {
@@ -408,7 +337,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, version));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, version)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -418,38 +347,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of a specific version of an extension")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The extension metadata are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified extension could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The extension metadata are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified extension could not be found",
+        content = @Content()
+    )
     public ResponseEntity<ExtensionJson> getExtension(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "julialang")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "language-julia")
             String extension,
             @PathVariable
             @Parameter(
@@ -464,7 +374,7 @@ public class RegistryAPI {
                 })
             )
             String targetPlatform,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "1.124.2")
             String version
     ) {
         for (var registry : getRegistries()) {
@@ -476,7 +386,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ExtensionJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version));
+        var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform, version)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -486,38 +396,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides a map of versions matching an extension")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "The extension versions are returned in JSON format"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "The specified extension could not be found",
-                    content = @Content()
-            ),
-            @ApiResponse(
-                    responseCode = "429",
-                    description = "A client has sent too many requests in a given amount of time",
-                    content = @Content(),
-                    headers = {
-                            @Header(
-                                    name = "X-Rate-Limit-Retry-After-Seconds",
-                                    description = "Number of seconds to wait after receiving a 429 response",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            ),
-                            @Header(
-                                    name = "X-Rate-Limit-Remaining",
-                                    description = "Remaining number of requests left",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            )
-                    }
-            )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The extension versions are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified extension could not be found",
+        content = @Content()
+    )
     public ResponseEntity<VersionsJson> getVersions(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "vscodevim")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "vim")
             String extension,
             @RequestParam(defaultValue = "18")
             @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
@@ -535,38 +426,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides a map of versions matching an extension")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "The extension versions are returned in JSON format"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "The specified extension could not be found",
-                    content = @Content()
-            ),
-            @ApiResponse(
-                    responseCode = "429",
-                    description = "A client has sent too many requests in a given amount of time",
-                    content = @Content(),
-                    headers = {
-                            @Header(
-                                    name = "X-Rate-Limit-Retry-After-Seconds",
-                                    description = "Number of seconds to wait after receiving a 429 response",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            ),
-                            @Header(
-                                    name = "X-Rate-Limit-Remaining",
-                                    description = "Remaining number of requests left",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            )
-                    }
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "The extension versions are returned in JSON format"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "The specified extension could not be found",
+            content = @Content()
+    )
     public ResponseEntity<VersionsJson> getVersions(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "stateful")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "runme")
             String extension,
             @PathVariable
             @Parameter(
@@ -593,11 +465,11 @@ public class RegistryAPI {
 
     private ResponseEntity<VersionsJson> handleGetVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
         if (size < 0) {
-            var json = VersionsJson.error("The parameter 'size' must not be negative.");
+            var json = VersionsJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = VersionsJson.error("The parameter 'offset' must not be negative.");
+            var json = VersionsJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         for (var registry : getRegistries()) {
@@ -609,7 +481,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = VersionsJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform));
+        var json = VersionsJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -619,38 +491,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides a list of version references matching an extension")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "The extension version references are returned in JSON format"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "The specified extension could not be found",
-                    content = @Content()
-            ),
-            @ApiResponse(
-                    responseCode = "429",
-                    description = "A client has sent too many requests in a given amount of time",
-                    content = @Content(),
-                    headers = {
-                            @Header(
-                                    name = "X-Rate-Limit-Retry-After-Seconds",
-                                    description = "Number of seconds to wait after receiving a 429 response",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            ),
-                            @Header(
-                                    name = "X-Rate-Limit-Remaining",
-                                    description = "Remaining number of requests left",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            )
-                    }
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "The extension version references are returned in JSON format"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "The specified extension could not be found",
+            content = @Content()
+    )
     public ResponseEntity<VersionReferencesJson> getVersionReferences(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "svelte")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "svelte-vscode")
             String extension,
             @RequestParam(defaultValue = "18")
             @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
@@ -668,38 +521,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides a list of version references matching an extension")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "The extension version references are returned in JSON format"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "The specified extension could not be found",
-                    content = @Content()
-            ),
-            @ApiResponse(
-                    responseCode = "429",
-                    description = "A client has sent too many requests in a given amount of time",
-                    content = @Content(),
-                    headers = {
-                            @Header(
-                                    name = "X-Rate-Limit-Retry-After-Seconds",
-                                    description = "Number of seconds to wait after receiving a 429 response",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            ),
-                            @Header(
-                                    name = "X-Rate-Limit-Remaining",
-                                    description = "Remaining number of requests left",
-                                    schema = @Schema(type = "integer", format = "int32")
-                            )
-                    }
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "The extension version references are returned in JSON format"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "The specified extension could not be found",
+            content = @Content()
+    )
     public ResponseEntity<VersionReferencesJson> getVersionReferences(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "hashicorp")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "terraform")
             String extension,
             @PathVariable
             @Parameter(
@@ -726,11 +560,11 @@ public class RegistryAPI {
 
     private ResponseEntity<VersionReferencesJson> handleGetVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset) {
         if (size < 0) {
-            var json = VersionReferencesJson.error("The parameter 'size' must not be negative.");
+            var json = VersionReferencesJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = VersionReferencesJson.error("The parameter 'offset' must not be negative.");
+            var json = VersionReferencesJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         for (var registry : getRegistries()) {
@@ -742,58 +576,39 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = VersionReferencesJson.error("Extension not found: " + NamingUtil.toLogFormat(namespace, extension, targetPlatform));
+        var json = VersionReferencesJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("/api/{namespace}/{extension}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
     @CrossOrigin
     @Operation(summary = "Access a file packaged by an extension")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The file content is returned"
-        ),
-        @ApiResponse(
-            responseCode = "302",
-            description = "The file is found at the specified location",
-            content = @Content(),
-            headers = @Header(
-                name = "Location",
-                description = "The actual URL where the file can be accessed",
-                schema = @Schema(type = "string")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified file could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+    @ApiResponse(
+        responseCode = "200",
+        description = "The file content is returned"
+    )
+    @ApiResponse(
+        responseCode = "302",
+        description = "The file is found at the specified location",
+        content = @Content(),
+        headers = @Header(
+            name = "Location",
+            description = "The actual URL where the file can be accessed",
+            schema = @Schema(type = "string")
         )
-    })
-    public ResponseEntity<byte[]> getFile(
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified file could not be found",
+        content = @Content()
+    )
+    public ResponseEntity<StreamingResponseBody> getFile(
             HttpServletRequest request,
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "astro-build")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "astro-vscode")
             String extension,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "2.15.4")
             String version
     ) {
         var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{version}/file/**");
@@ -810,49 +625,30 @@ public class RegistryAPI {
     @GetMapping("/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
     @CrossOrigin
     @Operation(summary = "Access a file packaged by an extension")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The file content is returned"
-        ),
-        @ApiResponse(
-            responseCode = "302",
-            description = "The file is found at the specified location",
-            content = @Content(),
-            headers = @Header(
-                name = "Location",
-                description = "The actual URL where the file can be accessed",
-                schema = @Schema(type = "string")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified file could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+    @ApiResponse(
+        responseCode = "200",
+        description = "The file content is returned"
+    )
+    @ApiResponse(
+        responseCode = "302",
+        description = "The file is found at the specified location",
+        content = @Content(),
+        headers = @Header(
+            name = "Location",
+            description = "The actual URL where the file can be accessed",
+            schema = @Schema(type = "string")
         )
-    })
-    public ResponseEntity<byte[]> getFile(
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified file could not be found",
+        content = @Content()
+    )
+    public ResponseEntity<StreamingResponseBody> getFile(
             HttpServletRequest request,
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "AdaCore")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "ada")
             String extension,
             @PathVariable
             @Parameter(
@@ -867,7 +663,7 @@ public class RegistryAPI {
                 })
             )
             String targetPlatform,
-            @PathVariable @Parameter(description = "Extension version", example = "0.65.0")
+            @PathVariable @Parameter(description = "Extension version", example = "24.0.6")
             String version
     ) {
         var fileName = UrlUtil.extractWildcardPath(request, "/api/{namespace}/{extension}/{targetPlatform}/{version}/file/**");
@@ -887,21 +683,19 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Returns the list of reviews of an extension")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The reviews are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified extension could not be found",
-            content = @Content()
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The reviews are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified extension could not be found",
+        content = @Content()
+    )
     public ResponseEntity<ReviewListJson> getReviews(
-            @PathVariable @Parameter(description = "Extension namespace", example = "redhat")
+            @PathVariable @Parameter(description = "Extension namespace", example = "Prisma")
             String namespace,
-            @PathVariable @Parameter(description = "Extension name", example = "java")
+            @PathVariable @Parameter(description = "Extension name", example = "prisma")
             String extension
     ) {
         for (var registry : getRegistries()) {
@@ -913,7 +707,7 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        var json = ReviewListJson.error("Extension not found: " + NamingUtil.toExtensionId(namespace, extension));
+        var json = ReviewListJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
         return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
     }
 
@@ -923,37 +717,18 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Search extensions via text entered by a user")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The search results are returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The request contains an invalid parameter value",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value = "{\"error\": \"The parameter 'size' must not be negative.\"}")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+    @ApiResponse(
+        responseCode = "200",
+        description = "The search results are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The request contains an invalid parameter value",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{\"error\": \"The parameter 'size' must not be negative.\"}")
         )
-    })
+    )
     public ResponseEntity<SearchResultJson> search(
             @RequestParam(required = false)
             @Parameter(description = "Query text for searching", example = "javascript")
@@ -983,40 +758,41 @@ public class RegistryAPI {
             @RequestParam(defaultValue = "desc") 
             @Parameter(description = "Descending or ascending sort order", schema = @Schema(type = "string", allowableValues = {"asc", "desc"}))
             String sortOrder,
-            @RequestParam(defaultValue = "relevance")
-            @Parameter(description = "Sort key (relevance is a weighted mix of various properties)", schema = @Schema(type = "string", allowableValues = {"relevance", "timestamp", "averageRating", "downloadCount"}))
+            @RequestParam(defaultValue = SortBy.RELEVANCE)
+            @Parameter(description = "Sort key (relevance is a weighted mix of various properties)", schema = @Schema(type = "string", allowableValues = {SortBy.RELEVANCE, SortBy.TIMESTAMP, SortBy.RATING, SortBy.DOWNLOADS}))
             String sortBy,
-            @RequestParam(required = false)
+            @RequestParam(defaultValue = "false")
             @Parameter(description = "Whether to include information on all available versions for each returned entry")
             boolean includeAllVersions
     ) {
         if (size < 0) {
-            var json = SearchResultJson.error("The parameter 'size' must not be negative.");
+            var json = SearchResultJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = SearchResultJson.error("The parameter 'offset' must not be negative.");
+            var json = SearchResultJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions);
-        var result = new SearchResultJson();
-        result.extensions = new ArrayList<>(size);
+        var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions, null);
+        var resultOffset = 0;
+        var resultSize = 0;
+        var resultExtensions = new ArrayList<SearchEntryJson>(size);
         for (var registry : getRegistries()) {
-            if (result.extensions.size() >= size) {
-                return ResponseEntity.ok(result);
+            if (resultExtensions.size() >= size) {
+                break;
             }
             try {
                 var subResult = registry.search(options);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeSearchResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
+                if(resultExtensions.isEmpty() && subResult.getExtensions() != null) {
+                    resultExtensions.addAll(subResult.getExtensions());
+                } else if (subResult.getExtensions() != null && !subResult.getExtensions().isEmpty()) {
+                    int limit = size - resultExtensions.size();
+                    var subResultSize = mergeSearchResults(resultExtensions, subResult.getExtensions(), limit);
+                    resultOffset += subResult.getOffset();
+                    offset = Math.max(offset - subResult.getOffset() - subResultSize, 0);
                 }
-                result.totalSize += subResult.totalSize;
+                resultSize += subResult.getTotalSize();
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
@@ -1024,19 +800,23 @@ public class RegistryAPI {
             }
         }
 
+        var result = new SearchResultJson();
+        result.setOffset(resultOffset);
+        result.setTotalSize(resultSize);
+        result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noCache().cachePublic())
                 .body(result);
     }
 
-    private int mergeSearchResults(SearchResultJson result, List<SearchEntryJson> entries, int limit) {
-        var previousResult = Iterables.limit(result.extensions, result.extensions.size());
+    private int mergeSearchResults(List<SearchEntryJson> extensions, List<SearchEntryJson> entries, int limit) {
+        var previousResult = Iterables.limit(extensions, extensions.size());
         var entriesIter = entries.iterator();
         int mergedEntries = 0;
-        while (entriesIter.hasNext() && result.extensions.size() < limit) {
+        while (entriesIter.hasNext() && extensions.size() < limit) {
             var next = entriesIter.next();
-            if (!Iterables.any(previousResult, ext -> ext.namespace.equals(next.namespace) && ext.name.equals(next.name))) {
-                result.extensions.add(next);
+            if (!Iterables.any(previousResult, ext -> ext.getNamespace().equals(next.getNamespace()) && ext.getName().equals(next.getName()))) {
+                extensions.add(next);
                 mergedEntries++;
             }
         }
@@ -1049,16 +829,14 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of extensions matching the given parameters")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Returns the (possibly empty) query results"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The request contains an invalid parameter value"
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "Returns the (possibly empty) query results"
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The request contains an invalid parameter value"
+    )
     public ResponseEntity<QueryResultJson> getQueryV2(
             @RequestParam(required = false)
             @Parameter(description = "Name of a namespace", example = "foo")
@@ -1070,7 +848,7 @@ public class RegistryAPI {
             @Parameter(description = "Version of an extension", example = "1")
             String extensionVersion,
             @RequestParam(required = false)
-            @Parameter(description = "Identifier in the form {namespace}.{extension}", example = "foo.bar")
+            @Parameter(description = "Identifier in the format {namespace}.{extension}", example = "foo.bar")
             String extensionId,
             @RequestParam(required = false)
             @Parameter(description = "Universally unique identifier of an extension", example = "5678")
@@ -1105,11 +883,11 @@ public class RegistryAPI {
             int offset
     ) {
         if (size < 0) {
-            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+            var json = QueryResultJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+            var json = QueryResultJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if(!List.of("true", "false", "links").contains(includeAllVersions)) {
@@ -1117,39 +895,45 @@ public class RegistryAPI {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
-        var request = new QueryRequestV2();
-        request.namespaceName = namespaceName;
-        request.extensionName = extensionName;
-        request.extensionVersion = extensionVersion;
-        request.extensionId = extensionId;
-        request.extensionUuid = extensionUuid;
-        request.namespaceUuid = namespaceUuid;
-        request.includeAllVersions = includeAllVersions;
-        request.targetPlatform = targetPlatform;
-        request.size = size;
-        request.offset = offset;
+        var request = new QueryRequestV2(
+                namespaceName,
+                extensionName,
+                extensionVersion,
+                extensionId,
+                extensionUuid,
+                namespaceUuid,
+                includeAllVersions,
+                targetPlatform,
+                size,
+                offset
+        );
 
-        var result = new QueryResultJson();
-        result.offset = request.offset;
-        result.extensions = new ArrayList<>(size);
+        var resultSize = 0;
+        var resultOffset = request.offset();
+        var resultExtensions = new ArrayList<ExtensionJson>(size);
         for (var registry : getRegistries()) {
             try {
                 var subResult = registry.queryV2(request);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
+                if(resultExtensions.isEmpty() && subResult.getExtensions() != null) {
+                    resultExtensions.addAll(subResult.getExtensions());
+                } else if (subResult.getExtensions() != null && !subResult.getExtensions().isEmpty()) {
+                    int limit = size - resultExtensions.size();
+                    var subResultSize = mergeQueryResults(resultExtensions, subResult.getExtensions(), limit);
+                    resultOffset += subResult.getOffset();
+                    offset = Math.max(offset - subResult.getOffset() - subResultSize, 0);
                 }
-                result.totalSize += subResult.totalSize;
+                resultSize += subResult.getTotalSize();
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
                 return exc.toResponseEntity(QueryResultJson.class);
             }
         }
+
+        var result = new QueryResultJson();
+        result.setOffset(resultOffset);
+        result.setTotalSize(resultSize);
+        result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                 .body(result);
@@ -1161,37 +945,18 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of extensions matching the given parameters")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Returns the (possibly empty) query results"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The request contains an invalid parameter value",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+    @ApiResponse(
+        responseCode = "200",
+        description = "Returns the (possibly empty) query results"
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The request contains an invalid parameter value",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{\"error\":\"The 'extensionId' parameter must have the format 'namespace.extension'.\"}")
         )
-    })
+    )
     public ResponseEntity<QueryResultJson> getQuery(
             @RequestParam(required = false)
             @Parameter(description = "Name of a namespace", example = "foo")
@@ -1203,7 +968,7 @@ public class RegistryAPI {
             @Parameter(description = "Version of an extension", example = "1")
             String extensionVersion,
             @RequestParam(required = false)
-            @Parameter(description = "Identifier in the form {namespace}.{extension}", example = "foo.bar")
+            @Parameter(description = "Identifier in the format {namespace}.{extension}", example = "foo.bar")
             String extensionId,
             @RequestParam(required = false)
             @Parameter(description = "Universally unique identifier of an extension", example = "5678")
@@ -1211,7 +976,7 @@ public class RegistryAPI {
             @RequestParam(required = false)
             @Parameter(description = "Universally unique identifier of a namespace", example = "1234")
             String namespaceUuid,
-            @RequestParam(required = false)
+            @RequestParam(defaultValue = "false")
             @Parameter(description = "Whether to include all versions of an extension, ignored if extensionVersion is specified")
             boolean includeAllVersions,
             @RequestParam(required = false)
@@ -1235,60 +1000,66 @@ public class RegistryAPI {
             int offset
     ) {
         if (size < 0) {
-            var json = QueryResultJson.error("The parameter 'size' must not be negative.");
+            var json = QueryResultJson.error(negativeSizeMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (offset < 0) {
-            var json = QueryResultJson.error("The parameter 'offset' must not be negative.");
+            var json = QueryResultJson.error(negativeOffsetMessage());
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         
-        var request = new QueryRequest();
-        request.namespaceName = namespaceName;
-        request.extensionName = extensionName;
-        request.extensionVersion = extensionVersion;
-        request.extensionId = extensionId;
-        request.extensionUuid = extensionUuid;
-        request.namespaceUuid = namespaceUuid;
-        request.includeAllVersions = includeAllVersions;
-        request.targetPlatform = targetPlatform;
-        request.size = size;
-        request.offset = offset;
+        var request = new QueryRequest(
+                namespaceName,
+                extensionName,
+                extensionVersion,
+                extensionId,
+                extensionUuid,
+                namespaceUuid,
+                includeAllVersions,
+                targetPlatform,
+                size,
+                offset
+        );
 
-        var result = new QueryResultJson();
-        result.offset = request.offset;
-        result.extensions = new ArrayList<>(size);
+        var resultSize = 0;
+        var resultOffset = request.offset();
+        var resultExtensions = new ArrayList<ExtensionJson>(size);
         for (var registry : getRegistries()) {
             try {
                 var subResult = registry.query(request);
-                if(result.extensions.isEmpty() && subResult.extensions != null) {
-                    result.extensions.addAll(subResult.extensions);
-                } else if (subResult.extensions != null && !subResult.extensions.isEmpty()) {
-                    int limit = size - result.extensions.size();
-                    var subResultSize = mergeQueryResults(result, subResult.extensions, limit);
-                    result.offset += subResult.offset;
-                    offset = Math.max(offset - subResult.offset - subResultSize, 0);
+                if(resultExtensions.isEmpty() && subResult.getExtensions() != null) {
+                    resultExtensions.addAll(subResult.getExtensions());
+                } else if (subResult.getExtensions() != null && !subResult.getExtensions().isEmpty()) {
+                    int limit = size - resultExtensions.size();
+                    var subResultSize = mergeQueryResults(resultExtensions, subResult.getExtensions(), limit);
+                    resultOffset += subResult.getOffset();
+                    offset = Math.max(offset - subResult.getOffset() - subResultSize, 0);
                 }
-                result.totalSize += subResult.totalSize;
+                resultSize += subResult.getTotalSize();
             } catch (NotFoundException exc) {
                 // Try the next registry
             } catch (ErrorResultException exc) {
                 return exc.toResponseEntity(QueryResultJson.class);
             }
         }
+
+        var result = new QueryResultJson();
+        result.setTotalSize(resultSize);
+        result.setOffset(resultOffset);
+        result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                 .body(result);
     }
 
-    private int mergeQueryResults(QueryResultJson result, List<ExtensionJson> entries, int limit) {
-        var previousResult = Iterables.limit(result.extensions, result.extensions.size());
+    private int mergeQueryResults(List<ExtensionJson> extensions, List<ExtensionJson> entries, int limit) {
+        var previousResult = Iterables.limit(extensions, extensions.size());
         var entriesIter = entries.iterator();
         int mergedEntries = 0;
-        while (entriesIter.hasNext() && result.extensions.size() < limit) {
+        while (entriesIter.hasNext() && extensions.size() < limit) {
             var next = entriesIter.next();
-            if (!Iterables.any(previousResult, ext -> ext.namespace.equals(next.namespace) && ext.name.equals(next.name))) {
-                result.extensions.add(next);
+            if (!Iterables.any(previousResult, ext -> ext.getNamespace().equals(next.getNamespace()) && ext.getName().equals(next.getName()))) {
+                extensions.add(next);
                 mergedEntries++;
             }
         }
@@ -1302,29 +1073,10 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Provides metadata of extensions matching the given parameters. Deprecated: use GET /api/-/query instead.", deprecated = true)
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "301",
-            description = "Returns redirect to GET /api/-/query."
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "301",
+        description = "Returns redirect to GET /api/-/query."
+    )
     public ResponseEntity<QueryResultJson> postQuery(
             @RequestBody @Parameter(description = "Parameters of the metadata query")
             QueryParamJson param
@@ -1343,46 +1095,29 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(summary = "Create a namespace")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "201",
-            description = "Successfully created the namespace",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value = "{ \"success\": \"Created namespace foobar\" }")
-            ),
-            headers = @Header(
-                name = "Location",
-                description = "The URL of the namespace metadata",
-                schema = @Schema(type = "string")
-            )
+    @ApiResponse(
+        responseCode = "201",
+        description = "Successfully created the namespace",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
+            examples = @ExampleObject(value = "{ \"success\": \"Created namespace foobar\" }")
         ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The namespace could not be created",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+        headers = @Header(
+            name = "Location",
+            description = "The URL of the namespace metadata",
+            schema = @Schema(type = "string")
         )
-    })
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The namespace could not be created",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
+            examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
+        )
+    )
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody @Parameter(description = "Describes the namespace to create")
             NamespaceJson namespace,
@@ -1390,15 +1125,15 @@ public class RegistryAPI {
             String token
     ) {
         if (namespace == null) {
-            return ResponseEntity.ok(ResultJson.error("No JSON input."));
+            return ResponseEntity.ok(ResultJson.error(NO_JSON_INPUT));
         }
-        if (StringUtils.isEmpty(namespace.name)) {
+        if (StringUtils.isEmpty(namespace.getName())) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
         }
         try {
             var json = local.createNamespace(namespace, token);
             var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.name);
+            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);
@@ -1416,54 +1151,38 @@ public class RegistryAPI {
         summary = "Create a namespace",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Describes the namespace to create",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(ref = "NamespaceJson")),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = NamespaceJson.class)),
             required = true
         )
     )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "201",
-            description = "Successfully created the namespace",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value="{ \"success\": \"Created namespace foobar\" }")
-            ),
-            headers = @Header(
-                name = "Location",
-                description = "The URL of the namespace metadata",
-                schema = @Schema(type = "string")
-            )
+    @ApiResponse(
+        responseCode = "201",
+        description = "Successfully created the namespace",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
+            examples = @ExampleObject(value="{ \"success\": \"Created namespace foobar\" }")
         ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The namespace could not be created",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value="{ \"error\": \"Invalid access token.\" }")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "User is not logged in"
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+        headers = @Header(
+            name = "Location",
+            description = "The URL of the namespace metadata",
+            schema = @Schema(type = "string")
         )
-    })
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The namespace could not be created",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class),
+            examples = @ExampleObject(value="{ \"error\": \"Invalid access token.\" }")
+        )
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "User is not logged in",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<ResultJson> createNamespace(
             @RequestBody NamespaceJson namespace
     ) {
@@ -1473,15 +1192,15 @@ public class RegistryAPI {
         }
 
         if (namespace == null) {
-            return ResponseEntity.ok(ResultJson.error("No JSON input."));
+            return ResponseEntity.ok(ResultJson.error(NO_JSON_INPUT));
         }
-        if (StringUtils.isEmpty(namespace.name)) {
+        if (StringUtils.isEmpty(namespace.getName())) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
         }
         try {
             var json = local.createNamespace(namespace, user);
             var serverUrl = UrlUtil.getBaseUrl();
-            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.name);
+            var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
                     .body(json);
@@ -1503,59 +1222,38 @@ public class RegistryAPI {
             required = true
         )
     )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "201",
-            description = "Successfully published the extension",
-            headers = @Header(
-                name = "Location",
-                description = "The URL of the extension metadata",
-                schema = @Schema(type = "string")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The extension could not be published",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+    @ApiResponse(
+        responseCode = "201",
+        description = "Successfully published the extension",
+        headers = @Header(
+            name = "Location",
+            description = "The URL of the extension metadata",
+            schema = @Schema(type = "string")
         )
-    })
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The extension could not be published",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
+        )
+    )
     public ResponseEntity<ExtensionJson> publish(
             InputStream content,
             @RequestParam @Parameter(description = "A personal access token") String token
     ) {
-        return Observation.createNotStarted("RegistryAPI#publish", observations).observe(() -> {
-            try {
-                var json = local.publish(content, token);
-                var serverUrl = UrlUtil.getBaseUrl();
-                var url = UrlUtil.createApiVersionUrl(serverUrl, json);
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .location(URI.create(url))
-                        .body(json);
-            } catch (ErrorResultException exc) {
-                logger.warn("Failed to publish extension", exc);
-                return exc.toResponseEntity(ExtensionJson.class);
-            }
-        });
+        try {
+            var json = local.publish(content, token);
+            var serverUrl = UrlUtil.getBaseUrl();
+            var url = UrlUtil.createApiVersionUrl(serverUrl, json);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create(url))
+                    .body(json);
+        } catch (ErrorResultException exc) {
+            logger.warn("Failed to publish extension", exc);
+            return exc.toResponseEntity(ExtensionJson.class);
+        }
     }
 
     @PostMapping(
@@ -1571,65 +1269,44 @@ public class RegistryAPI {
             required = true
         )
     )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "201",
-            description = "Successfully published the extension",
-            headers = @Header(
-                name = "Location",
-                description = "The URL of the extension metadata",
-                schema = @Schema(type = "string")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "The extension could not be published",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(value="{ \"error\": \"Unknown publisher: foobar\" }")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "User is not logged in"
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
+    @ApiResponse(
+        responseCode = "201",
+        description = "Successfully published the extension",
+        headers = @Header(
+            name = "Location",
+            description = "The URL of the extension metadata",
+            schema = @Schema(type = "string")
         )
-    })
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The extension could not be published",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value="{ \"error\": \"Unknown publisher: foobar\" }")
+        )
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "User is not logged in"
+    )
     public ResponseEntity<ExtensionJson> publish(InputStream content) {
-        return Observation.createNotStarted("RegistryAPI#publish", observations).observe(() -> {
-            try {
-                var user = users.findLoggedInUser();
-                if (user == null) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-                }
-
-                var json = local.publish(content, user);
-                var serverUrl = UrlUtil.getBaseUrl();
-                var url = UrlUtil.createApiUrl(serverUrl, "api", json.namespace, json.name, json.version);
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .location(URI.create(url))
-                        .body(json);
-            } catch (ErrorResultException exc) {
-                logger.warn("Failed to publish extension", exc);
-                return exc.toResponseEntity(ExtensionJson.class);
+        try {
+            var user = users.findLoggedInUser();
+            if (user == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
-        });
+
+            var json = local.publish(content, user);
+            var serverUrl = UrlUtil.getBaseUrl();
+            var url = UrlUtil.createApiUrl(serverUrl, "api", json.getNamespace(), json.getName(), json.getVersion());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create(url))
+                    .body(json);
+        } catch (ErrorResultException exc) {
+            logger.warn("Failed to publish extension", exc);
+            return exc.toResponseEntity(ExtensionJson.class);
+        }
     }
 
     @PostMapping(
@@ -1644,23 +1321,23 @@ public class RegistryAPI {
             @PathVariable String extension
     ) {
         if (review == null) {
-            var json = ResultJson.error("No JSON input.");
+            var json = ResultJson.error(NO_JSON_INPUT);
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
-        if (review.rating < 0 || review.rating > 5) {
+        if (review.getRating() < 0 || review.getRating() > 5) {
             var json = ResultJson.error("The rating must be an integer number between 0 and 5.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
-        if (review.title != null && review.title.length() > REVIEW_TITLE_SIZE) {
+        if (review.getTitle() != null && review.getTitle().length() > REVIEW_TITLE_SIZE) {
             var json = ResultJson.error("The title must not be longer than " + REVIEW_TITLE_SIZE + " characters.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
-        if (review.comment != null && review.comment.length() > REVIEW_COMMENT_SIZE) {
+        if (review.getComment() != null && review.getComment().length() > REVIEW_COMMENT_SIZE) {
             var json = ResultJson.error("The review must not be longer than " + REVIEW_COMMENT_SIZE + " characters.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         var json = local.postReview(review, namespace, extension);
-        if (json.error == null) {
+        if (json.getError() == null) {
             return new ResponseEntity<>(json, HttpStatus.CREATED);
         } else {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
@@ -1674,7 +1351,7 @@ public class RegistryAPI {
     @Operation(hidden = true)
     public ResponseEntity<ResultJson> deleteReview(@PathVariable String namespace, @PathVariable String extension) {
         var json = local.deleteReview(namespace, extension);
-        if (json.error == null) {
+        if (json.getError() == null) {
             return ResponseEntity.ok(json);
         } else {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
@@ -1687,34 +1364,15 @@ public class RegistryAPI {
     )
     @CrossOrigin
     @Operation(summary = "Access a public key file")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The file content is returned"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The specified public key file could not be found",
-            content = @Content()
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            content = @Content(),
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The file content is returned"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified public key file could not be found",
+        content = @Content()
+    )
     public ResponseEntity<String> getPublicKey(
             @PathVariable @Parameter(description = "Public ID of a public key file", example = "92dea4de-80b5-4577-b27d-44cdcda82c63")
             String publicId
@@ -1736,32 +1394,14 @@ public class RegistryAPI {
     @GetMapping(path = "/api/version", produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin
     @Operation(summary = "Return the registry version")
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "The registry version is returned in JSON format"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "The registry version could not be determined"
-        ),
-        @ApiResponse(
-            responseCode = "429",
-            description = "A client has sent too many requests in a given amount of time",
-            headers = {
-                @Header(
-                    name = "X-Rate-Limit-Retry-After-Seconds",
-                    description = "Number of seconds to wait after receiving a 429 response",
-                    schema = @Schema(type = "integer", format = "int32")
-                ),
-                @Header(
-                    name = "X-Rate-Limit-Remaining",
-                    description = "Remaining number of requests left",
-                    schema = @Schema(type = "integer", format = "int32")
-                )
-            }
-        )
-    })
+    @ApiResponse(
+        responseCode = "200",
+        description = "The registry version is returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The registry version could not be determined"
+    )
     public ResponseEntity<RegistryVersionJson> getServerVersion() {
         try {
             return ResponseEntity.ok()

@@ -35,63 +35,94 @@ public class UpstreamProxyService {
     protected final Logger logger = LoggerFactory.getLogger(UpstreamProxyService.class);
 
     public NamespaceJson rewriteUrls(NamespaceJson json) {
-        rewriteUrlMap(json.extensions);
-        if(!StringUtils.isEmpty(json.membersUrl)) {
-            json.membersUrl = rewriteUrl(json.membersUrl);
+        rewriteUrlMap(json.getExtensions());
+        if(!StringUtils.isEmpty(json.getMembersUrl())) {
+            json.setMembersUrl(rewriteUrl(json.getMembersUrl()));
         }
-        if(!StringUtils.isEmpty(json.roleUrl)) {
-            json.roleUrl = rewriteUrl(json.roleUrl);
+        if(!StringUtils.isEmpty(json.getRoleUrl())) {
+            json.setRoleUrl(rewriteUrl(json.getRoleUrl()));
         }
 
         return json;
     }
 
     public ExtensionJson rewriteUrls(ExtensionJson json) {
-        json.namespaceUrl = rewriteUrl(json.namespaceUrl);
-        json.reviewsUrl = rewriteUrl(json.reviewsUrl);
-        rewriteUrlMap(json.files);
-        rewriteUrlMap(json.allVersions);
-        json.dependencies = rewriteUrlList(json.dependencies, this::rewriteUrls);
-        json.bundledExtensions = rewriteUrlList(json.bundledExtensions, this::rewriteUrls);
-        rewriteUrlMap(json.downloads);
+        json.setNamespaceUrl(rewriteUrl(json.getNamespaceUrl()));
+        json.setReviewsUrl(rewriteUrl(json.getReviewsUrl()));
+        rewriteUrlMap(json.getFiles());
+        rewriteUrlMap(json.getAllVersions());
+        json.setDependencies(rewriteUrlList(json.getDependencies(), this::rewriteUrls));
+        json.setBundledExtensions(rewriteUrlList(json.getBundledExtensions(), this::rewriteUrls));
+        rewriteUrlMap(json.getDownloads());
         return json;
     }
 
     public SearchResultJson rewriteUrls(SearchResultJson json) {
-        json.extensions = rewriteUrlList(json.extensions, this::rewriteUrls);
+        json.setExtensions(rewriteUrlList(json.getExtensions(), this::rewriteUrls));
         return json;
     }
 
     public QueryResultJson rewriteUrls(QueryResultJson json) {
-        json.extensions = rewriteUrlList(json.extensions, this::rewriteUrls);
+        json.setExtensions(rewriteUrlList(json.getExtensions(), this::rewriteUrls));
         return json;
     }
 
     public ExtensionQueryResult rewriteUrls(ExtensionQueryResult json) {
-        for(var result : json.results) {
-            for(var extension : result.extensions) {
-                for(var version : extension.versions) {
-                    version.assetUri = rewriteUrl(version.assetUri);
-                    version.fallbackAssetUri = rewriteUrl(version.fallbackAssetUri);
-                    for (var file : version.files) {
-                        file.source = rewriteUrl(file.source);
-                    }
-                }
-            }
-        }
-        return json;
+        return new ExtensionQueryResult(json.results().stream()
+                .map(result -> new ExtensionQueryResult.ResultItem(rewriteExtensionUrls(result.extensions()), result.resultMetadata()))
+                .toList());
+    }
+
+    private List<ExtensionQueryResult.Extension> rewriteExtensionUrls(List<ExtensionQueryResult.Extension> extensions) {
+        return extensions.stream()
+                .map(extension -> new ExtensionQueryResult.Extension(
+                        extension.extensionId(),
+                        extension.extensionName(),
+                        extension.displayName(),
+                        extension.shortDescription(),
+                        extension.publisher(),
+                        rewriteVersionUrls(extension.versions()),
+                        extension.statistics(),
+                        extension.tags(),
+                        extension.releaseDate(),
+                        extension.publishedDate(),
+                        extension.lastUpdated(),
+                        extension.categories(),
+                        extension.flags()
+                ))
+                .toList();
+    }
+
+    private List<ExtensionQueryResult.ExtensionVersion> rewriteVersionUrls(List<ExtensionQueryResult.ExtensionVersion> versions) {
+        return versions.stream()
+                .map(version -> new ExtensionQueryResult.ExtensionVersion(
+                        version.version(),
+                        version.lastUpdated(),
+                        rewriteUrl(version.assetUri()),
+                        rewriteUrl(version.fallbackAssetUri()),
+                        rewriteFileUrls(version.files()),
+                        version.properties(),
+                        version.targetPlatform()
+                ))
+                .toList();
+    }
+
+    private List<ExtensionQueryResult.ExtensionFile> rewriteFileUrls(List<ExtensionQueryResult.ExtensionFile> files) {
+        return files.stream()
+                .map(file -> new ExtensionQueryResult.ExtensionFile(
+                        file.assetType(),
+                        rewriteUrl(file.source())
+                ))
+                .toList();
     }
 
     public VersionsJson rewriteUrls(VersionsJson json) {
-        rewriteUrlMap(json.versions);
+        rewriteUrlMap(json.getVersions());
         return json;
     }
 
     public VersionReferencesJson rewriteUrls(VersionReferencesJson json) {
-        json.versions = json.versions.stream()
-                .map(this::rewriteUrls)
-                .collect(Collectors.toList());
-
+        json.setVersions(json.getVersions().stream().map(this::rewriteUrls).toList());
         return json;
     }
 
@@ -111,22 +142,21 @@ public class UpstreamProxyService {
     }
 
     private SearchEntryJson rewriteUrls(SearchEntryJson json) {
-        json.url = rewriteUrl(json.url);
-        rewriteUrlMap(json.files);
-        json.allVersions = rewriteUrlList(json.allVersions, this::rewriteUrls);
+        json.setUrl(rewriteUrl(json.getUrl()));
+        rewriteUrlMap(json.getFiles());
+        json.setAllVersions(rewriteUrlList(json.getAllVersions(), this::rewriteUrls));
 
         return json;
     }
 
     private VersionReferenceJson rewriteUrls(VersionReferenceJson json) {
-        json.url = rewriteUrl(json.url);
-        rewriteUrlMap(json.files);
-
+        json.setUrl(rewriteUrl(json.getUrl()));
+        rewriteUrlMap(json.getFiles());
         return json;
     }
 
     private ExtensionReferenceJson rewriteUrls(ExtensionReferenceJson json) {
-        json.url = rewriteUrl(json.url);
+        json.setUrl(rewriteUrl(json.getUrl()));
         return json;
     }
 

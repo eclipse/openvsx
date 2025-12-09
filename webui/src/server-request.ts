@@ -29,12 +29,8 @@ export interface ErrorResponse {
 }
 
 export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
-    if (!req.method) {
-        req.method = 'GET';
-    }
-    if (!req.headers) {
-        req.headers = {};
-    }
+    req.method ??= 'GET';
+    req.headers ??= {};
     if (!req.headers['Accept']) {
         req.headers['Accept'] = 'application/json';
     }
@@ -44,7 +40,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         signal: req.abortController.signal
     };
     if (req.payload) {
-        param.body = (req.payload instanceof File) ? req.payload : JSON.stringify(req.payload);
+        param.body = (req.payload instanceof File || req.payload instanceof FormData) ? req.payload : JSON.stringify(req.payload);
     }
     param.headers = req.headers;
     if (req.followRedirect) {
@@ -66,7 +62,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
 
     const response = await fetchBuilder(fetch, options)(req.endpoint, param);
     if (response.ok) {
-        switch (req.headers!['Accept']) {
+        switch (req.headers['Accept']) {
             case 'application/json':
                 return response.json();
             case 'text/plain':
@@ -74,10 +70,10 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
             case 'application/octet-stream':
                 return response.blob() as Promise<any>;
             default:
-                throw new Error(`Unsupported type ${req.headers!['Accept']}`);
+                throw new Error(`Unsupported type ${req.headers['Accept']}`);
         }
     } else if (response.status === 429) {
-        const retrySeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds') || '0';
+        const retrySeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds') ?? '0';
         const jitter = Math.floor(Math.random() * 100);
         const timeoutMillis = ((Number(retrySeconds) + 1) * 1000) + jitter;
         return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req))

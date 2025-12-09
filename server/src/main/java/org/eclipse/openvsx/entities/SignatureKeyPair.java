@@ -11,6 +11,7 @@ package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -19,6 +20,9 @@ import java.util.Objects;
 @Entity
 public class SignatureKeyPair implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     public static final String KEYPAIR_MODE_CREATE = "create";
     public static final String KEYPAIR_MODE_RENEW = "renew";
     public static final String KEYPAIR_MODE_DELETE = "delete";
@@ -26,19 +30,19 @@ public class SignatureKeyPair implements Serializable {
     @Id
     @GeneratedValue(generator = "signatureKeyPairSeq")
     @SequenceGenerator(name = "signatureKeyPairSeq", sequenceName = "signature_key_pair_seq")
-    long id;
+    private long id;
 
     @Column(length = 128)
-    String publicId;
+    private String publicId;
 
     @Column(length = 32)
-    byte[] privateKey;
+    private byte[] privateKey;
 
-    String publicKeyText;
+    private String publicKeyText;
 
-    LocalDateTime created;
+    private LocalDateTime created;
 
-    boolean active;
+    private boolean active;
 
     public long getId() {
         return id;

@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.admin;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -33,6 +34,8 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 @Component
 public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<ChangeNamespaceJobRequest> {
 
+    private static final String EXT_PACKAGE = ".vsix";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeNamespaceJobRequestHandler.class);
 
     private static final List<String> RENAME_TYPES = List.of(DOWNLOAD, DOWNLOAD_SHA256, DOWNLOAD_SIG);
@@ -41,6 +44,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
     static {
         var MAX_SIZE = 100;
         LOCKS = Collections.synchronizedMap(new LinkedHashMap<>(MAX_SIZE) {
+            @Override
             protected boolean removeEldestEntry(Map.Entry eldest){
                 return size() > MAX_SIZE;
             }
@@ -66,77 +70,59 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
 
     @Override
     public void run(ChangeNamespaceJobRequest jobRequest) throws Exception {
-        var oldNamespace = jobRequest.getData().oldNamespace;
-        synchronized (LOCKS.computeIfAbsent(oldNamespace, key -> new Object())) {
+        var oldNamespace = jobRequest.getData().oldNamespace();
+        Object lock;
+        synchronized (LOCKS) {
+            lock = LOCKS.computeIfAbsent(oldNamespace, key -> new Object());
+        }
+        synchronized (lock) {
             execute(jobRequest);
         }
     }
 
     private void execute(ChangeNamespaceJobRequest jobRequest) {
         var json = jobRequest.getData();
-        LOGGER.info(">> Change namespace from {} to {}", json.oldNamespace, json.newNamespace);
-        var oldNamespace = repositories.findNamespace(json.oldNamespace);
+        LOGGER.info(">> Change namespace from {} to {}", json.oldNamespace(), json.newNamespace());
+        var oldNamespace = repositories.findNamespace(json.oldNamespace());
         if(oldNamespace == null) {
             return;
         }
 
-        var oldResources = repositories.findFileResources(oldNamespace);
-        var newNamespaceOptional = Optional.ofNullable(repositories.findNamespace(json.newNamespace));
+        var newNamespaceOptional = Optional.ofNullable(repositories.findNamespace(json.newNamespace()));
         var createNewNamespace = newNamespaceOptional.isEmpty();
         var newNamespace = newNamespaceOptional.orElseGet(() -> {
-            validateNamespace(json.newNamespace);
+            validateNamespace(json.newNamespace());
             var namespace = new Namespace();
-            namespace.setName(json.newNamespace);
+            namespace.setName(json.newNamespace());
             return namespace;
         });
 
-        var copyResources = oldResources.stream()
-                .findFirst()
-                .map(storageUtil::shouldStoreExternally)
-                .orElse(false);
+        var oldResources = repositories.findFileResources(oldNamespace);
+        var pairs = copyResources(oldResources, newNamespace);
+        storageUtil.copyFiles(pairs);
+        var updatedResources = pairs.stream()
+                .filter(pair -> RENAME_TYPES.contains(pair.getFirst().getType()))
+                .map(pair -> {
+                    var oldResource = pair.getFirst();
+                    var newResource = pair.getSecond();
+                    oldResource.setName(newResource.getName());
+                    return oldResource;
+                })
+                .collect(Collectors.toList());
 
-        List<Pair<FileResource, FileResource>> pairs = null;
-        List<FileResource> updatedResources;
-        if(copyResources) {
-            pairs = copyResources(oldResources, newNamespace);
-            storageUtil.copyFiles(pairs);
-            updatedResources = pairs.stream()
-                    .filter(pair -> RENAME_TYPES.contains(pair.getFirst().getType()))
-                    .map(pair -> {
-                        var oldResource = pair.getFirst();
-                        var newResource = pair.getSecond();
-                        oldResource.setName(newResource.getName());
-                        return oldResource;
-                    })
-                    .collect(Collectors.toList());
-        } else {
-            var newBinaryNames = oldResources.stream()
-                    .map(FileResource::getExtension)
-                    .collect(Collectors.groupingBy(ExtensionVersion::getId))
-                    .entrySet().stream()
-                    .map(entry -> {
-                        var newBinaryName = newBinaryName(newNamespace, entry.getValue().get(0));
-                        return new AbstractMap.SimpleEntry<>(entry.getKey(), newBinaryName);
-                    })
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            updatedResources = oldResources
-                    .filter(resource -> RENAME_TYPES.contains(resource.getType()))
-                    .map(resource -> {
-                        resource.setName(getNewResourceName(resource, newBinaryNames));
-                        return resource;
-                    })
-                    .toList();
+        if(StringUtils.isNotEmpty(oldNamespace.getLogoName())) {
+            newNamespace.setLogoName(NamingUtil.changeLogoName(oldNamespace, newNamespace));
+            storageUtil.copyNamespaceLogo(oldNamespace, newNamespace);
         }
 
-        service.changeNamespaceInDatabase(newNamespace, oldNamespace, updatedResources, createNewNamespace, json.removeOldNamespace);
-        if(copyResources) {
-            // remove the old resources from external storage
-            pairs.stream()
-                    .map(Pair::getFirst)
-                    .forEach(storageUtil::removeFile);
-        }
-        LOGGER.info("<< Changed namespace from {} to {}", json.oldNamespace, json.newNamespace);
+        service.changeNamespaceInDatabase(newNamespace, oldNamespace, updatedResources, createNewNamespace, json.removeOldNamespace());
+
+        // remove the old resources from external storage
+        pairs.stream()
+                .map(Pair::getFirst)
+                .forEach(storageUtil::removeFile);
+
+        LOGGER.info("<< Changed namespace from {} to {}", json.oldNamespace(), json.newNamespace());
     }
 
     private void validateNamespace(String namespace) {
@@ -161,22 +147,22 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                     newExtension.setId(extension.getId());
                     newExtension.setName(extension.getName());
                     newExtension.setNamespace(newNamespace);
-                    return new AbstractMap.SimpleEntry<>(entry.getKey(), newExtension);
+                    return Map.entry(entry.getKey(), newExtension);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        for(var key : extVersions.keySet()) {
-            var extVersion = extVersions.get(key);
+        for(var entry : extVersions.entrySet()) {
+            var extVersion = entry.getValue();
             var newExtVersion = new ExtensionVersion();
             newExtVersion.setId(extVersion.getId());
             newExtVersion.setExtension(extensions.get(extVersion.getExtension().getId()));
             newExtVersion.setVersion(extVersion.getVersion());
             newExtVersion.setTargetPlatform(extVersion.getTargetPlatform());
-            extVersions.put(key, newExtVersion);
+            entry.setValue(newExtVersion);
         }
 
         var newBinaryNames = extVersions.values().stream()
-                .map(extVersion -> new AbstractMap.SimpleEntry<>(extVersion.getId(), newBinaryName(newNamespace, extVersion)))
+                .map(extVersion -> Map.entry(extVersion.getId(), newBinaryName(newNamespace, extVersion)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return resources.stream()
@@ -199,10 +185,10 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                 : resource.getName();
 
         if(resource.getType().equals(DOWNLOAD_SHA256)) {
-            name = name.replace(".vsix", ".sha256");
+            name = name.replace(EXT_PACKAGE, ".sha256");
         }
         if(resource.getType().equals(DOWNLOAD_SIG)) {
-            name = name.replace(".vsix", ".sigzip");
+            name = name.replace(EXT_PACKAGE, ".sigzip");
         }
 
         LOGGER.info("New resource name: {}", name);
@@ -215,7 +201,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                 extVersion.getExtension().getName(),
                 extVersion.getTargetPlatform(),
                 extVersion.getVersion(),
-                ".vsix"
+                EXT_PACKAGE
         );
     }
 }

@@ -15,63 +15,64 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.MigrationItem;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.storage.AzureBlobStorageService;
-import org.eclipse.openvsx.storage.GoogleCloudStorageService;
-import org.eclipse.openvsx.storage.IStorageService;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.UUID;
 
 @Component
 public class MigrationService {
 
+    private static final Map<String, Class<? extends JobRequestHandler<MigrationJobRequest>>> JOB_HANDLERS = Map.of(
+            "SetPreReleaseMigration", SetPreReleaseJobRequestHandler.class,
+            "RenameDownloadsMigration", RenameDownloadsJobRequestHandler.class,
+            "ExtractVsixManifestMigration", ExtractVsixManifestsJobRequestHandler.class,
+            "FixTargetPlatformMigration", FixTargetPlatformsJobRequestHandler.class,
+            "GenerateSha256ChecksumMigration", GenerateSha256ChecksumJobRequestHandler.class,
+            "CheckPotentiallyMaliciousExtensionVersions", PotentiallyMaliciousJobRequestHandler.class,
+            "LocalNamespaceLogoMigration", NamespaceLogoFileResourceJobRequestHandler.class,
+            "LocalFileResourceContentMigration", FileResourceContentJobRequestHandler.class,
+            "RemoveFileResourceTypeResourceMigration", RemoveFileResourceTypeResourceJobRequestHandler.class,
+            "FixMissingFilesMigration", FixMissingFilesJobRequestHandler.class
+    );
+
     protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
 
-    private final RestTemplate backgroundRestTemplate;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
-    private final AzureBlobStorageService azureStorage;
-    private final GoogleCloudStorageService googleStorage;
+    private final StorageUtilService storageUtil;
     private final JobRequestScheduler scheduler;
 
     public MigrationService(
-            RestTemplate backgroundRestTemplate,
             EntityManager entityManager,
             RepositoryService repositories,
-            AzureBlobStorageService azureStorage,
-            GoogleCloudStorageService googleStorage,
+            StorageUtilService storageUtil,
             JobRequestScheduler scheduler
     ) {
-        this.backgroundRestTemplate =  backgroundRestTemplate;
         this.entityManager = entityManager;
         this.repositories = repositories;
-        this.azureStorage = azureStorage;
-        this.googleStorage = googleStorage;
+        this.storageUtil = storageUtil;
         this.scheduler = scheduler;
     }
 
     @Transactional
-    public void enqueueMigration(String jobName, Class<? extends JobRequestHandler<MigrationJobRequest>> handler, MigrationItem item) {
+    public void enqueueMigration(MigrationItem item) {
         item = entityManager.merge(item);
-        var jobIdText = jobName + "::itemId=" + item.getId();
+        var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+        var handler = JOB_HANDLERS.get(item.getJobName());
         scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId()));
+        logger.info("Enqueued migration {}", jobIdText);
         item.setMigrationScheduled(true);
     }
 
@@ -83,65 +84,24 @@ public class MigrationService {
         return entityManager.find(FileResource.class, jobRequest.getEntityId());
     }
 
-    @Retryable
-    public TempFile getExtensionFile(Map.Entry<FileResource, byte[]> entry) throws IOException {
-        var extensionFile = new TempFile("migration-extension_", ".vsix");
-
-        var content = entry.getValue();
-        if(content == null) {
-            var download = entry.getKey();
-            var storage = getStorage(download);
-            var uri = storage.getLocation(download);
-            try {
-                backgroundRestTemplate.execute("{extensionLocation}", HttpMethod.GET, null, response -> {
-                    try (var out = Files.newOutputStream(extensionFile.getPath())) {
-                        response.getBody().transferTo(out);
-                    }
-
-                    return extensionFile;
-                }, Map.of("extensionLocation", uri.toString()));
-            } catch (HttpClientErrorException e) {
-                if(e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                    logger.warn("Could not find extension file for: {}", NamingUtil.toLogFormat(download.getExtension()));
-                } else {
-                    throw e;
-                }
-            }
-        } else {
-            Files.write(extensionFile.getPath(), content);
-        }
-
-        return extensionFile;
+    @Transactional
+    public void updateResource(FileResource resource) {
+        entityManager.merge(resource);
     }
 
     @Retryable
-    public void uploadFileResource(FileResource resource) {
-        if(resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            return;
-        }
-
-        var storage = getStorage(resource);
-        storage.uploadFile(resource);
-        resource.setContent(null);
+    public TempFile getExtensionFile(FileResource resource) throws IOException {
+        return storageUtil.downloadFile(resource);
     }
 
     @Retryable
-    public void uploadFileResource(FileResource resource, TempFile extensionFile) {
-        if(resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            return;
-        }
-
-        var storage = getStorage(resource);
-        storage.uploadFile(resource, extensionFile);
-        resource.setContent(null);
+    public void uploadFileResource(TempFile tempFile) {
+        storageUtil.uploadFile(tempFile);
     }
 
     @Retryable
     public void removeFile(FileResource resource) {
-        if(!resource.getStorageType().equals(FileResource.STORAGE_DB)) {
-            var storage = getStorage(resource);
-            storage.removeFile(resource);
-        }
+        storageUtil.removeFile(resource);
     }
 
     @Transactional
@@ -159,30 +119,15 @@ public class MigrationService {
         return repositories.findFileByType(extVersion, type);
     }
 
-    @Transactional
-    public Map.Entry<FileResource, byte[]> getDownload(ExtensionVersion extVersion) {
+    public FileResource getDownload(ExtensionVersion extVersion) {
         var download = repositories.findFileByType(extVersion, FileResource.DOWNLOAD);
-        if(download != null) {
-            var content = download.getStorageType().equals(FileResource.STORAGE_DB) ? download.getContent() : null;
-            return new AbstractMap.SimpleEntry<>(download, content);
-        } else {
-            logger.warn("Could not find download for: {}", NamingUtil.toLogFormat(extVersion));
-            return null;
+        if(download == null) {
+            logger.atWarn()
+                    .setMessage("Could not find download for: {}")
+                    .addArgument(() -> NamingUtil.toLogFormat(extVersion))
+                    .log();
         }
-    }
 
-    @Transactional
-    public byte[] getContent(FileResource download) {
-        download = entityManager.merge(download);
-        return download.getStorageType().equals(FileResource.STORAGE_DB) ? download.getContent() : null;
-    }
-
-    private IStorageService getStorage(FileResource resource) {
-        var storages = Map.of(
-                FileResource.STORAGE_AZURE, azureStorage,
-                FileResource.STORAGE_GOOGLE, googleStorage
-        );
-
-        return storages.get(resource.getStorageType());
+        return download;
     }
 }

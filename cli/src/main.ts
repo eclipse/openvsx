@@ -15,8 +15,9 @@ import { verifyPat } from './verify-pat';
 import { publish } from './publish';
 import { handleError } from './util';
 import { getExtension } from './get';
-
-const pkg = require('../package.json');
+import login from './login';
+import logout from './logout';
+import { LIB_VERSION } from './version';
 
 module.exports = function (argv: string[]): void {
     const program = new commander.Command();
@@ -24,7 +25,7 @@ module.exports = function (argv: string[]): void {
         .option('-r, --registryUrl <url>', 'Use the registry API at this base URL.')
         .option('-p, --pat <token>', 'Personal access token.')
         .option('--debug', 'Include debug information on error')
-        .version(pkg.version, '-V, --version', 'Print the Eclipse Open VSX CLI version');
+        .version(LIB_VERSION, '-V, --version', 'Print the Eclipse Open VSX CLI version');
 
     const createNamespaceCmd = program.command('create-namespace <name>');
     createNamespaceCmd.description('Create a new namespace')
@@ -52,7 +53,8 @@ module.exports = function (argv: string[]): void {
         .option('--pre-release', 'Mark this package as a pre-release')
         .option('--no-dependencies', 'Disable dependency detection via npm or yarn')
         .option('--skip-duplicate', 'Fail silently if version already exists on the marketplace')
-        .action((extensionFile: string, { target, packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate }) => {
+        .option('--packageVersion <version>', 'Version of the provided VSIX packages.')
+        .action((extensionFile: string, { target, packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate, packageVersion }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -67,16 +69,17 @@ module.exports = function (argv: string[]): void {
                 console.warn("Ignoring option '--baseImagesUrl' for prepackaged extension.");
             if (extensionFile !== undefined && yarn !== undefined)
                 console.warn("Ignoring option '--yarn' for prepackaged extension.");
+            if (extensionFile !== undefined && packageVersion !== undefined)
+                console.warn("Ignoring option '--packageVersion' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
-            publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate })
+            publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, dependencies, skipDuplicate, packageVersion })
                 .then(results => {
                     const reasons = results.filter(result => result.status === 'rejected')
-                        .map(result => result as PromiseRejectedResult)
                         .map(rejectedResult => rejectedResult.reason);
 
                     if (reasons.length > 0) {
                         const message = 'See the documentation for more information:\n'
-                        + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions';
+                            + 'https://github.com/eclipse/openvsx/wiki/Publishing-Extensions';
                         const errorHandler = handleError(program.debug, message, false);
                         for (const reason of reasons) {
                             errorHandler(reason);
@@ -97,6 +100,19 @@ module.exports = function (argv: string[]): void {
             const { registryUrl } = program.opts();
             getExtension({ extensionId, target: target, version: versionRange, registryUrl, output, metadata })
                 .catch(handleError(program.debug));
+        });
+
+    const loginCmd = program.command('login <namespace>');
+    loginCmd.description('Adds a namespace to the list of known namespaces')
+        .action((namespace: string) => {
+            const { registryUrl, pat } = program.opts();
+            login({ namespace, registryUrl, pat }).catch(handleError(program.debug));
+        });
+
+    const logoutCmd = program.command('logout <namespace>');
+    logoutCmd.description('Removes a namespace from the list of known namespaces')
+        .action((namespace: string) => {
+            logout(namespace).catch(handleError(program.debug));
         });
 
     program

@@ -18,71 +18,279 @@ public class AdminStatisticsJson extends ResultJson {
 
     public static AdminStatisticsJson error(String message) {
         var result = new AdminStatisticsJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
-    public int year;
+    private int year;
 
-    public int month;
+    private int month;
 
-    public long extensions;
+    private long extensions;
 
-    public long downloads;
+    private long downloads;
 
-    public long downloadsTotal;
+    private long downloadsTotal;
 
-    public long publishers;
+    private long publishers;
 
-    public double averageReviewsPerExtension;
+    private double averageReviewsPerExtension;
 
-    public long namespaceOwners;
+    private long namespaceOwners;
 
-    public List<ExtensionsByRating> extensionsByRating;
+    private List<ExtensionsByRating> extensionsByRating;
 
-    public List<PublishersByExtensionsPublished> publishersByExtensionsPublished;
+    private List<PublishersByExtensionsPublished> publishersByExtensionsPublished;
 
-    public List<TopMostActivePublishingUsers> topMostActivePublishingUsers;
+    private List<TopMostActivePublishingUsers> topMostActivePublishingUsers;
 
-    public List<TopNamespaceExtensions> topNamespaceExtensions;
+    private List<TopNamespaceExtensions> topNamespaceExtensions;
 
-    public List<TopNamespaceExtensionVersions> topNamespaceExtensionVersions;
+    private List<TopNamespaceExtensionVersions> topNamespaceExtensionVersions;
 
-    public List<TopMostDownloadedExtensions> topMostDownloadedExtensions;
+    private List<TopMostDownloadedExtensions> topMostDownloadedExtensions;
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
+    }
+
+    public int getMonth() {
+        return month;
+    }
+
+    public void setMonth(int month) {
+        this.month = month;
+    }
+
+    public long getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(long extensions) {
+        this.extensions = extensions;
+    }
+
+    public long getDownloads() {
+        return downloads;
+    }
+
+    public void setDownloads(long downloads) {
+        this.downloads = downloads;
+    }
+
+    public long getDownloadsTotal() {
+        return downloadsTotal;
+    }
+
+    public void setDownloadsTotal(long downloadsTotal) {
+        this.downloadsTotal = downloadsTotal;
+    }
+
+    public long getPublishers() {
+        return publishers;
+    }
+
+    public void setPublishers(long publishers) {
+        this.publishers = publishers;
+    }
+
+    public double getAverageReviewsPerExtension() {
+        return averageReviewsPerExtension;
+    }
+
+    public void setAverageReviewsPerExtension(double averageReviewsPerExtension) {
+        this.averageReviewsPerExtension = averageReviewsPerExtension;
+    }
+
+    public long getNamespaceOwners() {
+        return namespaceOwners;
+    }
+
+    public void setNamespaceOwners(long namespaceOwners) {
+        this.namespaceOwners = namespaceOwners;
+    }
+
+    public List<ExtensionsByRating> getExtensionsByRating() {
+        return extensionsByRating;
+    }
+
+    public void setExtensionsByRating(List<ExtensionsByRating> extensionsByRating) {
+        this.extensionsByRating = extensionsByRating;
+    }
+
+    public List<PublishersByExtensionsPublished> getPublishersByExtensionsPublished() {
+        return publishersByExtensionsPublished;
+    }
+
+    public void setPublishersByExtensionsPublished(List<PublishersByExtensionsPublished> publishersByExtensionsPublished) {
+        this.publishersByExtensionsPublished = publishersByExtensionsPublished;
+    }
+
+    public List<TopMostActivePublishingUsers> getTopMostActivePublishingUsers() {
+        return topMostActivePublishingUsers;
+    }
+
+    public void setTopMostActivePublishingUsers(List<TopMostActivePublishingUsers> topMostActivePublishingUsers) {
+        this.topMostActivePublishingUsers = topMostActivePublishingUsers;
+    }
+
+    public List<TopNamespaceExtensions> getTopNamespaceExtensions() {
+        return topNamespaceExtensions;
+    }
+
+    public void setTopNamespaceExtensions(List<TopNamespaceExtensions> topNamespaceExtensions) {
+        this.topNamespaceExtensions = topNamespaceExtensions;
+    }
+
+    public List<TopNamespaceExtensionVersions> getTopNamespaceExtensionVersions() {
+        return topNamespaceExtensionVersions;
+    }
+
+    public void setTopNamespaceExtensionVersions(List<TopNamespaceExtensionVersions> topNamespaceExtensionVersions) {
+        this.topNamespaceExtensionVersions = topNamespaceExtensionVersions;
+    }
+
+    public List<TopMostDownloadedExtensions> getTopMostDownloadedExtensions() {
+        return topMostDownloadedExtensions;
+    }
+
+    public void setTopMostDownloadedExtensions(List<TopMostDownloadedExtensions> topMostDownloadedExtensions) {
+        this.topMostDownloadedExtensions = topMostDownloadedExtensions;
+    }
 
     public static class ExtensionsByRating {
-        public int rating;
+        private int rating;
 
-        public int extensions;
+        private int extensions;
+
+        public int getRating() {
+            return rating;
+        }
+
+        public void setRating(int rating) {
+            this.rating = rating;
+        }
+
+        public int getExtensions() {
+            return extensions;
+        }
+
+        public void setExtensions(int extensions) {
+            this.extensions = extensions;
+        }
     }
 
     public static class PublishersByExtensionsPublished {
-        public int extensionsPublished;
+        private int extensionsPublished;
 
-        public int publishers;
+        private int publishers;
+
+        public int getExtensionsPublished() {
+            return extensionsPublished;
+        }
+
+        public void setExtensionsPublished(int extensionsPublished) {
+            this.extensionsPublished = extensionsPublished;
+        }
+
+        public int getPublishers() {
+            return publishers;
+        }
+
+        public void setPublishers(int publishers) {
+            this.publishers = publishers;
+        }
     }
 
     public static class TopMostActivePublishingUsers {
-        public String userLoginName;
+        private String userLoginName;
 
-        public int publishedExtensionVersions;
+        private int publishedExtensionVersions;
+
+        public String getUserLoginName() {
+            return userLoginName;
+        }
+
+        public void setUserLoginName(String userLoginName) {
+            this.userLoginName = userLoginName;
+        }
+
+        public int getPublishedExtensionVersions() {
+            return publishedExtensionVersions;
+        }
+
+        public void setPublishedExtensionVersions(int publishedExtensionVersions) {
+            this.publishedExtensionVersions = publishedExtensionVersions;
+        }
     }
 
     public static class TopNamespaceExtensions {
-        public String namespace;
+        private String namespace;
 
-        public int extensions;
+        private int extensions;
+
+        public String getNamespace() {
+            return namespace;
+        }
+
+        public void setNamespace(String namespace) {
+            this.namespace = namespace;
+        }
+
+        public int getExtensions() {
+            return extensions;
+        }
+
+        public void setExtensions(int extensions) {
+            this.extensions = extensions;
+        }
     }
 
     public static class TopNamespaceExtensionVersions {
-        public String namespace;
+        private String namespace;
 
-        public int extensionVersions;
+        private int extensionVersions;
+
+        public String getNamespace() {
+            return namespace;
+        }
+
+        public void setNamespace(String namespace) {
+            this.namespace = namespace;
+        }
+
+        public int getExtensionVersions() {
+            return extensionVersions;
+        }
+
+        public void setExtensionVersions(int extensionVersions) {
+            this.extensionVersions = extensionVersions;
+        }
     }
 
     public static class TopMostDownloadedExtensions {
-        public String extensionIdentifier;
+        private String extensionIdentifier;
 
-        public long downloads;
+        private long downloads;
+
+        public String getExtensionIdentifier() {
+            return extensionIdentifier;
+        }
+
+        public void setExtensionIdentifier(String extensionIdentifier) {
+            this.extensionIdentifier = extensionIdentifier;
+        }
+
+        public long getDownloads() {
+            return downloads;
+        }
+
+        public void setDownloads(long downloads) {
+            this.downloads = downloads;
+        }
     }
 }

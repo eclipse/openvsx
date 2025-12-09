@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Claiming namespace ownership
+    url: https://github.com/EclipseFdn/open-vsx.org/issues/new?template=claim-namespace-ownership.md
+    about: Claiming ownership of a namespace on https://open-vsx.org.

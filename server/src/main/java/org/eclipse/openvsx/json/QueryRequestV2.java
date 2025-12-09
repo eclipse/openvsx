@@ -9,25 +9,30 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-public class QueryRequestV2 {
-
-    public String namespaceName;
-
-    public String extensionName;
-
-    public String extensionVersion;
-
-    public String extensionId;
-
-    public String extensionUuid;
-
-    public String namespaceUuid;
-
-    public String includeAllVersions;
-
-    public String targetPlatform;
-
-    public int size;
-
-    public int offset;
+public record QueryRequestV2(
+        String namespaceName,
+        String extensionName,
+        String extensionVersion,
+        String extensionId,
+        String extensionUuid,
+        String namespaceUuid,
+        String includeAllVersions,
+        String targetPlatform,
+        int size,
+        int offset
+) {
+    public QueryRequest toQueryRequest() {
+        return new QueryRequest(
+                namespaceName,
+                extensionName,
+                extensionVersion,
+                extensionId,
+                extensionUuid,
+                namespaceUuid,
+                includeAllVersions.equals("true"),
+                targetPlatform,
+                size,
+                offset
+        );
+    }
 }

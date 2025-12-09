@@ -11,6 +11,9 @@ services:
         max-file: "3"
     ports:
       - '5432:5432'
+    profiles:
+      - db
+      - debug
 
   elasticsearch:
     image: elasticsearch:8.7.1
@@ -29,6 +32,9 @@ services:
       timeout: 5s
       retries: 50
       start_period: 5s
+    profiles:
+      - es
+      - debug
 
   kibana:
     image: kibana:8.7.1
@@ -41,8 +47,159 @@ services:
     profiles:
       - kibana
 
+  redis-node-1:
+    image: redis:7.2
+    container_name: redis-node-1
+    ports:
+      - "7001:7000"
+    command: redis-server /etc/redis.conf
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+      - /redis/node-1:/data
+    environment:
+      - REDISCLI_AUTH=openvsx
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
+      interval: 5s
+      retries: 5
+    profiles:
+      - redis
+
+  redis-node-2:
+    image: redis:7.2
+    container_name: redis-node-2
+    depends_on:
+      redis-node-1:
+        condition: service_healthy
+    ports:
+      - "7002:7000"
+    command: redis-server /etc/redis.conf
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+      - /redis/node-2:/data
+    environment:
+      - REDISCLI_AUTH=openvsx
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
+      interval: 5s
+      retries: 5
+    profiles:
+      - redis
+
+  redis-node-3:
+    image: redis:7.2
+    container_name: redis-node-3
+    depends_on:
+      redis-node-2:
+        condition: service_healthy
+    ports:
+      - "7003:7000"
+    command: redis-server /etc/redis.conf
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+      - /redis/node-3:/data
+    environment:
+      - REDISCLI_AUTH=openvsx
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
+      interval: 5s
+      retries: 5
+    profiles:
+      - redis
+
+  redis-node-4:
+    image: redis:7.2
+    container_name: redis-node-4
+    depends_on:
+      redis-node-3:
+        condition: service_healthy
+    ports:
+      - "7004:7000"
+    command: redis-server /etc/redis.conf
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+      - /redis/node-4:/data
+    environment:
+      - REDISCLI_AUTH=openvsx
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
+      interval: 5s
+      retries: 5
+    profiles:
+      - redis
+
+  redis-node-5:
+    image: redis:7.2
+    container_name: redis-node-5
+    depends_on:
+      redis-node-4:
+        condition: service_healthy
+    ports:
+      - "7005:7000"
+    command: redis-server /etc/redis.conf
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+      - /redis/node-5:/data
+    environment:
+      - REDISCLI_AUTH=openvsx
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
+      interval: 5s
+      retries: 5
+    profiles:
+      - redis
+
+  redis-node-6:
+    image: redis:7.2
+    container_name: redis-node-6
+    depends_on:
+      redis-node-5:
+        condition: service_healthy
+    ports:
+      - "7006:7000"
+    command: redis-server /etc/redis.conf
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+      - /redis/node-6:/data
+    environment:
+      - REDISCLI_AUTH=openvsx
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
+      interval: 5s
+      retries: 5
+    profiles:
+      - redis
+
+  redis-cluster-init:
+    image: redis:7.2
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+      - redis-node-5
+      - redis-node-6
+    environment:
+      - REDISCLI_AUTH=openvsx
+    entrypoint: >
+      bash -c "
+      sleep 10;
+      echo yes | redis-cli --user openvsx --cluster create 
+      redis-node-1:7000 redis-node-2:7000 redis-node-3:7000 
+      redis-node-4:7000 redis-node-5:7000 redis-node-6:7000 
+      --cluster-replicas 1"
+    profiles:
+      - redis
+
+  redisinsight:
+    image: redis/redisinsight
+    ports:
+      - '5540:5540'
+    profiles:
+      - redisinsight
+
   server:
-    image: openjdk:17
+    image: eclipse-temurin:25-jdk
     working_dir: /app
     command: sh -c 'scripts/generate-properties.sh --docker && ./gradlew assemble && ./gradlew runServer'
     volumes:
@@ -65,7 +222,7 @@ services:
   webui:
     image: node:18
     working_dir: /app
-    command: sh -c 'yarn && yarn build && yarn build:default && yarn start:default'
+    command: sh -c 'yarn && yarn build && yarn build:default && yarn watch & yarn watch:default & yarn start:default'
     volumes:
       - ./webui:/app
     ports:

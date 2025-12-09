@@ -10,9 +10,11 @@
 package org.eclipse.openvsx.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.mime.MimeType;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.search.ExtensionSearch;
 
@@ -50,7 +52,7 @@ public class NamingUtil {
     }
 
     public static String toLogFormat(ExtensionJson json) {
-        return toLogFormat(json.namespace, json.name, json.targetPlatform, json.version);
+        return toLogFormat(json.getNamespace(), json.getName(), json.getTargetPlatform(), json.getVersion());
     }
 
     public static String toLogFormat(String namespace, String extension, String version) {
@@ -75,14 +77,29 @@ public class NamingUtil {
     }
 
     public static String toExtensionId(ExtensionQueryResult.Extension extension) {
-        return toExtensionId(extension.publisher.publisherName, extension.extensionName);
+        return toExtensionId(extension.publisher().publisherName(), extension.extensionName());
     }
 
     public static String toExtensionId(ExtensionSearch search) {
-        return toExtensionId(search.namespace, search.name);
+        return toExtensionId(search.getNamespace(), search.getName());
     }
 
     public static String toExtensionId(String namespace, String extension) {
         return namespace + "." + extension;
+    }
+
+    public static ExtensionId fromExtensionId(String text) {
+        var split = text.split("\\.");
+        return split.length == 2 && !split[0].isEmpty() && !split[1].isEmpty()
+                ? new ExtensionId(split[0], split[1])
+                : null;
+    }
+
+    public static String toLogoName(Namespace namespace, MimeType logoType) {
+        return  "logo-" + namespace.getName() + "-" + System.currentTimeMillis() + logoType.getExtension();
+    }
+
+    public static String changeLogoName(Namespace oldNamespace, Namespace newNamespace) {
+        return oldNamespace.getLogoName().replace("-" + oldNamespace.getName() + "-", "-" + newNamespace.getName() + "-");
     }
 }

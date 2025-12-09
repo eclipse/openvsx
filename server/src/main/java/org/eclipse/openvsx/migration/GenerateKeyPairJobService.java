@@ -20,6 +20,7 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -27,7 +28,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Component
@@ -42,17 +42,12 @@ public class GenerateKeyPairJobService {
     }
 
     @Transactional
-    public void renewKeyPair() {
-        var activeKeyPair = repositories.findActiveKeyPair();
-        if(activeKeyPair != null) {
-            activeKeyPair.setActive(false);
-        }
-
-        generateKeyPair();
+    public void updateKeyPair(SignatureKeyPair keyPair) {
+        repositories.deactivateKeyPairs();
+        entityManager.persist(keyPair);
     }
 
-    @Transactional
-    public void generateKeyPair() {
+    public SignatureKeyPair generateKeyPair() throws IOException {
         var generator = new Ed25519KeyPairGenerator();
         generator.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
         var pair = generator.generateKeyPair();
@@ -61,19 +56,14 @@ public class GenerateKeyPairJobService {
         keyPair.setPublicId(UUID.randomUUID().toString());
         keyPair.setPrivateKey(((Ed25519PrivateKeyParameters) pair.getPrivate()).getEncoded());
         keyPair.setPublicKeyText(getPublicKeyText(pair));
-        keyPair.setCreated(LocalDateTime.now());
+        keyPair.setCreated(TimeUtil.getCurrentUTC());
         keyPair.setActive(true);
-        entityManager.persist(keyPair);
+        return keyPair;
     }
     
-    private String getPublicKeyText(AsymmetricCipherKeyPair pair) {
-        PemObject pemObject;
-        try {
-            var publicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pair.getPublic());
-            pemObject = new PemObject("PUBLIC KEY", publicKeyInfo.getEncoded());
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+    private String getPublicKeyText(AsymmetricCipherKeyPair pair) throws IOException {
+        var publicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pair.getPublic());
+        var pemObject = new PemObject("PUBLIC KEY", publicKeyInfo.getEncoded());
 
         try (
                 var output = new ByteArrayOutputStream();
@@ -82,8 +72,6 @@ public class GenerateKeyPairJobService {
             writer.writeObject(pemObject);
             writer.flush();
             return output.toString(StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
         }
     }
 

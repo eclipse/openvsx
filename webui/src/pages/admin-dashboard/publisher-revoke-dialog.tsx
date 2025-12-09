@@ -45,7 +45,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
         try {
             setWorking(true);
             const user = props.publisherInfo.user;
-            const result = await service.admin.revokePublisherContributions(abortController.current, user.provider!, user.loginName);
+            const result = await service.admin.revokePublisherContributions(abortController.current, user.provider as string, user.loginName);
             if (isError(result)) {
                 throw result;
             }

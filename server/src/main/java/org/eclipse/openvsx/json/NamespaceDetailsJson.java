@@ -2,10 +2,8 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import jakarta.validation.constraints.NotNull;
-import java.io.Serializable;
-import java.util.Arrays;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,46 +13,115 @@ import java.util.Objects;
     description = "Details of a namespace"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class NamespaceDetailsJson extends ResultJson implements Serializable {
+public class NamespaceDetailsJson extends ResultJson {
 
     public static NamespaceDetailsJson error(String message) {
         var result = new NamespaceDetailsJson();
-        result.error = message;
+        result.setError(message);
         return result;
     }
 
     @Schema(description = "Name of the namespace")
     @NotNull
-    public String name;
+    private String name;
 
     @Schema(description = "Display name of the namespace")
     @NotNull
-    public String displayName;
+    private String displayName;
 
     @Schema(description = "Description of the namespace")
-    public String description;
+    private String description;
 
     @Schema(description = "Logo URL of the namespace")
-    public String logo;
-
-    @Schema(hidden = true)
-    public byte[] logoBytes;
+    private String logo;
 
     @Schema(description = "Website URL of the namespace")
-    public String website;
+    private String website;
 
     @Schema(description = "Support URL of the namespace")
-    public String supportLink;
+    private String supportLink;
 
     @Schema(description = "Map of social network names to their profile URLs")
-    public Map<String, String> socialLinks;
+    private Map<String, String> socialLinks;
 
     @Schema(description = "Map of extension names to their metadata URLs")
-    public List<SearchEntryJson> extensions;
+    private List<SearchEntryJson> extensions;
 
     @Schema(description = "Indicates whether the namespace has an owner")
     @NotNull
-    public boolean verified;
+    private boolean verified;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getLogo() {
+        return logo;
+    }
+
+    public void setLogo(String logo) {
+        this.logo = logo;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
+
+    public void setWebsite(String website) {
+        this.website = website;
+    }
+
+    public String getSupportLink() {
+        return supportLink;
+    }
+
+    public void setSupportLink(String supportLink) {
+        this.supportLink = supportLink;
+    }
+
+    public Map<String, String> getSocialLinks() {
+        return socialLinks;
+    }
+
+    public void setSocialLinks(Map<String, String> socialLinks) {
+        this.socialLinks = socialLinks;
+    }
+
+    public List<SearchEntryJson> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(List<SearchEntryJson> extensions) {
+        this.extensions = extensions;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -66,7 +133,6 @@ public class NamespaceDetailsJson extends ResultJson implements Serializable {
                 && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
                 && Objects.equals(logo, that.logo)
-                && Arrays.equals(logoBytes, that.logoBytes)
                 && Objects.equals(website, that.website)
                 && Objects.equals(supportLink, that.supportLink)
                 && Objects.equals(socialLinks, that.socialLinks)
@@ -75,8 +141,6 @@ public class NamespaceDetailsJson extends ResultJson implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(name, displayName, description, logo, website, supportLink, socialLinks, extensions, verified);
-        result = 31 * result + Arrays.hashCode(logoBytes);
-        return result;
+        return Objects.hash(name, displayName, description, logo, website, supportLink, socialLinks, extensions, verified);
     }
 }

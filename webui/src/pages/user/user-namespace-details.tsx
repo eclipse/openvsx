@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, TextField, Typography, Grid, Button, IconButton, Slider, Stack, Dialog, DialogActions, DialogTitle,
     DialogContent, InputAdornment, Select, MenuItem, Paper, SelectChangeEvent } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
@@ -101,6 +101,11 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     const [prevEditorPosition, setPrevEditorPosition] = useState<Position>();
     const [linkedInAccountType, setLinkedInAccountType] = useState<string>(LINKED_IN_PERSONAL);
 
+    const noChanges = useMemo(() => {
+        const isFalsy = (x: unknown) => !!x === false;
+        return _.isEqual(_.omitBy(currentDetails, isFalsy), _.omitBy(newDetails, isFalsy));
+    }, [currentDetails, newDetails]);
+
     useEffect(() => {
         getNamespaceDetails();
         return () => abortController.current.abort();
@@ -111,9 +116,16 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
         getNamespaceDetails();
     }, [props.namespace]);
 
-    const getNamespaceDetails = async (): Promise<void> => {
+    const resetLogoPreview = () => {
+        if (logoPreview) {
+            URL.revokeObjectURL(logoPreview);
+        }
         setLogoPreview(undefined);
+    };
+
+    const getNamespaceDetails = async (): Promise<void> => {
         if (!props.namespace.name) {
+            resetLogoPreview();
             setCurrentDetails(undefined);
             setNewDetails(undefined);
             setLoading(false);
@@ -147,6 +159,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
             setCurrentDetails(copy(details));
             setNewDetails(copy(details));
             setLinkedInAccountType(linkedInAccountType);
+            resetLogoPreview();
             setLoading(false);
         } catch (err) {
             context.handleError(err);
@@ -181,13 +194,20 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 ? 'https://twitter.com/' + details.socialLinks.twitter
                 : undefined;
 
-            const result = await context.service.setNamespaceDetails(abortController.current, details);
+            const result = await context.service.setNamespaceDetails(abortController.current, props.namespace.detailsUrl, details);
             if (isError(result)) {
                 throw result;
             }
 
+            if (logoPreview) {
+                const logoFile = await (await fetch(logoPreview)).blob();
+                await context.service.setNamespaceLogo(abortController.current, props.namespace.detailsUrl, logoFile, details.logo as string);
+                await getNamespaceDetails();
+            } else {
+                setCurrentDetails(copy(newDetails));
+            }
+
             setDetailsUpdated(true);
-            setCurrentDetails(copy(details));
             setBannerNamespaceName(details.displayName || details.name);
         } catch (err) {
             context.handleError(err);
@@ -276,7 +296,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
 
     const handleFileDialogOpen = () => {
         setDropzoneFile(undefined);
-        setLogoPreview(undefined);
+        resetLogoPreview();
     };
 
     const rotateLeft = () => setEditorRotation(editorRotation - 90);
@@ -295,20 +315,24 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
         setEditing(false);
     };
 
-    const handleSaveLogo = () => {
-        const canvasScaled = editor.current?.getImageScaledToCanvas();
-        if (canvasScaled) {
-            const dataUrl = canvasScaled.toDataURL();
-            setLogoPreview(dataUrl);
-            setEditing(false);
-            if (newDetails) {
-                const details = copy(newDetails);
-                details.logo = dropzoneFile!.name;
-                const prefix = 'data:image/png;base64,';
-                details.logoBytes = dataUrl.substring(prefix.length);
-                setNewDetails(details);
+    const handleApplyLogo = () => {
+        const avatarEditor = editor.current as AvatarEditor;
+        const canvasScaled = avatarEditor.getImageScaledToCanvas();
+        canvasScaled.toBlob(async (blob) => {
+            if (blob) {
+                if (logoPreview) {
+                    URL.revokeObjectURL(logoPreview);
+                }
+                setLogoPreview(URL.createObjectURL(blob));
+
+                if (newDetails) {
+                    const details = copy(newDetails);
+                    details.logo = dropzoneFile!.name;
+                    setNewDetails(details);
+                }
             }
-        }
+        });
+        setEditing(false);
     };
 
     const adjustScale = (x: number) => {
@@ -320,11 +344,10 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     };
 
     const deleteLogo = () => {
-        setLogoPreview(undefined);
+        resetLogoPreview();
         if (newDetails) {
             const details = copy(newDetails);
             details.logo = undefined;
-            details.logoBytes = undefined;
             setNewDetails(details);
         }
     };
@@ -362,7 +385,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                         <AvatarEditor
                             style={{ margin: '0 auto' }}
                             ref={editor}
-                            image={dropzoneFile || ''}
+                            image={dropzoneFile ?? ''}
                             width={120}
                             height={120}
                             border={8}
@@ -412,8 +435,8 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 </Button>
                 <Button
                     autoFocus
-                    onClick={handleSaveLogo} >
-                    Save logo
+                    onClick={handleApplyLogo} >
+                    Apply logo
                 </Button>
             </DialogActions>
         </Dialog>
@@ -458,7 +481,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                                 style={{ borderColor: getColor(isFocused, isDragAccept, isDragReject) }}
                             >
                                 <input {...getInputProps({ accept: 'image/jpeg,image/png', multiple: false })} />
-                                <img src={logoPreview || newDetails?.logo || context.pageSettings.urls.extensionDefaultIcon}/>
+                                <img src={logoPreview ?? newDetails?.logo ?? context.pageSettings.urls.extensionDefaultIcon}/>
                             </DropzoneDiv>
                             { logoPreview || newDetails?.logo ?
                                 <Box
@@ -498,7 +521,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                         <TextField fullWidth
                             label='Display name'
                             name={INPUT_DISPLAY_NAME}
-                            value={ newDetails.displayName || '' }
+                            value={ newDetails.displayName ?? '' }
                             onChange={ handleInputChange } />
                     </Grid>
                     <Grid item xs={12}>
@@ -509,7 +532,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                             variant='outlined'
                             label='Description'
                             name={INPUT_DESCRIPTION}
-                            value={ newDetails.description || '' }
+                            value={ newDetails.description ?? '' }
                             onChange={ handleInputChange } />
                     </Grid>
                 </Grid>
@@ -519,7 +542,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                         label='Website'
                         type='url'
                         name={INPUT_WEBSITE}
-                        value={ newDetails.website || '' }
+                        value={ newDetails.website ?? '' }
                         onChange={ handleInputChange } />
             </Grid>
             <Grid item xs={12}>
@@ -527,7 +550,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     label='Support link'
                     type='url'
                     name={INPUT_SUPPORT_LINK}
-                    value={ newDetails.supportLink || '' }
+                    value={ newDetails.supportLink ?? '' }
                     onChange={ handleInputChange } />
             </Grid>
             <Grid item xs={12}>
@@ -538,7 +561,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     <Grid item xs>
                         <TextField fullWidth
                             name={INPUT_LINKEDIN}
-                            value={ newDetails.socialLinks.linkedin || '' }
+                            value={ newDetails.socialLinks.linkedin ?? '' }
                             onChange={ handleInputChange }
                             InputProps={{ startAdornment: <InputAdornment position='start'>
                                 <Select
@@ -574,7 +597,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     <Grid item xs>
                         <TextField fullWidth
                             name={INPUT_GITHUB}
-                            value={ newDetails.socialLinks.github || '' }
+                            value={ newDetails.socialLinks.github ?? '' }
                             onChange={ handleInputChange }
                             InputProps={{ startAdornment: <InputAdornment position='start'>https://github.com/</InputAdornment> }}/>
                     </Grid>
@@ -588,14 +611,14 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                     <Grid item xs>
                         <TextField fullWidth
                             name={INPUT_TWITTER}
-                            value={ newDetails.socialLinks.twitter || '' }
+                            value={ newDetails.socialLinks.twitter ?? '' }
                             onChange={ handleInputChange }
                             InputProps={{ startAdornment: <InputAdornment position='start'>https://twitter.com/</InputAdornment> }}/>
                     </Grid>
                 </Grid>
             </Grid>
             <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' disabled={_.isEqual(currentDetails, newDetails)} onClick={setNamespaceDetails}>
+                <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' disabled={noChanges} onClick={setNamespaceDetails}>
                     Save Namespace Details
                 </Button>
             </Grid>

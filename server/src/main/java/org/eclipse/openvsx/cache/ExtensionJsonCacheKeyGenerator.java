@@ -26,6 +26,6 @@ public class ExtensionJsonCacheKeyGenerator implements KeyGenerator {
     }
 
     public String generate(String namespaceName, String extensionName, String targetPlatform, String version) {
-        return NamingUtil.toFileFormat(namespaceName, extensionName, version, targetPlatform);
+        return NamingUtil.toFileFormat(namespaceName, extensionName, targetPlatform, version);
     }
 }

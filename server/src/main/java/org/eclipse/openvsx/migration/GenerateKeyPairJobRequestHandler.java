@@ -9,20 +9,20 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import io.micrometer.common.util.StringUtils;
 import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
-import static org.eclipse.openvsx.entities.FileResource.STORAGE_DB;
 import static org.eclipse.openvsx.entities.SignatureKeyPair.*;
 
 @Component
@@ -50,7 +50,12 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         switch (keyPairMode) {
             case KEYPAIR_MODE_CREATE:
-                createKeyPair();
+                var activeKeyPair = repositories.findActiveKeyPair();
+                if(activeKeyPair == null) {
+                    renewKeyPair();
+                } else {
+                    repositories.findVersionsWithout(activeKeyPair).forEach(this::enqueueCreateSignatureJob);
+                }
                 break;
             case KEYPAIR_MODE_RENEW:
                 renewKeyPair();
@@ -58,24 +63,17 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
             case KEYPAIR_MODE_DELETE:
                 deleteKeyPairs();
                 break;
+            default:
+                if(StringUtils.isNotEmpty(keyPairMode)) {
+                    var values = String.join(",", KEYPAIR_MODE_CREATE, KEYPAIR_MODE_RENEW, KEYPAIR_MODE_DELETE);
+                    throw new IllegalArgumentException("Unsupported value '" + keyPairMode + "' for 'ovsx.integrity.key-pair' defined. Supported values are: " + values);
+                }
         }
     }
 
-    private void createKeyPair() {
-        var activeKeyPair = repositories.findActiveKeyPair();
-        Streamable<ExtensionVersion> extVersions;
-        if(activeKeyPair == null) {
-            service.generateKeyPair();
-            extVersions = repositories.findVersions();
-        } else {
-            extVersions = repositories.findVersionsWithout(activeKeyPair);
-        }
-
-        extVersions.forEach(this::enqueueCreateSignatureJob);
-    }
-
-    private void renewKeyPair() {
-        service.renewKeyPair();
+    private void renewKeyPair() throws IOException {
+        var keyPair = service.generateKeyPair();
+        service.updateKeyPair(keyPair);
         repositories.findVersions().forEach(this::enqueueCreateSignatureJob);
     }
 
@@ -86,13 +84,10 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
 
     private void enqueueCreateSignatureJob(ExtensionVersion extVersion) {
         var handler = ExtensionVersionSignatureJobRequestHandler.class;
-        var jobRequest = new MigrationJobRequest<>(handler, extVersion.getId());
-        scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(30), jobRequest);
+        scheduler.enqueue(new MigrationJobRequest<>(handler, extVersion.getId()));
     }
 
     private void enqueueDeleteSignatureJob(FileResource resource) {
-        if(!resource.getStorageType().equals(STORAGE_DB)) {
-            scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(30), new RemoveFileJobRequest(resource));
-        }
+        scheduler.enqueue(new RemoveFileJobRequest(resource));
     }
 }

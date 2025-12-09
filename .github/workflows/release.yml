@@ -10,15 +10,19 @@ env:
 
 jobs:
   build:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: Set Image Version
       run: echo "IMAGE_VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
     - name: Build Web UI Image
       run: docker build -t $WEBUI_TAG:$IMAGE_VERSION webui
     - name: Build Server Image
-      run: docker build -t $SERVER_TAG:$IMAGE_VERSION server
+      run: docker build -t $SERVER_TAG:$IMAGE_VERSION server --secret id=dv-key,env=DEVELOCITY_ACCESS_KEY
+      env:
+        DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
     - name: Push Docker Images
       run: |
         echo ${{ secrets.BOT_ACCESS_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin

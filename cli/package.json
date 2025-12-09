@@ -1,6 +1,6 @@
 {
     "name": "ovsx",
-    "version": "0.9.1",
+    "version": "0.10.8",
     "description": "Command line interface for Eclipse Open VSX",
     "keywords": [
         "cli",
@@ -31,38 +31,45 @@
     "types": "lib/index",
     "bin": "lib/ovsx",
     "engines": {
-        "node": ">= 16"
+        "node": ">= 20"
     },
     "dependencies": {
-        "@vscode/vsce": "^2.25.0",
-        "commander": "^6.1.0",
+        "@vscode/vsce": "^3.2.1",
+        "commander": "^6.2.1",
         "follow-redirects": "^1.14.6",
         "is-ci": "^2.0.0",
         "leven": "^3.1.0",
         "semver": "^7.6.0",
-        "tmp": "^0.2.1"
+        "tmp": "^0.2.3",
+        "yauzl-promise": "^4.0.0"
     },
     "devDependencies": {
+        "@eslint/eslintrc": "^3.2.0",
+        "@eslint/js": "^9.15.0",
+        "@stylistic/eslint-plugin": "^2.11.0",
         "@types/follow-redirects": "^1.13.1",
         "@types/is-ci": "^2.0.0",
-        "@types/node": "^16.11.7",
+        "@types/node": "^20.14.8",
         "@types/semver": "^7.5.8",
-        "@types/tmp": "^0.1.0",
-        "@typescript-eslint/eslint-plugin": "^5.44.0",
-        "@typescript-eslint/parser": "^5.44.0",
-        "eslint": "^8.28.0",
-        "rimraf": "^3.0.2",
-        "typescript": "^4.3.2"
+        "@types/tmp": "^0.2.2",
+        "@types/yauzl-promise": "^4",
+        "@typescript-eslint/eslint-plugin": "^8.15.0",
+        "@typescript-eslint/parser": "^8.15.0",
+        "eslint": "^9.15.0",
+        "limiter": "^2.1.0",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.6.3"
     },
     "scripts": {
         "clean": "rimraf lib",
+        "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
         "build": "tsc -p ./tsconfig.json && yarn run lint && cp src/ovsx lib/ovsx",
         "watch": "tsc -w -p ./tsconfig.json",
-        "lint": "eslint -c ./configs/eslintrc.json --ext .ts src",
-        "prepare": "yarn run clean && yarn run build",
+        "lint": "eslint -c ./configs/eslintrc.mjs src",
+        "prepare": "yarn run clean && yarn run prebuild && yarn run build",
         "publish:next": "yarn npm publish --tag next",
         "publish:latest": "yarn npm publish --tag latest",
         "load-extensions": "node scripts/load-test-extensions.js"
     },
-    "packageManager": "yarn@4.1.0"
+    "packageManager": "yarn@4.9.1"
 }

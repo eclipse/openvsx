@@ -4,44 +4,51 @@ buildscript {
     }
     dependencies {
         classpath "org.hibernate.orm:hibernate-gradle-plugin:6.2.2.Final"
+        classpath "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin:4.0.0"
     }
 }
 plugins {
-    id 'jacoco'
-    id 'nu.studer.jooq' version '8.2.1'
-    id 'de.undercouch.download' version '5.4.0'
-    id 'org.springframework.boot' version '3.1.0'
-    id 'io.spring.dependency-management' version '1.1.0'
-    id 'io.gatling.gradle' version '3.9.5'
     id 'java'
+    id 'scala'
+    id 'jacoco'
+    id 'org.jooq.jooq-codegen-gradle' version '3.19.26'
+    id 'de.undercouch.download' version '5.4.0'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'io.gatling.gradle' version '3.14.9'
+    id 'maven-publish'
 }
 apply plugin: 'org.hibernate.orm'
+apply plugin: 'com.adarshr.test-logger'
 
 def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [
-    java: '17',
+    java: '25',
     flyway: '9.19.1',
-    springdoc: '2.1.0',
-    gcloud: '2.36.1',
+    springdoc: '2.8.13',
+    gcloud: '2.50.0',
     azure: '12.23.0',
-    junit: '5.7.1',
-    testcontainers: '1.15.2',
+    aws: '2.29.29',
+    junit: '5.9.2',
+    testcontainers: '1.19.3',
     jackson: '2.15.2',
     woodstox: '6.4.0',
-    jobrunr: '6.2.0',
-    bucket4j: '0.9.0',
-    ehcache: '3.10.8',
-    tika: '2.6.0',
-    bouncycastle: '1.77',
+    jobrunr: '7.5.0',
+    bucket4j: '0.12.7',
+    bucket4j_redis: '8.10.1',
+    tika: '3.2.2',
+    bouncycastle: '1.80',
     commons_lang3: '3.12.0',
-    httpclient5: '5.2.1',
     jaxb_api: '2.3.1',
     jaxb_impl: '2.3.8',
-    gatling: '3.9.5',
-    loki4j: '1.4.2'
+    gatling: '3.14.9',
+    loki4j: '1.4.2',
+    jedis: '6.2.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
-sourceCompatibility = versions.java
+java {
+    sourceCompatibility = versions.java
+}
 
 repositories {
     mavenCentral()
@@ -65,27 +72,57 @@ configurations {
     gatling.exclude group: "io.gatling.highcharts", module: "gatling-charts-highcharts"
 }
 
+dependencyManagement {
+    gatling {
+        dependencies {
+            dependencySet(group: 'io.netty', version: '4.2.7.Final') {
+                entry 'netty-codec-http'
+                entry 'netty-codec'
+                entry 'netty-handler'
+                entry 'netty-buffer'
+                entry 'netty-transport'
+                entry 'netty-common'
+                entry 'netty-transport-native-epoll'
+            }
+        }
+    }
+}
+
 dependencies {
-    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation 'org.springframework.boot:spring-boot-starter-jetty'
+    modules {
+        module("org.springframework.boot:spring-boot-starter-tomcat") {
+            replacedBy("org.springframework.boot:spring-boot-starter-jetty")
+        }
+    }
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-jooq"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-data-elasticsearch"
+    implementation "org.springframework.boot:spring-boot-starter-data-redis"
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "org.springframework.boot:spring-boot-starter-aop"
+    implementation "org.springframework.boot:spring-boot-starter-mail"
+    implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.springframework.retry:spring-retry"
     implementation "org.bouncycastle:bcpkix-jdk18on:${versions.bouncycastle}"
-    implementation "org.ehcache:ehcache:${versions.ehcache}"
+    implementation "com.github.ben-manes.caffeine:caffeine"
+    implementation 'com.github.ben-manes.caffeine:jcache'
+    implementation "redis.clients:jedis:${versions.jedis}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
+    implementation "com.bucket4j:bucket4j-redis:${versions.bucket4j_redis}"
     implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
+    implementation "software.amazon.awssdk:s3:${versions.aws}"
+    implementation "software.amazon.awssdk:sts:${versions.aws}"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${versions.springdoc}"
     implementation "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
@@ -96,7 +133,7 @@ dependencies {
     implementation "javax.xml.bind:jaxb-api:${versions.jaxb_api}"
     implementation "com.sun.xml.bind:jaxb-impl:${versions.jaxb_impl}"
     implementation "org.apache.commons:commons-lang3:${versions.commons_lang3}"
-    implementation "org.apache.httpcomponents.client5:httpclient5:${versions.httpclient5}"
+    implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "org.apache.tika:tika-core:${versions.tika}"
     implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
     implementation "io.micrometer:micrometer-tracing"
@@ -104,7 +141,7 @@ dependencies {
     implementation "io.opentelemetry:opentelemetry-exporter-zipkin"
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
-    jooqGenerator "org.postgresql:postgresql"
+    jooqCodegen "org.postgresql:postgresql"
 
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
 
@@ -113,49 +150,53 @@ dependencies {
     }
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.testcontainers:elasticsearch:${versions.testcontainers}"
+    testImplementation "org.testcontainers:localstack:${versions.testcontainers}"
+    testImplementation "org.testcontainers:junit-jupiter:${versions.testcontainers}"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
     testRuntimeOnly "org.testcontainers:postgresql:${versions.testcontainers}"
-
+    
     gatling "io.gatling:gatling-core:${versions.gatling}"
     gatling "io.gatling:gatling-app:${versions.gatling}"
+}
 
-    constraints {
-        implementation('org.eclipse.parsson:parsson:1.0.5') {
-            because 'version 1.0.0 pulled from elasticsearch-java has CVE-2023-4043'
+jooq {
+    configuration {
+        logging = "WARN"
+        jdbc {
+            driver = 'org.postgresql.Driver'
+            url = 'jdbc:postgresql://localhost:5432/postgres'
+            user = 'openvsx'
+            password = 'openvsx'
+        }
+        generator {
+            name = 'org.jooq.codegen.DefaultGenerator'
+            database {
+                name = 'org.jooq.meta.postgres.PostgresDatabase'
+                inputSchema = 'public'
+                includes = '.*'
+                excludes = ''
+            }
+            target {
+                packageName = 'org.eclipse.openvsx.jooq'
+                directory = jooqSrcDir
+            }
+            generate {
+                implicitJoinPathsToOne = false
+                implicitJoinPathsToMany = false
+                implicitJoinPathUnusedConstructors = false
+                implicitJoinPathsUseTableNameForUnambiguousFKs = false
+                implicitJoinPathsAsKotlinProperties = false
+            }
         }
     }
 }
 
-jooq {
-    // use jOOQ version defined in Spring Boot
-    version = dependencyManagement.importedProperties['jooq.version']
-    edition = nu.studer.gradle.jooq.JooqEdition.OSS
-    configurations {
-        main {
-            generateSchemaSourceOnCompilation = false
-            generationTool {
-                logging = org.jooq.meta.jaxb.Logging.WARN
-                jdbc {
-                    driver = 'org.postgresql.Driver'
-                    url = 'jdbc:postgresql://localhost:5432/postgres'
-                    user = 'gitpod'
-                    password = 'gitpod'
-                }
-                generator {
-                    name = 'org.jooq.codegen.DefaultGenerator'
-                    database {
-                        name = 'org.jooq.meta.postgres.PostgresDatabase'
-                        inputSchema = 'public'
-                        includes = '.*'
-                        excludes = ''
-                    }
-                    target {
-                        packageName = 'org.eclipse.openvsx.jooq'
-                        directory = jooqSrcDir
-                    }
-                }
-            }
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact ('scripts/run-server.sh') 
+            artifact bootJar
         }
     }
 }
@@ -179,6 +220,19 @@ task unitTests(type: Test) {
     exclude 'org/eclipse/openvsx/IntegrationTest.class'
     exclude 'org/eclipse/openvsx/cache/CacheServiceTest.class'
     exclude 'org/eclipse/openvsx/repositories/RepositoryServiceSmokeTest.class'
+    exclude 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
+}
+
+task s3IntegrationTests(type: Test) {
+    description = 'Runs S3 integration tests using LocalStack (requires Docker/Podman).'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    include 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
+
+    // Set system properties for test configuration
+    systemProperty 'spring.profiles.active', 's3-integration'
 }
 
 jacocoTestReport {
@@ -187,6 +241,12 @@ jacocoTestReport {
     }
 
     dependsOn test // tests are required to run before generating the report
+}
+
+tasks.withType(ScalaCompile).configureEach {
+    scalaCompileOptions.forkOptions.with {
+        jvmArgs = ['-Xss100m'] // Scala compiler may require a larger stack size when compiling Gatling simulations
+    }
 }
 
 apply from: 'dependencies.gradle'

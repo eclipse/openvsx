@@ -16,26 +16,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class AdminStatisticsJobRequestHandlerTest {
+class AdminStatisticsJobRequestHandlerTest {
 
-    @MockBean
+    @MockitoBean
     RepositoryService repositories;
 
-    @MockBean
+    @MockitoBean
     AdminStatisticsService service;
 
     @Autowired
     AdminStatisticsJobRequestHandler handler;
 
     @Test
-    public void testAdminStatisticsJobRequestHandler() throws Exception {
+    void testAdminStatisticsJobRequestHandler() throws Exception {
         var expectedStatistics = mockAdminStatistics();
 
         var request = new AdminStatisticsJobRequest(2023, 11);
@@ -44,7 +44,7 @@ public class AdminStatisticsJobRequestHandlerTest {
     }
 
     @Test
-    public void testAdminStatisticsJobRequestHandlerWithPreviousStatistics() throws Exception {
+    void testAdminStatisticsJobRequestHandlerWithPreviousStatistics() throws Exception {
         var expectedStatistics = mockAdminStatistics();
         expectedStatistics.setDownloads(678L);
 

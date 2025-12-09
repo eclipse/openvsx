@@ -23,13 +23,17 @@ import createDefaultTheme from './theme';
 // The production code for open-vsx.org is at https://github.com/eclipse/open-vsx.org
 
 
-let serverHost = location.hostname;
+let serverHost = location.host;
 if (serverHost.startsWith('3000-')) {
     // Gitpod dev environment: the frontend runs on port 3000, but the server runs on port 8080
     serverHost = '8080-' + serverHost.substring(5);
 } else if (location.port === '3000') {
     // Localhost dev environment
-    serverHost = serverHost + ':8080';
+    serverHost = location.hostname + ':8080';
+} else if (serverHost.includes('che-webui')) {
+    // Eclipse Che dev environment.
+    // If serverHost contains 'che-webui', replace it with 'che-server'
+    serverHost = serverHost.replace('che-webui', 'che-server');
 }
 const service = new ExtensionRegistryService(`${location.protocol}//${serverHost}`);
 

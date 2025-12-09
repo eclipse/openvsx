@@ -19,25 +19,19 @@ import java.util.Collection;
 
 public interface FileResourceRepository extends Repository<FileResource, Long> {
 
-    Streamable<FileResource> findByExtension(ExtensionVersion extVersion);
+    void deleteByExtension(ExtensionVersion extVersion);
 
     Streamable<FileResource> findByExtensionExtensionNamespace(Namespace namespace);
 
     Streamable<FileResource> findByStorageType(String storageType);
 
-    FileResource findFirstByExtensionAndNameIgnoreCaseOrderByType(ExtensionVersion extVersion, String name);
-
     FileResource findByExtensionAndType(ExtensionVersion extVersion, String type);
 
-    FileResource findByExtensionAndTypeAndNameIgnoreCase(ExtensionVersion extVersion, String type, String name);
-
     Streamable<FileResource> findByTypeAndStorageTypeAndNameIgnoreCaseIn(String type, String storageType, Collection<String> names);
-
-    Streamable<FileResource> findByExtensionAndTypeIn(ExtensionVersion extVersion, Collection<String> types);
-
-    void deleteByExtensionAndType(ExtensionVersion extVersion, String type);
 
     void deleteByType(String type);
 
     Streamable<FileResource> findByType(String type);
+
+    Streamable<FileResource> findByExtension(ExtensionVersion extVersion);
 }

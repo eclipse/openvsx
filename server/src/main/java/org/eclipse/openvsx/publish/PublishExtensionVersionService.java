@@ -17,14 +17,10 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.nio.file.Files;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_SITEMAP;
 
@@ -47,41 +43,22 @@ public class PublishExtensionVersionService {
 
     @Transactional
     public void deleteFileResources(ExtensionVersion extVersion) {
-        repositories.findFiles(extVersion).forEach(entityManager::remove);
+        repositories.deleteFiles(extVersion);
     }
 
     @Retryable
-    public void storeDownload(FileResource download, TempFile extensionFile) {
-        if (storageUtil.shouldStoreExternally(download)) {
-            storageUtil.uploadFile(download, extensionFile);
-        } else {
-            try {
-                download.setContent(Files.readAllBytes(extensionFile.getPath()));
-            } catch (IOException e) {
-                throw new ErrorResultException("Failed to read extension file", e);
-            }
-
-            download.setStorageType(FileResource.STORAGE_DB);
-        }
+    public void storeResource(TempFile tempFile) {
+        storageUtil.uploadFile(tempFile);
     }
 
-    @Retryable
-    public void storeResource(FileResource resource) {
-        // Store file resource in the DB or external storage
-        if (storageUtil.shouldStoreExternally(resource)) {
-            storageUtil.uploadFile(resource);
-            // Don't store the binary content in the DB - it's now stored externally
-            resource.setContent(null);
-        } else {
-            resource.setStorageType(FileResource.STORAGE_DB);
-        }
+    @Transactional
+    public void mirrorResource(TempFile tempFile) {
+        mirrorResource(tempFile.getResource());
     }
 
     @Transactional
     public void mirrorResource(FileResource resource) {
         resource.setStorageType(storageUtil.getActiveStorageType());
-        // Don't store the binary content in the DB - it's now stored externally
-        resource.setContent(null);
         entityManager.persist(resource);
     }
 

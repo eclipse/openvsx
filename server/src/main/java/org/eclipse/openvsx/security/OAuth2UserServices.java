@@ -13,6 +13,7 @@ import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
+import org.eclipse.openvsx.eclipse.TokenService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -20,22 +21,25 @@ import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2LoginAuthenticationToken;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.Collections;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNullElse;
+import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
+import static org.eclipse.openvsx.entities.UserData.ROLE_PRIVILEGED;
 import static org.eclipse.openvsx.security.CodedAuthException.*;
+import static org.springframework.security.core.authority.AuthorityUtils.createAuthorityList;
 
 @Service
 public class OAuth2UserServices {
@@ -45,43 +49,30 @@ public class OAuth2UserServices {
     private final RepositoryService repositories;
     private final EntityManager entityManager;
     private final EclipseService eclipse;
-    private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
-    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2;
-    private final OAuth2UserService<OidcUserRequest, OidcUser> oidc;
+    private final OAuth2AttributesConfig attributesConfig;
+    private final DefaultOAuth2UserService springOAuth2UserService;
+    private final OidcUserService springOidcUserService;
 
     public OAuth2UserServices(
             UserService users,
             TokenService tokens,
             RepositoryService repositories,
             EntityManager entityManager,
-            EclipseService eclipse
+            EclipseService eclipse,
+            OAuth2AttributesConfig attributesConfig
     ) {
         this.users = users;
         this.tokens = tokens;
         this.repositories = repositories;
         this.entityManager = entityManager;
         this.eclipse = eclipse;
-        this.oauth2 = new OAuth2UserService<OAuth2UserRequest, OAuth2User>() {
-            @Override
-            public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-                return OAuth2UserServices.this.loadUser(userRequest);
-            }
-        };
-        this.oidc = new OAuth2UserService<OidcUserRequest, OidcUser>() {
-            @Override
-            public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
-                return OAuth2UserServices.this.loadUser(userRequest);
-            }
-        };
+        this.attributesConfig = attributesConfig;
+        springOAuth2UserService = new DefaultOAuth2UserService();
+        springOidcUserService = new OidcUserService();
     }
 
-    public OAuth2UserService<OAuth2UserRequest, OAuth2User> getOauth2() {
-        return oauth2;
-    }
-
-    public OAuth2UserService<OidcUserRequest, OidcUser> getOidc() {
-        return oidc;
-    }
+    public OAuth2UserService<OAuth2UserRequest, OAuth2User> getOauth2() { return this::loadUser; }
+    public OAuth2UserService<OidcUserRequest, OidcUser> getOidc() { return this::loadUser; }
 
     @EventListener
     public void authenticationSucceeded(AuthenticationSuccessEvent event) {
@@ -89,38 +80,43 @@ public class OAuth2UserServices {
         // `ExtendedOAuth2UserServices.loadUser` was processed.
         if (event.getSource() instanceof OAuth2LoginAuthenticationToken) {
             var auth = (OAuth2LoginAuthenticationToken) event.getSource();
-            var idPrincipal = (IdPrincipal) auth.getPrincipal();
-            var accessToken = auth.getAccessToken();
-            var refreshToken = auth.getRefreshToken();
             var registrationId = auth.getClientRegistration().getRegistrationId();
-
-            tokens.updateTokens(idPrincipal.getId(), registrationId, accessToken, refreshToken);
+            if(registrationId.equals("eclipse")) {
+                var idPrincipal = (IdPrincipal) auth.getPrincipal();
+                tokens.updateEclipseToken(idPrincipal.getId(), auth.getAccessToken(), auth.getRefreshToken());
+            }
         }
     }
 
     public IdPrincipal loadUser(OAuth2UserRequest userRequest) {
-        var registrationId = userRequest.getClientRegistration().getRegistrationId();
-        switch (registrationId) {
-            case "github":
-                return loadGitHubUser(userRequest);
-            case "eclipse":
-                return loadEclipseUser(userRequest);
-            default:
-                throw new CodedAuthException("Unsupported registration: " + registrationId, UNSUPPORTED_REGISTRATION);
-        }
+        return switch (userRequest.getClientRegistration().getRegistrationId()) {
+            case "eclipse" -> loadEclipseUser(userRequest);
+            default -> loadGenericUser(userRequest);
+        };
     }
 
-    private IdPrincipal loadGitHubUser(OAuth2UserRequest userRequest) {
-        var authUser = delegate.loadUser(userRequest);
-        String loginName = authUser.getAttribute("login");
-        if (StringUtils.isEmpty(loginName))
-            throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_GITHUB_USER);
-        var userData = repositories.findUserByLoginName("github", loginName);
-        if (userData == null)
-            userData = users.registerNewUser(authUser);
-        else
-            users.updateExistingUser(userData, authUser);
-        return new IdPrincipal(userData.getId(), authUser.getName(), getAuthorities(userData));
+    public boolean canLogin() {
+        return users.canLogin();
+    }
+
+    private IdPrincipal loadGenericUser(OAuth2UserRequest userRequest) {
+        var registrationId = userRequest.getClientRegistration().getRegistrationId();
+        var mapping = attributesConfig.getAttributeMapping(registrationId);
+        if(mapping == null) {
+            throw new CodedAuthException("Unsupported registration: " + registrationId ,UNSUPPORTED_REGISTRATION);
+        }
+
+        var oauth2User = userRequest instanceof OidcUserRequest oidcRequest
+                ? springOidcUserService.loadUser(oidcRequest)
+                : springOAuth2UserService.loadUser(userRequest);
+
+        var userAttributes = mapping.toUserData(registrationId, oauth2User);
+        if (StringUtils.isEmpty(userAttributes.getLoginName())) {
+            throw new CodedAuthException("Invalid login: missing 'login' field.", INVALID_USER);
+        }
+
+        var userData = users.upsertUser(userAttributes);
+        return new IdPrincipal(userData.getId(), userData.getAuthId(), getAuthorities(userData));
     }
 
     private IdPrincipal loadEclipseUser(OAuth2UserRequest userRequest) {
@@ -137,12 +133,12 @@ public class OAuth2UserServices {
         try {
             var accessToken = userRequest.getAccessToken().getTokenValue();
             var profile = eclipse.getUserProfile(accessToken);
-            if (StringUtils.isEmpty(profile.githubHandle))
+            if (StringUtils.isEmpty(profile.getGithubHandle()))
                 throw new CodedAuthException("Your Eclipse profile is missing a GitHub username.",
                         ECLIPSE_MISSING_GITHUB_ID);
-            if (!profile.githubHandle.equalsIgnoreCase(userData.getLoginName()))
+            if (!profile.getGithubHandle().equalsIgnoreCase(userData.getLoginName()))
                 throw new CodedAuthException("The GitHub username setting in your Eclipse profile ("
-                        + profile.githubHandle
+                        + profile.getGithubHandle()
                         + ") does not match your GitHub authentication ("
                         + userData.getLoginName() + ").",
                         ECLIPSE_MISMATCH_GITHUB_ID);
@@ -155,15 +151,10 @@ public class OAuth2UserServices {
     }
 
     private Collection<GrantedAuthority> getAuthorities(UserData userData) {
-        var role = userData.getRole();
-        switch (role != null ? role : "") {
-            case UserData.ROLE_ADMIN:
-                return AuthorityUtils.createAuthorityList("ROLE_ADMIN");
-            case UserData.ROLE_PRIVILEGED:
-                return AuthorityUtils.createAuthorityList("ROLE_PRIVILEGED");
-            default:
-                return Collections.emptyList();
-        }
+        return switch (requireNonNullElse(userData.getRole(), "")) {
+            case ROLE_ADMIN -> createAuthorityList("ROLE_ADMIN");
+            case ROLE_PRIVILEGED -> createAuthorityList("ROLE_PRIVILEGED");
+            default -> emptyList();
+        };
     }
-
 }

@@ -150,9 +150,9 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
         return published;
     };
 
-    const tryResolveNamespaceError = async (publishResponse: Readonly<ErrorResult>) => {
+    const tryResolveNamespaceError = async (publishResponse: Readonly<unknown>) => {
         const namespaceError = 'Unknown publisher: ';
-        if (!publishResponse.error.startsWith(namespaceError)) {
+        if (!isError(publishResponse) || !publishResponse.error.startsWith(namespaceError)) {
             throw publishResponse;
         }
         const namespace = publishResponse.error.substring(namespaceError.length, publishResponse.error.indexOf('\n', namespaceError.length));

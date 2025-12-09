@@ -12,7 +12,7 @@ import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, us
 import { Box, Typography, Divider, Link } from '@mui/material';
 import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';
-import { ExtensionReview, Extension, ExtensionReviewList, isEqualUser, isError } from '../../extension-registry-types';
+import { ExtensionReview, Extension, ExtensionReviewList, isEqualUser, isError, UserData } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { ButtonWithProgress } from '../../components/button-with-progress';
@@ -67,7 +67,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         if (!context.user || !reviewList) {
             return  '';
         }
-        const existingReview = reviewList.reviews.find(r => isEqualUser(r.user, context.user!));
+        const existingReview = reviewList.reviews.find(r => isEqualUser(r.user, context.user as UserData));
         if (existingReview) {
             const localTime = toLocalTime(existingReview.timestamp);
             return <ButtonWithProgress

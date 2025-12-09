@@ -1,0 +1,133 @@
+{
+  "results": [
+    {
+      "extensions": [
+        {
+          "extensionId": "test-1",
+          "extensionName": "vscode-yaml",
+          "displayName": "YAML",
+          "shortDescription": "YAML Language Support",
+          "publisher": {
+            "displayName": "redhat",
+            "publisherId": "test-2",
+            "publisherName": "redhat",
+            "domain": null,
+            "isDomainVerified": null
+          },
+          "versions": [
+            {
+              "version": "0.5.2",
+              "lastUpdated": "2000-01-01T10:00Z",
+              "assetUri": null,
+              "fallbackAssetUri": null,
+              "files": [
+                {
+                  "assetType": "Microsoft.VisualStudio.Code.Manifest",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/package.json"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Content.Details",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/README.md"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Content.License",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/LICENSE.txt"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Icons.Default",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/icon128.png"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.VSIXPackage",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/redhat.vscode-yaml-0.5.2.vsix"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/CHANGELOG.md"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.VsixManifest",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/extension.vsixmanifest"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.VsixSignature",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.5.2/file/redhat.vscode-yaml-0.5.2.sigzip"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.PublicKey",
+                  "source": "http://localhost/api/-/public-key/123-456-789"
+                }
+              ],
+              "properties": null,
+              "targetPlatform": "universal"
+            },
+            {
+              "version": "0.4.0",
+              "lastUpdated": "2000-01-01T10:00Z",
+              "assetUri": null,
+              "fallbackAssetUri": null,
+              "files": [
+                {
+                  "assetType": "Microsoft.VisualStudio.Code.Manifest",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/package.json"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Content.Details",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/README.md"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Content.License",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/LICENSE.txt"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Icons.Default",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/icon128.png"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.VSIXPackage",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/redhat.vscode-yaml-0.5.2.vsix"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.Content.Changelog",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/CHANGELOG.md"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.VsixManifest",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/extension.vsixmanifest"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.VsixSignature",
+                  "source": "http://localhost/api/redhat/vscode-yaml/0.4.0/file/redhat.vscode-yaml-0.5.2.sigzip"
+                },
+                {
+                  "assetType": "Microsoft.VisualStudio.Services.PublicKey",
+                  "source": "http://localhost/api/-/public-key/123-456-789"
+                }
+              ],
+              "properties": null,
+              "targetPlatform": "universal"
+            }
+          ],
+          "statistics": [],
+          "tags": null,
+          "releaseDate": "1999-12-01T09:00Z",
+          "publishedDate": "1999-12-01T09:00Z",
+          "lastUpdated": "2000-01-01T10:00Z",
+          "categories": null,
+          "flags": "preview"
+        }
+      ],
+      "resultMetadata": [
+        {
+          "metadataType": "ResultCount",
+          "metadataItems": [
+            {
+              "name": "TotalCount",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
