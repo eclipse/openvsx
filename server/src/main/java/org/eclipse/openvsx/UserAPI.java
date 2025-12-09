@@ -121,7 +121,7 @@ public class UserAPI {
         json.setRole(user.getRole());
         json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
         json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
-        eclipse.enrichUserJson(json, user);
+        eclipse.enrichUserJsonWithPublisherAgreement(json, user);
         return json;
     }
 

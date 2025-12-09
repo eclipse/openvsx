@@ -1,8 +1,11 @@
 package org.eclipse.openvsx.util;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.util.List;
 
 public class HttpHeadersUtil {
     private HttpHeadersUtil() {
@@ -20,9 +23,14 @@ public class HttpHeadersUtil {
                 headers.add(header, request.getHeader(header));
             }
 
-        } catch (IllegalStateException e) {
-        }
+        } catch (IllegalStateException _) {}
         headers.remove(HttpHeaders.HOST);
+        return headers;
+    }
+
+    public static HttpHeaders getAcceptJsonHeaders() {
+        var headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         return headers;
     }
 }

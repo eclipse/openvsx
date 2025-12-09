@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 public class EclipseProfile {
 
@@ -129,6 +130,14 @@ public class EclipseProfile {
         this.publisherAgreements = publisherAgreements;
     }
 
+    public Optional<PublisherAgreement> getOpenVsxPublisherAgreement() {
+        if (publisherAgreements != null &&  publisherAgreements.getOpenVsx() != null) {
+            return Optional.of(publisherAgreements.getOpenVsx());
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public static class PublisherAgreements {
 
         @JsonProperty("open-vsx")
@@ -152,7 +161,7 @@ public class EclipseProfile {
                     var list = p.getCodec().readValue(p, TYPE_LIST_AGREEMENT);
                     var result = new PublisherAgreements();
                     if (!list.isEmpty())
-                        result.openVsx = list.get(0);
+                        result.openVsx = list.getFirst();
                     return result;
                 }
                 return p.getCodec().readValue(p, PublisherAgreements.class);

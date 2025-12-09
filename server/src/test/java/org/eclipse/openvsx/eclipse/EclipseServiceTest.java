@@ -62,6 +62,9 @@ import static org.mockito.ArgumentMatchers.eq;
 })
 class EclipseServiceTest {
 
+    private static final String PUBLIC_PROFILE_URL = "https://test.openvsx.eclipse.org/account/profile/{personId}";
+    private static final String PUBLISHER_AGREEMENT_URL = "https://test.openvsx.eclipse.org/openvsx/publisher_agreement/{personId}";
+
     @MockitoBean
     RepositoryService repositories;
 
@@ -83,9 +86,15 @@ class EclipseServiceTest {
 
     @Test
     void testGetPublicProfile() throws Exception {
-        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
-        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
-                .thenReturn(mockProfileResponse());
+        Mockito.when(
+            restTemplate.exchange(
+                eq(PUBLIC_PROFILE_URL),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class),
+                eq(Map.of("personId", "test"))
+            )
+        ).thenReturn(mockProfileResponse());
 
         var profile = eclipse.getPublicProfile("test");
 
@@ -118,9 +127,15 @@ class EclipseServiceTest {
         var user = mockUser();
         user.setEclipsePersonId("test");
 
-        var urlTemplate = "https://test.openvsx.eclipse.org/openvsx/publisher_agreement/{personId}";
-        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
-                .thenReturn(mockAgreementResponse());
+        Mockito.when(
+            restTemplate.exchange(
+                eq(PUBLISHER_AGREEMENT_URL),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class),
+                eq(Map.of("personId", "test"))
+            )
+        ).thenReturn(mockAgreementResponse());
 
         var agreement = eclipse.getPublisherAgreement(user);
         assertThat(agreement).isNotNull();
@@ -131,13 +146,42 @@ class EclipseServiceTest {
     }
 
     @Test
-    void testCheckPublisherAgreementOutdated() throws Exception {
+    void testCheckPublisherOutdatedAgreement() throws Exception {
         var user = mockUser();
         user.setEclipsePersonId("test");
 
-        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
-        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
-                .thenReturn(mockOutdatedProfileResponse());
+        Mockito.when(
+            restTemplate.exchange(
+                    eq(PUBLISHER_AGREEMENT_URL),
+                    eq(HttpMethod.GET),
+                    any(HttpEntity.class),
+                    eq(String.class),
+                    eq(Map.of("personId", "test"))
+            )
+        ).thenReturn(mockOutdatedAgreementResponse());
+
+        try {
+            eclipse.checkPublisherAgreement(user);
+            fail("Expected an ErrorResultException");
+        } catch(ErrorResultException exc) {
+            assertThat(exc.getMessage()).isEqualTo("Your Publisher Agreement with the Eclipse Foundation is outdated (version 0.1). The current version is 1.1.");
+        }
+    }
+
+    @Test
+    void testCheckPublisherOutdatedAgreementNoToken() throws Exception {
+        var user = mockUserNoToken();
+        user.setEclipsePersonId("test");
+
+        Mockito.when(
+                restTemplate.exchange(
+                        eq(PUBLIC_PROFILE_URL),
+                        eq(HttpMethod.GET),
+                        any(HttpEntity.class),
+                        eq(String.class),
+                        eq(Map.of("personId", "test"))
+                )
+        ).thenReturn(mockOutdatedProfileResponse());
 
         try {
             eclipse.checkPublisherAgreement(user);
@@ -152,21 +196,33 @@ class EclipseServiceTest {
         var user = mockUser();
         user.setEclipsePersonId("test");
 
-        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
-        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
-                .thenReturn(mockAllowedProfileResponse());
+        Mockito.when(
+            restTemplate.exchange(
+                    eq(PUBLISHER_AGREEMENT_URL),
+                    eq(HttpMethod.GET),
+                    any(HttpEntity.class),
+                    eq(String.class),
+                    eq(Map.of("personId", "test"))
+            )
+        ).thenReturn(mockAgreementResponse());
 
         eclipse.checkPublisherAgreement(user);
     }
 
     @Test
-    void testCheckPublisherAgreement() throws Exception {
-        var user = mockUser();
+    void testCheckPublisherAgreementAllowedNoToken() throws Exception {
+        var user = mockUserNoToken();
         user.setEclipsePersonId("test");
 
-        var urlTemplate = "https://test.openvsx.eclipse.org/account/profile/{personId}";
-        Mockito.when(restTemplate.exchange(eq(urlTemplate), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(Map.of("personId", "test"))))
-                .thenReturn(mockProfileResponse());
+        Mockito.when(
+                restTemplate.exchange(
+                        eq(PUBLIC_PROFILE_URL),
+                        eq(HttpMethod.GET),
+                        any(HttpEntity.class),
+                        eq(String.class),
+                        eq(Map.of("personId", "test"))
+                )
+        ).thenReturn(mockAllowedProfileResponse());
 
         eclipse.checkPublisherAgreement(user);
     }
@@ -284,6 +340,15 @@ class EclipseServiceTest {
         return user;
     }
 
+    private UserData mockUserNoToken() {
+        var user = new UserData();
+        user.setLoginName("test");
+        user.setProvider("github");
+        Mockito.when(tokens.getActiveEclipseToken(user))
+            .thenReturn(null);
+        return user;
+    }
+
     private ResponseEntity<String> mockProfileResponse() throws IOException {
         try (var stream = getClass().getResourceAsStream("profile-response.json")) {
             var json = CharStreams.toString(new InputStreamReader(stream));
@@ -311,7 +376,14 @@ class EclipseServiceTest {
             return new ResponseEntity<>(json, HttpStatus.OK);
         }
     }
-    
+
+    private ResponseEntity<String> mockOutdatedAgreementResponse() throws IOException {
+        try (var stream = getClass().getResourceAsStream("publisher-agreement-outdated-response.json")) {
+            var json = CharStreams.toString(new InputStreamReader(stream));
+            return new ResponseEntity<>(json, HttpStatus.OK);
+        }
+    }
+
     @TestConfiguration
     static class TestConfig {
         @Bean
