@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Common interface for all search service implementations.
@@ -62,7 +63,7 @@ public interface ISearchService {
      */
     void removeSearchEntries(Collection<Long> ids);
 
-    public record Options(
+    record Options(
             String queryString,
             String category,
             String targetPlatform,
@@ -71,8 +72,63 @@ public interface ISearchService {
             String sortOrder,
             String sortBy,
             boolean includeAllVersions,
-            String[] namespacesToExclude
+            String[] namespacesToExclude,
+            String namespace
     ) {
+        private static final Pattern PUBLISHER_PATTERN = Pattern.compile("^@?publisher:| @?publisher:");
+
+        public Options(
+                String queryString,
+                String category,
+                String targetPlatform,
+                int requestedSize,
+                int requestedOffset,
+                String sortOrder,
+                String sortBy,
+                boolean includeAllVersions,
+                String[] namespacesToExclude
+        ) {
+            String namespace = null;
+            if(queryString != null) {
+                var matcher =  PUBLISHER_PATTERN.matcher(queryString);
+                var results = matcher.results().toList();
+                if(results.size() > 1) {
+                    requestedSize = 0;
+                } else if(!results.isEmpty()) {
+                    var first = results.getFirst();
+                    var publisherStartIndex = first.start();
+                    var publisherEndIndex = queryString.indexOf(' ', first.end());
+                    if(publisherEndIndex == -1) {
+                        publisherEndIndex = queryString.length();
+                    }
+                    namespace = queryString.substring(first.end(), publisherEndIndex);
+                    var newQuery = "";
+                    if(publisherStartIndex > 0) {
+                        newQuery += queryString.substring(0, publisherStartIndex);
+                    }
+                    if(publisherEndIndex < queryString.length()) {
+                        newQuery += queryString.substring(publisherEndIndex);
+                    }
+
+                    queryString = newQuery.trim();
+                }
+            }
+
+            this(
+                    queryString,
+                    category,
+                    targetPlatform,
+                    requestedSize,
+                    requestedOffset,
+                    sortOrder,
+                    sortBy,
+                    includeAllVersions,
+                    namespacesToExclude,
+                    namespace
+            );
+        }
+
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -86,12 +142,13 @@ public interface ISearchService {
                     && Objects.equals(targetPlatform, options.targetPlatform)
                     && Objects.equals(sortOrder, options.sortOrder)
                     && Objects.equals(sortBy, options.sortBy)
-                    && Arrays.equals(namespacesToExclude, options.namespacesToExclude);
+                    && Arrays.equals(namespacesToExclude, options.namespacesToExclude)
+                    && Objects.equals(namespace, options.namespace);
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(queryString, category, targetPlatform, requestedSize, requestedOffset, sortOrder, sortBy, includeAllVersions);
+            int result = Objects.hash(queryString, category, targetPlatform, requestedSize, requestedOffset, sortOrder, sortBy, includeAllVersions, namespace);
             result = 31 * result + Arrays.hashCode(namespacesToExclude);
             return result;
         }

@@ -586,6 +586,109 @@ class RegistryAPITest {
     }
 
     @Test
+    void testSearchPublisher() throws Exception {
+        var extVersions = mockSearch();
+        extVersions.forEach(extVersion -> Mockito.when(repositories.findLatestVersion(extVersion.getExtension(), null, false, true)).thenReturn(extVersion));
+        Mockito.when(repositories.findLatestVersions(extVersions.stream().map(ExtensionVersion::getExtension).map(Extension::getId).toList()))
+                .thenReturn(extVersions);
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "publisher:foo", "10", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(searchJson(s -> {
+                    s.setOffset(0);
+                    s.setTotalSize(1);
+                    var e1 = new SearchEntryJson();
+                    e1.setNamespace("foo");
+                    e1.setName("bar");
+                    e1.setVersion("1.0.0");
+                    e1.setTimestamp("2000-01-01T10:00Z");
+                    e1.setDisplayName("Foo Bar");
+                    s.getExtensions().add(e1);
+                })));
+    }
+
+    @Test
+    void testSearchPublisherWithQueryLast() throws Exception {
+        var extVersions = mockSearch();
+        extVersions.forEach(extVersion -> Mockito.when(repositories.findLatestVersion(extVersion.getExtension(), null, false, true)).thenReturn(extVersion));
+        Mockito.when(repositories.findLatestVersions(extVersions.stream().map(ExtensionVersion::getExtension).map(Extension::getId).toList()))
+                .thenReturn(extVersions);
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "publisher:foo bar", "10", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(searchJson(s -> {
+                    s.setOffset(0);
+                    s.setTotalSize(1);
+                    var e1 = new SearchEntryJson();
+                    e1.setNamespace("foo");
+                    e1.setName("bar");
+                    e1.setVersion("1.0.0");
+                    e1.setTimestamp("2000-01-01T10:00Z");
+                    e1.setDisplayName("Foo Bar");
+                    s.getExtensions().add(e1);
+                })));
+    }
+
+    @Test
+    void testSearchPublisherWithQueryFirst() throws Exception {
+        var extVersions = mockSearch();
+        extVersions.forEach(extVersion -> Mockito.when(repositories.findLatestVersion(extVersion.getExtension(), null, false, true)).thenReturn(extVersion));
+        Mockito.when(repositories.findLatestVersions(extVersions.stream().map(ExtensionVersion::getExtension).map(Extension::getId).toList()))
+                .thenReturn(extVersions);
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "bar publisher:foo", "10", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(searchJson(s -> {
+                    s.setOffset(0);
+                    s.setTotalSize(1);
+                    var e1 = new SearchEntryJson();
+                    e1.setNamespace("foo");
+                    e1.setName("bar");
+                    e1.setVersion("1.0.0");
+                    e1.setTimestamp("2000-01-01T10:00Z");
+                    e1.setDisplayName("Foo Bar");
+                    s.getExtensions().add(e1);
+                })));
+    }
+
+    @Test
+    void testSearchPublisherWithMoreQuery() throws Exception {
+        var extVersions = mockSearch();
+        extVersions.forEach(extVersion -> Mockito.when(repositories.findLatestVersion(extVersion.getExtension(), null, false, true)).thenReturn(extVersion));
+        Mockito.when(repositories.findLatestVersions(extVersions.stream().map(ExtensionVersion::getExtension).map(Extension::getId).toList()))
+                .thenReturn(extVersions);
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "bar publisher:foo code", "10", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(searchJson(s -> {
+                    s.setOffset(0);
+                    s.setTotalSize(1);
+                    var e1 = new SearchEntryJson();
+                    e1.setNamespace("foo");
+                    e1.setName("bar");
+                    e1.setVersion("1.0.0");
+                    e1.setTimestamp("2000-01-01T10:00Z");
+                    e1.setDisplayName("Foo Bar");
+                    s.getExtensions().add(e1);
+                })));
+    }
+
+    @Test
+    void testSearchMultiplePublishers() throws Exception {
+        var extVersions = mockSearch();
+        extVersions.forEach(extVersion -> Mockito.when(repositories.findLatestVersion(extVersion.getExtension(), null, false, true)).thenReturn(extVersion));
+        Mockito.when(repositories.findLatestVersions(extVersions.stream().map(ExtensionVersion::getExtension).map(Extension::getId).toList()))
+                .thenReturn(extVersions);
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "publisher:bar publisher:foo", "10", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(searchJson(s -> {
+                    s.setOffset(0);
+                    s.setTotalSize(0);
+                })));
+    }
+
+    @Test
     void testSearchInactive() throws Exception {
         var extVersionsList = mockSearch();
         extVersionsList.forEach(extVersion -> {
@@ -2184,6 +2287,19 @@ class RegistryAPITest {
         var searchOptions = new ISearchService.Options("foo", null, null, 10, 0, "desc", SortBy.RELEVANCE, false, null);
         Mockito.when(search.search(searchOptions))
                 .thenReturn(searchResult);
+
+        var publisherSearchOptions = new ISearchService.Options("", null, null, 10, 0, "desc", SortBy.RELEVANCE, false, null, "foo");
+        Mockito.when(search.search(publisherSearchOptions))
+                .thenReturn(searchResult);
+
+        var publisherWithQuerySearchOptions = new ISearchService.Options("bar", null, null, 10, 0, "desc", SortBy.RELEVANCE, false, null, "foo");
+        Mockito.when(search.search(publisherWithQuerySearchOptions))
+                .thenReturn(searchResult);
+
+        var publisherWithMoreQuerySearchOptions = new ISearchService.Options("bar code", null, null, 10, 0, "desc", SortBy.RELEVANCE, false, null, "foo");
+        Mockito.when(search.search(publisherWithMoreQuerySearchOptions))
+                .thenReturn(searchResult);
+
         return List.of(extVersion);
     }
 

@@ -58,6 +58,7 @@ public class DatabaseSearchService implements ISearchService {
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public SearchResult search(ISearchService.Options options) {
         var matchingExtensions = repositories.findAllActiveExtensions();
+        matchingExtensions = includeByNamespace(options, matchingExtensions);
         matchingExtensions = excludeByNamespace(options, matchingExtensions);
         matchingExtensions = excludeByTargetPlatform(options, matchingExtensions);
         matchingExtensions = excludeByCategory(options, matchingExtensions);
@@ -139,6 +140,14 @@ public class DatabaseSearchService implements ISearchService {
         }
 
         return matchingExtensions.filter(extension -> extension.getVersions().stream().anyMatch(ev -> ev.getTargetPlatform().equals(options.targetPlatform())));
+    }
+
+    private Streamable<Extension> includeByNamespace(Options options, Streamable<Extension> matchingExtensions) {
+        if(options.namespace() == null) {
+            return matchingExtensions;
+        }
+
+        return matchingExtensions.filter(extension -> extension.getNamespace().getName().equalsIgnoreCase(options.namespace()));
     }
 
     private Streamable<Extension> excludeByNamespace(Options options, Streamable<Extension> matchingExtensions) {
