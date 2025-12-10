@@ -227,9 +227,7 @@ public final class UrlUtil {
     }
 
     public static String extractWildcardPath(HttpServletRequest request) {
-        var path = extractWildcardPath(request, (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE));
-        // need to decode the path as it is part of the URL and thus potentially URI encoded.
-        return UriUtils.decode(path, StandardCharsets.UTF_8);
+        return extractWildcardPath(request, (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE));
     }
 
     /**
@@ -240,6 +238,12 @@ public final class UrlUtil {
      */
     public static String extractWildcardPath(HttpServletRequest request, String pattern) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+
+        if (path != null) {
+            // need to decode the path as it is part of the URL and thus URI encoded.
+            path = UriUtils.decode(path, StandardCharsets.UTF_8);
+        }
+
         return path != null && pattern != null
                 ? new AntPathMatcher().extractPathWithinPattern(pattern, path)
                 : "";
