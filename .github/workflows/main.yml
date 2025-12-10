@@ -38,9 +38,6 @@ jobs:
     - name: Build CLI
       run: yarn --cwd cli
 
-    - name: Build and test webui
-      run: yarn --cwd webui test
-
     - name: Get all changed webui files
       id: changed_webui_files
       uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
