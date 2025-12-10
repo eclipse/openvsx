@@ -227,7 +227,9 @@ public final class UrlUtil {
     }
 
     public static String extractWildcardPath(HttpServletRequest request) {
-        return extractWildcardPath(request, (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE));
+        var path = extractWildcardPath(request, (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE));
+        // need to decode the path as it is part of the URL and thus potentially URI encoded.
+        return UriUtils.decode(path, StandardCharsets.UTF_8);
     }
 
     /**
