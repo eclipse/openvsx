@@ -39,8 +39,6 @@ org:
       allow-anonymous-data-usage: false
 
 ovsx:
-  redis:
-    embedded: true
   storage:
     local:
       directory: /tmp

@@ -170,7 +170,6 @@ public class UserService {
     }
 
     @Transactional(rollbackOn = { ErrorResultException.class, NotFoundException.class })
-    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#details.name")
     public ResultJson updateNamespaceDetails(NamespaceDetailsJson details, UserData user) {
         var namespace = repositories.findNamespace(details.getName());
         if (namespace == null) {
@@ -211,6 +210,8 @@ public class UserService {
             namespace.setLogoStorageType(null);
         }
 
+        cache.evictNamespaceDetails(namespace);
+        cache.evictExtensionQueryExtensionData(namespace);
         return ResultJson.success("Updated details for namespace " + details.getName());
     }
 

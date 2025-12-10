@@ -22,9 +22,11 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.TestingAuthenticationToken;
@@ -39,8 +41,11 @@ import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
+import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 import static org.eclipse.openvsx.entities.FileResource.STORAGE_LOCAL;
 import static org.junit.jupiter.api.Assertions.*;
@@ -69,6 +74,14 @@ class CacheServiceTest {
 
     @Autowired
     RepositoryService repositories;
+
+    @BeforeEach
+    void beforeEach() {
+       Stream.of(CACHE_EXTENSION_JSON, CACHE_AVERAGE_REVIEW_RATING)
+               .map(name -> cache.getCache(name))
+               .filter(Objects::nonNull)
+               .forEach(Cache::clear);
+    }
 
     @Test
     @Transactional
@@ -301,7 +314,7 @@ class CacheServiceTest {
             // returns cached value
             assertEquals(0L, repositories.getAverageReviewRating());
 
-            cache.getCache(CacheService.CACHE_AVERAGE_REVIEW_RATING).clear();
+            cache.getCache(CACHE_AVERAGE_REVIEW_RATING).clear();
 
             // returns new value from database
             assertEquals(3L, repositories.getAverageReviewRating());

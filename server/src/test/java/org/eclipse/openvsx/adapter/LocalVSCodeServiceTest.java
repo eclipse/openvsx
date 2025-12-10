@@ -11,14 +11,11 @@ package org.eclipse.openvsx.adapter;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.SignatureKeyPair;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.VersionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,9 +29,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.openvsx.adapter.ExtensionQueryParam.*;
+import static org.eclipse.openvsx.adapter.ExtensionQueryParam.Criterion;
+import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(SpringExtension.class)
@@ -112,6 +111,18 @@ public class LocalVSCodeServiceTest {
         var keyPair = new SignatureKeyPair();
         keyPair.setPublicId("123-456-789");
         extVersion.setSignatureKeyPair(keyPair);
+
+        var resourceTypes = List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, CHANGELOG, VSIXMANIFEST);
+        var resources = resourceTypes.stream()
+                .map(type -> {
+                    var resource = new FileResource();
+                    resource.setExtension(extVersion);
+                    resource.setType(type);
+                    resource.setName(type);
+                    return resource;
+                }).toList();
+
+        Mockito.when(repositories.findFileResourcesByExtensionVersionIdAndType(Set.of(extVersion.getId()), resourceTypes)).thenReturn(resources);
 
         return extVersion;
     }

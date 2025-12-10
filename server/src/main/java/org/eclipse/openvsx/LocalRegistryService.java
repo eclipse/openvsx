@@ -694,6 +694,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         search.updateSearchEntry(extension);
         cache.evictExtensionJsons(extension);
         cache.evictLatestExtensionVersion(extension);
+        cache.evictExtensionQueryExtensionData(extension);
         return ResultJson.success("Added review for " + NamingUtil.toExtensionId(extension));
     }
 
@@ -721,6 +722,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         search.updateSearchEntry(extension);
         cache.evictExtensionJsons(extension);
         cache.evictLatestExtensionVersion(extension);
+        cache.evictExtensionQueryExtensionData(extension);
         return ResultJson.success("Deleted review for " + NamingUtil.toExtensionId(extension));
     }
 

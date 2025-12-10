@@ -162,7 +162,11 @@ public class CacheConfig {
             @Value("${ovsx.caching.malicious-extensions.max-size:1}") long maliciousExtensionsMaxSize,
             @Value("${ovsx.caching.rate-limiting.name:buckets}") String rateLimitingCacheName,
             @Value("${ovsx.caching.rate-limiting.tti:PT1H}") Duration rateLimitingTti,
-            @Value("${ovsx.caching.rate-limiting.max-size:1024}") long rateLimitingMaxSize
+            @Value("${ovsx.caching.rate-limiting.max-size:1024}") long rateLimitingMaxSize,
+            @Value("${ovsx.caching.extensionquery-ids.ttl:PT1H}") Duration extensionQueryIdsTtl,
+            @Value("${ovsx.caching.extensionquery-ids.max-size:1024}") long extensionQueryIdsMaxSize,
+            @Value("${ovsx.caching.extensionquery-results.ttl:PT1H}") Duration extensionQueryResultsTtl,
+            @Value("${ovsx.caching.extensionquery-results.max-size:1024}") long extensionQueryResultsMaxSize
     ) {
         logger.info("Configure Caffeine cache manager");
         var averageReviewRatingCache = createCaffeineConfiguration(averageReviewRatingTtl, averageReviewRatingMaxSize, false);
@@ -173,6 +177,8 @@ public class CacheConfig {
         var sitemapCache = createCaffeineConfiguration(sitemapTtl, sitemapMaxSize, false);
         var maliciousExtensionsCache = createCaffeineConfiguration(maliciousExtensionsTtl, maliciousExtensionsMaxSize, false);
         var rateLimitingCache = createCaffeineConfiguration(rateLimitingTti, rateLimitingMaxSize, true);
+        var extensionQueryIdsCache = createCaffeineConfiguration(extensionQueryIdsTtl, extensionQueryIdsMaxSize, false);
+        var extensionQueryResultsCache = createCaffeineConfiguration(extensionQueryResultsTtl, extensionQueryResultsMaxSize, false);
 
         var cacheManager = new CacheManagerImpl(
                 new CaffeineCachingProvider(),
@@ -190,6 +196,8 @@ public class CacheConfig {
         cacheManager.createCache(CACHE_SITEMAP, sitemapCache);
         cacheManager.createCache(CACHE_MALICIOUS_EXTENSIONS, maliciousExtensionsCache);
         cacheManager.createCache(rateLimitingCacheName, rateLimitingCache);
+        cacheManager.createCache(CACHE_EXTENSIONQUERY_EXTENSION_IDS, extensionQueryIdsCache);
+        cacheManager.createCache(CACHE_EXTENSIONQUERY_RESULTS, extensionQueryResultsCache);
         return new JCacheCacheManager(cacheManager);
     }
 
@@ -216,7 +224,9 @@ public class CacheConfig {
             @Value("${ovsx.caching.extension-json.ttl:PT1H}") Duration extensionJsonTtl,
             @Value("${ovsx.caching.latest-extension-version.ttl:PT1H}") Duration latestExtensionVersionTtl,
             @Value("${ovsx.caching.sitemap.ttl:PT1H}") Duration sitemapTtl,
-            @Value("${ovsx.caching.malicious-extensions.ttl:P3D}") Duration maliciousExtensionsTtl
+            @Value("${ovsx.caching.malicious-extensions.ttl:P3D}") Duration maliciousExtensionsTtl,
+            @Value("${ovsx.caching.extensionquery-ids.ttl:PT1H}") Duration extensionQueryIdsTtl,
+            @Value("${ovsx.caching.extensionquery-results.ttl:PT1H}") Duration extensionQueryResultsTtl
     ) {
         logger.info("Configure Redis cache manager");
         var extensionVersionMapper = JsonMapper.builder()
@@ -251,6 +261,14 @@ public class CacheConfig {
                 .withCacheConfiguration(
                         CACHE_MALICIOUS_EXTENSIONS,
                         redisCacheConfig(new GenericJackson2JsonRedisSerializer(), maliciousExtensionsTtl)
+                )
+                .withCacheConfiguration(
+                        CACHE_EXTENSIONQUERY_EXTENSION_IDS,
+                        redisCacheConfig(new GenericJackson2JsonRedisSerializer(), extensionQueryIdsTtl)
+                )
+                .withCacheConfiguration(
+                        CACHE_EXTENSIONQUERY_RESULTS,
+                        redisCacheConfig(new GenericJackson2JsonRedisSerializer(), extensionQueryResultsTtl)
                 )
                 .build();
     }

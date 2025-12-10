@@ -95,6 +95,7 @@ public class AzureDownloadCountProcessor {
             extension = entityManager.merge(extension);
             cache.evictExtensionJsons(extension);
             cache.evictLatestExtensionVersion(extension);
+            cache.evictExtensionQueryExtensionData(extension);
         }));
     }
 
