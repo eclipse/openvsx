@@ -38,6 +38,7 @@
         "commander": "^6.2.1",
         "follow-redirects": "^1.14.6",
         "is-ci": "^2.0.0",
+        "jws": "^4.0.1",
         "leven": "^3.1.0",
         "semver": "^7.6.0",
         "tmp": "^0.2.3",
@@ -59,6 +60,10 @@
         "limiter": "^2.1.0",
         "rimraf": "^6.0.1",
         "typescript": "^5.6.3"
+    },
+    "resolutions": {
+        "glob": "^11.1.0",
+        "jws": "^4.0.1"
     },
     "scripts": {
         "clean": "rimraf lib",
