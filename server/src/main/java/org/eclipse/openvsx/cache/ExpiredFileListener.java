@@ -24,7 +24,7 @@ public class ExpiredFileListener implements RemovalListener<Object, Object> {
 
     @Override
     public void onRemoval(@Nullable Object key, @Nullable Object value, RemovalCause cause) {
-        logger.info("File removal cache event: {} | key: {} | value: {}", cause, key, value);
+        logger.debug("File removal cache event: {} | key: {} | value: {}", cause, key, value);
         if(!(value instanceof Path path)) {
             return;
         }
@@ -32,7 +32,7 @@ public class ExpiredFileListener implements RemovalListener<Object, Object> {
         try {
             var deleted = Files.deleteIfExists(path);
             if(deleted) {
-                logger.info("Deleted expired file {} successfully", path);
+                logger.debug("Deleted expired file {} successfully", path);
             } else {
                 logger.warn("Did NOT delete expired file {}", path);
             }
