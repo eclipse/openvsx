@@ -648,6 +648,27 @@ class VSCodeAPITest {
     }
 
     @Test
+    void testBrowseFilenameWithWhitespace() throws Exception {
+        var namespaceName = "editorconfig";
+        var extensionName = "editorconfig";
+        var version = "0.16.6-1";
+        var path = mockExtensionBrowse(namespaceName, extensionName, version);
+        var bytes = new byte[0];
+        try(var zip = new ZipFile(path.toFile())) {
+            var entry = zip.getEntry("extension/EditorConfig icon.png");
+            try(var in = zip.getInputStream(entry)) {
+                bytes = in.readAllBytes();
+            }
+        }
+        mockMvc.perform(get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}/{path}", namespaceName, extensionName, version, "extension/EditorConfig icon.png"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(bytes))
+                .andDo(result -> Files.delete(path));
+    }
+
+    @Test
     void testDownload() throws Exception {
         mockExtensionVersion();
         mockMvc.perform(get("/vscode/gallery/publishers/{namespace}/vsextensions/{extension}/{version}/vspackage",
@@ -977,13 +998,14 @@ class VSCodeAPITest {
         var resource = new FileResource();
         resource.setId(3L);
         resource.setExtension(extVersion);
-        resource.setName("EditorConfig.EditorConfig-0.16.6.vsix");
+        var vsixFileName = namespaceName + "." + extensionName + "-" + version + ".vsix";
+        resource.setName(vsixFileName);
         resource.setType(DOWNLOAD);
         resource.setStorageType(STORAGE_LOCAL);
 
         var path = Path.of("/tmp", namespaceName, extensionName, (!TargetPlatform.isUniversal(targetPlatform) ? targetPlatform : ""), version, resource.getName());
         path.toFile().mkdirs();
-        try (var in = getClass().getResourceAsStream("../EditorConfig.EditorConfig-0.16.6.vsix")) {
+        try (var in = getClass().getResourceAsStream("../" + vsixFileName)) {
             Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
         }
 
