@@ -1251,7 +1251,7 @@ public class RegistryAPI {
                     .location(URI.create(url))
                     .body(json);
         } catch (ErrorResultException exc) {
-            logger.warn("Failed to publish extension", exc);
+            logger.warn("Failed to publish extension: {}", exc.getMessage());
             return exc.toResponseEntity(ExtensionJson.class);
         }
     }
@@ -1304,7 +1304,7 @@ public class RegistryAPI {
                     .location(URI.create(url))
                     .body(json);
         } catch (ErrorResultException exc) {
-            logger.warn("Failed to publish extension", exc);
+            logger.warn("Failed to publish extension: {}", exc.getMessage());
             return exc.toResponseEntity(ExtensionJson.class);
         }
     }
