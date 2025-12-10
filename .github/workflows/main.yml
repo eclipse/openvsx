@@ -122,8 +122,8 @@ jobs:
         push: ${{ github.repository_owner == 'eclipse' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        secrets: |
-          "dv-key=${{ secrets.DEVELOCITY_ACCESS_KEY }}"
+        secrets-envs: |
+          "dv-key=DEVELOCITY_ACCESS_KEY"
 
   save-pr-number:
     permissions:
