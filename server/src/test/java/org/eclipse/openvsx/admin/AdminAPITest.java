@@ -74,7 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
-    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class
+    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class
 })
 class AdminAPITest {
     
@@ -1451,7 +1451,8 @@ class AdminAPITest {
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
-                FileCacheDurationConfig fileCacheDurationConfig
+                FileCacheDurationConfig fileCacheDurationConfig,
+                CdnServiceConfig cdnServiceConfig
         ) {
             return new StorageUtilService(
                     repositories,
@@ -1463,7 +1464,8 @@ class AdminAPITest {
                     search,
                     cache,
                     entityManager,
-                    fileCacheDurationConfig
+                    fileCacheDurationConfig,
+                    cdnServiceConfig
             );
         }
 

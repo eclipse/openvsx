@@ -86,7 +86,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, AzureDownloadCountService.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
-    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class
+    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class
 })
 class RegistryAPITest {
 
@@ -2590,7 +2590,8 @@ class RegistryAPITest {
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
-                FileCacheDurationConfig fileCacheDurationConfig
+                FileCacheDurationConfig fileCacheDurationConfig,
+                CdnServiceConfig cdnServiceConfig
         ) {
             return new StorageUtilService(
                     repositories,
@@ -2602,7 +2603,8 @@ class RegistryAPITest {
                     search,
                     cache,
                     entityManager,
-                    fileCacheDurationConfig
+                    fileCacheDurationConfig,
+                    cdnServiceConfig
             );
         }
 

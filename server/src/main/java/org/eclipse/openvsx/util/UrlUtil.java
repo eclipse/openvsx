@@ -21,6 +21,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriUtils;
 
+import javax.annotation.Nullable;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
@@ -111,6 +113,27 @@ public final class UrlUtil {
 
     public static String createApiReviewsUrl(String serverUrl, String namespace, String extension) {
         return createApiUrl(serverUrl, "api", namespace, extension, "reviews");
+    }
+
+    /**
+     * Creates a URI of the form {@code baseUrl + '/' + encodedPath},
+     * ensuring that only a single slash is between baseUrl and path.
+     *
+     * @param baseUrl the baseURL.
+     * @param encodedPath the encoded path to append
+     */
+    public static URI createURI(String baseUrl, String encodedPath) {
+        // ensure that the baseURL always ends with a '/'.
+        if (baseUrl.isEmpty() || baseUrl.charAt(baseUrl.length() - 1) != '/') {
+            baseUrl += '/';
+        }
+
+        // strip a preceding '/' from the path.
+        if (encodedPath.startsWith("/")) {
+            encodedPath = encodedPath.substring(1);
+        }
+
+        return URI.create(baseUrl + encodedPath);
     }
 
     /**
