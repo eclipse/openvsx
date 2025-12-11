@@ -173,20 +173,13 @@ public class StorageUtilService implements IStorageService {
     }
 
     private IStorageService getStorageService(String storageType) {
-        var storageService = switch (storageType) {
+        return switch (storageType) {
             case STORAGE_GOOGLE -> googleStorage;
             case STORAGE_AZURE -> azureStorage;
             case STORAGE_AWS -> awsStorage;
             case STORAGE_LOCAL -> localStorage;
             default -> throw new IllegalArgumentException("Storage '" + storageType + "' is not available.");
         };
-
-        // fail fast if the requested storage service is not enabled.
-        if (!storageService.isEnabled()) {
-            throw new IllegalStateException("requested storage '" + storageType + "' is not enabled.");
-        } else {
-            return storageService;
-        }
     }
 
     private IStorageService getStorageServiceForRetrieval(String storageType) {
