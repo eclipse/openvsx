@@ -14,7 +14,7 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostActivePublishingUse
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtensions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
-import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -32,7 +32,6 @@ import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
-import org.eclipse.openvsx.jooq.tables.Shedlock;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
@@ -96,9 +95,9 @@ public class Public extends SchemaImpl {
     public final AdminStatisticsTopNamespaceExtensions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS = AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS;
 
     /**
-     * The table <code>public.azure_download_count_processed_item</code>.
+     * The table <code>public.download_count_processed_item</code>.
      */
-    public final AzureDownloadCountProcessedItem AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM = AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM;
+    public final DownloadCountProcessedItem DOWNLOAD_COUNT_PROCESSED_ITEM = DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM;
 
     /**
      * The table <code>public.extension</code>.
@@ -186,11 +185,6 @@ public class Public extends SchemaImpl {
     public final PersonalAccessToken PERSONAL_ACCESS_TOKEN = PersonalAccessToken.PERSONAL_ACCESS_TOKEN;
 
     /**
-     * The table <code>public.shedlock</code>.
-     */
-    public final Shedlock SHEDLOCK = Shedlock.SHEDLOCK;
-
-    /**
      * The table <code>public.signature_key_pair</code>.
      */
     public final SignatureKeyPair SIGNATURE_KEY_PAIR = SignatureKeyPair.SIGNATURE_KEY_PAIR;
@@ -227,7 +221,7 @@ public class Public extends SchemaImpl {
     public final List<Sequence<?>> getSequences() {
         return Arrays.asList(
             Sequences.ADMIN_STATISTICS_SEQ,
-            Sequences.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_SEQ,
+            Sequences.DOWNLOAD_COUNT_PROCESSED_ITEM_SEQ,
             Sequences.EXTENSION_REVIEW_SEQ,
             Sequences.EXTENSION_SEQ,
             Sequences.EXTENSION_VERSION_SEQ,
@@ -253,7 +247,7 @@ public class Public extends SchemaImpl {
             AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS,
             AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS,
             AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS,
-            AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM,
+            DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM,
             Extension.EXTENSION,
             ExtensionReview.EXTENSION_REVIEW,
             ExtensionVersion.EXTENSION_VERSION,
@@ -271,7 +265,6 @@ public class Public extends SchemaImpl {
             NamespaceSocialLinks.NAMESPACE_SOCIAL_LINKS,
             PersistedLog.PERSISTED_LOG,
             PersonalAccessToken.PERSONAL_ACCESS_TOKEN,
-            Shedlock.SHEDLOCK,
             SignatureKeyPair.SIGNATURE_KEY_PAIR,
             SpringSession.SPRING_SESSION,
             SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES,

@@ -15,6 +15,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -100,6 +101,14 @@ public class CacheService {
             return;
         }
 
+        // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern.
+        // This uses the redis KEYS command that might take a while but considering the typical size of the EXTENSION_JSON
+        // cache its acceptable.
+        if (cache instanceof RedisCacheWriter redisCache) {
+            redisCache.clean(CACHE_EXTENSION_JSON, extensionJsonCacheKey.generateWildcard(extension).getBytes());
+            return;
+        }
+
         var versions = new ArrayList<>(VersionAlias.ALIAS_NAMES);
         extension.getVersions().stream()
                 .map(ExtensionVersion::getVersion)
@@ -143,6 +152,14 @@ public class CacheService {
     public void evictLatestExtensionVersion(Extension extension) {
         var cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION);
         if(cache == null) {
+            return;
+        }
+
+        // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern.
+        // This uses the redis KEYS command that might take a while but considering the typical size of the EXTENSION_JSON
+        // cache its acceptable.
+        if (cache instanceof RedisCacheWriter redisCache) {
+            redisCache.clean(CACHE_LATEST_EXTENSION_VERSION, latestExtensionVersionCacheKey.generateWildcard(extension).getBytes());
             return;
         }
 

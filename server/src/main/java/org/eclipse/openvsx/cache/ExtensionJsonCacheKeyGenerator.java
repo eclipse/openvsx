@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.cache.interceptor.KeyGenerator;
@@ -27,5 +28,11 @@ public class ExtensionJsonCacheKeyGenerator implements KeyGenerator {
 
     public String generate(String namespaceName, String extensionName, String targetPlatform, String version) {
         return NamingUtil.toFileFormat(namespaceName, extensionName, targetPlatform, version);
+    }
+
+    public String generateWildcard(Extension extension) {
+        var extensionName = extension.getName();
+        var namespaceName = extension.getNamespace().getName();
+        return NamingUtil.toExtensionId(namespaceName, extensionName) + "*";
     }
 }
