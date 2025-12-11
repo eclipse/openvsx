@@ -147,6 +147,9 @@ public class UserJson extends ResultJson {
         /* 'none' | 'signed' | 'outdated' */
         private String status;
 
+        @Schema(hidden = true)
+        private String version;
+
         private String timestamp;
 
         public String getStatus() {
@@ -155,6 +158,14 @@ public class UserJson extends ResultJson {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
         }
 
         public String getTimestamp() {
@@ -170,12 +181,14 @@ public class UserJson extends ResultJson {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PublisherAgreement that = (PublisherAgreement) o;
-            return Objects.equals(status, that.status) && Objects.equals(timestamp, that.timestamp);
+            return Objects.equals(status, that.status) &&
+                    Objects.equals(version, that.version) &&
+                    Objects.equals(timestamp, that.timestamp);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(status, timestamp);
+            return Objects.hash(status, version, timestamp);
         }
     }
 

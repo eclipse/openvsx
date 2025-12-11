@@ -1,7 +1,7 @@
 {
     "PersonID": "test",
     "DocumentID": "abcd",
-    "Version": "1.1",
+    "Version": "0.1",
     "EffectiveDate": "2020-10-09 05:10:32",
     "ReceivedDate": "2020-10-09",
     "ExpirationDate": null,
