@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import com.google.common.collect.ImmutableMap;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,6 +37,12 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties("ovsx.storage.cdn")
 public class CdnServiceConfig {
+    private static final Map<String, String> STORAGE_TYPE_TO_SERVICE = ImmutableMap.of(
+            "aws", "aws",
+            "azure-blob", "azure",
+            "google-cloud", "gcp"
+    );
+
     private boolean enabled;
     private Map<String, String> services = new HashMap<>();
 
@@ -56,6 +63,11 @@ public class CdnServiceConfig {
     }
 
     public @Nullable String getCdnFrontUrl(String storageType) {
-        return enabled ? services.get(storageType) : null;
+        if (enabled) {
+            String serviceName = STORAGE_TYPE_TO_SERVICE.get(storageType);
+            return serviceName != null ? services.get(serviceName) : null;
+        } else {
+            return null;
+        }
     }
 }

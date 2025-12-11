@@ -43,6 +43,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class StorageUtilServiceTest {
 
     @Autowired
+    CdnServiceConfig cdnServiceConfig;
+
+    @Autowired
     AzureBlobStorageService azureStorage;
 
     @Autowired
@@ -50,12 +53,18 @@ public class StorageUtilServiceTest {
 
     @Test
     public void testCdnEnabled() {
+        cdnServiceConfig.setEnabled(true);
+
         // Test a file resource for which a cdn prefix is enabled
         var extension = mockExtension();
         var extensionVersion = mockExtensionVersion(extension, 1, "1.0.0", "universal");
-        var resource = mockFileResource(1, extensionVersion, "README.md", README, FileResource.STORAGE_AWS);
+        var resourceAws = mockFileResource(1, extensionVersion, "README.md", README, FileResource.STORAGE_AWS);
+        var resourceAzure = mockFileResource(1, extensionVersion, "README.md", README, FileResource.STORAGE_AZURE);
 
-        assertEquals("https://test.cloudfront.com/redhat/vscode-yaml/1.0.0/README.md", storageUtilService.getLocation(resource).toString());
+        assertEquals("https://test.cloudfront.com/aws/redhat/vscode-yaml/1.0.0/README.md", storageUtilService.getLocation(resourceAws).toString());
+        assertEquals("https://test.cloudfront.com/azure/redhat/vscode-yaml/1.0.0/README.md", storageUtilService.getLocation(resourceAzure).toString());
+
+        cdnServiceConfig.setEnabled(false);
     }
 
     @Test
@@ -134,9 +143,10 @@ public class StorageUtilServiceTest {
         @Bean
         public CdnServiceConfig cdnServiceConfiguration() {
             var config = new CdnServiceConfig();
-            config.setEnabled(true);
+            config.setEnabled(false);
             var services = new HashMap<String, String>();
-            services.put("aws", "https://test.cloudfront.com");
+            services.put("aws", "https://test.cloudfront.com/aws");
+            services.put("azure", "https://test.cloudfront.com/azure");
             config.setServices(services);
             return config;
         }
