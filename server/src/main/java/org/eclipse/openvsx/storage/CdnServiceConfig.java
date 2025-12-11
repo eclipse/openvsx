@@ -30,7 +30,7 @@ import java.util.Map;
  *     cdn:
  *       enabled: true
  *       services:
- *         - aws: https://my.cdn.front.domain/
+ *         aws: https://my.cdn.front.domain/
  * </pre>
  */
 @Configuration
