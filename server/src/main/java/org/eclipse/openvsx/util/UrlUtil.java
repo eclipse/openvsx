@@ -115,20 +115,25 @@ public final class UrlUtil {
         return createApiUrl(serverUrl, "api", namespace, extension, "reviews");
     }
 
-    public static @Nullable URI createURI(String baseUrl, String... segments) {
-        if(Arrays.stream(segments).anyMatch(Objects::isNull)) {
-            return null;
-        }
-
-        var path = Arrays.stream(segments)
-                .filter(StringUtils::isNotEmpty)
-                .collect(Collectors.joining("/"));
-
+    /**
+     * Creates a URI of the form {@code baseUrl + '/' + encodedPath},
+     * ensuring that only a single slash is between baseUrl and path.
+     *
+     * @param baseUrl the baseURL.
+     * @param encodedPath the encoded path to append
+     */
+    public static URI createURI(String baseUrl, String encodedPath) {
+        // ensure that the baseURL always ends with a '/'.
         if (baseUrl.isEmpty() || baseUrl.charAt(baseUrl.length() - 1) != '/') {
             baseUrl += '/';
         }
 
-        return URI.create(baseUrl + path);
+        // strip a preceding '/' from the path.
+        if (encodedPath.startsWith("/")) {
+            encodedPath = encodedPath.substring(1);
+        }
+
+        return URI.create(baseUrl + encodedPath);
     }
 
     /**
