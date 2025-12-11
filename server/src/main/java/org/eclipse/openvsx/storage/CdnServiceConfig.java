@@ -13,6 +13,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -36,7 +37,7 @@ import java.util.Map;
 @ConfigurationProperties("ovsx.storage.cdn")
 public class CdnServiceConfig {
     private boolean enabled;
-    private Map<String, String> services;
+    private Map<String, String> services = new HashMap<>();
 
     public boolean isEnabled() {
         return enabled;
