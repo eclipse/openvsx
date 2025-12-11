@@ -33,6 +33,7 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
+    public static final Index DOWNLOAD_COUNT_PROCESSED_ITEM_NAME = Internal.createIndex(DSL.name("download_count_processed_item_name"), DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM, new OrderField[] { DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM.NAME }, false);
     public static final Index DOWNLOAD_COUNT_PROCESSED_ITEM_STORAGE_TYPE = Internal.createIndex(DSL.name("download_count_processed_item_storage_type"), DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM, new OrderField[] { DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM.STORAGE_TYPE }, false);
     public static final Index EXTENSION__NAMESPACE_ID__IDX = Internal.createIndex(DSL.name("extension__namespace_id__idx"), Extension.EXTENSION, new OrderField[] { Extension.EXTENSION.NAMESPACE_ID }, false);
     public static final Index EXTENSION_REVIEW__EXTENSION_ID__IDX = Internal.createIndex(DSL.name("extension_review__extension_id__idx"), ExtensionReview.EXTENSION_REVIEW, new OrderField[] { ExtensionReview.EXTENSION_REVIEW.EXTENSION_ID }, false);

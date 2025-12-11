@@ -88,13 +88,13 @@ public class DownloadCountProcessor {
         });
     }
 
-    @Transactional //needs transaction for lazy-loading versions
-    public void evictCaches(List<Extension> extensions) {
-        Observation.createNotStarted("DownloadCountProcessor#evictCaches", observations).observe(() -> extensions.forEach(extension -> {
-            extension = entityManager.merge(extension);
-            cache.evictExtensionJsons(extension);
-            cache.evictLatestExtensionVersion(extension);
-        }));
+    @Transactional // needs transaction for lazy-loading versions
+    public void evictCaches(Extension extension) {
+        Observation.createNotStarted("DownloadCountProcessor#evictCaches", observations).observe(() -> {
+            var mergedExtension = entityManager.merge(extension);
+            cache.evictExtensionJsons(mergedExtension);
+            cache.evictLatestExtensionVersion(mergedExtension);
+        });
     }
 
     public void updateSearchEntries(List<Extension> extensions) {

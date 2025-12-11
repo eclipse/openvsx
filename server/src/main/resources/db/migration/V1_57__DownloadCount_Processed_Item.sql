@@ -7,9 +7,6 @@ CREATE TABLE IF NOT EXISTS public.download_count_processed_item (id BIGINT NOT N
 );
 
 ALTER TABLE ONLY public.download_count_processed_item
-    DROP CONSTRAINT IF EXISTS download_count_processed_item_pkey;
-
-ALTER TABLE ONLY public.download_count_processed_item
     ADD CONSTRAINT download_count_processed_item_pkey PRIMARY KEY (id);
 
 CREATE INDEX IF NOT EXISTS download_count_processed_item_storage_type ON download_count_processed_item (storage_type);

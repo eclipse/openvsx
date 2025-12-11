@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.storage.log;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.util.TempFile;
@@ -52,6 +53,7 @@ import java.util.zip.GZIPInputStream;
 public class AwsDownloadCountService {
     private final Logger logger = LoggerFactory.getLogger(AwsDownloadCountService.class);
 
+    private static final String LOG_LOCATION_PREFIX = "AWSLogs/";
     private static final int MAX_KEYS = 100;
 
     private final AwsStorageService  awsStorageService;
@@ -60,8 +62,8 @@ public class AwsDownloadCountService {
     @Value("${ovsx.logs.aws.bucket:}")
     String bucket;
 
-    @Value("${ovsx.logs.aws.prefix:AWSLogs/}")
-    String prefix;
+    @Value("${ovsx.logs.aws.log-location-prefix:" + LOG_LOCATION_PREFIX + "}")
+    String logLocationPrefix;
 
     public AwsDownloadCountService(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
         this.awsStorageService = awsStorageService;
@@ -138,39 +140,46 @@ public class AwsDownloadCountService {
         }
         logFiles.removeAll(failedItems);
 
-        for (var name : logFiles) {
-            var processedOn = LocalDateTime.now();
+        var allUpdatedExtensions = new HashMap<Long, Extension>();
 
-            if (processedOn.isAfter(maxExecutionTime)) {
-                logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
-                return false;
-            }
+        try {
+            for (var name : logFiles) {
+                var processedOn = LocalDateTime.now();
 
-            var success = false;
-            stopWatch.start();
-            try {
-                var counts = processLogFile(name);
-                if (!counts.isEmpty()) {
-                    var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
-                    var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                    processor.evictCaches(updatedExtensions);
-                    processor.updateSearchEntries(updatedExtensions);
+                if (processedOn.isAfter(maxExecutionTime)) {
+                    logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
+                    return false;
                 }
 
-                success = true;
-            } catch (Exception e) {
-                logger.error("failed to process log file: {}", name, e);
+                var success = false;
+                stopWatch.start();
+                try {
+                    var counts = processLogFile(name);
+                    if (!counts.isEmpty()) {
+                        var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
+                        var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
+                        updatedExtensions.forEach(extension -> allUpdatedExtensions.put(extension.getId(), extension));
+                    }
+
+                    success = true;
+                } catch (Exception e) {
+                    logger.error("failed to process log file: {}", name, e);
+                }
+
+                stopWatch.stop();
+                var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
+                processor.persistProcessedItem(name, FileResource.STORAGE_AWS, processedOn, executionTime, success);
+                if (success) {
+                    deleteFile(name);
+                }
             }
 
-            stopWatch.stop();
-            var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
-            processor.persistProcessedItem(name, FileResource.STORAGE_AWS, processedOn, executionTime, success);
-            if (success) {
-                deleteFile(name);
-            }
+            return true;
+        } finally {
+            // evict caches and update search entries for all updated extensions
+            allUpdatedExtensions.values().forEach(processor::evictCaches);
+            processor.updateSearchEntries(allUpdatedExtensions.values().stream().toList());
         }
-
-        return true;
     }
 
     private Map<String, Integer> processLogFile(String fileName) throws IOException {
@@ -188,6 +197,8 @@ public class AwsDownloadCountService {
                     continue;
                 }
 
+                // Format:
+                // date	time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status	cs(Referer)	cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type	x-edge-request-id	x-host-header	cs-protocol	cs-bytes	time-taken	x-forwarded-for	ssl-protocol	ssl-cipher	x-edge-response-result-type	cs-protocol-version	fle-status	fle-encrypted-fields	c-port	time-to-first-byte	x-edge-detailed-result-type	sc-content-type	sc-content-len	sc-range-start	sc-range-end
                 var components = line.split("[ \t]+");
 
                 if (isGetOperation(components) && isStatusOk(components) && isExtensionPackageUri(components)) {
@@ -232,7 +243,7 @@ public class AwsDownloadCountService {
     }
 
     private ListObjectsV2Response listObjects(String continuationToken) {
-        var builder = ListObjectsV2Request.builder().bucket(bucket).maxKeys(MAX_KEYS).prefix(prefix);
+        var builder = ListObjectsV2Request.builder().bucket(bucket).maxKeys(MAX_KEYS).prefix(logLocationPrefix);
 
         if (continuationToken != null) {
             builder.continuationToken(continuationToken);

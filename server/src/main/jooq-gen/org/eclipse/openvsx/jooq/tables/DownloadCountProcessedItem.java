@@ -126,7 +126,7 @@ public class DownloadCountProcessedItem extends TableImpl<DownloadCountProcessed
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.DOWNLOAD_COUNT_PROCESSED_ITEM_STORAGE_TYPE);
+        return Arrays.asList(Indexes.DOWNLOAD_COUNT_PROCESSED_ITEM_NAME, Indexes.DOWNLOAD_COUNT_PROCESSED_ITEM_STORAGE_TYPE);
     }
 
     @Override

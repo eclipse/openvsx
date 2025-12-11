@@ -101,12 +101,11 @@ public class CacheService {
             return;
         }
 
-        var namespaceName = extension.getNamespace().getName();
-        var extensionName = extension.getName();
-
-        // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern
+        // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern.
+        // This uses the redis KEYS command that might take a while but considering the typical size of the EXTENSION_JSON
+        // cache its acceptable.
         if (cache instanceof RedisCacheWriter redisCache) {
-            redisCache.clean(CACHE_EXTENSION_JSON, extensionJsonCacheKey.generateWildcard(namespaceName, extensionName).getBytes());
+            redisCache.clean(CACHE_EXTENSION_JSON, extensionJsonCacheKey.generateWildcard(extension).getBytes());
             return;
         }
 
@@ -115,6 +114,8 @@ public class CacheService {
                 .map(ExtensionVersion::getVersion)
                 .forEach(versions::add);
 
+        var namespaceName = extension.getNamespace().getName();
+        var extensionName = extension.getName();
         var targetPlatforms = new ArrayList<>(TargetPlatform.TARGET_PLATFORM_NAMES);
         targetPlatforms.add("null");
         for (var version : versions) {
@@ -151,6 +152,14 @@ public class CacheService {
     public void evictLatestExtensionVersion(Extension extension) {
         var cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION);
         if(cache == null) {
+            return;
+        }
+
+        // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern.
+        // This uses the redis KEYS command that might take a while but considering the typical size of the EXTENSION_JSON
+        // cache its acceptable.
+        if (cache instanceof RedisCacheWriter redisCache) {
+            redisCache.clean(CACHE_LATEST_EXTENSION_VERSION, latestExtensionVersionCacheKey.generateWildcard(extension).getBytes());
             return;
         }
 
