@@ -61,6 +61,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
     const tokenCount = props.publisherInfo.activeAccessTokenNum;
     const extensionCount = props.publisherInfo.extensions.filter(e => e.active).length;
     const hasAgreement = props.publisherInfo.user.publisherAgreement?.status !== 'none';
+
     return <>
         <Button
             variant='contained'
@@ -74,7 +75,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
             <DialogTitle >Revoke Publisher Contributions</DialogTitle>
             <DialogContent>
                 <DialogContentText component='div'>
-                    <Typography>
+                    <Typography component='div'>
                         {
                             !tokenCount && !extensionCount && !hasAgreement ?
                             <>
