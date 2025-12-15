@@ -1,0 +1,82 @@
+{
+    "namespaceUrl": "http://localhost:8080/api/vscodevim",
+    "reviewsUrl": "http://localhost:8080/api/vscodevim/vim/reviews",
+    "files": {
+        "download": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/vscodevim.vim-1.19.3.vsix",
+        "signature": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/vscodevim.vim-1.19.3.sigzip",
+        "manifest": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/package.json",
+        "readme": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/README.md",
+        "changelog": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/CHANGELOG.md",
+        "license": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/LICENSE.txt",
+        "vsixmanifest": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/extension.vsixmanifest",
+        "sha256": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/vscodevim.vim-1.19.3.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/73a98fc8-08c5-4403-9674-06a4094ccb08"
+    },
+    "name": "vim",
+    "namespace": "vscodevim",
+    "targetPlatform": "universal",
+    "version": "1.19.3",
+    "preRelease": false,
+    "publishedBy": {
+        "loginName": "amvanbaren",
+        "fullName": "Aart van Baren",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+        "homepage": "https://github.com/amvanbaren",
+        "provider": "github"
+    },
+    "verified": false,
+    "unrelatedPublisher": true,
+    "namespaceAccess": "restricted",
+    "allVersions": {
+        "latest": "http://localhost:8080/api/vscodevim/vim/latest",
+        "1.19.3": "http://localhost:8080/api/vscodevim/vim/1.19.3"
+    },
+    "allVersionsUrl": "http://localhost:8080/api/vscodevim/vim/versions",
+    "downloadCount": 0,
+    "reviewCount": 0,
+    "versionAlias": [
+        "latest"
+    ],
+    "timestamp": "2025-11-27T11:24:28.807921Z",
+    "preview": false,
+    "displayName": "Vim",
+    "namespaceDisplayName": "vscodevim",
+    "description": "Vim emulation for Visual Studio Code",
+    "engines": {
+        "vscode": "^1.42.0"
+    },
+    "categories": [
+        "Other",
+        "Keymaps"
+    ],
+    "extensionKind": [
+        "ui",
+        "web",
+        "workspace"
+    ],
+    "tags": [
+        "__ext_vimrc",
+        "__web_extension",
+        "keybindings",
+        "vi",
+        "vim",
+        "vimrc",
+        "vscodevim"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/VSCodeVim/Vim",
+    "repository": "https://github.com/VSCodeVim/Vim.git",
+    "sponsorLink": "",
+    "bugs": "https://github.com/VSCodeVim/Vim/issues",
+    "galleryColor": "#e3f4ff",
+    "galleryTheme": "light",
+    "localizedLanguages": [],
+    "qna": "https://vscodevim.herokuapp.com/",
+    "dependencies": [],
+    "bundledExtensions": [],
+    "downloads": {
+        "universal": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/vscodevim.vim-1.19.3.vsix"
+    },
+    "deprecated": false,
+    "downloadable": true
+}

@@ -1,0 +1,97 @@
+{
+    "namespaceUrl": "http://localhost:8080/api/rust-lang",
+    "reviewsUrl": "http://localhost:8080/api/rust-lang/rust-analyzer/reviews",
+    "files": {
+        "download": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/rust-lang.rust-analyzer-0.4.2712@darwin-arm64.vsix",
+        "signature": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/rust-lang.rust-analyzer-0.4.2712@darwin-arm64.sigzip",
+        "manifest": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/package.json",
+        "readme": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/readme.md",
+        "license": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/LICENSE.txt",
+        "icon": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/icon.png",
+        "vsixmanifest": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/extension.vsixmanifest",
+        "sha256": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/rust-lang.rust-analyzer-0.4.2712@darwin-arm64.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/73a98fc8-08c5-4403-9674-06a4094ccb08"
+    },
+    "name": "rust-analyzer",
+    "namespace": "rust-lang",
+    "targetPlatform": "darwin-arm64",
+    "version": "0.4.2712",
+    "preRelease": true,
+    "publishedBy": {
+        "loginName": "amvanbaren",
+        "fullName": "Aart van Baren",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+        "homepage": "https://github.com/amvanbaren",
+        "provider": "github"
+    },
+    "active": true,
+    "verified": false,
+    "unrelatedPublisher": true,
+    "namespaceAccess": "restricted",
+    "allVersions": {
+        "latest": "http://localhost:8080/api/rust-lang/rust-analyzer/latest",
+        "pre-release": "http://localhost:8080/api/rust-lang/rust-analyzer/pre-release",
+        "0.4.2712": "http://localhost:8080/api/rust-lang/rust-analyzer/0.4.2712",
+        "0.4.2601": "http://localhost:8080/api/rust-lang/rust-analyzer/0.4.2601"
+    },
+    "allVersionsUrl": "http://localhost:8080/api/rust-lang/rust-analyzer/versions",
+    "downloadCount": 0,
+    "reviewCount": 0,
+    "versionAlias": [
+        "latest",
+        "pre-release"
+    ],
+    "timestamp": "2025-12-09T16:05:31.700356Z",
+    "preview": false,
+    "displayName": "rust-analyzer",
+    "namespaceDisplayName": "rust-lang",
+    "description": "Rust language support for Visual Studio Code",
+    "engines": {
+        "vscode": "^1.93.0"
+    },
+    "categories": [
+        "Formatters",
+        "Programming Languages"
+    ],
+    "extensionKind": [
+        "workspace"
+    ],
+    "tags": [
+        "__ext_rast",
+        "__ext_rs",
+        "json",
+        "keybindings",
+        "ra_syntax_tree",
+        "rs",
+        "rust"
+    ],
+    "license": "MIT OR Apache-2.0",
+    "homepage": "https://rust-analyzer.github.io/",
+    "repository": "https://github.com/rust-lang/rust-analyzer.git",
+    "sponsorLink": "",
+    "bugs": "https://github.com/rust-lang/rust-analyzer/issues",
+    "galleryColor": "",
+    "galleryTheme": "",
+    "localizedLanguages": [],
+    "dependencies": [],
+    "bundledExtensions": [],
+    "allTargetPlatformVersions": [
+        {
+            "version": "0.4.2712",
+            "targetPlatforms": [
+                "darwin-arm64",
+                "linux-x64",
+                "win32-arm64"
+            ]
+        },
+        {
+            "version": "0.4.2601",
+            "targetPlatforms": [
+                "alpine-x64",
+                "darwin-arm64"
+            ]
+        }
+    ],
+    "deprecated": false,
+    "downloadable": false
+}

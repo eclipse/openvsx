@@ -1,0 +1,216 @@
+{
+  "offset": 0,
+  "totalSize": 8349,
+  "extensions": [
+    {
+      "url": "http://localhost:8080/api/vscodevim/vim",
+      "files": {
+        "download": "http://localhost:8080/api/vscodevim/vim/1.32.4/file/vscodevim.vim-1.32.4.vsix",
+        "signature": "http://localhost:8080/api/vscodevim/vim/1.32.4/file/vscodevim.vim-1.32.4.sigzip",
+        "icon": "http://localhost:8080/api/vscodevim/vim/1.32.4/file/icon.png",
+        "sha256": "http://localhost:8080/api/vscodevim/vim/1.32.4/file/vscodevim.vim-1.32.4.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "vim",
+      "namespace": "vscodevim",
+      "version": "1.32.4",
+      "timestamp": "2025-12-14T23:05:07.638873Z",
+      "verified": true,
+      "averageRating": 4.714285714285714,
+      "reviewCount": 14,
+      "downloadCount": 627305,
+      "displayName": "Vim",
+      "description": "Vim emulation for Visual Studio Code",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/Anthropic/claude-code",
+      "files": {
+        "download": "http://localhost:8080/api/Anthropic/claude-code/alpine-arm64/2.0.70/file/Anthropic.claude-code-2.0.70@alpine-arm64.vsix",
+        "signature": "http://localhost:8080/api/Anthropic/claude-code/alpine-arm64/2.0.70/file/Anthropic.claude-code-2.0.70@alpine-arm64.sigzip",
+        "icon": "http://localhost:8080/api/Anthropic/claude-code/alpine-arm64/2.0.70/file/claude-logo.png",
+        "sha256": "http://localhost:8080/api/Anthropic/claude-code/alpine-arm64/2.0.70/file/Anthropic.claude-code-2.0.70@alpine-arm64.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "claude-code",
+      "namespace": "Anthropic",
+      "version": "2.0.70",
+      "timestamp": "2025-12-15T23:52:30.857198Z",
+      "verified": true,
+      "averageRating": 3.6,
+      "reviewCount": 50,
+      "downloadCount": 849786,
+      "displayName": "Claude Code for VS Code",
+      "description": "Claude Code for VS Code: Harness the power of Claude Code without leaving your IDE",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/devsense/composer-php-vscode",
+      "files": {
+        "download": "http://localhost:8080/api/devsense/composer-php-vscode/1.63.18213/file/devsense.composer-php-vscode-1.63.18213.vsix",
+        "signature": "http://localhost:8080/api/devsense/composer-php-vscode/1.63.18213/file/devsense.composer-php-vscode-1.63.18213.sigzip",
+        "icon": "http://localhost:8080/api/devsense/composer-php-vscode/1.63.18213/file/composer-icon.png",
+        "sha256": "http://localhost:8080/api/devsense/composer-php-vscode/1.63.18213/file/devsense.composer-php-vscode-1.63.18213.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "composer-php-vscode",
+      "namespace": "devsense",
+      "version": "1.63.18213",
+      "timestamp": "2025-12-13T17:53:43.720079Z",
+      "verified": true,
+      "averageRating": 5,
+      "reviewCount": 2,
+      "downloadCount": 2243149,
+      "displayName": "Composer",
+      "description": "All-in-One composer integration, quick actions, commands, automatic installation, tasks, code lenses, diagnostics, and composer.json IntelliSense.",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/Dart-Code/flutter",
+      "files": {
+        "download": "http://localhost:8080/api/Dart-Code/flutter/3.125.20251201/file/Dart-Code.flutter-3.125.20251201.vsix",
+        "signature": "http://localhost:8080/api/Dart-Code/flutter/3.125.20251201/file/Dart-Code.flutter-3.125.20251201.sigzip",
+        "icon": "http://localhost:8080/api/Dart-Code/flutter/3.125.20251201/file/flutter.png",
+        "sha256": "http://localhost:8080/api/Dart-Code/flutter/3.125.20251201/file/Dart-Code.flutter-3.125.20251201.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "flutter",
+      "namespace": "Dart-Code",
+      "version": "3.125.20251201",
+      "timestamp": "2025-12-01T12:37:43.598544Z",
+      "verified": true,
+      "averageRating": 5,
+      "reviewCount": 5,
+      "downloadCount": 1336759,
+      "displayName": "Flutter",
+      "description": "Flutter support and debugger for Visual Studio Code.",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/saoudrizwan/claude-dev",
+      "files": {
+        "download": "http://localhost:8080/api/saoudrizwan/claude-dev/3.42.0/file/saoudrizwan.claude-dev-3.42.0.vsix",
+        "signature": "http://localhost:8080/api/saoudrizwan/claude-dev/3.42.0/file/saoudrizwan.claude-dev-3.42.0.sigzip",
+        "icon": "http://localhost:8080/api/saoudrizwan/claude-dev/3.42.0/file/icon.png",
+        "sha256": "http://localhost:8080/api/saoudrizwan/claude-dev/3.42.0/file/saoudrizwan.claude-dev-3.42.0.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "claude-dev",
+      "namespace": "saoudrizwan",
+      "version": "3.42.0",
+      "timestamp": "2025-12-12T23:34:21.213061Z",
+      "verified": true,
+      "averageRating": 3.3333333333333335,
+      "reviewCount": 12,
+      "downloadCount": 1490737,
+      "displayName": "Cline",
+      "description": "Autonomous coding agent right in your IDE, capable of creating/editing files, running commands, using the browser, and more with your permission every step of the way.",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/Dart-Code/dart-code",
+      "files": {
+        "download": "http://localhost:8080/api/Dart-Code/dart-code/3.125.20251202/file/Dart-Code.dart-code-3.125.20251202.vsix",
+        "signature": "http://localhost:8080/api/Dart-Code/dart-code/3.125.20251202/file/Dart-Code.dart-code-3.125.20251202.sigzip",
+        "icon": "http://localhost:8080/api/Dart-Code/dart-code/3.125.20251202/file/dart.png",
+        "sha256": "http://localhost:8080/api/Dart-Code/dart-code/3.125.20251202/file/Dart-Code.dart-code-3.125.20251202.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "dart-code",
+      "namespace": "Dart-Code",
+      "version": "3.125.20251202",
+      "timestamp": "2025-12-02T12:18:10.447752Z",
+      "verified": true,
+      "averageRating": 5,
+      "reviewCount": 4,
+      "downloadCount": 1487202,
+      "displayName": "Dart",
+      "description": "Dart language support and debugger for Visual Studio Code.",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/klusterai/kluster-verify-code",
+      "files": {
+        "download": "http://localhost:8080/api/klusterai/kluster-verify-code/0.0.62/file/klusterai.kluster-verify-code-0.0.62.vsix",
+        "signature": "http://localhost:8080/api/klusterai/kluster-verify-code/0.0.62/file/klusterai.kluster-verify-code-0.0.62.sigzip",
+        "icon": "http://localhost:8080/api/klusterai/kluster-verify-code/0.0.62/file/kluster-logo.png",
+        "sha256": "http://localhost:8080/api/klusterai/kluster-verify-code/0.0.62/file/klusterai.kluster-verify-code-0.0.62.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "kluster-verify-code",
+      "namespace": "klusterai",
+      "version": "0.0.62",
+      "timestamp": "2025-12-11T12:47:49.257570Z",
+      "verified": true,
+      "averageRating": 5,
+      "reviewCount": 18,
+      "downloadCount": 4931,
+      "displayName": "kluster.ai",
+      "description": "Real-time code reviews powered by kluster.ai: automatically scan AI-generated code for quality, security, and performance",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/GitLab/gitlab-workflow",
+      "files": {
+        "download": "http://localhost:8080/api/GitLab/gitlab-workflow/6.60.5/file/GitLab.gitlab-workflow-6.60.5.vsix",
+        "signature": "http://localhost:8080/api/GitLab/gitlab-workflow/6.60.5/file/GitLab.gitlab-workflow-6.60.5.sigzip",
+        "icon": "http://localhost:8080/api/GitLab/gitlab-workflow/6.60.5/file/logo.png",
+        "sha256": "http://localhost:8080/api/GitLab/gitlab-workflow/6.60.5/file/GitLab.gitlab-workflow-6.60.5.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "gitlab-workflow",
+      "namespace": "GitLab",
+      "version": "6.60.5",
+      "timestamp": "2025-12-15T18:42:41.837706Z",
+      "verified": true,
+      "averageRating": 5,
+      "reviewCount": 7,
+      "downloadCount": 730216,
+      "displayName": "GitLab Workflow",
+      "description": "Official GitLab-maintained extension for Visual Studio Code.",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/streetsidesoftware/code-spell-checker",
+      "files": {
+        "download": "http://localhost:8080/api/streetsidesoftware/code-spell-checker/4.4.0/file/streetsidesoftware.code-spell-checker-4.4.0.vsix",
+        "signature": "http://localhost:8080/api/streetsidesoftware/code-spell-checker/4.4.0/file/streetsidesoftware.code-spell-checker-4.4.0.sigzip",
+        "icon": "http://localhost:8080/api/streetsidesoftware/code-spell-checker/4.4.0/file/SpellCheck.png",
+        "sha256": "http://localhost:8080/api/streetsidesoftware/code-spell-checker/4.4.0/file/streetsidesoftware.code-spell-checker-4.4.0.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "code-spell-checker",
+      "namespace": "streetsidesoftware",
+      "version": "4.4.0",
+      "timestamp": "2025-12-14T07:43:06.762787Z",
+      "verified": true,
+      "averageRating": 4.5,
+      "reviewCount": 8,
+      "downloadCount": 876445,
+      "displayName": "Code Spell Checker",
+      "description": "Spelling checker for source code",
+      "deprecated": false
+    },
+    {
+      "url": "http://localhost:8080/api/charliermarsh/ruff",
+      "files": {
+        "download": "http://localhost:8080/api/charliermarsh/ruff/alpine-arm64/2025.32.0/file/charliermarsh.ruff-2025.32.0@alpine-arm64.vsix",
+        "signature": "http://localhost:8080/api/charliermarsh/ruff/alpine-arm64/2025.32.0/file/charliermarsh.ruff-2025.32.0@alpine-arm64.sigzip",
+        "icon": "http://localhost:8080/api/charliermarsh/ruff/alpine-arm64/2025.32.0/file/icon.png",
+        "sha256": "http://localhost:8080/api/charliermarsh/ruff/alpine-arm64/2025.32.0/file/charliermarsh.ruff-2025.32.0@alpine-arm64.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+      },
+      "name": "ruff",
+      "namespace": "charliermarsh",
+      "version": "2025.32.0",
+      "timestamp": "2025-12-04T15:54:25.538136Z",
+      "verified": true,
+      "averageRating": 5,
+      "reviewCount": 7,
+      "downloadCount": 694389,
+      "displayName": "Ruff",
+      "description": "A Visual Studio Code extension with support for the Ruff linter and formatter for Python.",
+      "deprecated": false
+    }
+  ]
+}

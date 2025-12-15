@@ -1,0 +1,193 @@
+[
+    {
+        "files": {
+            "download": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/rust-lang.rust-analyzer-0.4.2712@darwin-arm64.vsix",
+            "manifest": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/package.json",
+            "readme": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/readme.md",
+            "license": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/LICENSE.txt",
+            "icon": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/icon.png",
+            "vsixmanifest": "http://localhost:8080/api/rust-lang/rust-analyzer/darwin-arm64/0.4.2712/file/extension.vsixmanifest"
+        },
+        "name": "rust-analyzer",
+        "namespace": "rust-lang",
+        "targetPlatform": "darwin-arm64",
+        "version": "0.4.2712",
+        "preRelease": true,
+        "publishedBy": {
+            "loginName": "amvanbaren",
+            "fullName": "Aart van Baren",
+            "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+            "homepage": "https://github.com/amvanbaren",
+            "provider": "github"
+        },
+        "active": true,
+        "downloadCount": 0,
+        "timestamp": "2025-12-09T16:05:31.700356Z",
+        "preview": false,
+        "displayName": "rust-analyzer",
+        "namespaceDisplayName": "rust-lang",
+        "description": "Rust language support for Visual Studio Code",
+        "engines": {
+            "vscode": "^1.93.0"
+        },
+        "categories": [
+            "Formatters",
+            "Programming Languages"
+        ],
+        "extensionKind": [
+            "workspace"
+        ],
+        "tags": [
+            "__ext_rast",
+            "__ext_rs",
+            "json",
+            "keybindings",
+            "ra_syntax_tree",
+            "rs",
+            "rust"
+        ],
+        "license": "MIT OR Apache-2.0",
+        "homepage": "https://rust-analyzer.github.io/",
+        "repository": "https://github.com/rust-lang/rust-analyzer.git",
+        "sponsorLink": "",
+        "bugs": "https://github.com/rust-lang/rust-analyzer/issues",
+        "galleryColor": "",
+        "galleryTheme": "",
+        "localizedLanguages": [],
+        "dependencies": [],
+        "bundledExtensions": [],
+        "deprecated": false,
+        "downloadable": true
+    },
+    {
+        "files": {
+            "download": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/DotJoshJohnson.xml-2.5.0.vsix",
+            "manifest": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/package.json",
+            "readme": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/README.md",
+            "changelog": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/CHANGELOG.md",
+            "license": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/LICENSE.txt",
+            "icon": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/xml.png",
+            "vsixmanifest": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/extension.vsixmanifest"
+        },
+        "name": "xml",
+        "namespace": "DotJoshJohnson",
+        "targetPlatform": "universal",
+        "version": "2.5.0",
+        "preRelease": false,
+        "publishedBy": {
+            "loginName": "amvanbaren",
+            "fullName": "Aart van Baren",
+            "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+            "homepage": "https://github.com/amvanbaren",
+            "provider": "github"
+        },
+        "active": true,
+        "downloadCount": 0,
+        "timestamp": "2025-11-27T11:24:11.673203Z",
+        "preview": false,
+        "displayName": "XML Tools",
+        "namespaceDisplayName": "DotJoshJohnson",
+        "description": "XML Formatting, XQuery, and XPath Tools for Visual Studio Code",
+        "engines": {
+            "vscode": "^1.22.2"
+        },
+        "categories": [
+            "Formatters",
+            "Programming Languages",
+            "Linters",
+            "Other"
+        ],
+        "extensionKind": [],
+        "tags": [
+            "__ext_config",
+            "__ext_csproj",
+            "__ext_xml",
+            "__ext_xq",
+            "__ext_xql",
+            "__ext_xqm",
+            "__ext_xquery",
+            "__ext_xqy",
+            "__ext_xsd",
+            "__ext_xsl",
+            "keybindings",
+            "xml",
+            "xquery",
+            "xsl"
+        ],
+        "homepage": "https://github.com/DotJoshJohnson/vscode-xml",
+        "repository": "https://github.com/DotJoshJohnson/vscode-xml.git",
+        "sponsorLink": "",
+        "bugs": "https://github.com/DotJoshJohnson/vscode-xml/issues",
+        "galleryColor": "#FFFFFF",
+        "galleryTheme": "light",
+        "localizedLanguages": [],
+        "dependencies": [],
+        "bundledExtensions": [],
+        "deprecated": false,
+        "downloadable": true
+    },
+    {
+        "files": {
+            "download": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/vscodevim.vim-1.19.3.vsix",
+            "manifest": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/package.json",
+            "readme": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/README.md",
+            "changelog": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/CHANGELOG.md",
+            "license": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/LICENSE.txt",
+            "icon": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/icon.png",
+            "vsixmanifest": "http://localhost:8080/api/vscodevim/vim/1.19.3/file/extension.vsixmanifest"
+        },
+        "name": "vim",
+        "namespace": "vscodevim",
+        "targetPlatform": "universal",
+        "version": "1.19.3",
+        "preRelease": false,
+        "publishedBy": {
+            "loginName": "amvanbaren",
+            "fullName": "Aart van Baren",
+            "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+            "homepage": "https://github.com/amvanbaren",
+            "provider": "github"
+        },
+        "active": true,
+        "downloadCount": 0,
+        "timestamp": "2025-11-27T11:24:28.807921Z",
+        "preview": false,
+        "displayName": "Vim",
+        "namespaceDisplayName": "vscodevim",
+        "description": "Vim emulation for Visual Studio Code",
+        "engines": {
+            "vscode": "^1.42.0"
+        },
+        "categories": [
+            "Other",
+            "Keymaps"
+        ],
+        "extensionKind": [
+            "ui",
+            "web",
+            "workspace"
+        ],
+        "tags": [
+            "__ext_vimrc",
+            "__web_extension",
+            "keybindings",
+            "vi",
+            "vim",
+            "vimrc",
+            "vscodevim"
+        ],
+        "license": "MIT",
+        "homepage": "https://github.com/VSCodeVim/Vim",
+        "repository": "https://github.com/VSCodeVim/Vim.git",
+        "sponsorLink": "",
+        "bugs": "https://github.com/VSCodeVim/Vim/issues",
+        "galleryColor": "#e3f4ff",
+        "galleryTheme": "light",
+        "localizedLanguages": [],
+        "qna": "https://vscodevim.herokuapp.com/",
+        "dependencies": [],
+        "bundledExtensions": [],
+        "deprecated": false,
+        "downloadable": true
+    }
+]

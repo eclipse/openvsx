@@ -1381,6 +1381,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/regex-escape@npm:^3":
+  version: 3.4.1
+  resolution: "@types/regex-escape@npm:3.4.1"
+  checksum: 10/ddc06d08729514fe33ef2e0acb094344a7492f0719a34481f0b43288b85281ba76186d7c9efc6d550f5913c0ede374ad19d3b6dce5562b63c053d8f134cd60ed
+  languageName: node
+  linkType: hard
+
 "@types/send@npm:*":
   version: 0.17.4
   resolution: "@types/send@npm:0.17.4"
@@ -4969,6 +4976,7 @@ __metadata:
     "@types/react-infinite-scroller": "npm:^1.2.3"
     "@types/react-router-dom": "npm:^5.3.3"
     "@types/react-transition-group": "npm:^4.4.6"
+    "@types/regex-escape": "npm:^3"
     "@typescript-eslint/eslint-plugin": "npm:^8.15.0"
     "@typescript-eslint/parser": "npm:^8.15.0"
     chai: "npm:^4.3.7"
@@ -4995,6 +5003,7 @@ __metadata:
     react-infinite-scroller: "npm:^1.2.6"
     react-router: "npm:^6.14.2"
     react-router-dom: "npm:^6.14.1"
+    regex-escape: "npm:^3.4.11"
     rimraf: "npm:^6.1.2"
     source-map-loader: "npm:^4.0.1"
     style-loader: "npm:^3.3.3"
@@ -5582,6 +5591,13 @@ __metadata:
   version: 0.14.1
   resolution: "regenerator-runtime@npm:0.14.1"
   checksum: 10/5db3161abb311eef8c45bcf6565f4f378f785900ed3945acf740a9888c792f75b98ecb77f0775f3bf95502ff423529d23e94f41d80c8256e8fa05ed4b07cf471
+  languageName: node
+  linkType: hard
+
+"regex-escape@npm:^3.4.11":
+  version: 3.4.11
+  resolution: "regex-escape@npm:3.4.11"
+  checksum: 10/3e227cefadbbfa56efebe48dd2d4588e772bc8b47f9ebee609dc82a3dc220565ae4985d6186b8bbca2cf3c3c1022fcb085e7962c2df2ebdeea77317e4d5fb5e7
   languageName: node
   linkType: hard
 

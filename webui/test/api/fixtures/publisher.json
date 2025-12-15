@@ -1,0 +1,176 @@
+{
+    "user": {
+        "loginName": "amvanbaren",
+        "fullName": "Aart van Baren",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+        "homepage": "https://github.com/amvanbaren",
+        "provider": "github"
+    },
+    "extensions": [
+        {
+            "files": {
+                "download": "http://localhost:8080/api/HookyQR/beautify/0.1.3/file/HookyQR.beautify-0.1.3.vsix",
+                "manifest": "http://localhost:8080/api/HookyQR/beautify/0.1.3/file/package.json",
+                "readme": "http://localhost:8080/api/HookyQR/beautify/0.1.3/file/README.md",
+                "icon": "http://localhost:8080/api/HookyQR/beautify/0.1.3/file/icon.svg",
+                "vsixmanifest": "http://localhost:8080/api/HookyQR/beautify/0.1.3/file/extension.vsixmanifest"
+            },
+            "name": "beautify",
+            "namespace": "HookyQR",
+            "targetPlatform": "universal",
+            "version": "0.1.3",
+            "preRelease": false,
+            "publishedBy": {
+                "loginName": "amvanbaren",
+                "fullName": "Aart van Baren",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+                "homepage": "https://github.com/amvanbaren",
+                "provider": "github"
+            },
+            "active": true,
+            "downloadCount": 0,
+            "timestamp": "2025-11-27T11:25:39.681684Z",
+            "preview": false,
+            "displayName": "beautify",
+            "namespaceDisplayName": "HookyQR",
+            "description": "Beautify code in place for VS Code",
+            "engines": {
+                "vscode": "^0.10.1"
+            },
+            "categories": [
+                "Other",
+                "Languages"
+            ],
+            "extensionKind": [],
+            "tags": [
+                "vscode"
+            ],
+            "license": "MIT",
+            "homepage": "",
+            "repository": "https://github.com/HookyQR/VSCodeBeautify",
+            "sponsorLink": "",
+            "bugs": "https://github.com/HookyQR/VSCodeBeautify/issues",
+            "galleryColor": "#e8e030",
+            "galleryTheme": "light",
+            "localizedLanguages": [],
+            "dependencies": [],
+            "bundledExtensions": [],
+            "deprecated": true,
+            "downloadable": true
+        },
+        {
+            "files": {
+                "download": "http://localhost:8080/api/illixion/vscode-vibrancy-continued/1.1.62/file/illixion.vscode-vibrancy-continued-1.1.62.vsix",
+                "manifest": "http://localhost:8080/api/illixion/vscode-vibrancy-continued/1.1.62/file/package.json",
+                "readme": "http://localhost:8080/api/illixion/vscode-vibrancy-continued/1.1.62/file/readme.md",
+                "changelog": "http://localhost:8080/api/illixion/vscode-vibrancy-continued/1.1.62/file/changelog.md",
+                "license": "http://localhost:8080/api/illixion/vscode-vibrancy-continued/1.1.62/file/LICENSE.txt",
+                "icon": "http://localhost:8080/api/illixion/vscode-vibrancy-continued/1.1.62/file/logo.png",
+                "vsixmanifest": "http://localhost:8080/api/illixion/vscode-vibrancy-continued/1.1.62/file/extension.vsixmanifest"
+            },
+            "name": "vscode-vibrancy-continued",
+            "namespace": "illixion",
+            "targetPlatform": "universal",
+            "version": "1.1.62",
+            "preRelease": false,
+            "publishedBy": {
+                "loginName": "amvanbaren",
+                "fullName": "Aart van Baren",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+                "homepage": "https://github.com/amvanbaren",
+                "provider": "github"
+            },
+            "active": true,
+            "downloadCount": 0,
+            "timestamp": "2025-11-28T16:25:20.685233Z",
+            "preview": false,
+            "displayName": "Vibrancy Continued",
+            "namespaceDisplayName": "illixion",
+            "description": "Vibrancy Effect for Visual Studio Code",
+            "engines": {
+                "vscode": "^1.63.0"
+            },
+            "categories": [
+                "Other",
+                "Themes"
+            ],
+            "extensionKind": [
+                "ui"
+            ],
+            "tags": [
+                "__sponsor_extension"
+            ],
+            "homepage": "https://github.com/illixion/vscode-vibrancy-continued#readme",
+            "repository": "https://github.com/illixion/vscode-vibrancy-continued.git",
+            "sponsorLink": "https://github.com/sponsors/illixion",
+            "bugs": "https://github.com/illixion/vscode-vibrancy-continued/issues",
+            "galleryColor": "#42BFF5",
+            "galleryTheme": "",
+            "localizedLanguages": [],
+            "qna": "https://github.com/illixion/vscode-vibrancy-continued/discussions/categories/q-a",
+            "dependencies": [],
+            "bundledExtensions": [],
+            "deprecated": false,
+            "downloadable": true
+        },
+        {
+            "files": {
+                "download": "http://localhost:8080/api/ritwickdey/LiveServer/5.6.1/file/ritwickdey.LiveServer-5.6.1.vsix",
+                "manifest": "http://localhost:8080/api/ritwickdey/LiveServer/5.6.1/file/package.json",
+                "readme": "http://localhost:8080/api/ritwickdey/LiveServer/5.6.1/file/README.md",
+                "changelog": "http://localhost:8080/api/ritwickdey/LiveServer/5.6.1/file/CHANGELOG.md",
+                "license": "http://localhost:8080/api/ritwickdey/LiveServer/5.6.1/file/LICENSE.txt",
+                "icon": "http://localhost:8080/api/ritwickdey/LiveServer/5.6.1/file/icon.png",
+                "vsixmanifest": "http://localhost:8080/api/ritwickdey/LiveServer/5.6.1/file/extension.vsixmanifest"
+            },
+            "name": "LiveServer",
+            "namespace": "ritwickdey",
+            "targetPlatform": "universal",
+            "version": "5.6.1",
+            "preRelease": false,
+            "publishedBy": {
+                "loginName": "amvanbaren",
+                "fullName": "Aart van Baren",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+                "homepage": "https://github.com/amvanbaren",
+                "provider": "github"
+            },
+            "active": true,
+            "downloadCount": 0,
+            "timestamp": "2025-11-27T11:26:05.739999Z",
+            "preview": false,
+            "displayName": "Live Server",
+            "namespaceDisplayName": "ritwickdey",
+            "description": "Launch a development local Server with live reload feature for static & dynamic pages",
+            "engines": {
+                "vscode": "^1.20.0"
+            },
+            "categories": [
+                "Other"
+            ],
+            "extensionKind": [],
+            "tags": [
+                "html preview",
+                "keybindings",
+                "live preview",
+                "live reload",
+                "multi-root ready",
+                "open in browser",
+                "svg preview"
+            ],
+            "license": "MIT",
+            "homepage": "https://ritwickdey.github.io/vscode-live-server/",
+            "repository": "https://github.com/ritwickdey/vscode-live-server.git",
+            "sponsorLink": "",
+            "bugs": "https://github.com/ritwickdey/vscode-live-server/issues",
+            "galleryColor": "#41205f",
+            "galleryTheme": "dark",
+            "localizedLanguages": [],
+            "dependencies": [],
+            "bundledExtensions": [],
+            "deprecated": false,
+            "downloadable": true
+        }
+    ],
+    "activeAccessTokenNum": 3
+}
