@@ -174,3 +174,20 @@ ovsx:
     check-against-verified-only: true
     exclude-owner-namespaces: true
     new-extensions-only: true
+  secret-scanning:
+    enabled: true
+    rules-path: 'classpath:scanning/secret-scanning-custom-rules.yaml'
+    inline-suppressions: 'secret-scanner:ignore,gitleaks:allow,nosecret,@suppress-secret'
+    auto-generate-rules: true
+    force-regenerate-rules: false
+    generated-rules-path: '/tmp/secret-scanning-rules-gitleaks.yaml'
+    max-file-size-bytes: 5242880
+    max-entry-count: 5000
+    max-total-uncompressed-bytes: 104857600
+    max-findings: 200
+    max-line-length: 10000
+    long-line-no-space-threshold: 1000
+    keyword-context-chars: 100
+    log-secret-preview-chars: 10
+    timeout-seconds: 5
+    timeout-check-every-n-lines: 100
