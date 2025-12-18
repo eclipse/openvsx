@@ -23,6 +23,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.search.SimilarityConfig;
 import org.eclipse.openvsx.search.SimilarityService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
@@ -834,7 +835,7 @@ class UserAPITest {
                     eclipse,
                     cache,
                     integrityService,
-                    similarityService
+                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
             );
         }
 
@@ -844,11 +845,17 @@ class UserAPITest {
         }
 
         @Bean
-        SimilarityService similarityService(
+        SimilarityService similarityService(RepositoryService repositories) {
+            return new SimilarityService(repositories);
+        }
+
+        @Bean
+        SimilarityCheckService similarityCheckService(
                 SimilarityConfig config,
+                SimilarityService similarityService,
                 RepositoryService repositories
         ) {
-            return new SimilarityService(config, repositories);
+            return new SimilarityCheckService(config, similarityService, repositories);
         }
 
         @Bean

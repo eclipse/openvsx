@@ -22,7 +22,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.search.SimilarityService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.VersionService;
@@ -82,7 +82,7 @@ class LocalRegistryServiceTest {
     ExtensionVersionIntegrityService integrityService;
 
     @Mock
-    SimilarityService similarityService;
+    SimilarityCheckService similarityCheckService;
 
     private LocalRegistryService registryService;
 
@@ -100,7 +100,7 @@ class LocalRegistryServiceTest {
                 eclipse,
                 cacheService,
                 integrityService,
-                similarityService
+                similarityCheckService
         );
 
         doNothing().when(eclipse).checkPublisherAgreement(any());
@@ -115,8 +115,7 @@ class LocalRegistryServiceTest {
 
         when(validator.validateNamespace("new-space")).thenReturn(Optional.empty());
         when(repositories.findNamespaceName("new-space")).thenReturn(null);
-        when(repositories.findMemberships(user)).thenReturn(Streamable.of(buildMembership(user, "user-ns")));
-        when(similarityService.findSimilarNamespaces("new-space", List.of("user-ns")))
+        when(similarityCheckService.findSimilarNamespacesForCreation("new-space", user))
                 .thenReturn(List.of(buildNamespace("new-space-1")));
 
         assertThatThrownBy(() -> registryService.createNamespace(json, user))
@@ -142,7 +141,7 @@ class LocalRegistryServiceTest {
 
         // No persistence and no similarity checks should occur when we bail out early.
         verify(entityManager, never()).persist(any(Namespace.class));
-        verify(similarityService, never()).findSimilarNamespaces(any(), any());
+        verify(similarityCheckService, never()).findSimilarNamespacesForCreation(any(), any());
     }
 
     @Test
@@ -154,8 +153,7 @@ class LocalRegistryServiceTest {
 
         when(validator.validateNamespace("clean-ns")).thenReturn(Optional.empty());
         when(repositories.findNamespaceName("clean-ns")).thenReturn(null);
-        when(repositories.findMemberships(user)).thenReturn(Streamable.empty());
-        when(similarityService.findSimilarNamespaces("clean-ns", List.of())).thenReturn(List.of());
+        when(similarityCheckService.findSimilarNamespacesForCreation("clean-ns", user)).thenReturn(List.of());
 
         registryService.createNamespace(json, user);
 

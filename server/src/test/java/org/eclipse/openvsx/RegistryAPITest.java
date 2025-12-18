@@ -2591,7 +2591,7 @@ class RegistryAPITest {
                     eclipse,
                     cache,
                     integrityService,
-                    similarityService
+                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
             );
         }
 
@@ -2665,11 +2665,17 @@ class RegistryAPITest {
         }
 
         @Bean
-        SimilarityService similarityService(
+        SimilarityService similarityService(RepositoryService repositories) {
+            return new SimilarityService(repositories);
+        }
+
+        @Bean
+        SimilarityCheckService similarityCheckService(
                 SimilarityConfig config,
+                SimilarityService similarityService,
                 RepositoryService repositories
         ) {
-            return new SimilarityService(config, repositories);
+            return new SimilarityCheckService(config, similarityService, repositories);
         }
 
         @Bean
@@ -2682,8 +2688,7 @@ class RegistryAPITest {
                 UserService users,
                 ExtensionValidator validator,
                 ExtensionControlService extensionControl,
-                SimilarityService similarityService,
-                SimilarityConfig similarityConfig
+                SimilarityCheckService similarityCheckService
         ) {
             return new PublishExtensionVersionHandler(
                     service,
@@ -2694,9 +2699,7 @@ class RegistryAPITest {
                     users,
                     validator,
                     extensionControl,
-                    similarityService,
-                    // Pass configuration so handler can honor similarity rules in tests.
-                    similarityConfig
+                    similarityCheckService
             );
         }
     }

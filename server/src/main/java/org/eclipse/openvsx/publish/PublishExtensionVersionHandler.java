@@ -21,8 +21,7 @@ import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SimilarityConfig;
-import org.eclipse.openvsx.search.SimilarityService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -52,8 +51,7 @@ public class PublishExtensionVersionHandler {
     private final UserService users;
     private final ExtensionValidator validator;
     private final ExtensionControlService extensionControl;
-    private final SimilarityService similarityService;
-    private final SimilarityConfig similarityConfig;
+    private final SimilarityCheckService similarityCheckService;
 
     public PublishExtensionVersionHandler(
             PublishExtensionVersionService service,
@@ -64,8 +62,7 @@ public class PublishExtensionVersionHandler {
             UserService users,
             ExtensionValidator validator,
             ExtensionControlService extensionControl,
-            SimilarityService similarityService,
-            SimilarityConfig similarityConfig
+            SimilarityCheckService similarityCheckService
     ) {
         this.service = service;
         this.integrityService = integrityService;
@@ -75,8 +72,7 @@ public class PublishExtensionVersionHandler {
         this.users = users;
         this.validator = validator;
         this.extensionControl = extensionControl;
-        this.similarityService = similarityService;
-        this.similarityConfig = similarityConfig;
+        this.similarityCheckService = similarityCheckService;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -179,22 +175,12 @@ public class PublishExtensionVersionHandler {
     }
 
     private void validateDistinctName(String extensionName, String namespaceName, String displayName, UserData user) {
-        // Get all namespaces to exclude from similarity search
-        // If configured, exclude namespaces where the user is an owner
-        // This allows users to publish similar names in their own namespaces
-        List<String> memberNamespaces = similarityConfig.isExcludeOwnerNamespaces()
-            ? repositories.findMemberships(user)
-                .stream()
-                .filter(membership -> NamespaceMembership.ROLE_OWNER.equals(membership.getRole()))
-                .map(membership -> membership.getNamespace().getName())
-                .toList()
-            : List.of();
-
-        var similarExtensions = similarityService.findSimilarExtensions(
+        // Use SimilarityCheckService which handles config gates and "exclude owner namespaces" logic
+        var similarExtensions = similarityCheckService.findSimilarExtensionsForPublishing(
             extensionName,
             namespaceName,
             displayName,
-            memberNamespaces
+            user
         );
         
         if (similarExtensions.isEmpty()) {

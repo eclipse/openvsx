@@ -23,8 +23,7 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SimilarityConfig;
-import org.eclipse.openvsx.search.SimilarityService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,10 +73,7 @@ class PublishExtensionVersionHandlerTest {
     ExtensionControlService extensionControl;
 
     @Mock
-    SimilarityService similarityService;
-
-    @Mock
-    SimilarityConfig similarityConfig;
+    SimilarityCheckService similarityCheckService;
 
     private PublishExtensionVersionHandler handler;
 
@@ -93,11 +89,8 @@ class PublishExtensionVersionHandlerTest {
                 users,
                 validator,
                 extensionControl,
-                similarityService,
-                similarityConfig
+                similarityCheckService
         );
-
-        when(similarityConfig.isExcludeOwnerNamespaces()).thenReturn(true);
         when(extensionControl.getMaliciousExtensionIds()).thenReturn(Collections.emptyList());
     }
 
@@ -125,12 +118,11 @@ class PublishExtensionVersionHandlerTest {
         when(users.hasPublishPermission(user, namespace)).thenReturn(true);
         when(validator.validateExtensionVersion("1.0.0")).thenReturn(Optional.empty());
         when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
-        when(repositories.findMemberships(user)).thenReturn(Streamable.of(buildOwnerMembership(namespace)));
 
         var similarExtension = new Extension();
         similarExtension.setNamespace(buildNamespace("other"));
         similarExtension.setName("demo-other");
-        when(similarityService.findSimilarExtensions("demo", "publisher", "Demo Extension", List.of("publisher")))
+        when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "publisher", "Demo Extension", user))
                 .thenReturn(List.of(similarExtension));
 
         var similarLatest = new ExtensionVersion();
@@ -143,7 +135,7 @@ class PublishExtensionVersionHandlerTest {
 
         // Persist should never happen because we bail out early on similarity.
         verify(entityManager, never()).persist(metadata);
-        verify(similarityService).findSimilarExtensions("demo", "publisher", "Demo Extension", List.of("publisher"));
+        verify(similarityCheckService).findSimilarExtensionsForPublishing("demo", "publisher", "Demo Extension", user);
     }
 
     @Test
@@ -173,14 +165,13 @@ class PublishExtensionVersionHandlerTest {
         when(validator.validateExtensionVersion("1.0.1")).thenReturn(Optional.empty());
         when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
         when(validator.validateMetadata(metadata)).thenReturn(List.of());
-        when(repositories.findMemberships(user)).thenReturn(Streamable.of(buildOwnerMembership(ownedNamespace)));
-        when(similarityService.findSimilarExtensions("demo", "publisher", "Demo Next", List.of("owned-ns")))
+        when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "publisher", "Demo Next", user))
                 .thenReturn(List.of());
         when(repositories.findExtension("demo", namespace)).thenReturn(null);
 
         handler.createExtensionVersion(processor, token, LocalDateTime.now(), false);
 
-        verify(similarityService).findSimilarExtensions("demo", "publisher", "Demo Next", List.of("owned-ns"));
+        verify(similarityCheckService).findSimilarExtensionsForPublishing("demo", "publisher", "Demo Next", user);
     }
 
     @Test
@@ -209,8 +200,7 @@ class PublishExtensionVersionHandlerTest {
         when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
         when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
         when(validator.validateMetadata(metadata)).thenReturn(List.of());
-        when(repositories.findMemberships(user)).thenReturn(Streamable.empty());
-        when(similarityService.findSimilarExtensions("demo", "publisher", "Demo OK", List.of()))
+        when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "publisher", "Demo OK", user))
                 .thenReturn(List.of());
         when(repositories.findExtension("demo", namespace)).thenReturn(null);
 
@@ -227,10 +217,8 @@ class PublishExtensionVersionHandlerTest {
     }
 
     @Test
-    void shouldSkipExclusionWhenConfigDisabled() {
-        // When exclusion flag is off, we must not filter out owner namespaces.
-        when(similarityConfig.isExcludeOwnerNamespaces()).thenReturn(false);
-
+    void shouldCheckSimilarityForAllExtensions() {
+        // All extensions should be checked for similarity.
         var processor = org.mockito.Mockito.mock(ExtensionProcessor.class);
         when(processor.getNamespace()).thenReturn("pub");
         when(processor.getExtensionName()).thenReturn("demo");
@@ -247,12 +235,12 @@ class PublishExtensionVersionHandlerTest {
         when(validator.validateExtensionVersion("3.0.0")).thenReturn(Optional.empty());
         when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
         when(validator.validateMetadata(processor.getMetadata())).thenReturn(List.of());
-        when(similarityService.findSimilarExtensions("demo", "pub", null, List.of())).thenReturn(List.of());
+        when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "pub", null, user)).thenReturn(List.of());
         when(repositories.findExtension("demo", namespace)).thenReturn(null);
 
         handler.createExtensionVersion(processor, token, LocalDateTime.now(), false);
 
-        verify(similarityService).findSimilarExtensions("demo", "pub", null, List.of());
+        verify(similarityCheckService).findSimilarExtensionsForPublishing("demo", "pub", null, user);
     }
 
     private NamespaceMembership buildOwnerMembership(Namespace namespace) {

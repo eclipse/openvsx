@@ -23,7 +23,7 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.search.SimilarityService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
@@ -64,7 +64,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final EclipseService eclipse;
     private final CacheService cache;
     private final ExtensionVersionIntegrityService integrityService;
-    private final SimilarityService similarityService;
+    private final SimilarityCheckService similarityCheckService;
 
     public LocalRegistryService(
             EntityManager entityManager,
@@ -78,7 +78,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             EclipseService eclipse,
             CacheService cache,
             ExtensionVersionIntegrityService integrityService,
-            SimilarityService similarityService
+            SimilarityCheckService similarityCheckService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -91,7 +91,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.eclipse = eclipse;
         this.cache = cache;
         this.integrityService = integrityService;
-        this.similarityService = similarityService;
+        this.similarityCheckService = similarityCheckService;
     }
 
     @Value("${ovsx.webui.url:}")
@@ -599,13 +599,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ErrorResultException("Namespace already exists: " + namespaceName);
         }
 
-        var memberNamespaces = repositories.findMemberships(user)
-            .stream()
-            .map(membership -> membership.getNamespace().getName())
-            .toList();
-
         // Check if the proposed namespace name is too similar to existing ones
-        var similarNamespaces = similarityService.findSimilarNamespaces(json.getName(), memberNamespaces);
+        var similarNamespaces = similarityCheckService.findSimilarNamespacesForCreation(json.getName(), user);
         if (!similarNamespaces.isEmpty()) {
             var similarNames = similarNamespaces.stream()
                     .map(Namespace::getName)
