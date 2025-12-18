@@ -21,6 +21,8 @@ import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SimilarityConfig;
+import org.eclipse.openvsx.search.SimilarityService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -50,6 +52,8 @@ public class PublishExtensionVersionHandler {
     private final UserService users;
     private final ExtensionValidator validator;
     private final ExtensionControlService extensionControl;
+    private final SimilarityService similarityService;
+    private final SimilarityConfig similarityConfig;
 
     public PublishExtensionVersionHandler(
             PublishExtensionVersionService service,
@@ -59,7 +63,9 @@ public class PublishExtensionVersionHandler {
             JobRequestScheduler scheduler,
             UserService users,
             ExtensionValidator validator,
-            ExtensionControlService extensionControl
+            ExtensionControlService extensionControl,
+            SimilarityService similarityService,
+            SimilarityConfig similarityConfig
     ) {
         this.service = service;
         this.integrityService = integrityService;
@@ -69,6 +75,8 @@ public class PublishExtensionVersionHandler {
         this.users = users;
         this.validator = validator;
         this.extensionControl = extensionControl;
+        this.similarityService = similarityService;
+        this.similarityConfig = similarityConfig;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -110,8 +118,11 @@ public class PublishExtensionVersionHandler {
 
         var extensionName = processor.getExtensionName();
         validateExtensionVersion(processor, namespaceName, extensionName);
-
+        
         var extVersion = processor.getMetadata();
+        var displayName = extVersion.getDisplayName();
+        validateExtensionName(namespaceName, extensionName, displayName, user);
+
         extVersion.setTimestamp(timestamp);
         extVersion.setPublishedWith(token);
         extVersion.setActive(false);
@@ -147,19 +158,64 @@ public class PublishExtensionVersionHandler {
     }
 
     private void validateExtensionVersion(ExtensionProcessor processor, String namespaceName, String extensionName) {
-        var nameIssue = validator.validateExtensionName(extensionName);
-        if (nameIssue.isPresent()) {
-            throw new ErrorResultException(nameIssue.get().toString());
-        }
-        if(isMalicious(namespaceName, extensionName)) {
-            throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
-        }
-
         var version = processor.getVersion();
         var versionIssue = validator.validateExtensionVersion(version);
         if (versionIssue.isPresent()) {
             throw new ErrorResultException(versionIssue.get().toString());
         }
+    }
+
+    private void validateExtensionName(String namespaceName, String extensionName, String displayName, UserData user) {
+        var nameIssue = validator.validateExtensionName(extensionName);
+        if (nameIssue.isPresent()) {
+            throw new ErrorResultException(nameIssue.get().toString());
+        }
+
+        if(isMalicious(namespaceName, extensionName)) {
+            throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
+        }
+
+        validateDistinctName(extensionName, namespaceName, displayName, user);
+    }
+
+    private void validateDistinctName(String extensionName, String namespaceName, String displayName, UserData user) {
+        // Get all namespaces to exclude from similarity search
+        // If configured, exclude namespaces where the user is an owner
+        // This allows users to publish similar names in their own namespaces
+        List<String> memberNamespaces = similarityConfig.isExcludeOwnerNamespaces()
+            ? repositories.findMemberships(user)
+                .stream()
+                .filter(membership -> NamespaceMembership.ROLE_OWNER.equals(membership.getRole()))
+                .map(membership -> membership.getNamespace().getName())
+                .toList()
+            : List.of();
+
+        var similarExtensions = similarityService.findSimilarExtensions(
+            extensionName,
+            namespaceName,
+            displayName,
+            memberNamespaces
+        );
+        
+        if (similarExtensions.isEmpty()) {
+            return;
+        }
+
+        var similarExt = similarExtensions.get(0);
+        var latestVersion = repositories.findLatestVersion(similarExt, null, false, true);
+        String similarDisplayName = latestVersion != null ? latestVersion.getDisplayName() : null;
+        
+        throw new ErrorResultException(String.format(
+            "Extension '%s.%s' (display name: '%s') is too similar to existing extension '%s.%s' (display name: '%s'). " +
+            "Please choose a more distinct name to avoid confusion. " +
+            "Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions",
+            namespaceName,
+            extensionName,
+            displayName,
+            similarExt.getNamespace().getName(),
+            similarExt.getName(),
+            similarDisplayName != null ? similarDisplayName : ""
+        ));
     }
 
     private void validateMetadata(ExtensionVersion extVersion) {
