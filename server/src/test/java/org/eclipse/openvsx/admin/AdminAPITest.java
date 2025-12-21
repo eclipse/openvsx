@@ -26,6 +26,9 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
+import org.eclipse.openvsx.search.SimilarityConfig;
+import org.eclipse.openvsx.search.SimilarityService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
@@ -1508,7 +1511,8 @@ class AdminAPITest {
                 EclipseService eclipse,
                 CacheService cache,
                 FileCacheDurationConfig fileCacheDurationConfig,
-                ExtensionVersionIntegrityService integrityService
+                ExtensionVersionIntegrityService integrityService,
+                SimilarityService similarityService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -1521,8 +1525,28 @@ class AdminAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService
+                    integrityService,
+                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
             );
+        }
+
+        @Bean
+        SimilarityConfig similarityConfig() {
+            return new SimilarityConfig();
+        }
+
+        @Bean
+        SimilarityService similarityService(RepositoryService repositories) {
+            return new SimilarityService(repositories);
+        }
+
+        @Bean
+        SimilarityCheckService similarityCheckService(
+                SimilarityConfig config,
+                SimilarityService similarityService,
+                RepositoryService repositories
+        ) {
+            return new SimilarityCheckService(config, similarityService, repositories);
         }
 
         @Bean
