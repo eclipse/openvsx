@@ -659,4 +659,40 @@ public class RepositoryService {
     public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
         return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
     }
+
+    public List<Extension> findSimilarExtensionsByLevenshtein(
+            String extensionName,
+            String namespaceName,
+            String displayName,
+            List<String> excludeNamespaces,
+            double levenshteinThreshold,
+            boolean verifiedOnly,
+            int limit
+    ) {
+        return extensionJooqRepo.findSimilarExtensionsByLevenshtein(
+                extensionName,
+                namespaceName,
+                displayName,
+                excludeNamespaces,
+                levenshteinThreshold,
+                verifiedOnly,
+                limit
+        );
+    }
+
+    public List<Namespace> findSimilarNamespacesByLevenshtein(
+            String namespaceName,
+            List<String> excludeNamespaces,
+            double levenshteinThreshold,
+            boolean verifiedOnly,
+            int limit
+    ) {
+        return namespaceJooqRepo.findSimilarNamespacesByLevenshtein(
+                namespaceName,
+                excludeNamespaces,
+                levenshteinThreshold,
+                verifiedOnly,
+                limit
+        );
+    }
 }
