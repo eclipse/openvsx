@@ -23,6 +23,7 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
@@ -63,6 +64,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final EclipseService eclipse;
     private final CacheService cache;
     private final ExtensionVersionIntegrityService integrityService;
+    private final SimilarityCheckService similarityCheckService;
 
     public LocalRegistryService(
             EntityManager entityManager,
@@ -75,7 +77,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             StorageUtilService storageUtil,
             EclipseService eclipse,
             CacheService cache,
-            ExtensionVersionIntegrityService integrityService
+            ExtensionVersionIntegrityService integrityService,
+            SimilarityCheckService similarityCheckService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -88,6 +91,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.eclipse = eclipse;
         this.cache = cache;
         this.integrityService = integrityService;
+        this.similarityCheckService = similarityCheckService;
     }
 
     @Value("${ovsx.webui.url:}")
@@ -593,6 +597,19 @@ public class LocalRegistryService implements IExtensionRegistry {
         var namespaceName = repositories.findNamespaceName(json.getName());
         if (namespaceName != null) {
             throw new ErrorResultException("Namespace already exists: " + namespaceName);
+        }
+
+        // Check if the proposed namespace name is too similar to existing ones
+        var similarNamespaces = similarityCheckService.findSimilarNamespacesForCreation(json.getName(), user);
+        if (!similarNamespaces.isEmpty()) {
+            var similarNames = similarNamespaces.stream()
+                    .map(Namespace::getName)
+                    .collect(Collectors.joining(", "));
+            throw new ErrorResultException(
+                "Namespace name '" + json.getName() + "' is too similar to existing namespace(s): " + similarNames + ". " +
+                "Please choose a more distinct name to avoid confusion. " +
+                "Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions"
+            );
         }
 
         // Create the requested namespace
