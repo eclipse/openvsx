@@ -220,7 +220,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findVersion(userData,"version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
                 () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
-                () -> repositories.deactivateAccessTokens(userData)
+                () -> repositories.deactivateAccessTokens(userData),
+                () -> repositories.findSimilarExtensionsByLevenshtein("extensionName", "namespaceName", "displayName", Collections.emptyList(), 0.5, false, 10),
+                () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", Collections.emptyList(), 0.5, false, 10)
         );
 
         // check that we did not miss anything

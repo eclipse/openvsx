@@ -167,3 +167,10 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+  similarity:
+    enabled: true
+    levenshtein-threshold: 0.2
+    skip-verified-publishers: true
+    check-against-verified-only: true
+    exclude-owner-namespaces: true
+    new-extensions-only: true
