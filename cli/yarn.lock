@@ -3391,7 +3391,7 @@ __metadata:
     typescript: "npm:^5.6.3"
     yauzl-promise: "npm:^4.0.0"
   bin:
-    ovsx: lib/ovsx
+    ovsx: ovsx
   languageName: unknown
   linkType: soft
 
