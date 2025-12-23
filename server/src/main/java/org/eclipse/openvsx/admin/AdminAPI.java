@@ -277,6 +277,43 @@ public class AdminAPI {
         }
     }
 
+    @PostMapping(
+            path = "/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Delete a review for an extension by a user")
+    @ApiResponse(
+            responseCode = "200",
+            description = "A success message is returned in JSON format",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Extension not found",
+            content = @Content()
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Review not found",
+            content = @Content()
+    )
+    public ResponseEntity<ResultJson> deleteReview(
+            @PathVariable String namespace,
+            @PathVariable String extension,
+            @PathVariable String provider,
+            @PathVariable String loginName
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+            var result = admins.deleteReview(namespace, extension, loginName, provider);
+            admins.logAdminAction(adminUser, result);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
     @GetMapping(
         path = "/admin/namespace/{namespaceName}",
         produces = MediaType.APPLICATION_JSON_VALUE

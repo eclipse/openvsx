@@ -209,6 +209,22 @@ export class ExtensionRegistryService {
         });
     }
 
+    async deleteUserReview(abortController: AbortController, extension: Extension, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.getCsrfToken(abortController);
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'admin', 'extension', extension.namespace, extension.name, 'review', user.provider || 'github', user.loginName, 'delete']),
+            headers
+        });
+    }
+
     getUser(abortController: AbortController): Promise<Readonly<UserData | ErrorResult>> {
         return sendRequest({
             abortController,
