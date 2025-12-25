@@ -25,6 +25,7 @@ public class HttpHeadersUtil {
 
         } catch (IllegalStateException _) {}
         headers.remove(HttpHeaders.HOST);
+        headers.remove(HttpHeaders.CONTENT_LENGTH);
         return headers;
     }
 
