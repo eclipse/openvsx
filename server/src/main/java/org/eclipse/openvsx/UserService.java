@@ -32,6 +32,7 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,13 +56,15 @@ public class UserService {
     private final RepositoryService repositories;
     private final StorageUtilService storageUtil;
     private final CacheService cache;
+    private final ApplicationEventPublisher eventPublisher;
     private final ExtensionValidator validator;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2AttributesConfig attributesConfig;
 
     @Value("${ovsx.token-prefix:}")
     String tokenPrefix;
-
+    
+    @Autowired
     public UserService(
             EntityManager entityManager,
             RepositoryService repositories,
@@ -78,6 +81,7 @@ public class UserService {
         this.validator = validator;
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.attributesConfig = attributesConfig;
+        this.eventPublisher = eventPublisher;
     }
 
     public UserData findLoggedInUser() {
@@ -144,6 +148,7 @@ public class UserService {
             throw new ErrorResultException("User " + user.getLoginName() + " is not a member of " + namespace.getName() + ".");
         }
         entityManager.remove(membership);
+        eventPublisher.publishEvent(new org.eclipse.openvsx.events.NamespaceMembershipChangedEvent(this, namespace));
         return ResultJson.success("Removed " + user.getLoginName() + " from namespace " + namespace.getName() + ".");
     }
 
@@ -159,6 +164,7 @@ public class UserService {
                 throw new ErrorResultException("User " + user.getLoginName() + " already has the role " + role + ".");
             }
             membership.setRole(role);
+            eventPublisher.publishEvent(new org.eclipse.openvsx.events.NamespaceMembershipChangedEvent(this, namespace));
             return ResultJson.success("Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role + ".");
         }
         membership = new NamespaceMembership();
@@ -166,6 +172,7 @@ public class UserService {
         membership.setUser(user);
         membership.setRole(role);
         entityManager.persist(membership);
+        eventPublisher.publishEvent(new org.eclipse.openvsx.events.NamespaceMembershipChangedEvent(this, namespace));
         return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName() + ".");
     }
 
