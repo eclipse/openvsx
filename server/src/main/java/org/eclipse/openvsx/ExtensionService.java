@@ -22,6 +22,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.SecretScanningService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -55,6 +56,7 @@ public class ExtensionService {
     private final CacheService cache;
     private final PublishExtensionVersionHandler publishHandler;
     private final JobRequestScheduler scheduler;
+    private final SecretScanningService secretScanningService;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
@@ -68,7 +70,8 @@ public class ExtensionService {
             SearchUtilService search,
             CacheService cache,
             PublishExtensionVersionHandler publishHandler,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            SecretScanningService secretScanningService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -76,6 +79,7 @@ public class ExtensionService {
         this.cache = cache;
         this.publishHandler = publishHandler;
         this.scheduler = scheduler;
+        this.secretScanningService = secretScanningService;
     }
 
     @Transactional
@@ -95,6 +99,32 @@ public class ExtensionService {
     }
 
     private void doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
+        // Scan for secrets before processing the extension
+        // This fails fast if secrets are detected, preventing publication
+        var scanResult = secretScanningService.scanForSecrets(extensionFile);
+        if (scanResult.isSecretsFound()) {
+            var findings = scanResult.getFindings();
+            var errorMessage = new StringBuilder();
+            errorMessage.append("Extension publication blocked: potential secrets detected in the package.\n\n");
+            errorMessage.append("The following potential secrets were found:\n");
+            
+            int maxFindings = Math.min(5, findings.size());
+            for (int i = 0; i < maxFindings; i++) {
+                errorMessage.append("  ").append(i + 1).append(". ").append(findings.get(i).toString()).append("\n");
+            }
+            
+            if (findings.size() > maxFindings) {
+                errorMessage.append("  ... and ").append(findings.size() - maxFindings).append(" more\n");
+            }
+            
+            errorMessage.append("\nPlease remove these secrets before publishing. ");
+            errorMessage.append("Consider using environment variables or configuration files that are not included in the package. ");
+            
+            errorMessage.append("Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions");
+            
+            throw new ErrorResultException(errorMessage.toString());
+        }
+        
         try (var processor = new ExtensionProcessor(extensionFile)) {
             var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
             if (requireLicense) {
