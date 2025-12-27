@@ -11,8 +11,6 @@ package org.eclipse.openvsx;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.re2j.Pattern;
-
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,10 +27,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.scanning.SecretScannerFactory;
-import org.eclipse.openvsx.scanning.SecretScanningConfiguration;
 import org.eclipse.openvsx.scanning.SecretScanningService;
-import org.eclipse.openvsx.scanning.SecretRuleLoader;
 import org.eclipse.openvsx.search.*;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
@@ -54,8 +49,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -95,7 +88,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
-    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class
+    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
+    SecretScanningService.class
 })
 class RegistryAPITest {
 
@@ -2601,74 +2595,6 @@ class RegistryAPITest {
                     integrityService,
                     similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
             );
-        }
-
-        @Bean
-        SecretScanningConfiguration secretScanningConfiguration() {
-            // Create a test configuration with scanning disabled by default for tests
-            // This prevents secret scanning from interfering with test execution
-            return new SecretScanningConfiguration() {
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
-
-                @Override
-                public long getMaxFileSizeBytes() {
-                    return 1048576; // 1MB default
-                }
-                
-                @Override
-                public java.util.List<String> getRulePaths() {
-                    // Provide a minimal test rule file to allow factory initialization
-                    return java.util.List.of("classpath:org/eclipse/openvsx/scanning/secret-rules-a.yaml");
-                }
-
-                @Override
-                public int getTimeoutCheckEveryNLines() {
-                    return 100;
-                }
-
-                @Override
-                public int getLongLineNoSpaceThreshold() {
-                    return 1000;
-                }
-
-                @Override
-                public int getKeywordContextChars() {
-                    return 100;
-                }
-
-                @Override
-                public int getLogAllowlistedPreviewLength() {
-                    return 10;
-                }
-            };
-        }
-
-        @Bean
-        SecretRuleLoader secretRuleLoader() {
-            return new SecretRuleLoader();
-        }
-
-        @Bean
-        SecretScannerFactory secretScannerFactory(SecretRuleLoader loader, SecretScanningConfiguration config) {
-            var generator = new org.eclipse.openvsx.scanning.GitleaksRulesGenerator(config);
-            SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
-            factory.initialize();
-            return factory;
-        }
-
-        @Bean
-        AsyncTaskExecutor secretScanExecutor() {
-            return new SimpleAsyncTaskExecutor();
-        }
-
-        @Bean
-        SecretScanningService secretScanningService(SecretScanningConfiguration config,
-                                                    SecretScannerFactory factory,
-                                                    AsyncTaskExecutor secretScanExecutor) {
-            return new SecretScanningService(config, factory, secretScanExecutor);
         }
 
         @Bean
