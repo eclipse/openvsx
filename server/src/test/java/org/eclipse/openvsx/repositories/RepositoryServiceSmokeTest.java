@@ -282,6 +282,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
                 () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
                 () -> repositories.deactivateAccessTokens(userData),
+                () -> repositories.expireAccessTokens(NOW),
+                () -> repositories.findAccessTokensCreatedBefore(NOW),
                 () -> repositories.findSimilarExtensionsByLevenshtein("extensionName", "namespaceName", "displayName", Collections.emptyList(), 0.5, false, 10),
                 () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", Collections.emptyList(), 0.5, false, 10),
                 () -> repositories.findExtensionScans(extVersion),

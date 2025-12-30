@@ -9,19 +9,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
+import jakarta.persistence.*;
+import org.eclipse.openvsx.json.AccessTokenJson;
+import org.eclipse.openvsx.util.TimeUtil;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import jakarta.persistence.*;
-
-import org.eclipse.openvsx.json.AccessTokenJson;
-import org.eclipse.openvsx.util.TimeUtil;
-
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = "value") })
 public class PersonalAccessToken implements Serializable {
+
+    public static final int EXPIRY_DAYS = 90;
 
     @Serial
     private static final long serialVersionUID = 1L;

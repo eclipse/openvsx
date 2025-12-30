@@ -33,6 +33,9 @@ spring:
     baseline-description: JobRunr tables
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
   session:
@@ -167,6 +170,9 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+    access-token-expiry:
+      subject: 'Open VSX Access Token Expiry Notification'
+      template: 'access-token-expiry-notification.html'
   # dynamic tier-based rate limiting configuration
   rate-limit:
     enabled: false

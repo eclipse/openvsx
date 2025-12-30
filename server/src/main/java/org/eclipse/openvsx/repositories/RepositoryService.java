@@ -715,6 +715,14 @@ public class RepositoryService {
         return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
     }
 
+    public Streamable<PersonalAccessToken> findAccessTokensCreatedBefore(LocalDateTime timestamp) {
+        return tokenRepo.findByCreatedTimestampLessThanEqualAndActiveTrue(timestamp);
+    }
+
+    public void expireAccessTokens(LocalDateTime timestamp) {
+        tokenRepo.expireAccessTokens(timestamp);
+    }
+
     public List<Extension> findSimilarExtensionsByLevenshtein(
             String extensionName,
             String namespaceName,
