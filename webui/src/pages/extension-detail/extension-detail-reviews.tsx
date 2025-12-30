@@ -8,78 +8,45 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect, useRef } from 'react';
+import React, { Fragment, FunctionComponent, ReactNode, useState } from 'react';
 import { Box, Typography, Divider, Link } from '@mui/material';
-import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';
-import { ExtensionReview, Extension, ExtensionReviewList, isEqualUser, isError, UserData } from '../../extension-registry-types';
+import { ExtensionReview, Extension, ExtensionReviewList, isEqualUser } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Timestamp } from '../../components/timestamp';
 import { ExportRatingStars } from './extension-rating-stars';
 import { ExtensionReviewDialog } from './extension-review-dialog';
+import { useDeleteReviewMutation, useGetExtensionReviewsQuery, useGetUserQuery } from '../../store/api';
 
 export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsProps> = props => {
-    const [reviewList, setReviewList] = useState<ExtensionReviewList>();
-    const [loading, setLoading] = useState<boolean>(true);
+    const { data: reviewList, isLoading } = useGetExtensionReviewsQuery(props.extension);
+    const [deleteReview] = useDeleteReviewMutation();
     const [revoked, setRevoked] = useState<boolean>(false);
-    const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
-
-    useEffect(() => {
-        updateReviews();
-        return () => abortController.current.abort();
-    }, []);
-
-    const updateReviews = async () => {
-        try {
-            const reviewList = await context.service.getExtensionReviews(abortController.current, props.extension);
-            setReviewList(reviewList);
-        } catch (err) {
-            context.handleError(err);
-        }
-
-        setLoading(false);
-        setRevoked(false);
-    };
-
-    const saveCompleted = () => {
-        setLoading(true);
-        updateReviews();
-        props.reviewsDidUpdate();
-    };
+    const { data: user } = useGetUserQuery();
 
     const handleRevokeButton = async () => {
         setRevoked(true);
-        try {
-            const result = await context.service.deleteReview(abortController.current, reviewList!.deleteUrl);
-            if (isError(result)) {
-                throw result;
-            }
-            saveCompleted();
-        } catch (err) {
-            context.handleError(err);
-        }
+        await deleteReview({ deleteReviewUrl: reviewList!.deleteUrl, extension: props.extension });
     };
 
     const renderButton = (): ReactNode => {
-        if (!context.user || !reviewList) {
-            return  '';
+        if (!user || !reviewList) {
+            return '';
         }
-        const existingReview = reviewList.reviews.find(r => isEqualUser(r.user, context.user as UserData));
+        const existingReview = reviewList.reviews.find(r => isEqualUser(r.user, user));
         if (existingReview) {
             const localTime = toLocalTime(existingReview.timestamp);
             return <ButtonWithProgress
-                    working={revoked}
-                    onClick={handleRevokeButton}
-                    title={`Revoke review written by ${context.user.loginName} on ${localTime}`} >
+                working={revoked}
+                onClick={handleRevokeButton}
+                title={`Revoke review written by ${user.loginName} on ${localTime}`} >
                 Revoke my Review
             </ButtonWithProgress>;
         } else {
             return <Box>
                 <ExtensionReviewDialog
-                    saveCompleted={saveCompleted}
                     extension={props.extension}
                     reviewPostUrl={reviewList.postUrl}
                 />
@@ -105,24 +72,24 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
                 <Box display='flex'>
                     {
                         r.timestamp ?
-                        <>
-                            <Typography variant='body2'><Timestamp value={r.timestamp}/></Typography>
-                            <TextDivider />
-                        </>
-                        : null
+                            <>
+                                <Typography variant='body2'><Timestamp value={r.timestamp} /></Typography>
+                                <TextDivider />
+                            </>
+                            : null
                     }
                     <Typography variant='body2'>
                         {
                             r.user.homepage ?
-                            <Link
-                                href={r.user.homepage}
-                                color='text.primary'
-                                underline='hover'
-                            >
-                                {r.user.loginName}
-                            </Link>
-                            :
-                            r.user.loginName
+                                <Link
+                                    href={r.user.homepage}
+                                    color='text.primary'
+                                    underline='hover'
+                                >
+                                    {r.user.loginName}
+                                </Link>
+                                :
+                                r.user.loginName
                         }
                     </Typography>
                 </Box>
@@ -163,7 +130,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         </Box>
         <Divider />
         <Box>
-            <DelayedLoadIndicator loading={loading}/>
+            <DelayedLoadIndicator loading={isLoading} />
             {renderReviewList(reviewList)}
         </Box>
     </>;
@@ -172,5 +139,4 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
 
 export interface ExtensionDetailReviewsProps {
     extension: Extension;
-    reviewsDidUpdate: () => void;
 }

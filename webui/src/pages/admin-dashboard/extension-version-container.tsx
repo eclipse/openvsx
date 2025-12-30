@@ -8,52 +8,57 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
+import React, { ChangeEvent, FunctionComponent, useState, useEffect } from 'react';
 import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
 import { Box, Grid, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
 import { getTargetPlatformDisplayName } from '../../utils';
-import { MainContext } from '../../context';
+import { useGetExtensionIconQuery } from '../../store/api';
+
+const WILDCARD = '*';
+const getTargetPlatformVersions = (extension: Extension) => {
+    const versionMap: TargetPlatformVersion[] = [];
+    versionMap.push({ targetPlatform: WILDCARD, version: WILDCARD, checked: false });
+    if (extension.allTargetPlatformVersions != null) {
+        extension.allTargetPlatformVersions
+            .filter(i => VERSION_ALIASES.indexOf(i.version) < 0)
+            .forEach(i => {
+                const { version, targetPlatforms } = i;
+                versionMap.push({ targetPlatform: WILDCARD, version, checked: false });
+                targetPlatforms.forEach(targetPlatform => versionMap.push({ targetPlatform, version, checked: false }));
+            });
+    }
+
+    return versionMap;
+};
 
 export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainerProps> = props => {
-    const WILDCARD = '*';
     const { extension } = props;
-    const { service } = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
+    const [targetPlatformVersions, setTargetPlatformVersions] = useState<TargetPlatformVersion[]>([]);
+    const [icon, setIcon] = useState<string | undefined>(undefined);
+    const { data: iconBlob } = useGetExtensionIconQuery(extension);
 
-    const getTargetPlatformVersions = () => {
-        const versionMap: TargetPlatformVersion[] = [];
-        versionMap.push({ targetPlatform: WILDCARD, version: WILDCARD, checked: false });
-        if (extension.allTargetPlatformVersions != null) {
-            extension.allTargetPlatformVersions
-                .filter(i => VERSION_ALIASES.indexOf(i.version) < 0)
-                .forEach(i => {
-                    const { version, targetPlatforms } = i;
-                    versionMap.push({ targetPlatform: WILDCARD, version, checked: false });
-                    targetPlatforms.forEach(targetPlatform => versionMap.push({ targetPlatform, version, checked: false }));
-                });
-        }
-
-        return versionMap;
-    };
+    useEffect(() => {
+        setTargetPlatformVersions(getTargetPlatformVersions(extension));
+    }, [extension]);
 
     useEffect(() => {
         return () => {
-            abortController.current.abort();
+            if (icon) {
+                URL.revokeObjectURL(icon);
+            }
         };
     }, []);
 
-    const [targetPlatformVersions, setTargetPlatformVersions] = useState(getTargetPlatformVersions());
-    const [icon, setIcon] = useState<string | undefined>(undefined);
     useEffect(() => {
         if (icon) {
             URL.revokeObjectURL(icon);
         }
 
-        service.getExtensionIcon(abortController.current, props.extension).then(setIcon);
-        setTargetPlatformVersions(getTargetPlatformVersions());
-    }, [props.extension]);
+        const newIcon = iconBlob ? URL.createObjectURL(iconBlob) : undefined;
+        setIcon(newIcon);
+    }, [iconBlob]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const newTargetPlatformVersions: TargetPlatformVersion[] = [];

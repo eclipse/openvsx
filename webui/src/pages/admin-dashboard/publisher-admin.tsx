@@ -8,24 +8,21 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, createContext, useEffect, useRef, ReactNode } from 'react';
+import React, { FunctionComponent, useState, useContext, createContext, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 import { PublisherDetails } from './publisher-details';
+import { apiSlice, useGetUserQuery } from '../../store/api';
 
 export const UpdateContext = createContext({ handleUpdate: () => { } });
 export const PublisherAdmin: FunctionComponent = props => {
-    const { pageSettings, service, user, handleError } = useContext(MainContext);
+    const { data: user } = useGetUserQuery();
+    const { pageSettings } = useContext(MainContext);
 
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+    const [getPublisherInfo] = apiSlice.useLazyAdminGetPublisherInfoQuery();
 
     const [loading, setLoading] = useState(false);
     const [inputValue, setInputValue] = useState('');
@@ -37,26 +34,21 @@ export const PublisherAdmin: FunctionComponent = props => {
     const [notFound, setNotFound] = useState('');
     const fetchPublisher = async () => {
         const publisherName = inputValue;
-        try {
-            setLoading(true);
-            if (publisherName !== '') {
-                const publisher = await service.admin.getPublisherInfo(abortController.current, 'github', publisherName);
+        setLoading(true);
+        if (publisherName !== '') {
+            const { data: publisher } = await getPublisherInfo({ provider: 'github', login: publisherName });
+            if (publisher != null) {
                 setNotFound('');
                 setPublisher(publisher);
             } else {
-                setNotFound('');
-                setPublisher(undefined);
-            }
-            setLoading(false);
-        } catch (err) {
-            if (err?.status === 404) {
                 setNotFound(publisherName);
                 setPublisher(undefined);
-            } else {
-                handleError(err);
             }
-            setLoading(false);
+        } else {
+            setNotFound('');
+            setPublisher(undefined);
         }
+        setLoading(false);
     };
 
     const handleUpdate = () => {

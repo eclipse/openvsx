@@ -8,19 +8,19 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext } from 'react';
+import React, { FunctionComponent } from 'react';
 import { Box, Typography, Avatar, Select, MenuItem, Button, SelectChangeEvent } from '@mui/material';
 import { NamespaceMembership, MembershipRole, Namespace, UserData } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import { useGetUserQuery } from '../../store/api';
+
+const equalUser = (user1: UserData | undefined, user2: UserData | undefined) => {
+    return user1?.loginName === user2?.loginName && user1?.provider === user2?.provider;
+};
 
 export const UserNamespaceMember: FunctionComponent<UserNamespaceMemberProps> = props => {
-    const equalUser = (user1: UserData | undefined, user2: UserData | undefined) => {
-        return user1?.loginName === user2?.loginName && user1?.provider === user2?.provider;
-    };
-
+    const { data: user } = useGetUserQuery();
     const memberUser = props.member.user;
-    const context = useContext(MainContext);
-    const contextUser = context.user;
+
     return <Box key={'member:' + memberUser.loginName} p={2} display='flex' alignItems='center'>
         <Box alignItems='center' overflow='auto' width='33%'>
             <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>{memberUser.loginName}</Typography>
@@ -43,7 +43,7 @@ export const UserNamespaceMember: FunctionComponent<UserNamespaceMemberProps> = 
             }}
         >
             {
-                props.fixSelf && equalUser(memberUser, contextUser) ?
+                props.fixSelf && equalUser(memberUser, user) ?
                     <Box
                         sx={{
                             fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',

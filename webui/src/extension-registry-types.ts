@@ -157,6 +157,7 @@ export interface UserData {
     loginName: string;
     tokensUrl: UrlString;
     createTokenUrl: UrlString;
+    deleteAllTokensUrl: UrlString;
     fullName?: string;
     avatarUrl?: UrlString;
     homepage?: string;
@@ -258,3 +259,12 @@ export interface LoginProviders {
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';
+
+export interface ExtensionFilter {
+    query: string;
+    category: ExtensionCategory | '';
+    size: number;
+    offset: number;
+    sortBy: SortBy;
+    sortOrder: SortOrder;
+}

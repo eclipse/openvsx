@@ -8,13 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState, ReactNode } from 'react';
 import { Box, Typography, Tabs, Tab, useTheme, useMediaQuery, Link } from '@mui/material';
 import { Namespace, UserData } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
 import { NamespaceDetail } from './user-settings-namespace-detail';
 import { CreateNamespaceDialog } from './create-namespace-dialog';
+import { useGetNamespacesQuery, useGetUserQuery } from '../../store/api';
 
 interface NamespaceTabProps {
     chosenNamespace: Namespace,
@@ -56,48 +57,24 @@ const NamespacesTabs = (props: NamespaceTabProps) => {
 
 export const UserSettingsNamespaces: FunctionComponent = () => {
 
-    const [loading, setLoading] = useState(true);
-    const [namespaces, setNamespaces] = useState<Array<Namespace>>([]);
     const [chosenNamespace, setChosenNamespace] = useState<Namespace>();
-    const { pageSettings, service, user, handleError } = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
+    const { pageSettings } = useContext(MainContext);
+    const { data: user } = useGetUserQuery();
+    const { data: namespaces, isLoading } = useGetNamespacesQuery();
 
     useEffect(() => {
-        initNamespaces();
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+        if (chosenNamespace == null && namespaces != null && namespaces.length > 0) {
+            setChosenNamespace(namespaces[0]);
+        }
+    }, [namespaces, chosenNamespace]);
 
     const handleChangeNamespace = (value: Namespace): void => {
-        doHandleChangeNamespace(value);
-    };
-
-    const doHandleChangeNamespace = async(chosenNamespace: Namespace): Promise<void> => {
         setChosenNamespace(chosenNamespace);
-    };
-
-    const initNamespaces = async(): Promise<void> => {
-        try {
-            const namespaces = await service.getNamespaces(abortController.current);
-            const chosenNamespace = namespaces.length ? namespaces[0] : undefined;
-            setNamespaces(namespaces);
-            setChosenNamespace(chosenNamespace);
-            setLoading(false);
-        } catch (err) {
-            handleError(err);
-            setLoading(false);
-        }
-    };
-
-    const handleNamespaceCreated = () => {
-        setLoading(true);
-        initNamespaces();
     };
 
     let namespaceContainer: ReactNode = null;
     const namespaceAccessUrl = pageSettings.urls.namespaceAccessInfo;
-    if (namespaces.length > 0 && chosenNamespace) {
+    if ((namespaces?.length ?? 0) > 0 && chosenNamespace) {
         namespaceContainer = <Box
             sx={{
                 display: 'flex',
@@ -108,18 +85,17 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
         >
             <NamespacesTabs
                 chosenNamespace={chosenNamespace}
-                namespaces={namespaces}
+                namespaces={namespaces ?? []}
                 onChange={handleChangeNamespace}
             />
             <NamespaceDetail
                 namespace={chosenNamespace}
-                setLoadingState={(loading: boolean) => setLoading(loading)}
                 filterUsers={(foundUser: UserData) => foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName}
                 fixSelf={true}
                 namespaceAccessUrl={namespaceAccessUrl}
                 theme={pageSettings.themeType}/>
         </Box>;
-    } else if (!loading) {
+    } else if (!isLoading) {
         namespaceContainer = <Typography variant='body1'>No namespaces available. Read <Link color='secondary' href={namespaceAccessUrl} target='_blank'>here</Link> about claiming namespaces.</Typography>;
     }
 
@@ -143,14 +119,12 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
                 }}
             >
                 <Box sx={{ mr: 1, mb: 1 }}>
-                    <CreateNamespaceDialog
-                        namespaceCreated={handleNamespaceCreated}
-                    />
+                    <CreateNamespaceDialog />
                 </Box>
             </Box>
         </Box>
         <Box mt={2}>
-            <DelayedLoadIndicator loading={loading}/>
+            <DelayedLoadIndicator loading={isLoading}/>
             {namespaceContainer}
         </Box>
     </>;

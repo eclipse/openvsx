@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Grid, Fade } from '@mui/material';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
@@ -17,37 +17,21 @@ import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 import { SearchEntry } from '../../extension-registry-types';
 import { ExportRatingStars } from '../extension-detail/extension-rating-stars';
 import { createRoute } from '../../utils';
+import { useGetExtensionIconQuery } from '../../store/api';
 
 export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = props => {
     const [icon, setIcon] = useState<string>();
+    const { data } = useGetExtensionIconQuery(props.extension);
     const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
-        updateChanges();
-        return () => {
-            abortController.current.abort();
-            if (icon) {
-                URL.revokeObjectURL(icon);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        updateChanges();
-    }, [props.extension.namespace, props.extension.name, props.extension.version]);
-
-    const updateChanges = async (): Promise<void> => {
         if (icon) {
             URL.revokeObjectURL(icon);
         }
-        try {
-            const icon = await context.service.getExtensionIcon(abortController.current, props.extension);
-            setIcon(icon);
-        } catch (err) {
-            context.handleError(err);
-        }
-    };
+
+        const newIcon = data ? URL.createObjectURL(data) : undefined;
+        setIcon(newIcon);
+    }, [data]);
 
     const { extension, filterSize, idx } = props;
     const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);

@@ -8,61 +8,30 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useEffect, useState, useContext, useRef } from 'react';
+import React, { FunctionComponent, useState } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { UserNamespaceMember } from './user-namespace-member-component';
-import { Namespace, NamespaceMembership, MembershipRole, isError, UserData } from '../../extension-registry-types';
+import { Namespace, NamespaceMembership, MembershipRole, UserData } from '../../extension-registry-types';
 import { AddMemberDialog } from './add-namespace-member-dialog';
-import { MainContext } from '../../context';
+import { useGetNamespaceMembersQuery, useGetUserQuery, useSetNamespaceMemberMutation } from '../../store/api';
 
 export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListProps> = props => {
-    const { service, user, handleError } = useContext(MainContext);
-    const [members, setMembers] = useState<NamespaceMembership[]>([]);
     const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
-    const abortController = useRef<AbortController>(new AbortController());
+    const { data: user } = useGetUserQuery();
+    const { data: membershipList } = useGetNamespaceMembersQuery(props.namespace);
+    const [setNamespaceMember] = useSetNamespaceMemberMutation();
 
-    useEffect(() => {
-        fetchMembers();
-    }, [props.namespace]);
-
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
 
     const handleCloseAddDialog = async () => {
         setAddDialogIsOpen(false);
-        fetchMembers();
     };
     const handleOpenAddDialog = () => {
         setAddDialogIsOpen(true);
     };
 
-    const fetchMembers = async () => {
-        try {
-            const membershipList = await service.getNamespaceMembers(abortController.current, props.namespace);
-            const members = membershipList.namespaceMemberships;
-            setMembers(members);
-        } catch (err) {
-            handleError(err);
-        }
-    };
-
     const changeRole = async (membership: NamespaceMembership, role: MembershipRole | 'remove') => {
-        try {
-            props.setLoadingState(true);
-            const endpoint = props.namespace.roleUrl;
-            const result = await service.setNamespaceMember(abortController.current, endpoint, membership.user, role);
-            if (isError(result)) {
-                throw result;
-            }
-            await fetchMembers();
-            props.setLoadingState(false);
-        } catch (err) {
-            handleError(err);
-            props.setLoadingState(false);
-        }
+        const endpoint = props.namespace.roleUrl;
+        await setNamespaceMember({ endpoint, user: membership.user, role });
     };
 
     if (!user) {
@@ -83,9 +52,9 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
                 Add Namespace Member
             </Button>
         </Box>
-        {members.length ?
+        {membershipList?.namespaceMemberships.length ?
             <Paper elevation={3}>
-                {members.map(member =>
+                {membershipList?.namespaceMemberships.map(member =>
                     <UserNamespaceMember
                         key={'nspcmbr-' + member.user.loginName + member.user.provider}
                         namespace={props.namespace}
@@ -96,18 +65,16 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
             </Paper> :
             <Typography variant='body1'>There are no members assigned yet.</Typography>}
         <AddMemberDialog
-            members={members}
+            members={membershipList?.namespaceMemberships ?? []}
             namespace={props.namespace}
             onClose={handleCloseAddDialog}
             open={addDialogIsOpen}
-            setLoadingState={props.setLoadingState}
             filterUsers={props.filterUsers} />
     </>;
 };
 
 export interface UserNamespaceMemberListProps {
     namespace: Namespace;
-    setLoadingState: (loadingState: boolean) => void;
     filterUsers: (user: UserData) => boolean;
     fixSelf: boolean;
 }

@@ -15,7 +15,7 @@ import { UserNamespaceExtensionListItem } from './user-namespace-extension-list-
 import { Extension } from '../../extension-registry-types';
 
 interface UserExtensionListProps {
-    extensions?: Extension[];
+    extensions?: Readonly<Extension[]>;
     loading: boolean;
     canDelete?: boolean
 }

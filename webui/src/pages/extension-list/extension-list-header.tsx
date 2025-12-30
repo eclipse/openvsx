@@ -16,6 +16,26 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { ExtensionListSearchfield } from './extension-list-searchfield';
 import { MainContext } from '../../context';
 
+const getCategories = (): ExtensionCategory[] => {
+    return [
+        'Programming Languages',
+        'Snippets',
+        'Linters',
+        'Themes',
+        'Debuggers',
+        'Formatters',
+        'Keymaps',
+        'SCM Providers',
+        'Other',
+        'Extension Packs',
+        'Language Packs',
+        'Data Science',
+        'Machine Learning',
+        'Visualization',
+        'Notebooks'
+    ];
+};
+
 export const ExtensionListHeader: FunctionComponent<ExtensionListHeaderProps> = props => {
     const [categories, setCategories] = useState<ExtensionCategory[]>([]);
     const [category, setCategory] = useState<ExtensionCategory | ''>('');
@@ -24,7 +44,7 @@ export const ExtensionListHeader: FunctionComponent<ExtensionListHeaderProps> = 
     const context = useContext(MainContext);
 
     useEffect(() => {
-        const categories = Array.from(context.service.getCategories());
+        const categories = Array.from(getCategories());
         categories.sort((a, b) => {
             if (a === b)
                 return 0;

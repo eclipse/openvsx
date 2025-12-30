@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, Suspense, lazy } from 'react';
+import React, { FunctionComponent, ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { styled, Theme } from '@mui/material/styles';
 import { Link, Typography, Box } from '@mui/material';
@@ -21,8 +21,9 @@ import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
 import { createAbsoluteURL } from '../utils';
+import { useGetRegistryVersionQuery, serverUrl } from '../store/api';
 
-export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string, serverVersionPromise: Promise<string>): PageSettings {
+export default function createPageSettings(prefersDarkMode: boolean): PageSettings {
     const toolbarContent: FunctionComponent = () =>
         <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
             <OpenVSXLogo width='auto' height='40px' marginTop='8px' prefersDarkMode={prefersDarkMode} />
@@ -39,10 +40,12 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
 
     const StyledRouteLink = styled(RouteLink)(link);
 
-    const ServerVersion = lazy(async () => {
-        const version = await serverVersionPromise;
-        return { default: () => <Typography variant='body2' sx={{ fontSize: '0.8rem' }}>Server Version: {version}</Typography> };
-    });
+    const ServerVersion: FunctionComponent = () => {
+        const { data } = useGetRegistryVersionQuery();
+        return data != null
+            ? <Typography variant='body2' sx={{ fontSize: '0.8rem' }}>Server Version: {data.version}</Typography>
+            : <div>Loading version...</div>;
+    };
 
 
     const footerContent: FunctionComponent<{ expanded: boolean }> = () =>
@@ -65,9 +68,7 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
             >
                 <GitHubIcon />&nbsp;eclipse/openvsx
             </Link>
-            <Suspense fallback={<div>Loading version...</div>}>
-                <ServerVersion/>
-            </Suspense>
+            <ServerVersion/>
             <StyledRouteLink to='/about'>
                 About This Service
             </StyledRouteLink>

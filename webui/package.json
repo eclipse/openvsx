@@ -1,6 +1,6 @@
 {
     "name": "openvsx-webui",
-    "version": "0.17.1",
+    "version": "0.18.0",
     "description": "User interface for Eclipse Open VSX",
     "keywords": [
         "react",
@@ -41,6 +41,7 @@
         "@mui/base": "^5.0.0-beta.9",
         "@mui/icons-material": "^5.13.7",
         "@mui/material": "^5.13.7",
+        "@reduxjs/toolkit": "^2.11.0",
         "clipboard-copy": "^4.0.1",
         "clsx": "^1.2.1",
         "dompurify": "^3.0.4",
@@ -56,6 +57,7 @@
         "react-dropzone": "^14.2.3",
         "react-helmet-async": "^1.3.0",
         "react-infinite-scroller": "^1.2.6",
+        "react-redux": "^9.2.0",
         "react-router": "^6.14.2",
         "react-router-dom": "^6.14.1"
     },

@@ -10,16 +10,11 @@
 
 import { createContext } from 'react';
 import { PageSettings } from './page-settings';
-import { ExtensionRegistryService } from './extension-registry-service';
-import { UserData } from './extension-registry-types';
 import { ErrorResponse } from './server-request';
 
 export interface MainContext {
-    service: ExtensionRegistryService;
     pageSettings: PageSettings;
     handleError: (err: Error | Partial<ErrorResponse>) => void;
-    user?: UserData;
-    updateUser: () => void;
     loginProviders?: Record<string, string>;
 }
 

@@ -8,42 +8,33 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useState } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@mui/material';
-import { MainContext } from '../../context';
-import { isError, Extension, TargetPlatformVersion } from '../../extension-registry-types';
+import { TargetPlatformVersion } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';
 import { StyledInput } from './namespace-input';
+import { useAdminDeleteExtensionsMutation, useAdminGetExtensionQuery } from '../../store/api';
 
 export const ExtensionAdmin: FunctionComponent = props => {
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const [loading, setLoading] = useState(false);
-
     const [extensionValue, setExtensionValue] = useState('');
+    const [error, setError] = useState('');
+    const [extensionFieldError, setExtensionFieldError] = useState(false);
+    const [namespaceFieldError, setNamespaceFieldError] = useState(false);
+    const [namespaceValue, setNamespaceValue] = useState('');
+
+    const { data: extension, isLoading } = useAdminGetExtensionQuery({ namespace: namespaceValue, extension: extensionValue }, { skip: !namespaceValue || !extensionValue });
+    const [deleteExtensions] = useAdminDeleteExtensionsMutation();
+
     const handleExtensionChange = (value: string) => {
         setExtensionValue(value);
     };
 
-    const [namespaceValue, setNamespaceValue] = useState('');
     const handleNamespaceChange = (value: string) => {
         setNamespaceValue(value);
     };
 
-    const [error, setError] = useState('');
-
-    const [extensionFieldError, setExtensionFieldError] = useState(false);
-    const [namespaceFieldError, setNamespaceFieldError] = useState(false);
-
-    const { service, handleError } = useContext(MainContext);
-    const [extension, setExtension] = useState<Extension | undefined>(undefined);
     const findExtension = async () => {
         if (!namespaceValue) {
             setNamespaceFieldError(true);
@@ -57,24 +48,6 @@ export const ExtensionAdmin: FunctionComponent = props => {
             return;
         }
         setExtensionFieldError(false);
-        try {
-            setLoading(true);
-            const extensionDetail = await service.admin.getExtension(abortController.current, namespaceValue, extensionValue);
-            if (isError(extensionDetail)) {
-                throw extensionDetail;
-            }
-            setExtension(extensionDetail);
-            setError('');
-            setLoading(false);
-        } catch (err) {
-            if (err && err.status === 404) {
-                setError(`Extension not found: ${namespaceValue}.${extensionValue}`);
-                setExtension(undefined);
-            } else {
-                handleError(err);
-            }
-            setLoading(false);
-        }
     };
 
     const onRemove = async (targetPlatformVersions?: TargetPlatformVersion[]) => {
@@ -82,8 +55,7 @@ export const ExtensionAdmin: FunctionComponent = props => {
             return;
         }
 
-        await service.admin.deleteExtensions(abortController.current, { namespace: extension.namespace, extension: extension.name, targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform })) });
-        await findExtension();
+        await deleteExtensions({ namespace: extension.namespace, extension: extension.name, targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform })) });
     };
 
     return <SearchListContainer
@@ -112,6 +84,6 @@ export const ExtensionAdmin: FunctionComponent = props => {
                 <ExtensionVersionContainer onRemove={onRemove} extension={extension} />
                 : ''
         }
-        loading={loading}
+        loading={isLoading}
     />;
 };
