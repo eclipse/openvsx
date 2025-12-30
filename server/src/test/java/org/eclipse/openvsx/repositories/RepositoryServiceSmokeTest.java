@@ -220,7 +220,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findVersion(userData,"version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
                 () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
-                () -> repositories.deactivateAccessTokens(userData)
+                () -> repositories.deactivateAccessTokens(userData),
+                () -> repositories.expireAccessTokens(NOW),
+                () -> repositories.findAccessTokensCreatedBefore(NOW)
         );
 
         // check that we did not miss anything
