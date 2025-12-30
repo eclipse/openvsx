@@ -41,6 +41,9 @@ public class UserJson extends ResultJson {
     private String createTokenUrl;
 
     @Schema(hidden = true)
+    private String deleteAllTokensUrl;
+
+    @Schema(hidden = true)
     private String role;
 
     @Schema(description = "Full name")
@@ -83,6 +86,14 @@ public class UserJson extends ResultJson {
 
     public void setCreateTokenUrl(String createTokenUrl) {
         this.createTokenUrl = createTokenUrl;
+    }
+
+    public String getDeleteAllTokensUrl() {
+        return deleteAllTokensUrl;
+    }
+
+    public void setDeleteAllTokensUrl(String deleteAllTokensUrl) {
+        this.deleteAllTokensUrl = deleteAllTokensUrl;
     }
 
     public String getRole() {
@@ -200,6 +211,7 @@ public class UserJson extends ResultJson {
         return Objects.equals(loginName, userJson.loginName)
                 && Objects.equals(tokensUrl, userJson.tokensUrl)
                 && Objects.equals(createTokenUrl, userJson.createTokenUrl)
+                && Objects.equals(deleteAllTokensUrl, userJson.deleteAllTokensUrl)
                 && Objects.equals(role, userJson.role)
                 && Objects.equals(fullName, userJson.fullName)
                 && Objects.equals(avatarUrl, userJson.avatarUrl)
@@ -211,6 +223,18 @@ public class UserJson extends ResultJson {
 
     @Override
     public int hashCode() {
-        return Objects.hash(loginName, tokensUrl, createTokenUrl, role, fullName, avatarUrl, homepage, provider, publisherAgreement, additionalLogins);
+        return Objects.hash(
+                loginName,
+                tokensUrl,
+                createTokenUrl,
+                deleteAllTokensUrl,
+                role,
+                fullName,
+                avatarUrl,
+                homepage,
+                provider,
+                publisherAgreement,
+                additionalLogins
+        );
     }
 }

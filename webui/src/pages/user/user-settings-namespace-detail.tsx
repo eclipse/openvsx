@@ -110,7 +110,6 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
                 props.namespace.membersUrl
                 ? <Grid item>
                     <UserNamespaceMemberList
-                        setLoadingState={props.setLoadingState}
                         namespace={props.namespace}
                         filterUsers={props.filterUsers}
                         fixSelf={props.fixSelf} />
@@ -133,8 +132,7 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
         <NamespaceChangeDialog
             open={changeDialogIsOpen}
             onClose={handleCloseChangeDialog}
-            namespace={props.namespace}
-            setLoadingState={props.setLoadingState} />
+            namespace={props.namespace} />
     </>;
 };
 
@@ -142,7 +140,6 @@ export interface NamespaceDetailProps {
     namespace: Namespace;
     filterUsers: (user: UserData) => boolean;
     fixSelf: boolean;
-    setLoadingState: (loading: boolean) => void;
     namespaceAccessUrl?: string;
     theme?: string;
 }

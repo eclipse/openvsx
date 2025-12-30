@@ -8,38 +8,30 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
- import React, { ChangeEvent, FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+ import React, { ChangeEvent, FunctionComponent, useState, useEffect } from 'react';
  import {
      Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, TextField
  } from '@mui/material';
  import { ButtonWithProgress } from '../../components/button-with-progress';
- import { Namespace, SuccessResult, isError } from '../../extension-registry-types';
- import { MainContext } from '../../context';
+ import { Namespace, SuccessResult } from '../../extension-registry-types';
  import { InfoDialog } from '../../components/info-dialog';
+import { useAdminChangeNamespaceMutation } from '../../store/api';
 
  export interface NamespaceChangeDialogProps {
      open: boolean;
      onClose: () => void;
      namespace: Namespace;
-     setLoadingState: (loading: boolean) => void;
  }
 
  export const NamespaceChangeDialog: FunctionComponent<NamespaceChangeDialogProps> = props => {
      const { open } = props;
-     const { service, handleError } = useContext(MainContext);
      const [working, setWorking] = useState(false);
      const [newNamespace, setNewNamespace] = useState('');
      const [removeOldNamespace, setRemoveOldNamespace] = useState(false);
      const [mergeIfNewNamespaceAlreadyExists, setMergeIfNewNamespaceAlreadyExists] = useState(false);
      const [infoDialogIsOpen, setInfoDialogIsOpen] = useState(false);
      const [infoDialogMessage, setInfoDialogMessage] = useState('');
-
-     const abortController = useRef<AbortController>(new AbortController());
-     useEffect(() => {
-         return () => {
-             abortController.current.abort();
-         };
-     }, []);
+     const [changeNamespace] = useAdminChangeNamespaceMutation();
 
     useEffect(() => {
         if (open) {
@@ -63,28 +55,16 @@
         setMergeIfNewNamespaceAlreadyExists(checked);
     };
     const handleChangeNamespace = async () => {
-        try {
-            if (!props.namespace) {
-                return;
-            }
-            setWorking(true);
-            props.setLoadingState(true);
-            const oldNamespace = props.namespace.name;
-            const result = await service.admin.changeNamespace(abortController.current, { oldNamespace, newNamespace, removeOldNamespace, mergeIfNewNamespaceAlreadyExists });
-            if (isError(result)) {
-                throw result;
-            }
-
-            const successResult = result as SuccessResult;
-            props.setLoadingState(false);
-            setWorking(false);
-            setInfoDialogIsOpen(true);
-            setInfoDialogMessage(successResult.success);
-        } catch (err) {
-            props.setLoadingState(false);
-            setWorking(false);
-            handleError(err);
+        if (!props.namespace) {
+            return;
         }
+        setWorking(true);
+        const oldNamespace = props.namespace.name;
+        const { data: result } = await changeNamespace({ oldNamespace, newNamespace, removeOldNamespace, mergeIfNewNamespaceAlreadyExists });
+        const successResult = result as SuccessResult;
+        setWorking(false);
+        setInfoDialogIsOpen(true);
+        setInfoDialogMessage(successResult.success);
     };
 
      return <>

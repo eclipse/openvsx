@@ -23,6 +23,7 @@ import { MainContext } from '../../context';
 import { UserData } from '../../extension-registry-types';
 import { LoginComponent } from '../../default/login';
 import { UserSettingsDeleteExtension } from './user-settings-delete-extension';
+import { useGetUserQuery } from '../../store/api';
 
 export namespace UserSettingsRoutes {
     export const ROOT = createRoute(['user-settings']);
@@ -34,14 +35,15 @@ export namespace UserSettingsRoutes {
     export const DELETE_EXTENSION = createRoute([ROOT, 'extensions', ':namespace', ':extension', 'delete']);
 }
 
-export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
+export const UserSettings: FunctionComponent = () => {
 
-    const { pageSettings, user, loginProviders } = useContext(MainContext);
+    const { pageSettings, loginProviders } = useContext(MainContext);
     const { tab, namespace, extension } = useParams();
+    const { data: user, isLoading: userLoading } = useGetUserQuery();
 
     const renderTab = (user: UserData, tab?: string, namespace?: string, extension?: string): ReactNode => {
         if (tab == null && namespace != null && extension != null) {
-            return <UserSettingsDeleteExtension namespace={namespace} extension={extension}/>;
+            return <UserSettingsDeleteExtension namespace={namespace} extension={extension} />;
         }
 
         switch (tab) {
@@ -59,7 +61,7 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
     };
 
     const renderContent = (): ReactNode => {
-        if (props.userLoading) {
+        if (userLoading) {
             return <DelayedLoadIndicator loading={true} />;
         }
 
@@ -70,8 +72,8 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
                     <Box mt={2}>
                         <Typography variant='body1'>
                             Please <LoginComponent loginProviders={loginProviders} renderButton={(href, onClick) => {
-return (<Link color='secondary' href={href} onClick={onClick}>log in</Link>);
-}}/> to
+                                return (<Link color='secondary' href={href} onClick={onClick}>log in</Link>);
+                            }} /> to
                             access your account settings.
                         </Typography>
                     </Box>
@@ -105,12 +107,8 @@ return (<Link color='secondary' href={href} onClick={onClick}>log in</Link>);
 
     return <>
         <Helmet>
-            <title>Settings – { pageSettings.pageTitle }</title>
+            <title>Settings – {pageSettings.pageTitle}</title>
         </Helmet>
-        { renderContent() }
+        {renderContent()}
     </>;
 };
-
-export interface UserSettingsProps {
-    userLoading: boolean;
-}

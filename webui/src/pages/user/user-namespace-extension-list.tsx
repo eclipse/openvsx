@@ -8,61 +8,40 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
-import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import React, { FunctionComponent, useEffect, useState } from 'react';
+import { Namespace, Extension } from '../../extension-registry-types';
 import { UserExtensionList } from './user-extension-list';
 import { Typography } from '@mui/material';
+import { apiSlice } from '../../store/api';
 
 export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespaceExtensionListContainerProps> = props => {
     const [extensions, setExtensions] = useState<Extension[]>();
-    const [loading, setLoading] = useState<boolean>(true);
-    const context = useContext(MainContext);
-
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        updateExtensions();
-        return () => abortController.current.abort();
-    }, []);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [getExtensionDetail] = apiSlice.useLazyGetExtensionDetailQuery();
 
     useEffect(() => {
-        setExtensions(undefined);
         setLoading(true);
-        updateExtensions();
-    }, [props.namespace.name]);
+        const namespace = props.namespace.name;
+        const promises = Object.keys(props.namespace.extensions)
+            .map(async (name: string) => {
+                const { data } = await getExtensionDetail({ namespace, name });
+                return data;
+            });
 
-    const updateExtensions = async (): Promise<void> => {
-        const extensionsURLs: string[] = Object.keys(props.namespace.extensions).map((key: string) => props.namespace.extensions[key]);
-
-        const getExtension = async (url: string) => {
-            let result: Extension | ErrorResult;
-            try {
-                result = await context.service.getExtensionDetail(abortController.current, url);
-                if (isError(result)) {
-                    throw result;
-                }
-                return result;
-            } catch (error) {
-                context.handleError(error);
-                return undefined;
-            }
-        };
-
-        const extensionUnfiltered = await Promise.all(
-            extensionsURLs.map((url: string) => getExtension(url))
-        );
-        const extensions = extensionUnfiltered.filter(e => e != null) as Extension[];
-
-        setExtensions(extensions);
-        setLoading(false);
-    };
+        Promise.all(promises)
+            .then((response) => {
+                const extensions = response.filter((extension) => extension != null) as Extension[];
+                setExtensions(extensions);
+                setLoading(false);
+            });
+    }, [props.namespace.name, props.namespace.extensions]);
 
     return <>
         <Typography variant='h5'>Extensions</Typography>
         {
             extensions && extensions.length > 0
                 ? <UserExtensionList extensions={extensions} loading={loading} canDelete />
-                : <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
+                : <Typography variant='body1'>No extensions published under this namespace yet.</Typography>
         }
     </>;
 };

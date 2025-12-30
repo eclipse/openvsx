@@ -8,54 +8,30 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { FunctionComponent, useContext, useState, ReactNode } from 'react';
 import {
     Box, Typography, Paper, Button, Dialog, DialogContent, DialogContentText, Link
 } from '@mui/material';
-import { UserData, isError, ReportedError } from '../../extension-registry-types';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { createAbsoluteURL } from '../../utils';
 import { MainContext } from '../../context';
 import CircularProgress from '@mui/material/CircularProgress';
+import { eclipseLoginUrl, useGetStaticContentQuery, useSignPublisherAgreementMutation } from '../../store/api';
+import { UserData } from '../../extension-registry-types';
 
-export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = props => {
-    const { service, pageSettings, updateUser, handleError } = useContext(MainContext);
+export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = ({ user }) => {
+    const { pageSettings, handleError } = useContext(MainContext);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
-    const [agreementText, setAgreementText] = useState('');
-    const abortController = useRef<AbortController>(new AbortController());
+    const { data: agreementText } = useGetStaticContentQuery(pageSettings.urls.publisherAgreement as string, { skip: pageSettings.urls.publisherAgreement == null });
+    const [signPublisherAgreement] = useSignPublisherAgreementMutation();
 
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    useEffect(() => {
-        if (dialogOpen) {
-            onDialogOpened();
-        }
-    }, [dialogOpen]);
-
-    const signPublisherAgreement = async (): Promise<void> => {
-        try {
-            setWorking(true);
-            const result = await service.signPublisherAgreement(abortController.current);
-            if (isError(result)) {
-                throw result;
-            }
-            updateUser();
-            setDialogOpen(false);
-        } catch (err) {
-            if (!(err as ReportedError).code) {
-                Object.assign(err, { code: 'publisher-agreement-problem' });
-            }
-            handleError(err);
-        } finally {
-            setWorking(false);
-        }
+    const onSignPublisherAgreement = async (): Promise<void> => {
+        setWorking(true);
+        await signPublisherAgreement();
+        setDialogOpen(false);
+        setWorking(false);
     };
 
     const openPublisherAgreement = () => {
@@ -66,26 +42,11 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         }
     };
 
-    const onDialogOpened = async () => {
-        const agreementURL = pageSettings.urls.publisherAgreement;
-        if (agreementURL) {
-            try {
-                const agreementMd = await service.getStaticContent(abortController.current, agreementURL);
-                setAgreementText(agreementMd);
-            } catch (err) {
-                handleError(err);
-            }
-        } else {
-            setAgreementText('Publisher agreement text is not available.');
-        }
-    };
-
     const onClose = () => {
         setDialogOpen(false);
     };
 
-    const user = props.user;
-    if (!user.publisherAgreement) {
+    if (!user?.publisherAgreement) {
         return null;
     }
 
@@ -118,7 +79,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                 an Eclipse Foundation account.
             </Typography>
             <Box mt={2} display='flex' justifyContent='flex-end'>
-                <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+                <Link href={eclipseLoginUrl}>
                     <Button variant='outlined' color='secondary'>
                         Log in with Eclipse
                     </Button>
@@ -143,7 +104,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                                 sanitize={false}
                                 linkify={false} />
                             <Box display='flex' justifyContent='flex-end' >
-                                <ButtonWithProgress working={working} onClick={signPublisherAgreement}>
+                                <ButtonWithProgress working={working} onClick={onSignPublisherAgreement}>
                                     Agree
                                 </ButtonWithProgress>
                             </Box>

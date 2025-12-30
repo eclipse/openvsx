@@ -8,15 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useState, useContext, useEffect, useRef } from 'react';
+import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useState, useContext } from 'react';
 import { UserData } from '../..';
 import {
     Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Popper, Fade, Paper,
     Box, Avatar
 } from '@mui/material';
-import { Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
+import { Namespace, NamespaceMembership } from '../../extension-registry-types';
 import { NamespaceDetailConfigContext } from './user-settings-namespace-detail';
 import { MainContext } from '../../context';
+import { apiSlice, useSetNamespaceMemberMutation } from '../../store/api';
 
 export interface AddMemberDialogProps {
     open: boolean;
@@ -24,46 +25,30 @@ export interface AddMemberDialogProps {
     filterUsers: (user: UserData) => boolean;
     namespace: Namespace;
     members: NamespaceMembership[];
-    setLoadingState: (loading: boolean) => void;
 }
 
 export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props => {
     const { open } = props;
     const config = useContext(NamespaceDetailConfigContext);
-    const { service, handleError } = useContext(MainContext);
+    const { handleError } = useContext(MainContext);
     const [foundUsers, setFoundUsers] = useState<UserData[]>([]);
     const [showUserPopper, setShowUserPopper] = useState(false);
     const [popperTarget, setPopperTarget] = useState<HTMLInputElement | undefined>(undefined);
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+    const [setNamespaceMember] = useSetNamespaceMemberMutation();
+    const [getUserByName] = apiSlice.useLazyGetUserByNameQuery();
 
     const addUser = async (user: UserData) => {
-        try {
-            if (!props.namespace) {
-                return;
-            }
-            if (props.members.find(m => m.user.loginName === user.loginName && m.user.provider === user.provider)) {
-                setShowUserPopper(false);
-                handleError({ message: `User ${user.loginName} is already a member of ${props.namespace.name}.` });
-                return;
-            }
-            props.setLoadingState(true);
-            const endpoint = props.namespace.roleUrl;
-            const result = await service.setNamespaceMember(abortController.current, endpoint, user, config.defaultMemberRole ?? 'contributor');
-            if (isError(result)) {
-                throw result;
-            }
-            props.setLoadingState(false);
-            onClose();
-        } catch (err) {
-            setShowUserPopper(false);
-            props.setLoadingState(false);
-            handleError(err);
+        if (!props.namespace) {
+            return;
         }
+        if (props.members.find(m => m.user.loginName === user.loginName && m.user.provider === user.provider)) {
+            setShowUserPopper(false);
+            handleError({ message: `User ${user.loginName} is already a member of ${props.namespace.name}.` });
+            return;
+        }
+        const endpoint = props.namespace.roleUrl;
+        await setNamespaceMember({ endpoint, user, role: config.defaultMemberRole ?? 'contributor' });
+        onClose();
     };
 
     const onClose = () => {
@@ -78,7 +63,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props =>
         let showUserPopper = false;
         let foundUsers: UserData[] = [];
         if (val) {
-            const users = await service.getUserByName(abortController.current, val);
+            const { data: users } = await getUserByName(val);
             if (users) {
                 showUserPopper = true;
                 foundUsers = users;

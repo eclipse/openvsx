@@ -8,39 +8,21 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useState } from 'react';
 import { Box } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { PublisherInfo, isError } from '../../extension-registry-types';
-import { MainContext } from '../../context';
-import { UpdateContext } from './publisher-admin';
+import { PublisherInfo } from '../../extension-registry-types';
+import { useAdminRevokeAccessTokensMutation } from '../../store/api';
 
 export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeTokensButtonProps> = props => {
-    const { service, handleError } = useContext(MainContext);
-    const updateContext = useContext(UpdateContext);
-
     const [working, setWorking] = useState(false);
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+    const [revokeAccessTokens] = useAdminRevokeAccessTokensMutation();
 
     const doRevoke = async () => {
-        try {
-            setWorking(true);
-            const user = props.publisherInfo.user;
-            const result = await service.admin.revokeAccessTokens(abortController.current, user.provider as string, user.loginName);
-            if (isError(result)) {
-                throw result;
-            }
-            updateContext.handleUpdate();
-        } catch (err) {
-            handleError(err);
-        } finally {
-            setWorking(false);
-        }
+        setWorking(true);
+        const user = props.publisherInfo.user;
+        await revokeAccessTokens({ provider: user.provider as string, login: user.loginName });
+        setWorking(false);
     };
 
     return <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>

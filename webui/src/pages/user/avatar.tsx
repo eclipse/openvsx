@@ -8,14 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useRef, useState } from 'react';
+import React, { FunctionComponent, useRef, useState } from 'react';
 import { styled } from '@mui/material/styles';
 import { Avatar, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { UserSettingsRoutes } from './user-settings';
 import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
-import { MainContext } from '../../context';
 import { LogoutForm } from './logout';
+import { useGetUserQuery } from '../../store/api';
 
 const AvatarRouteLink = styled(RouteLink)({
     cursor: 'pointer',
@@ -27,8 +27,8 @@ const AvatarMenuItem = styled(MenuItem)({ cursor: 'auto' });
 
 export const UserAvatar: FunctionComponent = () => {
     const [open, setOpen] = useState<boolean>(false);
-    const context = useContext(MainContext);
     const avatarButton = useRef<any>();
+    const { data: user } = useGetUserQuery();
 
     const handleAvatarClick = () => {
         setOpen(!open);
@@ -38,7 +38,6 @@ export const UserAvatar: FunctionComponent = () => {
         setOpen(false);
     };
 
-    const user = context.user;
     if (!user) {
         return null;
     }

@@ -8,34 +8,31 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
 import * as InfiniteScroll from 'react-infinite-scroller';
 import { Box, Grid, CircularProgress, Container } from '@mui/material';
 import { ExtensionListItem } from './extension-list-item';
-import { isError, SearchEntry, SearchResult } from '../../extension-registry-types';
-import { ExtensionFilter } from '../../extension-registry-service';
+import { ExtensionFilter, SearchEntry, SearchResult } from '../../extension-registry-types';
 import { debounce } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { MainContext } from '../../context';
+import { apiSlice } from '../../store/api';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
-    const abortController = useRef<AbortController>(new AbortController());
     const cancellationToken = useRef<{ timeout?: number }>({});
     const enableLoadMore = useRef(false);
     const lastRequestedPage = useRef(0);
     const pageOffset = useRef(0);
     const filterSize = useRef(props.filter.size ?? 10);
-    const context = useContext(MainContext);
     const [extensions, setExtensions] = useState<SearchEntry[]>([]);
     const [extensionKeys, setExtensionKeys] = useState<Set<string>>(new Set<string>());
     const [appliedFilter, setAppliedFilter] = useState<ExtensionFilter>();
     const [hasMore, setHasMore] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
+    const [search] = apiSlice.useLazySearchQuery();
 
     useEffect(() => {
         enableLoadMore.current = true;
         return () => {
-            abortController.current.abort();
             clearTimeout(cancellationToken.current.timeout);
             enableLoadMore.current = false;
         };
@@ -45,30 +42,21 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
         filterSize.current = props.filter.size ?? filterSize.current;
         debounce(
             async () => {
-                try {
-                    const result = await context.service.search(abortController.current, props.filter);
-                    if (isError(result)) {
-                        throw result;
-                    }
-
-                    const searchResult = result as SearchResult;
-                    props.onUpdate(searchResult.totalSize);
-                    const actualSize = searchResult.extensions.length;
-                    pageOffset.current = lastRequestedPage.current;
-                    const extensionKeys = new Set<string>();
-                    for (const ext of searchResult.extensions) {
-                        extensionKeys.add(`${ext.namespace}.${ext.name}`);
-                    }
-
-                    setExtensions(searchResult.extensions);
-                    setExtensionKeys(extensionKeys);
-                    setAppliedFilter(props.filter);
-                    setHasMore(actualSize < searchResult.totalSize && actualSize > 0);
-                } catch (err) {
-                    context.handleError(err);
-                } finally {
-                    setLoading(false);
+                const { data: result } = await search(props.filter);
+                const searchResult = result as SearchResult;
+                props.onUpdate(searchResult.totalSize);
+                const actualSize = searchResult.extensions.length;
+                pageOffset.current = lastRequestedPage.current;
+                const extensionKeys = new Set<string>();
+                for (const ext of searchResult.extensions) {
+                    extensionKeys.add(`${ext.namespace}.${ext.name}`);
                 }
+
+                setExtensions(searchResult.extensions);
+                setExtensionKeys(extensionKeys);
+                setAppliedFilter(props.filter);
+                setHasMore(actualSize < searchResult.totalSize && actualSize > 0);
+                setLoading(false);
             },
             cancellationToken.current,
             props.debounceTime
@@ -83,37 +71,31 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
         if (!isSameFilter(props.filter, filter)) {
             return;
         }
-        try {
-            filter.offset = (p - pageOffset.current) * filterSize.current;
-            const result = await context.service.search(abortController.current, filter);
-            if (isError(result)) {
-                throw result;
-            }
 
-            const newExtensions: SearchEntry[] = [];
-            const newExtensionKeys = new Set<string>();
-            newExtensions.push(...extensions);
-            extensionKeys.forEach((key) => newExtensionKeys.add(key));
-            const searchResult = result as SearchResult;
-            if (enableLoadMore.current && isSameFilter(props.filter, filter)) {
-                // Check for duplicate keys to avoid problems due to asynchronous user edit / loadMore call
-                for (const ext of searchResult.extensions) {
-                    const key = `${ext.namespace}.${ext.name}`;
-                    if (!extensionKeys.has(key)) {
-                        newExtensions.push(ext);
-                        newExtensionKeys.add(key);
-                    }
+        filter.offset = (p - pageOffset.current) * filterSize.current;
+        const { data: result } = await search(filter);
+        const newExtensions: SearchEntry[] = [];
+        const newExtensionKeys = new Set<string>();
+        newExtensions.push(...extensions);
+        extensionKeys.forEach((key) => newExtensionKeys.add(key));
+        const searchResult = result as SearchResult;
+        if (enableLoadMore.current && isSameFilter(props.filter, filter)) {
+            // TODO test if this is needed
+            // Check for duplicate keys to avoid problems due to asynchronous user edit / loadMore call
+            for (const ext of searchResult.extensions) {
+                const key = `${ext.namespace}.${ext.name}`;
+                if (!extensionKeys.has(key)) {
+                    newExtensions.push(ext);
+                    newExtensionKeys.add(key);
                 }
-
-                setExtensions(newExtensions);
-                setExtensionKeys(newExtensionKeys);
-                setHasMore(extensions.length < searchResult.totalSize && searchResult.extensions.length > 0);
             }
-        } catch (err) {
-            context.handleError(err);
-        } finally {
-            setLoading(false);
+
+            setExtensions(newExtensions);
+            setExtensionKeys(newExtensionKeys);
+            setHasMore(extensions.length < searchResult.totalSize && searchResult.extensions.length > 0);
         }
+
+        setLoading(false);
     };
 
     const isSameFilter = (f1: ExtensionFilter, f2: ExtensionFilter): boolean => {

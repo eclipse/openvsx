@@ -8,27 +8,25 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import React, { ChangeEvent, FunctionComponent, useEffect, useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, Box, TextField, DialogActions } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { isError } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import { useCreateNamespaceMutation, useGetUserQuery } from '../../store/api';
 
 const NAMESPACE_NAME_SIZE = 255;
 
-export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps> = props => {
+export const CreateNamespaceDialog: FunctionComponent = () => {
     const [open, setOpen] = useState<boolean>(false);
     const [posted, setPosted] = useState<boolean>(false);
     const [name, setName] = useState<string>('');
     const [nameError, setNameError] = useState<string>();
 
-    const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
+    const { data: user } = useGetUserQuery();
+    const [createNamespace] = useCreateNamespaceMutation();
 
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
         return () => {
-            abortController.current.abort();
             document.removeEventListener('keydown', handleEnter);
         };
     }, []);
@@ -55,23 +53,13 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
     };
 
     const handleCreateNamespace = async () => {
-        if (!context.user) {
+        if (!user) {
             return;
         }
 
         setPosted(true);
-        try {
-            const response = await context.service.createNamespace(abortController.current, name);
-            if (isError(response)) {
-                throw response;
-            }
-
-            setOpen(false);
-            props.namespaceCreated();
-        } catch (err) {
-            context.handleError(err);
-        }
-
+        await createNamespace(name);
+        setOpen(false);
         setPosted(false);
     };
 
@@ -111,7 +99,3 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
         </Dialog>
     </>;
 };
-
-export interface CreateNamespaceDialogProps {
-    namespaceCreated: () => void;
-}

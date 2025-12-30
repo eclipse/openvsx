@@ -8,64 +8,37 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useEffect } from 'react';
 import { Box } from '@mui/material';
-import { MainContext } from '../../context';
-import { isError, Extension, TargetPlatformVersion } from '../../extension-registry-types';
+import { TargetPlatformVersion } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { ExtensionVersionContainer } from '../admin-dashboard/extension-version-container';
 import { useNavigate } from 'react-router';
+import { useDeleteExtensionsMutation, useGetExtensionQuery } from '../../store/api';
 import { UserSettingsRoutes } from './user-settings';
 
 export const UserSettingsDeleteExtension: FunctionComponent<UserSettingsDeleteExtensionProps> = props => {
     const navigate = useNavigate();
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+    const { data: extension, isLoading } = useGetExtensionQuery(props);
+    const [deleteExtensions] = useDeleteExtensionsMutation();
 
     useEffect(() => {
-        findExtension();
-    }, [props.namespace, props.extension]);
-
-    const [loading, setLoading] = useState(false);
-
-    const { service, handleError } = useContext(MainContext);
-    const [extension, setExtension] = useState<Extension | undefined>(undefined);
-    const findExtension = async () => {
-        try {
-            setLoading(true);
-            const extensionDetail = await service.getExtension(abortController.current, props.namespace, props.extension);
-            if (isError(extensionDetail)) {
-                throw extensionDetail;
-            }
-            setExtension(extensionDetail);
-            setLoading(false);
-        } catch (err) {
-            setLoading(false);
-            setExtension(undefined);
-            if (err && err.status === 404) {
-                navigate(UserSettingsRoutes.EXTENSIONS);
-            } else {
-                handleError(err);
-            }
+        if (!isLoading && extension == null) {
+            navigate(UserSettingsRoutes.EXTENSIONS);
         }
-    };
+    }, [extension, isLoading]);
 
     const onRemove = async (targetPlatformVersions?: TargetPlatformVersion[]) => {
         if (extension == null) {
             return;
         }
 
-        await service.deleteExtensions(abortController.current, { namespace: extension.namespace, extension: extension.name, targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform })) });
-        await findExtension();
+        await deleteExtensions({ namespace: extension.namespace, extension: extension.name, targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform })) });
     };
 
     return (
         <Box>
-            <DelayedLoadIndicator loading={loading} />
+            <DelayedLoadIndicator loading={isLoading} />
             {
                 extension ?
                     <ExtensionVersionContainer onRemove={onRemove} extension={extension} />

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
+import React, { FunctionComponent, ReactNode, useContext, useMemo } from 'react';
 import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
@@ -24,15 +24,14 @@ import { Extension, ExtensionReference, VERSION_ALIASES } from '../../extension-
 import { ExtensionListRoutes } from '../extension-list/extension-list-container';
 import { ExtensionDetailRoutes } from './extension-detail';
 import { ExtensionDetailDownloadsMenu } from './extension-detail-downloads-menu';
+import { useGetStaticContentQuery } from '../../store/api';
 
 export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewProps> = props => {
 
-    const [loading, setLoading] = useState(true);
-    const [readme, setReadme] = useState('');
-    const { pageSettings, service, handleError } = useContext(MainContext);
+    const { data: readme, isLoading } = useGetStaticContentQuery(props.extension.files.readme);
+    const { pageSettings } = useContext(MainContext);
     const params = useParams();
     const navigate = useNavigate();
-    const abortController = useRef<AbortController>(new AbortController());
 
     const worksWithEngines = useMemo(() => {
         const engines = props.extension.engines;
@@ -77,34 +76,6 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             }
         </Grid>);
     }, [props.extension.downloads]);
-
-    useEffect(() => {
-        updateReadme();
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    useEffect(() => {
-        setLoading(true);
-        updateReadme();
-    }, [props.extension.namespace, props.extension.name, props.extension.version]);
-
-    const updateReadme = async (): Promise<void> => {
-        if (props.extension.files.readme) {
-            try {
-                const readme = await service.getExtensionReadme(abortController.current, props.extension);
-                setReadme(readme);
-                setLoading(false);
-            } catch (err) {
-                handleError(err);
-                setLoading(false);
-            }
-        } else {
-            setReadme('## No README available');
-            setLoading(false);
-        }
-    };
 
     const renderVersionSection = (): ReactNode => {
         const { extension } = props;
@@ -244,7 +215,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
     };
 
     if (!readme) {
-        return <DelayedLoadIndicator loading={loading} />;
+        return <DelayedLoadIndicator loading={isLoading} />;
     }
 
     const { extension } = props;

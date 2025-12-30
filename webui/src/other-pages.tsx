@@ -10,7 +10,6 @@ import { UserSettings, UserSettingsRoutes } from './pages/user/user-settings';
 import { NamespaceDetail, NamespaceDetailRoutes } from './pages/namespace-detail/namespace-detail';
 import { ExtensionDetail, ExtensionDetailRoutes } from './pages/extension-detail/extension-detail';
 import { getCookieValueByKey, setCookie } from './utils';
-import { UserData } from './extension-registry-types';
 import { NotFound } from './not-found';
 
 const ToolbarItem = styled(Box)({
@@ -35,7 +34,7 @@ const Footer = styled('footer')(({ theme }: { theme: Theme }) => ({
     backgroundImage: theme.palette.mode == 'dark' ? 'linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08))' : undefined
 }));
 
-export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
+export const OtherPages: FunctionComponent = () => {
     const { pageSettings } = useContext(MainContext);
     const {
         additionalRoutes: AdditionalRoutes,
@@ -107,8 +106,8 @@ export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
         <Box pb={`${getContentPadding()}px`}>
             <Routes>
                 <Route path={ExtensionListRoutes.MAIN} element={ <ExtensionListContainer /> } />
-                <Route path={UserSettingsRoutes.MAIN} element={<UserSettings userLoading={props.userLoading} />} />
-                <Route path={UserSettingsRoutes.DELETE_EXTENSION} element={<UserSettings userLoading={props.userLoading} />} />
+                <Route path={UserSettingsRoutes.MAIN} element={<UserSettings />} />
+                <Route path={UserSettingsRoutes.DELETE_EXTENSION} element={<UserSettings />} />
                 <Route path={NamespaceDetailRoutes.MAIN} element={ <NamespaceDetail /> } />
                 <Route path={ExtensionDetailRoutes.MAIN} element={<ExtensionDetail />} />
                 <Route path={ExtensionDetailRoutes.MAIN_TARGET} element={<ExtensionDetail />} />
@@ -127,8 +126,3 @@ export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
         }
     </Wrapper>;
 };
-
-export interface OtherPagesProps {
-    user?: UserData;
-    userLoading: boolean;
-}

@@ -12,13 +12,17 @@ import React, { FunctionComponent, ReactNode, useContext, useEffect } from 'reac
 import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions, Box, Link } from '@mui/material';
 import { MainContext } from '../context';
 import { styled, Theme } from '@mui/material/styles';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { hideError, selectError } from '../store/error';
 
 const ErrorLink = styled(Link)(({ theme }: { theme: Theme }) => ({
     textDecoration: 'underline',
     color: theme.palette.primary.contrastText
 }));
 
-export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
+export const ErrorDialog: FunctionComponent = () => {
+    const dispatch = useAppDispatch();
+    const error = useAppSelector(selectError);
 
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
@@ -27,16 +31,14 @@ export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
 
     const handleEnter = (event: KeyboardEvent): void => {
         if (event.code ===  'Enter') {
-            props.handleCloseDialog();
+            handleCloseDialog();
         }
     };
 
-    const getContentForCode = (): ReactNode => {
-        if (!props.errorCode) {
-            return null;
-        }
+    const handleCloseDialog = () => dispatch(hideError());
 
-        switch (props.errorCode) {
+    const getContentForCode = (): ReactNode => {
+        switch (error.code) {
             case 'eclipse-missing-github-id':
                 return <>
                     Please fill in the &ldquo;GitHub Username&rdquo; field
@@ -65,12 +67,12 @@ export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
     const context = useContext(MainContext);
     const codeContent = getContentForCode();
     return <Dialog
-            open={props.isErrorDialogOpen}
-            onClose={props.handleCloseDialog} >
+            open={error.show}
+            onClose={handleCloseDialog} >
         <DialogTitle>Error</DialogTitle>
         <DialogContent>
             <DialogContentText sx={{ color: context.pageSettings.themeType === 'dark' ? '#ff849e' : '#c54a64' }}>
-                {props.errorMessage}
+                {error.message}
                 {
                     codeContent ?
                     <Box mt={2}>
@@ -81,16 +83,9 @@ export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
             </DialogContentText>
         </DialogContent>
         <DialogActions>
-            <Button onClick={props.handleCloseDialog}>
+            <Button onClick={handleCloseDialog}>
                 Close
             </Button>
         </DialogActions>
     </Dialog>;
 };
-
-export interface ErrorDialogProps {
-    errorMessage: string;
-    errorCode?: number | string;
-    isErrorDialogOpen: boolean;
-    handleCloseDialog: () => void;
-}

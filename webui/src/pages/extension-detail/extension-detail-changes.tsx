@@ -8,47 +8,18 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import React, { FunctionComponent } from 'react';
 import { Box, Divider, Typography } from '@mui/material';
-import { MainContext } from '../../context';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Extension } from '../../extension-registry-types';
+import { useGetStaticContentQuery } from '../../store/api';
 
 export const ExtensionDetailChanges: FunctionComponent<ExtensionDetailChangesProps> = props => {
-    const [changelog, setChangelog] = useState<string>();
-    const [loading, setLoading] = useState<boolean>(true);
-    const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
-
-    useEffect(() => {
-        updateChanges();
-        return () => abortController.current.abort();
-    }, []);
-
-    useEffect(() => {
-        setLoading(true);
-        updateChanges();
-    }, [props.extension.namespace, props.extension.name, props.extension.version]);
-
-    const updateChanges = async (): Promise<void> => {
-        if (props.extension.files.changelog) {
-            try {
-                const changelog = await context.service.getExtensionChangelog(abortController.current, props.extension);
-                setChangelog(changelog);
-            } catch (err) {
-                context.handleError(err);
-                setChangelog(undefined);
-            }
-        } else {
-            setChangelog('');
-        }
-
-        setLoading(false);
-    };
+    const { data: changelog, isLoading } = useGetStaticContentQuery(props.extension.files.changelog);
 
     if (typeof changelog === 'undefined') {
-        return <DelayedLoadIndicator loading={loading} />;
+        return <DelayedLoadIndicator loading={isLoading} />;
     }
     if (changelog.length === 0) {
         return <>

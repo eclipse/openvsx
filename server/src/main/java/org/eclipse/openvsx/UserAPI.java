@@ -121,6 +121,7 @@ public class UserAPI {
         json.setRole(user.getRole());
         json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
         json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
+        json.setDeleteAllTokensUrl(createApiUrl(serverUrl, "user", "tokens", "delete"));
         eclipse.enrichUserJsonWithPublisherAgreement(json, user);
         return json;
     }
@@ -187,6 +188,19 @@ public class UserAPI {
         } catch(NotFoundException e) {
             return new ResponseEntity<>(ResultJson.error("Token does not exist."), HttpStatus.NOT_FOUND);
         }
+    }
+
+    @PostMapping(
+            path = "/user/tokens/delete",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> deleteAllAccessTokens() {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        return ResponseEntity.ok(users.deleteAllAccessTokens(user));
     }
 
     @GetMapping(

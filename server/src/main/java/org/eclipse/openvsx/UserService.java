@@ -285,6 +285,16 @@ public class UserService {
         return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
     }
 
+    @Transactional
+    public ResultJson deleteAllAccessTokens(UserData user) {
+        var tokens = repositories.findAccessTokens(user);
+        for(var token : tokens) {
+            token.setActive(false);
+        }
+
+        return ResultJson.success("Deleted access tokens for user " + user.getLoginName() + ".");
+    }
+
     public boolean canLogin() {
         return !getLoginProviders().isEmpty();
     }

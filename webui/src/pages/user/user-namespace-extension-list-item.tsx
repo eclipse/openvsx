@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useContext, FunctionComponent, useState, useEffect, useRef, ReactNode, MouseEvent } from 'react';
+import React, { useContext, FunctionComponent, useState, useEffect, ReactNode, MouseEvent } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, styled, IconButton } from '@mui/material';
 import { Link as RouteLink, useNavigate } from 'react-router-dom';
@@ -18,6 +18,7 @@ import { Timestamp } from '../../components/timestamp';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { UserSettingsRoutes } from './user-settings';
+import { useGetExtensionIconQuery } from '../../store/api';
 
 const getOpacity = (extension: Extension) => {
     if (extension.deprecated) {
@@ -42,26 +43,31 @@ const Paragraph = styled(Box)({
 });
 
 export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
-    const { pageSettings, service } = useContext(MainContext);
+    const { pageSettings } = useContext(MainContext);
     const [icon, setIcon] = useState<string | undefined>(undefined);
     const { extension } = props;
     const route = extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]) || '';
     const deleteRoute = extension && createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name, 'delete']) || '';
     const inactive = extension.active === false;
-    const abortController = useRef<AbortController>(new AbortController());
     const navigate = useNavigate();
+    const { data: iconBlob } = useGetExtensionIconQuery(extension);
+
     useEffect(() => {
         return () => {
-            abortController.current.abort();
+            if (icon) {
+                URL.revokeObjectURL(icon);
+            }
         };
     }, []);
+
     useEffect(() => {
         if (icon) {
             URL.revokeObjectURL(icon);
         }
 
-        service.getExtensionIcon(abortController.current, extension).then(setIcon);
-    }, [extension]);
+        const newIcon = iconBlob ? URL.createObjectURL(iconBlob) : undefined;
+        setIcon(newIcon);
+    }, [iconBlob]);
 
     let status: ReactNode = null;
     if (inactive) {

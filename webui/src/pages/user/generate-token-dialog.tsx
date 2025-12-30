@@ -8,24 +8,25 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import React, { ChangeEvent, FunctionComponent, useEffect, useState, useRef } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, Box, TextField, DialogActions, Typography } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { CopyToClipboard } from '../../components/copy-to-clipboard';
-import { PersonalAccessToken, isError } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import { PersonalAccessToken } from '../../extension-registry-types';
+import { useCreateAccessTokenMutation, useGetUserQuery } from '../../store/api';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
-export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = props => {
+export const GenerateTokenDialog: FunctionComponent = props => {
     const [open, setOpen] = useState<boolean>(false);
     const [posted, setPosted] = useState<boolean>(false);
     const [description, setDescription] = useState<string>('');
     const [descriptionError, setDescriptionError] = useState<string>();
     const [token, setToken] = useState<PersonalAccessToken>();
 
-    const context = useContext(MainContext);
     const abortController = useRef<AbortController>(new AbortController());
+    const { data: user } = useGetUserQuery();
+    const [createAccessToken] = useCreateAccessTokenMutation();
 
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
@@ -56,20 +57,12 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
     };
 
     const handleGenerate = async () => {
-        if (!context.user) {
+        if (!user) {
             return;
         }
         setPosted(true);
-        try {
-            const token = await context.service.createAccessToken(abortController.current, context.user, description);
-            if (isError(token)) {
-                throw token;
-            }
-            setToken(token);
-            props.handleTokenGenerated();
-        } catch (err) {
-            context.handleError(err);
-        }
+        const { data: token } = await createAccessToken({ user, description });
+        setToken(token);
     };
 
     const handleEnter = (e: KeyboardEvent) => {
@@ -151,7 +144,3 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
         </Dialog>
     </>;
 };
-
-export interface GenerateTokenDialogProps {
-    handleTokenGenerated: () => void;
-}

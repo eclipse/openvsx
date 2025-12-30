@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
+import React, { FunctionComponent, ReactNode, useState } from 'react';
 import { Theme, Typography, Box, Paper, Button, Link, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
-import { PersonalAccessToken } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import { PersonalAccessToken, UserData } from '../../extension-registry-types';
 import { GenerateTokenDialog } from './generate-token-dialog';
 import { UserSettingsRoutes } from './user-settings';
 import styled from '@mui/material/styles/styled';
+import { useDeleteAccessTokenMutation, useDeleteAllAccessTokensMutation, useGetAccessTokensQuery, useGetUserQuery } from '../../store/api';
 
 const link = ({ theme }: { theme: Theme }) => ({
     color: theme.palette.secondary.main,
@@ -43,42 +43,15 @@ const DeleteButton = styled(Button)(({ theme }: { theme: Theme }) => ({
 
 export const UserSettingsTokens: FunctionComponent = () => {
 
-    const { service, user, handleError } = useContext(MainContext);
-
-    const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
-    const [loading, setLoading] = useState(true);
     const [showDeleteAll, setShowDeleteAll] = useState(false);
 
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        updateTokens();
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const updateTokens = async() => {
-        if (!user) {
-            return;
-        }
-        try {
-            const tokens = await service.getAccessTokens(abortController.current, user);
-            setTokens(tokens);
-            setLoading(false);
-        } catch (err) {
-            handleError(err);
-            setLoading(false);
-        }
-    };
+    const { data: user } = useGetUserQuery();
+    const { data: tokens, isLoading } = useGetAccessTokensQuery(user as UserData, { skip: user == null });
+    const [deleteAccessToken] = useDeleteAccessTokenMutation();
+    const [deleteAllAccessTokens] = useDeleteAllAccessTokensMutation();
 
     const handleDelete = async (token: PersonalAccessToken) => {
-        setLoading(true);
-        try {
-            await service.deleteAccessToken(abortController.current, token);
-            updateTokens();
-        } catch (err) {
-            handleError(err);
-        }
+        await deleteAccessToken(token);
     };
 
     const onShowDeleteAll = () => setShowDeleteAll(true);
@@ -86,32 +59,21 @@ export const UserSettingsTokens: FunctionComponent = () => {
 
     const handleDeleteAll = async () => {
         onHideDeleteAll();
-        setLoading(true);
-        try {
-            await service.deleteAllAccessTokens(abortController.current, tokens);
-            updateTokens();
-        } catch (err) {
-            handleError(err);
-        }
-    };
-
-    const handleTokenGenerated = () => {
-        setLoading(true);
-        updateTokens();
+        await deleteAllAccessTokens(user as UserData);
     };
 
     const renderToken = (token: PersonalAccessToken): ReactNode => {
         return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
             <Box alignItems='center' overflow='auto'>
                 <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>{token.description}</Typography>
-                <Typography variant='body2'>Created: <Timestamp value={token.createdTimestamp}/></Typography>
-                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? <Timestamp value={token.accessedTimestamp}/> : 'never'}</Typography>
+                <Typography variant='body2'>Created: <Timestamp value={token.createdTimestamp} /></Typography>
+                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? <Timestamp value={token.accessedTimestamp} /> : 'never'}</Typography>
             </Box>
             <Box display='flex' alignItems='center'>
                 <DeleteButton
                     variant='outlined'
                     onClick={() => handleDelete(token)}
-                    disabled={loading}>
+                    disabled={isLoading}>
                     Delete
                 </DeleteButton>
             </Box>
@@ -151,15 +113,13 @@ export const UserSettingsTokens: FunctionComponent = () => {
                 }}
             >
                 <Box mr={1} mb={1}>
-                    <GenerateTokenDialog
-                        handleTokenGenerated={handleTokenGenerated}
-                    />
+                    <GenerateTokenDialog/>
                 </Box>
                 <Box>
                     <DeleteButton
                         variant='outlined'
                         onClick={onShowDeleteAll}
-                        disabled={loading || tokens.length === 0}>
+                        disabled={isLoading || (tokens?.length ?? 0) === 0}>
                         Delete all
                     </DeleteButton>
                 </Box>
@@ -167,16 +127,16 @@ export const UserSettingsTokens: FunctionComponent = () => {
         </Box>
         <Box mt={2}>
             {
-                tokens.length === 0 && !loading ?
-                <EmptyTypography variant='body1'>
-                    You currently have no tokens.
-                </EmptyTypography> : null
+                (tokens?.length ?? 0) === 0 && !isLoading ?
+                    <EmptyTypography variant='body1'>
+                        You currently have no tokens.
+                    </EmptyTypography> : null
             }
         </Box>
         <Box mt={2}>
-            <DelayedLoadIndicator loading={loading}/>
+            <DelayedLoadIndicator loading={isLoading} />
             <Paper elevation={3}>
-                {tokens.map(token => renderToken(token))}
+                {tokens?.map(token => renderToken(token))}
             </Paper>
         </Box>
         <Dialog

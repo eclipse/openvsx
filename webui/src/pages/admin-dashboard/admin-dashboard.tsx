@@ -23,6 +23,7 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { Welcome } from './welcome';
 import { PublisherAdmin } from './publisher-admin';
 import PersonIcon from '@mui/icons-material/Person';
+import { useGetUserQuery } from '../../store/api';
 
 export namespace AdminDashboardRoutes {
     export const ROOT = 'admin-dashboard';
@@ -43,8 +44,9 @@ const Message: FunctionComponent<{message: string}> = ({ message }) => {
     </Box>);
 };
 
-export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
-    const { user, loginProviders } = useContext(MainContext);
+export const AdminDashboard: FunctionComponent = () => {
+    const { data: user, isLoading: userLoading } = useGetUserQuery();
+    const { loginProviders } = useContext(MainContext);
 
     const navigate = useNavigate();
     const toMainPage = () => navigate('/');
@@ -76,7 +78,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
         </>;
     } else if (user) {
         content = <Message message='You are not authorized as administrator.'/>;
-    } else if (!props.userLoading && loginProviders) {
+    } else if (!userLoading && loginProviders) {
         content = <Message message='You are not logged in.'/>;
     }
 
@@ -85,7 +87,3 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
         <Box display='flex' height='100vh'>{content}</Box>
     </>;
 };
-
-export interface AdminDashboardProps {
-    userLoading: boolean;
-}

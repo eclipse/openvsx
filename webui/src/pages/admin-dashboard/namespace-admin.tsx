@@ -8,95 +8,60 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef, ReactNode } from 'react';
+import React, { FunctionComponent, useState, useContext, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { Namespace, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
+import { useAdminCreateNamespaceMutation, useAdminGetNamespaceQuery, useGetUserQuery } from '../../store/api';
 
 export const NamespaceAdmin: FunctionComponent = props => {
-    const { pageSettings, service, user, handleError } = useContext(MainContext);
+    const { pageSettings } = useContext(MainContext);
+    const [namespaceName, setNamespaceName] = useState<string>();
+    const [inputValue, setInputValue] = useState('');
+    const [creating, setCreating] = useState(false);
 
-    const [loading, setLoading] = useState(false);
-    const [currentNamespace, setCurrentNamespace] = useState<Namespace | undefined>();
-    const [notFound, setNotFound] = useState('');
+    const [createNamespace] = useAdminCreateNamespaceMutation();
+    const { data: user } = useGetUserQuery();
+    const { data: currentNamespace, isLoading } = useAdminGetNamespaceQuery(namespaceName as string, { skip: namespaceName == null });
 
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const fetchNamespace = async (namespaceName: string) => {
-        if (!namespaceName) {
-            setCurrentNamespace(undefined);
-            setNotFound('');
-            return;
-        }
-        try {
-            setLoading(true);
-            const namespace = await service.admin.getNamespace(abortController.current, namespaceName);
-            if (isError(namespace)) {
-                throw namespace;
-            }
-            setCurrentNamespace(namespace);
-            setNotFound('');
-            setLoading(false);
-        } catch (err) {
-            if (err && err.status === 404) {
-                setNotFound(namespaceName);
-                setCurrentNamespace(undefined);
-            } else {
-                handleError(err);
-            }
-            setLoading(false);
-        }
+    const fetchNamespace = (namespaceName: string) => {
+        setNamespaceName(namespaceName ? namespaceName : undefined);
     };
 
-    const [inputValue, setInputValue] = useState('');
     const onChangeInput = (name: string) => {
         setInputValue(name);
     };
 
-    const [creating, setCreating] = useState(false);
     const onCreate = async () => {
-        try {
-            setCreating(true);
-            await service.admin.createNamespace(abortController.current, {
-                name: inputValue
-            });
-            await fetchNamespace(inputValue);
-        } catch (err) {
-            handleError(err);
-        } finally {
-            setCreating(false);
-        }
+        setCreating(true);
+        await createNamespace({
+            name: inputValue
+        });
+        setCreating(false);
     };
 
     let listContainer: ReactNode = '';
     if (currentNamespace && pageSettings && user) {
         listContainer = <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
             <NamespaceDetail
-                setLoadingState={setLoading}
                 namespace={currentNamespace}
                 filterUsers={() => true}
                 fixSelf={false}
             />
         </NamespaceDetailConfigContext.Provider>;
-    } else if (notFound) {
+    } else if (namespaceName && currentNamespace == null && !isLoading) {
         listContainer = <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center'>
             <Typography variant='body1'>
-                Namespace {notFound} not found. Do you want to create it?
+                Namespace {namespaceName} not found. Do you want to create it?
             </Typography>
             <Box mt={3}>
                 <ButtonWithProgress
                     working={creating}
                     onClick={onCreate}>
-                    Create Namespace {notFound}
+                    Create Namespace {namespaceName}
                 </ButtonWithProgress>
             </Box>
         </Box>;
@@ -107,6 +72,6 @@ export const NamespaceAdmin: FunctionComponent = props => {
             [<StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />]
         }
         listContainer={listContainer}
-        loading={loading}
+        loading={isLoading}
     />;
 };

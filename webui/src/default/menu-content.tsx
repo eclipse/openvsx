@@ -29,6 +29,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { AdminDashboardRoutes } from '../pages/admin-dashboard/admin-dashboard';
 import { LogoutForm } from '../pages/user/logout';
 import { LoginComponent } from './login';
+import { useGetUserQuery } from '../store/api';
 
 //-------------------- Mobile View --------------------//
 
@@ -54,8 +55,7 @@ export const MobileMenuItemText: FunctionComponent<PropsWithChildren> = ({ child
 };
 
 export const MobileUserAvatar: FunctionComponent = () => {
-    const context = useContext(MainContext);
-    const user = context.user;
+    const { data: user } = useGetUserQuery();
     if (!user) {
         return null;
     }
@@ -118,7 +118,8 @@ export const MobileUserAvatar: FunctionComponent = () => {
 
 export const MobileMenuContent: FunctionComponent = () => {
     const location = useLocation();
-    const { user, loginProviders } = useContext(MainContext);
+    const { data: user } = useGetUserQuery();
+    const { loginProviders } = useContext(MainContext);
 
     return <>
         {loginProviders && (
@@ -205,7 +206,8 @@ export const MenuLink = styled(Link)(headerItem);
 export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
-    const { user, loginProviders } = useContext(MainContext);
+    const { data: user } = useGetUserQuery();
+    const { loginProviders } = useContext(MainContext);
     return <>
         <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
             Documentation
