@@ -24,12 +24,12 @@ jobs:
     - name: Read PR_NUMBER.txt
       if: github.event.workflow_run.event == 'pull_request'
       id: pr_number
-      uses: juliangruber/read-file-action@v1
+      uses: juliangruber/read-file-action@b549046febe0fe86f8cb4f93c24e284433f9ab58  # v1.1.7
       with:
         path: ${{ runner.temp }}/artifacts/PR_NUMBER.txt
     - name: Request GitHub API for PR data
       if: github.event.workflow_run.event == 'pull_request'
-      uses: octokit/request-action@v2.x
+      uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13  # v2.x
       id: get_pr_data
       with:
         route: GET /repos/{full_name}/pulls/{number}
@@ -38,7 +38,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Checkout head branch
-      uses: actions/checkout@v6
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
       with:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           ref: ${{ github.event.workflow_run.head_branch }}
@@ -54,19 +54,19 @@ jobs:
         git checkout $HEAD_BRANCH
         git clean -ffdx && git reset --hard HEAD
     - name: Cache SonarCloud packages
-      uses: actions/cache@v5
+      uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb  # v5.0.1
       with:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
     - name: Cache Gradle packages
-      uses: actions/cache@v5
+      uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb  # v5.0.1
       with:
         path: ~/.gradle/caches
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Set up JDK
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e  # v5.1.0
       with:
         distribution: 'temurin'
         java-version: 25
@@ -78,7 +78,7 @@ jobs:
       run: find ~/.gradle/caches -type f -name '*.jar' -exec cp {} server/libraries \;
     - name: SonarCloud Scan on PR
       if: github.event.workflow_run.event == 'pull_request'
-      uses: SonarSource/sonarqube-scan-action@master
+      uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9  # master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -90,7 +90,7 @@ jobs:
           -Dsonar.pullrequest.base=${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
     - name: SonarCloud Scan on push
       if: github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.event.repository.full_name
-      uses: SonarSource/sonarqube-scan-action@master
+      uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9  # master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
