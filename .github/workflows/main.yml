@@ -14,7 +14,31 @@ env:
   WEBUI_IMAGE: openvsx-webui
 
 jobs:
-  build-and-push-cli-and-webui:
+  build-cli:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: 24.x
+
+      - name: Install Yarn
+        working-directory: cli
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+
+      - name: Build CLI
+        working-directory: cli
+        run: yarn
+
+  build-and-push-webui:
     permissions:
       contents: read
       packages: write
@@ -24,21 +48,6 @@ jobs:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         persist-credentials: false
-
-    - name: Set up Node.js
-      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
-      with:
-        node-version: 24.x
-
-    - name: Install Yarn
-      working-directory: cli
-      run: |
-        corepack enable
-        corepack prepare yarn@stable --activate
-
-    - name: Build CLI
-      working-directory: cli
-      run: yarn
 
     - name: Get all changed webui files
       id: changed_webui_files
