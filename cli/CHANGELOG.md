@@ -2,7 +2,7 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
-### v0.10.8 (Dec. 2025)
+### [v0.10.8] (Dec. 2025)
 
 #### Dependencies
 
@@ -11,7 +11,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.10.7 (Nov. 2025)
+### [v0.10.7] (Nov. 2025)
 
 #### Dependencies
 
@@ -20,7 +20,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.10.6 (Sep. 2025)
+### [v0.10.6] (Sep. 2025)
 
 #### Dependencies
 
@@ -95,7 +95,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.9.5 (Sep. 2024)
+### [v0.9.5] (Sep. 2024)
 
 #### Breaking Changes
 
@@ -109,7 +109,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.9.4 (Sep. 2024)
+### [v0.9.4] (Sep. 2024)
 
 #### Dependencies
 
@@ -117,7 +117,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.9.2 (July 2024)
+### [v0.9.2] (July 2024)
 
 #### Bug Fixes
 
@@ -129,7 +129,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.9.1 (Apr. 2024)
+### [v0.9.1] (Apr. 2024)
 
 #### Bug Fixes
 
@@ -143,7 +143,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.9.0 (Mar. 2024)
+### [v0.9.0] (Mar. 2024)
 
 #### Breaking Changes
 
@@ -156,7 +156,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.8.4 (Mar. 2024)
+### [v0.8.4] (Mar. 2024)
 
 #### Dependencies
 
@@ -165,7 +165,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.8.3 (Aug. 2023)
+### [v0.8.3] (Aug. 2023)
 
 #### Dependencies
 
@@ -174,7 +174,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.8.2 (July 2023)
+### [v0.8.2] (July 2023)
 
 #### Dependencies
 
@@ -183,7 +183,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.8.1 (May. 2023)
+### [v0.8.1] (May. 2023)
 
 #### Dependencies
 
@@ -191,7 +191,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.8.0 (Jan. 2023)
+### [v0.8.0] (Jan. 2023)
 
 #### New Features
 
@@ -199,7 +199,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
  
-### v0.7.1 (Dec. 2022)
+### [v0.7.1] (Dec. 2022)
 
 #### Dependencies
 
@@ -207,7 +207,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.7.0 (Dec. 2022)
+### [v0.7.0] (Dec. 2022)
 
 #### New Features
 
@@ -219,7 +219,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.6.0 (Nov. 2022)
+### [v0.6.0] (Nov. 2022)
 
 #### New Features
 
@@ -231,7 +231,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.5.0 (Mar. 2022)
+### [v0.5.0] (Mar. 2022)
 
 #### New Features
 
@@ -239,7 +239,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.4.0 (Feb. 2022)
+### [v0.4.0] (Feb. 2022)
 
 #### New Features
 
@@ -247,7 +247,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.3.0 (Jan. 2022)
+### [v0.3.0] (Jan. 2022)
 
 #### Breaking Changes
 
@@ -261,7 +261,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.2.1 (Sep. 2021)
+### [v0.2.1] (Sep. 2021)
 
 #### New Features
 
@@ -274,7 +274,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.2.0 (Jun. 2021)
+### [v0.2.0] (Jun. 2021)
 
 #### New Features
 
@@ -291,6 +291,6 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ---
 
-### v0.1.0 (Apr. 2021)
+### [v0.1.0] (Apr. 2021)
 
 First release of Open VSX with the Eclipse Foundation.
