@@ -1,30 +1,143 @@
-name: Release
+name: Release Open VSX
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
 
 env:
-  SERVER_TAG: ghcr.io/eclipse/openvsx-server
-  WEBUI_TAG: ghcr.io/eclipse/openvsx-webui
+  REGISTRY: ghcr.io
+  SERVER_IMAGE: openvsx-server
+  WEBUI_IMAGE: openvsx-webui
 
 jobs:
-  build:
-    permissions:
-      contents: none
-    runs-on: ubuntu-latest
+  prepare:
+    if: github.repository == 'eclipse/openvsx'
+    runs-on: ubuntu-22.04
+    outputs:
+      release-tag: ${{ steps.context.outputs.RELEASE_TAG }}
+      release-version: ${{ steps.context.outputs.RELEASE_VERSION }}
     steps:
-    - uses: actions/checkout@v6
-    - name: Set Image Version
-      run: echo "IMAGE_VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
-    - name: Build Web UI Image
-      run: docker build -t $WEBUI_TAG:$IMAGE_VERSION webui
-    - name: Build Server Image
-      run: docker build -t $SERVER_TAG:$IMAGE_VERSION server --secret id=dv-key,env=DEVELOCITY_ACCESS_KEY
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: "Setup context"
+        id: context
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          echo "RELEASE_TAG=${REF_NAME}" >> $GITHUB_OUTPUT
+          VERSION=$(echo ${REF_NAME} | sed 's/v//')
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+  build-and-push-webui:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        persist-credentials: false
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+      with:
+        images: |
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.WEBUI_IMAGE }}
+        tags:
+          type=ref,event=tag
+        labels: |
+          org.opencontainers.image.title=OpenVSX WebUI
+
+    - name: Build and push Web UI Image
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+      with:
+        context: webui
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  build-and-push-server:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        persist-credentials: false
+
+    - name: Set up JDK
+      uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5.1.0
+      with:
+        distribution: 'temurin'
+        java-version: 25
+
+    - name: Run Server Tests
+      run: server/gradlew --no-daemon -p server check
       env:
         DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
-    - name: Push Docker Images
-      run: |
-        echo ${{ secrets.BOT_ACCESS_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-        docker push $SERVER_TAG:$IMAGE_VERSION
-        docker push $WEBUI_TAG:$IMAGE_VERSION
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+      with:
+        images: |
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.SERVER_IMAGE }}
+        tags:
+          type=ref,event=tag
+        labels: |
+          org.opencontainers.image.title=OpenVSX Server
+
+    - name: Build and push Server Image
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+      env:
+        DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
+      with:
+        context: server
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        secret-envs: |
+          "dv-key=DEVELOCITY_ACCESS_KEY"
+
+  github-publish:
+    runs-on: ubuntu-22.04
+    needs: ['prepare', 'build-and-push-webui', 'build-and-push-server']
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        persist-credentials: false
+
+    - name: "Create GitHub release"
+      uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+      with:
+        name: "v${{ needs.prepare.outputs.release-version }}"
+        tag_name: "${{ needs.prepare.outputs.release-tag }}"
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        make_latest: true
