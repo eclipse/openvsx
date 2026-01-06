@@ -44,11 +44,11 @@ jobs:
             echo "NPM_TAG=next" >> $GITHUB_OUTPUT
           else
             echo "NPM_TAG=latest" >> $GITHUB_OUTPUT
-            
+
             if [[ "${VERSION}" != "${PROJECT_VERSION}" ]]; then
               echo "Project version '${PROJECT_VERSION}' does not match version from tag '${VERSION}'."
               exit 1
-            fi          
+            fi
           fi
 
   npm-publish:
