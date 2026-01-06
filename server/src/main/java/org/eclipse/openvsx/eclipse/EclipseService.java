@@ -146,7 +146,7 @@ public class EclipseService {
             if (exc instanceof HttpStatusCodeException) {
                 var status = ((HttpStatusCodeException) exc).getStatusCode();
                 if (status == HttpStatus.NOT_FOUND)
-                    throw new ErrorResultException("No Eclipse profile data available for user: " + personId);
+                    throw new ErrorResultException("No Eclipse profile data available for user '" + personId + "': " + exc.getMessage());
             }
 
             var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
@@ -184,10 +184,15 @@ public class EclipseService {
         if (!usableToken) {
             var eclipsePersonId = user.getEclipsePersonId();
             if (eclipsePersonId != null) {
-                var profile = getPublicProfile(user.getEclipsePersonId());
-                var publisherAgreement = profile.getOpenVsxPublisherAgreement();
-                if (publisherAgreement.isPresent()) {
-                    agreement = new PublisherAgreement(true, null, publisherAgreement.get().getVersion(), null);
+                try {
+                    var profile = getPublicProfile(user.getEclipsePersonId());
+                    var publisherAgreement = profile.getOpenVsxPublisherAgreement();
+                    if (publisherAgreement.isPresent()) {
+                        agreement = new PublisherAgreement(true, null, publisherAgreement.get().getVersion(), null);
+                    }
+                } catch (ErrorResultException e) {
+                    // public profile could not be retrieved for the user, could be blocked.
+                    logger.warn(e.getMessage());
                 }
             }
         }
