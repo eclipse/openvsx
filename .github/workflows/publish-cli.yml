@@ -1,0 +1,119 @@
+name: Publish CLI
+
+on:
+  push:
+    tags:
+      - "cli-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.repository == 'eclipse/openvsx'
+    runs-on: ubuntu-22.04
+    outputs:
+      release-tag: ${{ steps.context.outputs.RELEASE_TAG }}
+      release-version: ${{ steps.context.outputs.RELEASE_VERSION }}
+      project-version: ${{ steps.context.outputs.PROJECT_VERSION }}
+      npm-tag: ${{ steps.context.outputs.NPM_TAG }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: "Setup context"
+        id: context
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          echo "RELEASE_TAG=${REF_NAME}" >> $GITHUB_OUTPUT
+          VERSION=$(echo ${REF_NAME} | sed 's/cli-//')
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
+          PROJECT_VERSION=$(jq -r .version cli/package.json)
+          echo "PROJECT_VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+          # if the tag contains '-rc', build and publish a release candidate
+          if [[ "${REF_NAME}" =~ ^.*-rc.* ]]; then
+            echo "NPM_TAG=next" >> $GITHUB_OUTPUT
+          else
+            echo "NPM_TAG=latest" >> $GITHUB_OUTPUT
+            
+            if [[ "${VERSION}" != "${PROJECT_VERSION}" ]]; then
+              echo "Project version '${PROJECT_VERSION}' does not match version from tag '${VERSION}'."
+              exit 1
+            fi          
+          fi
+
+  npm-publish:
+    name: "Publish to npm"
+    runs-on: ubuntu-22.04
+    needs: ['prepare']
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        working-directory: cli
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+
+      - name: Build CLI
+        working-directory: cli
+        env:
+          VERSION: ${{ needs.prepare.outputs.release-version }}
+        run: |
+          yarn
+          npm version ${VERSION} --allow-same-version
+          yarn run prepare
+
+      - name: Publish
+        working-directory: cli
+        env:
+          NPM_TAG: ${{ needs.prepare.outputs.npm-tag }}
+        run: |
+          npm publish --provenance --access public --tag ${NPM_TAG}
+
+  github-publish:
+    runs-on: ubuntu-22.04
+    needs: ['prepare', 'npm-publish']
+    if: ${{ needs.prepare.outputs.npm-tag == 'latest' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: "Extract release notes"
+        id: extract-release-notes
+        uses: ffurrer2/extract-release-notes@202313ec7461b6b9e401996714484690ab1ae105 # v3.0.0
+        with:
+          changelog_file: "cli/CHANGELOG.md"
+          release_notes_file: "cli/RELEASE_NOTES.md"
+
+      - name: "Create GitHub release"
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        with:
+          name: "CLI v${{ needs.prepare.outputs.release-version }}"
+          tag_name: "${{ needs.prepare.outputs.release-tag }}"
+          body_path: "cli/RELEASE_NOTES.md"
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          make_latest: false

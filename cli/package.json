@@ -12,7 +12,7 @@
     "homepage": "https://open-vsx.org",
     "repository": {
         "type": "git",
-        "url": "https://github.com/eclipse/openvsx.git",
+        "url": "git+https://github.com/eclipse/openvsx.git",
         "directory": "cli"
     },
     "bugs": "https://github.com/eclipse/openvsx/issues",
@@ -29,7 +29,9 @@
     ],
     "main": "lib/index",
     "types": "lib/index",
-    "bin": "lib/ovsx",
+    "bin": {
+        "ovsx": "lib/ovsx"
+    },
     "engines": {
         "node": ">= 20"
     },
