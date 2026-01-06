@@ -13,15 +13,13 @@ env:
 jobs:
   prepare:
     if: github.repository == 'eclipse/openvsx'
+    permissions:
+      contents: none
     runs-on: ubuntu-22.04
     outputs:
       release-tag: ${{ steps.context.outputs.RELEASE_TAG }}
       release-version: ${{ steps.context.outputs.RELEASE_VERSION }}
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
       - name: "Setup context"
         id: context
         shell: bash
