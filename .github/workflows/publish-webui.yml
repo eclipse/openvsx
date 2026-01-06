@@ -103,7 +103,8 @@ jobs:
           release_notes_file: "webui/RELEASE_NOTES.md"
 
       - name: "Create GitHub release"
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        # pin to 2.4.2 due to https://github.com/softprops/action-gh-release/issues/703
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
         with:
           name: "Frontend Library v${{ needs.prepare.outputs.release-version }}"
           tag_name: "${{ needs.prepare.outputs.release-tag }}"
