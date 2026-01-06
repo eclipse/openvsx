@@ -28,15 +28,17 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
       with:
-        node-version: 18.x
+        node-version: 24.x
 
     - name: Install Yarn
+      working-directory: cli
       run: |
         corepack enable
         corepack prepare yarn@stable --activate
 
     - name: Build CLI
-      run: yarn --cwd cli
+      working-directory: cli
+      run: yarn
 
     - name: Get all changed webui files
       id: changed_webui_files
