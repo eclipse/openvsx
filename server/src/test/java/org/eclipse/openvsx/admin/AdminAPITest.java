@@ -25,6 +25,7 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.SecretScanningService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.search.SimilarityConfig;
@@ -74,7 +75,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
-    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class
+    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class,
+    SecretScanningService.class
 })
 class AdminAPITest {
     
@@ -1556,9 +1558,10 @@ class AdminAPITest {
                 SearchUtilService search,
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
-                JobRequestScheduler scheduler
+                JobRequestScheduler scheduler,
+                SecretScanningService secretScanningService
         ) {
-            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
+            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler, secretScanningService);
         }
 
         @Bean
