@@ -46,7 +46,7 @@ public class SecretScannerFactory {
     private static final Logger logger = LoggerFactory.getLogger(SecretScannerFactory.class);
 
     private final SecretRuleLoader ruleLoader;
-    private final SecretScanningConfiguration config;
+    private final SecretScanningConfig config;
     private final GitleaksRulesGenerator generator;
 
     private List<SecretRule> rules = List.of();
@@ -56,7 +56,7 @@ public class SecretScannerFactory {
 
     public SecretScannerFactory(
             @NotNull SecretRuleLoader ruleLoader, 
-            @NotNull SecretScanningConfiguration config,
+            @NotNull SecretScanningConfig config,
             @NotNull GitleaksRulesGenerator generator) {
         this.ruleLoader = ruleLoader;
         this.config = config;
@@ -191,7 +191,7 @@ public class SecretScannerFactory {
      */
     private List<String> getGlobalExcludedExtensions(
             @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
-            @NotNull SecretScanningConfiguration config) {
+            @NotNull SecretScanningConfig config) {
         List<String> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.fileExtensions != null) {
@@ -210,7 +210,7 @@ public class SecretScannerFactory {
      */
     private List<Pattern> getGlobalExcludedPathPatterns(
             @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
-            @NotNull SecretScanningConfiguration config) {
+            @NotNull SecretScanningConfig config) {
         List<Pattern> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.paths != null) {
@@ -228,7 +228,7 @@ public class SecretScannerFactory {
      */
     private List<Pattern> getGlobalAllowlistPatterns(
             @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
-            @NotNull SecretScanningConfiguration config) {
+            @NotNull SecretScanningConfig config) {
         List<Pattern> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.regexes != null && !globalAllowlist.regexes.isEmpty()) {
@@ -246,7 +246,7 @@ public class SecretScannerFactory {
      */
     private List<String> getGlobalStopwords(
             @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
-            @NotNull SecretScanningConfiguration config) {
+            @NotNull SecretScanningConfig config) {
         List<String> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.stopwords != null) {
@@ -262,7 +262,7 @@ public class SecretScannerFactory {
      * Get inline suppression markers from config.
      * Returns lowercase versions of the suppression markers for case-insensitive matching.
      */
-    private List<String> getInlineSuppressions(@NotNull SecretScanningConfiguration config) {
+    private List<String> getInlineSuppressions(@NotNull SecretScanningConfig config) {
         return config.getInlineSuppressions().stream()
                 .map(String::toLowerCase)
                 .toList();

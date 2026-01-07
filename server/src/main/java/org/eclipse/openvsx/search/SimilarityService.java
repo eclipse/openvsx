@@ -16,6 +16,7 @@ import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -63,7 +64,7 @@ public class SimilarityService {
             logger.error("Similarity check failed for extension='{}', namespace='{}', displayName='{}': {}", 
                 extensionName, namespaceName, displayName, e.getMessage(), e);
             
-            throw new RuntimeException(
+            throw new ErrorResultException(
                 "Unable to verify extension name uniqueness due to system error. " +
                 "Please try again later or contact support if the problem persists."
             );
@@ -97,7 +98,7 @@ public class SimilarityService {
             logger.error("Similarity check failed for namespace='{}': {}", 
                 namespaceName, e.getMessage(), e);
             
-            throw new RuntimeException(
+            throw new ErrorResultException(
                 "Unable to verify namespace name uniqueness due to system error. " +
                 "Please try again later or contact support if the problem persists."
             );

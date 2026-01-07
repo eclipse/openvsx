@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +45,7 @@ public class SecretScanningService {
     
     private static final Logger logger = LoggerFactory.getLogger(SecretScanningService.class);
     
-    private final SecretScanningConfiguration config;
+    private final SecretScanningConfig config;
     private final SecretScanner fileContentScanner;
     private final AsyncTaskExecutor taskExecutor;
 
@@ -65,7 +64,7 @@ public class SecretScanningService {
      * Constructs a secret scanning service with the specified configuration and executor.
      */
     public SecretScanningService(
-            SecretScanningConfiguration config,
+            SecretScanningConfig config,
             SecretScannerFactory scannerFactory,
             AsyncTaskExecutor taskExecutor) {
         this.config = config;
@@ -80,18 +79,18 @@ public class SecretScanningService {
     }
     
     /**
+     * Returns whether secret scanning is enabled.
+     */
+    public boolean isEnabled() {
+        return config.isEnabled();
+    }
+    
+    /**
      * Scans an extension package for potential secrets.
      * 
-     * This method checks if secret scanning is enabled for the publishing flow.
-     * When disabled, extensions can still be published without secret detection.
-     * The scanner itself is always available for other use cases (e.g., retroactive scans).
+     * Callers should check {@link #isEnabled()} before invoking this method.
      */
     public SecretScanResult scanForSecrets(@NotNull TempFile extensionFile) {
-        if (!config.isEnabled()) {
-            logger.debug("Secret scanning is disabled for publishing");
-            return SecretScanResult.skipped();
-        }
-        
         // Use thread-safe collection for parallel processing
         List<SecretFinding> findings = Collections.synchronizedList(new ArrayList<>());
         AtomicInteger findingsCount = new AtomicInteger(0); // Cap findings to protect memory
