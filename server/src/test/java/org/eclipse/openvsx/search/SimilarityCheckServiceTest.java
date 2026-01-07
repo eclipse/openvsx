@@ -57,23 +57,17 @@ class SimilarityCheckServiceTest {
     }
 
     @Test
-    void shouldReturnEmptyWhenSimilarityChecksDisabled() {
-        // When the feature is disabled, no database work should happen.
+    void isEnabled_shouldDelegateToConfig() {
+        when(config.isEnabled()).thenReturn(true);
+        assertThat(similarityCheckService.isEnabled()).isTrue();
+
         when(config.isEnabled()).thenReturn(false);
-
-        var result = similarityCheckService.findSimilarExtensionsForPublishing(
-            "ext", "ns", "Display", user
-        );
-
-        assertThat(result).isEmpty();
-        verifyNoInteractions(similarityService);
-        verifyNoInteractions(repositories);
+        assertThat(similarityCheckService.isEnabled()).isFalse();
     }
 
     @Test
     void shouldExcludeOwnerNamespacesWhenConfigured() {
         // When exclude-owner-namespaces is enabled, we should build a list of owner namespaces to exclude.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isExcludeOwnerNamespaces()).thenReturn(true);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
@@ -106,7 +100,6 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldNotExcludeNamespacesWhenConfigDisabled() {
         // When exclude-owner-namespaces is disabled, pass an empty exclude list.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isExcludeOwnerNamespaces()).thenReturn(false);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
@@ -123,9 +116,8 @@ class SimilarityCheckServiceTest {
     }
 
     @Test
-    void shouldDelegateSimilarExtensionsToServiceWhenEnabled() {
-        // Happy path: when enabled, delegate to SimilarityService with proper parameters.
-        when(config.isEnabled()).thenReturn(true);
+    void shouldDelegateSimilarExtensionsToService() {
+        // Happy path: delegate to SimilarityService with proper parameters.
         when(config.isExcludeOwnerNamespaces()).thenReturn(false);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
@@ -144,7 +136,6 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldSkipCheckForExistingExtensionWhenConfiguredForNewOnly() {
         // When configured for new extensions only, skip if extension already has versions.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isNewExtensionsOnly()).thenReturn(true);
         when(repositories.countVersions("ns", "ext")).thenReturn(1);
 
@@ -160,7 +151,6 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldCheckNewExtensionEvenWhenConfiguredForNewOnly() {
         // When configured for new extensions only, still check if extension has no versions.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isNewExtensionsOnly()).thenReturn(true);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
@@ -180,7 +170,6 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldSkipCheckForVerifiedPublisherWhenConfigured() {
         // When configured to skip verified publishers, check if namespace has owner memberships.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isSkipVerifiedPublishers()).thenReturn(true);
         var namespace = new Namespace();
         when(repositories.findNamespace("ns")).thenReturn(namespace);
@@ -199,7 +188,6 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldCheckVerifiedPublisherWhenSkipIsDisabled() {
         // When skip verified publishers is disabled, check even if namespace has owner memberships.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isSkipVerifiedPublishers()).thenReturn(false);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
@@ -217,7 +205,6 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldPassConfiguredThresholdAndVerifiedOnlyFlag() {
         // Verify that config values are correctly passed to SimilarityService.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isExcludeOwnerNamespaces()).thenReturn(false);
         when(config.getLevenshteinThreshold()).thenReturn(0.25);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(true);
@@ -233,21 +220,8 @@ class SimilarityCheckServiceTest {
     }
 
     @Test
-    void shouldReturnEmptyNamespacesWhenDisabled() {
-        // When disabled, namespace creation checks should not hit the database.
-        when(config.isEnabled()).thenReturn(false);
-
-        var result = similarityCheckService.findSimilarNamespacesForCreation("ns", user);
-
-        assertThat(result).isEmpty();
-        verifyNoInteractions(similarityService);
-        verifyNoInteractions(repositories);
-    }
-
-    @Test
-    void shouldDelegateSimilarNamespacesToServiceWhenEnabled() {
-        // When enabled, delegate to SimilarityService with config parameters.
-        when(config.isEnabled()).thenReturn(true);
+    void shouldDelegateSimilarNamespacesToService() {
+        // Delegate to SimilarityService with config parameters.
         when(config.isExcludeOwnerNamespaces()).thenReturn(false);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
@@ -264,7 +238,6 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldExcludeOwnerNamespacesForNamespaceCreation() {
         // When exclude-owner-namespaces is enabled for namespace creation.
-        when(config.isEnabled()).thenReturn(true);
         when(config.isExcludeOwnerNamespaces()).thenReturn(true);
         when(config.getLevenshteinThreshold()).thenReturn(0.2);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(true);

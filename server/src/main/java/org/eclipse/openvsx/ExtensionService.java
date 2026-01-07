@@ -101,28 +101,30 @@ public class ExtensionService {
     private void doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         // Scan for secrets before processing the extension
         // This fails fast if secrets are detected, preventing publication
-        var scanResult = secretScanningService.scanForSecrets(extensionFile);
-        if (scanResult.isSecretsFound()) {
-            var findings = scanResult.getFindings();
-            var errorMessage = new StringBuilder();
-            errorMessage.append("Extension publication blocked: potential secrets detected in the package.\n\n");
-            errorMessage.append("The following potential secrets were found:\n");
-            
-            int maxFindings = Math.min(5, findings.size());
-            for (int i = 0; i < maxFindings; i++) {
-                errorMessage.append("  ").append(i + 1).append(". ").append(findings.get(i).toString()).append("\n");
+        if (secretScanningService.isEnabled()) {
+            var scanResult = secretScanningService.scanForSecrets(extensionFile);
+            if (scanResult.isSecretsFound()) {
+                var findings = scanResult.getFindings();
+                var errorMessage = new StringBuilder();
+                errorMessage.append("Extension publication blocked: potential secrets detected in the package.\n\n");
+                errorMessage.append("The following potential secrets were found:\n");
+                
+                int maxFindings = Math.min(5, findings.size());
+                for (int i = 0; i < maxFindings; i++) {
+                    errorMessage.append("  ").append(i + 1).append(". ").append(findings.get(i).toString()).append("\n");
+                }
+                
+                if (findings.size() > maxFindings) {
+                    errorMessage.append("  ... and ").append(findings.size() - maxFindings).append(" more\n");
+                }
+                
+                errorMessage.append("\nPlease remove these secrets before publishing. ");
+                errorMessage.append("Consider using environment variables or configuration files that are not included in the package. ");
+                
+                errorMessage.append("Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions");
+                
+                throw new ErrorResultException(errorMessage.toString());
             }
-            
-            if (findings.size() > maxFindings) {
-                errorMessage.append("  ... and ").append(findings.size() - maxFindings).append(" more\n");
-            }
-            
-            errorMessage.append("\nPlease remove these secrets before publishing. ");
-            errorMessage.append("Consider using environment variables or configuration files that are not included in the package. ");
-            
-            errorMessage.append("Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions");
-            
-            throw new ErrorResultException(errorMessage.toString());
         }
         
         try (var processor = new ExtensionProcessor(extensionFile)) {

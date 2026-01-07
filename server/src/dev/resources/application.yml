@@ -191,6 +191,6 @@ ovsx:
     max-line-length: 10000
     long-line-no-space-threshold: 1000
     keyword-context-chars: 100
-    log-secret-preview-chars: 10
+    log-allowlisted-value-preview-length: 10
     timeout-seconds: 5
     timeout-check-every-n-lines: 100

@@ -12,7 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import com.google.re2j.Pattern;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +27,7 @@ import java.util.List;
  * before allowing publication. It uses regex patterns and entropy calculation to detect secrets.
  */
 @Configuration
-public class SecretScanningConfiguration {
+public class SecretScanningConfig {
     
     /**
      * Enables or disables secret scanning for extension publishing.
@@ -185,7 +184,7 @@ public class SecretScanningConfiguration {
     /**
      * Characters to include when logging secret preview values (for debugging allowlisted secrets).
      *
-     * Property: {@code ovsx.secret-scanning.log-secret-preview-chars}
+     * Property: {@code ovsx.secret-scanning.log-allowlisted-value-preview-length}
      * Default: {@code 10}
      */
     @Value("${ovsx.secret-scanning.log-allowlisted-value-preview-length:10}")
@@ -330,7 +329,7 @@ public class SecretScanningConfiguration {
         
         if (logAllowlistedPreviewLength < 0) {
             throw new IllegalArgumentException(
-                "ovsx.secret-scanning.log-secret-preview-chars must be >= 0, got: " + logAllowlistedPreviewLength);
+                "ovsx.secret-scanning.log-allowlisted-value-preview-length must be >= 0, got: " + logAllowlistedPreviewLength);
         }
     }
 }

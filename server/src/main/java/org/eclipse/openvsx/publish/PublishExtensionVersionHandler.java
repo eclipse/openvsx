@@ -175,6 +175,11 @@ public class PublishExtensionVersionHandler {
     }
 
     private void validateDistinctName(String extensionName, String namespaceName, String displayName, UserData user) {
+        // Check if similarity checking is enabled before invoking
+        if (!similarityCheckService.isEnabled()) {
+            return;
+        }
+
         // Use SimilarityCheckService which handles config gates and "exclude owner namespaces" logic
         var similarExtensions = similarityCheckService.findSimilarExtensionsForPublishing(
             extensionName,

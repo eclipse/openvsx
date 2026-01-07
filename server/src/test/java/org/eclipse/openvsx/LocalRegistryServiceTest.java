@@ -32,7 +32,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.util.Streamable;
 
 import java.util.List;
 import java.util.Optional;
@@ -115,6 +114,7 @@ class LocalRegistryServiceTest {
 
         when(validator.validateNamespace("new-space")).thenReturn(Optional.empty());
         when(repositories.findNamespaceName("new-space")).thenReturn(null);
+        when(similarityCheckService.isEnabled()).thenReturn(true);
         when(similarityCheckService.findSimilarNamespacesForCreation("new-space", user))
                 .thenReturn(List.of(buildNamespace("new-space-1")));
 
@@ -153,6 +153,7 @@ class LocalRegistryServiceTest {
 
         when(validator.validateNamespace("clean-ns")).thenReturn(Optional.empty());
         when(repositories.findNamespaceName("clean-ns")).thenReturn(null);
+        when(similarityCheckService.isEnabled()).thenReturn(true);
         when(similarityCheckService.findSimilarNamespacesForCreation("clean-ns", user)).thenReturn(List.of());
 
         registryService.createNamespace(json, user);

@@ -29,7 +29,7 @@ class SecretScannerFactoryTest {
     void initialize_buildsEvenWhenDisabled() throws Exception {
         // Factory initializes if rule paths are configured, even when publishing-time scanning is disabled
         TrackingRuleLoader loader = new TrackingRuleLoader();
-        SecretScanningConfiguration config = buildConfig(false);  // disabled
+        SecretScanningConfig config = buildConfig(false);  // disabled
         setField(config, "rulesPath", "classpath:org/eclipse/openvsx/scanning/secret-rules-a.yaml");  // Use test resource
         MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);
         SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
@@ -46,7 +46,7 @@ class SecretScannerFactoryTest {
     void initialize_skipsWhenNotConfigured() throws Exception {
         // Factory skips initialization if ovsx.secret-scanning block is not present
         TrackingRuleLoader loader = new TrackingRuleLoader();
-        SecretScanningConfiguration config = buildConfig(false);  // disabled
+        SecretScanningConfig config = buildConfig(false);  // disabled
         MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);
         SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
 
@@ -61,7 +61,7 @@ class SecretScannerFactoryTest {
     @Test
     void initialize_buildsMatchersAndIndexes() throws Exception {
         TrackingRuleLoader loader = new TrackingRuleLoader();
-        SecretScanningConfiguration config = buildConfig(true);
+        SecretScanningConfig config = buildConfig(true);
         setField(config, "rulesPath",
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-a.yaml," +
                         "classpath:org/eclipse/openvsx/scanning/secret-rules-b.yaml");
@@ -88,7 +88,7 @@ class SecretScannerFactoryTest {
     @Test
     void initialize_loadsGlobalAllowlistFromYaml() throws Exception {
         SecretRuleLoader loader = new SecretRuleLoader();
-        SecretScanningConfiguration config = buildConfig(true);
+        SecretScanningConfig config = buildConfig(true);
         setField(config, "rulesPath", "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml");
         MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);
 
@@ -103,9 +103,9 @@ class SecretScannerFactoryTest {
         assertNotNull(factory.getScanner());
     }
 
-    private SecretScanningConfiguration buildConfig(boolean enabled) throws Exception {
+    private SecretScanningConfig buildConfig(boolean enabled) throws Exception {
         // We set all the primitive fields explicitly so the factory can use getters safely.
-        SecretScanningConfiguration config = new SecretScanningConfiguration();
+        SecretScanningConfig config = new SecretScanningConfig();
         setField(config, "enabled", enabled);
         setField(config, "maxFileSizeBytes", 1024 * 1024);
         setField(config, "maxLineLength", 10_000);

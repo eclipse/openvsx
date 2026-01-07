@@ -90,7 +90,7 @@ class SecretScanningServiceTest {
     // --- Helpers ----------------------------------------------------------------
 
     private SecretScanningService buildServiceWithLimits(int maxEntries, long maxBytes, int maxFindings) throws Exception {
-        SecretScanningConfiguration config = new SecretScanningConfiguration();
+        SecretScanningConfig config = new SecretScanningConfig();
         setField(config, "enabled", true);
         setField(config, "maxFileSizeBytes", 1024 * 1024);
         setField(config, "maxLineLength", 10_000);
