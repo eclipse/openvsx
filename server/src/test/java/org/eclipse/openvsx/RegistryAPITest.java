@@ -27,6 +27,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.SecretScanResult;
 import org.eclipse.openvsx.scanning.SecretScanningService;
 import org.eclipse.openvsx.search.*;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
@@ -38,6 +39,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -88,8 +90,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
-    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
-    SecretScanningService.class
+    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class
 })
 class RegistryAPITest {
 
@@ -108,11 +109,19 @@ class RegistryAPITest {
     @MockitoBean
     EntityManager entityManager;
 
+    @MockitoBean
+    SecretScanningService secretScanningService;
+
     @Autowired
     MockMvc mockMvc;
 
     @Autowired
     ExtensionService extensions;
+
+    @BeforeEach
+    void setup() {
+        Mockito.when(secretScanningService.scanForSecrets(any())).thenReturn(SecretScanResult.skipped());
+    }
 
     @Test
     void testPublicNamespace() throws Exception {
