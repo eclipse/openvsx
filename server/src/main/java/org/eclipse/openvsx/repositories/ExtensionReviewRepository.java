@@ -27,6 +27,8 @@ public interface ExtensionReviewRepository extends Repository<ExtensionReview, L
 
     Streamable<ExtensionReview> findByExtensionAndUserAndActiveTrue(Extension extension, UserData user);
 
+    Streamable<ExtensionReview> findByUserAndActiveTrue(UserData user);
+
     long countByExtensionAndActiveTrue(Extension extension);
 
     @Cacheable(CACHE_AVERAGE_REVIEW_RATING)

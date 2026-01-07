@@ -53,16 +53,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -583,6 +579,7 @@ class AdminAPITest {
         Mockito.when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
         Mockito.when(repositories.countActiveAccessTokens(user)).thenReturn(1L);
         Mockito.when(repositories.findLatestVersions(user)).thenReturn(versions);
+        Mockito.when(repositories.findActiveReviews(user)).thenReturn(Streamable.empty());
 
         mockMvc.perform(get("/admin/publisher/{provider}/{loginName}", "github", "test")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
@@ -635,11 +632,14 @@ class AdminAPITest {
         Mockito.when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions));
 
+        Mockito.when(repositories.findActiveReviews(user))
+                .thenReturn(Streamable.empty());
+
         mockMvc.perform(post("/admin/publisher/{provider}/{loginName}/revoke", "github", "test")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deactivated 1 tokens and deactivated 1 extensions of user github/test.")));
+                .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions of user github/test.")));
 
         assertThat(token.isActive()).isFalse();
         assertThat(versions.get(0).isActive()).isFalse();
@@ -1146,6 +1146,57 @@ class AdminAPITest {
                 .andExpect(content().json(errorJson("New namespace already exists: bar")));
     }
 
+    @Test
+    void testDeleteReview() throws Exception {
+        mockAdminUser();
+        mockReviews();
+
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foobar", "baz", "github", "user1")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted review from user1 for foobar.baz")));
+    }
+
+    @Test
+    void testDeleteReviewNotLoggedIn() throws Exception {
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foo", "bar", "github", "user1")
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteReviewNormalUser() throws Exception {
+        mockNormalUser();
+
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foo", "bar", "github", "user1")
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteReviewUnknownExtension() throws Exception {
+        mockAdminUser();
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foo", "bar", "github", "user1")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(errorJson("Extension not found: foo.bar")));
+    }
+
+    @Test
+    void testDeleteReviewNonExistingReview() throws Exception {
+        mockAdminUser();
+        mockReviews();
+
+        mockMvc.perform(post("/admin/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete", "foobar", "baz", "github", "user3")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(errorJson("No active review for extension foobar.baz and user user3 found")));
+    }
+
     //---------- UTILITY ----------//
 
     private PersonalAccessToken mockAdminToken() {
@@ -1289,6 +1340,56 @@ class AdminAPITest {
         Mockito.when(repositories.findDeprecatedExtensions(extension))
                 .thenReturn(Streamable.empty());
         return versions;
+    }
+
+    private List<ExtensionReview> mockReviews() {
+        var extVersions = mockExtension(1, 0, 0);
+        var extVersion = extVersions.get(0);
+        var extension = extVersion.getExtension();
+
+        var user1 = new UserData();
+        user1.setLoginName("user1");
+        var review1 = new ExtensionReview();
+        review1.setId(1);
+        review1.setExtension(extension);
+        review1.setUser(user1);
+        review1.setRating(3);
+        review1.setComment("Somewhat ok");
+        review1.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
+        review1.setActive(true);
+
+        var user2 = new UserData();
+        user2.setLoginName("user2");
+        var review2 = new ExtensionReview();
+        review2.setId(2);
+        review2.setExtension(extension);
+        review2.setUser(user2);
+        review2.setRating(4);
+        review2.setComment("Quite good");
+        review2.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
+        review2.setActive(true);
+
+        var user3 = new UserData();
+        user3.setLoginName("user3");
+
+        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user1")))
+                .thenReturn(user1);
+        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user2")))
+                .thenReturn(user2);
+        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user3")))
+                .thenReturn(user3);
+
+        Mockito.when(repositories.findActiveReviews(any(), any()))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findActiveReviews(extension, user1))
+                .thenReturn(Streamable.of(review1));
+        Mockito.when(repositories.findActiveReviews(extension, user2))
+                .thenReturn(Streamable.of(review2));
+
+        Mockito.when(repositories.findActiveReviews(extension))
+                .thenReturn(Streamable.of(review1, review2));
+
+        return List.of(review1, review2);
     }
 
     private String createVersion(int major) {

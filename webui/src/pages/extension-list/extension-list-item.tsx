@@ -15,7 +15,7 @@ import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import { MainContext } from '../../context';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail';
 import { SearchEntry } from '../../extension-registry-types';
-import { ExportRatingStars } from '../extension-detail/extension-rating-stars';
+import { ExtensionRatingStars } from '../extension-detail/extension-rating-stars';
 import { createRoute } from '../../utils';
 
 export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = props => {
@@ -92,7 +92,7 @@ export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = prop
                         </Typography>
                     </Box>
                     <Box display='flex' justifyContent='center'>
-                        <ExportRatingStars number={extension.averageRating ?? 0} fontSize='small' />
+                        <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='small' />
                         &nbsp;
                         {downloadCountFormatted != "0" && <><SaveAltIcon /> {downloadCountFormatted}</>}
                     </Box>

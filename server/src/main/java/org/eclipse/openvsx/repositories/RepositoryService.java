@@ -275,6 +275,10 @@ public class RepositoryService {
         return extensionReviewRepo.findByExtension(extension);
     }
 
+    public Streamable<ExtensionReview> findActiveReviews(UserData user) {
+        return extensionReviewRepo.findByUserAndActiveTrue(user);
+    }
+
     public Streamable<ExtensionReview> findActiveReviews(Extension extension, UserData user) {
         return extensionReviewRepo.findByExtensionAndUserAndActiveTrue(extension, user);
     }
