@@ -90,7 +90,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
-    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class
+    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
+    SecretScanningService.class
 })
 class RegistryAPITest {
 
@@ -109,19 +110,11 @@ class RegistryAPITest {
     @MockitoBean
     EntityManager entityManager;
 
-    @MockitoBean
-    SecretScanningService secretScanningService;
-
     @Autowired
     MockMvc mockMvc;
 
     @Autowired
     ExtensionService extensions;
-
-    @BeforeEach
-    void setup() {
-        Mockito.when(secretScanningService.scanForSecrets(any())).thenReturn(SecretScanResult.skipped());
-    }
 
     @Test
     void testPublicNamespace() throws Exception {
