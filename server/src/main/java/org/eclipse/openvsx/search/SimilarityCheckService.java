@@ -12,6 +12,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -19,6 +20,7 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -46,18 +48,22 @@ public class SimilarityCheckService {
     }
 
     /**
+     * Returns whether similarity checking is enabled.
+     */
+    public boolean isEnabled() {
+        return config.isEnabled();
+    }
+
+    /**
      * Enforce configured similarity rules for publishing an extension.
+     * Callers should check {@link #isEnabled()} before invoking this method.
      */
     public List<Extension> findSimilarExtensionsForPublishing(
-            String extensionName,
-            String namespaceName,
-            String displayName,
-            UserData publishingUser
+            @Nullable String extensionName,
+            @Nullable String namespaceName,
+            @Nullable String displayName,
+            @NotNull UserData publishingUser
     ) {
-        if (!config.isEnabled()) {
-            return List.of();
-        }
-
         if (config.isNewExtensionsOnly() && namespaceName != null && extensionName != null) {
             if (repositories.countVersions(namespaceName, extensionName) > 0) {
                 return List.of();
@@ -71,19 +77,11 @@ public class SimilarityCheckService {
             }
         }
 
-        List<String> excludeNamespaces = config.isExcludeOwnerNamespaces()
-                ? repositories.findMemberships(publishingUser)
-                    .stream()
-                    .filter(membership -> NamespaceMembership.ROLE_OWNER.equals(membership.getRole()))
-                    .map(membership -> membership.getNamespace().getName())
-                    .toList()
-                : List.of();
-
         return similarityService.findSimilarExtensions(
             extensionName,
             namespaceName,
             displayName,
-            excludeNamespaces,
+            getExcludedNamespaces(publishingUser),
             config.getLevenshteinThreshold(),
             config.isCheckAgainstVerifiedOnly(),
             LIMIT
@@ -92,27 +90,34 @@ public class SimilarityCheckService {
 
     /**
      * Enforce configured similarity rules for namespace creation.
+     * Callers should check {@link #isEnabled()} before invoking this method.
      */
-    public List<Namespace> findSimilarNamespacesForCreation(String namespaceName, UserData publishingUser) {
-        if (!config.isEnabled()) {
-            return List.of();
-        }
-
-        List<String> excludeNamespaces = config.isExcludeOwnerNamespaces()
-                ? repositories.findMemberships(publishingUser)
-                    .stream()
-                    .filter(membership -> NamespaceMembership.ROLE_OWNER.equals(membership.getRole()))
-                    .map(membership -> membership.getNamespace().getName())
-                    .toList()
-                : List.of();
-
+    public List<Namespace> findSimilarNamespacesForCreation(
+            @NotNull String namespaceName,
+            @NotNull UserData publishingUser
+    ) {
         return similarityService.findSimilarNamespaces(
             namespaceName,
-            excludeNamespaces,
+            getExcludedNamespaces(publishingUser),
             config.getLevenshteinThreshold(),
             config.isCheckAgainstVerifiedOnly(),
             LIMIT
         );
+    }
+
+    /**
+     * Get the list of namespaces to exclude from similarity checks.
+     * When configured, excludes namespaces where the user is an owner.
+     */
+    private List<String> getExcludedNamespaces(@NotNull UserData user) {
+        if (!config.isExcludeOwnerNamespaces()) {
+            return List.of();
+        }
+        return repositories.findMemberships(user)
+                .stream()
+                .filter(m -> NamespaceMembership.ROLE_OWNER.equals(m.getRole()))
+                .map(m -> m.getNamespace().getName())
+                .toList();
     }
 }
 

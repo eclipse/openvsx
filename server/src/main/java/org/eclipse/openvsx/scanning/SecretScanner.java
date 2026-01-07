@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.util.ArchiveUtil;
+import org.eclipse.openvsx.util.SizeLimitInputStream;
 import jakarta.validation.constraints.NotNull;
 import javax.annotation.Nullable;
 
@@ -359,44 +360,6 @@ class SecretScanner {
         }
 
         return false;
-    }
-
-    /**
-     * InputStream wrapper that enforces a hard byte limit to prevent OOM from misleading entry headers.
-     */
-    private static class SizeLimitInputStream extends java.io.FilterInputStream {
-        private final long maxBytes;
-        private long bytesRead = 0;
-
-        protected SizeLimitInputStream(InputStream in, long maxBytes) {
-            super(in);
-            this.maxBytes = maxBytes;
-        }
-
-        @Override
-        public int read() throws IOException {
-            int b = super.read();
-            if (b != -1) {
-                checkLimit(1);
-            }
-            return b;
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            int n = super.read(b, off, len);
-            if (n != -1) {
-                checkLimit(n);
-            }
-            return n;
-        }
-
-        private void checkLimit(long n) throws IOException {
-            bytesRead += n;
-            if (bytesRead > maxBytes) {
-                throw new IOException("File size exceeds limit of " + maxBytes + " bytes");
-            }
-        }
     }
 }
 

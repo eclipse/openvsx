@@ -599,17 +599,19 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ErrorResultException("Namespace already exists: " + namespaceName);
         }
 
-        // Check if the proposed namespace name is too similar to existing ones
-        var similarNamespaces = similarityCheckService.findSimilarNamespacesForCreation(json.getName(), user);
-        if (!similarNamespaces.isEmpty()) {
-            var similarNames = similarNamespaces.stream()
-                    .map(Namespace::getName)
-                    .collect(Collectors.joining(", "));
-            throw new ErrorResultException(
-                "Namespace name '" + json.getName() + "' is too similar to existing namespace(s): " + similarNames + ". " +
-                "Please choose a more distinct name to avoid confusion. " +
-                "Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions"
-            );
+        // Check if the proposed namespace name is too similar to existing ones (if enabled)
+        if (similarityCheckService.isEnabled()) {
+            var similarNamespaces = similarityCheckService.findSimilarNamespacesForCreation(json.getName(), user);
+            if (!similarNamespaces.isEmpty()) {
+                var similarNames = similarNamespaces.stream()
+                        .map(Namespace::getName)
+                        .collect(Collectors.joining(", "));
+                throw new ErrorResultException(
+                    "Namespace name '" + json.getName() + "' is too similar to existing namespace(s): " + similarNames + ". " +
+                    "Please choose a more distinct name to avoid confusion. " +
+                    "Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions"
+                );
+            }
         }
 
         // Create the requested namespace
