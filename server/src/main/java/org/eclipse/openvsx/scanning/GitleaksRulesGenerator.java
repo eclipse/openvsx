@@ -18,8 +18,6 @@ import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -61,7 +59,7 @@ public class GitleaksRulesGenerator {
      */
     private static final Set<String> SKIP_RULE_IDS = Set.of("generic-api-key");
 
-    private final SecretScanningConfiguration config;
+    private final SecretScanningConfig config;
     
     /**
      * Path to the generated rules file, if generation succeeded.
@@ -69,7 +67,7 @@ public class GitleaksRulesGenerator {
      */
     private String generatedRulesPath;
 
-    public GitleaksRulesGenerator(SecretScanningConfiguration config) {
+    public GitleaksRulesGenerator(SecretScanningConfig config) {
         this.config = config;
     }
     

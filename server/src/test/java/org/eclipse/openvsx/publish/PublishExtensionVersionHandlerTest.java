@@ -122,6 +122,7 @@ class PublishExtensionVersionHandlerTest {
         var similarExtension = new Extension();
         similarExtension.setNamespace(buildNamespace("other"));
         similarExtension.setName("demo-other");
+        when(similarityCheckService.isEnabled()).thenReturn(true);
         when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "publisher", "Demo Extension", user))
                 .thenReturn(List.of(similarExtension));
 
@@ -165,6 +166,7 @@ class PublishExtensionVersionHandlerTest {
         when(validator.validateExtensionVersion("1.0.1")).thenReturn(Optional.empty());
         when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
         when(validator.validateMetadata(metadata)).thenReturn(List.of());
+        when(similarityCheckService.isEnabled()).thenReturn(true);
         when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "publisher", "Demo Next", user))
                 .thenReturn(List.of());
         when(repositories.findExtension("demo", namespace)).thenReturn(null);
@@ -200,6 +202,7 @@ class PublishExtensionVersionHandlerTest {
         when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
         when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
         when(validator.validateMetadata(metadata)).thenReturn(List.of());
+        when(similarityCheckService.isEnabled()).thenReturn(true);
         when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "publisher", "Demo OK", user))
                 .thenReturn(List.of());
         when(repositories.findExtension("demo", namespace)).thenReturn(null);
@@ -235,6 +238,7 @@ class PublishExtensionVersionHandlerTest {
         when(validator.validateExtensionVersion("3.0.0")).thenReturn(Optional.empty());
         when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
         when(validator.validateMetadata(processor.getMetadata())).thenReturn(List.of());
+        when(similarityCheckService.isEnabled()).thenReturn(true);
         when(similarityCheckService.findSimilarExtensionsForPublishing("demo", "pub", null, user)).thenReturn(List.of());
         when(repositories.findExtension("demo", namespace)).thenReturn(null);
 
