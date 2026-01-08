@@ -22,7 +22,11 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.SecretScanningService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
+import org.eclipse.openvsx.search.SimilarityConfig;
+import org.eclipse.openvsx.search.SimilarityService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
@@ -68,7 +72,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockitoBean(types = {
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
         ExtensionValidator.class, SimpleMeterRegistry.class, SearchUtilService.class, PublishExtensionVersionHandler.class,
-        JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class
+        JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, SecretScanningService.class
 })
 class UserAPITest {
 
@@ -817,7 +821,8 @@ class UserAPITest {
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
-                ExtensionVersionIntegrityService integrityService
+                ExtensionVersionIntegrityService integrityService,
+                SimilarityService similarityService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -830,8 +835,28 @@ class UserAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService
+                    integrityService,
+                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
             );
+        }
+
+        @Bean
+        SimilarityConfig similarityConfig() {
+            return new SimilarityConfig();
+        }
+
+        @Bean
+        SimilarityService similarityService(RepositoryService repositories) {
+            return new SimilarityService(repositories);
+        }
+
+        @Bean
+        SimilarityCheckService similarityCheckService(
+                SimilarityConfig config,
+                SimilarityService similarityService,
+                RepositoryService repositories
+        ) {
+            return new SimilarityCheckService(config, similarityService, repositories);
         }
 
         @Bean
@@ -841,9 +866,10 @@ class UserAPITest {
                 SearchUtilService search,
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
-                JobRequestScheduler scheduler
+                JobRequestScheduler scheduler,
+                SecretScanningService secretScanningService
         ) {
-            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
+            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler, secretScanningService);
         }
     }
 }
