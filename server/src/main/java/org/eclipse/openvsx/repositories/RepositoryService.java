@@ -60,6 +60,7 @@ public class RepositoryService {
     private final MigrationItemJooqRepository migrationItemJooqRepo;
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
+    private final CustomerRepository customerRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -84,7 +85,8 @@ public class RepositoryService {
             MigrationItemRepository migrationItemRepo,
             MigrationItemJooqRepository migrationItemJooqRepo,
             SignatureKeyPairRepository signatureKeyPairRepo,
-            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo
+            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
+            CustomerRepository customerRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -109,6 +111,7 @@ public class RepositoryService {
         this.migrationItemJooqRepo = migrationItemJooqRepo;
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
+        this.customerRepo = customerRepo;
     }
 
     public Namespace findNamespace(String name) {
@@ -663,4 +666,17 @@ public class RepositoryService {
     public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
         return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
     }
+
+    public List<Customer> findAllCustomers() {
+        return customerRepo.findAll();
+    }
+
+    public Customer findCustomer(String name) {
+        return customerRepo.findByNameIgnoreCase(name);
+    }
+
+    public long countCustomers() {
+        return customerRepo.count();
+    }
+
 }

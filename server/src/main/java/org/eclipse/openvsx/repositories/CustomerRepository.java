@@ -1,5 +1,5 @@
 /** ******************************************************************************
- * Copyright (c) 2021 Precies. Software and others
+ * Copyright (c) 2025 Eclipse Foundation and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -9,10 +9,16 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.entities.AdminStatistics;
+import org.eclipse.openvsx.entities.Customer;
 import org.springframework.data.repository.Repository;
 
-public interface CustomerRepository extends Repository<AdminStatistics, Long> {
+import java.util.List;
 
-    AdminStatistics findByYearAndMonth(int year, int month);
+public interface CustomerRepository extends Repository<Customer, Long> {
+
+    List<Customer> findAll();
+
+    Customer findByNameIgnoreCase(String name);
+
+    long count();
 }
