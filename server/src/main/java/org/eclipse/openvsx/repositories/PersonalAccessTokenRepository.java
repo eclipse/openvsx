@@ -16,6 +16,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
+import java.time.LocalDateTime;
+
 public interface PersonalAccessTokenRepository extends Repository<PersonalAccessToken, Long> {
 
     Streamable<PersonalAccessToken> findAll();
@@ -35,4 +37,10 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
     @Modifying
     @Query("update PersonalAccessToken t set t.active = false where t.user = ?1 and t.active = true")
     int updateActiveSetFalse(UserData user);
+
+    Streamable<PersonalAccessToken> findByCreatedTimestampLessThanEqualAndActiveTrue(LocalDateTime timestamp);
+
+    @Modifying
+    @Query("update PersonalAccessToken t set t.active = false where t.createdTimestamp <= ?1 and t.active = true")
+    void expireAccessTokens(LocalDateTime timestamp);
 }

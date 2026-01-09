@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mail;
 
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+
+import static org.eclipse.openvsx.entities.PersonalAccessToken.EXPIRY_DAYS;
 
 @Component
 public class MailService {
@@ -30,9 +33,36 @@ public class MailService {
     @Value("${ovsx.mail.revoked-access-tokens.template:}")
     String revokedAccessTokensTemplate;
 
+    @Value("${ovsx.mail.access-token-expiry.subject:}")
+    String accessTokenExpirySubject;
+
+    @Value("${ovsx.mail.access-token-expiry.template:}")
+    String accessTokenExpiryTemplate;
+
     public MailService(@Autowired(required = false) JavaMailSender sender, JobRequestScheduler scheduler) {
         this.disabled = sender == null;
         this.scheduler = scheduler;
+    }
+
+    public void scheduleAccessTokenExpiryNotification(PersonalAccessToken token) {
+        if(disabled) {
+            return;
+        }
+
+        var user = token.getUser();
+        var variables = Map.<String, Object>of(
+                "name", user.getFullName(),
+                "tokenName", token.getDescription(),
+                "expiryDate", token.getCreatedTimestamp().plusDays(EXPIRY_DAYS)
+        );
+        var jobRequest = new SendMailJobRequest(
+                user.getEmail(),
+                accessTokenExpirySubject,
+                accessTokenExpiryTemplate,
+                variables
+        );
+
+        scheduler.enqueue(jobRequest);
     }
 
     public void scheduleRevokedAccessTokensMail(UserData user) {
