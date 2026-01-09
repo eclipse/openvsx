@@ -34,7 +34,7 @@ def versions = [
     jackson: '2.15.2',
     woodstox: '6.4.0',
     jobrunr: '7.5.0',
-    bucket4j: '0.12.7',
+    bucket4j: '0.12.10',
     bucket4j_redis: '8.10.1',
     tika: '3.2.2',
     bouncycastle: '1.80',
