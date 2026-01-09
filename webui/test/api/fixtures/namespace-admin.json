@@ -1,0 +1,10 @@
+{
+    "name": "vscodevim",
+    "extensions": {
+        "vim": "http://localhost:8080/api/vscodevim/vim"
+    },
+    "verified": false,
+    "access": "restricted",
+    "membersUrl": "http://localhost:8080/admin/namespace/vscodevim/members",
+    "roleUrl": "http://localhost:8080/admin/namespace/vscodevim/change-member"
+}

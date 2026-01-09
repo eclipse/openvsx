@@ -1,0 +1,216 @@
+{
+    "offset": 0,
+    "totalSize": 8352,
+    "extensions": [
+        {
+            "url": "http://localhost:8080/api/dcloud-ide/hbuilderx-language-services",
+            "files": {
+                "download": "http://localhost:8080/api/dcloud-ide/hbuilderx-language-services/4.84.3/file/dcloud-ide.hbuilderx-language-services-4.84.3.vsix",
+                "signature": "http://localhost:8080/api/dcloud-ide/hbuilderx-language-services/4.84.3/file/dcloud-ide.hbuilderx-language-services-4.84.3.sigzip",
+                "icon": "http://localhost:8080/api/dcloud-ide/hbuilderx-language-services/4.84.3/file/uni.png",
+                "sha256": "http://localhost:8080/api/dcloud-ide/hbuilderx-language-services/4.84.3/file/dcloud-ide.hbuilderx-language-services-4.84.3.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "hbuilderx-language-services",
+            "namespace": "dcloud-ide",
+            "version": "4.84.3",
+            "timestamp": "2025-11-28T14:54:28.151428Z",
+            "verified": true,
+            "averageRating": 5.0,
+            "reviewCount": 16,
+            "downloadCount": 2759,
+            "displayName": "uni-app x语言服务",
+            "description": "支持uni-app x项目的代码提示、悬浮、转到定义、查找引用、大纲、校验等",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/devsense/profiler-php-vscode",
+            "files": {
+                "download": "http://localhost:8080/api/devsense/profiler-php-vscode/1.63.18213/file/devsense.profiler-php-vscode-1.63.18213.vsix",
+                "signature": "http://localhost:8080/api/devsense/profiler-php-vscode/1.63.18213/file/devsense.profiler-php-vscode-1.63.18213.sigzip",
+                "icon": "http://localhost:8080/api/devsense/profiler-php-vscode/1.63.18213/file/profiler-icon.png",
+                "sha256": "http://localhost:8080/api/devsense/profiler-php-vscode/1.63.18213/file/devsense.profiler-php-vscode-1.63.18213.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "profiler-php-vscode",
+            "namespace": "devsense",
+            "version": "1.63.18213",
+            "timestamp": "2025-12-13T17:54:39.596299Z",
+            "verified": true,
+            "averageRating": 5.0,
+            "reviewCount": 1,
+            "downloadCount": 2223589,
+            "displayName": "PHP Profiler",
+            "description": "Support for PHP (Xdebug) profiling files and inspecting them.",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/Vue/volar",
+            "files": {
+                "download": "http://localhost:8080/api/Vue/volar/3.1.8/file/Vue.volar-3.1.8.vsix",
+                "signature": "http://localhost:8080/api/Vue/volar/3.1.8/file/Vue.volar-3.1.8.sigzip",
+                "icon": "http://localhost:8080/api/Vue/volar/3.1.8/file/icon.png",
+                "sha256": "http://localhost:8080/api/Vue/volar/3.1.8/file/Vue.volar-3.1.8.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "volar",
+            "namespace": "Vue",
+            "version": "3.1.8",
+            "timestamp": "2025-12-09T02:44:04.841525Z",
+            "verified": true,
+            "averageRating": 5.0,
+            "reviewCount": 2,
+            "downloadCount": 1618268,
+            "displayName": "Vue (Official)",
+            "description": "Language Support for Vue",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/muhammad-sammy/csharp",
+            "files": {
+                "download": "http://localhost:8080/api/muhammad-sammy/csharp/2.100.11/file/muhammad-sammy.csharp-2.100.11.vsix",
+                "signature": "http://localhost:8080/api/muhammad-sammy/csharp/2.100.11/file/muhammad-sammy.csharp-2.100.11.sigzip",
+                "icon": "http://localhost:8080/api/muhammad-sammy/csharp/2.100.11/file/csharpIcon.png",
+                "sha256": "http://localhost:8080/api/muhammad-sammy/csharp/2.100.11/file/muhammad-sammy.csharp-2.100.11.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "csharp",
+            "namespace": "muhammad-sammy",
+            "version": "2.100.11",
+            "timestamp": "2025-11-22T17:26:04.791904Z",
+            "verified": true,
+            "averageRating": 5.0,
+            "reviewCount": 7,
+            "downloadCount": 434945,
+            "displayName": "C#",
+            "description": "Free/Libre C# support for vscode-compatible editors.",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/midudev/better-svg",
+            "files": {
+                "download": "http://localhost:8080/api/midudev/better-svg/0.4.2/file/midudev.better-svg-0.4.2.vsix",
+                "signature": "http://localhost:8080/api/midudev/better-svg/0.4.2/file/midudev.better-svg-0.4.2.sigzip",
+                "icon": "http://localhost:8080/api/midudev/better-svg/0.4.2/file/icon.png",
+                "sha256": "http://localhost:8080/api/midudev/better-svg/0.4.2/file/midudev.better-svg-0.4.2.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "better-svg",
+            "namespace": "midudev",
+            "version": "0.4.2",
+            "timestamp": "2025-12-10T15:30:04.086402Z",
+            "verified": true,
+            "averageRating": 5.0,
+            "reviewCount": 10,
+            "downloadCount": 1764,
+            "displayName": "Better SVG",
+            "description": "Preview your SVG with color picker, zoom controls, and SVGO optimization.",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/bmewburn/vscode-intelephense-client",
+            "files": {
+                "download": "http://localhost:8080/api/bmewburn/vscode-intelephense-client/1.16.2/file/bmewburn.vscode-intelephense-client-1.16.2.vsix",
+                "signature": "http://localhost:8080/api/bmewburn/vscode-intelephense-client/1.16.2/file/bmewburn.vscode-intelephense-client-1.16.2.sigzip",
+                "icon": "http://localhost:8080/api/bmewburn/vscode-intelephense-client/1.16.2/file/elephpant.png",
+                "sha256": "http://localhost:8080/api/bmewburn/vscode-intelephense-client/1.16.2/file/bmewburn.vscode-intelephense-client-1.16.2.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "vscode-intelephense-client",
+            "namespace": "bmewburn",
+            "version": "1.16.2",
+            "timestamp": "2025-11-27T04:07:22.280112Z",
+            "verified": true,
+            "averageRating": 4.5,
+            "reviewCount": 6,
+            "downloadCount": 771379,
+            "displayName": "PHP Intelephense",
+            "description": "PHP code intelligence for Visual Studio Code",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/openai/chatgpt",
+            "files": {
+                "download": "http://localhost:8080/api/openai/chatgpt/0.5.52/file/openai.chatgpt-0.5.52.vsix",
+                "signature": "http://localhost:8080/api/openai/chatgpt/0.5.52/file/openai.chatgpt-0.5.52.sigzip",
+                "icon": "http://localhost:8080/api/openai/chatgpt/0.5.52/file/blossom.dark.png",
+                "sha256": "http://localhost:8080/api/openai/chatgpt/0.5.52/file/openai.chatgpt-0.5.52.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "chatgpt",
+            "namespace": "openai",
+            "version": "0.5.52",
+            "timestamp": "2025-12-16T02:11:46.286122Z",
+            "verified": true,
+            "averageRating": 4.2,
+            "reviewCount": 10,
+            "downloadCount": 380861,
+            "displayName": "Codex – OpenAI’s coding agent",
+            "description": "Codex is a coding agent that works with you everywhere you code — included in ChatGPT Plus, Pro, Business, Edu, and Enterprise plans.",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/TabNine/tabnine-vscode",
+            "files": {
+                "download": "http://localhost:8080/api/TabNine/tabnine-vscode/3.332.0/file/TabNine.tabnine-vscode-3.332.0.vsix",
+                "signature": "http://localhost:8080/api/TabNine/tabnine-vscode/3.332.0/file/TabNine.tabnine-vscode-3.332.0.sigzip",
+                "icon": "http://localhost:8080/api/TabNine/tabnine-vscode/3.332.0/file/small_logo_grey.png",
+                "sha256": "http://localhost:8080/api/TabNine/tabnine-vscode/3.332.0/file/TabNine.tabnine-vscode-3.332.0.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "tabnine-vscode",
+            "namespace": "TabNine",
+            "version": "3.332.0",
+            "timestamp": "2025-12-08T16:40:22.833340Z",
+            "verified": true,
+            "averageRating": 4.25,
+            "reviewCount": 8,
+            "downloadCount": 479313,
+            "displayName": "(Legacy) Tabnine",
+            "description": "Tabnine does not onboard new users to this plugin. For our enterprise solution please go here: https://marketplace.visualstudio.com/items?itemName=TabNine.tabnine-vscode-self-hosted-updater",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/cweijan/vscode-mysql-client2",
+            "files": {
+                "download": "http://localhost:8080/api/cweijan/vscode-mysql-client2/8.4.4/file/cweijan.vscode-mysql-client2-8.4.4.vsix",
+                "signature": "http://localhost:8080/api/cweijan/vscode-mysql-client2/8.4.4/file/cweijan.vscode-mysql-client2-8.4.4.sigzip",
+                "icon": "http://localhost:8080/api/cweijan/vscode-mysql-client2/8.4.4/file/databases.png",
+                "sha256": "http://localhost:8080/api/cweijan/vscode-mysql-client2/8.4.4/file/cweijan.vscode-mysql-client2-8.4.4.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "vscode-mysql-client2",
+            "namespace": "cweijan",
+            "version": "8.4.4",
+            "timestamp": "2025-11-26T10:36:40.779033Z",
+            "verified": true,
+            "averageRating": 4.333333333333333,
+            "reviewCount": 6,
+            "downloadCount": 725679,
+            "displayName": "MySQL",
+            "description": "Database Management for MySQL/MariaDB, PostgreSQL, Redis and ElasticSearch.",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/RooVeterinaryInc/roo-cline",
+            "files": {
+                "download": "http://localhost:8080/api/RooVeterinaryInc/roo-cline/3.36.7/file/RooVeterinaryInc.roo-cline-3.36.7.vsix",
+                "signature": "http://localhost:8080/api/RooVeterinaryInc/roo-cline/3.36.7/file/RooVeterinaryInc.roo-cline-3.36.7.sigzip",
+                "icon": "http://localhost:8080/api/RooVeterinaryInc/roo-cline/3.36.7/file/icon.png",
+                "sha256": "http://localhost:8080/api/RooVeterinaryInc/roo-cline/3.36.7/file/RooVeterinaryInc.roo-cline-3.36.7.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "roo-cline",
+            "namespace": "RooVeterinaryInc",
+            "version": "3.36.7",
+            "timestamp": "2025-12-15T14:49:43.443491Z",
+            "verified": true,
+            "averageRating": 4.2,
+            "reviewCount": 5,
+            "downloadCount": 811758,
+            "displayName": "Roo Code",
+            "description": "A whole dev team of AI agents in your editor.",
+            "deprecated": false
+        }
+    ]
+}

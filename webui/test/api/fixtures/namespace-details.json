@@ -1,0 +1,74 @@
+{
+    "name": "Prisma",
+    "displayName": "Prisma",
+    "description": "Build data-driven applications with ease.",
+    "logo": "https://openvsx.eclipsecontent.org/Prisma/logo/logo-Prisma-1706696696415.png",
+    "website": "https://www.prisma.io/",
+    "supportLink": "https://www.prisma.io/support",
+    "socialLinks": {
+        "github": "https://github.com/prisma",
+        "twitter": "https://twitter.com/prisma",
+        "linkedin": "https://www.linkedin.com/company/prisma-io"
+    },
+    "extensions": [
+        {
+            "url": "http://localhost:8080/api/Prisma/prisma-insider",
+            "files": {
+                "download": "http://localhost:8080/api/Prisma/prisma-insider/31.1.4/file/Prisma.prisma-insider-31.1.4.vsix",
+                "signature": "http://localhost:8080/api/Prisma/prisma-insider/31.1.4/file/Prisma.prisma-insider-31.1.4.sigzip",
+                "icon": "http://localhost:8080/api/Prisma/prisma-insider/31.1.4/file/logo_white.png",
+                "sha256": "http://localhost:8080/api/Prisma/prisma-insider/31.1.4/file/Prisma.prisma-insider-31.1.4.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "prisma-insider",
+            "namespace": "Prisma",
+            "version": "31.1.4",
+            "timestamp": "2025-12-05T13:25:27.221203Z",
+            "averageRating": 5.0,
+            "reviewCount": 1,
+            "downloadCount": 899358,
+            "displayName": "Prisma - Insider",
+            "description": "This is the Insider Build of the Prisma VS Code extension (only use it if you are also using the dev version of the CLI).",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/Prisma/prisma",
+            "files": {
+                "download": "http://localhost:8080/api/Prisma/prisma/31.1.0/file/Prisma.prisma-31.1.0.vsix",
+                "signature": "http://localhost:8080/api/Prisma/prisma/31.1.0/file/Prisma.prisma-31.1.0.sigzip",
+                "icon": "http://localhost:8080/api/Prisma/prisma/31.1.0/file/logo_white.png",
+                "sha256": "http://localhost:8080/api/Prisma/prisma/31.1.0/file/Prisma.prisma-31.1.0.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "prisma",
+            "namespace": "Prisma",
+            "version": "31.1.0",
+            "timestamp": "2025-12-03T13:03:10.613097Z",
+            "averageRating": 5.0,
+            "reviewCount": 3,
+            "downloadCount": 447565,
+            "displayName": "Prisma",
+            "description": "Adds syntax highlighting, formatting, auto-completion, jump-to-definition and linting for .prisma files.",
+            "deprecated": false
+        },
+        {
+            "url": "http://localhost:8080/api/Prisma/vscode-graphql",
+            "files": {
+                "signature": "http://localhost:8080/api/Prisma/vscode-graphql/0.3.7/file/Prisma.vscode-graphql-0.3.7.sigzip",
+                "icon": "http://localhost:8080/api/Prisma/vscode-graphql/0.3.7/file/logo.png",
+                "download": "http://localhost:8080/api/Prisma/vscode-graphql/0.3.7/file/Prisma.vscode-graphql-0.3.7.vsix",
+                "sha256": "http://localhost:8080/api/Prisma/vscode-graphql/0.3.7/file/Prisma.vscode-graphql-0.3.7.sha256",
+                "publicKey": "http://localhost:8080/api/-/public-key/14ccb407-4e79-41ed-be5a-6d608325c45a"
+            },
+            "name": "vscode-graphql",
+            "namespace": "Prisma",
+            "version": "0.3.7",
+            "timestamp": "2020-09-20T18:15:15.890408Z",
+            "downloadCount": 12833,
+            "displayName": "GraphQL",
+            "description": "GraphQL extension for VSCode adds syntax highlighting, validation, and language features like go to definition, hover information and autocompletion for graphql projects. This extension also works with queries annotated with gql tag.",
+            "deprecated": false
+        }
+    ],
+    "verified": true
+}

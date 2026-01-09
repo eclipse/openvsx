@@ -1,0 +1,13 @@
+{
+    "loginName": "amvanbaren",
+    "tokensUrl": "http://localhost:8080/user/tokens",
+    "createTokenUrl": "http://localhost:8080/user/token/create",
+    "role": "admin",
+    "fullName": "Aart van Baren",
+    "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+    "homepage": "https://github.com/amvanbaren",
+    "provider": "github",
+    "publisherAgreement": {
+        "status": "signed"
+    }
+}

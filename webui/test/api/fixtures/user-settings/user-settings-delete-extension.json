@@ -1,0 +1,102 @@
+{
+    "namespaceUrl": "http://localhost:8080/api/DotJoshJohnson",
+    "reviewsUrl": "http://localhost:8080/api/DotJoshJohnson/xml/reviews",
+    "files": {
+        "download": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/DotJoshJohnson.xml-2.5.0.vsix",
+        "signature": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/DotJoshJohnson.xml-2.5.0.sigzip",
+        "manifest": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/package.json",
+        "readme": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/README.md",
+        "changelog": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/CHANGELOG.md",
+        "license": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/LICENSE.txt",
+        "icon": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/xml.png",
+        "vsixmanifest": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/extension.vsixmanifest",
+        "sha256": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0/file/DotJoshJohnson.xml-2.5.0.sha256",
+        "publicKey": "http://localhost:8080/api/-/public-key/73a98fc8-08c5-4403-9674-06a4094ccb08"
+    },
+    "name": "xml",
+    "namespace": "DotJoshJohnson",
+    "targetPlatform": "universal",
+    "version": "2.5.0",
+    "preRelease": false,
+    "publishedBy": {
+        "loginName": "amvanbaren",
+        "fullName": "Aart van Baren",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+        "homepage": "https://github.com/amvanbaren",
+        "provider": "github"
+    },
+    "active": true,
+    "verified": false,
+    "unrelatedPublisher": true,
+    "namespaceAccess": "restricted",
+    "allVersions": {
+        "latest": "http://localhost:8080/api/DotJoshJohnson/xml/latest",
+        "2.5.0": "http://localhost:8080/api/DotJoshJohnson/xml/2.5.0"
+    },
+    "allVersionsUrl": "http://localhost:8080/api/DotJoshJohnson/xml/versions",
+    "downloadCount": 0,
+    "reviewCount": 0,
+    "versionAlias": [
+        "latest"
+    ],
+    "timestamp": "2025-11-27T11:24:11.673203Z",
+    "preview": false,
+    "displayName": "XML Tools",
+    "namespaceDisplayName": "DotJoshJohnson",
+    "description": "XML Formatting, XQuery, and XPath Tools for Visual Studio Code",
+    "engines": {
+        "vscode": "^1.22.2"
+    },
+    "categories": [
+        "Formatters",
+        "Programming Languages",
+        "Linters",
+        "Other"
+    ],
+    "extensionKind": [],
+    "tags": [
+        "__ext_config",
+        "__ext_csproj",
+        "__ext_xml",
+        "__ext_xq",
+        "__ext_xql",
+        "__ext_xqm",
+        "__ext_xquery",
+        "__ext_xqy",
+        "__ext_xsd",
+        "__ext_xsl",
+        "keybindings",
+        "xml",
+        "xquery",
+        "xsl"
+    ],
+    "homepage": "https://github.com/DotJoshJohnson/vscode-xml",
+    "repository": "https://github.com/DotJoshJohnson/vscode-xml.git",
+    "sponsorLink": "",
+    "bugs": "https://github.com/DotJoshJohnson/vscode-xml/issues",
+    "galleryColor": "#FFFFFF",
+    "galleryTheme": "light",
+    "localizedLanguages": [],
+    "dependencies": [],
+    "bundledExtensions": [],
+    "allTargetPlatformVersions": [
+        {
+            "version": "2.5.0",
+            "targetPlatforms": [
+                "universal",
+                "linux-x64",
+                "win32-arm64"
+            ]
+        },
+        {
+            "version": "2.4.1",
+            "targetPlatforms": [
+                "universal",
+                "darwin-x64",
+                "linux-arm64"
+            ]
+        }
+    ],
+    "deprecated": false,
+    "downloadable": true
+}

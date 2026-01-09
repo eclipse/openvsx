@@ -1,0 +1,15 @@
+{
+    "namespaceMemberships": [
+        {
+            "namespace": "vscodevim",
+            "role": "contributor",
+            "user": {
+                "loginName": "amvanbaren",
+                "fullName": "Aart van Baren",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/14129099?v=4",
+                "homepage": "https://github.com/amvanbaren",
+                "provider": "github"
+            }
+        }
+    ]
+}

@@ -1,0 +1,146 @@
+{
+    "postUrl": "http://localhost:8080/api/eamodio/gitlens/review",
+    "deleteUrl": "http://localhost:8080/api/eamodio/gitlens/review/delete",
+    "reviews": [
+        {
+            "user": {
+                "loginName": "theArianit",
+                "avatarUrl": "https://avatars2.githubusercontent.com/u/17601489?v=4",
+                "homepage": "https://github.com/theArianit",
+                "provider": "github"
+            },
+            "timestamp": "2020-06-24T18:20:32.252216Z",
+            "comment": "",
+            "rating": 5
+        },
+        {
+            "user": {
+                "loginName": "WysokiStudent",
+                "fullName": "Aleksander Bobiński",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/37147444?v=4",
+                "homepage": "https://github.com/WysokiStudent",
+                "provider": "github"
+            },
+            "timestamp": "2022-06-14T19:13:27.152659Z",
+            "comment": "",
+            "rating": 5
+        },
+        {
+            "user": {
+                "loginName": "benz0li",
+                "fullName": "Olivier Benz",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/20233085?v=4",
+                "homepage": "https://github.com/benz0li",
+                "provider": "github"
+            },
+            "timestamp": "2022-11-07T10:12:40.271489Z",
+            "comment": "",
+            "rating": 4
+        },
+        {
+            "user": {
+                "loginName": "FBanitz",
+                "fullName": "François BANITZ",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/20282147?v=4",
+                "homepage": "https://github.com/FBanitz",
+                "provider": "github"
+            },
+            "timestamp": "2024-04-04T07:59:27.570381Z",
+            "comment": "",
+            "rating": 5
+        },
+        {
+            "user": {
+                "loginName": "Lavito1983",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/195150294?v=4",
+                "homepage": "https://github.com/Lavito1983",
+                "provider": "github"
+            },
+            "timestamp": "2025-02-08T13:45:11.170563Z",
+            "comment": "",
+            "rating": 1
+        },
+        {
+            "user": {
+                "loginName": "melroy89",
+                "fullName": "Melroy van den Berg",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/628926?v=4",
+                "homepage": "https://github.com/melroy89",
+                "provider": "github"
+            },
+            "timestamp": "2024-11-24T00:47:24.559419Z",
+            "comment": "Very useful, give you much insides. I did however disable \"Hovers\" completely, I find this feature very annoying. I even recommend the devs to disable Hovers by default as well.",
+            "rating": 5
+        },
+        {
+            "user": {
+                "loginName": "Alenvipin",
+                "fullName": "Vipin patel",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/186826874?v=4",
+                "homepage": "https://github.com/Alenvipin",
+                "provider": "github"
+            },
+            "timestamp": "2024-12-13T10:36:27.025343Z",
+            "comment": "",
+            "rating": 5
+        },
+        {
+            "user": {
+                "loginName": "melody-universe",
+                "fullName": "Melody Universe",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/22504827?v=4",
+                "homepage": "https://github.com/melody-universe",
+                "provider": "github"
+            },
+            "timestamp": "2025-04-09T19:15:47.212702Z",
+            "comment": "Kind of liked this extension. Shame they added AI-generated commit messages.",
+            "rating": 1
+        },
+        {
+            "user": {
+                "loginName": "souhaiebtar",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/15350774?v=4",
+                "homepage": "https://github.com/souhaiebtar",
+                "provider": "github"
+            },
+            "timestamp": "2025-06-19T09:37:44.797055Z",
+            "comment": "",
+            "rating": 5
+        },
+        {
+            "user": {
+                "loginName": "AndrewGrossman",
+                "fullName": "Andrew Grossman",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/1409332?v=4",
+                "homepage": "https://github.com/AndrewGrossman",
+                "provider": "github"
+            },
+            "timestamp": "2025-06-28T21:16:43.384531Z",
+            "comment": "Not a fan of permanent dedication of IDE screen real estate to advertisements.",
+            "rating": 1
+        },
+        {
+            "user": {
+                "loginName": "andriygm",
+                "fullName": "Andriy Massimilla",
+                "avatarUrl": "https://avatars.githubusercontent.com/u/7087461?v=4",
+                "homepage": "https://github.com/andriygm",
+                "provider": "github"
+            },
+            "timestamp": "2025-07-24T16:13:12.196615Z",
+            "comment": "GitLens section in source control view is extremely helpful, love the tab-based layout.",
+            "rating": 5
+        },
+        {
+            "user": {
+                "loginName": "amvanbaren",
+                "avatarUrl": "https://avatars2.githubusercontent.com/u/17601489?v=4",
+                "homepage": "https://github.com/amvanbaren",
+                "provider": "github"
+            },
+            "timestamp": "2025-06-24T18:20:32.252216Z",
+            "comment": "Test",
+            "rating": 1
+        }
+    ]
+}
