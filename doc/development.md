@@ -162,6 +162,11 @@ To run the Open VSX registry in a development environment, you can use `docker c
 
 Run:
 
+- in project root (the server application must be running):
+  `./server/scripts/upload-test-extensions.sh`
+
+or
+
 - in `server/`:  
   `gradlew downloadTestExtensions` to download vsix files from the official store and from Github.
 - in project root (the server application must be running):
