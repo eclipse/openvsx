@@ -15,7 +15,7 @@ jobs:
       run: mkdir -p ${{ runner.temp }}/artifacts
     - name: Download PR number artifact
       if: github.event.workflow_run.event == 'pull_request'
-      uses: dawidd6/action-download-artifact@v12
+      uses: dawidd6/action-download-artifact@0bd50d53a6d7fb5cb921e607957e9cc12b4ce392 # v12
       with:
         workflow: CI
         run_id: ${{ github.event.workflow_run.id }}
@@ -42,6 +42,7 @@ jobs:
       with:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           ref: ${{ github.event.workflow_run.head_branch }}
+          persist-credentials: false
           fetch-depth: 0
     - name: Checkout head branch of pull_request
       if: github.event.workflow_run.event == 'pull_request'
