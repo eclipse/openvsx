@@ -25,6 +25,7 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import javax.annotation.Nullable;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             EclipseService eclipse,
             CacheService cache,
             ExtensionVersionIntegrityService integrityService,
-            SimilarityCheckService similarityCheckService
+            @Nullable SimilarityCheckService similarityCheckService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -600,7 +601,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         // Check if the proposed namespace name is too similar to existing ones (if enabled)
-        if (similarityCheckService.isEnabled()) {
+        if (similarityCheckService != null && similarityCheckService.isEnabled()) {
             var similarNamespaces = similarityCheckService.findSimilarNamespacesForCreation(json.getName(), user);
             if (!similarNamespaces.isEmpty()) {
                 var similarNames = similarNamespaces.stream()

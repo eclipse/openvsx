@@ -43,17 +43,18 @@ class SecretScannerFactoryTest {
     }
 
     @Test
-    void initialize_skipsWhenNotConfigured() throws Exception {
-        // Factory skips initialization if ovsx.secret-scanning block is not present
+    void initialize_skipsWhenNoRulesConfigured() throws Exception {
+        // Factory skips initialization when enabled but no rule paths are configured
+        // Note: With @ConditionalOnProperty, factory is only created when enabled=true
         TrackingRuleLoader loader = new TrackingRuleLoader();
-        SecretScanningConfig config = buildConfig(false);  // disabled
-        MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);
+        SecretScanningConfig config = buildConfig(true);  // enabled but no rules paths
+        MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);  // no generated rules either
         SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
 
         factory.initialize();
 
-        assertFalse(loader.wasCalled, "Loader should not run when secret scanning is not configured");
-        assertNull(factory.getScanner(), "Scanner should not be created when not configured");
+        assertFalse(loader.wasCalled, "Loader should not run when no rules are configured");
+        assertNull(factory.getScanner(), "Scanner should not be created when no rules configured");
         assertTrue(factory.getRules().isEmpty(), "Rules should remain empty");
         assertTrue(factory.getKeywordToRules().isEmpty(), "Keyword index should remain empty");
     }

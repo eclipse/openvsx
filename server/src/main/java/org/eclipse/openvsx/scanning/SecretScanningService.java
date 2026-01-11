@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -16,10 +16,9 @@ import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.springframework.http.HttpStatus;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.IOException;
@@ -39,9 +38,14 @@ import java.util.zip.ZipFile;
  * passwords, and other sensitive credentials that should not be published publicly.
  * 
  * Uses Spring's default async executor for parallel file scanning within extension packages.
+ * Implements ValidationCheck to be auto-discovered by ExtensionScanService.
+ * Only loaded when secret scanning is enabled via configuration.
  */
 @Service
-public class SecretScanningService {
+@ConditionalOnProperty(name = "ovsx.secret-scanning.enabled", havingValue = "true")
+public class SecretScanningService implements ValidationCheck {
+
+    public static final String CHECK_TYPE = "SECRET";
     
     private static final Logger logger = LoggerFactory.getLogger(SecretScanningService.class);
     
@@ -70,19 +74,44 @@ public class SecretScanningService {
         this.config = config;
         this.taskExecutor = taskExecutor;
         
-        // Cache configuration values that are reused during scanning
         this.maxEntryCount = config.getMaxEntryCount();
         this.maxTotalUncompressedBytes = config.getMaxTotalUncompressedBytes();
         this.maxFindings = config.getMaxFindings();
 
         this.fileContentScanner = scannerFactory.getScanner();
     }
+
+    @Override
+    public boolean isEnforced() {
+        return config.isEnforced();
+    }
     
-    /**
-     * Returns whether secret scanning is enabled.
-     */
+    @Override
     public boolean isEnabled() {
         return config.isEnabled();
+    }
+
+    @Override
+    public String getCheckType() {
+        return CHECK_TYPE;
+    }
+
+    @Override
+    public ValidationCheck.Result check(ValidationCheck.Context context) {
+        if (context.extensionFile() == null) {
+            return ValidationCheck.Result.pass();
+        }
+
+        var scanResult = scanForSecrets(context.extensionFile());
+        if (!scanResult.isSecretsFound()) {
+            return ValidationCheck.Result.pass();
+        }
+
+        var failures = scanResult.getFindings().stream()
+            .map(f -> new ValidationCheck.Failure(f.getRuleId(), f.toString()))
+            .toList();
+
+        return ValidationCheck.Result.fail(failures);
     }
     
     /**
@@ -140,7 +169,7 @@ public class SecretScanningService {
                         } catch (SecretScanningTimeoutException | ScanCancelledException e) {
                             throw e;
                         } catch (Exception e) {
-                            logger.warn("Failed to scan file {}: {}", filePath, e.getMessage());
+                            logger.error("Failed to scan file {}: {}", filePath, e.getMessage());
                         }
                         return null;
                     }));
@@ -173,16 +202,18 @@ public class SecretScanningService {
             
         } catch (SecretScanningTimeoutException e) {
             logger.error("Secret scanning timed out after {} seconds", config.getTimeoutSeconds());
-            throw new ErrorResultException(
-                    "Secret scanning timed out after " + config.getTimeoutSeconds()
-                            + " seconds. Please reduce the file size or exclude large files.",
-                    HttpStatus.REQUEST_TIMEOUT);
+            throw new RuntimeException(
+                    "Secret scanning timed out after " + config.getTimeoutSeconds() + " seconds. " +
+                    "Please reduce the file size or exclude large files.", e);
         } catch (ZipException e) {
             logger.error("Failed to open extension file as zip: {}", e.getMessage());
-            throw new ErrorResultException("Failed to scan extension file: invalid zip format", HttpStatus.BAD_REQUEST);
+            throw new RuntimeException("Failed to scan extension file: invalid zip format", e);
         } catch (IOException e) {
             logger.error("Failed to scan extension file: {}", e.getMessage());
-            throw new ErrorResultException("Failed to scan extension file", HttpStatus.BAD_REQUEST);
+            throw new RuntimeException("Failed to scan extension file: " + e.getMessage(), e);
+        } catch (Exception e) {
+            logger.error("Failed to scan extension file: {}", e.getMessage());
+            throw new RuntimeException("Failed to scan extension file: " + e.getMessage(), e);
         }
         
         if (findings.isEmpty()) {

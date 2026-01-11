@@ -91,7 +91,8 @@ class SecretScanningServiceTest {
 
     private SecretScanningService buildServiceWithLimits(int maxEntries, long maxBytes, int maxFindings) throws Exception {
         SecretScanningConfig config = new SecretScanningConfig();
-        setField(config, "enabled", true);
+        // Disable scanning so we can construct the service without loading rule files.
+        setField(config, "enabled", false);
         setField(config, "maxFileSizeBytes", 1024 * 1024);
         setField(config, "maxLineLength", 10_000);
         setField(config, "timeoutSeconds", 10);

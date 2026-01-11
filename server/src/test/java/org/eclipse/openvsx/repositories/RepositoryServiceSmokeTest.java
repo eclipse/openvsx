@@ -58,6 +58,8 @@ class RepositoryServiceSmokeTest {
         // some queries require attached entities:
         var extension = new Extension();
         var namespace = new Namespace();
+        namespace.setName("namespaceName");
+        extension.setName("extensionName");
         extension.setNamespace(namespace);
         var userData = new UserData();
         var extVersion = new ExtensionVersion();
@@ -68,13 +70,50 @@ class RepositoryServiceSmokeTest {
         var keyPair = new SignatureKeyPair();
         keyPair.setPrivateKey(new byte[0]);
         keyPair.setPublicKeyText("");
-        Stream.of(extension, namespace, userData, extVersion, personalAccessToken, keyPair).forEach(em::persist);
+        
+        var scan = new ExtensionScan();
+        scan.setNamespaceName(namespace.getName());
+        scan.setExtensionName(extension.getName());
+        scan.setExtensionVersion(extVersion.getVersion());
+        scan.setTargetPlatform(extVersion.getTargetPlatform());
+        scan.setPublisher("publisher");
+        scan.setPublisherUrl("https://example.com");
+        scan.setExtensionVersion(extVersion.getVersion());
+        scan.setStartedAt(LocalDateTime.now());
+        scan.setStatus(ScanStatus.STARTED);
+        
+        var validationFailure = ExtensionValidationFailure.create("NAME_SQUATTING", "validation-name", "reason");
+        validationFailure.setEnforced(true);
+        validationFailure.setScan(scan);
+        
+        // Admin scan decision entity for testing
+        var adminDecision = AdminScanDecision.allowed(scan, userData);
+        
+        // File decision entity for testing
+        var fileDecision = FileDecision.allowed("fileHash", userData);
+        fileDecision.setScan(scan);
+        fileDecision.setFileName("file.txt");
+        fileDecision.setFileType(".txt");
+        fileDecision.setNamespaceName("namespaceName");
+        fileDecision.setExtensionName("extensionName");
+        fileDecision.setDisplayName("Display Name");
+        fileDecision.setPublisher("publisher");
+        fileDecision.setVersion("1.0.0");
+        
+        // Extension threat entity for testing
+        var threat = ExtensionThreat.create("test.js", "threatFileHash", ".js", "testScanner", "test-rule", "Test threat", "high");
+        threat.setScan(scan);
+        
+        // Persist all entities consistently using EntityManager
+        Stream.of(namespace, extension, userData, extVersion, personalAccessToken, keyPair,
+                  scan, validationFailure, adminDecision, fileDecision, threat)
+              .forEach(em::persist);
         em.flush();
-
+        
         var page = PageRequest.ofSize(1);
         var queryRequest = new QueryRequest(null, null, null, null, null, null, false, null, 1, 0);
 
-        // record executed queries
+        // Record executed queries
         var methodsToBeCalled = Stream.of(repositories.getClass().getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .collect(toList());
@@ -222,7 +261,84 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
                 () -> repositories.deactivateAccessTokens(userData),
                 () -> repositories.findSimilarExtensionsByLevenshtein("extensionName", "namespaceName", "displayName", Collections.emptyList(), 0.5, false, 10),
-                () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", Collections.emptyList(), 0.5, false, 10)
+                () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", Collections.emptyList(), 0.5, false, 10),
+                () -> repositories.findExtensionScans(extVersion),
+                () -> repositories.findLatestExtensionScan(extVersion),
+                () -> repositories.findExtensionScans(extension),
+                () -> repositories.findExtensionScansByNamespace(namespace.getName()),
+                () -> repositories.findExtensionScansByStatus(ScanStatus.STARTED),
+                () -> repositories.findInProgressExtensionScans(),
+                () -> repositories.countExtensionScansByStatus(ScanStatus.STARTED),
+                () -> repositories.findExtensionScan(scan.getId()),
+                () -> repositories.hasExtensionScanWithStatus(extVersion, ScanStatus.STARTED),
+                () -> repositories.findAllExtensionScans(),
+                () -> repositories.findValidationFailures(scan),
+                () -> repositories.findValidationFailuresByType(validationFailure.getCheckType()),
+                () -> repositories.findValidationFailures(scan, validationFailure.getCheckType()),
+                () -> repositories.countValidationFailures(scan),
+                () -> repositories.countValidationFailuresByType(validationFailure.getCheckType()),
+                () -> repositories.hasValidationFailures(scan),
+                () -> repositories.hasValidationFailuresOfType(scan, validationFailure.getCheckType()),
+                () -> repositories.findValidationFailure(validationFailure.getId()),
+                () -> repositories.findDistinctValidationFailureRuleNames(),
+                () -> repositories.findDistinctValidationFailureCheckTypes(),
+                () -> repositories.saveExtensionScan(scan),
+                () -> repositories.saveValidationFailure(validationFailure),
+                // DB paging and filtering methods for scan API
+                () -> repositories.countExtensionScansByStatusAndDateRange(ScanStatus.STARTED, NOW, NOW),
+                () -> repositories.countExtensionScansByStatusDateRangeAndEnforcement(ScanStatus.STARTED, NOW, NOW, true),
+                () -> repositories.findScansFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, page),
+                () -> repositories.countScansFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW),
+                () -> repositories.findScansFullyFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, List.of("checkType"), List.of("scanner"), true, null, page),
+                () -> repositories.countScansFullyFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, List.of("checkType"), List.of("scanner"), true, null),
+                // Statistics queries with full filter support
+                () -> repositories.countScansForStatistics(ScanStatus.STARTED, NOW, NOW, List.of("checkType"), List.of("scanner"), true),
+                () -> repositories.countAdminDecisionsForStatistics("ALLOWED", NOW, NOW, List.of("checkType"), List.of("scanner"), true),
+                // Admin scan decision methods
+                () -> repositories.findAdminScanDecision(scan),
+                () -> repositories.findAdminScanDecision(scan.getId()),
+                () -> repositories.saveAdminScanDecision(adminDecision),
+                () -> repositories.deleteAdminScanDecision(adminDecision.getId()),
+                () -> repositories.hasAdminScanDecisionByScanId(scan.getId()),
+                () -> repositories.countAdminScanDecisions("ALLOWED"),
+                // Note: We pass valid LocalDateTime values to avoid PostgreSQL null parameter type issues
+                () -> repositories.countAdminScanDecisionsByDateRange("ALLOWED", NOW.minusYears(1), NOW.plusYears(1)),
+                () -> repositories.countAdminScanDecisionsByEnforcement("ALLOWED", true),
+                () -> repositories.findAdminScanDecisionByScanId(scan.getId()),
+                // File decision methods
+                () -> repositories.hasFileDecision("fileHash"),
+                () -> repositories.findFileDecision(fileDecision.getId()),
+                () -> repositories.saveFileDecision(fileDecision),
+                () -> repositories.deleteFileDecision(fileDecision.getId()),
+                () -> repositories.deleteFileDecisionByHash("fileHash"),
+                () -> repositories.findFileDecisionsByIds(LONG_LIST),
+                () -> repositories.findFileDecisionByHash("fileHash"),
+                () -> repositories.findFileDecisionsFiltered("ALLOWED", "publisher", "namespace", "name", NOW.minusYears(1), NOW.plusYears(1), page),
+                () -> repositories.countAllFileDecisions(),
+                // Note: We pass valid LocalDateTime values to avoid PostgreSQL null parameter type issues
+                () -> repositories.countFileDecisionsByDateRange("ALLOWED", NOW.minusYears(1), NOW.plusYears(1)),
+                // Extension threat methods
+                () -> repositories.saveExtensionThreat(threat),
+                () -> repositories.findExtensionThreat(threat.getId()),
+                () -> repositories.findExtensionThreats(scan),
+                () -> repositories.hasExtensionThreats(scan),
+                () -> repositories.countExtensionThreats(scan),
+                () -> repositories.findDistinctThreatScannerTypes(),
+                () -> repositories.findExtensionThreatsByScanId(scan.getId()),
+                () -> repositories.findExtensionThreatsByFileHash("fileHash"),
+                () -> repositories.findDistinctThreatRuleNames(),
+                () -> repositories.findExtensionThreatsByType("testType"),
+                () -> repositories.findExtensionThreats(scan, "testType"),
+                () -> repositories.findExtensionThreatsAfter(NOW.minusYears(1)),
+                () -> repositories.findExtensionThreatsOrdered(scan),
+                () -> repositories.countExtensionThreatsByType("testType"),
+                () -> repositories.hasExtensionThreatsOfType(scan, "testType"),
+                // Additional admin scan decision methods
+                () -> repositories.hasAdminScanDecision(scan),
+                // Additional file decision methods  
+                () -> repositories.countFileDecisions("ALLOWED"),
+                // Extension scan delete method
+                () -> repositories.deleteExtensionScan(scan)
         );
 
         // check that we did not miss anything

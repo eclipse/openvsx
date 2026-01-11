@@ -22,7 +22,7 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.scanning.SecretScanningService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.search.SimilarityConfig;
@@ -72,7 +72,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockitoBean(types = {
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
         ExtensionValidator.class, SimpleMeterRegistry.class, SearchUtilService.class, PublishExtensionVersionHandler.class,
-        JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, SecretScanningService.class
+        JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, ExtensionScanService.class
 })
 class UserAPITest {
 
@@ -867,9 +867,17 @@ class UserAPITest {
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
-                SecretScanningService secretScanningService
+                ExtensionScanService extensionScanService
         ) {
-            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler, secretScanningService);
+            return new ExtensionService(
+                    entityManager,
+                    repositories,
+                    search,
+                    cache,
+                    publishHandler,
+                    scheduler,
+                    extensionScanService
+            );
         }
     }
 }

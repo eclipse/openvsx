@@ -163,7 +163,7 @@ class SecretScanner {
                 scanLineWithKeywordMatching(line, line.toLowerCase(), filePath, lineNumber, findings, findingsCount, recorder);
             }
         } catch (IOException e) {
-            logger.warn("Error reading file {}: {}", filePath, e.getMessage());
+            logger.error("Error reading file {}: {}", filePath, e.getMessage());
             throw e;
         }
 
