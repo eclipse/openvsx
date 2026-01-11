@@ -250,6 +250,43 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteReview(String namespace, String extensionName, String loginName, String provider) {
+        var extension = repositories.findExtension(extensionName, namespace);
+        if (extension == null || !extension.isActive()) {
+            var message = "Extension not found: " + NamingUtil.toExtensionId(namespace, extensionName);
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + loginName), HttpStatus.NOT_FOUND);
+        }
+
+        var reviews = repositories.findActiveReviews(extension, user);
+        if (reviews.isEmpty()) {
+            var message = "No active review for extension " + NamingUtil.toExtensionId(extension) + " and user " + loginName + " found";
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
+        for (var extReview : reviews) {
+            deleteReview(extReview);
+        }
+
+        return ResultJson.success("Deleted review from " + loginName + " for " + NamingUtil.toExtensionId(extension));
+    }
+
+    private void deleteReview(ExtensionReview review) {
+        entityManager.remove(review);
+
+        var extension = review.getExtension();
+        extension.setAverageRating(repositories.getAverageReviewRating(extension));
+        extension.setReviewCount(repositories.countActiveReviews(extension));
+        search.updateSearchEntry(extension);
+        cache.evictExtensionJsons(extension);
+        cache.evictLatestExtensionVersion(extension);
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson editNamespaceMember(String namespaceName, String userName, String provider, String role,
             UserData admin) throws ErrorResultException {
         var namespace = repositories.findNamespace(namespaceName);
@@ -402,8 +439,8 @@ public class AdminService {
         }
 
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount
-                + " tokens and deactivated " + deactivatedExtensionCount + " extensions of user "
-                + provider + "/" + loginName + "."); 
+                + " tokens, deactivated " + deactivatedExtensionCount + " extensions of user "
+                + provider + "/" + loginName + ".");
         logAdminAction(admin, result);
         return result;
     }

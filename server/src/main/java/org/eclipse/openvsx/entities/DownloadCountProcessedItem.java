@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2021 Precies. Software and others
+ * Copyright (c) 2025 Eclipse Foundation and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -9,18 +9,24 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+
 import java.time.LocalDateTime;
 
 @Entity
-public class AzureDownloadCountProcessedItem {
+public class DownloadCountProcessedItem {
 
     @Id
-    @GeneratedValue(generator = "azureDownloadCountProcessedItemSeq")
-    @SequenceGenerator(name = "azureDownloadCountProcessedItemSeq", sequenceName = "azure_download_count_processed_item_seq")
+    @GeneratedValue(generator = "downloadCountProcessedItemSeq")
+    @SequenceGenerator(name = "downloadCountProcessedItemSeq", sequenceName = "download_count_processed_item_seq")
     private long id;
 
     private String name;
+
+    private String storageType;
 
     private LocalDateTime processedOn;
 
@@ -42,6 +48,14 @@ public class AzureDownloadCountProcessedItem {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public void setStorageType(String storageType) {
+        this.storageType = storageType;
     }
 
     public LocalDateTime getProcessedOn() {

@@ -11,7 +11,7 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostActivePublishingUse
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtensions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
-import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -29,7 +29,6 @@ import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
-import org.eclipse.openvsx.jooq.tables.Shedlock;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
@@ -39,7 +38,7 @@ import org.eclipse.openvsx.jooq.tables.UserData;
 /**
  * Convenience access to all tables in public.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
 
     /**
@@ -82,9 +81,9 @@ public class Tables {
     public static final AdminStatisticsTopNamespaceExtensions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS = AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS;
 
     /**
-     * The table <code>public.azure_download_count_processed_item</code>.
+     * The table <code>public.download_count_processed_item</code>.
      */
-    public static final AzureDownloadCountProcessedItem AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM = AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM;
+    public static final DownloadCountProcessedItem DOWNLOAD_COUNT_PROCESSED_ITEM = DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM;
 
     /**
      * The table <code>public.extension</code>.
@@ -170,11 +169,6 @@ public class Tables {
      * The table <code>public.personal_access_token</code>.
      */
     public static final PersonalAccessToken PERSONAL_ACCESS_TOKEN = PersonalAccessToken.PERSONAL_ACCESS_TOKEN;
-
-    /**
-     * The table <code>public.shedlock</code>.
-     */
-    public static final Shedlock SHEDLOCK = Shedlock.SHEDLOCK;
 
     /**
      * The table <code>public.signature_key_pair</code>.

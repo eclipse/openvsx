@@ -13,6 +13,9 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: never
+  thymeleaf:
+    # explicitly disable thymeleaf view resolution
+    enabled: false
 
   security:
       oauth2:

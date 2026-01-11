@@ -12,7 +12,7 @@ import org.jooq.impl.SQLDataType;
 /**
  * Convenience access to all sequences in public.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Sequences {
 
     /**
@@ -21,9 +21,9 @@ public class Sequences {
     public static final Sequence<Long> ADMIN_STATISTICS_SEQ = Internal.createSequence("admin_statistics_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
-     * The sequence <code>public.azure_download_count_processed_item_seq</code>
+     * The sequence <code>public.download_count_processed_item_seq</code>
      */
-    public static final Sequence<Long> AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_SEQ = Internal.createSequence("azure_download_count_processed_item_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+    public static final Sequence<Long> DOWNLOAD_COUNT_PROCESSED_ITEM_SEQ = Internal.createSequence("download_count_processed_item_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
      * The sequence <code>public.extension_review_seq</code>

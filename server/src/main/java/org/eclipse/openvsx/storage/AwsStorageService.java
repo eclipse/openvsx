@@ -10,14 +10,12 @@
 
 package org.eclipse.openvsx.storage;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.TempFile;
-import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
@@ -85,7 +83,7 @@ public class AwsStorageService implements IStorageService {
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
-    protected S3Client getS3Client() {
+    public S3Client getS3Client() {
         if (s3Client == null) {
             var s3ClientBuilder = S3Client.builder()
                     .defaultsMode(DefaultsMode.STANDARD)
@@ -304,23 +302,5 @@ public class AwsStorageService implements IStorageService {
         });
 
         return path;
-    }
-
-    protected String getObjectKey(FileResource resource) {
-        var extVersion = resource.getExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var segments = new String[] {namespace.getName(), extension.getName()};
-        if (!extVersion.isUniversalTargetPlatform()) {
-            segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
-        }
-
-        segments = ArrayUtils.add(segments, extVersion.getVersion());
-        segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
-        return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
-    }
-
-    protected String getObjectKey(Namespace namespace) {
-        return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1);
     }
 }

@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.openvsx.storage;
+package org.eclipse.openvsx.storage.log;
 
 import com.google.common.collect.Lists;
 import io.micrometer.observation.Observation;
@@ -15,7 +15,7 @@ import io.micrometer.observation.ObservationRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.entities.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.entities.DownloadCountProcessedItem;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -28,12 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.eclipse.openvsx.entities.FileResource.STORAGE_AZURE;
-
 @Component
-public class AzureDownloadCountProcessor {
+public class DownloadCountProcessor {
 
-    protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountProcessor.class);
+    protected final Logger logger = LoggerFactory.getLogger(DownloadCountProcessor.class);
 
     private final EntityManager entityManager;
     private final RepositoryService repositories;
@@ -41,7 +39,7 @@ public class AzureDownloadCountProcessor {
     private final SearchUtilService search;
     private final ObservationRegistry observations;
 
-    public AzureDownloadCountProcessor(
+    public DownloadCountProcessor(
             EntityManager entityManager,
             RepositoryService repositories,
             CacheService cache,
@@ -56,10 +54,11 @@ public class AzureDownloadCountProcessor {
     }
 
     @Transactional
-    public void persistProcessedItem(String name, LocalDateTime processedOn, int executionTime, boolean success) {
-        Observation.createNotStarted("AzureDownloadCountProcessor#persistProcessedItem", observations).observe(() -> {
-            var processedItem = new AzureDownloadCountProcessedItem();
+    public void persistProcessedItem(String name, String storageType, LocalDateTime processedOn, int executionTime, boolean success) {
+        Observation.createNotStarted("DownloadCountProcessor#persistProcessedItem", observations).observe(() -> {
+            var processedItem = new DownloadCountProcessedItem();
             processedItem.setName(name);
+            processedItem.setStorageType(storageType);
             processedItem.setProcessedOn(processedOn);
             processedItem.setExecutionTime(executionTime);
             processedItem.setSuccess(success);
@@ -67,8 +66,8 @@ public class AzureDownloadCountProcessor {
         });
     }
 
-    public Map<Long, Integer> processDownloadCounts(Map<String, Integer> files) {
-        return Observation.createNotStarted("AzureDownloadCountProcessor#processDownloadCounts", observations).observe(() -> repositories.findDownloadsByStorageTypeAndName(STORAGE_AZURE, files.keySet()).stream()
+    public Map<Long, Integer> processDownloadCounts(String storageType, Map<String, Integer> files) {
+        return Observation.createNotStarted("DownloadCountProcessor#processDownloadCounts", observations).observe(() -> repositories.findDownloadsByStorageTypeAndName(storageType, files.keySet()).stream()
                 .map(fileResource -> Map.entry(fileResource, files.get(fileResource.getName().toUpperCase())))
                 .collect(Collectors.groupingBy(
                         e -> e.getKey().getExtension().getExtension().getId(),
@@ -78,7 +77,7 @@ public class AzureDownloadCountProcessor {
 
     @Transactional
     public List<Extension> increaseDownloadCounts(Map<Long, Integer> extensionDownloads) {
-        return Observation.createNotStarted("AzureDownloadCountProcessor#increaseDownloadCounts", observations).observe(() -> {
+        return Observation.createNotStarted("DownloadCountProcessor#increaseDownloadCounts", observations).observe(() -> {
             var extensions = repositories.findExtensions(extensionDownloads.keySet()).toList();
             extensions.forEach(extension -> {
                 var downloads = extensionDownloads.get(extension.getId());
@@ -89,32 +88,40 @@ public class AzureDownloadCountProcessor {
         });
     }
 
-    @Transactional //needs transaction for lazy-loading versions
-    public void evictCaches(List<Extension> extensions) {
-        Observation.createNotStarted("AzureDownloadCountProcessor#evictCaches", observations).observe(() -> extensions.forEach(extension -> {
-            extension = entityManager.merge(extension);
-            cache.evictExtensionJsons(extension);
-            cache.evictLatestExtensionVersion(extension);
-        }));
+    @Transactional // needs transaction for lazy-loading versions
+    public void evictCaches(Extension extension) {
+        Observation.createNotStarted("DownloadCountProcessor#evictCaches", observations).observe(() -> {
+            var mergedExtension = entityManager.merge(extension);
+            cache.evictExtensionJsons(mergedExtension);
+            cache.evictLatestExtensionVersion(mergedExtension);
+        });
     }
 
     public void updateSearchEntries(List<Extension> extensions) {
-        Observation.createNotStarted("AzureDownloadCountProcessor#updateSearchEntries", observations).observe(() -> {
-            logger.info(">> updateSearchEntries");
+        Observation.createNotStarted("DownloadCountProcessor#updateSearchEntries", observations).observe(() -> {
+            logger.info("[DownloadCountProcessor] >> updateSearchEntries");
             var activeExtensions = extensions.stream()
                     .filter(Extension::isActive)
                     .collect(Collectors.toList());
 
-            logger.info("total active extensions: {}", activeExtensions.size());
+            logger.info("[DownloadCountProcessor] total active extensions: {}", activeExtensions.size());
             var parts = Lists.partition(activeExtensions, 100);
-            logger.info("partitions: {} | partition size: 100", parts.size());
+            logger.info("[DownloadCountProcessor] partitions: {} | partition size: 100", parts.size());
 
             parts.forEach(search::updateSearchEntriesAsync);
-            logger.info("<< updateSearchEntries");
+            logger.info("[DownloadCountProcessor] << updateSearchEntries");
         });
     }
 
-    public List<String> processedItems(List<String> blobNames) {
-        return Observation.createNotStarted("AzureDownloadCountProcessor#processedItems", observations).observe(() -> repositories.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(blobNames));
+    public List<String> processedItems(String storageType, List<String> blobNames) {
+        return Observation.createNotStarted("DownloadCountProcessor#processedItems", observations).observe(() ->
+                repositories.findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(storageType, blobNames)
+        );
+    }
+
+    public List<String> failedItems(String storageType, List<String> blobNames) {
+        return Observation.createNotStarted("DownloadCountProcessor#failedItems", observations).observe(() ->
+                repositories.findAllFailedDownloadCountProcessedItemsByStorageTypeAndNameIn(storageType, blobNames)
+        );
     }
 }

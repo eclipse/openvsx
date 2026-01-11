@@ -199,7 +199,7 @@ services:
       - redisinsight
 
   server:
-    image: openjdk:17
+    image: eclipse-temurin:25-jdk
     working_dir: /app
     command: sh -c 'scripts/generate-properties.sh --docker && ./gradlew assemble && ./gradlew runServer'
     volumes:

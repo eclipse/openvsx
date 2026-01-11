@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -146,6 +147,9 @@ public class TokenService {
             var newToken = new OAuth2AccessToken(TokenType.BEARER, newTokenValue, issuedAt, expiresAt);
             var newRefreshToken = new OAuth2RefreshToken(newRefreshTokenValue, issuedAt);
             return Pair.of(newToken, newRefreshToken);
+        } catch (HttpClientErrorException.BadRequest exc) {
+            // keycloak sends a 400 status response if the refresh call failed
+            logger.warn("Eclipse token could not be refreshed: {}", exc.getMessage());
         } catch (RestClientException exc) {
             logger.error("Post request failed with URL: {}", tokenUri, exc);
         } catch (JsonProcessingException exc) {

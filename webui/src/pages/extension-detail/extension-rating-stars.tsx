@@ -13,12 +13,12 @@ import StarIcon from '@mui/icons-material/Star';
 import StarHalfIcon from '@mui/icons-material/StarHalf';
 import { Box } from '@mui/material';
 
-export interface ExportRatingStarsProps {
+export interface ExtensionRatingStarsProps {
     number: number;
     fontSize?: 'inherit' | 'small' | 'medium' | 'large';
 }
 
-export const ExportRatingStars: FunctionComponent<ExportRatingStarsProps> = props => {
+export const ExtensionRatingStars: FunctionComponent<ExtensionRatingStarsProps> = props => {
     const getStar = (i: number): ReactNode => {
         const starsNumber = props.number;
         const fontSize = props.fontSize ?? 'medium';

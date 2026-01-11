@@ -10,7 +10,10 @@
 
 import * as React from 'react';
 import { ChangeEvent, FunctionComponent, ReactElement, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab, Stack, useTheme, PaletteMode } from '@mui/material';
+import {
+    Typography, Box, Theme, Container, Link, Avatar, Paper, Badge, SxProps, Tabs, Tab, Stack, useTheme, PaletteMode,
+    decomposeColor
+} from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
@@ -21,7 +24,7 @@ import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { HoverPopover } from '../../components/hover-popover';
 import { Extension, UserData, isError } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
-import { ExportRatingStars } from './extension-rating-stars';
+import { ExtensionRatingStars } from './extension-rating-stars';
 import { NamespaceDetailRoutes } from '../namespace-detail/namespace-detail';
 import { ExtensionDetailOverview } from './extension-detail-overview';
 import { ExtensionDetailChanges } from './extension-detail-changes';
@@ -217,8 +220,19 @@ export const ExtensionDetail: FunctionComponent = () => {
     const renderExtension = (extension: Extension): ReactNode => {
         const tab = versionPointsToTab(version) ? version as string : 'overview';
         const themeType = (extension.galleryTheme || pageSettings.themeType) ?? 'light';
-        const headerColor = extension.galleryColor || theme.palette.neutral[themeType] as string;
+        const fallbackColor = theme.palette.neutral[themeType] as string;
+        let headerColor = extension.galleryColor || fallbackColor;
+
+        try {
+            // check if the color string can be decomposed, i.e. if mui understands it, otherwise
+            // fall back to the neutral color of the used palette.
+            decomposeColor(headerColor);
+        } catch (error) {
+            headerColor = fallbackColor;
+        }
+
         const headerTextColor = theme.palette.getContrastText(headerColor);
+
         return <>
             <Box
                 sx={{
@@ -385,7 +399,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                             `Average rating: ${getRoundedRating(extension.averageRating)} out of 5 (${extension.reviewCount} reviews)`
                             : 'Not rated yet'
                     }>
-                    <ExportRatingStars number={extension.averageRating ?? 0} fontSize='small' />
+                    <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='small' />
                     ({reviewCountFormatted})
                 </StyledLink>
                 </Box>

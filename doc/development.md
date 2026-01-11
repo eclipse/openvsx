@@ -82,13 +82,13 @@ To run the Open VSX registry in a development environment, you can use `docker c
 
   - [https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl)
 
-- Set up JDK 17
+- Set up JDK 25
   - sudo apt install -y wget apt-transport-https
   - mkdir -p /etc/apt/keyrings
   - wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
   - echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
   - sudo apt update
-  - sudo apt install temurin-17-jdk
+  - sudo apt install temurin-25-jdk
 
 - Install docker
 
@@ -120,15 +120,15 @@ To run the Open VSX registry in a development environment, you can use `docker c
 
 - Make sure the correct Java version is being used
 
-  - Download Java 17 if you don't have it already: https://adoptium.net/temurin/releases/
+  - Download Java 25 if you don't have it already: https://adoptium.net/temurin/releases/
 
   - Run the command `/usr/libexec/java_home –V` to see your matching Java virtual machines
 
-  - Pick Java 17 accordingly
+  - Pick Java 25 accordingly
 
-  - export JAVA_HOME='/usr/libexec/java_home –v 17.0.7+7'
+  - export JAVA_HOME='/usr/libexec/java_home –v 25.0.1+8'
 
-  - Run `java –version` to check if Java 17 is indeed being used
+  - Run `java –version` to check if Java 25 is indeed being used
 
   - https://stackoverflow.com/questions/21964709/how-to-set-or-change-the-default-java-jdk-version-on-macos
 
@@ -161,6 +161,11 @@ To run the Open VSX registry in a development environment, you can use `docker c
 ### Optional: Deploy example extensions to your local registry
 
 Run:
+
+- in project root (the server application must be running):
+  `./server/scripts/upload-test-extensions.sh`
+
+or
 
 - in `server/`:  
   `gradlew downloadTestExtensions` to download vsix files from the official store and from Github.

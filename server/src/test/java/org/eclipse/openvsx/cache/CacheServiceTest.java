@@ -22,6 +22,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -69,6 +70,13 @@ class CacheServiceTest {
 
     @Autowired
     RepositoryService repositories;
+
+    @BeforeEach
+    public void clearCaches() {
+        for (var name : cache.getCacheNames()) {
+            cache.getCache(name).clear();
+        }
+    }
 
     @Test
     @Transactional

@@ -9,9 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import com.google.common.io.ByteStreams;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
@@ -56,6 +58,9 @@ public class ExtensionService {
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
+
+    @Value("${ovsx.publishing.max-content-size:" + MAX_CONTENT_SIZE + "}")
+    int maxContentSize;
 
     public ExtensionService(
             EntityManager entityManager,
@@ -107,17 +112,19 @@ public class ExtensionService {
     }
 
     private TempFile createExtensionFile(InputStream content) {
-        try (var input = new BufferedInputStream(content)) {
-            input.mark(0);
-            var skipped = input.skip(MAX_CONTENT_SIZE  + 1);
-            if (skipped > MAX_CONTENT_SIZE) {
-                throw new ErrorResultException("The extension package exceeds the size limit of 512 MB.", HttpStatus.PAYLOAD_TOO_LARGE);
-            }
-
+        try (var input = ByteStreams.limit(new BufferedInputStream(content), maxContentSize + 1)) {
+            long size;
             var extensionFile = new TempFile("extension_", ".vsix");
             try(var out = Files.newOutputStream(extensionFile.getPath())) {
-                input.reset();
-                input.transferTo(out);
+                size = input.transferTo(out);
+            }
+
+            if (size > maxContentSize) {
+                try {
+                    extensionFile.close();
+                } catch (IOException _) {}
+                var maxSize = FileUtils.byteCountToDisplaySize(maxContentSize);
+                throw new ErrorResultException("The extension package exceeds the size limit of " + maxSize + ".", HttpStatus.PAYLOAD_TOO_LARGE);
             }
 
             return extensionFile;

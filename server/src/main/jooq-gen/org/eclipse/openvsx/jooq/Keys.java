@@ -11,7 +11,7 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostActivePublishingUse
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtensions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
-import org.eclipse.openvsx.jooq.tables.AzureDownloadCountProcessedItem;
+import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
@@ -28,7 +28,6 @@ import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
-import org.eclipse.openvsx.jooq.tables.Shedlock;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
@@ -40,7 +39,7 @@ import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopMostActivePubli
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopMostDownloadedExtensionsRecord;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopNamespaceExtensionVersionsRecord;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopNamespaceExtensionsRecord;
-import org.eclipse.openvsx.jooq.tables.records.AzureDownloadCountProcessedItemRecord;
+import org.eclipse.openvsx.jooq.tables.records.DownloadCountProcessedItemRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionReviewRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionVersionRecord;
@@ -57,7 +56,6 @@ import org.eclipse.openvsx.jooq.tables.records.NamespaceRecord;
 import org.eclipse.openvsx.jooq.tables.records.NamespaceSocialLinksRecord;
 import org.eclipse.openvsx.jooq.tables.records.PersistedLogRecord;
 import org.eclipse.openvsx.jooq.tables.records.PersonalAccessTokenRecord;
-import org.eclipse.openvsx.jooq.tables.records.ShedlockRecord;
 import org.eclipse.openvsx.jooq.tables.records.SignatureKeyPairRecord;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionAttributesRecord;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionRecord;
@@ -73,7 +71,7 @@ import org.jooq.impl.Internal;
  * A class modelling foreign key relationships and constraints of tables in
  * public.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Keys {
 
     // -------------------------------------------------------------------------
@@ -81,7 +79,7 @@ public class Keys {
     // -------------------------------------------------------------------------
 
     public static final UniqueKey<AdminStatisticsRecord> ADMIN_STATISTICS_PKEY = Internal.createUniqueKey(AdminStatistics.ADMIN_STATISTICS, DSL.name("admin_statistics_pkey"), new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
-    public static final UniqueKey<AzureDownloadCountProcessedItemRecord> AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM_PKEY = Internal.createUniqueKey(AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM, DSL.name("azure_download_count_processed_item_pkey"), new TableField[] { AzureDownloadCountProcessedItem.AZURE_DOWNLOAD_COUNT_PROCESSED_ITEM.ID }, true);
+    public static final UniqueKey<DownloadCountProcessedItemRecord> DOWNLOAD_COUNT_PROCESSED_ITEM_PKEY = Internal.createUniqueKey(DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM, DSL.name("download_count_processed_item_pkey"), new TableField[] { DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM.ID }, true);
     public static final UniqueKey<ExtensionRecord> EXTENSION_PKEY = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("extension_pkey"), new TableField[] { Extension.EXTENSION.ID }, true);
     public static final UniqueKey<ExtensionRecord> UNIQUE_EXTENSION_PUBLIC_ID = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("unique_extension_public_id"), new TableField[] { Extension.EXTENSION.PUBLIC_ID }, true);
     public static final UniqueKey<ExtensionReviewRecord> EXTENSION_REVIEW_PKEY = Internal.createUniqueKey(ExtensionReview.EXTENSION_REVIEW, DSL.name("extension_review_pkey"), new TableField[] { ExtensionReview.EXTENSION_REVIEW.ID }, true);
@@ -102,7 +100,6 @@ public class Keys {
     public static final UniqueKey<PersistedLogRecord> PERSISTED_LOG_PKEY = Internal.createUniqueKey(PersistedLog.PERSISTED_LOG, DSL.name("persisted_log_pkey"), new TableField[] { PersistedLog.PERSISTED_LOG.ID }, true);
     public static final UniqueKey<PersonalAccessTokenRecord> PERSONAL_ACCESS_TOKEN_PKEY = Internal.createUniqueKey(PersonalAccessToken.PERSONAL_ACCESS_TOKEN, DSL.name("personal_access_token_pkey"), new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.ID }, true);
     public static final UniqueKey<PersonalAccessTokenRecord> UKJEUD5MSSQBQKID58RD2K1INOF = Internal.createUniqueKey(PersonalAccessToken.PERSONAL_ACCESS_TOKEN, DSL.name("ukjeud5mssqbqkid58rd2k1inof"), new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.VALUE }, true);
-    public static final UniqueKey<ShedlockRecord> SHEDLOCK_PKEY = Internal.createUniqueKey(Shedlock.SHEDLOCK, DSL.name("shedlock_pkey"), new TableField[] { Shedlock.SHEDLOCK.NAME }, true);
     public static final UniqueKey<SignatureKeyPairRecord> SIGNATURE_KEY_PAIR_PKEY = Internal.createUniqueKey(SignatureKeyPair.SIGNATURE_KEY_PAIR, DSL.name("signature_key_pair_pkey"), new TableField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.ID }, true);
     public static final UniqueKey<SignatureKeyPairRecord> SIGNATURE_KEY_PAIR_UNIQUE_PUBLIC_ID = Internal.createUniqueKey(SignatureKeyPair.SIGNATURE_KEY_PAIR, DSL.name("signature_key_pair_unique_public_id"), new TableField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.PUBLIC_ID }, true);
     public static final UniqueKey<SpringSessionRecord> SPRING_SESSION_PK = Internal.createUniqueKey(SpringSession.SPRING_SESSION, DSL.name("spring_session_pk"), new TableField[] { SpringSession.SPRING_SESSION.PRIMARY_ID }, true);
