@@ -335,6 +335,54 @@ public class AdminAPI {
         }
     }
 
+    @PostMapping(
+        path = "/admin/api/namespace/{namespaceName}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Delete a namespace")
+    @ApiResponse(
+            responseCode = "200",
+            description = "A success message is returned in JSON format",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "An error message is returned in JSON format",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Namespace not found",
+            content = @Content()
+    )
+    public ResponseEntity<ResultJson> deleteNamespace(
+            @PathVariable @Parameter(description = "Namespace name", example = "my-namespace") String namespaceName,
+            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser(tokenValue);
+            var result = admins.deleteNamespace(namespaceName, adminUser);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
+        path = "/admin/namespace/{namespaceName}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> deleteNamespace(@PathVariable String namespaceName) {
+        try {
+            var adminUser = admins.checkAdminUser();
+            var result = admins.deleteNamespace(namespaceName, adminUser);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
     @GetMapping(
         path = "/admin/api/namespace/{namespaceName}/members",
         produces = MediaType.APPLICATION_JSON_VALUE

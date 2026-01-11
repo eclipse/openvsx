@@ -550,6 +550,202 @@ class AdminAPITest {
     }
 
     @Test
+    void testDeleteNamespaceNotLoggedIn() throws Exception {
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "foobar")
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteNamespaceNotAdmin() throws Exception {
+        mockNormalUser();
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "foobar")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteNamespace() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Streamable.empty());
+
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace: foobar")));
+    }
+
+    @Test
+    void testDeleteNamespaceNotFound() throws Exception {
+        mockAdminUser();
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(null);
+
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(errorJson("Namespace not found: foobar")));
+    }
+
+    @Test
+    void testDeleteNamespaceWithExtensions() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        var extension = new Extension();
+        extension.setName("test-extension");
+        extension.setNamespace(namespace);
+        
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension));
+
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Cannot delete namespace 'foobar' because it contains 1 extension. Please delete all extensions first or use the change namespace feature to move them.")));
+    }
+
+    @Test
+    void testDeleteNamespaceWithMultipleExtensions() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        var extension1 = new Extension();
+        extension1.setName("test-extension-1");
+        extension1.setNamespace(namespace);
+        var extension2 = new Extension();
+        extension2.setName("test-extension-2");
+        extension2.setNamespace(namespace);
+        var extension3 = new Extension();
+        extension3.setName("test-extension-3");
+        extension3.setNamespace(namespace);
+        
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension1, extension2, extension3));
+
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Cannot delete namespace 'foobar' because it contains 3 extensions. Please delete all extensions first or use the change namespace feature to move them.")));
+    }
+
+    @Test
+    void testDeleteNamespaceWithMemberships() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        var user1 = new UserData();
+        user1.setLoginName("user1");
+        var user2 = new UserData();
+        user2.setLoginName("user2");
+        
+        var membership1 = new NamespaceMembership();
+        membership1.setNamespace(namespace);
+        membership1.setUser(user1);
+        membership1.setRole(NamespaceMembership.ROLE_OWNER);
+        
+        var membership2 = new NamespaceMembership();
+        membership2.setNamespace(namespace);
+        membership2.setUser(user2);
+        membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+        
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Streamable.of(membership1, membership2));
+
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace: foobar")));
+        
+        Mockito.verify(entityManager).remove(membership1);
+        Mockito.verify(entityManager).remove(membership2);
+        Mockito.verify(entityManager).remove(namespace);
+    }
+
+    @Test
+    void testDeleteNamespaceWithTokenAuthentication() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        var token = mockAccessToken();
+        
+        Mockito.when(repositories.findNamespace("foobar"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Streamable.empty());
+
+        mockMvc.perform(post("/admin/api/namespace/{namespace}/delete?token={token}", "foobar", token.getValue())
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace: foobar")));
+    }
+
+    @Test
+    void testDeleteNamespaceWithInvalidToken() throws Exception {
+        mockMvc.perform(post("/admin/api/namespace/{namespace}/delete?token={token}", "foobar", "invalid-token")
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteNamespaceSpecialCharacters() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        namespace.setName("my-special-namespace_123");
+        
+        Mockito.when(repositories.findNamespace("my-special-namespace_123"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Streamable.empty());
+
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "my-special-namespace_123")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace: my-special-namespace_123")));
+    }
+
+    @Test
+    void testDeleteNamespaceCaseInsensitive() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        namespace.setName("FooBar");
+        
+        Mockito.when(repositories.findNamespace("FooBar"))
+                .thenReturn(namespace);
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Streamable.empty());
+
+        mockMvc.perform(post("/admin/namespace/{namespace}/delete", "FooBar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace: FooBar")));
+    }
+
+    @Test
     void testGetUserPublishInfoNotLoggedIn() throws Exception {
         mockNamespace();
         mockMvc.perform(get("/admin/publisher/{provider}/{loginName}", "github", "test")

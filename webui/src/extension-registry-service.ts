@@ -466,6 +466,7 @@ export interface AdminService {
     deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>>
     getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>>
     createNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
+    deleteNamespace(abortController: AbortController, namespaceName: string): Promise<Readonly<SuccessResult | ErrorResult>>
     changeNamespace(abortController: AbortController, req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>>
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
     revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
@@ -531,6 +532,22 @@ export class AdminServiceImpl implements AdminService {
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'create-namespace']),
             method: 'POST',
             payload: namespace,
+            headers
+        });
+    }
+
+    async deleteNamespace(abortController: AbortController, namespaceName: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'namespace', namespaceName, 'delete']),
+            method: 'POST',
             headers
         });
     }

@@ -79,12 +79,18 @@ export const NamespaceAdmin: FunctionComponent = props => {
 
     let listContainer: ReactNode = '';
     if (currentNamespace && pageSettings && user) {
+        const handleNamespaceDeleted = () => {
+            setCurrentNamespace(undefined);
+            setInputValue('');
+        };
+
         listContainer = <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
             <NamespaceDetail
                 setLoadingState={setLoading}
                 namespace={currentNamespace}
                 filterUsers={() => true}
                 fixSelf={false}
+                onNamespaceDeleted={handleNamespaceDeleted}
             />
         </NamespaceDetailConfigContext.Provider>;
     } else if (notFound) {

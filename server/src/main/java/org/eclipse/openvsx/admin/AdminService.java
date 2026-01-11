@@ -332,6 +332,42 @@ public class AdminService {
 
         scheduler.enqueue(new ChangeNamespaceJobRequest(json));
     }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteNamespace(String namespaceName, UserData admin) throws ErrorResultException {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new ErrorResultException("Namespace not found: " + namespaceName, HttpStatus.NOT_FOUND);
+        }
+
+        // Check if namespace has any extensions
+        var extensions = repositories.findExtensions(namespace);
+        if (!extensions.isEmpty()) {
+            var extensionCount = extensions.stream().count();
+            throw new ErrorResultException(
+                "Cannot delete namespace '" + namespaceName + "' because it contains " + 
+                extensionCount + " extension" + (extensionCount > 1 ? "s" : "") + ". " +
+                "Please delete all extensions first or use the change namespace feature to move them."
+            );
+        }
+
+        // Delete all namespace memberships
+        var memberships = repositories.findMemberships(namespace);
+        for (var membership : memberships) {
+            entityManager.remove(membership);
+        }
+
+        // Delete the namespace
+        entityManager.remove(namespace);
+
+        // Clear caches
+        cache.evictNamespaceDetails(namespace);
+        cache.evictSitemap();
+
+        var result = ResultJson.success("Deleted namespace: " + namespaceName);
+        logAdminAction(admin, result);
+        return result;
+    }
     
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
         var user = repositories.findUserByLoginName(provider, loginName);
