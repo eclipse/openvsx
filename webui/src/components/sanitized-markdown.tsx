@@ -76,6 +76,61 @@ const Markdown = styled('div')(({ theme }: { theme: Theme }) => ({
             textAlign: 'start',
             background: theme.palette.neutral.dark
         }
+    },
+    '& .markdown-alert': {
+        padding: '8px 16px',
+        marginBottom: 16,
+        borderLeft: '4px solid',
+        borderRadius: 4,
+        '& .markdown-alert-title': {
+            display: 'flex',
+            alignItems: 'center',
+            fontWeight: 600,
+            marginBottom: 4,
+            '& svg': {
+                marginRight: 8,
+                width: 16,
+                height: 16
+            }
+        },
+        '& p': {
+            margin: 0
+        }
+    },
+    '& .markdown-alert-note': {
+        borderColor: '#2f81f7',
+        backgroundColor: 'rgba(47, 129, 247, 0.1)',
+        '& .markdown-alert-title': {
+            color: '#2f81f7'
+        }
+    },
+    '& .markdown-alert-tip': {
+        borderColor: '#3fb950',
+        backgroundColor: 'rgba(63, 185, 80, 0.1)',
+        '& .markdown-alert-title': {
+            color: '#3fb950'
+        }
+    },
+    '& .markdown-alert-important': {
+        borderColor: '#a371f7',
+        backgroundColor: 'rgba(163, 113, 247, 0.1)',
+        '& .markdown-alert-title': {
+            color: '#a371f7'
+        }
+    },
+    '& .markdown-alert-warning': {
+        borderColor: '#d29922',
+        backgroundColor: 'rgba(210, 153, 34, 0.1)',
+        '& .markdown-alert-title': {
+            color: '#d29922'
+        }
+    },
+    '& .markdown-alert-caution': {
+        borderColor: '#f85149',
+        backgroundColor: 'rgba(248, 81, 73, 0.1)',
+        '& .markdown-alert-title': {
+            color: '#f85149'
+        }
     }
 }));
 
