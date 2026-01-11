@@ -9,8 +9,9 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useEffect } from 'react';
-import * as MarkdownIt from 'markdown-it';
+import MarkdownIt from 'markdown-it';
 import * as MarkdownItAnchor from 'markdown-it-anchor';
+import { alert } from '@mdit/plugin-alert';
 import DOMPurify from 'dompurify';
 import { Theme, styled } from '@mui/material/styles';
 import linkIcon from './link-icon';
@@ -85,6 +86,9 @@ export const SanitizedMarkdown: FunctionComponent<SanitizedMarkdownProps> = ({ c
         linkify: true,
         typographer: true
     });
+
+    markdownIt.use(alert);
+
     if (linkify === undefined || linkify) {
         const anchor = MarkdownItAnchor.default;
         markdownIt.use(anchor, {
