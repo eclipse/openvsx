@@ -624,34 +624,40 @@ export class AdminServiceImpl implements AdminService {
     }
 
     getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; adminDecision?: string[] }): Promise<Readonly<ScanResultsResponse>> {
-        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans']));
+        const query: { key: string, value: string | number }[] = [];
         if (params) {
-            if (params.size !== undefined) url.searchParams.set('size', params.size.toString());
-            if (params.offset !== undefined) url.searchParams.set('offset', params.offset.toString());
+            if (params.size !== undefined)
+                query.push({ key: 'size', value: params.size });
+            if (params.offset !== undefined)
+                query.push({ key: 'offset', value: params.offset });
             if (params.status) {
                 const statusValue = Array.isArray(params.status) ? params.status.join(',') : params.status;
-                url.searchParams.set('status', statusValue);
+                query.push({ key: 'status', value: statusValue });
             }
-            if (params.publisher) url.searchParams.set('publisher', params.publisher);
-            if (params.namespace) url.searchParams.set('namespace', params.namespace);
-            if (params.name) url.searchParams.set('name', params.name);
-            if (params.validationType && params.validationType.length > 0) {
-                url.searchParams.set('validationType', params.validationType.join(','));
-            }
-            if (params.threatScannerName && params.threatScannerName.length > 0) {
-                url.searchParams.set('threatScannerName', params.threatScannerName.join(','));
-            }
-            if (params.dateStartedFrom) url.searchParams.set('dateStartedFrom', params.dateStartedFrom);
-            if (params.dateStartedTo) url.searchParams.set('dateStartedTo', params.dateStartedTo);
-            if (params.enforcement) url.searchParams.set('enforcement', params.enforcement);
-            if (params.adminDecision && params.adminDecision.length > 0) {
-                url.searchParams.set('adminDecision', params.adminDecision.join(','));
-            }
+            if (params.publisher)
+                query.push({ key: 'publisher', value: params.publisher });
+            if (params.namespace)
+                query.push({ key: 'namespace', value: params.namespace });
+            if (params.name)
+                query.push({ key: 'name', value: params.name });
+            if (params.validationType && params.validationType.length > 0)
+                query.push({ key: 'validationType', value: params.validationType.join(',') });
+            if (params.threatScannerName && params.threatScannerName.length > 0)
+                query.push({ key: 'threatScannerName', value: params.threatScannerName.join(',') });
+            if (params.dateStartedFrom)
+                query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
+            if (params.dateStartedTo)
+                query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
+            if (params.enforcement)
+                query.push({ key: 'enforcement', value: params.enforcement });
+            if (params.adminDecision && params.adminDecision.length > 0)
+                query.push({ key: 'adminDecision', value: params.adminDecision.join(',') });
         }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans'], query);
         return sendRequest({
             abortController,
             credentials: true,
-            endpoint: url.toString()
+            endpoint
         });
     }
 
@@ -659,27 +665,31 @@ export class AdminServiceImpl implements AdminService {
         return sendRequest({
             abortController,
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', scanId])
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', scanId])
         });
     }
 
     getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>> {
-        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', 'counts']));
+        const query: { key: string, value: string | number }[] = [];
         if (params) {
-            if (params.dateStartedFrom) url.searchParams.set('dateStartedFrom', params.dateStartedFrom);
-            if (params.dateStartedTo) url.searchParams.set('dateStartedTo', params.dateStartedTo);
-            if (params.enforcement) url.searchParams.set('enforcement', params.enforcement);
+            if (params.dateStartedFrom)
+                query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
+            if (params.dateStartedTo)
+                query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
+            if (params.enforcement)
+                query.push({ key: 'enforcement', value: params.enforcement });
             if (params.threatScannerName && params.threatScannerName.length > 0) {
-                url.searchParams.set('threatScannerName', params.threatScannerName.join(','));
+                query.push({ key: 'threatScannerName', value: params.threatScannerName.join(',') });
             }
             if (params.validationType && params.validationType.length > 0) {
-                url.searchParams.set('validationType', params.validationType.join(','));
+                query.push({ key: 'validationType', value: params.validationType.join(',') });
             }
         }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'counts'], query);
         return sendRequest({
             abortController,
             credentials: true,
-            endpoint: url.toString()
+            endpoint
         });
     }
 
@@ -687,41 +697,55 @@ export class AdminServiceImpl implements AdminService {
         return sendRequest({
             abortController,
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', 'filterOptions'])
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'filterOptions'])
         });
     }
 
     getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>> {
-        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files']));
+        const query: { key: string, value: string | number }[] = [];
         if (params) {
-            if (params.size !== undefined) url.searchParams.set('size', String(params.size));
-            if (params.offset !== undefined) url.searchParams.set('offset', String(params.offset));
-            if (params.decision) url.searchParams.set('decision', params.decision);
-            if (params.publisher) url.searchParams.set('publisher', params.publisher);
-            if (params.namespace) url.searchParams.set('namespace', params.namespace);
-            if (params.name) url.searchParams.set('name', params.name);
-            if (params.dateDecidedFrom) url.searchParams.set('dateDecidedFrom', params.dateDecidedFrom);
-            if (params.dateDecidedTo) url.searchParams.set('dateDecidedTo', params.dateDecidedTo);
-            if (params.sortBy) url.searchParams.set('sortBy', params.sortBy);
-            if (params.sortOrder) url.searchParams.set('sortOrder', params.sortOrder);
+            if (params.size !== undefined)
+                query.push({ key: 'size', value: params.size });
+            if (params.offset !== undefined)
+                query.push({ key: 'offset', value: params.offset });
+            if (params.decision)
+                query.push({ key: 'decision', value: params.decision });
+            if (params.publisher)
+                query.push({ key: 'publisher', value: params.publisher });
+            if (params.namespace)
+                query.push({ key: 'namespace', value: params.namespace });
+            if (params.name)
+                query.push({ key: 'name', value: params.name });
+            if (params.dateDecidedFrom)
+                query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
+            if (params.dateDecidedTo)
+                query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
+            if (params.sortBy)
+                query.push({ key: 'sortBy', value: params.sortBy });
+            if (params.sortOrder)
+                query.push({ key: 'sortOrder', value: params.sortOrder });
         }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files'], query);
         return sendRequest({
             abortController,
             credentials: true,
-            endpoint: url.toString()
+            endpoint
         });
     }
 
     getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>> {
-        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files', 'counts']));
+        const query: { key: string, value: string | number }[] = [];
         if (params) {
-            if (params.dateDecidedFrom) url.searchParams.set('dateDecidedFrom', params.dateDecidedFrom);
-            if (params.dateDecidedTo) url.searchParams.set('dateDecidedTo', params.dateDecidedTo);
+            if (params.dateDecidedFrom)
+                query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
+            if (params.dateDecidedTo)
+                query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
         }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'counts'], query);
         return sendRequest({
             abortController,
             credentials: true,
-            endpoint: url.toString()
+            endpoint
         });
     }
 
@@ -739,7 +763,7 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             method: 'POST',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', 'decisions']),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'decisions']),
             headers,
             payload: request
         });
@@ -759,7 +783,7 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             method: 'POST',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files', 'decisions']),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'decisions']),
             headers,
             payload: request
         });
@@ -779,7 +803,7 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             method: 'DELETE',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files', 'decisions']),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'decisions']),
             headers,
             payload: request
         });
