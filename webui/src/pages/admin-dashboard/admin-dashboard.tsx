@@ -23,6 +23,8 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { Welcome } from './welcome';
 import { PublisherAdmin } from './publisher-admin';
 import PersonIcon from '@mui/icons-material/Person';
+import { ScanAdmin } from './scan-admin';
+import SecurityIcon from '@mui/icons-material/Security';
 
 export namespace AdminDashboardRoutes {
     export const ROOT = 'admin-dashboard';
@@ -30,6 +32,7 @@ export namespace AdminDashboardRoutes {
     export const NAMESPACE_ADMIN = createRoute([ROOT, 'namespaces']);
     export const EXTENSION_ADMIN = createRoute([ROOT, 'extensions']);
     export const PUBLISHER_ADMIN = createRoute([ROOT, 'publisher']);
+    export const SCANS_ADMIN = createRoute([ROOT, 'scans']);
 }
 
 const Message: FunctionComponent<{message: string}> = ({ message }) => {
@@ -59,16 +62,37 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' icon={<AssignmentIndIcon />} route={AdminDashboardRoutes.NAMESPACE_ADMIN} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' icon={<ExtensionSharpIcon />} route={AdminDashboardRoutes.EXTENSION_ADMIN} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' icon={<PersonIcon />} route={AdminDashboardRoutes.PUBLISHER_ADMIN} />
+                <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.SCANS_ADMIN} label='Scans' icon={<SecurityIcon />} route={AdminDashboardRoutes.SCANS_ADMIN} />
             </Sidepanel>
-            <Box overflow='auto' flex={1}>
+            <Box
+                overflow='auto'
+                flex={1}
+                sx={{
+                    overflowY: 'scroll',
+                    '&::-webkit-scrollbar': {
+                        width: '12px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '6px',
+                        '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                        },
+                    },
+                }}
+            >
                 <IconButton onClick={toMainPage} sx={{ float: 'right', mt: 1, mr: 1 }}>
                     <HighlightOffIcon/>
                 </IconButton>
-                <Container sx={{ pt: 8, height: '100%' }} maxWidth='lg'>
+                <Container sx={{ pt: 4, pb: 4, px: 3, height: '100%' }} maxWidth='xl'>
                     <Routes>
                         <Route path='/namespaces' element={<NamespaceAdmin/>} />
                         <Route path='/extensions' element={<ExtensionAdmin/>} />
                         <Route path='/publisher' element={<PublisherAdmin/>} />
+                        <Route path='/scans' element={<ScanAdmin/>} />
                         <Route path='*' element={<Welcome/>} />
                     </Routes>
                 </Container>

@@ -18,6 +18,8 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ValidationCheck;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -27,9 +29,13 @@ import java.util.List;
  * Central entry point for enforcing similarity rules with configuration-based policy.
  *
  * This service reads {@link SimilarityConfig} and applies all policy decisions.
+ * Implements ValidationCheck to be auto-discovered by ExtensionScanService.
  */
 @Service
-public class SimilarityCheckService {
+@ConditionalOnProperty(name = "ovsx.similarity.enabled", havingValue = "true")
+public class SimilarityCheckService implements ValidationCheck {
+
+    public static final String CHECK_TYPE = "NAME_SQUATTING";
 
     private static final int LIMIT = 10;
 
@@ -47,11 +53,65 @@ public class SimilarityCheckService {
         this.repositories = repositories;
     }
 
-    /**
-     * Returns whether similarity checking is enabled.
-     */
+    @Override
     public boolean isEnabled() {
         return config.isEnabled();
+    }
+
+    @Override
+    public boolean isEnforced() {
+        return config.isEnforced();
+    }
+
+    @Override
+    public String getCheckType() {
+        return CHECK_TYPE;
+    }
+
+    @Override
+    public ValidationCheck.Result check(ValidationCheck.Context context) {
+        var scan = context.scan();
+        var namespaceName = scan.getNamespaceName();
+        var extensionName = scan.getExtensionName();
+        var displayName = scan.getExtensionDisplayName();
+
+        if (config.isNewExtensionsOnly() && repositories.countVersions(namespaceName, extensionName) > 1) {
+            return ValidationCheck.Result.pass();
+        }
+
+        if (config.isSkipVerifiedPublishers()) {
+            var namespace = repositories.findNamespace(namespaceName);
+            if (namespace != null && repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER)) {
+                return ValidationCheck.Result.pass();
+            }
+        }
+
+        var similarExtensions = findSimilarExtensionsForPublishing(
+            extensionName,
+            namespaceName,
+            displayName,
+            context.user()
+        );
+
+        if (similarExtensions.isEmpty()) {
+            return ValidationCheck.Result.pass();
+        }
+
+        var similarExt = similarExtensions.get(0);
+        var latestVersion = repositories.findLatestVersion(similarExt, null, false, true);
+        String similarDisplayName = latestVersion != null ? latestVersion.getDisplayName() : null;
+
+        var reason = String.format(
+            "Extension '%s.%s' (display name: '%s') is too similar to existing extension '%s.%s' (display name: '%s')",
+            namespaceName,
+            extensionName,
+            displayName,
+            similarExt.getNamespace().getName(),
+            similarExt.getName(),
+            similarDisplayName != null ? similarDisplayName : ""
+        );
+
+        return ValidationCheck.Result.fail("Levenshtein Distance", reason);
     }
 
     /**
@@ -64,19 +124,6 @@ public class SimilarityCheckService {
             @Nullable String displayName,
             @NotNull UserData publishingUser
     ) {
-        if (config.isNewExtensionsOnly() && namespaceName != null && extensionName != null) {
-            if (repositories.countVersions(namespaceName, extensionName) > 0) {
-                return List.of();
-            }
-        }
-
-        if (config.isSkipVerifiedPublishers() && namespaceName != null) {
-            var namespace = repositories.findNamespace(namespaceName);
-            if (namespace != null && repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER)) {
-                return List.of();
-            }
-        }
-
         return similarityService.findSimilarExtensions(
             extensionName,
             namespaceName,

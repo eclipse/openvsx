@@ -18,6 +18,7 @@ import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -44,8 +45,11 @@ import java.util.stream.Collectors;
  * - ovsx.secret-scanning.enabled: Must be true to generate rules
  * - ovsx.secret-scanning.auto-generate-rules: Enable automatic generation (default: false)
  * - ovsx.secret-scanning.force-regenerate-rules: Force regeneration even if file exists (default: false)
+ * 
+ * Only loaded when auto-generate-rules is enabled via configuration.
  */
 @Component
+@ConditionalOnProperty(name = "ovsx.secret-scanning.auto-generate-rules", havingValue = "true")
 public class GitleaksRulesGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(GitleaksRulesGenerator.class);
@@ -89,7 +93,6 @@ public class GitleaksRulesGenerator {
     public void generateRulesIfNeeded() {
         // Skip if auto-generation is disabled
         if (!config.isAutoGenerateRules()) {
-            logger.info("Auto-generation of secret rules is disabled");
             return;
         }
 
@@ -110,10 +113,6 @@ public class GitleaksRulesGenerator {
                 return;
             }
 
-            // Generate rules
-            String action = outputFile.exists() ? "Regenerating" : "Generating";
-            logger.info("{} secret scanning rules from gitleaks.toml...", action);
-            
             generateRules(outputFile.toPath());
             
             // Verify the file was created successfully
@@ -144,7 +143,7 @@ public class GitleaksRulesGenerator {
      */
     private void generateRules(Path outputPath) throws IOException, InterruptedException {
         // Download TOML
-        logger.info("Downloading gitleaks.toml from: {}", GITLEAKS_URL);
+        logger.debug("Downloading gitleaks.toml from: {}", GITLEAKS_URL);
         String tomlContent = downloadGitleaksToml();
         
         GitleaksToml parsed = parseTomlWithJackson(tomlContent);
@@ -157,7 +156,6 @@ public class GitleaksRulesGenerator {
         configDto.rules = rules;
         configDto.allowlist = allowlist;
         
-        logger.info("Writing YAML to: {}", outputPath);
         writeYaml(configDto, outputPath);
     }
 
@@ -207,7 +205,7 @@ public class GitleaksRulesGenerator {
         for (RawRule raw : rawRules) {
             // Skip rules known to cause false positives
             if (raw.id != null && SKIP_RULE_IDS.contains(raw.id)) {
-                logger.info("Skipping rule: {} (known to cause false positives)", raw.id);
+                logger.debug("Skipping rule: {} (known to cause false positives)", raw.id);
                 skipped++;
                 continue;
             }
@@ -404,7 +402,7 @@ public class GitleaksRulesGenerator {
         if (parentDir != null && !parentDir.exists()) {
             try {
                 Files.createDirectories(parentDir.toPath());
-                logger.info("Created directory for generated rules: {}", parentDir.getAbsolutePath());
+                logger.debug("Created directory for generated rules: {}", parentDir.getAbsolutePath());
             } catch (IOException e) {
                 throw new IllegalStateException(
                     "Cannot create directory for generated rules: " + parentDir.getAbsolutePath() + 
@@ -419,7 +417,7 @@ public class GitleaksRulesGenerator {
                 ". Check file permissions.");
         }
         
-        logger.info("Using configured path for generated rules: {}", outputFile.getAbsolutePath());
+        logger.debug("Using configured path for generated rules: {}", outputFile.getAbsolutePath());
         return outputFile;
     }
 
