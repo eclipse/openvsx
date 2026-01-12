@@ -22,7 +22,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.scanning.SecretScanningService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class ExtensionService {
-
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
 
     private final EntityManager entityManager;
@@ -56,7 +55,7 @@ public class ExtensionService {
     private final CacheService cache;
     private final PublishExtensionVersionHandler publishHandler;
     private final JobRequestScheduler scheduler;
-    private final SecretScanningService secretScanningService;
+    private final ExtensionScanService scanService;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
@@ -71,7 +70,7 @@ public class ExtensionService {
             CacheService cache,
             PublishExtensionVersionHandler publishHandler,
             JobRequestScheduler scheduler,
-            SecretScanningService secretScanningService
+            ExtensionScanService scanService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -79,7 +78,7 @@ public class ExtensionService {
         this.cache = cache;
         this.publishHandler = publishHandler;
         this.scheduler = scheduler;
-        this.secretScanningService = secretScanningService;
+        this.scanService = scanService;
     }
 
     @Transactional
@@ -90,43 +89,50 @@ public class ExtensionService {
     }
 
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) throws ErrorResultException {
+        if (scanService.isEnabled()) {
+            return publishVersionWithScan(content, token);
+        } else {
+            var extensionFile = createExtensionFile(content);
+            doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+            publishHandler.publishAsync(extensionFile, this);
+            var download = extensionFile.getResource();
+            publishHandler.schedulePublicIdJob(download);
+            return download.getExtension();
+        }
+    }
+
+    private ExtensionVersion publishVersionWithScan(InputStream content, PersonalAccessToken token) throws ErrorResultException {
         var extensionFile = createExtensionFile(content);
-        doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-        publishHandler.publishAsync(extensionFile, this);
-        var download = extensionFile.getResource();
-        publishHandler.schedulePublicIdJob(download);
-        return download.getExtension();
+        ExtensionScan scan = null;
+        
+        try (var processor = new ExtensionProcessor(extensionFile)) {
+            scan = scanService.initializeScan(processor, token.getUser());
+
+            scanService.runValidation(scan, extensionFile, token.getUser());
+
+            doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+
+            scanService.runScan(scan, extensionFile, token.getUser());
+            
+            publishHandler.publishAsync(extensionFile, this, scan);
+            var download = extensionFile.getResource();
+            publishHandler.schedulePublicIdJob(extensionFile.getResource());
+            return download.getExtension();
+        } catch (ErrorResultException e) {
+            // ErrorResultException is thrown by doPublish when the extension is not valid, so we can remove the scan
+            if (scan != null && !scan.isCompleted()) {
+                scanService.removeScan(scan);
+            }
+            throw e;
+        }  catch (Exception e) {
+            if (scan != null && !scan.isCompleted()) {
+                scanService.markScanAsErrored(scan, "Unexpected error: " + e.getMessage());
+            }
+            throw e;
+        }
     }
 
     private void doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
-        // Scan for secrets before processing the extension
-        // This fails fast if secrets are detected, preventing publication
-        if (secretScanningService.isEnabled()) {
-            var scanResult = secretScanningService.scanForSecrets(extensionFile);
-            if (scanResult.isSecretsFound()) {
-                var findings = scanResult.getFindings();
-                var errorMessage = new StringBuilder();
-                errorMessage.append("Extension publication blocked: potential secrets detected in the package.\n\n");
-                errorMessage.append("The following potential secrets were found:\n");
-                
-                int maxFindings = Math.min(5, findings.size());
-                for (int i = 0; i < maxFindings; i++) {
-                    errorMessage.append("  ").append(i + 1).append(". ").append(findings.get(i).toString()).append("\n");
-                }
-                
-                if (findings.size() > maxFindings) {
-                    errorMessage.append("  ... and ").append(findings.size() - maxFindings).append(" more\n");
-                }
-                
-                errorMessage.append("\nPlease remove these secrets before publishing. ");
-                errorMessage.append("Consider using environment variables or configuration files that are not included in the package. ");
-                
-                errorMessage.append("Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions");
-                
-                throw new ErrorResultException(errorMessage.toString());
-            }
-        }
-        
         try (var processor = new ExtensionProcessor(extensionFile)) {
             var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
             if (requireLicense) {

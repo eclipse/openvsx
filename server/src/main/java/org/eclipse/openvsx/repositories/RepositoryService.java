@@ -20,6 +20,8 @@ import org.springframework.data.domain.*;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
+
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -60,6 +62,11 @@ public class RepositoryService {
     private final MigrationItemJooqRepository migrationItemJooqRepo;
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
+    private final ExtensionScanRepository extensionScanRepo;
+    private final ExtensionValidationFailureRepository extensionValidationFailureRepo;
+    private final AdminScanDecisionRepository adminScanDecisionRepo;
+    private final ExtensionThreatRepository extensionThreatRepo;
+    private final FileDecisionRepository fileDecisionRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -84,7 +91,12 @@ public class RepositoryService {
             MigrationItemRepository migrationItemRepo,
             MigrationItemJooqRepository migrationItemJooqRepo,
             SignatureKeyPairRepository signatureKeyPairRepo,
-            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo
+            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
+            ExtensionScanRepository extensionScanRepo,
+            AdminScanDecisionRepository adminScanDecisionRepo,
+            ExtensionValidationFailureRepository extensionValidationFailureRepo,
+            ExtensionThreatRepository extensionThreatRepo,
+            FileDecisionRepository fileDecisionRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -109,6 +121,11 @@ public class RepositoryService {
         this.migrationItemJooqRepo = migrationItemJooqRepo;
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
+        this.extensionScanRepo = extensionScanRepo;
+        this.adminScanDecisionRepo = adminScanDecisionRepo;
+        this.extensionValidationFailureRepo = extensionValidationFailureRepo;
+        this.extensionThreatRepo = extensionThreatRepo;
+        this.fileDecisionRepo = fileDecisionRepo;
     }
 
     public Namespace findNamespace(String name) {
@@ -698,5 +715,447 @@ public class RepositoryService {
                 verifiedOnly,
                 limit
         );
+    }
+
+    public ExtensionScan saveExtensionScan(ExtensionScan scan) {
+        return extensionScanRepo.save(scan);
+    }
+
+    public void deleteExtensionScan(ExtensionScan scan) {
+        extensionScanRepo.deleteById(scan.getId());
+    }
+
+    public ExtensionScan findExtensionScan(long id) {
+        return extensionScanRepo.findById(id);
+    }
+
+    public Streamable<ExtensionScan> findExtensionScans(ExtensionVersion version) {
+        var extension = version.getExtension();
+        var namespace = extension.getNamespace();
+        return extensionScanRepo.findByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatform(
+            namespace.getName(), extension.getName(), version.getVersion(), version.getTargetPlatform());
+    }
+
+    public ExtensionScan findLatestExtensionScan(ExtensionVersion version) {
+        var extension = version.getExtension();
+        var namespace = extension.getNamespace();
+        return extensionScanRepo.findFirstByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformOrderByStartedAtDesc(
+            namespace.getName(), extension.getName(), version.getVersion(), version.getTargetPlatform());
+    }
+
+    public Streamable<ExtensionScan> findExtensionScans(Extension extension) {
+        var namespace = extension.getNamespace();
+        return extensionScanRepo.findByNamespaceNameAndExtensionName(namespace.getName(), extension.getName());
+    }
+
+    public Streamable<ExtensionScan> findExtensionScansByNamespace(String namespaceName) {
+        return extensionScanRepo.findByNamespaceName(namespaceName);
+    }
+
+    public Streamable<ExtensionScan> findExtensionScansByStatus(ScanStatus status) {
+        return extensionScanRepo.findByStatus(status);
+    }
+
+    public Streamable<ExtensionScan> findInProgressExtensionScans() {
+        return extensionScanRepo.findByCompletedAtIsNull();
+    }
+
+    public long countExtensionScansByStatus(ScanStatus status) {
+        return extensionScanRepo.countByStatus(status);
+    }
+
+    /** Check if a scan exists for a specific version with a given status */
+    public boolean hasExtensionScanWithStatus(ExtensionVersion version, ScanStatus status) {
+        var extension = version.getExtension();
+        var namespace = extension.getNamespace();
+        return extensionScanRepo.existsByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformAndStatus(
+            namespace.getName(), extension.getName(), version.getVersion(), version.getTargetPlatform(), status);
+    }
+
+    public Streamable<ExtensionScan> findAllExtensionScans() {
+        return extensionScanRepo.findAllByOrderByStartedAtDesc();
+    }
+
+    public org.springframework.data.domain.Page<ExtensionScan> findScansFiltered(
+            Collection<ScanStatus> statuses,
+            String namespace,
+            String publisher,
+            String name,
+            LocalDateTime startedFrom,
+            LocalDateTime startedTo,
+            org.springframework.data.domain.Pageable pageable
+    ) {
+        // Convert empty collections to null, and enums to strings for native query
+        var statusesParam = (statuses == null || statuses.isEmpty()) 
+            ? null 
+            : statuses.stream().map(ScanStatus::name).toList();
+        var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
+        var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
+        var nameParam = (name == null || name.isBlank()) ? null : name;
+        
+        return extensionScanRepo.findScansFiltered(
+            statusesParam, namespaceParam, publisherParam, nameParam, startedFrom, startedTo, pageable
+        );
+    }
+
+    public long countScansFiltered(
+            Collection<ScanStatus> statuses,
+            String namespace,
+            String publisher,
+            String name,
+            LocalDateTime startedFrom,
+            LocalDateTime startedTo
+    ) {
+        // Convert enums to strings for native query
+        var statusesParam = (statuses == null || statuses.isEmpty()) 
+            ? null 
+            : statuses.stream().map(ScanStatus::name).toList();
+        var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
+        var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
+        var nameParam = (name == null || name.isBlank()) ? null : name;
+        
+        return extensionScanRepo.countScansFiltered(
+            statusesParam, namespaceParam, publisherParam, nameParam, startedFrom, startedTo
+        );
+    }
+
+    public long countExtensionScansByStatusAndDateRange(ScanStatus status, LocalDateTime startedFrom, LocalDateTime startedTo) {
+        return extensionScanRepo.countByStatusAndDateRange(status, startedFrom, startedTo);
+    }
+
+    public long countExtensionScansByStatusDateRangeAndEnforcement(
+            ScanStatus status, LocalDateTime startedFrom, LocalDateTime startedTo, boolean enforcedOnly) {
+        return extensionScanRepo.countByStatusDateRangeAndEnforcement(status, startedFrom, startedTo, enforcedOnly);
+    }
+
+    public org.springframework.data.domain.Page<ExtensionScan> findScansFullyFiltered(
+            @Nullable Collection<ScanStatus> statuses,
+            @Nullable String namespace,
+            @Nullable String publisher,
+            @Nullable String name,
+            @Nullable LocalDateTime startedFrom,
+            @Nullable LocalDateTime startedTo,
+            @Nullable Collection<String> checkTypes,
+            @Nullable Collection<String> scannerNames,
+            @Nullable Boolean enforcedOnly,
+            @Nullable org.eclipse.openvsx.admin.ScanAPI.AdminDecisionFilterValues adminDecisionFilter,
+            org.springframework.data.domain.Pageable pageable
+    ) {
+        // Convert enums to strings for native query
+        var statusesParam = (statuses == null || statuses.isEmpty()) 
+            ? null 
+            : statuses.stream().map(ScanStatus::name).toList();
+        var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
+        var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
+        var nameParam = (name == null || name.isBlank()) ? null : name;
+        // PostgreSQL doesn't allow empty IN clauses. When filter is disabled, we pass a
+        // dummy list combined with a boolean flag in the query to skip the check entirely.
+        var applyCheckTypesFilter = checkTypes != null && !checkTypes.isEmpty();
+        var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
+        var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
+        var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
+        
+        // Admin decision filter
+        var applyAdminDecisionFilter = adminDecisionFilter != null && adminDecisionFilter.hasFilter();
+        var filterAllowed = adminDecisionFilter != null && adminDecisionFilter.filterAllowed();
+        var filterBlocked = adminDecisionFilter != null && adminDecisionFilter.filterBlocked();
+        var filterNeedsReview = adminDecisionFilter != null && adminDecisionFilter.filterNeedsReview();
+        
+        return extensionScanRepo.findScansFullyFiltered(
+            statusesParam, namespaceParam, publisherParam, nameParam, 
+            startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
+            scannerNamesParam, applyScannerNamesFilter, enforcedOnly,
+            applyAdminDecisionFilter, filterAllowed, filterBlocked, filterNeedsReview,
+            pageable
+        );
+    }
+
+    public long countScansFullyFiltered(
+            @Nullable Collection<ScanStatus> statuses,
+            @Nullable String namespace,
+            @Nullable String publisher,
+            @Nullable String name,
+            @Nullable LocalDateTime startedFrom,
+            @Nullable LocalDateTime startedTo,
+            @Nullable Collection<String> checkTypes,
+            @Nullable Collection<String> scannerNames,
+            @Nullable Boolean enforcedOnly,
+            @Nullable org.eclipse.openvsx.admin.ScanAPI.AdminDecisionFilterValues adminDecisionFilter
+    ) {
+        // Convert enums to strings for native query
+        var statusesParam = (statuses == null || statuses.isEmpty()) 
+            ? null 
+            : statuses.stream().map(ScanStatus::name).toList();
+        var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
+        var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
+        var nameParam = (name == null || name.isBlank()) ? null : name;
+        // PostgreSQL doesn't allow empty IN clauses. When filter is disabled, we pass a
+        // dummy list combined with a boolean flag in the query to skip the check entirely.
+        var applyCheckTypesFilter = checkTypes != null && !checkTypes.isEmpty();
+        var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
+        var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
+        var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
+        
+        // Admin decision filter
+        var applyAdminDecisionFilter = adminDecisionFilter != null && adminDecisionFilter.hasFilter();
+        var filterAllowed = adminDecisionFilter != null && adminDecisionFilter.filterAllowed();
+        var filterBlocked = adminDecisionFilter != null && adminDecisionFilter.filterBlocked();
+        var filterNeedsReview = adminDecisionFilter != null && adminDecisionFilter.filterNeedsReview();
+        
+        return extensionScanRepo.countScansFullyFiltered(
+            statusesParam, namespaceParam, publisherParam, nameParam, 
+            startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
+            scannerNamesParam, applyScannerNamesFilter, enforcedOnly,
+            applyAdminDecisionFilter, filterAllowed, filterBlocked, filterNeedsReview
+        );
+    }
+
+    public long countScansForStatistics(
+            ScanStatus status,
+            @Nullable LocalDateTime startedFrom,
+            @Nullable LocalDateTime startedTo,
+            @Nullable Collection<String> checkTypes,
+            @Nullable Collection<String> scannerNames,
+            @Nullable Boolean enforcedOnly
+    ) {
+        // PostgreSQL doesn't allow empty IN clauses. When filter is disabled, we pass a
+        // dummy list combined with a boolean flag in the query to skip the check entirely.
+        var applyCheckTypesFilter = checkTypes != null && !checkTypes.isEmpty();
+        var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
+        var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
+        var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
+        
+        return extensionScanRepo.countForStatistics(
+            status.name(), startedFrom, startedTo, 
+            checkTypesParam, applyCheckTypesFilter,
+            scannerNamesParam, applyScannerNamesFilter, enforcedOnly
+        );
+    }
+
+    public long countAdminDecisionsForStatistics(
+            String decision,
+            @Nullable LocalDateTime startedFrom,
+            @Nullable LocalDateTime startedTo,
+            @Nullable Collection<String> checkTypes,
+            @Nullable Collection<String> scannerNames,
+            @Nullable Boolean enforcedOnly
+    ) {
+        // PostgreSQL doesn't allow empty IN clauses. When filter is disabled, we pass a
+        // dummy list combined with a boolean flag in the query to skip the check entirely.
+        var applyCheckTypesFilter = checkTypes != null && !checkTypes.isEmpty();
+        var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
+        var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
+        var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
+        
+        return adminScanDecisionRepo.countForStatistics(
+            decision, startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
+            scannerNamesParam, applyScannerNamesFilter, enforcedOnly
+        );
+    }
+
+    public ExtensionValidationFailure saveValidationFailure(ExtensionValidationFailure failure) {
+        return extensionValidationFailureRepo.save(failure);
+    }
+
+    public ExtensionValidationFailure findValidationFailure(long id) {
+        return extensionValidationFailureRepo.findById(id);
+    }
+
+    public Streamable<ExtensionValidationFailure> findValidationFailures(ExtensionScan scan) {
+        return extensionValidationFailureRepo.findByScan(scan);
+    }
+
+    public List<String> findDistinctValidationFailureRuleNames() {
+        return extensionValidationFailureRepo.findDistinctRuleNames();
+    }
+
+    public List<String> findDistinctValidationFailureCheckTypes() {
+        return extensionValidationFailureRepo.findDistinctCheckTypes();
+    }
+
+    public Streamable<ExtensionValidationFailure> findValidationFailuresByType(String checkType) {
+        return extensionValidationFailureRepo.findByCheckType(checkType);
+    }
+
+    public Streamable<ExtensionValidationFailure> findValidationFailures(ExtensionScan scan, String checkType) {
+        return extensionValidationFailureRepo.findByScanAndCheckType(scan, checkType);
+    }
+
+    public long countValidationFailures(ExtensionScan scan) {
+        return extensionValidationFailureRepo.countByScan(scan);
+    }
+
+    public long countValidationFailuresByType(String checkType) {
+        return extensionValidationFailureRepo.countByCheckType(checkType);
+    }
+
+    public boolean hasValidationFailures(ExtensionScan scan) {
+        return extensionValidationFailureRepo.existsByScan(scan);
+    }
+
+    public boolean hasValidationFailuresOfType(ExtensionScan scan, String checkType) {
+        return extensionValidationFailureRepo.existsByScanAndCheckType(scan, checkType);
+    }
+
+    public AdminScanDecision saveAdminScanDecision(AdminScanDecision decision) {
+        return adminScanDecisionRepo.save(decision);
+    }
+
+    public AdminScanDecision findAdminScanDecision(long id) {
+        return adminScanDecisionRepo.findById(id);
+    }
+
+    public AdminScanDecision findAdminScanDecision(ExtensionScan scan) {
+        return adminScanDecisionRepo.findByScan(scan);
+    }
+
+    public AdminScanDecision findAdminScanDecisionByScanId(long scanId) {
+        return adminScanDecisionRepo.findByScanId(scanId);
+    }
+
+    public boolean hasAdminScanDecision(ExtensionScan scan) {
+        return adminScanDecisionRepo.existsByScan(scan);
+    }
+
+    public boolean hasAdminScanDecisionByScanId(long scanId) {
+        return adminScanDecisionRepo.existsByScanId(scanId);
+    }
+
+    public long countAdminScanDecisions(String decision) {
+        return adminScanDecisionRepo.countByDecision(decision);
+    }
+
+    public long countAdminScanDecisionsByDateRange(String decision, LocalDateTime startedFrom, LocalDateTime startedTo) {
+        return adminScanDecisionRepo.countByDecisionAndDateRange(decision, startedFrom, startedTo);
+    }
+
+    public long countAdminScanDecisionsByEnforcement(String decision, boolean enforcedOnly) {
+        return adminScanDecisionRepo.countByDecisionAndEnforcement(decision, enforcedOnly);
+    }
+
+    public void deleteAdminScanDecision(long id) {
+        adminScanDecisionRepo.deleteById(id);
+    }
+
+    public ExtensionThreat saveExtensionThreat(ExtensionThreat threat) {
+        return extensionThreatRepo.save(threat);
+    }
+
+    public ExtensionThreat findExtensionThreat(long id) {
+        return extensionThreatRepo.findById(id);
+    }
+
+    public Streamable<ExtensionThreat> findExtensionThreats(ExtensionScan scan) {
+        return extensionThreatRepo.findByScan(scan);
+    }
+
+    public Streamable<ExtensionThreat> findExtensionThreatsByScanId(long scanId) {
+        return extensionThreatRepo.findByScanId(scanId);
+    }
+
+    public Streamable<ExtensionThreat> findExtensionThreatsByFileHash(String fileHash) {
+        return extensionThreatRepo.findByFileHash(fileHash);
+    }
+
+    public long countExtensionThreats(ExtensionScan scan) {
+        return extensionThreatRepo.countByScan(scan);
+    }
+
+    public boolean hasExtensionThreats(ExtensionScan scan) {
+        return extensionThreatRepo.existsByScan(scan);
+    }
+
+    public List<String> findDistinctThreatScannerTypes() {
+        return extensionThreatRepo.findDistinctScannerTypes();
+    }
+
+    public List<String> findDistinctThreatRuleNames() {
+        return extensionThreatRepo.findDistinctRuleNames();
+    }
+
+    public Streamable<ExtensionThreat> findExtensionThreatsByType(String type) {
+        return extensionThreatRepo.findByType(type);
+    }
+
+    public Streamable<ExtensionThreat> findExtensionThreats(ExtensionScan scan, String type) {
+        return extensionThreatRepo.findByScanAndType(scan, type);
+    }
+
+    public Streamable<ExtensionThreat> findExtensionThreatsAfter(LocalDateTime date) {
+        return extensionThreatRepo.findByDetectedAtAfter(date);
+    }
+
+    public Streamable<ExtensionThreat> findExtensionThreatsOrdered(ExtensionScan scan) {
+        return extensionThreatRepo.findByScanOrderByDetectedAtAsc(scan);
+    }
+
+    public long countExtensionThreatsByType(String type) {
+        return extensionThreatRepo.countByType(type);
+    }
+
+    public boolean hasExtensionThreatsOfType(ExtensionScan scan, String type) {
+        return extensionThreatRepo.existsByScanAndType(scan, type);
+    }
+
+    public FileDecision saveFileDecision(FileDecision decision) {
+        return fileDecisionRepo.save(decision);
+    }
+
+    public FileDecision findFileDecision(long id) {
+        return fileDecisionRepo.findById(id);
+    }
+
+    public FileDecision findFileDecisionByHash(String fileHash) {
+        return fileDecisionRepo.findByFileHash(fileHash);
+    }
+
+    public boolean hasFileDecision(String fileHash) {
+        return fileDecisionRepo.existsByFileHash(fileHash);
+    }
+
+    public long countFileDecisions(String decision) {
+        return fileDecisionRepo.countByDecision(decision);
+    }
+
+    public long countAllFileDecisions() {
+        return fileDecisionRepo.count();
+    }
+
+    public long countFileDecisionsByDateRange(String decision, LocalDateTime decidedFrom, LocalDateTime decidedTo) {
+        return fileDecisionRepo.countByDecisionAndDateRange(decision, decidedFrom, decidedTo);
+    }
+
+    public void deleteFileDecision(long id) {
+        fileDecisionRepo.deleteById(id);
+    }
+
+    public void deleteFileDecisionByHash(String fileHash) {
+        fileDecisionRepo.deleteByFileHash(fileHash);
+    }
+
+    public Page<FileDecision> findFileDecisionsFiltered(
+            String decision,
+            String publisher,
+            String namespace,
+            String name,
+            LocalDateTime decidedFrom,
+            LocalDateTime decidedTo,
+            Pageable pageable
+    ) {
+        var decisionParam = (decision == null || decision.isBlank()) ? null : decision.toUpperCase();
+        var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
+        var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
+        var nameParam = (name == null || name.isBlank()) ? null : name;
+        
+        return fileDecisionRepo.findFilesFiltered(
+            decisionParam, publisherParam, namespaceParam, nameParam, decidedFrom, decidedTo, pageable
+        );
+    }
+
+    public List<FileDecision> findFileDecisionsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return fileDecisionRepo.findByIdIn(ids);
     }
 }

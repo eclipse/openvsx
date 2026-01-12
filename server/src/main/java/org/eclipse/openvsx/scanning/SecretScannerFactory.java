@@ -18,7 +18,7 @@ import jakarta.validation.constraints.NotNull;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.DependsOn;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -36,11 +36,12 @@ import java.util.Set;
  * If neither is configured, initialization is skipped, allowing the application
  * to start without requiring secret scanning infrastructure.
  * 
- * This component depends on {@link GitleaksRulesGenerator} to ensure rules
- * are generated (if configured) before we try to load them.
+ * If auto-generation is enabled, this depends on {@link GitleaksRulesGenerator} 
+ * to ensure rules are generated before we try to load them.
+ * Only loaded when secret scanning is enabled via configuration.
  */
 @Component
-@DependsOn("gitleaksRulesGenerator")
+@ConditionalOnProperty(name = "ovsx.secret-scanning.enabled", havingValue = "true")
 public class SecretScannerFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(SecretScannerFactory.class);
@@ -57,7 +58,7 @@ public class SecretScannerFactory {
     public SecretScannerFactory(
             @NotNull SecretRuleLoader ruleLoader, 
             @NotNull SecretScanningConfig config,
-            @NotNull GitleaksRulesGenerator generator) {
+            @Nullable GitleaksRulesGenerator generator) {
         this.ruleLoader = ruleLoader;
         this.config = config;
         this.generator = generator;
@@ -69,7 +70,6 @@ public class SecretScannerFactory {
         List<String> rulePaths = buildRulePaths();
         
         // Skip initialization if there are no rule paths to load
-        // This happens when secret scanning is not configured at all
         if (rulePaths.isEmpty()) {
             logger.info("No secret scanning rules configured; skipping scanner initialization");
             return;
@@ -271,19 +271,17 @@ public class SecretScannerFactory {
     /**
      * Build the list of rule paths to load.
      * If auto-generation is enabled and succeeded, prepend the generated file path.
-     * Otherwise, use the configured paths from application.yml.
+     * Append the configured paths from the application.yml.
      */
     private List<String> buildRulePaths() {
         List<String> paths = new ArrayList<>();
         
-        // If auto-generation is enabled and succeeded, use the generated file
-        if (config.isAutoGenerateRules()) {
+        // If auto-generation is enabled and the generator bean exists, use the generated file
+        if (generator != null) {
             String generatedPath = generator.getGeneratedRulesPath();
             if (generatedPath != null) {
                 logger.debug("Using auto-generated rules file: {}", generatedPath);
                 paths.add(generatedPath);
-            } else {
-                logger.warn("Auto-generation was enabled but no rules file was generated");
             }
         }
         
