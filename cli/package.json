@@ -29,7 +29,9 @@
     ],
     "main": "lib/index",
     "types": "lib/index",
-    "bin": "bin/ovsx",
+    "bin": {
+        "ovsx": "bin/ovsx"
+    },
     "engines": {
         "node": ">= 20"
     },
