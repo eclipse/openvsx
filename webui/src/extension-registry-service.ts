@@ -12,7 +12,9 @@ import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders
+    LoginProviders, ScanResultJson, ScanCounts, ScanResultsResponse, ScanFilterOptions,
+    FilesResponse, FileDecisionCountsJson, ScanDecisionRequest, ScanDecisionResponse,
+    FileDecisionRequest, FileDecisionResponse, FileDecisionDeleteRequest, FileDecisionDeleteResponse
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -470,6 +472,17 @@ export interface AdminService {
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
     revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
     revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
+    getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all' }): Promise<Readonly<ScanResultsResponse>>
+    getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>
+    getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>>
+    getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>>
+    // Files API
+    getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>>;
+    getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>>
+    // Decision APIs
+    makeScanDecision(abortController: AbortController, request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>>
+    makeFileDecision(abortController: AbortController, request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>>
+    deleteFileDecisions(abortController: AbortController, request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>>
 }
 
 export interface AdminServiceConstructor {
@@ -591,6 +604,168 @@ export class AdminServiceImpl implements AdminService {
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'tokens', 'revoke']),
             headers
+        });
+    }
+
+    getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; adminDecision?: string[] }): Promise<Readonly<ScanResultsResponse>> {
+        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans']));
+        if (params) {
+            if (params.size !== undefined) url.searchParams.set('size', params.size.toString());
+            if (params.offset !== undefined) url.searchParams.set('offset', params.offset.toString());
+            if (params.status) {
+                const statusValue = Array.isArray(params.status) ? params.status.join(',') : params.status;
+                url.searchParams.set('status', statusValue);
+            }
+            if (params.publisher) url.searchParams.set('publisher', params.publisher);
+            if (params.namespace) url.searchParams.set('namespace', params.namespace);
+            if (params.name) url.searchParams.set('name', params.name);
+            if (params.validationType && params.validationType.length > 0) {
+                url.searchParams.set('validationType', params.validationType.join(','));
+            }
+            if (params.threatScannerName && params.threatScannerName.length > 0) {
+                url.searchParams.set('threatScannerName', params.threatScannerName.join(','));
+            }
+            if (params.dateStartedFrom) url.searchParams.set('dateStartedFrom', params.dateStartedFrom);
+            if (params.dateStartedTo) url.searchParams.set('dateStartedTo', params.dateStartedTo);
+            if (params.enforcement) url.searchParams.set('enforcement', params.enforcement);
+            if (params.adminDecision && params.adminDecision.length > 0) {
+                url.searchParams.set('adminDecision', params.adminDecision.join(','));
+            }
+        }
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: url.toString()
+        });
+    }
+
+    getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>> {
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', scanId])
+        });
+    }
+
+    getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>> {
+        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', 'counts']));
+        if (params) {
+            if (params.dateStartedFrom) url.searchParams.set('dateStartedFrom', params.dateStartedFrom);
+            if (params.dateStartedTo) url.searchParams.set('dateStartedTo', params.dateStartedTo);
+            if (params.enforcement) url.searchParams.set('enforcement', params.enforcement);
+            if (params.threatScannerName && params.threatScannerName.length > 0) {
+                url.searchParams.set('threatScannerName', params.threatScannerName.join(','));
+            }
+            if (params.validationType && params.validationType.length > 0) {
+                url.searchParams.set('validationType', params.validationType.join(','));
+            }
+        }
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: url.toString()
+        });
+    }
+
+    getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>> {
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', 'filterOptions'])
+        });
+    }
+
+    getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>> {
+        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files']));
+        if (params) {
+            if (params.size !== undefined) url.searchParams.set('size', String(params.size));
+            if (params.offset !== undefined) url.searchParams.set('offset', String(params.offset));
+            if (params.decision) url.searchParams.set('decision', params.decision);
+            if (params.publisher) url.searchParams.set('publisher', params.publisher);
+            if (params.namespace) url.searchParams.set('namespace', params.namespace);
+            if (params.name) url.searchParams.set('name', params.name);
+            if (params.dateDecidedFrom) url.searchParams.set('dateDecidedFrom', params.dateDecidedFrom);
+            if (params.dateDecidedTo) url.searchParams.set('dateDecidedTo', params.dateDecidedTo);
+            if (params.sortBy) url.searchParams.set('sortBy', params.sortBy);
+            if (params.sortOrder) url.searchParams.set('sortOrder', params.sortOrder);
+        }
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: url.toString()
+        });
+    }
+
+    getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>> {
+        const url = new URL(createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files', 'counts']));
+        if (params) {
+            if (params.dateDecidedFrom) url.searchParams.set('dateDecidedFrom', params.dateDecidedFrom);
+            if (params.dateDecidedTo) url.searchParams.set('dateDecidedTo', params.dateDecidedTo);
+        }
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: url.toString()
+        });
+    }
+
+    async makeScanDecision(abortController: AbortController, request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'scans', 'decisions']),
+            headers,
+            payload: request
+        });
+    }
+
+    async makeFileDecision(abortController: AbortController, request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files', 'decisions']),
+            headers,
+            payload: request
+        });
+    }
+
+    async deleteFileDecisions(abortController: AbortController, request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'api', 'files', 'decisions']),
+            headers,
+            payload: request
         });
     }
 }
