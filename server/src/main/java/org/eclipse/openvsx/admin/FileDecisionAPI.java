@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * Provides endpoints for managing file-level security decisions.
  */
 @RestController
-@RequestMapping("/admin/api")
+@RequestMapping("/admin/scans")
 @ApiResponse(
     responseCode = "403",
     description = "Administration role is required",
