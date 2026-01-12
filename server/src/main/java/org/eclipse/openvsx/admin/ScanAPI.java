@@ -53,7 +53,7 @@ import org.springframework.data.domain.Sort;
  * Used by the admin dashboard to monitor extension validation and scanning.
  */
 @RestController
-@RequestMapping("/admin/api")
+@RequestMapping("/admin/scans")
 @ApiResponse(
     responseCode = "403",
     description = "Administration role is required",
@@ -79,7 +79,7 @@ public class ScanAPI {
      * Get aggregated scan counts by status and admin decisions counts.
      */
     @GetMapping(
-        path = "/scans/counts",
+        path = "/counts",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -224,7 +224,7 @@ public class ScanAPI {
      * Get all extension scans with filtering, sorting and pagination.
      */
     @GetMapping(
-        path = "/scans",
+        path = "",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -484,7 +484,7 @@ public class ScanAPI {
      * Returns distinct values that can be used to filter the scan list.
      */
     @GetMapping(
-        path = "/scans/filterOptions",
+        path = "/filterOptions",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -518,7 +518,7 @@ public class ScanAPI {
      * Returns detailed information about a single scan.
      */
     @GetMapping(
-        path = "/scans/{scanId}",
+        path = "/{scanId}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -564,7 +564,7 @@ public class ScanAPI {
      * Pass a single scanId for individual decisions, or multiple scanIds for bulk operations.
      */
     @PostMapping(
-        path = "/scans/decisions",
+        path = "/decisions",
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
