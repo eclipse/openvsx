@@ -12,11 +12,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ValidationCheck;
+import org.eclipse.openvsx.util.TempFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,12 +47,24 @@ class SimilarityCheckServiceTest {
     @InjectMocks
     SimilarityCheckService similarityCheckService;
 
+    @Mock
+    TempFile extensionFile;
+
     UserData user;
 
     @BeforeEach
     void setUp() {
         user = new UserData();
         user.setLoginName("testuser");
+    }
+
+    /** Helper to create a ValidationCheck.Context for testing check() method */
+    private ValidationCheck.Context createContext(String namespaceName, String extensionName, String displayName) {
+        var scan = new ExtensionScan();
+        scan.setNamespaceName(namespaceName);
+        scan.setExtensionName(extensionName);
+        scan.setExtensionDisplayName(displayName);
+        return new ValidationCheck.Context(scan, extensionFile, user);
     }
 
     @Test
@@ -135,34 +146,33 @@ class SimilarityCheckServiceTest {
 
     @Test
     void shouldSkipCheckForExistingExtensionWhenConfiguredForNewOnly() {
-        // When configured for new extensions only, skip if extension already has versions.
+        // When configured for new extensions only, skip if extension already has versions (>1 means existing).
         when(config.isNewExtensionsOnly()).thenReturn(true);
-        when(repositories.countVersions("ns", "ext")).thenReturn(1);
+        when(repositories.countVersions("ns", "ext")).thenReturn(2);
 
-        var result = similarityCheckService.findSimilarExtensionsForPublishing(
-            "ext", "ns", "Display", user
-        );
+        var context = createContext("ns", "ext", "Display");
+        var result = similarityCheckService.check(context);
 
-        assertThat(result).isEmpty();
+        assertThat(result.passed()).isTrue();
         verify(repositories).countVersions("ns", "ext");
         verifyNoInteractions(similarityService);
     }
 
     @Test
     void shouldCheckNewExtensionEvenWhenConfiguredForNewOnly() {
-        // When configured for new extensions only, still check if extension has no versions.
+        // When configured for new extensions only, still check if extension has 0 or 1 version.
         when(config.isNewExtensionsOnly()).thenReturn(true);
+        when(config.isExcludeOwnerNamespaces()).thenReturn(false);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
-        when(repositories.countVersions("ns", "ext")).thenReturn(0);
+        when(repositories.countVersions("ns", "ext")).thenReturn(1);
         when(similarityService.findSimilarExtensions("ext", "ns", "Display", List.of(), 0.15, false, 10))
                 .thenReturn(List.of());
 
-        var result = similarityCheckService.findSimilarExtensionsForPublishing(
-            "ext", "ns", "Display", user
-        );
+        var context = createContext("ns", "ext", "Display");
+        var result = similarityCheckService.check(context);
 
-        assertThat(result).isEmpty();
+        assertThat(result.passed()).isTrue();
         verify(repositories).countVersions("ns", "ext");
         verify(similarityService).findSimilarExtensions("ext", "ns", "Display", List.of(), 0.15, false, 10);
     }
@@ -170,16 +180,16 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldSkipCheckForVerifiedPublisherWhenConfigured() {
         // When configured to skip verified publishers, check if namespace has owner memberships.
+        when(config.isNewExtensionsOnly()).thenReturn(false);
         when(config.isSkipVerifiedPublishers()).thenReturn(true);
         var namespace = new Namespace();
         when(repositories.findNamespace("ns")).thenReturn(namespace);
         when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER)).thenReturn(true);
 
-        var result = similarityCheckService.findSimilarExtensionsForPublishing(
-            "ext", "ns", "Display", user
-        );
+        var context = createContext("ns", "ext", "Display");
+        var result = similarityCheckService.check(context);
 
-        assertThat(result).isEmpty();
+        assertThat(result.passed()).isTrue();
         verify(repositories).findNamespace("ns");
         verify(repositories).hasMemberships(namespace, NamespaceMembership.ROLE_OWNER);
         verifyNoInteractions(similarityService);
@@ -188,17 +198,18 @@ class SimilarityCheckServiceTest {
     @Test
     void shouldCheckVerifiedPublisherWhenSkipIsDisabled() {
         // When skip verified publishers is disabled, check even if namespace has owner memberships.
+        when(config.isNewExtensionsOnly()).thenReturn(false);
         when(config.isSkipVerifiedPublishers()).thenReturn(false);
+        when(config.isExcludeOwnerNamespaces()).thenReturn(false);
         when(config.getLevenshteinThreshold()).thenReturn(0.15);
         when(config.isCheckAgainstVerifiedOnly()).thenReturn(false);
         when(similarityService.findSimilarExtensions("ext", "ns", "Display", List.of(), 0.15, false, 10))
                 .thenReturn(List.of());
 
-        var result = similarityCheckService.findSimilarExtensionsForPublishing(
-            "ext", "ns", "Display", user
-        );
+        var context = createContext("ns", "ext", "Display");
+        var result = similarityCheckService.check(context);
 
-        assertThat(result).isEmpty();
+        assertThat(result.passed()).isTrue();
         verify(similarityService).findSimilarExtensions("ext", "ns", "Display", List.of(), 0.15, false, 10);
     }
 

@@ -19,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
@@ -33,8 +34,10 @@ import java.util.Map;
 
 /**
  * Loads secret detection rules from a YAML file.
+ * Only loaded when secret scanning is enabled via configuration.
  */
 @Component
+@ConditionalOnProperty(name = "ovsx.secret-scanning.enabled", havingValue = "true")
 public class SecretRuleLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(SecretRuleLoader.class);
@@ -88,8 +91,7 @@ public class SecretRuleLoader {
      */
     public LoadedRules loadAll(@NotNull List<String> paths) {
         if (paths.isEmpty()) {
-            var message = "Secret scanning rules path list is empty";
-            logger.warn(message);
+            logger.warn("Secret scanning rules path list is empty");
             return new LoadedRules(List.of(), null);
         }
 

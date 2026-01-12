@@ -170,8 +170,11 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+  scanning:
+    enabled: true
   similarity:
     enabled: true
+    enforced: true
     levenshtein-threshold: 0.2
     skip-verified-publishers: true
     check-against-verified-only: true
@@ -185,8 +188,8 @@ ovsx:
     force-regenerate-rules: false
     generated-rules-path: '/tmp/secret-scanning-rules-gitleaks.yaml'
     max-file-size-bytes: 5242880
-    max-entry-count: 5000
-    max-total-uncompressed-bytes: 104857600
+    max-entry-count: 50000
+    max-total-uncompressed-bytes: 524288000
     max-findings: 200
     max-line-length: 10000
     long-line-no-space-threshold: 1000

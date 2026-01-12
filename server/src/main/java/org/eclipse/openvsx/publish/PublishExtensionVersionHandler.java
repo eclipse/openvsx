@@ -21,7 +21,7 @@ import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.search.SimilarityCheckService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -51,7 +51,7 @@ public class PublishExtensionVersionHandler {
     private final UserService users;
     private final ExtensionValidator validator;
     private final ExtensionControlService extensionControl;
-    private final SimilarityCheckService similarityCheckService;
+    private final ExtensionScanService scanService;
 
     public PublishExtensionVersionHandler(
             PublishExtensionVersionService service,
@@ -62,7 +62,7 @@ public class PublishExtensionVersionHandler {
             UserService users,
             ExtensionValidator validator,
             ExtensionControlService extensionControl,
-            SimilarityCheckService similarityCheckService
+            ExtensionScanService scanService
     ) {
         this.service = service;
         this.integrityService = integrityService;
@@ -72,7 +72,7 @@ public class PublishExtensionVersionHandler {
         this.users = users;
         this.validator = validator;
         this.extensionControl = extensionControl;
-        this.similarityCheckService = similarityCheckService;
+        this.scanService = scanService;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -170,43 +170,6 @@ public class PublishExtensionVersionHandler {
         if(isMalicious(namespaceName, extensionName)) {
             throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
         }
-
-        validateDistinctName(extensionName, namespaceName, displayName, user);
-    }
-
-    private void validateDistinctName(String extensionName, String namespaceName, String displayName, UserData user) {
-        // Check if similarity checking is enabled before invoking
-        if (!similarityCheckService.isEnabled()) {
-            return;
-        }
-
-        // Use SimilarityCheckService which handles config gates and "exclude owner namespaces" logic
-        var similarExtensions = similarityCheckService.findSimilarExtensionsForPublishing(
-            extensionName,
-            namespaceName,
-            displayName,
-            user
-        );
-        
-        if (similarExtensions.isEmpty()) {
-            return;
-        }
-
-        var similarExt = similarExtensions.get(0);
-        var latestVersion = repositories.findLatestVersion(similarExt, null, false, true);
-        String similarDisplayName = latestVersion != null ? latestVersion.getDisplayName() : null;
-        
-        throw new ErrorResultException(String.format(
-            "Extension '%s.%s' (display name: '%s') is too similar to existing extension '%s.%s' (display name: '%s'). " +
-            "Please choose a more distinct name to avoid confusion. " +
-            "Refer to the publishing guidelines: https://github.com/EclipseFdn/open-vsx.org/wiki/Publishing-Extensions",
-            namespaceName,
-            extensionName,
-            displayName,
-            similarExt.getNamespace().getName(),
-            similarExt.getName(),
-            similarDisplayName != null ? similarDisplayName : ""
-        ));
     }
 
     private void validateMetadata(ExtensionVersion extVersion) {
@@ -247,8 +210,23 @@ public class PublishExtensionVersionHandler {
     }
 
     @Async
-    @Retryable
     public void publishAsync(TempFile extensionFile, ExtensionService extensionService) {
+        doPublish(extensionFile, extensionService);
+    }
+
+    @Async
+    public void publishAsync(TempFile extensionFile, ExtensionService extensionService, ExtensionScan scan) {
+        try {
+            doPublish(extensionFile, extensionService);
+            scanService.completeScanningSuccess(scan);
+        } catch (Exception e) {
+            scanService.markScanAsErrored(scan, "Async processing failed: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Retryable
+    private void doPublish(TempFile extensionFile, ExtensionService extensionService) {
         var download = extensionFile.getResource();
         var extVersion = download.getExtension();
 

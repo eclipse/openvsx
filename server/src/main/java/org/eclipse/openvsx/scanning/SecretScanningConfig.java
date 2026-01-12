@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -22,9 +22,6 @@ import java.util.List;
 
 /**
  * Configuration for secret scanning in extension packages.
- * 
- * This service scans VSIX files for potential secrets like API keys, tokens, and passwords
- * before allowing publication. It uses regex patterns and entropy calculation to detect secrets.
  */
 @Configuration
 public class SecretScanningConfig {
@@ -77,6 +74,19 @@ public class SecretScanningConfig {
      */
     @Value("${ovsx.secret-scanning.generated-rules-path:}")
     private String generatedRulesPath;
+
+    /**
+     * Whether secret scan findings are enforced (i.e. block publishing) when detected.
+     *
+     * Why this exists:
+     * - We sometimes want to run secret scanning and record audit data,
+     *   but not reject publication (monitor-only mode).
+     *
+     * Default is true to preserve historic behavior: when secret scanning is enabled,
+     * findings will block publishing unless explicitly configured otherwise.
+     */
+    @Value("${ovsx.secret-scanning.enforced:true}")
+    private boolean enforced;
 
     /**
      * Maximum file size to scan in bytes. Files larger than this are skipped.
@@ -194,6 +204,10 @@ public class SecretScanningConfig {
         return enabled;
     }
 
+    public boolean isEnforced() {
+        return enforced;
+    }
+
     public long getMaxFileSizeBytes() {
         return maxFileSizeBytes;
     }
@@ -276,37 +290,31 @@ public class SecretScanningConfig {
 
     @PostConstruct
     public void validate() {
-        // Max file size should be positive
         if (maxFileSizeBytes <= 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-scanning.max-file-size-bytes must be positive, got: " + maxFileSizeBytes);
         }
         
-        // Max line length should be positive
         if (maxLineLength <= 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-scanning.max-line-length must be positive, got: " + maxLineLength);
         }
 
-        // Timeout should be positive
         if (timeoutSeconds <= 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-scanning.timeout-seconds must be positive, got: " + timeoutSeconds);
         }
         
-        // Entry cap must be positive
         if (maxEntryCount <= 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-scanning.max-entry-count must be positive, got: " + maxEntryCount);
         }
         
-        // Total size cap must be positive
         if (maxTotalUncompressedBytes <= 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-scanning.max-total-uncompressed-bytes must be positive, got: " + maxTotalUncompressedBytes);
         }
         
-        // Findings cap must be positive
         if (maxFindings <= 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-scanning.max-findings must be positive, got: " + maxFindings);

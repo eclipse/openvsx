@@ -258,3 +258,158 @@ export interface LoginProviders {
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';
+
+// Scan and file decision types (used by admin scan UI)
+export interface ScanResultJson {
+    id: string;
+    namespace: string;
+    extensionName: string;
+    version: string;
+    displayName: string;
+    publisher: string;
+    extensionIcon?: string;
+    downloadUrl?: string;
+    publisherUrl?: string;
+    status: string;
+    dateScanStarted: string;
+    dateScanEnded?: string;
+    errorMessage?: string;
+    dateQuarantined?: string;
+    dateRejected?: string;
+    threats?: Array<{
+        id: string;
+        fileName: string;
+        fileHash: string;
+        type: string;
+        severity?: string;
+        reason: string;
+        fileExtension: string;
+        dateDetected: string;
+        ruleName: string;
+        enforcedFlag?: boolean;
+    }>;
+    validationFailures?: Array<{
+        id: string;
+        type: string;
+        ruleName: string;
+        reason: string;
+        dateDetected: string;
+        enforcedFlag: boolean;
+    }>;
+    adminDecision?: {
+        decision: string;
+        decidedBy: string;
+        dateDecided: string;
+    };
+}
+
+export interface ScanCounts {
+    STARTED: number;
+    VALIDATING: number;
+    SCANNING: number;
+    PASSED: number;
+    QUARANTINED: number;
+    AUTO_REJECTED: number;
+    ERROR: number;
+    ALLOWED: number;
+    BLOCKED: number;
+    NEEDS_REVIEW: number;
+}
+
+export interface ScanResultsResponse {
+    success?: string;
+    warning?: string;
+    error?: string;
+    offset: number;
+    totalSize: number;
+    scans: ScanResultJson[];
+}
+
+export interface ScanFilterOptions {
+    validationTypes: string[];
+    threatScannerNames: string[];
+}
+
+export interface FileDecisionJson {
+    id: string;
+    fileName: string;
+    fileHash: string;
+    fileType: string;
+    decision: string;
+    decidedBy: string;
+    dateDecided: string;
+    displayName: string;
+    namespace: string;
+    extensionName: string;
+    publisher: string;
+    version: string;
+    scanId?: string;
+}
+
+export interface FilesResponse {
+    success?: string;
+    warning?: string;
+    error?: string;
+    offset: number;
+    totalSize: number;
+    files: FileDecisionJson[];
+}
+
+export interface FileDecisionCountsJson {
+    allowed: number;
+    blocked: number;
+    total: number;
+}
+
+export interface ScanDecisionRequest {
+    scanIds: string[];
+    decision: string;
+}
+
+export interface ScanDecisionResult {
+    scanId: string;
+    success: boolean;
+    error?: string;
+}
+
+export interface ScanDecisionResponse {
+    processed: number;
+    successful: number;
+    failed: number;
+    results: ScanDecisionResult[];
+}
+
+export interface FileDecisionRequest {
+    fileHashes: string[];
+    decision: string;
+}
+
+export interface FileDecisionResult {
+    fileHash: string;
+    success: boolean;
+    error?: string;
+}
+
+export interface FileDecisionResponse {
+    processed: number;
+    successful: number;
+    failed: number;
+    results: FileDecisionResult[];
+}
+
+export interface FileDecisionDeleteRequest {
+    fileIds: string[];
+}
+
+export interface FileDecisionDeleteResult {
+    fileId: string;
+    success: boolean;
+    error?: string;
+}
+
+export interface FileDecisionDeleteResponse {
+    processed: number;
+    successful: number;
+    failed: number;
+    results: FileDecisionDeleteResult[];
+}

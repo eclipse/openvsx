@@ -51,6 +51,20 @@ public class SimilarityConfig {
     private boolean newExtensionsOnly;
 
     /**
+     * Whether similarity failures are enforced (i.e. block publishing) when a similarity match is found.
+     *
+     * Why this exists:
+     * - We sometimes want to run the check and store the audit trail (scan + failures)
+     *   without rejecting publication (monitor-only mode).
+     *
+     * Default is true to preserve the historic behavior: when the similarity check is enabled,
+     * it blocks publishing on matches unless explicitly configured otherwise.
+     */
+    @Value("${ovsx.similarity.enforced:true}")
+    private boolean enforced;
+
+
+    /**
      * Levenshtein threshold used to decide whether two extension identifiers are "too similar".
      * The check compares the edit distance against a fraction of the identifier length.
      * Smaller values are stricter. For example {@code 0.15} requires at least ~15% difference.
@@ -98,6 +112,10 @@ public class SimilarityConfig {
 
     public boolean isNewExtensionsOnly() {
         return newExtensionsOnly;
+    }
+    
+    public boolean isEnforced() {
+        return enforced;
     }
 
     public double getLevenshteinThreshold() {

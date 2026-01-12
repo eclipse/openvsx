@@ -27,8 +27,8 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.scanning.SecretScanResult;
-import org.eclipse.openvsx.scanning.SecretScanningService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.*;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
@@ -39,7 +39,6 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -91,7 +90,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
     JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
-    SecretScanningService.class
+    ExtensionScanPersistenceService.class
 })
 class RegistryAPITest {
 
@@ -109,6 +108,9 @@ class RegistryAPITest {
 
     @MockitoBean
     EntityManager entityManager;
+
+    @MockitoBean
+    ExtensionScanService extensionScanService;
 
     @Autowired
     MockMvc mockMvc;
@@ -2607,9 +2609,17 @@ class RegistryAPITest {
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
-                SecretScanningService secretScanningService
+                ExtensionScanService extensionScanService
         ) {
-            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler, secretScanningService);
+            return new ExtensionService(
+                    entityManager,
+                    repositories,
+                    search,
+                    cache,
+                    publishHandler,
+                    scheduler,
+                    extensionScanService
+            );
         }
 
         @Bean
@@ -2693,7 +2703,7 @@ class RegistryAPITest {
                 UserService users,
                 ExtensionValidator validator,
                 ExtensionControlService extensionControl,
-                SimilarityCheckService similarityCheckService
+                ExtensionScanService extensionScanService
         ) {
             return new PublishExtensionVersionHandler(
                     service,
@@ -2704,7 +2714,7 @@ class RegistryAPITest {
                     users,
                     validator,
                     extensionControl,
-                    similarityCheckService
+                    extensionScanService
             );
         }
     }
