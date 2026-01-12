@@ -29,9 +29,7 @@
     ],
     "main": "lib/index",
     "types": "lib/index",
-    "bin": {
-        "ovsx": "lib/ovsx"
-    },
+    "bin": "bin/ovsx",
     "engines": {
         "node": ">= 20"
     },
@@ -69,7 +67,7 @@
     "scripts": {
         "clean": "rimraf lib",
         "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
-        "build": "tsc -p ./tsconfig.json && yarn run lint && cp src/ovsx lib/ovsx",
+        "build": "tsc -p ./tsconfig.json && yarn run lint",
         "watch": "tsc -w -p ./tsconfig.json",
         "lint": "eslint -c ./configs/eslintrc.mjs src",
         "prepare": "yarn run clean && yarn run prebuild && yarn run build",
