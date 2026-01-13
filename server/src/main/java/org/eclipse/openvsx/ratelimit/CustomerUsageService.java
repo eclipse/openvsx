@@ -18,14 +18,14 @@ import redis.clients.jedis.JedisCluster;
 
 import java.time.Instant;
 
-public class UsageService {
+public class CustomerUsageService {
     private final static int WINDOW_MINUTES = 5;
 
-    private final Logger logger = LoggerFactory.getLogger(UsageService.class);
+    private final Logger logger = LoggerFactory.getLogger(CustomerUsageService.class);
 
     private final JedisCluster jedisCluster;
 
-    public UsageService(JedisCluster jedisCluster) {
+    public CustomerUsageService(JedisCluster jedisCluster) {
         this.jedisCluster = jedisCluster;
     }
 

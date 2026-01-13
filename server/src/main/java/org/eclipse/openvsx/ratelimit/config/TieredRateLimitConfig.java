@@ -13,7 +13,7 @@
 package org.eclipse.openvsx.ratelimit.config;
 
 import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimiterFilterFactory;
-import org.eclipse.openvsx.ratelimit.UsageService;
+import org.eclipse.openvsx.ratelimit.CustomerUsageService;
 import org.eclipse.openvsx.ratelimit.filter.TieredRateLimitServletFilterFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,19 +22,17 @@ import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.JedisCluster;
 
 @Configuration
-public class TieredRateLimitConfigBeans {
+@ConditionalOnProperty(value = "ovsx.tiered-rate-limit.enabled", havingValue = "true")
+@ConditionalOnBean(JedisCluster.class)
+public class TieredRateLimitConfig {
 
     @Bean
-    @ConditionalOnProperty(value = "ovsx.tiered-rate-limit.enabled", havingValue = "true")
-    @ConditionalOnBean(JedisCluster.class)
-    UsageService usageService(JedisCluster jedisCluster) {
-        return new UsageService(jedisCluster);
+    CustomerUsageService customerUsageService(JedisCluster jedisCluster) {
+        return new CustomerUsageService(jedisCluster);
     }
 
     @Bean
-    @ConditionalOnProperty(value = "ovsx.tiered-rate-limit.enabled", havingValue = "true")
-    @ConditionalOnBean(JedisCluster.class)
-    ServletRateLimiterFilterFactory tieredServletFilterFactory(UsageService usageService) {
-        return new TieredRateLimitServletFilterFactory(usageService);
+    ServletRateLimiterFilterFactory tieredServletFilterFactory(CustomerUsageService customerUsageService) {
+        return new TieredRateLimitServletFilterFactory(customerUsageService);
     }
 }

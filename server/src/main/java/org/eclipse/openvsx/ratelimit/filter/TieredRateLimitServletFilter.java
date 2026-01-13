@@ -21,7 +21,7 @@ import com.giffing.bucket4j.spring.boot.starter.service.RateLimitService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.openvsx.ratelimit.UsageService;
+import org.eclipse.openvsx.ratelimit.CustomerUsageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -34,14 +34,14 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
     private final Logger logger = LoggerFactory.getLogger(TieredRateLimitServletFilter.class);
 
     private FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig;
-    private final UsageService usageService;
+    private final CustomerUsageService customerUsageService;
 
     public TieredRateLimitServletFilter(
         FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig,
-        UsageService usageService
+        CustomerUsageService customerUsageService
     ) {
         this.filterConfig = filterConfig;
-        this.usageService = usageService;
+        this.customerUsageService = customerUsageService;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         logger.debug("rate limit filter: {}: {}", request.getRequestURI(), request.getRemoteAddr());
 
-        usageService.incrementUsage(request.getRemoteAddr());
+        customerUsageService.incrementUsage(request.getRemoteAddr());
 
         boolean allConsumed = true;
         Long remainingLimit = null;
