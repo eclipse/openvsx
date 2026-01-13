@@ -303,7 +303,7 @@ public class ElasticSearchService implements ISearchService {
 
         if (!StringUtils.isEmpty(options.namespace())) {
             // Filter by namespace
-            boolQuery.must(QueryBuilders.term(builder -> builder.field("namespace").value(options.namespace()).caseInsensitive(true)));
+            boolQuery.must(QueryBuilders.term(builder -> builder.field("namespace.keyword").value(options.namespace()).caseInsensitive(true)));
         }
         if (!StringUtils.isEmpty(options.category())) {
             // Filter by selected category
