@@ -159,7 +159,11 @@ export class Registry {
 
     private getUrl(path: string, query?: { [key: string]: string }): URL {
         const url = new URL(this.url);
-        url.pathname += path;
+        if (url.pathname.endsWith("/")) {
+            url.pathname += path;
+        } else {
+            url.pathname += `/${path}`;
+        }
         if (query) {
             url.search = querystring.stringify(query);
         }

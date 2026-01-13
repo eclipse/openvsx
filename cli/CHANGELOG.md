@@ -4,6 +4,10 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ### [Unreleased]
 
+#### Fixes
+
+- Support custom registry url including a subpath
+
 #### Changes
 
 - Move `ovsx` script to `bin` directory ([#1538](https://github.com/eclipse/openvsx/pull/1538))
