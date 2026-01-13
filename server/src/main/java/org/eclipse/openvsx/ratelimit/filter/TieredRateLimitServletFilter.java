@@ -21,28 +21,27 @@ import com.giffing.bucket4j.spring.boot.starter.service.RateLimitService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.ratelimit.UsageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
-public class RateLimitServletFilter extends OncePerRequestFilter implements ServletRateLimitFilter {
+public class TieredRateLimitServletFilter extends OncePerRequestFilter implements ServletRateLimitFilter {
 
-    private final Logger logger = LoggerFactory.getLogger(RateLimitServletFilter.class);
+    private final Logger logger = LoggerFactory.getLogger(TieredRateLimitServletFilter.class);
 
-    private CacheService cacheService;
     private FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig;
+    private final UsageService usageService;
 
-    public RateLimitServletFilter(
-        CacheService cacheService,
-        FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig
+    public TieredRateLimitServletFilter(
+        FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig,
+        UsageService usageService
     ) {
-        this.cacheService = cacheService;
         this.filterConfig = filterConfig;
+        this.usageService = usageService;
     }
 
     @Override
@@ -59,11 +58,7 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Serv
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         logger.debug("rate limit filter: {}: {}", request.getRequestURI(), request.getRemoteAddr());
 
-        var instant = Instant.now();
-        var epochMinute = instant.getEpochSecond() / 60;
-        var window = epochMinute / 5 * 5;
-        var old = cacheService.incrementCustomerUsage(request.getRemoteAddr() + ":" + window, 1);
-        System.out.println(old);
+        usageService.incrementUsage(request.getRemoteAddr());
 
         boolean allConsumed = true;
         Long remainingLimit = null;

@@ -17,24 +17,17 @@ import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimitF
 import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimiterFilterFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.openvsx.cache.CacheService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
-import redis.clients.jedis.JedisCluster;
+import org.eclipse.openvsx.ratelimit.UsageService;
 
-@Component
-@ConditionalOnProperty(value = "ovsx.rate-limit.enabled", havingValue = "true")
-@ConditionalOnBean(JedisCluster.class)
-public class RateLimitServletFilterFactory implements ServletRateLimiterFilterFactory {
-    private final CacheService cacheService;
+public class TieredRateLimitServletFilterFactory implements ServletRateLimiterFilterFactory {
+    private final UsageService usageService;
 
-    public RateLimitServletFilterFactory(CacheService cacheService) {
-        this.cacheService = cacheService;
+    public TieredRateLimitServletFilterFactory(UsageService usageService) {
+        this.usageService = usageService;
     }
 
     @Override
     public ServletRateLimitFilter create(FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig) {
-        return new RateLimitServletFilter(cacheService, filterConfig);
+        return new TieredRateLimitServletFilter(filterConfig, usageService);
     }
 }
