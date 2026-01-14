@@ -469,6 +469,63 @@ public class AdminAPI {
         }
     }
 
+    @DeleteMapping(
+        path = "/admin/namespace/{namespaceName}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Delete a namespace and all its extensions")
+    @ApiResponse(
+            responseCode = "200",
+            description = "The namespace was successfully deleted",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Namespace not found",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    public ResponseEntity<ResultJson> deleteNamespace(
+            @PathVariable @Parameter(description = "Namespace name", example = "my-namespace") String namespaceName
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+            var result = admins.deleteNamespace(namespaceName, adminUser);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @DeleteMapping(
+        path = "/admin/api/namespace/{namespaceName}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Delete a namespace and all its extensions (with token authentication)")
+    @ApiResponse(
+            responseCode = "200",
+            description = "The namespace was successfully deleted",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Namespace not found",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    public ResponseEntity<ResultJson> deleteNamespaceWithToken(
+            @PathVariable @Parameter(description = "Namespace name", example = "my-namespace") String namespaceName,
+            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser(tokenValue);
+            var result = admins.deleteNamespace(namespaceName, adminUser);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
     @GetMapping(
         path = "/admin/publisher/{provider}/{loginName}",
         produces = MediaType.APPLICATION_JSON_VALUE
