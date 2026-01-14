@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -u
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SERVER_ROOT=$( dirname "${SCRIPT_DIR}" )
+PROJECT_ROOT=$( dirname "${SERVER_ROOT}" )
 
 TEST_EXTENSIONS_DIRECTORY="${SERVER_ROOT}/build/test-extensions"
 
@@ -19,8 +20,8 @@ export PUBLISHERS="DotJoshJohnson eamodio felixfbecker formulahendry HookyQR ms-
 echo "Publishing test extensions to '${OVSX_REGISTRY_URL}'"
 
 echo "Creating namespaces..."
-for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace "${pub}"; done
+for pub in $PUBLISHERS; do "${PROJECT_ROOT}/cli/bin/ovsx" create-namespace "${pub}"; done
 
 echo "Publishing extensions..."
-find "${SERVER_ROOT}/build/test-extensions-builtin" -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
-find "${SERVER_ROOT}/build/test-extensions" -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
+find "${SERVER_ROOT}/build/test-extensions-builtin" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
+find "${SERVER_ROOT}/build/test-extensions" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
