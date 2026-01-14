@@ -84,7 +84,7 @@ class ScanAPITest {
         // Provide display name from linked version
         Mockito.when(repositories.findVersion("2.0.0", "universal", "third", "gamma")).thenReturn(TestData.version(12, "Alpha Utility"));
 
-        mockMvc.perform(get("/admin/api/scans")
+        mockMvc.perform(get("/admin/scans")
                 .param("status", "VALIDATING")
                 .param("publisher", "alpha")
                 .param("namespace", "a")
@@ -123,7 +123,7 @@ class ScanAPITest {
         Mockito.when(repositories.findVersion(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
         Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
 
-        mockMvc.perform(get("/admin/api/scans")
+        mockMvc.perform(get("/admin/scans")
                 .param("namespace", "alp")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -156,7 +156,7 @@ class ScanAPITest {
         )).thenReturn(new PageImpl<>(List.of(scanA)));
 
         // Match by displayName partial (case-insensitive)
-        mockMvc.perform(get("/admin/api/scans")
+        mockMvc.perform(get("/admin/scans")
                 .param("name", "tool")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -171,7 +171,7 @@ class ScanAPITest {
         )).thenReturn(new PageImpl<>(List.of(scanB)));
 
         // Match by extensionName partial
-        mockMvc.perform(get("/admin/api/scans")
+        mockMvc.perform(get("/admin/scans")
                 .param("name", "bet")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -199,7 +199,7 @@ class ScanAPITest {
         Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
 
         // explode=false behavior: status=PASSED,ERROR should be parsed into a list of two values.
-        mockMvc.perform(get("/admin/api/scans")
+        mockMvc.perform(get("/admin/scans")
                 .param("status", "PASSED,ERROR")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -237,7 +237,7 @@ class ScanAPITest {
         });
 
         // Validates CSV parsing: "BLOCKLIST,NAME SQUATTING" -> ["BLOCKLIST", "NAME SQUATTING"]
-        mockMvc.perform(get("/admin/api/scans")
+        mockMvc.perform(get("/admin/scans")
                 .param("validationType", "BLOCKLIST,NAME SQUATTING")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -251,7 +251,7 @@ class ScanAPITest {
         Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
         Mockito.when(repositories.findDistinctValidationFailureCheckTypes()).thenReturn(java.util.List.of("NAME_SQUATTING", "BLOCKLIST"));
 
-        mockMvc.perform(get("/admin/api/scans/filterOptions").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/admin/scans/filterOptions").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.validationTypes.length()").value(2))
             .andExpect(jsonPath("$.validationTypes[0]").value("NAME_SQUATTING"))
@@ -263,7 +263,7 @@ class ScanAPITest {
         Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
         Mockito.when(repositories.findAllExtensionScans()).thenReturn(Streamable.empty());
 
-        mockMvc.perform(get("/admin/api/scans")
+        mockMvc.perform(get("/admin/scans")
                 .param("sortBy", "unknownField")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest())
@@ -283,7 +283,7 @@ class ScanAPITest {
         Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.ERRORED)).thenReturn(7L);
 
         // Default behavior (no filters): uses the fast count-by-status repository calls.
-        mockMvc.perform(get("/admin/api/scans/counts").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/admin/scans/counts").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.STARTED").value(1))
             .andExpect(jsonPath("$.VALIDATING").value(2))
@@ -318,13 +318,13 @@ class ScanAPITest {
             Mockito.argThat(s -> s != ScanStatus.REJECTED), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean()
         )).thenReturn(0L);
 
-        mockMvc.perform(get("/admin/api/scans/counts")
+        mockMvc.perform(get("/admin/scans/counts")
                 .param("enforcement", "enforced")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.AUTO_REJECTED").value(1));
 
-        mockMvc.perform(get("/admin/api/scans/counts")
+        mockMvc.perform(get("/admin/scans/counts")
                 .param("enforcement", "notEnforced")
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -349,7 +349,7 @@ class ScanAPITest {
         Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(Streamable.empty());
         Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
 
-        mockMvc.perform(get("/admin/api/scans").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/admin/scans").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.scans[0].displayName").value("Manifest Display"))
             .andExpect(jsonPath("$.scans[0].extensionName").value("ext"))
@@ -361,7 +361,7 @@ class ScanAPITest {
     void getScanCounts_requires_admin() throws Exception {
         Mockito.when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
 
-        mockMvc.perform(get("/admin/api/scans/counts").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/admin/scans/counts").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isForbidden());
     }
 
@@ -369,7 +369,7 @@ class ScanAPITest {
     void getScans_requires_admin() throws Exception {
         Mockito.when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
 
-        mockMvc.perform(get("/admin/api/scans").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/admin/scans").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isForbidden());
     }
 

@@ -61,7 +61,7 @@ public final class SecretFinding {
     @Override
     public String toString() {
         return String.format(
-            "Potential secret found in %s:%d (rule: %s, entropy: %f): %s",
+            "Potential secret found in %s:%d (rule: %s, entropy: %.2f): %s",
             filePath,
             lineNumber,
             ruleId,
