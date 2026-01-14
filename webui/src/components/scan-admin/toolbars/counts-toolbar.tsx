@@ -173,7 +173,7 @@ export const CountsToolbar: FunctionComponent<CountsToolbarProps> = ({
                                                     checked={option.checked}
                                                     size='small'
                                                     sx={{
-                                                        color: 'rgba(255, 255, 255, 0.23)',
+                                                        color: theme.palette.checkboxUnchecked,
                                                         '&.Mui-checked': {
                                                             color: theme.palette.secondary.main,
                                                         },

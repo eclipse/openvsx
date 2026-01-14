@@ -274,7 +274,7 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                 checked={allSelected}
                                 onChange={handleSelectAll}
                                 sx={{
-                                    color: theme.palette.scanBackground.light,
+                                    color: theme.palette.checkboxUnchecked,
                                     '&.Mui-checked': {
                                         color: 'secondary.main',
                                     },
@@ -433,7 +433,7 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                         <Checkbox
                                             checked={selected}
                                             sx={{
-                                                color: theme.palette.scanBackground.light,
+                                                color: theme.palette.checkboxUnchecked,
                                                 '&.Mui-checked': {
                                                     color: 'secondary.main',
                                                 },

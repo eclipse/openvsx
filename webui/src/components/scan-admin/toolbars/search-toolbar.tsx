@@ -158,7 +158,7 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                                     disabled={filter.disabled}
                                     size='small'
                                     sx={{
-                                        color: 'rgba(255, 255, 255, 0.23)',
+                                        color: theme.palette.checkboxUnchecked,
                                         '&.Mui-checked': {
                                             color: theme.palette.secondary.main,
                                         },
