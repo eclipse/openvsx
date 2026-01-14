@@ -11,6 +11,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Changes
 
 - Move `ovsx` script to `bin` directory ([#1538](https://github.com/eclipse/openvsx/pull/1538))
+- Disable the automatic execution of lifecycle scripts by yarn ([#1546](https://github.com/eclipse/openvsx/pull/1546))
 
 ### [v0.10.8] (Jan. 2026)
 
