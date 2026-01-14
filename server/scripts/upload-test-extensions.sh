@@ -20,8 +20,8 @@ export PUBLISHERS="DotJoshJohnson eamodio felixfbecker formulahendry HookyQR ms-
 echo "Publishing test extensions to '${OVSX_REGISTRY_URL}'"
 
 echo "Creating namespaces..."
-for pub in $PUBLISHERS; do ${PROJECT_ROOT}/cli/bin/ovsx create-namespace "${pub}"; done
+for pub in $PUBLISHERS; do "${PROJECT_ROOT}/cli/bin/ovsx" create-namespace "${pub}"; done
 
 echo "Publishing extensions..."
-find "${SERVER_ROOT}/build/test-extensions-builtin" -name '*.vsix' -exec ${PROJECT_ROOT}/cli/bin/ovsx publish '{}' \;
-find "${SERVER_ROOT}/build/test-extensions" -name '*.vsix' -exec ${PROJECT_ROOT}/cli/bin/ovsx publish '{}' \;
+find "${SERVER_ROOT}/build/test-extensions-builtin" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
+find "${SERVER_ROOT}/build/test-extensions" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
