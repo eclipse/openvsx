@@ -234,7 +234,6 @@ export const useScansEffect = (
         state.dateRange,
         state.enforcement,
         state.refreshTrigger,
-        state.scans.length,
         dispatch,
         handleErrorRef,
     ]);
