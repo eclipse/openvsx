@@ -30,6 +30,24 @@ the [EclipseFdn/open-vsx.org wiki](https://github.com/EclipseFdn/open-vsx.org/wi
 
 See the [openvsx Wiki](https://github.com/eclipse/openvsx/wiki) for documentation of general concepts and usage of this project.
 
+## Features
+
+### Database Read/Write Splitting
+
+OpenVSX supports database read/write splitting for improved horizontal scalability in high-traffic deployments. This feature allows you to configure separate connection pools for:
+
+- **Primary database**: Handles all write operations and can also serve reads
+- **Replica database(s)**: Handles read-only operations for better performance
+
+This is particularly beneficial since most database traffic consists of SELECT statements that can be distributed across read replicas. The feature provides:
+
+- Native support for PostgreSQL replication
+- Automatic routing of `@Transactional(readOnly=true)` methods to replicas
+- Backward compatibility with single-database deployments
+- Separate HikariCP connection pools for optimal resource utilization
+
+For detailed configuration instructions, see [Database Read/Write Splitting Documentation](doc/database-read-write-splitting.md).
+
 ## Development
 
 - The easiest way to get a development environment for this project is to open it in [Gitpod](https://gitpod.io/).
