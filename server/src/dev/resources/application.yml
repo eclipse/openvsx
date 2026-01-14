@@ -24,9 +24,27 @@ spring:
 #      username: openvsx
 #      password: openvsx
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: openvsx
-    password: openvsx
+    primary:
+      url: jdbc:postgresql://localhost:5432/postgres
+      username: openvsx
+      password: openvsx
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+    # Replica configuration (optional) - uncomment to enable read/write splitting
+    # replica:
+    #   url: jdbc:postgresql://localhost:5433/postgres
+    #   username: openvsx
+    #   password: openvsx
+    #   hikari:
+    #     maximum-pool-size: 20
+    #     minimum-idle: 10
+    #     connection-timeout: 30000
+    #     idle-timeout: 600000
+    #     max-lifetime: 1800000
   flyway:
     baseline-on-migrate: true
     baseline-version: 0.1.0
@@ -145,6 +163,9 @@ bucket4j:
               unit: seconds
 
 ovsx:
+  datasource:
+    replica:
+      enabled: false  # Set to true and configure replica datasource to enable read/write splitting
   databasesearch:
     enabled: false
   elasticsearch:

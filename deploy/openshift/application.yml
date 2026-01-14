@@ -20,9 +20,23 @@ spring:
     jcache:
       config: classpath:ehcache.xml
   datasource:
-    url: jdbc:postgresql://postgresql:5432/openvsx
-    username: openvsx
-    password: openvsx
+    primary:
+      url: jdbc:postgresql://postgresql:5432/openvsx
+      username: openvsx
+      password: openvsx
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 5
+        connection-timeout: 30000
+    # Replica configuration (optional) - set via environment variables or uncomment
+    # replica:
+    #   url: ${OPENVSX_REPLICA_DB_URL:jdbc:postgresql://postgresql-replica:5432/openvsx}
+    #   username: ${OPENVSX_REPLICA_DB_USER:openvsx}
+    #   password: ${OPENVSX_REPLICA_DB_PASSWORD:openvsx}
+    #   hikari:
+    #     maximum-pool-size: 20
+    #     minimum-idle: 10
+    #     connection-timeout: 30000
   flyway:
     baseline-on-migrate: true
     baseline-version: 0.1.0
@@ -96,6 +110,9 @@ bucket4j:
   enabled: false
 
 ovsx:
+  datasource:
+    replica:
+      enabled: false  # Set to true and configure replica datasource to enable read/write splitting
   databasesearch:
     enabled: false
   elasticsearch:
