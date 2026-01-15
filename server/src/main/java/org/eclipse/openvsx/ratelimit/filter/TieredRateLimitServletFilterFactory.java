@@ -17,17 +17,20 @@ import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimitF
 import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimiterFilterFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.openvsx.ratelimit.CustomerService;
 import org.eclipse.openvsx.ratelimit.CustomerUsageService;
 
 public class TieredRateLimitServletFilterFactory implements ServletRateLimiterFilterFactory {
+    private final CustomerService customerService;
     private final CustomerUsageService usageService;
 
-    public TieredRateLimitServletFilterFactory(CustomerUsageService usageService) {
+    public TieredRateLimitServletFilterFactory(CustomerService customerService, CustomerUsageService usageService) {
+        this.customerService = customerService;
         this.usageService = usageService;
     }
 
     @Override
     public ServletRateLimitFilter create(FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig) {
-        return new TieredRateLimitServletFilter(filterConfig, usageService);
+        return new TieredRateLimitServletFilter(filterConfig, customerService, usageService);
     }
 }

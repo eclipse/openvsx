@@ -9,16 +9,16 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.entities.Customer;
+import org.eclipse.openvsx.entities.Tier;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;
 
-public interface CustomerRepository extends Repository<Customer, Long> {
+public interface TierRepository extends Repository<Tier, Long> {
 
-    List<Customer> findAll();
+    List<Tier> findAll();
 
-    Customer findByNameIgnoreCase(String name);
+    Tier findByNameIgnoreCase(String name);
 
     long count();
 }

@@ -61,6 +61,7 @@ public class RepositoryService {
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
     private final CustomerRepository customerRepo;
+    private final TierRepository tierRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -86,7 +87,8 @@ public class RepositoryService {
             MigrationItemJooqRepository migrationItemJooqRepo,
             SignatureKeyPairRepository signatureKeyPairRepo,
             SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
-            CustomerRepository customerRepo
+            CustomerRepository customerRepo,
+            TierRepository tierRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -112,6 +114,7 @@ public class RepositoryService {
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
         this.customerRepo = customerRepo;
+        this.tierRepo = tierRepo;
     }
 
     public Namespace findNamespace(String name) {
@@ -677,6 +680,18 @@ public class RepositoryService {
 
     public long countCustomers() {
         return customerRepo.count();
+    }
+
+    public List<Tier> findAllTiers() {
+        return tierRepo.findAll();
+    }
+
+    public Tier findTier(String name) {
+        return tierRepo.findByNameIgnoreCase(name);
+    }
+
+    public long countTiers() {
+        return tierRepo.count();
     }
 
 }

@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.ratelimit.config;
 
 import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimiterFilterFactory;
+import org.eclipse.openvsx.ratelimit.CustomerService;
 import org.eclipse.openvsx.ratelimit.CustomerUsageService;
 import org.eclipse.openvsx.ratelimit.filter.TieredRateLimitServletFilterFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -32,7 +33,7 @@ public class TieredRateLimitConfig {
     }
 
     @Bean
-    ServletRateLimiterFilterFactory tieredServletFilterFactory(CustomerUsageService customerUsageService) {
-        return new TieredRateLimitServletFilterFactory(customerUsageService);
+    ServletRateLimiterFilterFactory tieredServletFilterFactory(CustomerService customerService, CustomerUsageService customerUsageService) {
+        return new TieredRateLimitServletFilterFactory(customerService, customerUsageService);
     }
 }

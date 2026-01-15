@@ -14,6 +14,7 @@ package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,9 +28,12 @@ public class Customer {
 
     private String name;
 
+    @ManyToOne
+    private Tier tier;
+
     @Column(length = 2048)
     @Convert(converter = ListOfStringConverter.class)
-    private List<String> cidrs;
+    private List<String> cidrs = Collections.emptyList();
 
     public String getName() {
         return name;
@@ -37,6 +41,14 @@ public class Customer {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Tier getTier() {
+        return tier;
+    }
+
+    public void setTier(Tier tier) {
+        this.tier = tier;
     }
 
     public List<String> getCidrs() {
@@ -54,11 +66,21 @@ public class Customer {
         Customer that = (Customer) o;
         return id == that.id
                 && Objects.equals(name, that.name)
+                && Objects.equals(tier, that.tier)
                 && Objects.equals(cidrs, that.cidrs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, cidrs);
+        return Objects.hash(id, name, tier, cidrs);
+    }
+
+    @Override
+    public String toString() {
+        return "Customer{" +
+                "name='" + name + '\'' +
+                ", tier=" + tier +
+                ", cidrs=" + cidrs +
+                '}';
     }
 }
