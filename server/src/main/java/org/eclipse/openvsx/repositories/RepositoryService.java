@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
@@ -62,6 +63,7 @@ public class RepositoryService {
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
     private final CustomerRepository customerRepo;
     private final TierRepository tierRepo;
+    private final UsageStatsRepository usageStatsRepository;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -88,7 +90,8 @@ public class RepositoryService {
             SignatureKeyPairRepository signatureKeyPairRepo,
             SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
             CustomerRepository customerRepo,
-            TierRepository tierRepo
+            TierRepository tierRepo,
+            UsageStatsRepository usageStatsRepository
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -115,6 +118,7 @@ public class RepositoryService {
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
         this.customerRepo = customerRepo;
         this.tierRepo = tierRepo;
+        this.usageStatsRepository = usageStatsRepository;
     }
 
     public Namespace findNamespace(String name) {
@@ -694,4 +698,8 @@ public class RepositoryService {
         return tierRepo.count();
     }
 
+    @Transactional
+    public void saveUsageStats(UsageStats usageStats) {
+        usageStatsRepository.save(usageStats);
+    }
 }

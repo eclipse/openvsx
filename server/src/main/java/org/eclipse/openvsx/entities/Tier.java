@@ -14,11 +14,19 @@ package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.Objects;
 
 @Entity
-public class Tier {
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "name" }),
+})
+public class Tier implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(generator = "tierSeq")
@@ -35,7 +43,7 @@ public class Tier {
 
     @Column(nullable = false)
     @Convert(converter = DurationSecondsConverter.class)
-    private Duration time = Duration.ofMinutes(5);
+    private Duration duration = Duration.ofMinutes(5);
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -65,12 +73,12 @@ public class Tier {
         this.capacity = capacity;
     }
 
-    public Duration getTime() {
-        return time;
+    public Duration getDuration() {
+        return duration;
     }
 
-    public void setTime(Duration time) {
-        this.time = time;
+    public void setDuration(Duration duration) {
+        this.duration = duration;
     }
 
     public RefillStrategy getRefillStrategy() {
@@ -90,13 +98,13 @@ public class Tier {
             && Objects.equals(name, that.name)
             && Objects.equals(description, that.description)
             && Objects.equals(capacity, that.capacity)
-            && Objects.equals(time, that.time)
+            && Objects.equals(duration, that.duration)
             && Objects.equals(refillStrategy, that.refillStrategy);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, capacity, time, refillStrategy);
+        return Objects.hash(id, name, description, capacity, duration, refillStrategy);
     }
 
     @Override
@@ -104,7 +112,7 @@ public class Tier {
         return "Tier{" +
                 "name='" + name + '\'' +
                 ", capacity=" + capacity +
-                ", time=" + time +
+                ", duration=" + duration +
                 ", refillStrategy=" + refillStrategy +
                 '}';
     }

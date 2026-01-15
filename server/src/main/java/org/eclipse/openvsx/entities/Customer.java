@@ -14,12 +14,20 @@ package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 @Entity
-public class Customer {
+@Table(uniqueConstraints = {
+    @UniqueConstraint(columnNames = { "name" }),
+})
+public class Customer implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(generator = "customerSeq")

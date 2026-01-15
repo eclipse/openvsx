@@ -16,6 +16,7 @@ import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimite
 import org.eclipse.openvsx.ratelimit.CustomerService;
 import org.eclipse.openvsx.ratelimit.CustomerUsageService;
 import org.eclipse.openvsx.ratelimit.filter.TieredRateLimitServletFilterFactory;
+import org.eclipse.openvsx.repositories.RepositoryService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -28,8 +29,8 @@ import redis.clients.jedis.JedisCluster;
 public class TieredRateLimitConfig {
 
     @Bean
-    CustomerUsageService customerUsageService(JedisCluster jedisCluster) {
-        return new CustomerUsageService(jedisCluster);
+    CustomerUsageService customerUsageService(RepositoryService repositories, JedisCluster jedisCluster) {
+        return new CustomerUsageService(repositories, jedisCluster);
     }
 
     @Bean
