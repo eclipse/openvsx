@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Theme, Typography, Box, Paper, Button, Link, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import { Theme, Typography, Box, Paper, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
@@ -27,7 +27,6 @@ const link = ({ theme }: { theme: Theme }) => ({
     }
 });
 
-const StyledLink = styled(Link)(link);
 const StyledRouteLink = styled(RouteLink)(link);
 
 const EmptyTypography = styled(Typography)(({ theme }: { theme: Theme }) => ({
@@ -43,7 +42,7 @@ const DeleteButton = styled(Button)(({ theme }: { theme: Theme }) => ({
 
 export const UserSettingsTokens: FunctionComponent = () => {
 
-    const { service, user, handleError } = useContext(MainContext);
+    const { service, user, handleError, pageSettings } = useContext(MainContext);
 
     const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
     const [loading, setLoading] = useState(true);
@@ -119,14 +118,14 @@ export const UserSettingsTokens: FunctionComponent = () => {
     };
 
     const agreement = user?.publisherAgreement;
+    const PublisherAgreementNotSignedContent = pageSettings.elements.userSettings?.accessTokens?.publisherAgreementNotSignedContent;
     if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
-        return <Box>
+        return PublisherAgreementNotSignedContent ? <PublisherAgreementNotSignedContent/> :
+        <Box>
             <EmptyTypography variant='body1'>
-                Access tokens cannot be created as you currently do not have an Eclipse Foundation Open VSX
-                Publisher Agreement signed. Please return to
+                Access tokens cannot be created as you currently do not have a Publisher Agreement signed. Please return to
                 your <StyledRouteLink to={UserSettingsRoutes.PROFILE}>Profile</StyledRouteLink> page
-                to sign the Publisher Agreement. Should you believe this is in error, please
-                contact <StyledLink href='mailto:license@eclipse.org'>license@eclipse.org</StyledLink>.
+                to sign the Publisher Agreement.
             </EmptyTypography>
         </Box>;
     }
