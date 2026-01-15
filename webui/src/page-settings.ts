@@ -43,6 +43,11 @@ export interface PageSettings {
             },
             cookie?: Cookie
         };
+        userSettings?: {
+            accessTokens?: {
+              publisherAgreementNotSignedContent?: ComponentType; 
+            }
+        },
         mainHeadTags?: ComponentType<{ pageSettings: PageSettings }>;
         extensionHeadTags?: ComponentType<{ extension?: Extension, pageSettings: PageSettings }>;
         namespaceHeadTags?: ComponentType<{ namespaceDetails?: NamespaceDetails, name: string, pageSettings: PageSettings }>;
