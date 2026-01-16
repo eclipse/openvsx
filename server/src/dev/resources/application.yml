@@ -170,3 +170,30 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+  scanning:
+    enabled: true
+  similarity:
+    enabled: true
+    enforced: true
+    levenshtein-threshold: 0.2
+    skip-verified-publishers: true
+    check-against-verified-only: true
+    exclude-owner-namespaces: true
+    new-extensions-only: true
+  secret-scanning:
+    enabled: true
+    rules-path: 'classpath:scanning/secret-scanning-custom-rules.yaml'
+    inline-suppressions: 'secret-scanner:ignore,gitleaks:allow,nosecret,@suppress-secret'
+    auto-generate-rules: true
+    force-regenerate-rules: false
+    generated-rules-path: '/tmp/secret-scanning-rules-gitleaks.yaml'
+    max-file-size-bytes: 5242880
+    max-entry-count: 50000
+    max-total-uncompressed-bytes: 524288000
+    max-findings: 200
+    max-line-length: 10000
+    long-line-no-space-threshold: 1000
+    keyword-context-chars: 100
+    log-allowlisted-value-preview-length: 10
+    timeout-seconds: 5
+    timeout-check-every-n-lines: 100

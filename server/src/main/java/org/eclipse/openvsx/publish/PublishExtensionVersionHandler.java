@@ -21,6 +21,7 @@ import org.eclipse.openvsx.adapter.VSCodeIdNewExtensionJobRequest;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -50,6 +51,7 @@ public class PublishExtensionVersionHandler {
     private final UserService users;
     private final ExtensionValidator validator;
     private final ExtensionControlService extensionControl;
+    private final ExtensionScanService scanService;
 
     public PublishExtensionVersionHandler(
             PublishExtensionVersionService service,
@@ -59,7 +61,8 @@ public class PublishExtensionVersionHandler {
             JobRequestScheduler scheduler,
             UserService users,
             ExtensionValidator validator,
-            ExtensionControlService extensionControl
+            ExtensionControlService extensionControl,
+            ExtensionScanService scanService
     ) {
         this.service = service;
         this.integrityService = integrityService;
@@ -69,6 +72,7 @@ public class PublishExtensionVersionHandler {
         this.users = users;
         this.validator = validator;
         this.extensionControl = extensionControl;
+        this.scanService = scanService;
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -110,8 +114,11 @@ public class PublishExtensionVersionHandler {
 
         var extensionName = processor.getExtensionName();
         validateExtensionVersion(processor, namespaceName, extensionName);
-
+        
         var extVersion = processor.getMetadata();
+        var displayName = extVersion.getDisplayName();
+        validateExtensionName(namespaceName, extensionName, displayName, user);
+
         extVersion.setTimestamp(timestamp);
         extVersion.setPublishedWith(token);
         extVersion.setActive(false);
@@ -147,18 +154,21 @@ public class PublishExtensionVersionHandler {
     }
 
     private void validateExtensionVersion(ExtensionProcessor processor, String namespaceName, String extensionName) {
-        var nameIssue = validator.validateExtensionName(extensionName);
-        if (nameIssue.isPresent()) {
-            throw new ErrorResultException(nameIssue.get().toString());
-        }
-        if(isMalicious(namespaceName, extensionName)) {
-            throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
-        }
-
         var version = processor.getVersion();
         var versionIssue = validator.validateExtensionVersion(version);
         if (versionIssue.isPresent()) {
             throw new ErrorResultException(versionIssue.get().toString());
+        }
+    }
+
+    private void validateExtensionName(String namespaceName, String extensionName, String displayName, UserData user) {
+        var nameIssue = validator.validateExtensionName(extensionName);
+        if (nameIssue.isPresent()) {
+            throw new ErrorResultException(nameIssue.get().toString());
+        }
+
+        if(isMalicious(namespaceName, extensionName)) {
+            throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
         }
     }
 
@@ -200,8 +210,23 @@ public class PublishExtensionVersionHandler {
     }
 
     @Async
-    @Retryable
     public void publishAsync(TempFile extensionFile, ExtensionService extensionService) {
+        doPublish(extensionFile, extensionService);
+    }
+
+    @Async
+    public void publishAsync(TempFile extensionFile, ExtensionService extensionService, ExtensionScan scan) {
+        try {
+            doPublish(extensionFile, extensionService);
+            scanService.completeScanningSuccess(scan);
+        } catch (Exception e) {
+            scanService.markScanAsErrored(scan, "Async processing failed: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Retryable
+    private void doPublish(TempFile extensionFile, ExtensionService extensionService) {
         var download = extensionFile.getResource();
         var extVersion = download.getExtension();
 

@@ -11,6 +11,10 @@ package org.eclipse.openvsx.util;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -49,4 +53,44 @@ public final class ArchiveUtil {
         }
         return file;
     }
+
+    /**
+     * Enforce coarse archive limits before reading content.
+     */
+    public static void enforceArchiveLimits(List<? extends ZipEntry> entries,
+                                            int maxEntryCount,
+                                            long maxTotalUncompressedBytes) {
+        if (entries.size() > maxEntryCount) {
+            throw new ErrorResultException("Archive contains too many entries (" + entries.size() + ").");
+        }
+
+        long declaredTotal = 0;
+        for (ZipEntry entry : entries) {
+            long size = entry.getSize();
+            if (size > 0) {
+                declaredTotal += size;
+                if (declaredTotal > maxTotalUncompressedBytes) {
+                    throw new ErrorResultException("Uncompressed archive size exceeds limit of " + maxTotalUncompressedBytes + " bytes.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Reject zip entries that attempt path traversal or absolute paths.
+     */
+    public static boolean isSafePath(String filePath) {
+        try {
+            if (filePath.startsWith("/") || filePath.startsWith("\\")) {
+                return false;
+            }
+
+            Path normalized = Paths.get(filePath).normalize();
+
+            return !(normalized.isAbsolute() || normalized.startsWith("..") || normalized.toString().startsWith(".."));
+        } catch (InvalidPathException e) {
+            return false;
+        }
+    }
+
 }
