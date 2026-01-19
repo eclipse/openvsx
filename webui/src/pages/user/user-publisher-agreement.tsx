@@ -94,14 +94,14 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         content = <Typography variant='body1'>
             {
                 user.publisherAgreement.timestamp
-                    ? <>You signed the Eclipse Foundation Open VSX Publisher Agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
-                    : 'You signed the Eclipse Foundation Open VSX Publisher Agreement.'
+                    ? <>You signed the {pageSettings.agreement.name} <Timestamp value={user.publisherAgreement.timestamp} />.</>
+                    : <>You signed the {pageSettings.agreement.name}.</>
             }
         </Typography>;
     } else if (user.additionalLogins?.find(login => login.provider === 'eclipse')) {
         content = <>
             <Typography variant='body1'>
-                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                You need to sign the {pageSettings.agreement.name} before you can publish
                 any extension to this registry.
             </Typography>
             <Box mt={2} display='flex' justifyContent='flex-end'>
@@ -113,7 +113,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     } else {
         content = <>
             <Typography variant='body1'>
-                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                You need to sign the {pageSettings.agreement.name} before you can publish
                 any extension to this registry. To start the signing process, please log in with
                 an Eclipse Foundation account.
             </Typography>

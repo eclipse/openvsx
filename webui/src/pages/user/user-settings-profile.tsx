@@ -14,6 +14,7 @@ import { toLocalTime } from '../../utils';
 import { UserData } from '../../extension-registry-types';
 import { UserPublisherAgreement } from './user-publisher-agreement';
 import styled from '@mui/material/styles/styled';
+import { PageSettings } from '../../page-settings';
 
 const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
     [theme.breakpoints.up('lg')]: {
@@ -37,12 +38,11 @@ const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
     marginBottom: theme.spacing(2)
 }));
 
-export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = props => {
+export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = ({ user, agreement, isAdmin }) => {
 
-    const user = props.user;
     let publisherAgreementPanel: ReactNode = null;
     if (user.publisherAgreement) {
-        if (props.isAdmin) {
+        if (isAdmin) {
             let statusText = 'has not signed';
             if (user.publisherAgreement.status === 'signed') {
                 statusText = 'has signed';
@@ -51,7 +51,7 @@ export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = 
             }
 
             publisherAgreementPanel = <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
-                {user.loginName} {statusText} the Eclipse publisher agreement.
+                {user.loginName} {statusText} the {agreement.name}.
             </Typography>;
         } else {
             publisherAgreementPanel = <Grid container>
@@ -88,5 +88,6 @@ export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = 
 
 export interface UserSettingsProfileProps {
     user: UserData;
+    agreement: PageSettings['agreement'];
     isAdmin?: boolean;
 }

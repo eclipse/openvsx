@@ -10,24 +10,12 @@
 
 import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import { Theme, Typography, Box, Paper, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
-import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
 import { PersonalAccessToken } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { GenerateTokenDialog } from './generate-token-dialog';
-import { UserSettingsRoutes } from './user-settings';
 import styled from '@mui/material/styles/styled';
-
-const link = ({ theme }: { theme: Theme }) => ({
-    color: theme.palette.secondary.main,
-    textDecoration: 'none',
-    '&:hover': {
-        textDecoration: 'underline'
-    }
-});
-
-const StyledRouteLink = styled(RouteLink)(link);
 
 const EmptyTypography = styled(Typography)(({ theme }: { theme: Theme }) => ({
     [theme.breakpoints.down('sm')]: {
@@ -118,16 +106,9 @@ export const UserSettingsTokens: FunctionComponent = () => {
     };
 
     const agreement = user?.publisherAgreement;
-    const PublisherAgreementNotSignedContent = pageSettings.elements.userSettings?.accessTokens?.publisherAgreementNotSignedContent;
+    const PublisherAgreementNotSignedContent = pageSettings.elements.agreement.notSignedContent;
     if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
-        return PublisherAgreementNotSignedContent ? <PublisherAgreementNotSignedContent/> :
-        <Box>
-            <EmptyTypography variant='body1'>
-                Access tokens cannot be created as you currently do not have a Publisher Agreement signed. Please return to
-                your <StyledRouteLink to={UserSettingsRoutes.PROFILE}>Profile</StyledRouteLink> page
-                to sign the Publisher Agreement.
-            </EmptyTypography>
-        </Box>;
+        return  <PublisherAgreementNotSignedContent pageSettings={pageSettings}/>;
     }
 
     return <>

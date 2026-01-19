@@ -15,14 +15,16 @@ import { UserExtensionList } from '../user/user-extension-list';
 import { Box, Typography } from '@mui/material';
 import { PublisherRevokeDialog } from './publisher-revoke-dialog';
 import { PublisherRevokeTokensButton } from './publisher-revoke-tokens-button';
+import { PageSettings } from '../../page-settings';
 
 interface PublisherDetailsProps {
     publisherInfo: PublisherInfo;
+    agreement: PageSettings['agreement'];
 }
 
 export const PublisherDetails: FunctionComponent<PublisherDetailsProps> = props => {
     return <Box mt={2}>
-        <UserSettingsProfile user={props.publisherInfo.user} isAdmin={true} />
+        <UserSettingsProfile user={props.publisherInfo.user} agreement={props.agreement} isAdmin={true} />
         <Box mt={2}>
             <Typography variant='h5'>Access Tokens</Typography>
             <Typography variant='body1'>

@@ -21,6 +21,7 @@ import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
 import { createAbsoluteURL } from '../utils';
+import { DefaultAgreementNotSignedContent } from './agreement';
 
 export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string, serverVersionPromise: Promise<string>): PageSettings {
     const toolbarContent: FunctionComponent = () =>
@@ -124,7 +125,13 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
             additionalRoutes,
             mainHeadTags,
             extensionHeadTags,
-            namespaceHeadTags
+            namespaceHeadTags,
+            agreement: {
+              notSignedContent: DefaultAgreementNotSignedContent,
+            }
+        },
+        agreement: {
+            name: 'Eclipse Foundation Open VSX Publisher Agreement',
         },
         urls: {
             extensionDefaultIcon: '/default-icon.png',
