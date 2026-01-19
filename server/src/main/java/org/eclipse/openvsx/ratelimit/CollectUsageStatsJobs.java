@@ -22,17 +22,16 @@ import org.springframework.stereotype.Component;
 public class CollectUsageStatsJobs {
     private final Logger logger = LoggerFactory.getLogger(CollectUsageStatsJobs.class);
 
-    private CustomerUsageService customerUsageService;
+    private final UsageDataService usageDataService;
 
-    public CollectUsageStatsJobs(CustomerUsageService customerUsageService) {
-        this.customerUsageService = customerUsageService;
+    public CollectUsageStatsJobs(UsageDataService usageDataService) {
+        this.usageDataService = usageDataService;
     }
 
     @Job(name = "Collect usage stats", retries = 0)
     @Recurring(id = "collect-usage-stats", cron = "*/15 * * * * *", zoneId = "UTC")
     public void collect() {
         logger.info("starting collect usage stats job");
-
-        customerUsageService.persistUsageStats();
+        usageDataService.persistUsageStats();
     }
 }

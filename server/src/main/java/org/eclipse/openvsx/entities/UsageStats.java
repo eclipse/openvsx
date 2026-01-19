@@ -17,7 +17,7 @@ import jakarta.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -38,7 +38,7 @@ public class UsageStats implements Serializable {
     private Customer customer;
 
     @Column(nullable = false)
-    private Instant windowStart;
+    private LocalDateTime windowStart;
 
     @Column(nullable = false)
     @Convert(converter = DurationSecondsConverter.class)
@@ -46,6 +46,46 @@ public class UsageStats implements Serializable {
 
     @Column(nullable = false)
     private long count = 0;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public LocalDateTime getWindowStart() {
+        return windowStart;
+    }
+
+    public void setWindowStart(LocalDateTime windowStart) {
+        this.windowStart = windowStart;
+    }
+
+    public Duration getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Duration duration) {
+        this.duration = duration;
+    }
+
+    public long getCount() {
+        return count;
+    }
+
+    public void setCount(long count) {
+        this.count = count;
+    }
 
     @Override
     public boolean equals(Object o) {

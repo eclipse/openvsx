@@ -21,8 +21,8 @@ import com.giffing.bucket4j.spring.boot.starter.service.RateLimitService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.openvsx.ratelimit.CustomerService;
-import org.eclipse.openvsx.ratelimit.CustomerUsageService;
+import org.eclipse.openvsx.ratelimit.UsageDataService;
+import org.eclipse.openvsx.ratelimit.IdentityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -35,17 +35,17 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
     private final Logger logger = LoggerFactory.getLogger(TieredRateLimitServletFilter.class);
 
     private FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig;
-    private final CustomerService customerService;
-    private final CustomerUsageService customerUsageService;
+    private final UsageDataService customerUsageService;
+    private final IdentityService identityService;
 
     public TieredRateLimitServletFilter(
         FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig,
-        CustomerService customerService,
-        CustomerUsageService customerUsageService
+        UsageDataService customerUsageService,
+        IdentityService identityService
     ) {
         this.filterConfig = filterConfig;
-        this.customerService = customerService;
         this.customerUsageService = customerUsageService;
+        this.identityService = identityService;
     }
 
     @Override
@@ -62,9 +62,13 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         logger.debug("rate limit filter: {}: {}", request.getRequestURI(), request.getRemoteAddr());
 
-        var customer = customerService.getCustomer(request.getRemoteAddr());
-        logger.info("handling rate limit for customer {}", customer);
-        customerUsageService.incrementUsage(request.getRemoteAddr());
+        var identity = identityService.resolveIdentity(request);
+
+        if (identity.isCustomer()) {
+            var customer = identity.getCustomer();
+            logger.info("handling rate limit for customer {}", customer);
+            customerUsageService.incrementUsage(customer);
+        }
 
         boolean allConsumed = true;
         Long remainingLimit = null;

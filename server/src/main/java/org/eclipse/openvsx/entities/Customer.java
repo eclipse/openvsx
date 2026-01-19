@@ -41,7 +41,15 @@ public class Customer implements Serializable {
 
     @Column(length = 2048)
     @Convert(converter = ListOfStringConverter.class)
-    private List<String> cidrs = Collections.emptyList();
+    private List<String> cidrBlocks = Collections.emptyList();
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -59,12 +67,12 @@ public class Customer implements Serializable {
         this.tier = tier;
     }
 
-    public List<String> getCidrs() {
-        return cidrs;
+    public List<String> getCidrBlocks() {
+        return cidrBlocks;
     }
 
-    public void setCidrs(List<String> cidrs) {
-        this.cidrs = cidrs;
+    public void setCidrs(List<String> cidrBlocks) {
+        this.cidrBlocks = cidrBlocks;
     }
 
     @Override
@@ -75,12 +83,12 @@ public class Customer implements Serializable {
         return id == that.id
                 && Objects.equals(name, that.name)
                 && Objects.equals(tier, that.tier)
-                && Objects.equals(cidrs, that.cidrs);
+                && Objects.equals(cidrBlocks, that.cidrBlocks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, tier, cidrs);
+        return Objects.hash(id, name, tier, cidrBlocks);
     }
 
     @Override
@@ -88,7 +96,7 @@ public class Customer implements Serializable {
         return "Customer{" +
                 "name='" + name + '\'' +
                 ", tier=" + tier +
-                ", cidrs=" + cidrs +
+                ", cidrBlocks=" + cidrBlocks +
                 '}';
     }
 }

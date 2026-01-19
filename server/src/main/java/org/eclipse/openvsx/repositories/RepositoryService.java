@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 
@@ -678,7 +679,11 @@ public class RepositoryService {
         return customerRepo.findAll();
     }
 
-    public Customer findCustomer(String name) {
+    public Optional<Customer> findCustomerById(long id) {
+        return customerRepo.findById(id);
+    }
+
+    public Optional<Customer> findCustomer(String name) {
         return customerRepo.findByNameIgnoreCase(name);
     }
 

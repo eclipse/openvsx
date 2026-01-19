@@ -13,12 +13,15 @@ import org.eclipse.openvsx.entities.Customer;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CustomerRepository extends Repository<Customer, Long> {
 
+    Optional<Customer> findById(long id);
+
     List<Customer> findAll();
 
-    Customer findByNameIgnoreCase(String name);
+    Optional<Customer> findByNameIgnoreCase(String name);
 
     long count();
 }

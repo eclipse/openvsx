@@ -43,7 +43,8 @@ def versions = [
     jaxb_impl: '2.3.8',
     gatling: '3.14.9',
     loki4j: '1.4.2',
-    jedis: '6.2.0'
+    jedis: '6.2.0',
+    ipaddress: '5.5.1'
 ]
 ext['junit-jupiter.version'] = versions.junit
 java {
@@ -117,6 +118,7 @@ dependencies {
     implementation "redis.clients:jedis:${versions.jedis}"
     implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
     implementation "com.bucket4j:bucket4j-redis:${versions.bucket4j_redis}"
+    implementation "com.github.seancfoley:ipaddress:${versions.ipaddress}"
     implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"

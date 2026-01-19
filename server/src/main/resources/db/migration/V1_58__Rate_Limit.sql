@@ -19,9 +19,9 @@ ALTER TABLE ONLY public.tier
 -- create customer table
 CREATE TABLE IF NOT EXISTS public.customer (id BIGINT NOT NULL,
                                             name CHARACTER VARYING(255) NOT NULL,
-    tier_id bigint,
-    cidrs CHARACTER VARYING(2048)
-    );
+                                            tier_id bigint,
+                                            cidr_blocks CHARACTER VARYING(2048)
+);
 
 ALTER TABLE ONLY public.customer
     ADD CONSTRAINT customer_pkey PRIMARY KEY (id);
@@ -38,7 +38,7 @@ SELECT SETVAL('customer_seq', (SELECT COALESCE(MAX(id), 1) FROM customer)::BIGIN
 -- create usage_stats table
 CREATE TABLE IF NOT EXISTS public.usage_stats (id BIGINT NOT NULL,
                                                customer_id BIGINT,
-                                               window_start BIGINT NOT NULL,
+                                               window_start TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                                                duration INTEGER NOT NULL,
                                                count BIGINT NOT NULL
 );
