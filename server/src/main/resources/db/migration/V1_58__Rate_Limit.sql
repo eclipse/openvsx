@@ -20,6 +20,7 @@ ALTER TABLE ONLY public.tier
 CREATE TABLE IF NOT EXISTS public.customer (id BIGINT NOT NULL,
                                             name CHARACTER VARYING(255) NOT NULL,
                                             tier_id bigint,
+                                            state CHARACTER VARYING(255) NOT NULL,
                                             cidr_blocks CHARACTER VARYING(2048)
 );
 

@@ -39,6 +39,10 @@ public class Customer implements Serializable {
     @ManyToOne
     private Tier tier;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private EnforcementState state = EnforcementState.EVALUATION;
+
     @Column(length = 2048)
     @Convert(converter = ListOfStringConverter.class)
     private List<String> cidrBlocks = Collections.emptyList();
@@ -67,11 +71,19 @@ public class Customer implements Serializable {
         this.tier = tier;
     }
 
+    public EnforcementState getState() {
+        return state;
+    }
+
+    public void setState(EnforcementState state) {
+        this.state = state;
+    }
+
     public List<String> getCidrBlocks() {
         return cidrBlocks;
     }
 
-    public void setCidrs(List<String> cidrBlocks) {
+    public void setCidrBlocks(List<String> cidrBlocks) {
         this.cidrBlocks = cidrBlocks;
     }
 
@@ -96,6 +108,7 @@ public class Customer implements Serializable {
         return "Customer{" +
                 "name='" + name + '\'' +
                 ", tier=" + tier +
+                ", state=" + state +
                 ", cidrBlocks=" + cidrBlocks +
                 '}';
     }
