@@ -15,7 +15,7 @@ import {
     Box
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
-import { RefillStrategy, type Tier } from "../../../extension-registry-types";
+import { RefillStrategy, type Tier, TierFormData } from "../../../extension-registry-types";
 
 type DurationUnit = 'seconds' | 'minutes' | 'hours' | 'days';
 
@@ -34,7 +34,7 @@ interface TierFormDialogProps {
 }
 
 export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, onSubmit }) => {
-    const [formData, setFormData] = useState<Omit<Tier, 'id'>>({
+    const [formData, setFormData] = useState<TierFormData>({
         name: '',
         description: '',
         capacity: 100,
@@ -69,7 +69,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                 description: '',
                 capacity: 100,
                 duration: 3600,
-                refillStrategy: RefillStrategy.INTERVAL 
+                refillStrategy: RefillStrategy.INTERVAL
             }));
             setDurationValue(1);
             setDurationUnit('hours');

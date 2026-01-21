@@ -272,3 +272,5 @@ export interface Tier {
     duration: number;
     refillStrategy: RefillStrategy;
 }
+
+export type TierFormData = Omit<Tier, 'id'>;
