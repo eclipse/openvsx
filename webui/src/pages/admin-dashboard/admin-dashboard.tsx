@@ -23,6 +23,8 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { Welcome } from './welcome';
 import { PublisherAdmin } from './publisher-admin';
 import PersonIcon from '@mui/icons-material/Person';
+import StarIcon from '@mui/icons-material/Star';
+import { Tiers } from './tiers/tiers';
 
 export namespace AdminDashboardRoutes {
     export const ROOT = 'admin-dashboard';
@@ -30,6 +32,7 @@ export namespace AdminDashboardRoutes {
     export const NAMESPACE_ADMIN = createRoute([ROOT, 'namespaces']);
     export const EXTENSION_ADMIN = createRoute([ROOT, 'extensions']);
     export const PUBLISHER_ADMIN = createRoute([ROOT, 'publisher']);
+    export const TIERS = createRoute([ROOT, 'tiers']);
 }
 
 const Message: FunctionComponent<{message: string}> = ({ message }) => {
@@ -59,6 +62,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' icon={<AssignmentIndIcon />} route={AdminDashboardRoutes.NAMESPACE_ADMIN} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' icon={<ExtensionSharpIcon />} route={AdminDashboardRoutes.EXTENSION_ADMIN} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' icon={<PersonIcon />} route={AdminDashboardRoutes.PUBLISHER_ADMIN} />
+                <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.TIERS} label='Tiers' icon={<StarIcon />} route={AdminDashboardRoutes.TIERS} />
             </Sidepanel>
             <Box overflow='auto' flex={1}>
                 <IconButton onClick={toMainPage} sx={{ float: 'right', mt: 1, mr: 1 }}>
@@ -69,6 +73,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                         <Route path='/namespaces' element={<NamespaceAdmin/>} />
                         <Route path='/extensions' element={<ExtensionAdmin/>} />
                         <Route path='/publisher' element={<PublisherAdmin/>} />
+                        <Route path='/tiers' element={<Tiers/>} />
                         <Route path='*' element={<Welcome/>} />
                     </Routes>
                 </Container>

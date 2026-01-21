@@ -12,7 +12,7 @@ import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders
+    LoginProviders, Tier, RefillStrategy
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -486,15 +486,47 @@ export interface AdminService {
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
     revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
     revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
+    getAllTiers(): Promise<Readonly<Tier[]>>;
+    getTierById(id: number): Promise<Readonly<Tier>>;
+    createTier(tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>>;
+    updateTier(id: number, tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>>;
+    deleteTier(id: number): Promise<Readonly<void>>;
 }
 
-export interface AdminServiceConstructor {
-    new (registry: ExtensionRegistryService): AdminService
-}
+export type AdminServiceConstructor = new (registry: ExtensionRegistryService) => AdminService;
 
 export class AdminServiceImpl implements AdminService {
 
-    constructor(readonly registry: ExtensionRegistryService) {}
+    constructor(readonly registry: ExtensionRegistryService) {
+        this.initializeMockTiers();
+    }
+
+    private readonly tierCounter = { value: 1 };
+    private readonly mockTiers: Map<number, Tier> = new Map();
+
+    private initializeMockTiers(): void {
+        if (this.mockTiers.size === 0) {
+            const sampleTiers: Tier[] = [
+                {
+                    id: this.tierCounter.value++,
+                    name: 'Free',
+                    description: 'Free tier with basic rate limiting',
+                    capacity: 100,
+                    duration: 3600,
+                    refillStrategy: RefillStrategy.GREEDY
+                },
+                {
+                    id: this.tierCounter.value++,
+                    name: 'Professional',
+                    description: 'Professional tier with higher rate limits',
+                    capacity: 1000,
+                    duration: 3600,
+                    refillStrategy: RefillStrategy.GREEDY
+                }
+            ];
+            sampleTiers.forEach(tier => this.mockTiers.set(tier.id, tier));
+        }
+    }
 
     getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
         return sendRequest({
@@ -608,6 +640,48 @@ export class AdminServiceImpl implements AdminService {
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'tokens', 'revoke']),
             headers
         });
+    }
+
+    async getAllTiers(): Promise<Readonly<Tier[]>> {
+        return Array.from(this.mockTiers.values());
+    }
+
+    async getTierById(id: number): Promise<Readonly<Tier>> {
+        const tier = this.mockTiers.get(id);
+        if (!tier) {
+            throw new Error(`Tier with ID ${id} not found`);
+        }
+        return tier;
+    }
+
+    async createTier(tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>> {
+        const newTier: Tier = {
+            id: this.tierCounter.value++,
+            ...tier
+        };
+        this.mockTiers.set(newTier.id, newTier);
+        return newTier;
+    }
+
+    async updateTier(id: number, tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>> {
+        const existingTier = this.mockTiers.get(id);
+        if (!existingTier) {
+            throw new Error(`Tier with ID ${id} not found`);
+        }
+
+        const updatedTier: Tier = {
+            ...existingTier,
+            ...tier
+        };
+        this.mockTiers.set(id, updatedTier);
+        return updatedTier;
+    }
+
+    async deleteTier(id: number): Promise<void> {
+        if (!this.mockTiers.has(id)) {
+            throw new Error(`Tier with ID ${id} not found`);
+        }
+        this.mockTiers.delete(id);
     }
 }
 
