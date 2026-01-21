@@ -148,7 +148,7 @@ ovsx:
   databasesearch:
     enabled: false
   elasticsearch:
-    enabled: true 
+    enabled: true
     clear-on-start: true
   redis:
     enabled: false
