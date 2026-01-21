@@ -258,3 +258,17 @@ export interface LoginProviders {
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';
+
+export enum RefillStrategy {
+    GREEDY = 'GREEDY',
+    INTERVAL = 'INTERVAL',
+}
+
+export interface Tier {
+    id: number;
+    name: string;
+    description?: string;
+    capacity: number;
+    duration: number;
+    refillStrategy: RefillStrategy;
+}
