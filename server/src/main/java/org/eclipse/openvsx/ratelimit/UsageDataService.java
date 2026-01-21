@@ -28,8 +28,10 @@ import java.time.ZoneOffset;
 import java.util.Map;
 
 public class UsageDataService {
+    public static final String COLLECT_USAGE_STATS_SCHEDULE = "*/15 * * * * *";
+
     private final static String USAGE_DATA_KEY = "usage.customer";
-    private final static int WINDOW_MINUTES = 5;
+    private final static int    WINDOW_MINUTES = 5;
 
     private final Logger logger = LoggerFactory.getLogger(UsageDataService.class);
 
@@ -63,7 +65,7 @@ public class UsageDataService {
                 var key = result.getKey();
                 var value = result.getValue();
 
-                logger.info("{} - {}", key, value);
+                logger.debug("usage stats: {} - {}", key, value);
 
                 var component = key.split(":");
                 var customerId = Long.parseLong(component[0]);

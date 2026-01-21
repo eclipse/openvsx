@@ -10,16 +10,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-
 package org.eclipse.openvsx.ratelimit;
 
 import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Customer;
-import org.eclipse.openvsx.entities.UserData;
 
 import javax.annotation.Nullable;
 
-public record ResolvedIdentity(@Nullable Customer customer) {
+public record ResolvedIdentity(@Nullable Customer customer, String cacheKey) {
 
     public boolean isCustomer() {
         return customer != null;
@@ -33,11 +31,11 @@ public record ResolvedIdentity(@Nullable Customer customer) {
         }
     }
 
-    public static ResolvedIdentity anonymous() {
-        return new ResolvedIdentity(null);
+    public static ResolvedIdentity anonymous(String cacheKey) {
+        return new ResolvedIdentity(null, cacheKey);
     }
 
     public static ResolvedIdentity ofCustomer(Customer customer) {
-        return new ResolvedIdentity(customer);
+        return new ResolvedIdentity(customer, String.valueOf(customer.getId()));
     }
 }

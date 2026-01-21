@@ -42,6 +42,6 @@ public class IdentityService {
         }
 
 
-        return ResolvedIdentity.anonymous();
+        return ResolvedIdentity.anonymous(ipAddress);
     }
 }

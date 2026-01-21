@@ -21,10 +21,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+import static org.eclipse.openvsx.ratelimit.UsageDataService.COLLECT_USAGE_STATS_SCHEDULE;
+
 @Component
 public class ScheduleRateLimitJobs {
-
-    private static final String COLLECT_USAGE_STATS_SCHEDULE = "*/15 * * * * *";
 
     private UsageDataService usageDataService;
     private final JobRequestScheduler scheduler;

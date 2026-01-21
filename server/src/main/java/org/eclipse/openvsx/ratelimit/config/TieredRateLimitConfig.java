@@ -16,7 +16,12 @@ import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimite
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
+import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
+import io.github.bucket4j.distributed.proxy.ClientSideConfig;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
+import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import org.eclipse.openvsx.ratelimit.CustomerService;
+import org.eclipse.openvsx.ratelimit.TieredRateLimitService;
 import org.eclipse.openvsx.ratelimit.UsageDataService;
 import org.eclipse.openvsx.ratelimit.IdentityService;
 import org.eclipse.openvsx.ratelimit.filter.TieredRateLimitServletFilterFactory;
@@ -26,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -51,12 +57,18 @@ public class TieredRateLimitConfig {
     }
 
     @Bean
+    TieredRateLimitService tieredRateLimitService(ProxyManager<byte[]> proxyManager) {
+        return new TieredRateLimitService(proxyManager);
+    }
+
+    @Bean
     ServletRateLimiterFilterFactory tieredServletFilterFactory(
         UsageDataService
         customerUsageService,
-        IdentityService identityService
+        IdentityService identityService,
+        TieredRateLimitService rateLimitService
     ) {
-        return new TieredRateLimitServletFilterFactory(customerUsageService, identityService);
+        return new TieredRateLimitServletFilterFactory(customerUsageService, identityService, rateLimitService);
     }
 
     @Bean
@@ -98,4 +110,16 @@ public class TieredRateLimitConfig {
 
         return caffeineCacheManager;
     }
+
+    @Bean
+    @ConditionalOnMissingBean(ProxyManager.class)
+    public ProxyManager<byte[]> jedisBasedProxyManager(JedisCluster jedisCluster) {
+        return JedisBasedProxyManager.builderFor(jedisCluster)
+                .withClientSideConfig(
+                        ClientSideConfig
+                                .getDefault()
+                                .withExpirationAfterWriteStrategy(ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofSeconds(10))))
+                .build();
+    }
+
 }
