@@ -146,9 +146,9 @@ bucket4j:
 
 ovsx:
   databasesearch:
-    enabled: true
+    enabled: false
   elasticsearch:
-    enabled: false 
+    enabled: true 
     clear-on-start: true
   redis:
     enabled: false
