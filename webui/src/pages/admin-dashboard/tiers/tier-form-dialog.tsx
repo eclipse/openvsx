@@ -113,27 +113,21 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
     };
 
     const handleSubmit = async () => {
-        try {
-            setError(null);
-            setLoading(true);
+        setError(null);
+        setLoading(true);
 
-            // Basic validation
+        try {
+            // Validate required fields
             if (!formData.name.trim()) {
-                setError('Tier name is required');
-                setLoading(false);
-                return;
+                throw new Error('Tier name is required');
             }
 
             if (formData.capacity <= 0) {
-                setError('Capacity must be greater than 0');
-                setLoading(false);
-                return;
+                throw new Error('Capacity must be greater than 0');
             }
 
             if (durationValue <= 0) {
-                setError('Duration must be greater than 0');
-                setLoading(false);
-                return;
+                throw new Error('Duration must be greater than 0');
             }
 
             const durationInSeconds = getDurationInSeconds();
