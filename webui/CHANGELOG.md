@@ -17,6 +17,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Upgrade `lodash` from `4.17.21` to `4.17.23` ([#1557](https://github.com/eclipse/openvsx/pull/1557))
 
+### Dependencies
+
+- Upgrade react-router from 6.23.1 to 6.30.2 ([#1532](https://github.com/eclipse/openvsx/pull/1532))
+
 ## [v0.17.1] (Jan. 2026)
 
 ### Dependencies
