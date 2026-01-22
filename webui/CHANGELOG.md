@@ -13,6 +13,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Disable the automatic execution of lifecycle scripts by yarn ([#1546](https://github.com/eclipse/openvsx/pull/1546))
 
+### Dependencies
+
+- Upgrade `lodash` from `4.17.21` to `4.17.23` ([#1557](https://github.com/eclipse/openvsx/pull/1557))
+
 ## [v0.17.1] (Jan. 2026)
 
 ### Dependencies
