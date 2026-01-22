@@ -113,12 +113,17 @@ public class RateLimitAPI {
         try {
             admins.checkAdminUser();
 
-            var savedTier = repositories.findTier(name);
-            if (savedTier == null) {
+            var tier = repositories.findTier(name);
+            if (tier == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            repositories.deleteTier(savedTier);
+            var existingCustomers = repositories.countCustomersByTier(tier);
+            if (existingCustomers > 0) {
+                return ResponseEntity.badRequest().body(ResultJson.error("Cannot delete tier '" + name + "' because it is still in use"));
+            }
+
+            repositories.deleteTier(tier);
 
             return ResponseEntity.ok(ResultJson.success("Deleted tier '" + name + "'"));
         } catch (Exception exc) {

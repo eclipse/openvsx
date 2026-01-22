@@ -10,18 +10,15 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Customer;
+import org.eclipse.openvsx.entities.Tier;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CustomerRepository extends Repository<Customer, Long> {
-
-    Optional<Customer> findById(long id);
-
-    List<Customer> findAll();
-
+public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Optional<Customer> findByNameIgnoreCase(String name);
 
-    long count();
+    int countCustomersByTier(Tier tier);
 }

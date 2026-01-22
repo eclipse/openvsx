@@ -30,14 +30,27 @@ import {
 import type { SelectChangeEvent } from '@mui/material';
 import { RefillStrategy, type Tier } from "../../../extension-registry-types";
 
-type DurationUnit = 'seconds' | 'minutes' | 'hours' | 'days';
+type DurationUnit = 'seconds' | 'minutes' | 'hours';
 
 const DURATION_MULTIPLIERS: Record<DurationUnit, number> = {
     seconds: 1,
     minutes: 60,
-    hours: 3600,
-    days: 86400
+    hours: 3600
 };
+
+function formatDuration(duration: number): [number, DurationUnit] {
+    const hours = Math.floor(duration / 3600);
+    if (hours > 0) {
+        return [hours, "hours"];
+    }
+
+    const minutes = Math.floor(duration / 60);
+    if (minutes > 0) {
+        return [minutes, "minutes"];
+    }
+
+    return [duration, "seconds"];
+}
 
 interface TierFormDialogProps {
     open: boolean;
@@ -65,16 +78,17 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
 
     useEffect(() => {
         if (tier) {
-            setFormData(prev => ({
+            setFormData(_ => ({
                 name: tier.name,
                 description: tier.description || '',
                 capacity: tier.capacity,
                 duration: tier.duration,
                 refillStrategy: tier.refillStrategy as any
             } as Tier));
-            // Convert duration seconds to hours for display
-            setDurationValue(Math.floor(tier.duration / 3600));
-            setDurationUnit('hours');
+            // Convert duration seconds to value/unit for display
+            const [value, unit] = formatDuration(tier.duration);
+            setDurationValue(value);
+            setDurationUnit(unit);
         } else {
             setFormData(prev => ({
                 ...prev,
@@ -130,6 +144,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
             onClose();
         } catch (err: any) {
             setError(err.message || 'An error occurred while saving the tier');
+        } finally {
             setLoading(false);
         }
     };
@@ -201,7 +216,6 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                             <MenuItem value='seconds'>Seconds</MenuItem>
                             <MenuItem value='minutes'>Minutes</MenuItem>
                             <MenuItem value='hours'>Hours</MenuItem>
-                            <MenuItem value='days'>Days</MenuItem>
                         </Select>
                     </FormControl>
                 </Box>

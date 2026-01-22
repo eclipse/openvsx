@@ -52,7 +52,7 @@ export const Tiers: FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<Tier | undefined>();
 
-  // Load all tiers
+  // load all tiers
   const loadTiers = async () => {
     try {
       setLoading(true);
@@ -88,10 +88,10 @@ export const Tiers: FC = () => {
   const handleFormSubmit = async (formData: Tier) => {
     try {
       if (selectedTier) {
-        // Update existing tier
+        // update existing tier
         await service.admin.updateTier(abortController.current, selectedTier.name, formData);
       } else {
-        // Create new tier
+        // create new tier
         await service.admin.createTier(abortController.current, formData);
       }
       await loadTiers();

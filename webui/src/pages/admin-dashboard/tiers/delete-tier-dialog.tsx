@@ -43,6 +43,7 @@ export const DeleteTierDialog: FC<DeleteTierDialogProps> = ({ open, tier, onClos
             onClose();
         } catch (err: any) {
             setError(err.message || 'An error occurred while deleting the tier');
+        } finally {
             setLoading(false);
         }
     };
