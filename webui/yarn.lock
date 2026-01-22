@@ -1061,13 +1061,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@remix-run/router@npm:1.23.2":
-  version: 1.23.2
-  resolution: "@remix-run/router@npm:1.23.2"
-  checksum: 10/50eb497854881bbd2e1016d4eb83c935ecd618e1c3888b74718851317e3b04edbaae9fe1baa49ec08c5c52cfe7118f4664e37144813d9500f45f922d6602a782
-  languageName: node
-  linkType: hard
-
 "@stylistic/eslint-plugin@npm:^2.11.0":
   version: 2.11.0
   resolution: "@stylistic/eslint-plugin@npm:2.11.0"
@@ -5136,7 +5129,6 @@ __metadata:
     react-dropzone: "npm:^14.2.3"
     react-helmet-async: "npm:^1.3.0"
     react-infinite-scroller: "npm:^1.2.6"
-    react-router: "npm:^6.14.2"
     react-router-dom: "npm:^6.14.1"
     rimraf: "npm:^6.1.2"
     source-map-loader: "npm:^4.0.1"
@@ -5670,17 +5662,6 @@ __metadata:
   peerDependencies:
     react: ">=16.8"
   checksum: 10/72747878fd851b8fc9a6c2f1ee7a3f3a69f18df0c45d7857851b57930d4f55686190f5df0b8d9064ce9e8594bd9ac6a6f479bd8c91552f0b825beb012fa5a770
-  languageName: node
-  linkType: hard
-
-"react-router@npm:^6.14.2":
-  version: 6.30.3
-  resolution: "react-router@npm:6.30.3"
-  dependencies:
-    "@remix-run/router": "npm:1.23.2"
-  peerDependencies:
-    react: ">=16.8"
-  checksum: 10/1a51bdcc42b8d7979228dea8b5c44a28a4add9b681781f75b74f5f920d20058a92ffe5f1d0ba0621f03abe1384b36025b53b402515ecb35f27a6a2f2f25d6fbe
   languageName: node
   linkType: hard
 
