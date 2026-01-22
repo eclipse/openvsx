@@ -8,6 +8,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Support removing reviews by admins ([#1403](https://github.com/eclipse/openvsx/pull/1403))
 
+### Dependencies
+
+- Upgrade react-router from 6.23.1 to 6.30.2 ([#1532](https://github.com/eclipse/openvsx/pull/1532))
+
 ## [v0.17.1] (Jan. 2026)
 
 ### Dependencies
