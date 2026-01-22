@@ -12,7 +12,7 @@ import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders, Tier, RefillStrategy
+    LoginProviders, Tier, TierList
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -486,47 +486,17 @@ export interface AdminService {
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
     revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
     revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
-    getAllTiers(): Promise<Readonly<Tier[]>>;
-    getTierById(id: number): Promise<Readonly<Tier>>;
-    createTier(tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>>;
-    updateTier(id: number, tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>>;
-    deleteTier(id: number): Promise<Readonly<void>>;
+    getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
+    createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
+    updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
+    deleteTier(abortController: AbortController, name: string): Promise<Readonly<void>>;
 }
 
 export type AdminServiceConstructor = new (registry: ExtensionRegistryService) => AdminService;
 
 export class AdminServiceImpl implements AdminService {
 
-    constructor(readonly registry: ExtensionRegistryService) {
-        this.initializeMockTiers();
-    }
-
-    private readonly tierCounter = { value: 1 };
-    private readonly mockTiers: Map<number, Tier> = new Map();
-
-    private initializeMockTiers(): void {
-        if (this.mockTiers.size === 0) {
-            const sampleTiers: Tier[] = [
-                {
-                    id: this.tierCounter.value++,
-                    name: 'Free',
-                    description: 'Free tier with basic rate limiting',
-                    capacity: 100,
-                    duration: 3600,
-                    refillStrategy: RefillStrategy.GREEDY
-                },
-                {
-                    id: this.tierCounter.value++,
-                    name: 'Professional',
-                    description: 'Professional tier with higher rate limits',
-                    capacity: 1000,
-                    duration: 3600,
-                    refillStrategy: RefillStrategy.GREEDY
-                }
-            ];
-            sampleTiers.forEach(tier => this.mockTiers.set(tier.id, tier));
-        }
-    }
+    constructor(readonly registry: ExtensionRegistryService) {}
 
     getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
         return sendRequest({
@@ -642,46 +612,68 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async getAllTiers(): Promise<Readonly<Tier[]>> {
-        return Array.from(this.mockTiers.values());
+    async getTiers(abortController: AbortController): Promise<Readonly<TierList>> {
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers']),
+            credentials: true
+        });
     }
 
-    async getTierById(id: number): Promise<Readonly<Tier>> {
-        const tier = this.mockTiers.get(id);
-        if (!tier) {
-            throw new Error(`Tier with ID ${id} not found`);
-        }
-        return tier;
-    }
-
-    async createTier(tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>> {
-        const newTier: Tier = {
-            id: this.tierCounter.value++,
-            ...tier
+    async createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
         };
-        this.mockTiers.set(newTier.id, newTier);
-        return newTier;
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            payload: tier,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', 'create']),
+            headers
+        }, false);
     }
 
-    async updateTier(id: number, tier: Omit<Tier, 'id'>): Promise<Readonly<Tier>> {
-        const existingTier = this.mockTiers.get(id);
-        if (!existingTier) {
-            throw new Error(`Tier with ID ${id} not found`);
-        }
-
-        const updatedTier: Tier = {
-            ...existingTier,
-            ...tier
+    async updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
         };
-        this.mockTiers.set(id, updatedTier);
-        return updatedTier;
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'PUT',
+            payload: tier,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
+            headers
+        }, false);
     }
 
-    async deleteTier(id: number): Promise<void> {
-        if (!this.mockTiers.has(id)) {
-            throw new Error(`Tier with ID ${id} not found`);
+    async deleteTier(abortController: AbortController, name: string): Promise<void> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
         }
-        this.mockTiers.delete(id);
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
+            headers
+        }, false);
     }
 }
 

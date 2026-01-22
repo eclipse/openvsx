@@ -273,4 +273,6 @@ export interface Tier {
     refillStrategy: RefillStrategy;
 }
 
-export type TierFormData = Omit<Tier, 'id'>;
+export interface TierList {
+    tiers: Tier[];
+}

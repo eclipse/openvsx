@@ -10,15 +10,12 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Tier;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;
 
-public interface TierRepository extends Repository<Tier, Long> {
-
-    List<Tier> findAll();
-
+public interface TierRepository extends JpaRepository<Tier, Long> {
     Tier findByNameIgnoreCase(String name);
-
-    long count();
 }

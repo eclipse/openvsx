@@ -699,8 +699,12 @@ public class RepositoryService {
         return tierRepo.findByNameIgnoreCase(name);
     }
 
-    public long countTiers() {
-        return tierRepo.count();
+    public Tier upsertTier(Tier tier) {
+        return tierRepo.save(tier);
+    }
+
+    public void deleteTier(Tier tier) {
+        tierRepo.delete(tier);
     }
 
     @Transactional

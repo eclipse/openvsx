@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
+import org.eclipse.openvsx.json.TierJson;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -87,6 +88,29 @@ public class Tier implements Serializable {
 
     public void setRefillStrategy(RefillStrategy refillStrategy) {
         this.refillStrategy = refillStrategy;
+    }
+
+    public TierJson toJson() {
+        return new TierJson(name, description, capacity, duration.toSeconds(), refillStrategy.name());
+    }
+
+    public Tier updateFromJson(TierJson json) {
+        setName(json.name());
+        setDescription(json.description());
+        setCapacity(json.capacity());
+        setDuration(Duration.ofSeconds(json.duration()));
+        setRefillStrategy(RefillStrategy.valueOf(json.refillStrategy()));
+        return this;
+    }
+
+    public static Tier fromJson(TierJson json) {
+        var tier = new Tier();
+        tier.setName(json.name());
+        tier.setDescription(json.description());
+        tier.setCapacity(json.capacity());
+        tier.setDuration(Duration.ofSeconds(json.duration()));
+        tier.setRefillStrategy(RefillStrategy.valueOf(json.refillStrategy()));
+        return tier;
     }
 
     @Override

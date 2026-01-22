@@ -1,4 +1,17 @@
-import React, { FC, useState, useEffect } from "react";
+/*
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+import React, { FC, useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -19,13 +32,20 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { MainContext } from "../../../context";
-import type { Tier, TierFormData } from "../../../extension-registry-types";
+import type { Tier } from "../../../extension-registry-types";
 import { TierFormDialog } from "./tier-form-dialog";
 import { DeleteTierDialog } from "./delete-tier-dialog";
 
 export const Tiers: FC = () => {
+  const abortController = useRef<AbortController>(new AbortController());
+  useEffect(() => {
+    return () => {
+      abortController.current.abort();
+    };
+  }, []);
+
   const { service } = React.useContext(MainContext);
-  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [tiers, setTiers] = useState<readonly Tier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -37,8 +57,8 @@ export const Tiers: FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await service.admin.getAllTiers();
-      setTiers(data as Tier[]);
+      const data = await service.admin.getTiers(abortController.current);
+      setTiers(data.tiers);
     } catch (err: any) {
       setError(err.message || "Failed to load tiers");
     } finally {
@@ -65,14 +85,14 @@ export const Tiers: FC = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleFormSubmit = async (formData: TierFormData) => {
+  const handleFormSubmit = async (formData: Tier) => {
     try {
       if (selectedTier) {
         // Update existing tier
-        await service.admin.updateTier(selectedTier.id, formData);
+        await service.admin.updateTier(abortController.current, selectedTier.name, formData);
       } else {
         // Create new tier
-        await service.admin.createTier(formData);
+        await service.admin.createTier(abortController.current, formData);
       }
       await loadTiers();
     } catch (err: any) {
@@ -83,7 +103,7 @@ export const Tiers: FC = () => {
   const handleDeleteConfirm = async () => {
     try {
       if (selectedTier) {
-        await service.admin.deleteTier(selectedTier.id);
+        await service.admin.deleteTier(abortController.current, selectedTier.name);
         await loadTiers();
       }
     } catch (err: any) {
@@ -117,27 +137,27 @@ export const Tiers: FC = () => {
         </Button>
       </Box>
 
-      {error && (
+      { error &&
         <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
-      )}
+      }
 
-      {loading && (
+      { loading &&
         <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
           <CircularProgress />
         </Box>
-      )}
+      }
 
-      {!loading && tiers.length === 0 && (
+      { !loading && tiers.length === 0 &&
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography color='textSecondary' gutterBottom>
             No tiers found. Create one to get started.
           </Typography>
         </Paper>
-      )}
+      }
 
-      {!loading && tiers.length > 0 && (
+      { !loading && tiers.length > 0 &&
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -189,7 +209,7 @@ export const Tiers: FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      )}
+      }
 
       <TierFormDialog
         open={formDialogOpen}

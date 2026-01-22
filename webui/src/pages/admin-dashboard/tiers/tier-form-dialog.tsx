@@ -1,3 +1,16 @@
+/*
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
 import React, { FC, useState, useEffect } from 'react';
 import {
     Dialog,
@@ -15,7 +28,7 @@ import {
     Box
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
-import { RefillStrategy, type Tier, TierFormData } from "../../../extension-registry-types";
+import { RefillStrategy, type Tier } from "../../../extension-registry-types";
 
 type DurationUnit = 'seconds' | 'minutes' | 'hours' | 'days';
 
@@ -30,17 +43,17 @@ interface TierFormDialogProps {
     open: boolean;
     tier?: Tier;
     onClose: () => void;
-    onSubmit: (formData: Omit<Tier, 'id'>) => Promise<void>;
+    onSubmit: (formData: Tier) => Promise<void>;
 }
 
 export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, onSubmit }) => {
-    const [formData, setFormData] = useState<TierFormData>({
+    const [formData, setFormData] = useState<Tier>({
         name: '',
         description: '',
         capacity: 100,
         duration: 3600,
         refillStrategy: RefillStrategy.INTERVAL
-    });
+    } as Tier);
     const [durationValue, setDurationValue] = useState(1);
     const [durationUnit, setDurationUnit] = useState<DurationUnit>('hours');
     const [loading, setLoading] = useState(false);
@@ -58,7 +71,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                 capacity: tier.capacity,
                 duration: tier.duration,
                 refillStrategy: tier.refillStrategy as any
-            }));
+            } as Tier));
             // Convert duration seconds to hours for display
             setDurationValue(Math.floor(tier.duration / 3600));
             setDurationUnit('hours');
@@ -79,10 +92,10 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent) => {
         const { name, value } = e.target as any;
-        setFormData((prev: Omit<Tier, 'id'>) => ({
+        setFormData((prev: Tier) => ({
             ...prev,
             [name]: name === 'capacity' || name === 'duration' ? Number.parseInt(value as string, 10) : value
-        } as Omit<Tier, 'id'>));
+        } as Tier));
     };
 
     const handleSubmit = async () => {
@@ -203,10 +216,10 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                         value={formData.refillStrategy || ''}
                         onChange={(e: SelectChangeEvent) => {
                             const { name, value } = e.target;
-                            setFormData((prev: Omit<Tier, 'id'>) => ({
+                            setFormData((prev: Tier) => ({
                                 ...prev,
                                 [name]: value
-                            } as Omit<Tier, 'id'>));
+                            } as Tier));
                         }}
                         label='Refill Strategy'
                     >
