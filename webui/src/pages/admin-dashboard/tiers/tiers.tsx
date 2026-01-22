@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import React, { FC, useState, useEffect, useRef, useCallback } from "react";
+import React, { FC, useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -172,7 +172,7 @@ export const Tiers: FC = () => {
             </TableHead>
             <TableBody>
               {tiers.map(tier => (
-                <TableRow key={tier.id} hover>
+                <TableRow key={tier.name} hover>
                   <TableCell>{tier.name}</TableCell>
                   <TableCell>{tier.description || "-"}</TableCell>
                   <TableCell align='right'>{tier.capacity.toLocaleString()}</TableCell>

@@ -12,7 +12,7 @@ import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders, Tier, Customer, CustomerState
+    LoginProviders, Tier, TierList, Customer, CustomerState, 
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -486,7 +486,7 @@ export interface AdminService {
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
     revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
     revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
-    getTiers(abortController: AbortController): Promise<Readonly<{ tiers: Tier[] }>>;
+    getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
     createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
     updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
     deleteTier(abortController: AbortController, name: string): Promise<Readonly<void>>;
@@ -616,7 +616,7 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async getTiers(abortController: AbortController): Promise<Readonly<{ tiers: Tier[] }>> {
+    async getTiers(abortController: AbortController): Promise<Readonly<TierList>> {
         return sendRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers']),

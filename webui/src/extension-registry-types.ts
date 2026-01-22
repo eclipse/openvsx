@@ -265,7 +265,6 @@ export enum RefillStrategy {
 }
 
 export interface Tier {
-    id: number;
     name: string;
     description?: string;
     capacity: number;
