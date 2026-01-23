@@ -62,8 +62,9 @@ export const Tiers: FC = () => {
 
   useEffect(() => {
     loadTiers();
-    return () => abortController.current?.abort();
+    return () => abortController.current.abort();
   }, []);
+
   const handleCreateClick = () => {
     setSelectedTier(undefined);
     setFormDialogOpen(true);
@@ -119,7 +120,7 @@ export const Tiers: FC = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant='h4' component='h1'>
-          Tiers Management
+          Tier Management
         </Typography>
         <Button
           variant='contained'

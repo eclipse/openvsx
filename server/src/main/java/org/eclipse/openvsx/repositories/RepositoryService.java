@@ -687,12 +687,16 @@ public class RepositoryService {
         return customerRepo.findById(id);
     }
 
-    public Optional<Customer> findCustomer(String name) {
+    public Customer findCustomer(String name) {
         return customerRepo.findByNameIgnoreCase(name);
     }
 
-    public long countCustomers() {
-        return customerRepo.count();
+    public Customer upsertCustomer(Customer customer) {
+        return customerRepo.save(customer);
+    }
+
+    public void deleteCustomer(Customer customer) {
+        customerRepo.delete(customer);
     }
 
     public List<Tier> findAllTiers() {

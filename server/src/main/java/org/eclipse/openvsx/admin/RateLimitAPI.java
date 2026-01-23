@@ -12,10 +12,9 @@
  */
 package org.eclipse.openvsx.admin;
 
+import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.Tier;
-import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.TierJson;
-import org.eclipse.openvsx.json.TierListJson;
+import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.slf4j.Logger;
@@ -66,7 +65,7 @@ public class RateLimitAPI {
     )
     public ResponseEntity<TierJson> createTier(@RequestBody TierJson tier) {
         try {
-            admins.checkAdminUser();
+            var adminUser = admins.checkAdminUser();
 
             var existingTier = repositories.findTier(tier.name());
             if (existingTier != null) {
@@ -74,6 +73,10 @@ public class RateLimitAPI {
             }
 
             var savedTier = repositories.upsertTier(Tier.fromJson(tier));
+
+            var result = ResultJson.success("Created tier '" + savedTier.getName() + "'");
+            admins.logAdminAction(adminUser, result);
+
             return ResponseEntity.ok(savedTier.toJson());
         } catch (Exception exc) {
             logger.error("failed creating tier {}", tier.name(), exc);
@@ -88,7 +91,7 @@ public class RateLimitAPI {
     )
     public ResponseEntity<TierJson> updateTier(@PathVariable String name, @RequestBody TierJson tier) {
         try {
-            admins.checkAdminUser();
+            var adminUser = admins.checkAdminUser();
 
             var savedTier = repositories.findTier(name);
             if (savedTier == null) {
@@ -97,6 +100,9 @@ public class RateLimitAPI {
 
             savedTier.updateFromJson(tier);
             savedTier = repositories.upsertTier(savedTier);
+
+            var result = ResultJson.success("Updated tier '" + savedTier.getName() + "'");
+            admins.logAdminAction(adminUser, result);
 
             return ResponseEntity.ok(savedTier.toJson());
         } catch (Exception exc) {
@@ -111,7 +117,7 @@ public class RateLimitAPI {
     )
     public ResponseEntity<ResultJson> deleteTier(@PathVariable String name) {
         try {
-            admins.checkAdminUser();
+            var adminUser = admins.checkAdminUser();
 
             var tier = repositories.findTier(name);
             if (tier == null) {
@@ -125,9 +131,122 @@ public class RateLimitAPI {
 
             repositories.deleteTier(tier);
 
-            return ResponseEntity.ok(ResultJson.success("Deleted tier '" + name + "'"));
+            var result = ResultJson.success("Deleted tier '" + name + "'");
+            admins.logAdminAction(adminUser, result);
+
+            return ResponseEntity.ok(result);
         } catch (Exception exc) {
             logger.error("failed deleting tier {}", name, exc);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping(
+            path = "/customers",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<CustomerListJson> getCustomers() {
+        try {
+            admins.checkAdminUser();
+
+            var customers = repositories.findAllCustomers();
+            var result = new CustomerListJson(customers.stream().map(Customer::toJson).toList());
+            return ResponseEntity.ok(result);
+        } catch (Exception exc) {
+            logger.error("failed retrieving customers", exc);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping(
+            path = "/customers/create",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<CustomerJson> createCustomer(@RequestBody CustomerJson customerJson) {
+        try {
+            var adminUser = admins.checkAdminUser();
+
+            var existingCustomer = repositories.findCustomer(customerJson.name());
+            if (existingCustomer != null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            var customer = Customer.fromJson(customerJson);
+            // resolve the tier reference
+            var tier = repositories.findTier(customer.getTier().getName());
+            if (tier == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            customer.setTier(tier);
+
+            var savedCustomer = repositories.upsertCustomer(customer);
+
+            var result = ResultJson.success("Created customer '" + savedCustomer.getName() + "'");
+            admins.logAdminAction(adminUser, result);
+
+            return ResponseEntity.ok(savedCustomer.toJson());
+        } catch (Exception exc) {
+            logger.error("failed creating customer {}", customerJson.name(), exc);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PutMapping(
+            path = "/customers/{name}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<CustomerJson> updateCustomer(@PathVariable String name, @RequestBody CustomerJson customer) {
+        try {
+            var adminUser = admins.checkAdminUser();
+
+            var savedCustomer = repositories.findCustomer(name);
+            if (savedCustomer == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            savedCustomer.updateFromJson(customer);
+            // update the tier reference in case it changed
+            var tier = repositories.findTier(savedCustomer.getTier().getName());
+            if (tier == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            savedCustomer.setTier(tier);
+
+            savedCustomer = repositories.upsertCustomer(savedCustomer);
+
+            var result = ResultJson.success("Updated customer '" + savedCustomer.getName() + "'");
+            admins.logAdminAction(adminUser, result);
+
+            return ResponseEntity.ok(savedCustomer.toJson());
+        } catch (Exception exc) {
+            logger.error("failed updating tier {}", name, exc);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping(
+            path = "/customers/{name}",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> deleteCustomer(@PathVariable String name) {
+        try {
+            var adminUser = admins.checkAdminUser();
+
+            var customer = repositories.findCustomer(name);
+            if (customer == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            repositories.deleteCustomer(customer);
+
+            var result = ResultJson.success("Deleted customer '" + name + "'");
+            admins.logAdminAction(adminUser, result);
+
+            return ResponseEntity.ok(result);
+        } catch (Exception exc) {
+            logger.error("failed deleting customer {}", name, exc);
             return ResponseEntity.internalServerError().build();
         }
     }

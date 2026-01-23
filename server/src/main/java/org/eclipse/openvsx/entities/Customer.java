@@ -13,9 +13,12 @@
 package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
+import org.eclipse.openvsx.json.CustomerJson;
+import org.eclipse.openvsx.json.TierJson;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -85,6 +88,27 @@ public class Customer implements Serializable {
 
     public void setCidrBlocks(List<String> cidrBlocks) {
         this.cidrBlocks = cidrBlocks;
+    }
+
+    public CustomerJson toJson() {
+        return new CustomerJson(name, tier.toJson(), state.name(), cidrBlocks);
+    }
+
+    public Customer updateFromJson(CustomerJson json) {
+        setName(json.name());
+        setTier(Tier.fromJson(json.tier()));
+        setState(EnforcementState.valueOf(json.state()));
+        setCidrBlocks(json.cidrBlocks());
+        return this;
+    }
+
+    public static Customer fromJson(CustomerJson json) {
+        var customer = new Customer();
+        customer.setName(json.name());
+        customer.setTier(Tier.fromJson(json.tier()));
+        customer.setState(EnforcementState.valueOf(json.state()));
+        customer.setCidrBlocks(json.cidrBlocks());
+        return customer;
     }
 
     @Override

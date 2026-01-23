@@ -27,6 +27,8 @@ export const Welcome: FunctionComponent = props => {
                     <WelcomeLinkItem route={AdminDashboardRoutes.NAMESPACE_ADMIN} label='Namespaces' description='Manage user roles, create new namespaces' />
                     <WelcomeLinkItem route={AdminDashboardRoutes.EXTENSION_ADMIN} label='Extensions' description='Search for extensions and remove certain versions' />
                     <WelcomeLinkItem route={AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' description='Search for publishers and revoke their contributions' />
+                    <WelcomeLinkItem route={AdminDashboardRoutes.TIERS} label='Tiers' description='Manage rate-limit tiers' />
+                    <WelcomeLinkItem route={AdminDashboardRoutes.CUSTOMERS} label='Customers' description='Manage rate-limit customers' />
                 </Grid>
             </Paper>
         </Grid>

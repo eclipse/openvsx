@@ -276,14 +276,18 @@ export interface TierList {
     tiers: Tier[];
 }
 
-export enum CustomerState {
-    ENFORCEMENT = 'ENFORCEMENT',
-    EVALUATION = 'EVALUATION'
+export enum EnforcementState {
+    EVALUATION = 'EVALUATION',
+    ENFORCEMENT = 'ENFORCEMENT'
 }
 
 export interface Customer {
     name: string;
-    tierId?: string;
-    state: CustomerState;
-    cidrBlocks?: string;
+    tier?: Tier;
+    state: EnforcementState;
+    cidrBlocks: string[];
+}
+
+export interface CustomerList {
+    customers: Customer[];
 }

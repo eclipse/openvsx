@@ -1,3 +1,16 @@
+/*
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
 import React, { FC, useState, useEffect, useRef } from 'react';
 import {
     Dialog,
@@ -15,7 +28,7 @@ import {
     Box
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
-import { CustomerState, type Customer, type Tier } from "../../../extension-registry-types";
+import { type Customer, EnforcementState, type Tier } from "../../../extension-registry-types";
 import { MainContext } from "../../../context";
 
 interface CustomerFormDialogProps {
@@ -26,49 +39,46 @@ interface CustomerFormDialogProps {
 }
 
 export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer, onClose, onSubmit }) => {
-    const abortController = useRef<AbortController>();
+    const abortController = useRef<AbortController>(new AbortController());
     const { service } = React.useContext(MainContext);
     const [formData, setFormData] = useState<Customer>({
         name: '',
-        tierId: undefined,
-        state: CustomerState.ENFORCEMENT,
-        cidrBlocks: undefined
+        tier: undefined,
+        state: EnforcementState.ENFORCEMENT,
+        cidrBlocks: []
     });
     const [tiers, setTiers] = useState<Tier[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        abortController.current = new AbortController();
-        
-        const loadTiers = async () => {
-            try {
-                const data = await service.admin.getTiers(abortController.current!);
-                setTiers(data.tiers);
-            } catch (err: any) {
-                console.error('Failed to load tiers:', err);
-            }
-        };
-        
-        loadTiers();
+    const loadTiers = async () => {
+        try {
+            const data = await service.admin.getTiers(abortController.current!);
+            setTiers(data.tiers);
+        } catch (err: any) {
+            console.error('Failed to load tiers:', err);
+        }
+    };
 
-        return () => abortController.current?.abort();
-    }, [service]);
+    useEffect(() => {
+        loadTiers();
+        return () => abortController.current.abort();
+    }, []);
 
     useEffect(() => {
         if (customer) {
             setFormData({
                 name: customer.name,
-                tierId: customer.tierId,
+                tier: customer.tier,
                 state: customer.state,
                 cidrBlocks: customer.cidrBlocks
             });
         } else {
             setFormData({
                 name: '',
-                tierId: undefined,
-                state: CustomerState.ENFORCEMENT,
-                cidrBlocks: undefined
+                tier: undefined,
+                state: EnforcementState.ENFORCEMENT,
+                cidrBlocks: []
             });
         }
         setError(null);
@@ -76,11 +86,18 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
         const { name, value } = e.target;
-        
-        if (name === 'tierId') {
+
+        if (name === 'tierName') {
+            const tier = tiers.find((tier) => tier.name === value);
             setFormData(prev => ({
                 ...prev,
-                tierId: value === '' ? undefined : (value),
+                tier: tier,
+            }));
+        } else if (name === 'cidrBlocks') {
+            const cidrsBlocks = value.split(",")
+            setFormData(prev => ({
+                ...prev,
+                cidrBlocks: cidrsBlocks,
             }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
@@ -92,7 +109,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
         setLoading(true);
 
         try {
-            // Validate required fields
+            // validate required fields
             if (!formData.name.trim()) {
                 throw new Error('Customer name is required');
             }
@@ -134,14 +151,11 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                 <FormControl fullWidth disabled={loading}>
                     <InputLabel>Tier</InputLabel>
                     <Select
-                        name='tierId'
-                        value={formData.tierId ?? ''}
+                        name='tierName'
+                        value={formData.tier?.name ?? ''}
                         onChange={handleChange}
                         label='Tier'
                     >
-                        <MenuItem value=''>
-                            <em>None</em>
-                        </MenuItem>
                         {tiers.map(tier => (
                             <MenuItem key={tier.name} value={tier.name}>
                                 {tier.name}
@@ -158,8 +172,8 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                         onChange={handleChange}
                         label='State'
                     >
-                        {Object.keys(CustomerState).map(key => (
-                            <MenuItem key={key} value={CustomerState[key as keyof typeof CustomerState]}>
+                        {Object.keys(EnforcementState).map(key => (
+                            <MenuItem key={key} value={EnforcementState[key as keyof typeof EnforcementState]}>
                                 {key}
                             </MenuItem>
                         ))}
@@ -169,7 +183,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                 <TextField
                     label='CIDR Blocks'
                     name='cidrBlocks'
-                    value={formData.cidrBlocks ?? ''}
+                    value={formData.cidrBlocks?.join(",") ?? ''}
                     onChange={handleChange}
                     fullWidth
                     multiline

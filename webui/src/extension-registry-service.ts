@@ -12,7 +12,7 @@ import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders, Tier, TierList, Customer, CustomerState, 
+    LoginProviders, Tier, TierList, Customer, CustomerList,
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -490,10 +490,10 @@ export interface AdminService {
     createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
     updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
     deleteTier(abortController: AbortController, name: string): Promise<Readonly<void>>;
-    getCustomers(): Promise<Readonly<Customer[]>>;
-    createCustomer(formData: Customer): Promise<Readonly<Customer>>;
-    updateCustomer(name: string, formData: Customer): Promise<Readonly<Customer>>;
-    deleteCustomer(name: string): Promise<Readonly<void>>;
+    getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>>;
+    createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>>;
+    updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>>;
+    deleteCustomer(abortController: AbortController, name: string): Promise<Readonly<void>>;
 }
 
 export type AdminServiceConstructor = new (registry: ExtensionRegistryService) => AdminService;
@@ -680,36 +680,68 @@ export class AdminServiceImpl implements AdminService {
         }, false);
     }
 
-    async getCustomers(): Promise<Readonly<Customer[]>> {
-        return [
-            {
-                name: 'Acme Corp',
-                state: CustomerState.ENFORCEMENT,
-                cidrBlocks: '192.168.1.0/24,192.168.2.0/24'
-            },
-            {
-                name: 'TechStart Inc',
-                state: CustomerState.ENFORCEMENT,
-                cidrBlocks: '10.0.0.0/8'
-            },
-            {
-                name: 'Legacy Systems Ltd',
-                state: CustomerState.EVALUATION,
-                cidrBlocks: undefined
-            }
-        ];
+    async getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>> {
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers']),
+            credentials: true
+        });
     }
 
-    async createCustomer(formData: Customer): Promise<Readonly<Customer>> {
-        return formData;
+    async createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            payload: customer,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', 'create']),
+            headers
+        }, false);
     }
 
-    async updateCustomer(name: string, formData: Customer): Promise<Readonly<Customer>> {
-        return formData;
+    async updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'PUT',
+            payload: customer,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
+            headers
+        }, false);
     }
 
-    async deleteCustomer(name: string): Promise<void> {
-        // No-op for mock
+    async deleteCustomer(abortController: AbortController, name: string): Promise<void> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
+            headers
+        }, false);
     }
 }
 
