@@ -98,17 +98,19 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
         setTouched({});
     }, [open, customer, tiers]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
-        const { name, value } = e.target;
-
-        // Clear field error when user starts typing
-        if (errors[name]) {
+    const clearFieldError = (fieldName: string) => {
+        if (errors[fieldName]) {
             setErrors(prev => {
                 const newErrors = { ...prev };
-                delete newErrors[name];
+                delete newErrors[fieldName];
                 return newErrors;
             });
         }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
+        const { name, value } = e.target;
+        clearFieldError(name);
 
         if (name === 'tierName') {
             const tier = tiers.find((tier) => tier.name === value);
@@ -161,14 +163,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
     };
 
     const handleCidrBlocksChange = (event: any, value: string[]) => {
-        // Clear CIDR error when user modifies the field
-        if (errors.cidrBlocks) {
-            setErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors.cidrBlocks;
-                return newErrors;
-            });
-        }
+        clearFieldError('cidrBlocks');
 
         // Validate all entries
         const invalidEntries = value.filter(cidr => !isValidCIDR(cidr.trim()));

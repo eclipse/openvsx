@@ -25,7 +25,8 @@ import {
     MenuItem,
     CircularProgress,
     Alert,
-    Box
+    Box,
+    FormHelperText
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { RefillStrategy, type Tier } from "../../../extension-registry-types";
@@ -70,7 +71,8 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
     const [durationValue, setDurationValue] = useState(1);
     const [durationUnit, setDurationUnit] = useState<DurationUnit>('hours');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
 
     const getDurationInSeconds = (): number => {
         return durationValue * DURATION_MULTIPLIERS[durationUnit];
@@ -101,35 +103,92 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
             setDurationValue(1);
             setDurationUnit('hours');
         }
-        setError(null);
+        setErrors({});
+        setTouched({});
     }, [open, tier]);
+
+    const clearFieldError = (fieldName: string) => {
+        if (errors[fieldName]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[fieldName];
+                return newErrors;
+            });
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent) => {
         const { name, value } = e.target as any;
+        clearFieldError(name);
+
         setFormData((prev: Tier) => ({
             ...prev,
             [name]: name === 'capacity' || name === 'duration' ? Number.parseInt(value as string, 10) : value
         } as Tier));
     };
 
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name } = e.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+        validateField(name);
+    };
+
+    const fieldValidators: Record<string, () => string | undefined> = {
+        name: () => formData.name.trim() ? undefined : 'Tier name is required',
+        capacity: () => formData.capacity <= 0 ? 'Capacity must be greater than 0' : undefined,
+        duration: () => durationValue <= 0 ? 'Duration must be greater than 0' : undefined,
+        refillStrategy: () => formData.refillStrategy ? undefined : 'Refill strategy is required',
+    };
+
+    const validateField = (fieldName: string): string | undefined => {
+        const validator = fieldValidators[fieldName];
+        const error = validator?.();
+
+        if (error) {
+            setErrors(prev => ({ ...prev, [fieldName]: error }));
+        }
+        return error;
+    };
+
+    const validateForm = (): boolean => {
+        // Mark all fields as touched on submit
+        setTouched({
+            name: true,
+            capacity: true,
+            duration: true,
+            refillStrategy: true,
+        });
+
+        const newErrors: Record<string, string> = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = 'Tier name is required';
+        }
+
+        if (formData.capacity <= 0) {
+            newErrors.capacity = 'Capacity must be greater than 0';
+        }
+
+        if (durationValue <= 0) {
+            newErrors.duration = 'Duration must be greater than 0';
+        }
+
+        if (!formData.refillStrategy) {
+            newErrors.refillStrategy = 'Refill strategy is required';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = async () => {
-        setError(null);
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // Validate required fields
-            if (!formData.name.trim()) {
-                throw new Error('Tier name is required');
-            }
-
-            if (formData.capacity <= 0) {
-                throw new Error('Capacity must be greater than 0');
-            }
-
-            if (durationValue <= 0) {
-                throw new Error('Duration must be greater than 0');
-            }
-
             const durationInSeconds = getDurationInSeconds();
             await onSubmit({
                 ...formData,
@@ -137,7 +196,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
             });
             onClose();
         } catch (err: any) {
-            setError(err.message || 'An error occurred while saving the tier');
+            setErrors({ submit: err.message || 'An error occurred while saving the tier' });
         } finally {
             setLoading(false);
         }
@@ -151,17 +210,20 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-                {error && <Alert severity='error'>{error}</Alert>}
+                {errors.submit && <Alert severity='error'>{errors.submit}</Alert>}
 
                 <TextField
                     label='Tier Name'
                     name='name'
                     value={formData.name}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     fullWidth
                     placeholder='e.g., Professional, Enterprise'
                     required={true}
                     disabled={loading}
+                    error={touched.name && !!errors.name}
+                    helperText={touched.name && errors.name}
                 />
 
                 <TextField
@@ -182,22 +244,34 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                     type='number'
                     value={formData.capacity}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     fullWidth
                     inputProps={{ min: '1' }}
                     disabled={loading}
                     required={true}
-                    helperText='Maximum number of requests allowed per interval'
+                    error={touched.capacity && !!errors.capacity}
+                    helperText={(touched.capacity && errors.capacity) || 'Maximum number of requests allowed per interval'}
                 />
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <TextField
                         label='Duration'
+                        name='duration'
                         type='number'
                         value={durationValue}
-                        onChange={(e) => setDurationValue(Math.max(1, Number.parseInt(e.target.value, 10) || 0))}
+                        onChange={(e) => {
+                            clearFieldError('duration');
+                            setDurationValue(Math.max(1, Number.parseInt(e.target.value, 10) || 0));
+                        }}
+                        onBlur={(e) => {
+                            setTouched(prev => ({ ...prev, duration: true }));
+                            validateField('duration');
+                        }}
                         inputProps={{ min: '1' }}
                         disabled={loading}
                         required={true}
+                        error={touched.duration && !!errors.duration}
+                        helperText={touched.duration && errors.duration}
                         sx={{ flex: 1 }}
                     />
                     <FormControl disabled={loading} required={true} sx={{ minWidth: 150 }}>
@@ -217,17 +291,22 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                     = {getDurationInSeconds().toLocaleString()} seconds
                 </Box>
 
-                <FormControl fullWidth disabled={loading} required={true}>
+                <FormControl fullWidth disabled={loading} required={true} error={touched.refillStrategy && !!errors.refillStrategy}>
                     <InputLabel>Refill Strategy</InputLabel>
                     <Select
                         name='refillStrategy'
                         value={formData.refillStrategy || ''}
                         onChange={(e: SelectChangeEvent) => {
                             const { name, value } = e.target;
+                            clearFieldError(name);
                             setFormData((prev: Tier) => ({
                                 ...prev,
                                 [name]: value
                             } as Tier));
+                        }}
+                        onBlur={() => {
+                            setTouched(prev => ({ ...prev, refillStrategy: true }));
+                            validateField('refillStrategy');
                         }}
                         label='Refill Strategy'
                     >
@@ -237,6 +316,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                             </MenuItem>
                         ))}
                     </Select>
+                    {touched.refillStrategy && errors.refillStrategy && <FormHelperText>{errors.refillStrategy}</FormHelperText>}
                 </FormControl>
 
 
@@ -250,7 +330,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                 <Button
                     onClick={handleSubmit}
                     variant='contained'
-                    disabled={loading}
+                    disabled={loading || Object.keys(errors).length > 0}
                     startIcon={loading ? <CircularProgress size={20} /> : undefined}
                 >
                     {isEditMode ? 'Update' : 'Create'}
