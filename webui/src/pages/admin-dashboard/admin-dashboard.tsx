@@ -27,6 +27,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import StarIcon from '@mui/icons-material/Star';
 import { Tiers } from './tiers/tiers';
 import { Customers } from './customers/customers';
+import {LoginComponent} from "../../default/login";
+import AccountBoxIcon from "@mui/icons-material/AccountBox";
 
 export namespace AdminDashboardRoutes {
     export const ROOT = 'admin-dashboard';
@@ -87,12 +89,37 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
     } else if (user) {
         content = <Message message='You are not authorized as administrator.'/>;
     } else if (!props.userLoading && loginProviders) {
-        content = <Message message='You are not logged in.'/>;
+
+        content = <Box display='flex' alignItems='center'>
+            <Message message='You are not logged in.'/>
+            <Box height='fit-content' alignItems='center' display='flex'>
+            <LoginComponent
+                loginProviders={loginProviders}
+                renderButton={(href, onClick) => {
+                    if (href) {
+                        return (<IconButton
+                            href={href}
+                            title='Log In'
+                            aria-label='Log In' >
+                            <AccountBoxIcon />
+                        </IconButton>);
+                    } else {
+                        return (<IconButton
+                            onClick={onClick}
+                            title='Log In'
+                            aria-label='Log In' >
+                            <AccountBoxIcon />
+                        </IconButton>);
+                    }
+                }}
+            />
+            </Box>
+        </Box>;
     }
 
     return <>
         <CssBaseline />
-        <Box display='flex' height='100vh'>{content}</Box>
+        <Box display='flex' height='100vh' justifyContent='center'>{content}</Box>
     </>;
 };
 
