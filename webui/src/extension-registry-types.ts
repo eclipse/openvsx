@@ -265,7 +265,6 @@ export enum RefillStrategy {
 }
 
 export interface Tier {
-    id: number;
     name: string;
     description?: string;
     capacity: number;
@@ -275,4 +274,16 @@ export interface Tier {
 
 export interface TierList {
     tiers: Tier[];
+}
+
+export enum CustomerState {
+    ENFORCEMENT = 'ENFORCEMENT',
+    EVALUATION = 'EVALUATION'
+}
+
+export interface Customer {
+    name: string;
+    tierId?: string;
+    state: CustomerState;
+    cidrBlocks?: string;
 }

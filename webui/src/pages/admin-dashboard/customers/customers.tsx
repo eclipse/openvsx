@@ -1,17 +1,4 @@
-/*
- * Copyright (c) 2026 Contributors to the Eclipse Foundation.
- *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
- */
-
-import React, { FC, useState, useEffect, useRef } from "react";
+import React, { FC, useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Button,
@@ -26,100 +13,106 @@ import {
   CircularProgress,
   Alert,
   IconButton,
-  Stack
+  Stack,
+  Chip
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { MainContext } from "../../../context";
-import type { Tier } from "../../../extension-registry-types";
-import { TierFormDialog } from "./tier-form-dialog";
-import { DeleteTierDialog } from "./delete-tier-dialog";
+import type { Customer } from "../../../extension-registry-types";
+import { CustomerFormDialog } from "./customer-form-dialog";
+import { DeleteCustomerDialog } from "./delete-customer-dialog";
 
-export const Tiers: FC = () => {
-  const abortController = useRef<AbortController>(new AbortController());
+export const Customers: FC = () => {
+  const abortController = useRef<AbortController>();
   const { service } = React.useContext(MainContext);
-  const [tiers, setTiers] = useState<readonly Tier[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<Tier | undefined>();
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>();
 
-  // load all tiers
-  const loadTiers = async () => {
+  useEffect(() => {
+    abortController.current = new AbortController();
+    return () => abortController.current?.abort();
+  }, []);
+
+  // Load all customers
+  const loadCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await service.admin.getTiers(abortController.current);
-      setTiers(data.tiers);
+      const data = await service.admin.getCustomers();
+      setCustomers(data as Customer[]);
     } catch (err: any) {
-      setError(err.message || "Failed to load tiers");
+      setError(err.message || "Failed to load customers");
     } finally {
       setLoading(false);
     }
-  };
+  }, [service]);
 
   useEffect(() => {
-    loadTiers();
-    return () => abortController.current?.abort();
-  }, []);
+    loadCustomers();
+  }, [loadCustomers]);
+
   const handleCreateClick = () => {
-    setSelectedTier(undefined);
+    setSelectedCustomer(undefined);
     setFormDialogOpen(true);
   };
 
-  const handleEditClick = (tier: Tier) => {
-    setSelectedTier(tier);
+  const handleEditClick = (customer: Customer) => {
+    setSelectedCustomer(customer);
     setFormDialogOpen(true);
   };
 
-  const handleDeleteClick = (tier: Tier) => {
-    setSelectedTier(tier);
+  const handleDeleteClick = (customer: Customer) => {
+    setSelectedCustomer(customer);
     setDeleteDialogOpen(true);
   };
 
-  const handleFormSubmit = async (formData: Tier) => {
+  const handleFormSubmit = async (formData: Customer) => {
     try {
-      if (selectedTier) {
-        // update existing tier
-        await service.admin.updateTier(abortController.current, selectedTier.name, formData);
+      if (selectedCustomer) {
+        // Update existing customer
+        await service.admin.updateCustomer(selectedCustomer.name, formData);
       } else {
-        // create new tier
-        await service.admin.createTier(abortController.current, formData);
+        // Create new customer
+        await service.admin.createCustomer(formData);
       }
-      await loadTiers();
+      await loadCustomers();
     } catch (err: any) {
-      throw new Error(err.message || "Failed to save tier");
+      throw new Error(err.message || "Failed to save customer");
     }
   };
 
   const handleDeleteConfirm = async () => {
     try {
-      if (selectedTier) {
-        await service.admin.deleteTier(abortController.current, selectedTier.name);
-        await loadTiers();
+      if (selectedCustomer) {
+        await service.admin.deleteCustomer(selectedCustomer.name);
+        await loadCustomers();
       }
     } catch (err: any) {
-      throw new Error(err.message || "Failed to delete tier");
+      throw new Error(err.message || "Failed to delete customer");
     }
   };
 
   const handleFormDialogClose = () => {
     setFormDialogOpen(false);
-    setSelectedTier(undefined);
+    setSelectedCustomer(undefined);
   };
 
   const handleDeleteDialogClose = () => {
     setDeleteDialogOpen(false);
-    setSelectedTier(undefined);
+    setSelectedCustomer(undefined);
   };
 
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant='h4' component='h1'>
-          Tiers Management
+          Customers Management
         </Typography>
         <Button
           variant='contained'
@@ -127,71 +120,71 @@ export const Tiers: FC = () => {
           onClick={handleCreateClick}
           disabled={loading}
         >
-          Create Tier
+          Create Customer
         </Button>
       </Box>
 
-      { error &&
+      {error && (
         <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
-      }
+      )}
 
-      { loading &&
+      {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
           <CircularProgress />
         </Box>
-      }
+      )}
 
-      { !loading && tiers.length === 0 &&
+      {!loading && customers.length === 0 && (
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography color='textSecondary' gutterBottom>
-            No tiers found. Create one to get started.
+            No customers found. Create one to get started.
           </Typography>
         </Paper>
-      }
+      )}
 
-      { !loading && tiers.length > 0 &&
+      {!loading && customers.length > 0 && (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                 <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Description</TableCell>
-                <TableCell align='right' sx={{ fontWeight: "bold" }}>
-                  Capacity
-                </TableCell>
-                <TableCell align='right' sx={{ fontWeight: "bold" }}>
-                  Duration (s)
-                </TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Refill Strategy</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Tier</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>State</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>CIDR Blocks</TableCell>
                 <TableCell align='center' sx={{ fontWeight: "bold" }}>
                   Actions
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {tiers.map(tier => (
-                <TableRow key={tier.name} hover>
-                  <TableCell>{tier.name}</TableCell>
-                  <TableCell>{tier.description || "-"}</TableCell>
-                  <TableCell align='right'>{tier.capacity.toLocaleString()}</TableCell>
-                  <TableCell align='right'>{tier.duration.toLocaleString()}</TableCell>
-                  <TableCell>{tier.refillStrategy}</TableCell>
+              {customers.map(customer => (
+                <TableRow key={customer.name} hover>
+                  <TableCell>{customer.name}</TableCell>
+                  <TableCell>{customer.tierId || "-"}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={customer.state}
+                      size='small'
+                      variant='outlined'
+                    />
+                  </TableCell>
+                  <TableCell>{customer.cidrBlocks || "-"}</TableCell>
                   <TableCell align='center'>
                     <Stack direction='row' spacing={0.5} justifyContent='center'>
                       <IconButton
                         size='small'
-                        onClick={() => handleEditClick(tier)}
-                        title='Edit tier'
+                        onClick={() => handleEditClick(customer)}
+                        title='Edit customer'
                         color='primary'
                       >
                         <EditIcon fontSize='small' />
                       </IconButton>
                       <IconButton
                         size='small'
-                        onClick={() => handleDeleteClick(tier)}
-                        title='Delete tier'
+                        onClick={() => handleDeleteClick(customer)}
+                        title='Delete customer'
                         color='error'
                       >
                         <DeleteIcon fontSize='small' />
@@ -203,18 +196,18 @@ export const Tiers: FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      }
+      )}
 
-      <TierFormDialog
+      <CustomerFormDialog
         open={formDialogOpen}
-        tier={selectedTier}
+        customer={selectedCustomer}
         onClose={handleFormDialogClose}
         onSubmit={handleFormSubmit}
       />
 
-      <DeleteTierDialog
+      <DeleteCustomerDialog
         open={deleteDialogOpen}
-        tier={selectedTier}
+        customer={selectedCustomer}
         onClose={handleDeleteDialogClose}
         onConfirm={handleDeleteConfirm}
       />

@@ -12,7 +12,7 @@ import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders, Tier, TierList
+    LoginProviders, Tier, TierList, Customer, CustomerState, 
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -490,6 +490,10 @@ export interface AdminService {
     createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
     updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
     deleteTier(abortController: AbortController, name: string): Promise<Readonly<void>>;
+    getCustomers(): Promise<Readonly<Customer[]>>;
+    createCustomer(formData: Customer): Promise<Readonly<Customer>>;
+    updateCustomer(name: string, formData: Customer): Promise<Readonly<Customer>>;
+    deleteCustomer(name: string): Promise<Readonly<void>>;
 }
 
 export type AdminServiceConstructor = new (registry: ExtensionRegistryService) => AdminService;
@@ -674,6 +678,38 @@ export class AdminServiceImpl implements AdminService {
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
             headers
         }, false);
+    }
+
+    async getCustomers(): Promise<Readonly<Customer[]>> {
+        return [
+            {
+                name: 'Acme Corp',
+                state: CustomerState.ENFORCEMENT,
+                cidrBlocks: '192.168.1.0/24,192.168.2.0/24'
+            },
+            {
+                name: 'TechStart Inc',
+                state: CustomerState.ENFORCEMENT,
+                cidrBlocks: '10.0.0.0/8'
+            },
+            {
+                name: 'Legacy Systems Ltd',
+                state: CustomerState.EVALUATION,
+                cidrBlocks: undefined
+            }
+        ];
+    }
+
+    async createCustomer(formData: Customer): Promise<Readonly<Customer>> {
+        return formData;
+    }
+
+    async updateCustomer(name: string, formData: Customer): Promise<Readonly<Customer>> {
+        return formData;
+    }
+
+    async deleteCustomer(name: string): Promise<void> {
+        // No-op for mock
     }
 }
 
