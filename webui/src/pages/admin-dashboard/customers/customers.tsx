@@ -182,9 +182,13 @@ export const Customers: FC = () => {
                   <TableCell>
                     {customer.cidrBlocks.length > 0
                         ? customer.cidrBlocks.map((value) => (
-                            <tr>
-                              <td>{value}</td>
-                            </tr>
+                            <Chip
+                              key={value}
+                              label={value}
+                              size='small'
+                              variant='filled'
+                              sx={{ mr: 0.5, mb: 0.5 }}
+                            />
                         ))
                         : "-"
                     }
