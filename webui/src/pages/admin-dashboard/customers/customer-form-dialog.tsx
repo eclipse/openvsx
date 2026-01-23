@@ -25,7 +25,10 @@ import {
     MenuItem,
     CircularProgress,
     Alert,
-    Box
+    Box,
+    Autocomplete,
+    FormHelperText,
+    styled
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { type Customer, EnforcementState, type Tier } from "../../../extension-registry-types";
@@ -38,6 +41,15 @@ interface CustomerFormDialogProps {
     onSubmit: (formData: Customer) => Promise<void>;
 }
 
+const Code = styled('code')(({ theme }) => ({
+  fontFamily: 'source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace',
+  backgroundColor: theme.palette.action.hover, // Subtle gray background
+  padding: '2px 6px',
+  borderRadius: '4px',
+  fontSize: '0.9em',
+  color: theme.palette.text.primary,
+}));
+
 export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer, onClose, onSubmit }) => {
     const abortController = useRef<AbortController>(new AbortController());
     const { service } = React.useContext(MainContext);
@@ -49,11 +61,12 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
     });
     const [tiers, setTiers] = useState<Tier[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
 
     const loadTiers = async () => {
         try {
-            const data = await service.admin.getTiers(abortController.current!);
+            const data = await service.admin.getTiers(abortController.current);
             setTiers(data.tiers);
         } catch (err: any) {
             console.error('Failed to load tiers:', err);
@@ -76,16 +89,28 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
         } else {
             setFormData({
                 name: '',
-                tier: undefined,
+                tier: tiers.length > 0 ? tiers[0] : undefined,
                 state: EnforcementState.ENFORCEMENT,
                 cidrBlocks: []
             });
         }
-        setError(null);
-    }, [open, customer]);
+        setErrors({});
+        setTouched({});
+    }, [open, customer, tiers]);
+
+    const clearFieldError = (fieldName: string) => {
+        if (errors[fieldName]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[fieldName];
+                return newErrors;
+            });
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
         const { name, value } = e.target;
+        clearFieldError(name);
 
         if (name === 'tierName') {
             const tier = tiers.find((tier) => tier.name === value);
@@ -93,35 +118,117 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                 ...prev,
                 tier: tier,
             }));
-        } else if (name === 'cidrBlocks') {
-            const cidrsBlocks = value.split(",")
-            setFormData(prev => ({
-                ...prev,
-                cidrBlocks: cidrsBlocks,
-            }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
     };
 
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name } = e.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+        
+        // Validate the specific field on blur
+        validateField(name);
+    };
+
+    const fieldValidators: Record<string, () => string | undefined> = {
+        name: () => formData.name.trim() ? undefined : 'Customer name is required',
+        tierName: () => formData.tier?.name ? undefined : 'Tier selection is required',
+        state: () => formData.state ? undefined : 'State is required',
+        cidrBlocks: () => {
+            if (formData.cidrBlocks && formData.cidrBlocks.length > 0) {
+                const invalidEntries = formData.cidrBlocks.filter(cidr => !isValidCIDR(cidr.trim()));
+                if (invalidEntries.length > 0) {
+                    return `Invalid CIDR block(s): ${invalidEntries.join(', ')}`;
+                }
+            }
+            return undefined;
+        },
+    };
+
+    const validateField = (fieldName: string): string | undefined => {
+        const validator = fieldValidators[fieldName];
+        const error = validator?.();
+
+        if (error) {
+            setErrors(prev => ({ ...prev, [fieldName]: error }));
+        }
+        return error;
+    };
+
+    const isValidCIDR = (cidr: string): boolean => {
+        const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
+        const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}(\/\d{1,3})?$/;
+        return ipv4Regex.test(cidr) || ipv6Regex.test(cidr);
+    };
+
+    const handleCidrBlocksChange = (event: any, value: string[]) => {
+        clearFieldError('cidrBlocks');
+
+        // Validate all entries
+        const invalidEntries = value.filter(cidr => !isValidCIDR(cidr.trim()));
+        
+        if (invalidEntries.length > 0) {
+            setTouched(prev => ({ ...prev, cidrBlocks: true }));
+            setErrors(prev => ({
+                ...prev,
+                cidrBlocks: `Invalid CIDR block(s): ${invalidEntries.join(', ')}. Please enter valid IPv4 or IPv6 CIDR notation.`
+            }));
+        }
+        
+        // Always update the value so the user can see and correct invalid entries
+        setFormData(prev => ({
+            ...prev,
+            cidrBlocks: value.map(cidr => cidr.trim()),
+        }));
+    };
+
+    const validateForm = (): boolean => {
+        // Mark all fields as touched on submit
+        setTouched({
+            name: true,
+            tierName: true,
+            state: true,
+            cidrBlocks: true,
+        });
+
+        const newErrors: Record<string, string> = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = 'Customer name is required';
+        }
+
+        if (!formData.tier?.name) {
+            newErrors.tierName = 'Tier selection is required';
+        }
+
+        if (!formData.state) {
+            newErrors.state = 'State is required';
+        }
+
+        if (formData.cidrBlocks && formData.cidrBlocks.length > 0) {
+            const invalidEntries = formData.cidrBlocks.filter(cidr => !isValidCIDR(cidr.trim()));
+            if (invalidEntries.length > 0) {
+                newErrors.cidrBlocks = `Invalid CIDR block(s): ${invalidEntries.join(', ')}`;
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = async () => {
-        setError(null);
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // validate required fields
-            if (!formData.name.trim()) {
-                throw new Error('Customer name is required');
-            }
-
-            if (!formData.state) {
-                throw new Error('State is required');
-            }
-
             await onSubmit(formData);
             onClose();
         } catch (err: any) {
-            setError(err.message || 'An error occurred while saving the customer');
+            setErrors({ submit: err.message || 'An error occurred while saving the customer' });
         } finally {
             setLoading(false);
         }
@@ -135,25 +242,34 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-                {error && <Alert severity='error'>{error}</Alert>}
+                {errors.submit && (
+                  <Alert severity='error'>{errors.submit}</Alert>
+                )}
 
                 <TextField
                     label='Customer Name'
                     name='name'
                     value={formData.name}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     fullWidth
                     placeholder='e.g., Acme Corp, TechStart Inc'
                     required={true}
                     disabled={loading}
+                    error={touched.name && !!errors.name}
+                    helperText={touched.name && errors.name}
                 />
 
-                <FormControl fullWidth disabled={loading}>
+                <FormControl fullWidth disabled={loading} required={true} error={touched.tierName && !!errors.tierName}>
                     <InputLabel>Tier</InputLabel>
                     <Select
                         name='tierName'
                         value={formData.tier?.name ?? ''}
                         onChange={handleChange}
+                        onBlur={(e) => {
+                            setTouched(prev => ({ ...prev, tierName: true }));
+                            validateField('tierName');
+                        }}
                         label='Tier'
                     >
                         {tiers.map(tier => (
@@ -162,14 +278,19 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                             </MenuItem>
                         ))}
                     </Select>
+                    {touched.tierName && errors.tierName && <FormHelperText>{errors.tierName}</FormHelperText>}
                 </FormControl>
 
-                <FormControl fullWidth disabled={loading} required={true}>
+                <FormControl fullWidth disabled={loading} required={true} error={touched.state && !!errors.state}>
                     <InputLabel>State</InputLabel>
                     <Select
                         name='state'
                         value={formData.state}
                         onChange={handleChange}
+                        onBlur={(e) => {
+                            setTouched(prev => ({ ...prev, state: true }));
+                            validateField('state');
+                        }}
                         label='State'
                     >
                         {Object.keys(EnforcementState).map(key => (
@@ -178,19 +299,32 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                             </MenuItem>
                         ))}
                     </Select>
+                    {touched.state && errors.state && <FormHelperText>{errors.state}</FormHelperText>}
                 </FormControl>
 
-                <TextField
-                    label='CIDR Blocks'
-                    name='cidrBlocks'
-                    value={formData.cidrBlocks?.join(",") ?? ''}
-                    onChange={handleChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    placeholder='e.g., 192.168.1.0/24,192.168.2.0/24'
-                    helperText='Comma-separated list of CIDR blocks (optional)'
+                <Autocomplete
+                    multiple
+                    freeSolo
+                    limitTags={5}
                     disabled={loading}
+                    options={[]}
+                    value={formData.cidrBlocks || []}
+                    onChange={handleCidrBlocksChange}
+                    onBlur={() => {
+                        setTouched(prev => ({ ...prev, cidrBlocks: true }));
+                        validateField('cidrBlocks');
+                    }}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label='CIDR Blocks'
+                            placeholder='e.g., 192.168.1.0/24'
+                            error={touched.cidrBlocks && !!errors.cidrBlocks}
+                            helperText={(touched.cidrBlocks && errors.cidrBlocks) || (
+                              <>Enter CIDR blocks and press <Code>Enter</Code> to add each one</>
+                            )}
+                        />
+                    )}
                 />
 
               </Box>
@@ -203,7 +337,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                 <Button
                     onClick={handleSubmit}
                     variant='contained'
-                    disabled={loading}
+                    disabled={loading || Object.keys(errors).length > 0}
                     startIcon={loading ? <CircularProgress size={20} /> : undefined}
                 >
                     {isEditMode ? 'Update' : 'Create'}
