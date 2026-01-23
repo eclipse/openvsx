@@ -489,11 +489,11 @@ export interface AdminService {
     getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
     createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
     updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
-    deleteTier(abortController: AbortController, name: string): Promise<Readonly<void>>;
+    deleteTier(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>>;
     createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>>;
     updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>>;
-    deleteCustomer(abortController: AbortController, name: string): Promise<Readonly<void>>;
+    deleteCustomer(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
 }
 
 export type AdminServiceConstructor = new (registry: ExtensionRegistryService) => AdminService;
@@ -621,7 +621,7 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers']),
             credentials: true
-        });
+        }, false);
     }
 
     async createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>> {
@@ -662,7 +662,7 @@ export class AdminServiceImpl implements AdminService {
         }, false);
     }
 
-    async deleteTier(abortController: AbortController, name: string): Promise<void> {
+    async deleteTier(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
         const csrfResponse = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -685,7 +685,7 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers']),
             credentials: true
-        });
+        }, false);
     }
 
     async createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>> {
@@ -726,7 +726,7 @@ export class AdminServiceImpl implements AdminService {
         }, false);
     }
 
-    async deleteCustomer(abortController: AbortController, name: string): Promise<void> {
+    async deleteCustomer(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
         const csrfResponse = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'

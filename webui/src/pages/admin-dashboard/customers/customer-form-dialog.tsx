@@ -33,6 +33,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material';
 import { type Customer, EnforcementState, type Tier } from "../../../extension-registry-types";
 import { MainContext } from "../../../context";
+import {handleError} from "../../../utils";
 
 interface CustomerFormDialogProps {
     open: boolean;
@@ -228,7 +229,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
             await onSubmit(formData);
             onClose();
         } catch (err: any) {
-            setErrors({ submit: err.message || 'An error occurred while saving the customer' });
+            setErrors({ submit: handleError(err) });
         } finally {
             setLoading(false);
         }

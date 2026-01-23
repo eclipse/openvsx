@@ -30,6 +30,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { RefillStrategy, type Tier } from "../../../extension-registry-types";
+import {handleError} from "../../../utils";
 
 type DurationUnit = 'seconds' | 'minutes' | 'hours';
 
@@ -196,7 +197,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
             });
             onClose();
         } catch (err: any) {
-            setErrors({ submit: err.message || 'An error occurred while saving the tier' });
+            setErrors({ submit: handleError(err) });
         } finally {
             setLoading(false);
         }

@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
 import type { Customer } from "../../../extension-registry-types";
+import {handleError} from "../../../utils";
 
 interface DeleteCustomerDialogProps {
     open: boolean;
@@ -44,7 +45,7 @@ export const DeleteCustomerDialog: FC<DeleteCustomerDialogProps> = ({ open, cust
             await onConfirm();
             onClose();
         } catch (err: any) {
-            setError(err.message || 'An error occurred while deleting the customer');
+            setError(handleError(err));
             setLoading(false);
         }
     };

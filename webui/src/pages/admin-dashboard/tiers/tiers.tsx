@@ -35,6 +35,7 @@ import { MainContext } from "../../../context";
 import type { Tier } from "../../../extension-registry-types";
 import { TierFormDialog } from "./tier-form-dialog";
 import { DeleteTierDialog } from "./delete-tier-dialog";
+import {handleError} from "../../../utils";
 
 export const Tiers: FC = () => {
   const abortController = useRef<AbortController>(new AbortController());
@@ -54,7 +55,7 @@ export const Tiers: FC = () => {
       const data = await service.admin.getTiers(abortController.current);
       setTiers(data.tiers);
     } catch (err: any) {
-      setError(err.message || "Failed to load tiers");
+      setError(handleError(err));
     } finally {
       setLoading(false);
     }
@@ -81,28 +82,20 @@ export const Tiers: FC = () => {
   };
 
   const handleFormSubmit = async (formData: Tier) => {
-    try {
-      if (selectedTier) {
-        // update existing tier
-        await service.admin.updateTier(abortController.current, selectedTier.name, formData);
-      } else {
-        // create new tier
-        await service.admin.createTier(abortController.current, formData);
-      }
-      await loadTiers();
-    } catch (err: any) {
-      throw new Error(err.message || "Failed to save tier");
+    if (selectedTier) {
+      // update existing tier
+      await service.admin.updateTier(abortController.current, selectedTier.name, formData);
+    } else {
+      // create new tier
+      await service.admin.createTier(abortController.current, formData);
     }
+    await loadTiers();
   };
 
   const handleDeleteConfirm = async () => {
-    try {
-      if (selectedTier) {
-        await service.admin.deleteTier(abortController.current, selectedTier.name);
-        await loadTiers();
-      }
-    } catch (err: any) {
-      throw new Error(err.message || "Failed to delete tier");
+    if (selectedTier) {
+      await service.admin.deleteTier(abortController.current, selectedTier.name);
+      await loadTiers();
     }
   };
 
