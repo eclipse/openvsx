@@ -142,6 +142,28 @@ public class RateLimitAPI {
     }
 
     @GetMapping(
+            path = "/tiers/{name}/customers",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<CustomerListJson> getCustomersForTier(@PathVariable String name) {
+        try {
+            admins.checkAdminUser();
+
+            var tier = repositories.findTier(name);
+            if (tier == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            var existingCustomers = repositories.findCustomersByTier(tier);
+            var result = new CustomerListJson(existingCustomers.stream().map(Customer::toJson).toList());
+            return ResponseEntity.ok(result);
+        } catch (Exception exc) {
+            logger.error("failed getting customers for tier {}", name, exc);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping(
             path = "/customers",
             produces = MediaType.APPLICATION_JSON_VALUE
     )

@@ -20,5 +20,7 @@ import java.util.Optional;
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Customer findByNameIgnoreCase(String name);
 
+    List<Customer> findByTier(Tier tier);
+
     int countCustomersByTier(Tier tier);
 }

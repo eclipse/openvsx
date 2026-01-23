@@ -679,6 +679,10 @@ public class RepositoryService {
         return customerRepo.findAll();
     }
 
+    public List<Customer> findCustomersByTier(Tier tier) {
+        return customerRepo.findByTier(tier);
+    }
+
     public int countCustomersByTier(Tier tier) {
         return customerRepo.countCustomersByTier(tier);
     }
