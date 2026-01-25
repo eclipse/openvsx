@@ -38,18 +38,18 @@ import java.util.stream.Collectors;
  * Generates secret scanning rules from gitleaks.toml at application startup.
  * 
  * This component downloads the official gitleaks configuration and converts it to
- * the YAML format used by OpenVSX secret scanning. It runs before {@link SecretScannerFactory}
+ * the YAML format used by OpenVSX secret scanning. It runs before {@link SecretDetectorFactory}
  * to ensure rules are available when secret scanning initializes.
  * 
  * Generation is controlled by application configuration:
- * - ovsx.secret-scanning.enabled: Must be true to generate rules
- * - ovsx.secret-scanning.auto-generate-rules: Enable automatic generation (default: false)
- * - ovsx.secret-scanning.force-regenerate-rules: Force regeneration even if file exists (default: false)
+ * - ovsx.scanning.secret-scanning.enabled: Must be true to generate rules
+ * - ovsx.scanning.secret-scanning.gitleaks.auto-fetch: Enable automatic generation (default: false)
+ * - ovsx.scanning.secret-scanning.gitleaks.force-refresh: Force regeneration even if file exists (default: false)
  * 
- * Only loaded when auto-generate-rules is enabled via configuration.
+ * Only loaded when gitleaks.auto-fetch is enabled via configuration.
  */
 @Component
-@ConditionalOnProperty(name = "ovsx.secret-scanning.auto-generate-rules", havingValue = "true")
+@ConditionalOnProperty(name = "ovsx.scanning.secret-scanning.gitleaks.auto-fetch", havingValue = "true")
 public class GitleaksRulesGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(GitleaksRulesGenerator.class);
@@ -63,7 +63,7 @@ public class GitleaksRulesGenerator {
      */
     private static final Set<String> SKIP_RULE_IDS = Set.of("generic-api-key");
 
-    private final SecretScanningConfig config;
+    private final SecretDetectorConfig config;
     
     /**
      * Path to the generated rules file, if generation succeeded.
@@ -71,7 +71,7 @@ public class GitleaksRulesGenerator {
      */
     private String generatedRulesPath;
 
-    public GitleaksRulesGenerator(SecretScanningConfig config) {
+    public GitleaksRulesGenerator(SecretDetectorConfig config) {
         this.config = config;
     }
     
@@ -84,6 +84,45 @@ public class GitleaksRulesGenerator {
     }
 
     /**
+     * Refresh gitleaks rules by downloading and regenerating.
+     * 
+     * This method is called by the scheduled refresh job to update rules.
+     * Unlike {@link #generateRulesIfNeeded()}, this method always regenerates
+     * the rules file, regardless of whether it already exists.
+     * 
+     * @return true if rules were successfully refreshed, false on error
+     */
+    public boolean refreshRules() {
+        try {
+            File outputFile = resolveOutputFile();
+            
+            if (outputFile == null) {
+                logger.error("Cannot resolve output file for rules refresh");
+                return false;
+            }
+            
+            logger.info("Refreshing gitleaks rules from remote source...");
+            generateRules(outputFile.toPath());
+            
+            if (!outputFile.exists() || outputFile.length() == 0) {
+                logger.error("Rules refresh failed: output file is missing or empty");
+                return false;
+            }
+            
+            // Update the stored path in case it changed
+            this.generatedRulesPath = outputFile.getAbsolutePath();
+            
+            logger.info("Successfully refreshed gitleaks rules: {} ({} bytes)", 
+                outputFile.getName(), outputFile.length());
+            return true;
+            
+        } catch (Exception e) {
+            logger.error("Failed to refresh gitleaks rules", e);
+            return false;
+        }
+    }
+
+    /**
      * Generate gitleaks rules at startup if configured to do so.
      * 
      * Throws an exception if generation is enabled and fails, causing the application to fail to start.
@@ -91,8 +130,8 @@ public class GitleaksRulesGenerator {
      */
     @PostConstruct
     public void generateRulesIfNeeded() {
-        // Skip if auto-generation is disabled
-        if (!config.isAutoGenerateRules()) {
+        // Skip if auto-fetch is disabled
+        if (!config.isGitleaksAutoFetch()) {
             return;
         }
 
@@ -107,7 +146,7 @@ public class GitleaksRulesGenerator {
             this.generatedRulesPath = outputFile.getAbsolutePath();
             
             // Check if file already exists
-            if (outputFile.exists() && !config.isForceRegenerateRules()) {
+            if (outputFile.exists() && !config.isGitleaksForceRefresh()) {
                 logger.info("Secret rules file already exists: {}", 
                     outputFile.getName());
                 return;
@@ -134,7 +173,7 @@ public class GitleaksRulesGenerator {
             throw new IllegalStateException(
                 "Secret scanning rule generation failed. " +
                 "Either fix the network/configuration issue or disable auto-generation " +
-                "(set ovsx.secret-scanning.auto-generate-rules=false)", e);
+                "(set ovsx.secret-scanning.auto-fetch-gitleaks-rules=false)", e);
         }
     }
 
@@ -381,16 +420,16 @@ public class GitleaksRulesGenerator {
     /**
      * Resolve the output file path for the generated rules.
      * 
-     * Uses the path configured in ovsx.secret-scanning.generated-rules-path.
+     * Uses the path configured in ovsx.scanning.secret-scanning.gitleaks.output-path.
      * Fails fast with a clear error if not configured or not writable.
      */
     private File resolveOutputFile() {
-        String path = config.getGeneratedRulesPath();
+        String path = config.getGitleaksOutputPath();
         
         // Fail fast if not configured
         if (path == null || path.trim().isEmpty()) {
             throw new IllegalStateException(
-                "Secret scanning rule generation is enabled but 'ovsx.secret-scanning.generated-rules-path' is not configured. " +
+                "Secret scanning gitleaks.auto-fetch is enabled but 'ovsx.scanning.secret-scanning.gitleaks.output-path' is not configured. " +
                 "Please set this property to the full path where rules should be written (e.g., /app/data/secret-scanning-rules-gitleaks.yaml)"
             );
         }
