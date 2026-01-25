@@ -82,6 +82,9 @@ public class ScanResultJson extends ResultJson {
     @Schema(description = "Validation failures that caused auto-rejection")
     private List<ValidationFailureJson> validationFailures;
 
+    @Schema(description = "All checks/scans that were executed (pass, fail, or skip)")
+    private List<CheckResultJson> checkResults;
+
     @Schema(description = "Error message if the scan failed with an error")
     private String errorMessage;
 
@@ -235,6 +238,14 @@ public class ScanResultJson extends ResultJson {
 
     public void setValidationFailures(List<ValidationFailureJson> validationFailures) {
         this.validationFailures = validationFailures;
+    }
+
+    public List<CheckResultJson> getCheckResults() {
+        return checkResults;
+    }
+
+    public void setCheckResults(List<CheckResultJson> checkResults) {
+        this.checkResults = checkResults;
     }
 
     public String getErrorMessage() {

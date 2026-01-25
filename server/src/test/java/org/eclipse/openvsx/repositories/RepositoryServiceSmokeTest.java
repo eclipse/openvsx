@@ -104,9 +104,13 @@ class RepositoryServiceSmokeTest {
         var threat = ExtensionThreat.create("test.js", "threatFileHash", ".js", "testScanner", "test-rule", "Test threat", "high");
         threat.setScan(scan);
         
+        // Scan check result entity for testing
+        var scanCheckResult = ScanCheckResult.passed("SECRET_SCANNING", ScanCheckResult.CheckCategory.PUBLISH_CHECK, NOW, 10, "All checks passed");
+        scanCheckResult.setScan(scan);
+        
         // Persist all entities consistently using EntityManager
         Stream.of(namespace, extension, userData, extVersion, personalAccessToken, keyPair,
-                  scan, validationFailure, adminDecision, fileDecision, threat)
+                  scan, validationFailure, adminDecision, fileDecision, threat, scanCheckResult)
               .forEach(em::persist);
         em.flush();
         
@@ -337,6 +341,13 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.hasAdminScanDecision(scan),
                 // Additional file decision methods  
                 () -> repositories.countFileDecisions("ALLOWED"),
+                // Scan check result methods
+                () -> repositories.saveScanCheckResult(scanCheckResult),
+                () -> repositories.hasScanCheckResult(scan.getId(), "SECRET_SCANNING"),
+                () -> repositories.findScanCheckResults(scan),
+                () -> repositories.findScanCheckResultsByScanId(scan.getId()),
+                // Extension version lookup including inactive
+                () -> repositories.findExtensionVersionIncludingInactive(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion()),
                 // Extension scan delete method
                 () -> repositories.deleteExtensionScan(scan)
         );

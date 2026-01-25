@@ -2609,7 +2609,8 @@ class RegistryAPITest {
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
-                ExtensionScanService extensionScanService
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new ExtensionService(
                     entityManager,
@@ -2618,7 +2619,8 @@ class RegistryAPITest {
                     cache,
                     publishHandler,
                     scheduler,
-                    extensionScanService
+                    extensionScanService,
+                    scanPersistenceService
             );
         }
 
@@ -2703,7 +2705,8 @@ class RegistryAPITest {
                 UserService users,
                 ExtensionValidator validator,
                 ExtensionControlService extensionControl,
-                ExtensionScanService extensionScanService
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new PublishExtensionVersionHandler(
                     service,
@@ -2714,7 +2717,8 @@ class RegistryAPITest {
                     users,
                     validator,
                     extensionControl,
-                    extensionScanService
+                    extensionScanService,
+                    scanPersistenceService
             );
         }
     }

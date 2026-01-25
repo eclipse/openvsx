@@ -44,7 +44,8 @@ def versions = [
     gatling: '3.14.9',
     loki4j: '1.4.2',
     jedis: '6.2.0',
-    re2j: '1.7'
+    re2j: '1.7',
+    jsonpath: '2.9.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
 java {
@@ -139,6 +140,7 @@ dependencies {
     implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "org.apache.tika:tika-core:${versions.tika}"
     implementation "com.google.re2j:re2j:${versions.re2j}"
+    implementation "com.jayway.jsonpath:json-path:${versions.jsonpath}"
     implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
     implementation "io.micrometer:micrometer-tracing"
     implementation "io.micrometer:micrometer-tracing-bridge-otel"

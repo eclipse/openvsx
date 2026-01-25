@@ -26,8 +26,10 @@ import java.util.*;
  *    where n = text length, m = total pattern length, z = number of matches
  * 
  * Based on the algorithm used by TruffleHog for secret detection optimization.
+ * 
+ * This class is immutable after construction. Use {@link #builder()} to create instances.
  */
-public class AhoCorasick {
+public final class AhoCorasick {
     
     /**
      * Node in the Aho-Corasick trie.
@@ -35,98 +37,152 @@ public class AhoCorasick {
      */
     private static class TrieNode {
         // Children nodes indexed by character
-        Map<Character, TrieNode> children = new HashMap<>();
+        final Map<Character, TrieNode> children = new HashMap<>();
         
         // Failure link - where to go if no match found
         // This is the key to Aho-Corasick's efficiency
         TrieNode failure = null;
         
         // Output patterns at this node (if this node ends a pattern)
-        List<String> outputs = new ArrayList<>();
+        final List<String> outputs = new ArrayList<>();
     }
     
     private final TrieNode root;
     
-    public AhoCorasick() {
-        this.root = new TrieNode();
+    /**
+     * Private constructor - use {@link #builder()} to create instances.
+     */
+    private AhoCorasick(TrieNode root) {
+        this.root = root;
     }
     
     /**
-     * Build the automaton from a collection of keywords.
-     * This should be called once with all patterns before searching.
-     * 
-     * @param keywords Set of keywords to search for (should be lowercase for case-insensitive matching)
+     * Create a new builder for constructing an AhoCorasick automaton.
      */
-    public void build(@NotNull Set<String> keywords) {
-        // Step 1: Build the trie (prefix tree)
-        // Add all keywords to the trie structure
-        for (String keyword : keywords) {
-            if (keyword == null || keyword.isEmpty()) {
-                continue;
+    public static Builder builder() {
+        return new Builder();
+    }
+    
+    /**
+     * Builder for constructing immutable AhoCorasick instances.
+     */
+    public static final class Builder {
+        private final Set<String> keywords = new HashSet<>();
+        private boolean built = false;
+        
+        private Builder() {}
+        
+        /**
+         * Add a single keyword to the automaton.
+         * @param keyword The keyword to search for (should be lowercase for case-insensitive matching)
+         * @return this builder for chaining
+         */
+        public Builder addKeyword(@NotNull String keyword) {
+            checkNotBuilt();
+            if (keyword != null && !keyword.isEmpty()) {
+                keywords.add(keyword);
             }
-            addKeyword(keyword);
+            return this;
         }
         
-        // Step 2: Build failure links using BFS
-        // Failure links allow us to continue matching after a mismatch
-        // without backtracking in the text
-        buildFailureLinks();
-    }
-    
-    /**
-     * Add a single keyword to the trie.
-     */
-    private void addKeyword(String keyword) {
-        TrieNode current = root;
-        
-        for (char c : keyword.toCharArray()) {
-            current = current.children.computeIfAbsent(c, k -> new TrieNode());
+        /**
+         * Add multiple keywords to the automaton.
+         * @param keywords Collection of keywords to search for
+         * @return this builder for chaining
+         */
+        public Builder addKeywords(@NotNull Collection<String> keywords) {
+            checkNotBuilt();
+            for (String keyword : keywords) {
+                if (keyword != null && !keyword.isEmpty()) {
+                    this.keywords.add(keyword);
+                }
+            }
+            return this;
         }
         
-        current.outputs.add(keyword);
-    }
-    
-    /**
-     * Build failure links for all nodes using BFS.
-     * Failure links point to the longest proper suffix that is also a prefix of some pattern.
-     * This is what makes Aho-Corasick efficient - we never backtrack in the input text.
-     */
-    private void buildFailureLinks() {
-        Queue<TrieNode> queue = new LinkedList<>();
-        
-        // Initialize: all children of root fail back to root
-        for (TrieNode child : root.children.values()) {
-            child.failure = root;
-            queue.add(child);
-        }
-        
-        // BFS to build failure links for all nodes
-        while (!queue.isEmpty()) {
-            TrieNode current = queue.poll();
+        /**
+         * Build the immutable AhoCorasick automaton.
+         * This builder cannot be reused after calling build().
+         * @return The constructed automaton
+         */
+        public AhoCorasick build() {
+            checkNotBuilt();
+            built = true;
             
-            for (Map.Entry<Character, TrieNode> entry : current.children.entrySet()) {
-                char c = entry.getKey();
-                TrieNode child = entry.getValue();
+            TrieNode root = new TrieNode();
+            
+            // Step 1: Build the trie (prefix tree)
+            for (String keyword : keywords) {
+                addKeywordToTrie(root, keyword);
+            }
+            
+            // Step 2: Build failure links using BFS
+            buildFailureLinks(root);
+            
+            return new AhoCorasick(root);
+        }
+        
+        private void checkNotBuilt() {
+            if (built) {
+                throw new IllegalStateException("Builder has already been used to build an AhoCorasick instance");
+            }
+        }
+        
+        /**
+         * Add a single keyword to the trie.
+         */
+        private static void addKeywordToTrie(TrieNode root, String keyword) {
+            TrieNode current = root;
+            
+            for (char c : keyword.toCharArray()) {
+                current = current.children.computeIfAbsent(c, k -> new TrieNode());
+            }
+            
+            current.outputs.add(keyword);
+        }
+        
+        /**
+         * Build failure links for all nodes using BFS.
+         * Failure links point to the longest proper suffix that is also a prefix of some pattern.
+         * This is what makes Aho-Corasick efficient - we never backtrack in the input text.
+         */
+        private static void buildFailureLinks(TrieNode root) {
+            Queue<TrieNode> queue = new LinkedList<>();
+            
+            // Initialize: all children of root fail back to root
+            for (TrieNode child : root.children.values()) {
+                child.failure = root;
                 queue.add(child);
+            }
+            
+            // BFS to build failure links for all nodes
+            while (!queue.isEmpty()) {
+                TrieNode current = queue.poll();
                 
-                // Find the failure link for this child
-                // Walk up failure links until we find a node that has a child for 'c'
-                TrieNode failNode = current.failure;
-                while (failNode != null && !failNode.children.containsKey(c)) {
-                    failNode = failNode.failure;
-                }
-                
-                if (failNode == null) {
-                    // No suffix match found, fail to root
-                    child.failure = root;
-                } else {
-                    // Found a suffix match
-                    child.failure = failNode.children.get(c);
-                }
-                
-                // Copy outputs from failure node (for overlapping patterns)
-                if (child.failure != null && child.failure != root) {
-                    child.outputs.addAll(child.failure.outputs);
+                for (Map.Entry<Character, TrieNode> entry : current.children.entrySet()) {
+                    char c = entry.getKey();
+                    TrieNode child = entry.getValue();
+                    queue.add(child);
+                    
+                    // Find the failure link for this child
+                    // Walk up failure links until we find a node that has a child for 'c'
+                    TrieNode failNode = current.failure;
+                    while (failNode != null && !failNode.children.containsKey(c)) {
+                        failNode = failNode.failure;
+                    }
+                    
+                    if (failNode == null) {
+                        // No suffix match found, fail to root
+                        child.failure = root;
+                    } else {
+                        // Found a suffix match
+                        child.failure = failNode.children.get(c);
+                    }
+                    
+                    // Copy outputs from failure node (for overlapping patterns)
+                    if (child.failure != null && child.failure != root) {
+                        child.outputs.addAll(child.failure.outputs);
+                    }
                 }
             }
         }
@@ -199,4 +255,3 @@ public class AhoCorasick {
         }
     }
 }
-

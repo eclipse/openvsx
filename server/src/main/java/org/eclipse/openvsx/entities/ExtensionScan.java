@@ -94,6 +94,10 @@ public class ExtensionScan implements Serializable {
     @OneToMany(mappedBy = "scan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExtensionThreat> threats = new ArrayList<>();
 
+    /** List of all check results (both pass and fail) for audit trail */
+    @OneToMany(mappedBy = "scan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ScanCheckResult> checkResults = new ArrayList<>();
+
     public long getId() {
         return id;
     }
@@ -234,6 +238,19 @@ public class ExtensionScan implements Serializable {
 
     public boolean hasThreats() {
         return threats != null && !threats.isEmpty();
+    }
+
+    public List<ScanCheckResult> getCheckResults() {
+        return checkResults;
+    }
+
+    public void setCheckResults(List<ScanCheckResult> checkResults) {
+        this.checkResults = checkResults;
+    }
+
+    public void addCheckResult(ScanCheckResult result) {
+        checkResults.add(result);
+        result.setScan(this);
     }
 
     @Override
