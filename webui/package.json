@@ -41,6 +41,8 @@
         "@mui/base": "^5.0.0-beta.9",
         "@mui/icons-material": "^5.13.7",
         "@mui/material": "^5.13.7",
+        "@mui/system": "^5.15.15",
+        "@mui/x-data-grid": "^7",
         "clipboard-copy": "^4.0.1",
         "clsx": "^1.2.1",
         "dompurify": "^3.0.4",

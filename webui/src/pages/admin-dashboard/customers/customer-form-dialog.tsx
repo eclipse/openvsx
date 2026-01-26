@@ -42,6 +42,7 @@ interface CustomerFormDialogProps {
     onSubmit: (formData: Customer) => Promise<void>;
 }
 
+
 const Code = styled('code')(({ theme }) => ({
   fontFamily: 'source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace',
   backgroundColor: theme.palette.action.hover, // Subtle gray background
@@ -127,7 +128,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name } = e.target;
         setTouched(prev => ({ ...prev, [name]: true }));
-        
+
         // Validate the specific field on blur
         validateField(name);
     };
@@ -168,7 +169,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
 
         // Validate all entries
         const invalidEntries = value.filter(cidr => !isValidCIDR(cidr.trim()));
-        
+
         if (invalidEntries.length > 0) {
             setTouched(prev => ({ ...prev, cidrBlocks: true }));
             setErrors(prev => ({
@@ -176,7 +177,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                 cidrBlocks: `Invalid CIDR block(s): ${invalidEntries.join(', ')}. Please enter valid IPv4 or IPv6 CIDR notation.`
             }));
         }
-        
+
         // Always update the value so the user can see and correct invalid entries
         setFormData(prev => ({
             ...prev,
