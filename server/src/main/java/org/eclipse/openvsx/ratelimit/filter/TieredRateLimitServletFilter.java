@@ -12,13 +12,11 @@
  */
 package org.eclipse.openvsx.ratelimit.filter;
 
-import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.openvsx.ratelimit.TieredRateLimitService;
+import org.eclipse.openvsx.ratelimit.RateLimitService;
 import org.eclipse.openvsx.ratelimit.UsageDataService;
 import org.eclipse.openvsx.ratelimit.IdentityService;
 import org.eclipse.openvsx.ratelimit.config.TieredRateLimitFilterProperties;
@@ -28,7 +26,6 @@ import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public class TieredRateLimitServletFilter extends OncePerRequestFilter implements Ordered {
@@ -38,13 +35,13 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
     private final TieredRateLimitFilterProperties filterProperties;
     private final UsageDataService customerUsageService;
     private final IdentityService identityService;
-    private final TieredRateLimitService rateLimitService;
+    private final RateLimitService rateLimitService;
 
     public TieredRateLimitServletFilter(
         TieredRateLimitFilterProperties filterProperties,
         UsageDataService customerUsageService,
         IdentityService identityService,
-        TieredRateLimitService rateLimitService
+        RateLimitService rateLimitService
     ) {
         this.filterProperties = filterProperties;
         this.customerUsageService = customerUsageService;
@@ -53,7 +50,7 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         return !request.getRequestURI().matches(filterProperties.getUrl());
     }
 
@@ -65,74 +62,40 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
 
         if (identity.isCustomer()) {
             var customer = identity.getCustomer();
-            logger.info("updating usage status for customer {}", customer.getName());
+            logger.info("tiered-rate-limit: updating usage status for customer {}", customer.getName());
             customerUsageService.incrementUsage(customer);
         }
 
-        var bucketConfiguration = BucketConfiguration.builder()
-                .addLimit(Bandwidth.simple(200L, Duration.ofMinutes(1L)))
-                .build();
+        var bucket = rateLimitService.getBucket(identity);
 
-        var bucket = rateLimitService.getBucket(identity.cacheKey(), bucketConfiguration);
+        // TODO: return ratelimit from service for bucket
+        // response.setHeader("X-RateLimit-Limit", Long.toString(100L));
 
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
         logger.info(">>>>>>>> remainingTokens: {}", probe.getRemainingTokens());
         if (probe.isConsumed()) {
+            response.setHeader("X-Rate-Limit-Remaining", Long.toString(probe.getRemainingTokens()));
             chain.doFilter(request, response);
         } else {
-            HttpServletResponse httpResponse = (HttpServletResponse) response;
-            httpResponse.setContentType("text/plain");
-            httpResponse.setHeader("X-Rate-Limit-Retry-After-Seconds", "" + TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill()));
-            httpResponse.setStatus(429);
-            httpResponse.getWriter().append("Too many requests");
+            handleHttpResponseOnRateLimiting(response, probe);
         }
-
-//        boolean allConsumed = true;
-//        Long remainingLimit = null;
-//        for (var rl : filterConfig.getRateLimitChecks()) {
-//            var wrapper = rl.rateLimit(new ExpressionParams<>(request), null);
-//            if (wrapper != null && wrapper.getRateLimitResult() != null) {
-//                var rateLimitResult = wrapper.getRateLimitResult();
-//                if (rateLimitResult.isConsumed()) {
-//                    remainingLimit = RateLimitService.getRemainingLimit(remainingLimit, rateLimitResult);
-//                } else {
-//                    allConsumed = false;
-//                    handleHttpResponseOnRateLimiting(response, rateLimitResult);
-//                    break;
-//                }
-//                if (filterConfig.getStrategy().equals(RateLimitConditionMatchingStrategy.FIRST)) {
-//                    break;
-//                }
-//            }
-//        }
-//
-//        if (allConsumed) {
-//            if (remainingLimit != null && Boolean.FALSE.equals(filterConfig.getHideHttpResponseHeaders())) {
-//                logger.debug("add-x-rate-limit-remaining-header;limit:{}", remainingLimit);
-//                response.setHeader("X-Rate-Limit-Remaining", "" + remainingLimit);
-//            }
-//            chain.doFilter(request, response);
-//            filterConfig.getPostRateLimitChecks()
-//                    .forEach(rlc -> {
-//                        var result = rlc.rateLimit(request, response);
-//                        if (result != null) {
-//                            logger.debug("post-rate-limit;remaining-tokens:{}", result.getRateLimitResult().getRemainingTokens());
-//                        }
-//                    });
-//        }
     }
 
-//    private void handleHttpResponseOnRateLimiting(HttpServletResponse httpResponse, RateLimitResult rateLimitResult) throws IOException {
-//        httpResponse.setStatus(filterConfig.getHttpStatusCode().value());
-//        if (Boolean.FALSE.equals(filterConfig.getHideHttpResponseHeaders())) {
-//            httpResponse.setHeader("X-Rate-Limit-Retry-After-Seconds", "" + TimeUnit.NANOSECONDS.toSeconds(rateLimitResult.getNanosToWaitForRefill()));
-//            filterConfig.getHttpResponseHeaders().forEach(httpResponse::setHeader);
-//        }
-//        if (filterConfig.getHttpResponseBody() != null) {
-//            httpResponse.setContentType(filterConfig.getHttpContentType());
-//            httpResponse.getWriter().append(filterConfig.getHttpResponseBody());
-//        }
-//    }
+    private void handleHttpResponseOnRateLimiting(HttpServletResponse response, ConsumptionProbe probe) throws IOException {
+        response.setStatus(filterProperties.getHttpStatusCode().value());
+
+        response.setHeader("X-RateLimit-Remaining", "0");
+        response.setHeader("X-Rate-Limit-Reset", "" + TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForReset()));
+        var refillInSeconds = TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill());
+        response.setHeader("X-Rate-Limit-Retry-After-Seconds", Long.toString(refillInSeconds));
+        response.setHeader("Retry-After", Long.toString(refillInSeconds));
+
+        filterProperties.getHttpResponseHeaders().forEach(response::setHeader);
+        if (filterProperties.getHttpResponseBody() != null) {
+            response.setContentType(filterProperties.getHttpContentType());
+            response.getWriter().append(filterProperties.getHttpResponseBody());
+        }
+    }
 
     @Override
     public int getOrder() {

@@ -12,7 +12,7 @@
  */
 package org.eclipse.openvsx.ratelimit.filter;
 
-import org.eclipse.openvsx.ratelimit.TieredRateLimitService;
+import org.eclipse.openvsx.ratelimit.RateLimitService;
 import org.eclipse.openvsx.ratelimit.UsageDataService;
 import org.eclipse.openvsx.ratelimit.IdentityService;
 import org.eclipse.openvsx.ratelimit.config.TieredRateLimitConfig;
@@ -25,12 +25,12 @@ import org.springframework.stereotype.Component;
 public class TieredRateLimitServletFilterFactory {
     private final UsageDataService usageService;
     private final IdentityService identityService;
-    private final TieredRateLimitService rateLimitService;
+    private final RateLimitService rateLimitService;
 
     public TieredRateLimitServletFilterFactory(
         UsageDataService usageService,
         IdentityService identityService,
-        TieredRateLimitService rateLimitService
+        RateLimitService rateLimitService
     ) {
         this.usageService = usageService;
         this.identityService = identityService;

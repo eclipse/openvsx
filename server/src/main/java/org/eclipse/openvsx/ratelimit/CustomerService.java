@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 import static org.eclipse.openvsx.ratelimit.config.TieredRateLimitConfig.CACHE_RATE_LIMIT_CUSTOMER;

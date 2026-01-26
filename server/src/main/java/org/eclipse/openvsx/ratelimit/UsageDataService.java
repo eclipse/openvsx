@@ -14,9 +14,12 @@ package org.eclipse.openvsx.ratelimit;
 
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.UsageStats;
+import org.eclipse.openvsx.ratelimit.config.TieredRateLimitConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.stereotype.Component;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
@@ -27,6 +30,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Map;
 
+@Component
+@ConditionalOnBean(TieredRateLimitConfig.class)
 public class UsageDataService {
     // TODO: run the job every 10m
     public static final String COLLECT_USAGE_STATS_SCHEDULE = "*/15 * * * * *";

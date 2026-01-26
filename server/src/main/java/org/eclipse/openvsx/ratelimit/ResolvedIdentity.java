@@ -15,9 +15,13 @@ package org.eclipse.openvsx.ratelimit;
 import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Customer;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public record ResolvedIdentity(@Nullable Customer customer, String cacheKey) {
+public record ResolvedIdentity(
+        @Nonnull String cacheKey,
+        @Nullable Customer customer
+) {
 
     public boolean isCustomer() {
         return customer != null;
@@ -27,15 +31,7 @@ public record ResolvedIdentity(@Nullable Customer customer, String cacheKey) {
         if (isCustomer()) {
             return customer;
         } else {
-            throw new RuntimeException("no customer associated to identity");
+            throw new RuntimeException("no customer associated with identity");
         }
-    }
-
-    public static ResolvedIdentity anonymous(String cacheKey) {
-        return new ResolvedIdentity(null, cacheKey);
-    }
-
-    public static ResolvedIdentity ofCustomer(Customer customer) {
-        return new ResolvedIdentity(customer, String.valueOf(customer.getId()));
     }
 }

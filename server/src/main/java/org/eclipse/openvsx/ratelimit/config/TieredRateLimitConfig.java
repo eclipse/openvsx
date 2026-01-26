@@ -20,10 +20,6 @@ import io.github.bucket4j.distributed.proxy.ClientSideConfig;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import io.micrometer.common.util.StringUtils;
-import org.eclipse.openvsx.ratelimit.CustomerService;
-import org.eclipse.openvsx.ratelimit.TieredRateLimitService;
-import org.eclipse.openvsx.ratelimit.UsageDataService;
-import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -52,6 +48,7 @@ public class TieredRateLimitConfig  {
 
     public static final String CACHE_RATE_LIMIT_CUSTOMER = "ratelimit.customer";
     public static final String CACHE_RATE_LIMIT_TOKEN = "ratelimit.token";
+    public static final String CACHE_RATE_LIMIT_BUCKET = "ratelimit.bucket";
 
     @Bean
     public JedisCluster jedisCluster(RedisProperties properties) {
@@ -71,16 +68,6 @@ public class TieredRateLimitConfig  {
                 .collect(Collectors.toSet());
 
         return new JedisCluster(nodes, configBuilder.build());
-    }
-
-    @Bean
-    UsageDataService usageDataService(RepositoryService repositories, CustomerService customerService, JedisCluster jedisCluster) {
-        return new UsageDataService(repositories, customerService, jedisCluster);
-    }
-
-    @Bean
-    TieredRateLimitService tieredRateLimitService(ProxyManager<byte[]> proxyManager) {
-        return new TieredRateLimitService(proxyManager);
     }
 
     @Bean
@@ -110,15 +97,30 @@ public class TieredRateLimitConfig  {
     }
 
     @Bean
+    public Cache<Object, Object> bucketCache(
+            @Value("${ovsx.caching.bucket.tti:PT1H}") Duration timeToIdle,
+            @Value("${ovsx.caching.bucket.max-size:10000}") long maxSize
+    ) {
+        return Caffeine.newBuilder()
+                .expireAfterAccess(timeToIdle)
+                .maximumSize(maxSize)
+                .scheduler(Scheduler.systemScheduler())
+                .recordStats()
+                .build();
+    }
+
+    @Bean
     @Qualifier("rateLimitCacheManager")
     public CacheManager rateLimitCacheManager(
             Cache<Object, Object> customerCache,
-            Cache<Object, Object> tokenCache
+            Cache<Object, Object> tokenCache,
+            Cache<Object, Object> bucketCache
     ) {
         logger.info("Configure rate limit cache manager");
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.registerCustomCache(CACHE_RATE_LIMIT_CUSTOMER, customerCache);
         caffeineCacheManager.registerCustomCache(CACHE_RATE_LIMIT_TOKEN, tokenCache);
+        caffeineCacheManager.registerCustomCache(CACHE_RATE_LIMIT_BUCKET, bucketCache);
 
         return caffeineCacheManager;
     }

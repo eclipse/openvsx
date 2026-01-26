@@ -86,8 +86,4 @@ public class TieredRateLimitProperties {
     public void setDefaultHttpResponseBody(String defaultHttpResponseBody) {
         this.defaultHttpResponseBody = defaultHttpResponseBody;
     }
-
-    public static String getPropertyPrefix() {
-        return PROPERTY_PREFIX;
-    }
 }

@@ -25,23 +25,42 @@ public class IdentityService {
     }
 
     public ResolvedIdentity resolveIdentity(HttpServletRequest request) {
-        var forwardedFor = request.getHeader("X-Forwarded-For");
-        var ipAddress = forwardedFor != null ? forwardedFor : request.getRemoteAddr();
+        String ipAddress = getIPAddress(request);
+
+        String cacheKey = null;
 
         var token = request.getParameter("token");
         if (token != null) {
-
+            // TODO: check if its a valid access token
+            cacheKey = "token_" + token.hashCode();
         }
-
-        var session = request.getSession(false);
-        var sessionId = session != null ? session.getId() : null;
 
         var customer = customerService.getCustomerByIpAddress(ipAddress);
-        if (customer.isPresent()) {
-            return ResolvedIdentity.ofCustomer(customer.get());
+        if (customer.isPresent() && cacheKey != null) {
+            cacheKey = "customer" + customer.get().getId();
         }
 
+        if (cacheKey == null) {
+            var session = request.getSession(false);
+            var sessionId = session != null ? session.getId() : null;
+            if (sessionId != null) {
+                // TODO: check if its an active session
+                cacheKey = "session_" + sessionId.hashCode();
+            }
+        }
 
-        return ResolvedIdentity.anonymous(ipAddress);
+        if (cacheKey == null) {
+            cacheKey = "ip_" + ipAddress;
+        }
+
+        return new ResolvedIdentity(cacheKey, customer.orElse(null));
+    }
+
+    private String getIPAddress(HttpServletRequest request) {
+        // TODO: make this configurable rather than hardcode,
+        //       if the server is run without proxy, someone
+        //       could fake the X-Forwarded-For header
+        var forwardedFor = request.getHeader("X-Forwarded-For");
+        return forwardedFor != null ? forwardedFor : request.getRemoteAddr();
     }
 }
