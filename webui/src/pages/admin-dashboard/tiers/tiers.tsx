@@ -11,23 +11,17 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import React, { FC, useState, useEffect, useRef } from "react";
+import React, { FC, useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Button,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
   CircularProgress,
   Alert,
-  IconButton,
-  Stack
+  IconButton
 } from "@mui/material";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -36,6 +30,7 @@ import type { Tier } from "../../../extension-registry-types";
 import { TierFormDialog } from "./tier-form-dialog";
 import { DeleteTierDialog } from "./delete-tier-dialog";
 import {handleError} from "../../../utils";
+import { createMultiSelectFilterOperators } from "../components";
 
 export const Tiers: FC = () => {
   const abortController = useRef<AbortController>(new AbortController());
@@ -109,8 +104,77 @@ export const Tiers: FC = () => {
     setSelectedTier(undefined);
   };
 
+  // Extract unique values for filter dropdowns
+  const refillStrategyOptions = useMemo(() =>
+    [...new Set(tiers.map(t => t.refillStrategy).filter(Boolean))],
+    [tiers]
+  );
+
+  const columns: GridColDef[] = [
+    {
+      field: 'name',
+      headerName: 'Name',
+      flex: 1,
+      minWidth: 150
+    },
+    {
+      field: 'description',
+      headerName: 'Description',
+      flex: 2,
+      minWidth: 200,
+      valueGetter: (value: string) => value || '-'
+    },
+    {
+      field: 'capacity',
+      headerName: 'Capacity',
+      type: 'number',
+      width: 120,
+      valueFormatter: (value: number) => value.toLocaleString()
+    },
+    {
+      field: 'duration',
+      headerName: 'Duration (s)',
+      type: 'number',
+      width: 130,
+      valueFormatter: (value: number) => value.toLocaleString()
+    },
+    {
+      field: 'refillStrategy',
+      headerName: 'Refill Strategy',
+      width: 150,
+      filterOperators: createMultiSelectFilterOperators(refillStrategyOptions)
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 120,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<Tier>) => (
+        <>
+          <IconButton
+            size='small'
+            onClick={() => handleEditClick(params.row)}
+            title='Edit tier'
+            color='primary'
+          >
+            <EditIcon />
+          </IconButton>
+          <IconButton
+            size='small'
+            onClick={() => handleDeleteClick(params.row)}
+            title='Delete tier'
+            color='error'
+          >
+            <DeleteIcon />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant='h4' component='h1'>
           Tier Management
@@ -138,7 +202,7 @@ export const Tiers: FC = () => {
       }
 
       { !loading && tiers.length === 0 &&
-        <Paper sx={{ p: 3, textAlign: "center" }}>
+        <Paper elevation={0} sx={{ p: 3, textAlign: "center" }}>
           <Typography color='textSecondary' gutterBottom>
             No tiers found. Create one to get started.
           </Typography>
@@ -146,57 +210,19 @@ export const Tiers: FC = () => {
       }
 
       { !loading && tiers.length > 0 &&
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Description</TableCell>
-                <TableCell align='right' sx={{ fontWeight: "bold" }}>
-                  Capacity
-                </TableCell>
-                <TableCell align='right' sx={{ fontWeight: "bold" }}>
-                  Duration (s)
-                </TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Refill Strategy</TableCell>
-                <TableCell align='center' sx={{ fontWeight: "bold" }}>
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tiers.map(tier => (
-                <TableRow key={tier.name} hover>
-                  <TableCell>{tier.name}</TableCell>
-                  <TableCell>{tier.description || "-"}</TableCell>
-                  <TableCell align='right'>{tier.capacity.toLocaleString()}</TableCell>
-                  <TableCell align='right'>{tier.duration.toLocaleString()}</TableCell>
-                  <TableCell>{tier.refillStrategy}</TableCell>
-                  <TableCell align='center'>
-                    <Stack direction='row' spacing={0.5} justifyContent='center'>
-                      <IconButton
-                        size='small'
-                        onClick={() => handleEditClick(tier)}
-                        title='Edit tier'
-                        color='primary'
-                      >
-                        <EditIcon fontSize='small' />
-                      </IconButton>
-                      <IconButton
-                        size='small'
-                        onClick={() => handleDeleteClick(tier)}
-                        title='Delete tier'
-                        color='error'
-                      >
-                        <DeleteIcon fontSize='small' />
-                      </IconButton>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Paper elevation={0} sx={{ flex: 1, minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column' }}>
+          <DataGrid
+            rows={tiers as Tier[]}
+            columns={columns}
+            getRowId={(row) => row.name}
+            pageSizeOptions={[20, 35, 50]}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 20 } },
+            }}
+            disableRowSelectionOnClick
+            sx={{ flex: 1 }}
+          />
+        </Paper>
       }
 
       <TierFormDialog

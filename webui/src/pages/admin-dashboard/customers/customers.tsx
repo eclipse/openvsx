@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import React, {FC, useState, useEffect, useRef, useCallback} from "react";
+import React, { FC, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
     Box,
     Button,
@@ -29,6 +29,7 @@ import {
     Stack,
     Chip
 } from "@mui/material";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -37,6 +38,7 @@ import type {Customer} from "../../../extension-registry-types";
 import {CustomerFormDialog} from "./customer-form-dialog";
 import {DeleteCustomerDialog} from "./delete-customer-dialog";
 import {handleError} from "../../../utils";
+import { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from "../components";
 
 export const Customers: FC = () => {
     const abortController = useRef<AbortController>(new AbortController());
@@ -110,21 +112,110 @@ export const Customers: FC = () => {
         setSelectedCustomer(undefined);
     };
 
-    return (
-        <Box sx={{p: 3}}>
-            <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3}}>
-                <Typography variant='h4' component='h1'>
-                    Customer Management
-                </Typography>
-                <Button
-                    variant='contained'
-                    startIcon={<AddIcon/>}
-                    onClick={handleCreateClick}
-                    disabled={loading}
-                >
-                    Create Customer
-                </Button>
-            </Box>
+  // Extract unique values for filter dropdowns
+  const tierOptions = useMemo(() =>
+    [...new Set(customers.map(c => c.tier?.name).filter(Boolean))] as string[],
+    [customers]
+  );
+  const stateOptions = useMemo(() =>
+    [...new Set(customers.map(c => c.state).filter(Boolean))],
+    [customers]
+  );
+  const cidrBlockOptions = useMemo(() => {
+    const allCidrs = customers.reduce<string[]>((acc, c) => acc.concat(c.cidrBlocks), []);
+    return [...new Set(allCidrs)];
+  }, [customers]);
+
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+    {
+      field: 'tier',
+      headerName: 'Tier',
+      flex: 1,
+      minWidth: 120,
+      valueGetter: (value: Customer['tier']) => value?.name || '',
+      filterOperators: createMultiSelectFilterOperators(tierOptions)
+    },
+    {
+      field: 'state',
+      headerName: 'State',
+      flex: 1,
+      minWidth: 100,
+      filterOperators: createMultiSelectFilterOperators(stateOptions)
+    },
+    {
+      field: 'cidrBlocks',
+      headerName: 'CIDR Blocks',
+      flex: 2,
+      minWidth: 200,
+      sortable: false,
+      filterOperators: createArrayContainsFilterOperators(cidrBlockOptions),
+      renderCell: (params: GridRenderCellParams<Customer>) => {
+        const cidrBlocks = params.row.cidrBlocks;
+        const maxVisible = 2;
+        const visibleCidrs = cidrBlocks.slice(0, maxVisible);
+        const remainingCount = cidrBlocks.length - maxVisible;
+
+        return (
+          <Stack direction='row' spacing={0.5} alignItems='center' height='100%' sx={{ py: 0.5 }}>
+            {visibleCidrs.map((cidr: string) => (
+              <Chip key={cidr} label={cidr} size='small' variant='filled' />
+            ))}
+            {remainingCount > 0 && (
+              <Chip
+                label={`+${remainingCount}`}
+                size='small'
+                variant='outlined'
+                title={cidrBlocks.slice(maxVisible).join(', ')}
+              />
+            )}
+          </Stack>
+        );
+      }
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 120,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<Customer>) => (
+        <>
+          <IconButton
+            size='small'
+            onClick={() => handleEditClick(params.row)}
+            title='Edit'
+          >
+            <EditIcon />
+          </IconButton>
+          <IconButton
+            size='small'
+            onClick={() => handleDeleteClick(params.row)}
+            title='Delete'
+            color='error'
+          >
+            <DeleteIcon />
+          </IconButton>
+        </>
+      )
+    }
+  ];
+
+  return (
+    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant='h4' component='h1'>
+          Customer Management
+        </Typography>
+        <Button
+          variant='contained'
+          startIcon={<AddIcon />}
+          onClick={handleCreateClick}
+          disabled={loading}
+        >
+          Create Customer
+        </Button>
+      </Box>
 
             {error && (
                 <Alert severity='error' sx={{mb: 2}} onClose={() => setError(null)}>
@@ -138,80 +229,31 @@ export const Customers: FC = () => {
                 </Box>
             )}
 
-            {!loading && customers.length === 0 && (
-                <Paper sx={{p: 3, textAlign: "center"}}>
-                    <Typography color='textSecondary' gutterBottom>
-                        No customers found. Create one to get started.
-                    </Typography>
-                </Paper>
-            )}
+      { !loading && customers.length === 0 && (
+        <Paper elevation={0} sx={{ p: 3, textAlign: "center" }}>
+          <Typography color='textSecondary' gutterBottom>
+            No customers found. Create one to get started.
+          </Typography>
+        </Paper>
+      )}
 
-            {!loading && customers.length > 0 && (
-                <TableContainer component={Paper}>
-                    <Table>
-                        <TableHead>
-                            <TableRow sx={{backgroundColor: "#f5f5f5"}}>
-                                <TableCell sx={{fontWeight: "bold"}}>Name</TableCell>
-                                <TableCell sx={{fontWeight: "bold"}}>Tier</TableCell>
-                                <TableCell sx={{fontWeight: "bold"}}>State</TableCell>
-                                <TableCell sx={{fontWeight: "bold"}}>CIDR Blocks</TableCell>
-                                <TableCell align='center' sx={{fontWeight: "bold"}}>
-                                    Actions
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {customers.map(customer => (
-                                <TableRow key={customer.name} hover>
-                                    <TableCell>{customer.name}</TableCell>
-                                    <TableCell>{customer.tier?.name || "-"}</TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={customer.state}
-                                            size='small'
-                                            variant='outlined'
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        {customer.cidrBlocks.length > 0
-                                            ? customer.cidrBlocks.map((value) => (
-                                                <Chip
-                                                    key={value}
-                                                    label={value}
-                                                    size='small'
-                                                    variant='filled'
-                                                    sx={{mr: 0.5, mb: 0.5}}
-                                                />
-                                            ))
-                                            : "-"
-                                        }
-                                    </TableCell>
-                                    <TableCell align='center'>
-                                        <Stack direction='row' spacing={0.5} justifyContent='center'>
-                                            <IconButton
-                                                size='small'
-                                                onClick={() => handleEditClick(customer)}
-                                                title='Edit customer'
-                                                color='primary'
-                                            >
-                                                <EditIcon fontSize='small'/>
-                                            </IconButton>
-                                            <IconButton
-                                                size='small'
-                                                onClick={() => handleDeleteClick(customer)}
-                                                title='Delete customer'
-                                                color='error'
-                                            >
-                                                <DeleteIcon fontSize='small'/>
-                                            </IconButton>
-                                        </Stack>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            )}
+      { !loading && customers.length > 0 && (
+        <Paper elevation={0} sx={{ flex: 1, minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column' }}>
+          <DataGrid
+            rows={customers}
+            columns={columns}
+            getRowId={(row) => row.name}
+            pageSizeOptions={[20, 35, 50]}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 20 } },
+            }}
+            disableRowSelectionOnClick
+            sx={{
+              flex: 1,
+            }}
+          />
+        </Paper>
+      )}
 
             <CustomerFormDialog
                 open={formDialogOpen}
