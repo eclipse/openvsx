@@ -12,16 +12,17 @@
  */
 package org.eclipse.openvsx.ratelimit.filter;
 
-import com.giffing.bucket4j.spring.boot.starter.context.properties.FilterConfiguration;
-import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimitFilter;
-import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimiterFilterFactory;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.openvsx.ratelimit.TieredRateLimitService;
 import org.eclipse.openvsx.ratelimit.UsageDataService;
 import org.eclipse.openvsx.ratelimit.IdentityService;
+import org.eclipse.openvsx.ratelimit.config.TieredRateLimitConfig;
+import org.eclipse.openvsx.ratelimit.config.TieredRateLimitFilterProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.stereotype.Component;
 
-public class TieredRateLimitServletFilterFactory implements ServletRateLimiterFilterFactory {
+@Component
+@ConditionalOnBean(TieredRateLimitConfig.class)
+public class TieredRateLimitServletFilterFactory {
     private final UsageDataService usageService;
     private final IdentityService identityService;
     private final TieredRateLimitService rateLimitService;
@@ -36,8 +37,7 @@ public class TieredRateLimitServletFilterFactory implements ServletRateLimiterFi
         this.rateLimitService = rateLimitService;
     }
 
-    @Override
-    public ServletRateLimitFilter create(FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig) {
-        return new TieredRateLimitServletFilter(filterConfig, usageService, identityService, rateLimitService);
+    public TieredRateLimitServletFilter create(TieredRateLimitFilterProperties filterProperties) {
+        return new TieredRateLimitServletFilter(filterProperties, usageService, identityService, rateLimitService);
     }
 }

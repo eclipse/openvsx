@@ -12,9 +12,6 @@
  */
 package org.eclipse.openvsx.ratelimit.filter;
 
-import com.giffing.bucket4j.spring.boot.starter.context.RateLimitResult;
-import com.giffing.bucket4j.spring.boot.starter.context.properties.FilterConfiguration;
-import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimitFilter;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
@@ -24,43 +21,40 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.openvsx.ratelimit.TieredRateLimitService;
 import org.eclipse.openvsx.ratelimit.UsageDataService;
 import org.eclipse.openvsx.ratelimit.IdentityService;
+import org.eclipse.openvsx.ratelimit.config.TieredRateLimitFilterProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-public class TieredRateLimitServletFilter extends OncePerRequestFilter implements ServletRateLimitFilter {
+public class TieredRateLimitServletFilter extends OncePerRequestFilter implements Ordered {
 
     private final Logger logger = LoggerFactory.getLogger(TieredRateLimitServletFilter.class);
 
-    private FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig;
+    private final TieredRateLimitFilterProperties filterProperties;
     private final UsageDataService customerUsageService;
     private final IdentityService identityService;
     private final TieredRateLimitService rateLimitService;
 
     public TieredRateLimitServletFilter(
-        FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig,
+        TieredRateLimitFilterProperties filterProperties,
         UsageDataService customerUsageService,
         IdentityService identityService,
         TieredRateLimitService rateLimitService
     ) {
-        this.filterConfig = filterConfig;
+        this.filterProperties = filterProperties;
         this.customerUsageService = customerUsageService;
         this.identityService = identityService;
         this.rateLimitService = rateLimitService;
     }
 
     @Override
-    public void setFilterConfig(FilterConfiguration<HttpServletRequest, HttpServletResponse> filterConfig) {
-        this.filterConfig = filterConfig;
-    }
-
-    @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        return !request.getRequestURI().matches(filterConfig.getUrl());
+        return !request.getRequestURI().matches(filterProperties.getUrl());
     }
 
     @Override
@@ -128,20 +122,20 @@ public class TieredRateLimitServletFilter extends OncePerRequestFilter implement
 //        }
     }
 
-    private void handleHttpResponseOnRateLimiting(HttpServletResponse httpResponse, RateLimitResult rateLimitResult) throws IOException {
-        httpResponse.setStatus(filterConfig.getHttpStatusCode().value());
-        if (Boolean.FALSE.equals(filterConfig.getHideHttpResponseHeaders())) {
-            httpResponse.setHeader("X-Rate-Limit-Retry-After-Seconds", "" + TimeUnit.NANOSECONDS.toSeconds(rateLimitResult.getNanosToWaitForRefill()));
-            filterConfig.getHttpResponseHeaders().forEach(httpResponse::setHeader);
-        }
-        if (filterConfig.getHttpResponseBody() != null) {
-            httpResponse.setContentType(filterConfig.getHttpContentType());
-            httpResponse.getWriter().append(filterConfig.getHttpResponseBody());
-        }
-    }
+//    private void handleHttpResponseOnRateLimiting(HttpServletResponse httpResponse, RateLimitResult rateLimitResult) throws IOException {
+//        httpResponse.setStatus(filterConfig.getHttpStatusCode().value());
+//        if (Boolean.FALSE.equals(filterConfig.getHideHttpResponseHeaders())) {
+//            httpResponse.setHeader("X-Rate-Limit-Retry-After-Seconds", "" + TimeUnit.NANOSECONDS.toSeconds(rateLimitResult.getNanosToWaitForRefill()));
+//            filterConfig.getHttpResponseHeaders().forEach(httpResponse::setHeader);
+//        }
+//        if (filterConfig.getHttpResponseBody() != null) {
+//            httpResponse.setContentType(filterConfig.getHttpContentType());
+//            httpResponse.getWriter().append(filterConfig.getHttpResponseBody());
+//        }
+//    }
 
     @Override
     public int getOrder() {
-        return filterConfig.getOrder();
+        return filterProperties.getFilterOrder();
     }
 }

@@ -35,7 +35,7 @@ public class CollectUsageStatsJobRequestHandler implements JobRequestHandler<Col
     @Job(name = "Collect usage stats")
     public void run(CollectUsageStatsJobRequest collectUsageStatsJobRequest) throws Exception {
         if (usageDataService != null) {
-            logger.info("starting collect usage stats job");
+            logger.info("tiered-rate-limit: starting collect usage stats job");
             usageDataService.persistUsageStats();
         }
     }

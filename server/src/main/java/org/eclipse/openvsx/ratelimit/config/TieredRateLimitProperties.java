@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.eclipse.openvsx.ratelimit.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.http.HttpStatus;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@ConfigurationProperties(prefix = TieredRateLimitProperties.PROPERTY_PREFIX)
+public class TieredRateLimitProperties {
+
+    public static final String PROPERTY_PREFIX = "ovsx.tiered-rate-limit";
+
+    /**
+     * Enables or disables the tiered rate limit mechanism.
+     */
+    @NotNull
+    private Boolean enabled = false;
+
+    @Valid
+    private List<TieredRateLimitFilterProperties> filters = new ArrayList<>();
+
+    @NotBlank
+    private String defaultHttpContentType = "application/json";
+
+    @NotNull
+    private HttpStatus defaultHttpStatusCode = HttpStatus.TOO_MANY_REQUESTS;
+
+    /**
+     * The HTTP content which should be used in case of rate limiting
+     */
+    private String defaultHttpResponseBody = "{ \"message\": \"Too many requests!\" }";
+
+    public boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public List<TieredRateLimitFilterProperties> getFilters() {
+        return filters;
+    }
+
+    public void setFilters(List<TieredRateLimitFilterProperties> filters) {
+        this.filters = filters;
+    }
+
+    public String getDefaultHttpContentType() {
+        return defaultHttpContentType;
+    }
+
+    public void setDefaultHttpContentType(String defaultHttpContentType) {
+        this.defaultHttpContentType = defaultHttpContentType;
+    }
+
+    public HttpStatus getDefaultHttpStatusCode() {
+        return defaultHttpStatusCode;
+    }
+
+    public void setDefaultHttpStatusCode(HttpStatus defaultHttpStatusCode) {
+        this.defaultHttpStatusCode = defaultHttpStatusCode;
+    }
+
+    public String getDefaultHttpResponseBody() {
+        return defaultHttpResponseBody;
+    }
+
+    public void setDefaultHttpResponseBody(String defaultHttpResponseBody) {
+        this.defaultHttpResponseBody = defaultHttpResponseBody;
+    }
+
+    public static String getPropertyPrefix() {
+        return PROPERTY_PREFIX;
+    }
+}

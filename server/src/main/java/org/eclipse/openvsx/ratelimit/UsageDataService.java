@@ -28,6 +28,7 @@ import java.time.ZoneOffset;
 import java.util.Map;
 
 public class UsageDataService {
+    // TODO: run the job every 10m
     public static final String COLLECT_USAGE_STATS_SCHEDULE = "*/15 * * * * *";
 
     private final static String USAGE_DATA_KEY = "usage.customer";
@@ -49,7 +50,7 @@ public class UsageDataService {
         var key = customer.getId();
         var window = getCurrentUsageWindow();
         var old = jedisCluster.hincrBy(USAGE_DATA_KEY, key + ":" + window, 1);
-        logger.info("Usage count for {}: {}", customer.getName(), old + 1);
+        logger.info("tiered-rate-limit: usage count for {}: {}", customer.getName(), old + 1);
     }
 
     public void persistUsageStats() {
@@ -65,7 +66,7 @@ public class UsageDataService {
                 var key = result.getKey();
                 var value = result.getValue();
 
-                logger.debug("usage stats: {} - {}", key, value);
+                logger.debug("tiered-rate-limit: usage stats: {} - {}", key, value);
 
                 var component = key.split(":");
                 var customerId = Long.parseLong(component[0]);
@@ -74,7 +75,7 @@ public class UsageDataService {
                 if (window < currentWindow) {
                     var customer = customerService.getCustomerById(customerId);
                     if (customer.isEmpty()) {
-                        logger.warn("failed to find customer with id {}", customerId);
+                        logger.warn("tiered-rate-limit: failed to find customer with id {}", customerId);
                     } else {
                         UsageStats stats = new UsageStats();
 

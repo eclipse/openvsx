@@ -12,7 +12,6 @@
  */
 package org.eclipse.openvsx.ratelimit.config;
 
-import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimiterFilterFactory;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
@@ -20,36 +19,59 @@ import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ClientSideConfig;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
+import io.micrometer.common.util.StringUtils;
 import org.eclipse.openvsx.ratelimit.CustomerService;
 import org.eclipse.openvsx.ratelimit.TieredRateLimitService;
 import org.eclipse.openvsx.ratelimit.UsageDataService;
-import org.eclipse.openvsx.ratelimit.IdentityService;
-import org.eclipse.openvsx.ratelimit.filter.TieredRateLimitServletFilterFactory;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 
 import java.time.Duration;
+import java.util.stream.Collectors;
 
 @Configuration
-@ConditionalOnProperty(value = "ovsx.tiered-rate-limit.enabled", havingValue = "true")
-@ConditionalOnBean(JedisCluster.class)
-public class TieredRateLimitConfig {
+@ConditionalOnProperty(prefix = TieredRateLimitProperties.PROPERTY_PREFIX, name = "enabled", havingValue = "true")
+@EnableConfigurationProperties({TieredRateLimitProperties.class})
+public class TieredRateLimitConfig  {
 
     private final Logger logger = LoggerFactory.getLogger(TieredRateLimitConfig.class);
 
     public static final String CACHE_RATE_LIMIT_CUSTOMER = "ratelimit.customer";
     public static final String CACHE_RATE_LIMIT_TOKEN = "ratelimit.token";
+
+    @Bean
+    public JedisCluster jedisCluster(RedisProperties properties) {
+        logger.info("Configure jedis-cluster rate-limiting cache");
+        var configBuilder = DefaultJedisClientConfig.builder();
+        var username = properties.getUsername();
+        if(StringUtils.isNotEmpty(username)) {
+            configBuilder.user(username);
+        }
+        var password = properties.getPassword();
+        if(StringUtils.isNotEmpty(password)) {
+            configBuilder.password(password);
+        }
+
+        var nodes = properties.getCluster().getNodes().stream()
+                .map(HostAndPort::from)
+                .collect(Collectors.toSet());
+
+        return new JedisCluster(nodes, configBuilder.build());
+    }
 
     @Bean
     UsageDataService usageDataService(RepositoryService repositories, CustomerService customerService, JedisCluster jedisCluster) {
@@ -59,16 +81,6 @@ public class TieredRateLimitConfig {
     @Bean
     TieredRateLimitService tieredRateLimitService(ProxyManager<byte[]> proxyManager) {
         return new TieredRateLimitService(proxyManager);
-    }
-
-    @Bean
-    ServletRateLimiterFilterFactory tieredServletFilterFactory(
-        UsageDataService
-        customerUsageService,
-        IdentityService identityService,
-        TieredRateLimitService rateLimitService
-    ) {
-        return new TieredRateLimitServletFilterFactory(customerUsageService, identityService, rateLimitService);
     }
 
     @Bean
@@ -121,5 +133,4 @@ public class TieredRateLimitConfig {
                                 .withExpirationAfterWriteStrategy(ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofSeconds(10))))
                 .build();
     }
-
 }
