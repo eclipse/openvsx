@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, useEffect } from 'react';
-import * as MarkdownIt from 'markdown-it';
+import MarkdownIt from 'markdown-it';
 import * as MarkdownItAnchor from 'markdown-it-anchor';
 import DOMPurify from 'dompurify';
 import { Theme, styled } from '@mui/material/styles';
