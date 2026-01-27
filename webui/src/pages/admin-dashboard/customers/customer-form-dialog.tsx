@@ -33,7 +33,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material';
 import { type Customer, EnforcementState, type Tier } from "../../../extension-registry-types";
 import { MainContext } from "../../../context";
-import {handleError} from "../../../utils";
+import { handleError } from "../../../utils";
 
 interface CustomerFormDialogProps {
     open: boolean;

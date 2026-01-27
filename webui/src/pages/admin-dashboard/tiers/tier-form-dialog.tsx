@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { RefillStrategy, type Tier } from "../../../extension-registry-types";
-import {handleError} from "../../../utils";
+import { handleError } from "../../../utils";
 
 type DurationUnit = 'seconds' | 'minutes' | 'hours';
 

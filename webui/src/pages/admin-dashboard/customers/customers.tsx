@@ -27,16 +27,19 @@ import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import {MainContext} from "../../../context";
-import type {Customer} from "../../../extension-registry-types";
-import {CustomerFormDialog} from "./customer-form-dialog";
-import {DeleteCustomerDialog} from "./delete-customer-dialog";
-import {handleError} from "../../../utils";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import { MainContext } from "../../../context";
+import type { Customer } from "../../../extension-registry-types";
+import { CustomerFormDialog } from "./customer-form-dialog";
+import { DeleteCustomerDialog } from "./delete-customer-dialog";
+import { handleError } from "../../../utils";
 import { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from "../components";
+import { AdminDashboardRoutes } from "../admin-dashboard";
+import { Link } from "react-router-dom";
 
 export const Customers: FC = () => {
     const abortController = useRef<AbortController>(new AbortController());
-    const {service} = React.useContext(MainContext);
+    const { service } = React.useContext(MainContext);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -170,11 +173,19 @@ export const Customers: FC = () => {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 120,
+      width: 160,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<Customer>) => (
         <>
+          <IconButton
+            size='small'
+            component={Link}
+            to={`${AdminDashboardRoutes.USAGE_STATS}/${params.row.name}`}
+            title='View Usage Stats'
+          >
+            <BarChartIcon />
+          </IconButton>
           <IconButton
             size='small'
             onClick={() => handleEditClick(params.row)}
@@ -212,13 +223,13 @@ export const Customers: FC = () => {
       </Box>
 
             {error && (
-                <Alert severity='error' sx={{mb: 2}} onClose={() => setError(null)}>
+                <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
                     {error}
                 </Alert>
             )}
 
             {loading && (
-                <Box sx={{display: "flex", justifyContent: "center", p: 4}}>
+                <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
                     <CircularProgress/>
                 </Box>
             )}

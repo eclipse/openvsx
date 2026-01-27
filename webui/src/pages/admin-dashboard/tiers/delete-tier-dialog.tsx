@@ -23,7 +23,7 @@ import {
     Alert
 } from '@mui/material';
 import type { Tier } from '../../../extension-registry-types';
-import {handleError} from "../../../utils";
+import { handleError } from "../../../utils";
 
 interface DeleteTierDialogProps {
     open: boolean;

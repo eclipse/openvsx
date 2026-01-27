@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
 import type { Customer } from "../../../extension-registry-types";
-import {handleError} from "../../../utils";
+import { handleError } from "../../../utils";
 
 interface DeleteCustomerDialogProps {
     open: boolean;

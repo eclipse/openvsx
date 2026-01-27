@@ -25,9 +25,11 @@ import { PublisherAdmin } from './publisher-admin';
 import PersonIcon from '@mui/icons-material/Person';
 import PeopleIcon from '@mui/icons-material/People';
 import StarIcon from '@mui/icons-material/Star';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { Tiers } from './tiers/tiers';
 import { Customers } from './customers/customers';
-import {LoginComponent} from "../../default/login";
+import { UsageStatsView } from './usage-stats/usage-stats';
+import { LoginComponent } from "../../default/login";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 
 export namespace AdminDashboardRoutes {
@@ -38,6 +40,7 @@ export namespace AdminDashboardRoutes {
     export const PUBLISHER_ADMIN = createRoute([ROOT, 'publisher']);
     export const TIERS = createRoute([ROOT, 'tiers']);
     export const CUSTOMERS = createRoute([ROOT, 'customers']);
+    export const USAGE_STATS = createRoute([ROOT, 'usage']);
 }
 
 const Message: FunctionComponent<{message: string}> = ({ message }) => {
@@ -69,6 +72,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.PUBLISHER_ADMIN} label='Publishers' icon={<PersonIcon />} route={AdminDashboardRoutes.PUBLISHER_ADMIN} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.TIERS} label='Tiers' icon={<StarIcon />} route={AdminDashboardRoutes.TIERS} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.CUSTOMERS} label='Customers' icon={<PeopleIcon />} route={AdminDashboardRoutes.CUSTOMERS} />
+                <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage?.startsWith(AdminDashboardRoutes.USAGE_STATS)} label='Usage Stats' icon={<BarChartIcon />} route={AdminDashboardRoutes.USAGE_STATS} />
             </Sidepanel>
             <Box overflow='auto' flex={1}>
                 <IconButton onClick={toMainPage} sx={{ float: 'right', mt: 1, mr: 1 }}>
@@ -81,6 +85,8 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                         <Route path='/publisher' element={<PublisherAdmin/>} />
                         <Route path='/tiers' element={<Tiers/>} />
                         <Route path='/customers' element={<Customers/>} />
+                        <Route path='/usage' element={<UsageStatsView/>} />
+                        <Route path='/usage/:customer' element={<UsageStatsView/>} />
                         <Route path='*' element={<Welcome/>} />
                     </Routes>
                 </Container>
