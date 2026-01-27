@@ -291,3 +291,17 @@ export interface Customer {
 export interface CustomerList {
     customers: Customer[];
 }
+
+export interface UsageStats {
+    id: number;
+    customerId: number;
+    windowStart: string; // ISO timestamp
+    duration: number; // in seconds
+    count: number;
+}
+
+export interface UsageStatsList {
+    usageStats: UsageStats[];
+}
+
+export type UsageStatsPeriod = 'daily' | 'weekly' | 'monthly';

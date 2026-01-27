@@ -29,7 +29,7 @@ import { MainContext } from "../../../context";
 import type { Tier } from "../../../extension-registry-types";
 import { TierFormDialog } from "./tier-form-dialog";
 import { DeleteTierDialog } from "./delete-tier-dialog";
-import {handleError} from "../../../utils";
+import { handleError } from "../../../utils";
 import { createMultiSelectFilterOperators } from "../components";
 
 export const Tiers: FC = () => {
