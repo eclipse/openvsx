@@ -17,6 +17,7 @@ import org.eclipse.openvsx.util.ArchiveUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 import jakarta.validation.constraints.NotNull;
@@ -39,22 +40,22 @@ import java.util.zip.ZipFile;
  * 
  * Uses Spring's default async executor for parallel file scanning within extension packages.
  * Implements ValidationCheck to be auto-discovered by ExtensionScanService.
- * Only loaded when secret scanning is enabled via configuration.
+ * Only loaded when secret detection is enabled via configuration.
  */
 @Service
-@ConditionalOnProperty(name = "ovsx.secret-scanning.enabled", havingValue = "true")
-public class SecretScanningService implements ValidationCheck {
+@Order(3)  // Run third: secret detection
+@ConditionalOnProperty(name = "ovsx.scanning.secret-detection.enabled", havingValue = "true")
+public class SecretCheckService implements PublishCheck {
 
     public static final String CHECK_TYPE = "SECRET";
     
-    private static final Logger logger = LoggerFactory.getLogger(SecretScanningService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SecretCheckService.class);
     
-    private final SecretScanningConfig config;
-    private final SecretScanner fileContentScanner;
+    private final SecretDetectorConfig config;
+    private final ExtensionScanConfig scanConfig;
+    private final SecretDetector fileContentScanner;
     private final AsyncTaskExecutor taskExecutor;
 
-    private final int maxEntryCount;
-    private final long maxTotalUncompressedBytes;
     private final int maxFindings;
     
     /**
@@ -65,17 +66,17 @@ public class SecretScanningService implements ValidationCheck {
     }
     
     /**
-     * Constructs a secret scanning service with the specified configuration and executor.
+     * Constructs a secret detection service with the specified configuration and executor.
      */
-    public SecretScanningService(
-            SecretScanningConfig config,
-            SecretScannerFactory scannerFactory,
+    public SecretCheckService(
+            SecretDetectorConfig config,
+            ExtensionScanConfig scanConfig,
+            SecretDetectorFactory scannerFactory,
             AsyncTaskExecutor taskExecutor) {
         this.config = config;
+        this.scanConfig = scanConfig;
         this.taskExecutor = taskExecutor;
         
-        this.maxEntryCount = config.getMaxEntryCount();
-        this.maxTotalUncompressedBytes = config.getMaxTotalUncompressedBytes();
         this.maxFindings = config.getMaxFindings();
 
         this.fileContentScanner = scannerFactory.getScanner();
@@ -97,21 +98,21 @@ public class SecretScanningService implements ValidationCheck {
     }
 
     @Override
-    public ValidationCheck.Result check(ValidationCheck.Context context) {
+    public PublishCheck.Result check(PublishCheck.Context context) {
         if (context.extensionFile() == null) {
-            return ValidationCheck.Result.pass();
+            return PublishCheck.Result.pass();
         }
 
         var scanResult = scanForSecrets(context.extensionFile());
         if (!scanResult.isSecretsFound()) {
-            return ValidationCheck.Result.pass();
+            return PublishCheck.Result.pass();
         }
 
         var failures = scanResult.getFindings().stream()
-            .map(f -> new ValidationCheck.Failure(f.getRuleId(), f.toString()))
+            .map(f -> new PublishCheck.Failure(f.getRuleId(), f.toString()))
             .toList();
 
-        return ValidationCheck.Result.fail(failures);
+        return PublishCheck.Result.fail(failures);
     }
     
     /**
@@ -119,14 +120,14 @@ public class SecretScanningService implements ValidationCheck {
      * 
      * Callers should check {@link #isEnabled()} before invoking this method.
      */
-    public SecretScanResult scanForSecrets(@NotNull TempFile extensionFile) {
+    public SecretDetector.Result scanForSecrets(@NotNull TempFile extensionFile) {
         // Use thread-safe collection for parallel processing
-        List<SecretFinding> findings = Collections.synchronizedList(new ArrayList<>());
+        List<SecretDetector.Finding> findings = Collections.synchronizedList(new ArrayList<>());
         AtomicInteger findingsCount = new AtomicInteger(0); // Cap findings to protect memory
         
         try (ZipFile zipFile = new ZipFile(extensionFile.getPath().toFile())) {
             List<? extends ZipEntry> entries = Collections.list(zipFile.entries());
-            ArchiveUtil.enforceArchiveLimits(entries, maxEntryCount, maxTotalUncompressedBytes);
+            ArchiveUtil.enforceArchiveLimits(entries, scanConfig.getMaxEntryCount(), scanConfig.getMaxArchiveSizeBytes());
             
             AtomicInteger filesScanned = new AtomicInteger(0);
             AtomicInteger filesSkipped = new AtomicInteger(0);
@@ -139,7 +140,7 @@ public class SecretScanningService implements ValidationCheck {
                 for (ZipEntry entry : entries) {
                     tasks.add(taskExecutor.submit(() -> {
                         if (System.currentTimeMillis() - startTime > timeoutMillis) {
-                            throw new SecretScanningTimeoutException("Secret scanning timed out");
+                            throw new SecretScanningTimeoutException("Secret detection timed out");
                         }
                         
                         if (Thread.currentThread().isInterrupted()) {
@@ -201,33 +202,35 @@ public class SecretScanningService implements ValidationCheck {
                         filesScanned.get(), filesSkipped.get(), findings.size());
             
         } catch (SecretScanningTimeoutException e) {
-            logger.error("Secret scanning timed out after {} seconds", config.getTimeoutSeconds());
-            throw new RuntimeException(
-                    "Secret scanning timed out after " + config.getTimeoutSeconds() + " seconds. " +
+            logger.error("Secret detection timed out after {} seconds", config.getTimeoutSeconds());
+            throw new SecretScanningException(
+                    "Secret detection timed out after " + config.getTimeoutSeconds() + " seconds. " +
                     "Please reduce the file size or exclude large files.", e);
         } catch (ZipException e) {
             logger.error("Failed to open extension file as zip: {}", e.getMessage());
-            throw new RuntimeException("Failed to scan extension file: invalid zip format", e);
+            throw new SecretScanningException("Failed to scan extension file: invalid zip format", e);
         } catch (IOException e) {
             logger.error("Failed to scan extension file: {}", e.getMessage());
-            throw new RuntimeException("Failed to scan extension file: " + e.getMessage(), e);
+            throw new SecretScanningException("Failed to scan extension file: " + e.getMessage(), e);
+        } catch (SecretScanningException e) {
+            throw e;  // Re-throw already wrapped exceptions
         } catch (Exception e) {
             logger.error("Failed to scan extension file: {}", e.getMessage());
-            throw new RuntimeException("Failed to scan extension file: " + e.getMessage(), e);
+            throw new SecretScanningException("Failed to scan extension file: " + e.getMessage(), e);
         }
         
         if (findings.isEmpty()) {
-            return SecretScanResult.noSecretsFound();
+            return SecretDetector.Result.noSecretsFound();
         } else {
-            return SecretScanResult.secretsFound(findings);
+            return SecretDetector.Result.secretsFound(findings);
         }
     }
     
     /**
      * Record a finding while respecting the global cap.
      */
-    private boolean recordFinding(List<SecretFinding> findings, AtomicInteger findingsCount,
-                                  SecretFinding finding) {
+    private boolean recordFinding(List<SecretDetector.Finding> findings, AtomicInteger findingsCount,
+                                  SecretDetector.Finding finding) {
         int newCount = findingsCount.incrementAndGet();
         if (newCount > maxFindings) {
             throw new ScanCancelledException("Max findings reached");
@@ -243,6 +246,20 @@ public class SecretScanningService implements ValidationCheck {
 class SecretScanningTimeoutException extends RuntimeException {
     SecretScanningTimeoutException(String message) {
         super(message);
+    }
+}
+
+/**
+ * Exception thrown when secret detection fails.
+ * Wraps lower-level exceptions (IO, Zip, etc.) with user-facing messages.
+ */
+class SecretScanningException extends RuntimeException {
+    SecretScanningException(String message) {
+        super(message);
+    }
+    
+    SecretScanningException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
 

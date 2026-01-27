@@ -76,6 +76,13 @@ public class ExtensionJson extends ResultJson {
 
     @Schema(hidden = true)
     private Boolean active;
+    
+    @Schema(description = "Review/publishing status: published (active and visible to all), under_review (being reviewed), rejected (blocked)", 
+            allowableValues = {"published", "under_review", "rejected"})
+    private String reviewStatus;
+    
+    @Schema(description = "Message explaining the review status (e.g., why extension was quarantined or rejected)")
+    private String reviewMessage;
 
     @Schema(description = "The value 'true' means the publishing user is a privileged user or the publishing user is a member of the extension's namespace and the namespace has at least one owner.")
     @NotNull
@@ -284,6 +291,22 @@ public class ExtensionJson extends ResultJson {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+    
+    public String getReviewStatus() {
+        return reviewStatus;
+    }
+    
+    public void setReviewStatus(String reviewStatus) {
+        this.reviewStatus = reviewStatus;
+    }
+    
+    public String getReviewMessage() {
+        return reviewMessage;
+    }
+    
+    public void setReviewMessage(String reviewMessage) {
+        this.reviewMessage = reviewMessage;
     }
 
     public Boolean getVerified() {
@@ -597,6 +620,8 @@ public class ExtensionJson extends ResultJson {
                 && Objects.equals(preRelease, that.preRelease)
                 && Objects.equals(publishedBy, that.publishedBy)
                 && Objects.equals(active, that.active)
+                && Objects.equals(reviewStatus, that.reviewStatus)
+                && Objects.equals(reviewMessage, that.reviewMessage)
                 && Objects.equals(verified, that.verified)
                 && Objects.equals(unrelatedPublisher, that.unrelatedPublisher)
                 && Objects.equals(namespaceAccess, that.namespaceAccess)
@@ -637,7 +662,7 @@ public class ExtensionJson extends ResultJson {
     public int hashCode() {
         return Objects.hash(
                 namespaceUrl, reviewsUrl, files, name, namespace, targetPlatform, version, preRelease, publishedBy,
-                active, verified, unrelatedPublisher, namespaceAccess, allVersions, allVersionsUrl, averageRating,
+                active, reviewStatus, reviewMessage, verified, unrelatedPublisher, namespaceAccess, allVersions, allVersionsUrl, averageRating,
                 downloadCount, reviewCount, versionAlias, timestamp, preview, displayName, description, engines, categories,
                 extensionKind, tags, license, homepage, repository, bugs, markdown, galleryColor, galleryTheme, qna, badges,
                 dependencies, bundledExtensions, downloads, allTargetPlatformVersions, url, deprecated, replacement, downloadable

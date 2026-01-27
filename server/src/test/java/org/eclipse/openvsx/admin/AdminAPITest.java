@@ -25,6 +25,7 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
@@ -76,7 +77,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
     SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class,
-    ExtensionScanService.class
+    ExtensionScanService.class, ExtensionScanPersistenceService.class
 })
 class AdminAPITest {
     
@@ -1483,7 +1484,8 @@ class AdminAPITest {
                 StorageUtilService storageUtil,
                 CacheService cache,
                 JobRequestScheduler scheduler,
-                MailService mail
+                MailService mail,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new AdminService(
                     repositories,
@@ -1496,7 +1498,8 @@ class AdminAPITest {
                     storageUtil,
                     cache,
                     scheduler,
-                    mail
+                    mail,
+                    scanPersistenceService
             );
         }
 
@@ -1559,7 +1562,8 @@ class AdminAPITest {
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
-                ExtensionScanService extensionScanService
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new ExtensionService(
                     entityManager,
@@ -1568,7 +1572,8 @@ class AdminAPITest {
                     cache,
                     publishHandler,
                     scheduler,
-                    extensionScanService
+                    extensionScanService,
+                    scanPersistenceService
             );
         }
 

@@ -79,5 +79,8 @@ public interface ExtensionThreatRepository extends Repository<ExtensionThreat, L
 
     /** Delete all threats for a scan */
     void deleteByScan(ExtensionScan scan);
+
+    /** Find all threats for a specific scan job */
+    List<ExtensionThreat> findByJobId(long jobId);
 }
 

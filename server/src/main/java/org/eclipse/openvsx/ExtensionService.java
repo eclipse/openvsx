@@ -22,6 +22,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -56,6 +57,7 @@ public class ExtensionService {
     private final PublishExtensionVersionHandler publishHandler;
     private final JobRequestScheduler scheduler;
     private final ExtensionScanService scanService;
+    private final ExtensionScanPersistenceService scanPersistenceService;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
@@ -70,7 +72,8 @@ public class ExtensionService {
             CacheService cache,
             PublishExtensionVersionHandler publishHandler,
             JobRequestScheduler scheduler,
-            ExtensionScanService scanService
+            ExtensionScanService scanService,
+            ExtensionScanPersistenceService scanPersistenceService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -79,6 +82,7 @@ public class ExtensionService {
         this.publishHandler = publishHandler;
         this.scheduler = scheduler;
         this.scanService = scanService;
+        this.scanPersistenceService = scanPersistenceService;
     }
 
     @Transactional
@@ -111,9 +115,8 @@ public class ExtensionService {
             scanService.runValidation(scan, extensionFile, token.getUser());
 
             doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-
-            scanService.runScan(scan, extensionFile, token.getUser());
             
+            // Publish async handles requesting the longrunning scans
             publishHandler.publishAsync(extensionFile, this, scan);
             var download = extensionFile.getResource();
             publishHandler.schedulePublicIdJob(extensionFile.getResource());
@@ -290,6 +293,10 @@ public class ExtensionService {
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
+        // Clean up any pending scan jobs for this extension version
+        // to prevent "file not found" errors after deletion
+        scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
+        
         repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
         repositories.deleteFiles(extVersion);
         entityManager.remove(extVersion);

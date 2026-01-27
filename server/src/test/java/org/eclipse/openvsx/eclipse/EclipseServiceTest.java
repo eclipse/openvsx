@@ -22,6 +22,7 @@ import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.*;
@@ -60,7 +61,7 @@ import static org.mockito.ArgumentMatchers.eq;
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
     AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, CacheService.class,
     UserService.class, PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class,
-    JobRequestScheduler.class, CdnServiceConfig.class, ExtensionScanService.class
+    JobRequestScheduler.class, CdnServiceConfig.class, ExtensionScanService.class, ExtensionScanPersistenceService.class
 })
 class EclipseServiceTest {
 
@@ -411,7 +412,8 @@ class EclipseServiceTest {
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
-                ExtensionScanService extensionScanService
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new ExtensionService(
                     entityManager,
@@ -420,7 +422,8 @@ class EclipseServiceTest {
                     cache,
                     publishHandler,
                     scheduler,
-                    extensionScanService
+                    extensionScanService,
+                    scanPersistenceService
             );
         }
 

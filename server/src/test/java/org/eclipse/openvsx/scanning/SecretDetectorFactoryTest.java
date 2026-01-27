@@ -20,19 +20,20 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for the lightweight wiring performed by {@link SecretScannerFactory}.
+ * Tests for the lightweight wiring performed by {@link SecretDetectorFactory}.
  * These tests avoid the Spring context and keep assertions close to the wiring logic.
  */
-class SecretScannerFactoryTest {
+class SecretDetectorFactoryTest {
 
     @Test
     void initialize_buildsEvenWhenDisabled() throws Exception {
         // Factory initializes if rule paths are configured, even when publishing-time scanning is disabled
         TrackingRuleLoader loader = new TrackingRuleLoader();
-        SecretScanningConfig config = buildConfig(false);  // disabled
+        SecretDetectorConfig config = buildConfig(false);  // disabled
         setField(config, "rulesPath", "classpath:org/eclipse/openvsx/scanning/secret-rules-a.yaml");  // Use test resource
-        MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);
-        SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
+        ExtensionScanConfig scanConfig = buildScanConfig();
+        MockGitleaksRulesService gitleaksService = new MockGitleaksRulesService(null);
+        SecretDetectorFactory factory = new SecretDetectorFactory(loader, config, scanConfig, gitleaksService);
 
         factory.initialize();
 
@@ -47,9 +48,10 @@ class SecretScannerFactoryTest {
         // Factory skips initialization when enabled but no rule paths are configured
         // Note: With @ConditionalOnProperty, factory is only created when enabled=true
         TrackingRuleLoader loader = new TrackingRuleLoader();
-        SecretScanningConfig config = buildConfig(true);  // enabled but no rules paths
-        MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);  // no generated rules either
-        SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
+        SecretDetectorConfig config = buildConfig(true);  // enabled but no rules paths
+        ExtensionScanConfig scanConfig = buildScanConfig();
+        MockGitleaksRulesService gitleaksService = new MockGitleaksRulesService(null);  // no generated rules either
+        SecretDetectorFactory factory = new SecretDetectorFactory(loader, config, scanConfig, gitleaksService);
 
         factory.initialize();
 
@@ -62,13 +64,14 @@ class SecretScannerFactoryTest {
     @Test
     void initialize_buildsMatchersAndIndexes() throws Exception {
         TrackingRuleLoader loader = new TrackingRuleLoader();
-        SecretScanningConfig config = buildConfig(true);
+        SecretDetectorConfig config = buildConfig(true);
         setField(config, "rulesPath",
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-a.yaml," +
                         "classpath:org/eclipse/openvsx/scanning/secret-rules-b.yaml");
-        MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);
+        ExtensionScanConfig scanConfig = buildScanConfig();
+        MockGitleaksRulesService gitleaksService = new MockGitleaksRulesService(null);
 
-        SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
+        SecretDetectorFactory factory = new SecretDetectorFactory(loader, config, scanConfig, gitleaksService);
 
         factory.initialize();
 
@@ -89,11 +92,12 @@ class SecretScannerFactoryTest {
     @Test
     void initialize_loadsGlobalAllowlistFromYaml() throws Exception {
         SecretRuleLoader loader = new SecretRuleLoader();
-        SecretScanningConfig config = buildConfig(true);
+        SecretDetectorConfig config = buildConfig(true);
         setField(config, "rulesPath", "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml");
-        MockGitleaksRulesGenerator generator = new MockGitleaksRulesGenerator(null);
+        ExtensionScanConfig scanConfig = buildScanConfig();
+        MockGitleaksRulesService gitleaksService = new MockGitleaksRulesService(null);
 
-        SecretScannerFactory factory = new SecretScannerFactory(loader, config, generator);
+        SecretDetectorFactory factory = new SecretDetectorFactory(loader, config, scanConfig, gitleaksService);
         factory.initialize();
 
         assertNotNull(factory.getScanner(), "Scanner should be created");
@@ -104,21 +108,27 @@ class SecretScannerFactoryTest {
         assertNotNull(factory.getScanner());
     }
 
-    private SecretScanningConfig buildConfig(boolean enabled) throws Exception {
+    private SecretDetectorConfig buildConfig(boolean enabled) throws Exception {
         // We set all the primitive fields explicitly so the factory can use getters safely.
-        SecretScanningConfig config = new SecretScanningConfig();
+        SecretDetectorConfig config = new SecretDetectorConfig();
         setField(config, "enabled", enabled);
-        setField(config, "maxFileSizeBytes", 1024 * 1024);
-        setField(config, "maxLineLength", 10_000);
-        setField(config, "inlineSuppressionsString", "");
+        setField(config, "minifiedLineThreshold", 10_000);
+        setField(config, "suppressionMarkers", "");
         setField(config, "timeoutSeconds", 5);
-        setField(config, "maxEntryCount", 100);
-        setField(config, "maxTotalUncompressedBytes", 1024 * 1024);
         setField(config, "maxFindings", 10);
-        setField(config, "timeoutCheckEveryNLines", 10);
+        setField(config, "timeoutCheckInterval", 10);
         setField(config, "longLineNoSpaceThreshold", 80);
-        setField(config, "keywordContextChars", 10);
-        setField(config, "logAllowlistedPreviewLength", 4);
+        setField(config, "regexContextChars", 10);
+        setField(config, "debugPreviewChars", 4);
+        return config;
+    }
+    
+    private ExtensionScanConfig buildScanConfig() throws Exception {
+        ExtensionScanConfig config = new ExtensionScanConfig();
+        setField(config, "enabled", true);
+        setField(config, "maxArchiveSizeBytes", 1024 * 1024L);
+        setField(config, "maxSingleFileBytes", 1024 * 1024L);
+        setField(config, "maxEntryCount", 100);
         return config;
     }
 
@@ -140,13 +150,13 @@ class SecretScannerFactoryTest {
     }
 
     /**
-     * Mock generator for testing factory integration.
+     * Mock service for testing factory integration.
      */
-    static class MockGitleaksRulesGenerator extends GitleaksRulesGenerator {
+    static class MockGitleaksRulesService extends GitleaksRulesService {
         private final String mockPath;
 
-        MockGitleaksRulesGenerator(String mockPath) {
-            super(null);  // Don't need real config for mock
+        MockGitleaksRulesService(String mockPath) {
+            super(null, null, null);  // Don't need real dependencies for mock
             this.mockPath = mockPath;
         }
 
