@@ -30,7 +30,7 @@ export const periodKeyExtractors: Record<UsageStatsPeriod, (date: Date) => strin
 
 /**
  * Aggregates usage statistics by a specified period, summing counts for each period key.
- * 
+ *
  * @param stats - An array of UsageStats objects to aggregate.
  * @param period - The period type (e.g., daily, weekly) used to extract keys from dates.
  * @returns An array of objects, each containing a 'period' string key and the aggregated 'count' number, sorted by period.
