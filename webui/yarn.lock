@@ -1039,7 +1039,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/x-charts@npm:^6":
+"@mui/x-charts@npm:^6.19":
   version: 6.19.8
   resolution: "@mui/x-charts@npm:6.19.8"
   dependencies:
@@ -1068,7 +1068,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/x-data-grid@npm:^7":
+"@mui/x-data-grid@npm:^7.29":
   version: 7.29.12
   resolution: "@mui/x-data-grid@npm:7.29.12"
   dependencies:
@@ -1095,7 +1095,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/x-date-pickers@npm:^6":
+"@mui/x-date-pickers@npm:^6.20":
   version: 6.20.2
   resolution: "@mui/x-date-pickers@npm:6.20.2"
   dependencies:
@@ -1409,6 +1409,38 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10/7eb1bc5342a9604facd57598a6c62621e244822442976c443efb84ff745246b10d06e8b309b6e80130026a396f19bf6793b7cecd7380169f369dac3bfc46fb99
+  languageName: node
+  linkType: hard
+
+"@types/d3-path@npm:*":
+  version: 3.1.1
+  resolution: "@types/d3-path@npm:3.1.1"
+  checksum: 10/0437994d45d852ecbe9c4484e5abe504cd48751796d23798b6d829503a15563fdd348d93ac44489ba9c656992d16157f695eb889d9ce1198963f8e1dbabb1266
+  languageName: node
+  linkType: hard
+
+"@types/d3-scale@npm:^4.0":
+  version: 4.0.9
+  resolution: "@types/d3-scale@npm:4.0.9"
+  dependencies:
+    "@types/d3-time": "npm:*"
+  checksum: 10/2cae90a5e39252ae51388f3909ffb7009178582990462838a4edd53dd7e2e08121b38f0d2e1ac0e28e41167e88dea5b99e064ca139ba917b900a8020cf85362f
+  languageName: node
+  linkType: hard
+
+"@types/d3-shape@npm:^3.1":
+  version: 3.1.8
+  resolution: "@types/d3-shape@npm:3.1.8"
+  dependencies:
+    "@types/d3-path": "npm:*"
+  checksum: 10/ebc161d49101d84409829fea516ba7ec71ad51a1e97438ca0fafc1c30b56b3feae802d220375323632723a338dda7237c652e831e0b53527a6222ab0d1bb7809
+  languageName: node
+  linkType: hard
+
+"@types/d3-time@npm:*":
+  version: 3.0.4
+  resolution: "@types/d3-time@npm:3.0.4"
+  checksum: 10/b1eb4255066da56023ad243fd4ae5a20462d73bd087a0297c7d49ece42b2304a4a04297568c604a38541019885b2bc35a9e0fd704fad218e9bc9c5f07dc685ce
   languageName: node
   linkType: hard
 
@@ -5438,13 +5470,15 @@ __metadata:
     "@mui/icons-material": "npm:^5.13.7"
     "@mui/material": "npm:^5.13.7"
     "@mui/system": "npm:^5.15.15"
-    "@mui/x-charts": "npm:^6"
-    "@mui/x-data-grid": "npm:^7"
-    "@mui/x-date-pickers": "npm:^6"
+    "@mui/x-charts": "npm:^6.19"
+    "@mui/x-data-grid": "npm:^7.29"
+    "@mui/x-date-pickers": "npm:^6.20"
     "@playwright/test": "npm:^1.55.1"
     "@stylistic/eslint-plugin": "npm:^2.11.0"
     "@types/babel__core": "npm:^7"
     "@types/chai": "npm:^4.3.5"
+    "@types/d3-scale": "npm:^4.0"
+    "@types/d3-shape": "npm:^3.1"
     "@types/dompurify": "npm:^3.0.2"
     "@types/express": "npm:^4.17.21"
     "@types/lodash": "npm:^4.14.195"
